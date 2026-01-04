@@ -8,9 +8,10 @@ import { FilterBar, Filters } from './components/FilterBar';
 import { IdeaDetail } from './components/IdeaDetail';
 import { MeetingsPage } from './components/MeetingsPage';
 import { ProfileDashboard } from './components/ProfileDashboard';
+import { IntegrationsPage } from './components/IntegrationsPage';
 import './App.css';
 
-type Page = 'ideas' | 'meetings' | 'profile';
+type Page = 'ideas' | 'meetings' | 'profile' | 'integrations';
 
 interface StructuredIdea {
   id: string;
@@ -174,6 +175,10 @@ function App() {
     return <ProfileDashboard onBack={() => setCurrentPage('ideas')} />;
   }
 
+  if (currentPage === 'integrations') {
+    return <IntegrationsPage onBack={() => setCurrentPage('ideas')} />;
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -199,6 +204,14 @@ function App() {
                 title="Profil"
               >
                 👤 Profil
+              </button>
+              <button
+                type="button"
+                className="nav-button"
+                onClick={() => setCurrentPage('integrations')}
+                title="Integrationen"
+              >
+                ⚙️ Integrationen
               </button>
             </nav>
             <div className="status-indicators">

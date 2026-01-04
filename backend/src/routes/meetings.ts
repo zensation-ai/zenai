@@ -22,6 +22,58 @@ const upload = multer({
 });
 
 /**
+ * POST /api/meetings/search
+ * Search meetings by semantic similarity
+ * NOTE: Must be defined BEFORE /:id route
+ */
+meetingsRouter.post('/search', async (req, res) => {
+  const startTime = Date.now();
+
+  try {
+    const { query, limit } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Search query required' });
+    }
+
+    const results = await searchMeetings(query, limit || 10);
+
+    res.json({
+      results,
+      count: results.length,
+      processingTime: Date.now() - startTime,
+    });
+  } catch (error: any) {
+    console.error('Search meetings error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/meetings/action-items/all
+ * Get all action items across meetings
+ * NOTE: Must be defined BEFORE /:id route
+ */
+meetingsRouter.get('/action-items/all', async (req, res) => {
+  try {
+    const { completed, company_id } = req.query;
+
+    const items = await getAllActionItems({
+      completed: completed !== undefined ? completed === 'true' : undefined,
+      company_id: company_id as string,
+    });
+
+    res.json({
+      action_items: items,
+      count: items.length,
+    });
+  } catch (error: any) {
+    console.error('Get action items error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /api/meetings
  * Create a new meeting
  */
@@ -199,56 +251,6 @@ meetingsRouter.get('/:id/notes', async (req, res) => {
     res.json({ notes });
   } catch (error: any) {
     console.error('Get meeting notes error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/meetings/search
- * Search meetings by semantic similarity
- */
-meetingsRouter.post('/search', async (req, res) => {
-  const startTime = Date.now();
-
-  try {
-    const { query, limit } = req.body;
-
-    if (!query) {
-      return res.status(400).json({ error: 'Search query required' });
-    }
-
-    const results = await searchMeetings(query, limit || 10);
-
-    res.json({
-      results,
-      count: results.length,
-      processingTime: Date.now() - startTime,
-    });
-  } catch (error: any) {
-    console.error('Search meetings error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/meetings/action-items
- * Get all action items across meetings
- */
-meetingsRouter.get('/action-items/all', async (req, res) => {
-  try {
-    const { completed, company_id } = req.query;
-
-    const items = await getAllActionItems({
-      completed: completed !== undefined ? completed === 'true' : undefined,
-      company_id: company_id as string,
-    });
-
-    res.json({
-      action_items: items,
-      count: items.length,
-    });
-  } catch (error: any) {
-    console.error('Get action items error:', error);
     res.status(500).json({ error: error.message });
   }
 });

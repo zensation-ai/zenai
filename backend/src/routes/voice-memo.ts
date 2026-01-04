@@ -7,6 +7,7 @@ import { query } from '../utils/database';
 import { transcribeAudio, checkWhisperAvailable } from '../services/whisper';
 import { analyzeRelationships } from '../services/knowledge-graph';
 import { trackInteraction, suggestPriority } from '../services/user-profile';
+import { triggerWebhook } from '../services/webhooks';
 
 export const voiceMemoRouter = Router();
 
@@ -177,7 +178,7 @@ voiceMemoRouter.post('/', (req, res, next) => {
 
     const totalTime = Date.now() - startTime;
 
-    // Background tasks: Knowledge Graph analysis and user profile tracking
+    // Background tasks: Knowledge Graph analysis, user profile tracking, webhooks
     // These run async to not block the response
     Promise.all([
       analyzeRelationships(ideaId).catch((err) =>
@@ -189,6 +190,13 @@ voiceMemoRouter.post('/', (req, res, next) => {
         metadata: { action: 'create', source: 'voice-memo' },
       }).catch((err) =>
         console.log('Background tracking skipped:', err.message)
+      ),
+      triggerWebhook('idea.created', {
+        id: ideaId,
+        ...structured,
+        source: 'voice-memo'
+      }).catch((err) =>
+        console.log('Background webhook skipped:', err.message)
       ),
     ]);
 
@@ -257,6 +265,13 @@ voiceMemoRouter.post('/text', async (req, res) => {
         metadata: { action: 'create', source: 'text' },
       }).catch((err) =>
         console.log('Background tracking skipped:', err.message)
+      ),
+      triggerWebhook('idea.created', {
+        id: ideaId,
+        ...structured,
+        source: 'text'
+      }).catch((err) =>
+        console.log('Background webhook skipped:', err.message)
       ),
     ]);
 

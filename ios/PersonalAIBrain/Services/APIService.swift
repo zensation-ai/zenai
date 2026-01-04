@@ -357,6 +357,62 @@ class APIService: ObservableObject {
             print("Track interaction failed: \(error)")
         }
     }
+
+    // MARK: - Phase 4: Integrations
+
+    func getIntegrations() async throws -> [Integration] {
+        guard let url = URL(string: "\(baseURL)/api/integrations") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let integrationsResponse = try JSONDecoder().decode(IntegrationsResponse.self, from: data)
+        return integrationsResponse.integrations
+    }
+
+    func syncIntegration(provider: String) async throws -> SyncResult {
+        guard let url = URL(string: "\(baseURL)/api/integrations/\(provider)/sync") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 60
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        return try JSONDecoder().decode(SyncResult.self, from: data)
+    }
+
+    func getUpcomingCalendarEvents(hours: Int = 24) async throws -> [CalendarEvent] {
+        guard let url = URL(string: "\(baseURL)/api/integrations/microsoft/events?hours=\(hours)") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let eventsResponse = try decoder.decode(CalendarEventsResponse.self, from: data)
+        return eventsResponse.events
+    }
 }
 
 // MARK: - Response Models
@@ -444,6 +500,62 @@ struct ProfileStatsResponse: Codable {
 
 struct RecommendationsResponse: Codable {
     let recommendations: Recommendations
+}
+
+// Phase 4: Integration Models
+
+struct IntegrationsResponse: Codable {
+    let integrations: [Integration]
+}
+
+struct Integration: Codable, Identifiable {
+    let id: String
+    let provider: String
+    let name: String
+    let isEnabled: Bool
+    let isConnected: Bool
+    let features: [String]?
+    let lastSyncAt: Date?
+    let syncStatus: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, provider, name, features
+        case isEnabled = "isEnabled"
+        case isConnected = "isConnected"
+        case lastSyncAt = "lastSyncAt"
+        case syncStatus = "syncStatus"
+    }
+}
+
+struct SyncResult: Codable {
+    let success: Bool
+    let message: String?
+    let synced: Int?
+    let created: Int?
+    let updated: Int?
+}
+
+struct CalendarEventsResponse: Codable {
+    let events: [CalendarEvent]
+}
+
+struct CalendarEvent: Codable, Identifiable {
+    let id: String
+    let title: String
+    let description: String?
+    let startTime: Date
+    let endTime: Date
+    let location: String?
+    let isOnline: Bool
+    let onlineMeetingUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, location
+        case startTime = "startTime"
+        case endTime = "endTime"
+        case isOnline = "isOnline"
+        case onlineMeetingUrl = "onlineMeetingUrl"
+    }
 }
 
 // MARK: - API Errors

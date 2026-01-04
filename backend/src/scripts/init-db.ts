@@ -197,6 +197,167 @@ async function initDatabase() {
     `);
     console.log('   ✅ user_interactions table created\n');
 
+    // ==========================================
+    // PHASE 4: Enterprise Integration Tables
+    // ==========================================
+
+    // API Keys for external integrations
+    console.log('2h. Creating api_keys table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id UUID PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        key_hash VARCHAR(255) NOT NULL UNIQUE,
+        key_prefix VARCHAR(10) NOT NULL,
+        scopes JSONB DEFAULT '["read"]',
+        rate_limit INTEGER DEFAULT 1000,
+        expires_at TIMESTAMP WITH TIME ZONE,
+        last_used_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        is_active BOOLEAN DEFAULT TRUE
+      );
+    `);
+    console.log('   ✅ api_keys table created\n');
+
+    // OAuth tokens for external services
+    console.log('2i. Creating oauth_tokens table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS oauth_tokens (
+        id UUID PRIMARY KEY,
+        provider VARCHAR(50) NOT NULL CHECK (provider IN ('microsoft', 'slack', 'google', 'salesforce', 'hubspot')),
+        access_token TEXT NOT NULL,
+        refresh_token TEXT,
+        token_type VARCHAR(50) DEFAULT 'Bearer',
+        expires_at TIMESTAMP WITH TIME ZONE,
+        scopes JSONB DEFAULT '[]',
+        user_id VARCHAR(255),
+        metadata JSONB DEFAULT '{}',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    console.log('   ✅ oauth_tokens table created\n');
+
+    // Integrations configuration
+    console.log('2j. Creating integrations table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS integrations (
+        id VARCHAR(100) PRIMARY KEY,
+        provider VARCHAR(50) NOT NULL CHECK (provider IN ('microsoft', 'slack', 'google', 'salesforce', 'hubspot', 'webhook')),
+        name VARCHAR(255) NOT NULL,
+        is_enabled BOOLEAN DEFAULT FALSE,
+        config JSONB DEFAULT '{}',
+        sync_settings JSONB DEFAULT '{"auto_sync": false, "sync_interval_minutes": 60}',
+        last_sync_at TIMESTAMP WITH TIME ZONE,
+        sync_status VARCHAR(20) DEFAULT 'idle' CHECK (sync_status IN ('idle', 'syncing', 'success', 'error')),
+        error_message TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    console.log('   ✅ integrations table created\n');
+
+    // Webhook endpoints (outgoing)
+    console.log('2k. Creating webhooks table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS webhooks (
+        id UUID PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        url TEXT NOT NULL,
+        secret VARCHAR(255),
+        events JSONB DEFAULT '["idea.created"]',
+        is_active BOOLEAN DEFAULT TRUE,
+        retry_count INTEGER DEFAULT 3,
+        last_triggered_at TIMESTAMP WITH TIME ZONE,
+        failure_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    console.log('   ✅ webhooks table created\n');
+
+    // Webhook delivery log
+    console.log('2l. Creating webhook_deliveries table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS webhook_deliveries (
+        id UUID PRIMARY KEY,
+        webhook_id UUID NOT NULL REFERENCES webhooks(id) ON DELETE CASCADE,
+        event_type VARCHAR(100) NOT NULL,
+        payload JSONB NOT NULL,
+        response_status INTEGER,
+        response_body TEXT,
+        attempt INTEGER DEFAULT 1,
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'success', 'failed', 'retrying')),
+        error_message TEXT,
+        delivered_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    console.log('   ✅ webhook_deliveries table created\n');
+
+    // External calendar events (synced from Outlook/Google)
+    console.log('2m. Creating calendar_events table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS calendar_events (
+        id UUID PRIMARY KEY,
+        external_id VARCHAR(255) NOT NULL,
+        provider VARCHAR(50) NOT NULL CHECK (provider IN ('microsoft', 'google')),
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+        end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+        location VARCHAR(255),
+        attendees JSONB DEFAULT '[]',
+        is_online BOOLEAN DEFAULT FALSE,
+        online_meeting_url TEXT,
+        organizer JSONB,
+        status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'tentative', 'cancelled')),
+        linked_meeting_id UUID REFERENCES meetings(id) ON DELETE SET NULL,
+        raw_data JSONB,
+        synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(external_id, provider)
+      );
+    `);
+    console.log('   ✅ calendar_events table created\n');
+
+    // Slack messages (synced from channels)
+    console.log('2n. Creating slack_messages table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS slack_messages (
+        id UUID PRIMARY KEY,
+        external_id VARCHAR(255) NOT NULL,
+        channel_id VARCHAR(100) NOT NULL,
+        channel_name VARCHAR(255),
+        user_id VARCHAR(100),
+        user_name VARCHAR(255),
+        text TEXT NOT NULL,
+        thread_ts VARCHAR(100),
+        is_processed BOOLEAN DEFAULT FALSE,
+        linked_idea_id UUID REFERENCES ideas(id) ON DELETE SET NULL,
+        embedding vector(768),
+        raw_data JSONB,
+        message_ts TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(external_id)
+      );
+    `);
+    console.log('   ✅ slack_messages table created\n');
+
+    // Rate limiting tracking
+    console.log('2o. Creating rate_limits table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS rate_limits (
+        id SERIAL PRIMARY KEY,
+        key VARCHAR(255) NOT NULL,
+        window_start TIMESTAMP WITH TIME ZONE NOT NULL,
+        request_count INTEGER DEFAULT 1,
+        UNIQUE(key, window_start)
+      );
+    `);
+    console.log('   ✅ rate_limits table created\n');
+
     // Create indexes
     console.log('3. Creating indexes...');
 
@@ -249,7 +410,22 @@ async function initDatabase() {
       ON ideas
       USING gin(to_tsvector('german', COALESCE(title, '') || ' ' || COALESCE(summary, '') || ' ' || COALESCE(raw_transcript, '')));
     `);
-    console.log('   ✅ Full-text search index created\n');
+    console.log('   ✅ Full-text search index created');
+
+    // Phase 4: Integration indexes
+    await client.query('CREATE INDEX IF NOT EXISTS api_keys_prefix_idx ON api_keys(key_prefix);');
+    await client.query('CREATE INDEX IF NOT EXISTS api_keys_active_idx ON api_keys(is_active);');
+    await client.query('CREATE INDEX IF NOT EXISTS oauth_tokens_provider_idx ON oauth_tokens(provider);');
+    await client.query('CREATE INDEX IF NOT EXISTS integrations_provider_idx ON integrations(provider);');
+    await client.query('CREATE INDEX IF NOT EXISTS webhooks_active_idx ON webhooks(is_active);');
+    await client.query('CREATE INDEX IF NOT EXISTS webhook_deliveries_webhook_idx ON webhook_deliveries(webhook_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS webhook_deliveries_status_idx ON webhook_deliveries(status);');
+    await client.query('CREATE INDEX IF NOT EXISTS calendar_events_external_idx ON calendar_events(external_id, provider);');
+    await client.query('CREATE INDEX IF NOT EXISTS calendar_events_time_idx ON calendar_events(start_time, end_time);');
+    await client.query('CREATE INDEX IF NOT EXISTS slack_messages_channel_idx ON slack_messages(channel_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS slack_messages_ts_idx ON slack_messages(message_ts DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS rate_limits_key_idx ON rate_limits(key, window_start);');
+    console.log('   ✅ Phase 4 integration indexes created\n');
 
     // Create updated_at trigger
     console.log('4. Creating update trigger...');

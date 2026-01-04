@@ -3,8 +3,35 @@ import { query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector, quantizeToBinary } from '../utils/embedding';
 import { trackInteraction } from '../services/user-profile';
+import { triggerWebhook } from '../services/webhooks';
 
 export const ideasRouter = Router();
+
+/**
+ * GET /api/ideas/stats/summary
+ * Get statistics about ideas
+ * NOTE: Must be defined BEFORE /:id route to avoid being caught by it
+ */
+ideasRouter.get('/stats/summary', async (req, res) => {
+  try {
+    const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
+      query('SELECT COUNT(*) as total FROM ideas'),
+      query('SELECT type, COUNT(*) as count FROM ideas GROUP BY type'),
+      query('SELECT category, COUNT(*) as count FROM ideas GROUP BY category'),
+      query('SELECT priority, COUNT(*) as count FROM ideas GROUP BY priority'),
+    ]);
+
+    res.json({
+      total: parseInt(totalResult.rows[0].total),
+      byType: typeResult.rows.reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
+      byCategory: categoryResult.rows.reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
+      byPriority: priorityResult.rows.reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
+    });
+  } catch (error: any) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 /**
  * GET /api/ideas
@@ -268,6 +295,12 @@ ideasRouter.put('/:id', async (req, res) => {
       }).catch(() => {});
     }
 
+    // Phase 4: Trigger webhook
+    triggerWebhook('idea.updated', {
+      id: req.params.id,
+      ...result.rows[0]
+    }).catch(() => {});
+
     res.json(result.rows[0]);
   } catch (error: any) {
     console.error('Error updating idea:', error);
@@ -292,6 +325,11 @@ ideasRouter.delete('/:id', async (req, res) => {
       idea_id: req.params.id,
       interaction_type: 'archive',
       metadata: { action: 'delete' },
+    }).catch(() => {});
+
+    // Phase 4: Trigger webhook
+    triggerWebhook('idea.deleted', {
+      id: req.params.id
     }).catch(() => {});
 
     res.json({ success: true, deletedId: req.params.id });
@@ -322,34 +360,14 @@ ideasRouter.put('/:id/archive', async (req, res) => {
       metadata: { action: 'archive' },
     }).catch(() => {});
 
+    // Phase 4: Trigger webhook
+    triggerWebhook('idea.archived', {
+      id: req.params.id
+    }).catch(() => {});
+
     res.json({ success: true, archivedId: req.params.id });
   } catch (error: any) {
     console.error('Error archiving idea:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/ideas/stats/summary
- * Get statistics about ideas
- */
-ideasRouter.get('/stats/summary', async (req, res) => {
-  try {
-    const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-      query('SELECT COUNT(*) as total FROM ideas'),
-      query('SELECT type, COUNT(*) as count FROM ideas GROUP BY type'),
-      query('SELECT category, COUNT(*) as count FROM ideas GROUP BY category'),
-      query('SELECT priority, COUNT(*) as count FROM ideas GROUP BY priority'),
-    ]);
-
-    res.json({
-      total: parseInt(totalResult.rows[0].total),
-      byType: typeResult.rows.reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
-      byCategory: categoryResult.rows.reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
-      byPriority: priorityResult.rows.reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
-    });
-  } catch (error: any) {
-    console.error('Error fetching stats:', error);
     res.status(500).json({ error: error.message });
   }
 });
