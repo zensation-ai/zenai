@@ -1,5 +1,5 @@
 import { query } from '../utils/database';
-import { structureWithOllama, generateEmbedding } from '../utils/ollama';
+import { structureWithOllama } from '../utils/ollama';
 
 /**
  * Simple Knowledge Graph Service
@@ -81,41 +81,35 @@ async function analyzeWithLLM(
   sourceIdea: any,
   candidates: RelatedIdea[]
 ): Promise<IdeaRelation[]> {
-  const prompt = `Analysiere die Beziehungen zwischen dieser Idee und ähnlichen Ideen.
+  const prompt = `Du analysierst Beziehungen zwischen Ideen. Antworte NUR mit validem JSON.
 
 HAUPTIDEE:
-Titel: ${sourceIdea.title}
-Zusammenfassung: ${sourceIdea.summary}
-Keywords: ${JSON.parse(sourceIdea.keywords || '[]').join(', ')}
+- Titel: ${sourceIdea.title}
+- Zusammenfassung: ${sourceIdea.summary || 'Keine'}
 
-ÄHNLICHE IDEEN:
-${candidates.map((c, i) => `
-${i + 1}. "${c.title}"
-   Zusammenfassung: ${c.summary}
-   Keywords: ${JSON.parse(c.keywords || '[]').join(', ')}
-`).join('\n')}
+KANDIDATEN:
+${candidates.slice(0, 5).map((c, i) => `${i + 1}. "${c.title}" - ${c.summary || 'Keine Zusammenfassung'}`).join('\n')}
 
-Antworte NUR mit einem JSON-Array. Für jede relevante Beziehung:
-{
-  "targetIndex": <1-${candidates.length}>,
-  "relationType": "similar_to|builds_on|contradicts|supports|enables|part_of|related_tech",
-  "strength": <0.0-1.0>,
-  "reason": "Kurze Begründung"
-}
+Finde Beziehungen zwischen der Hauptidee und den Kandidaten.
+Mögliche Beziehungstypen: similar_to, builds_on, supports, enables, related_tech
 
-Nur Beziehungen mit strength > 0.5 ausgeben. Leeres Array [] wenn keine starken Beziehungen.`;
+Antworte EXAKT in diesem JSON-Format (nur das Array, kein Text davor/danach):
+[{"targetIndex": 1, "relationType": "similar_to", "strength": 0.8, "reason": "Beide behandeln KI"}]
+
+Wenn keine Beziehungen: []`;
 
   try {
     const response = await structureWithOllama(prompt);
 
     // Parse the response - it might be wrapped in an object
     let relations: any[] = [];
-    if (Array.isArray(response)) {
-      relations = response;
-    } else if (response.relationships) {
-      relations = response.relationships;
-    } else if (response.relations) {
-      relations = response.relations;
+    const responseAny = response as any;
+    if (Array.isArray(responseAny)) {
+      relations = responseAny;
+    } else if (responseAny.relationships) {
+      relations = responseAny.relationships;
+    } else if (responseAny.relations) {
+      relations = responseAny.relations;
     }
 
     // Map to proper structure
@@ -244,13 +238,21 @@ export async function getSuggestedConnections(ideaId: string): Promise<any[]> {
     LIMIT 5
   `, [ideaId]);
 
-  return result.rows.map(row => ({
-    id: row.id,
-    title: row.title,
-    summary: row.summary,
-    keywords: JSON.parse(row.keywords || '[]'),
-    similarity: 1 - (row.distance / 50), // Normalize to 0-1
-  }));
+  return result.rows.map(row => {
+    let keywords: string[] = [];
+    try {
+      keywords = typeof row.keywords === 'string' ? JSON.parse(row.keywords) : (row.keywords || []);
+    } catch {
+      keywords = [];
+    }
+    return {
+      id: row.id,
+      title: row.title,
+      summary: row.summary,
+      keywords,
+      similarity: 1 - (row.distance / 50), // Normalize to 0-1
+    };
+  });
 }
 
 /**

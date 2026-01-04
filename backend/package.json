@@ -7,7 +7,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
-    "db:init": "ts-node src/scripts/init-db.ts"
+    "db:init": "ts-node src/scripts/init-db.ts",
+    "benchmark": "ts-node src/scripts/benchmark.ts"
   },
   "keywords": ["ai", "voice-memo", "ollama", "mistral", "pgvector"],
   "author": "Alexander Bering",
