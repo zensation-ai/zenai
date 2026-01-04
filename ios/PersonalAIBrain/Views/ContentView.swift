@@ -6,33 +6,40 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            // Swipe Review
+            SwipeCardsView()
+                .tabItem {
+                    Label("Review", systemImage: "rectangle.stack.fill")
+                }
+                .tag(0)
+
             // Ideas List
             IdeasListView()
                 .tabItem {
                     Label("Ideen", systemImage: "lightbulb.fill")
                 }
-                .tag(0)
+                .tag(1)
 
             // Record
             RecordView()
                 .tabItem {
                     Label("Aufnehmen", systemImage: "mic.fill")
                 }
-                .tag(1)
+                .tag(2)
 
             // Search
             SearchView()
                 .tabItem {
                     Label("Suchen", systemImage: "magnifyingglass")
                 }
-                .tag(2)
+                .tag(3)
 
             // Settings
             SettingsView()
                 .tabItem {
                     Label("Einstellungen", systemImage: "gear")
                 }
-                .tag(3)
+                .tag(4)
         }
         .tint(.blue)
     }

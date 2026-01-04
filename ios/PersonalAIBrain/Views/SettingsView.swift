@@ -2,8 +2,12 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var apiService: APIService
+    @EnvironmentObject var localStorageService: LocalStorageService
+    @EnvironmentObject var offlineQueueService: OfflineQueueService
     @State private var isConnected = false
     @State private var isChecking = false
+    @State private var isSyncing = false
+    @State private var localStats: LocalStorageStats = LocalStorageStats()
 
     var body: some View {
         NavigationStack {
@@ -28,6 +32,66 @@ struct SettingsView: View {
 
                     Button("Verbindung testen") {
                         checkConnection()
+                    }
+                }
+
+                // Local Storage
+                Section("Lokaler Speicher") {
+                    HStack {
+                        Image(systemName: "internaldrive")
+                            .foregroundColor(.blue)
+                        Text("Gespeicherte Ideen")
+                        Spacer()
+                        Text("\(localStats.totalIdeas)")
+                            .foregroundColor(.secondary)
+                    }
+
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .foregroundColor(.orange)
+                        Text("Nicht synchronisiert")
+                        Spacer()
+                        Text("\(localStats.unsyncedIdeas)")
+                            .foregroundColor(.secondary)
+                    }
+
+                    HStack {
+                        Image(systemName: "hand.draw")
+                            .foregroundColor(.purple)
+                        Text("Swipe-Aktionen")
+                        Spacer()
+                        Text("\(localStats.totalSwipeActions)")
+                            .foregroundColor(.secondary)
+                    }
+
+                    Button(action: syncNow) {
+                        HStack {
+                            if isSyncing {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                            }
+                            Text(isSyncing ? "Synchronisiere..." : "Jetzt synchronisieren")
+                        }
+                    }
+                    .disabled(isSyncing || !isConnected)
+                }
+
+                // Offline Queue
+                Section("Offline-Warteschlange") {
+                    HStack {
+                        Image(systemName: "tray.full")
+                            .foregroundColor(.blue)
+                        Text("Ausstehende Aktionen")
+                        Spacer()
+                        Text("\(offlineQueueService.queuedItems.count)")
+                            .foregroundColor(.secondary)
+                    }
+
+                    if !offlineQueueService.queuedItems.isEmpty {
+                        Button("Warteschlange leeren") {
+                            offlineQueueService.clearQueue()
+                        }
+                        .foregroundColor(.red)
                     }
                 }
 
@@ -84,6 +148,7 @@ struct SettingsView: View {
             .navigationTitle("Einstellungen")
             .task {
                 checkConnection()
+                loadStats()
             }
         }
     }
@@ -94,6 +159,19 @@ struct SettingsView: View {
             isConnected = await apiService.checkHealth()
             isChecking = false
         }
+    }
+
+    private func syncNow() {
+        isSyncing = true
+        Task {
+            await localStorageService.syncWithServer()
+            localStats = localStorageService.getStatistics()
+            isSyncing = false
+        }
+    }
+
+    private func loadStats() {
+        localStats = localStorageService.getStatistics()
     }
 }
 
@@ -223,4 +301,6 @@ struct EndpointRow: View {
 #Preview {
     SettingsView()
         .environmentObject(APIService())
+        .environmentObject(LocalStorageService.shared)
+        .environmentObject(OfflineQueueService.shared)
 }
