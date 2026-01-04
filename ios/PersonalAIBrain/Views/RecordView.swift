@@ -8,6 +8,17 @@ struct RecordView: View {
     @State private var processedIdea: VoiceMemoResponse?
     @State private var errorMessage: String?
     @State private var showResult = false
+    @State private var processingPhase = 0
+    @State private var processingTimer: Timer?
+
+    // Verarbeitungsphasen mit Icons
+    private let processingSteps: [(icon: String, text: String)] = [
+        ("waveform", "Audio wird übertragen..."),
+        ("text.bubble", "Transkription läuft..."),
+        ("brain.head.profile", "KI analysiert..."),
+        ("lightbulb.fill", "Idee wird strukturiert..."),
+        ("checkmark.circle", "Fast fertig...")
+    ]
 
     var body: some View {
         NavigationStack {
@@ -15,22 +26,15 @@ struct RecordView: View {
                 Spacer()
 
                 // Status Text
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     if audioRecorder.isRecording {
-                        Text("Aufnahme läuft...")
-                            .font(.headline)
-                            .foregroundColor(.red)
-
-                        Text(audioRecorder.formattedTime)
-                            .font(.system(size: 48, weight: .light, design: .monospaced))
+                        RecordingIndicator(time: audioRecorder.formattedTime)
                     } else if isProcessing {
-                        Text("Verarbeite...")
-                            .font(.headline)
-                            .foregroundColor(.blue)
+                        ProcessingIndicator(
+                            step: processingSteps[processingPhase % processingSteps.count]
+                        )
                     } else {
-                        Text("Tippe zum Aufnehmen")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                        IdleIndicator()
                     }
                 }
 
@@ -130,6 +134,10 @@ struct RecordView: View {
     private func processAudio(_ data: Data) {
         isProcessing = true
         errorMessage = nil
+        processingPhase = 0
+
+        // Timer für Phasenwechsel starten
+        startProcessingAnimation()
 
         Task {
             do {
@@ -137,14 +145,160 @@ struct RecordView: View {
                     audioData: data,
                     filename: "recording.wav"
                 )
+                stopProcessingAnimation()
                 processedIdea = response
                 showResult = true
+
+                // Haptisches Feedback bei Erfolg
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
             } catch {
+                stopProcessingAnimation()
                 errorMessage = error.localizedDescription
+
+                // Haptisches Feedback bei Fehler
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.error)
             }
 
             isProcessing = false
         }
+    }
+
+    private func startProcessingAnimation() {
+        processingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                processingPhase += 1
+            }
+        }
+    }
+
+    private func stopProcessingAnimation() {
+        processingTimer?.invalidate()
+        processingTimer = nil
+    }
+}
+
+// MARK: - Idle Indicator
+
+struct IdleIndicator: View {
+    @State private var isPulsing = false
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "mic.fill")
+                .font(.system(size: 32))
+                .foregroundColor(.secondary)
+                .scaleEffect(isPulsing ? 1.1 : 1.0)
+                .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isPulsing)
+
+            Text("Tippe zum Aufnehmen")
+                .font(.headline)
+                .foregroundColor(.secondary)
+        }
+        .onAppear { isPulsing = true }
+    }
+}
+
+// MARK: - Recording Indicator
+
+struct RecordingIndicator: View {
+    let time: String
+    @State private var isPulsing = false
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 12, height: 12)
+                    .scaleEffect(isPulsing ? 1.3 : 1.0)
+                    .opacity(isPulsing ? 0.7 : 1.0)
+                    .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: isPulsing)
+
+                Text("Aufnahme läuft")
+                    .font(.headline)
+                    .foregroundColor(.red)
+            }
+
+            Text(time)
+                .font(.system(size: 48, weight: .light, design: .monospaced))
+                .foregroundColor(.primary)
+        }
+        .onAppear { isPulsing = true }
+    }
+}
+
+// MARK: - Processing Indicator
+
+struct ProcessingIndicator: View {
+    let step: (icon: String, text: String)
+    @State private var rotation: Double = 0
+    @State private var scale: CGFloat = 1.0
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ZStack {
+                // Äußerer pulsierender Ring
+                Circle()
+                    .stroke(Color.zensationOrange.opacity(0.3), lineWidth: 3)
+                    .frame(width: 80, height: 80)
+                    .scaleEffect(scale)
+                    .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: scale)
+
+                // Rotierender Ring
+                Circle()
+                    .trim(from: 0, to: 0.7)
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: [.zensationOrange, .zensationOrange.opacity(0.3)]),
+                            center: .center
+                        ),
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
+                    .frame(width: 70, height: 70)
+                    .rotationEffect(.degrees(rotation))
+
+                // Icon in der Mitte
+                Image(systemName: step.icon)
+                    .font(.system(size: 28))
+                    .foregroundColor(.zensationOrange)
+                    .transition(.scale.combined(with: .opacity))
+                    .id(step.icon)
+            }
+
+            Text(step.text)
+                .font(.headline)
+                .foregroundColor(.primary)
+                .transition(.opacity)
+                .id(step.text)
+                .animation(.easeInOut, value: step.text)
+
+            // Fortschritts-Dots
+            HStack(spacing: 6) {
+                ForEach(0..<5, id: \.self) { index in
+                    Circle()
+                        .fill(Color.zensationOrange)
+                        .frame(width: 8, height: 8)
+                        .opacity(stepOpacity(for: index))
+                }
+            }
+        }
+        .onAppear {
+            scale = 1.15
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+        }
+    }
+
+    private func stepOpacity(for index: Int) -> Double {
+        // Aktueller Schritt voll sichtbar, vorherige auch, nachfolgende gedimmt
+        let currentStep = (step.text.hashValue % 5 + 5) % 5
+        if index <= currentStep {
+            return 1.0
+        }
+        return 0.3
     }
 }
 
@@ -155,28 +309,97 @@ struct RecordButton: View {
     let isProcessing: Bool
     let action: () -> Void
 
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var glowOpacity: Double = 0.0
+
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            // Haptisches Feedback beim Tippen
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            action()
+        }) {
             ZStack {
+                // Glow-Effekt beim Recording
+                if isRecording {
+                    Circle()
+                        .fill(Color.red.opacity(glowOpacity))
+                        .frame(width: 140, height: 140)
+                        .blur(radius: 20)
+                }
+
+                // Pulsierender äußerer Ring
+                Circle()
+                    .stroke(buttonColor.opacity(0.3), lineWidth: 2)
+                    .frame(width: 120, height: 120)
+                    .scaleEffect(pulseScale)
+
                 // Outer ring
                 Circle()
-                    .stroke(isRecording ? Color.red : Color.blue, lineWidth: 4)
+                    .stroke(buttonColor, lineWidth: 4)
                     .frame(width: 100, height: 100)
 
-                // Inner circle
+                // Inner circle mit Gradient
                 Circle()
-                    .fill(isRecording ? Color.red : Color.blue)
-                    .frame(width: isRecording ? 40 : 80, height: isRecording ? 40 : 80)
-                    .animation(.easeInOut(duration: 0.2), value: isRecording)
+                    .fill(
+                        LinearGradient(
+                            colors: [buttonColor, buttonColor.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: innerSize, height: innerSize)
+                    .shadow(color: buttonColor.opacity(0.4), radius: isRecording ? 10 : 5)
 
-                // Processing indicator
-                if isProcessing {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                // Stop-Icon beim Recording
+                if isRecording {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.white)
+                        .frame(width: 24, height: 24)
+                }
+
+                // Mic-Icon im Idle-Zustand
+                if !isRecording && !isProcessing {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(.white)
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: isRecording)
+            .animation(.easeInOut(duration: 0.2), value: isProcessing)
         }
         .buttonStyle(.plain)
+        .disabled(isProcessing)
+        .opacity(isProcessing ? 0.5 : 1.0)
+        .onChange(of: isRecording) { _, newValue in
+            if newValue {
+                startPulseAnimation()
+            } else {
+                stopPulseAnimation()
+            }
+        }
+    }
+
+    private var buttonColor: Color {
+        isRecording ? .red : .zensationOrange
+    }
+
+    private var innerSize: CGFloat {
+        isRecording ? 40 : 80
+    }
+
+    private func startPulseAnimation() {
+        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            pulseScale = 1.15
+            glowOpacity = 0.4
+        }
+    }
+
+    private func stopPulseAnimation() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            pulseScale = 1.0
+            glowOpacity = 0.0
+        }
     }
 }
 

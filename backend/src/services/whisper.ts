@@ -67,10 +67,11 @@ function runWhisperCLI(
     const args = [
       inputPath,
       '--model', WHISPER_MODEL,
-      '--language', 'de', // Default to German
+      '--language', 'de', // Force German - keine Auto-Erkennung
       '--output_format', 'json',
       '--output_dir', path.dirname(outputPath),
       '--task', 'transcribe',
+      '--fp16', 'False', // Stabiler auf CPU
     ];
 
     console.log(`Running: whisper ${args.join(' ')}`);
