@@ -5,6 +5,9 @@ import { voiceMemoRouter } from './routes/voice-memo';
 import { ideasRouter } from './routes/ideas';
 import { healthRouter } from './routes/health';
 import { knowledgeGraphRouter } from './routes/knowledge-graph';
+import { meetingsRouter } from './routes/meetings';
+import { userProfileRouter } from './routes/user-profile';
+import { companiesRouter } from './routes/companies';
 
 dotenv.config();
 
@@ -21,6 +24,9 @@ app.use('/api/health', healthRouter);
 app.use('/api/voice-memo', voiceMemoRouter);
 app.use('/api/ideas', ideasRouter);
 app.use('/api/knowledge-graph', knowledgeGraphRouter);
+app.use('/api/meetings', meetingsRouter);
+app.use('/api/profile', userProfileRouter);
+app.use('/api/companies', companiesRouter);
 
 // Error handling
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

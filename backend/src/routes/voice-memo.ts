@@ -5,6 +5,8 @@ import { structureWithOllama, generateEmbedding } from '../utils/ollama';
 import { quantizeToInt8, quantizeToBinary, formatForPgVector } from '../utils/embedding';
 import { query } from '../utils/database';
 import { transcribeAudio, checkWhisperAvailable } from '../services/whisper';
+import { analyzeRelationships } from '../services/knowledge-graph';
+import { trackInteraction, suggestPriority } from '../services/user-profile';
 
 export const voiceMemoRouter = Router();
 
@@ -175,6 +177,21 @@ voiceMemoRouter.post('/', (req, res, next) => {
 
     const totalTime = Date.now() - startTime;
 
+    // Background tasks: Knowledge Graph analysis and user profile tracking
+    // These run async to not block the response
+    Promise.all([
+      analyzeRelationships(ideaId).catch((err) =>
+        console.log('Background relationship analysis skipped:', err.message)
+      ),
+      trackInteraction({
+        idea_id: ideaId,
+        interaction_type: 'edit',
+        metadata: { action: 'create', source: 'voice-memo' },
+      }).catch((err) =>
+        console.log('Background tracking skipped:', err.message)
+      ),
+    ]);
+
     res.json({
       success: true,
       ideaId,
@@ -218,12 +235,36 @@ voiceMemoRouter.post('/text', async (req, res) => {
     const embedding = await generateEmbedding(text);
 
     const ideaId = uuidv4();
+
+    // Check for suggested priority based on learned patterns
+    const keywords = structured.keywords || [];
+    const suggestedPrio = await suggestPriority(keywords);
+    if (suggestedPrio && structured.priority !== suggestedPrio) {
+      console.log(`Auto-priority suggestion: ${suggestedPrio} (was ${structured.priority})`);
+      // Only suggest, don't override - could add metadata for frontend
+    }
+
     await storeIdea(ideaId, structured, text, embedding);
+
+    // Background tasks
+    Promise.all([
+      analyzeRelationships(ideaId).catch((err) =>
+        console.log('Background relationship analysis skipped:', err.message)
+      ),
+      trackInteraction({
+        idea_id: ideaId,
+        interaction_type: 'edit',
+        metadata: { action: 'create', source: 'text' },
+      }).catch((err) =>
+        console.log('Background tracking skipped:', err.message)
+      ),
+    ]);
 
     res.json({
       success: true,
       ideaId,
       structured,
+      suggestedPriority: suggestedPrio,
       processingTime: Date.now() - startTime,
     });
   } catch (error: any) {

@@ -6,7 +6,11 @@ import { SearchBar } from './components/SearchBar';
 import { Stats } from './components/Stats';
 import { FilterBar, Filters } from './components/FilterBar';
 import { IdeaDetail } from './components/IdeaDetail';
+import { MeetingsPage } from './components/MeetingsPage';
+import { ProfileDashboard } from './components/ProfileDashboard';
 import './App.css';
+
+type Page = 'ideas' | 'meetings' | 'profile';
 
 interface StructuredIdea {
   id: string;
@@ -30,6 +34,7 @@ interface ApiStatus {
 }
 
 function App() {
+  const [currentPage, setCurrentPage] = useState<Page>('ideas');
   const [ideas, setIdeas] = useState<StructuredIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -160,6 +165,15 @@ function App() {
     }
   };
 
+  // Render sub-pages
+  if (currentPage === 'meetings') {
+    return <MeetingsPage onBack={() => setCurrentPage('ideas')} />;
+  }
+
+  if (currentPage === 'profile') {
+    return <ProfileDashboard onBack={() => setCurrentPage('ideas')} />;
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -169,6 +183,24 @@ function App() {
             <span className="version-badge">v1.0</span>
           </div>
           <div className="header-right">
+            <nav className="header-nav">
+              <button
+                type="button"
+                className="nav-button"
+                onClick={() => setCurrentPage('meetings')}
+                title="Meetings"
+              >
+                📅 Meetings
+              </button>
+              <button
+                type="button"
+                className="nav-button"
+                onClick={() => setCurrentPage('profile')}
+                title="Profil"
+              >
+                👤 Profil
+              </button>
+            </nav>
             <div className="status-indicators">
               <span
                 className={`status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector, quantizeToBinary } from '../utils/embedding';
+import { trackInteraction } from '../services/user-profile';
 
 export const ideasRouter = Router();
 
@@ -88,6 +89,16 @@ ideasRouter.get('/:id', async (req, res) => {
     }
 
     const row = result.rows[0];
+
+    // Track view interaction for learning
+    trackInteraction({
+      idea_id: req.params.id,
+      interaction_type: 'view',
+    }).catch(() => {});
+
+    // Increment view count
+    query('UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id]).catch(() => {});
+
     res.json({
       ...row,
       next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
@@ -240,6 +251,23 @@ ideasRouter.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Idea not found' });
     }
 
+    // Track edit and priority changes for learning
+    const metadata: Record<string, any> = { action: 'update' };
+    if (priority) {
+      metadata.new_priority = priority;
+      trackInteraction({
+        idea_id: req.params.id,
+        interaction_type: 'prioritize',
+        metadata,
+      }).catch(() => {});
+    } else {
+      trackInteraction({
+        idea_id: req.params.id,
+        interaction_type: 'edit',
+        metadata,
+      }).catch(() => {});
+    }
+
     res.json(result.rows[0]);
   } catch (error: any) {
     console.error('Error updating idea:', error);
@@ -259,9 +287,44 @@ ideasRouter.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Idea not found' });
     }
 
+    // Track archive/delete for learning
+    trackInteraction({
+      idea_id: req.params.id,
+      interaction_type: 'archive',
+      metadata: { action: 'delete' },
+    }).catch(() => {});
+
     res.json({ success: true, deletedId: req.params.id });
   } catch (error: any) {
     console.error('Error deleting idea:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /api/ideas/:id/archive
+ * Archive an idea (soft delete)
+ */
+ideasRouter.put('/:id/archive', async (req, res) => {
+  try {
+    const result = await query(
+      'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Idea not found' });
+    }
+
+    trackInteraction({
+      idea_id: req.params.id,
+      interaction_type: 'archive',
+      metadata: { action: 'archive' },
+    }).catch(() => {});
+
+    res.json({ success: true, archivedId: req.params.id });
+  } catch (error: any) {
+    console.error('Error archiving idea:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -27,17 +27,17 @@ struct ContentView: View {
                 }
                 .tag(2)
 
-            // Search
-            SearchView()
+            // Meetings
+            MeetingsView()
                 .tabItem {
-                    Label("Suchen", systemImage: "magnifyingglass")
+                    Label("Meetings", systemImage: "calendar")
                 }
                 .tag(3)
 
-            // Settings
-            SettingsView()
+            // Profile
+            ProfileView()
                 .tabItem {
-                    Label("Einstellungen", systemImage: "gear")
+                    Label("Profil", systemImage: "person.circle")
                 }
                 .tag(4)
         }

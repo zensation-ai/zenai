@@ -17,6 +17,9 @@ interface ProcessedResult {
     category: string;
     priority: string;
     summary: string;
+    next_steps?: string[];
+    context_needed?: string[];
+    keywords?: string[];
   };
 }
 

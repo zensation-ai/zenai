@@ -38,6 +38,29 @@
   gap: 16px;
 }
 
+.header-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-button:hover {
+  background: var(--surface-light);
+  border-color: var(--primary);
+}
+
 .header h1 {
   font-size: 1.5rem;
   font-weight: 600;

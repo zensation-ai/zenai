@@ -1,0 +1,297 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { MeetingCard, Meeting } from './MeetingCard';
+import { MeetingDetail } from './MeetingDetail';
+import './MeetingsPage.css';
+
+interface MeetingNotes {
+  id: string;
+  meeting_id: string;
+  raw_transcript: string;
+  structured_summary: string;
+  key_decisions: string[];
+  action_items: any[];
+  topics_discussed: string[];
+  follow_ups: any[];
+  sentiment: 'positive' | 'neutral' | 'negative' | 'mixed';
+  created_at: string;
+}
+
+interface MeetingsPageProps {
+  onBack: () => void;
+}
+
+export function MeetingsPage({ onBack }: MeetingsPageProps) {
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [selectedNotes, setSelectedNotes] = useState<MeetingNotes | null>(null);
+  const [meetingNotesMap, setMeetingNotesMap] = useState<Record<string, boolean>>({});
+  const [showNewMeeting, setShowNewMeeting] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed'>('all');
+
+  // New meeting form state
+  const [newMeeting, setNewMeeting] = useState({
+    title: '',
+    date: '',
+    meeting_type: 'internal' as Meeting['meeting_type'],
+    participants: '',
+    location: '',
+    duration_minutes: 60,
+  });
+
+  useEffect(() => {
+    loadMeetings();
+  }, []);
+
+  const loadMeetings = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/meetings?limit=50');
+      setMeetings(response.data.meetings);
+
+      // Check which meetings have notes
+      const notesMap: Record<string, boolean> = {};
+      for (const meeting of response.data.meetings) {
+        try {
+          const notesRes = await axios.get(`/api/meetings/${meeting.id}/notes`);
+          notesMap[meeting.id] = !!notesRes.data.notes;
+        } catch {
+          notesMap[meeting.id] = false;
+        }
+      }
+      setMeetingNotesMap(notesMap);
+
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Laden fehlgeschlagen');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMeetingClick = async (meeting: Meeting) => {
+    setSelectedMeeting(meeting);
+
+    try {
+      const response = await axios.get(`/api/meetings/${meeting.id}/notes`);
+      setSelectedNotes(response.data.notes || null);
+    } catch {
+      setSelectedNotes(null);
+    }
+  };
+
+  const handleNotesAdded = (notes: MeetingNotes) => {
+    setSelectedNotes(notes);
+    setMeetingNotesMap((prev) => ({ ...prev, [notes.meeting_id]: true }));
+
+    // Update meeting status to completed
+    setMeetings((prev) =>
+      prev.map((m) =>
+        m.id === notes.meeting_id ? { ...m, status: 'completed' as const } : m
+      )
+    );
+  };
+
+  const handleCreateMeeting = async () => {
+    if (!newMeeting.title || !newMeeting.date) {
+      setError('Titel und Datum sind erforderlich');
+      return;
+    }
+
+    try {
+      const response = await axios.post('/api/meetings', {
+        ...newMeeting,
+        participants: newMeeting.participants
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean),
+      });
+
+      setMeetings([response.data.meeting, ...meetings]);
+      setShowNewMeeting(false);
+      setNewMeeting({
+        title: '',
+        date: '',
+        meeting_type: 'internal',
+        participants: '',
+        location: '',
+        duration_minutes: 60,
+      });
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Meeting erstellen fehlgeschlagen');
+    }
+  };
+
+  const filteredMeetings = meetings.filter((m) => {
+    if (filter === 'all') return true;
+    if (filter === 'scheduled') return m.status === 'scheduled' || m.status === 'in_progress';
+    if (filter === 'completed') return m.status === 'completed';
+    return true;
+  });
+
+  return (
+    <div className="meetings-page">
+      <div className="meetings-header">
+        <button className="back-button" onClick={onBack}>
+          ← Zurück
+        </button>
+        <h1>Meetings</h1>
+        <button className="new-meeting-btn" onClick={() => setShowNewMeeting(true)}>
+          + Neues Meeting
+        </button>
+      </div>
+
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button onClick={() => setError(null)}>×</button>
+        </div>
+      )}
+
+      <div className="meetings-filters">
+        <button
+          className={filter === 'all' ? 'active' : ''}
+          onClick={() => setFilter('all')}
+        >
+          Alle ({meetings.length})
+        </button>
+        <button
+          className={filter === 'scheduled' ? 'active' : ''}
+          onClick={() => setFilter('scheduled')}
+        >
+          Geplant ({meetings.filter((m) => m.status === 'scheduled' || m.status === 'in_progress').length})
+        </button>
+        <button
+          className={filter === 'completed' ? 'active' : ''}
+          onClick={() => setFilter('completed')}
+        >
+          Abgeschlossen ({meetings.filter((m) => m.status === 'completed').length})
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="loading-state">
+          <div className="loading-spinner large" />
+          <p>Lade Meetings...</p>
+        </div>
+      ) : filteredMeetings.length === 0 ? (
+        <div className="empty-state">
+          <span className="empty-icon">📅</span>
+          <h3>Keine Meetings gefunden</h3>
+          <p>Erstelle dein erstes Meeting mit dem Button oben.</p>
+        </div>
+      ) : (
+        <div className="meetings-grid">
+          {filteredMeetings.map((meeting) => (
+            <MeetingCard
+              key={meeting.id}
+              meeting={meeting}
+              onClick={() => handleMeetingClick(meeting)}
+              hasNotes={meetingNotesMap[meeting.id]}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Meeting Detail Modal */}
+      {selectedMeeting && (
+        <MeetingDetail
+          meeting={selectedMeeting}
+          notes={selectedNotes}
+          onClose={() => {
+            setSelectedMeeting(null);
+            setSelectedNotes(null);
+          }}
+          onNotesAdded={handleNotesAdded}
+        />
+      )}
+
+      {/* New Meeting Modal */}
+      {showNewMeeting && (
+        <div className="modal-overlay" onClick={() => setShowNewMeeting(false)}>
+          <div className="new-meeting-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={() => setShowNewMeeting(false)}>
+              ×
+            </button>
+            <h2>Neues Meeting</h2>
+
+            <div className="form-group">
+              <label>Titel *</label>
+              <input
+                type="text"
+                value={newMeeting.title}
+                onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
+                placeholder="Meeting Titel..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Datum & Uhrzeit *</label>
+              <input
+                type="datetime-local"
+                value={newMeeting.date}
+                onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Typ</label>
+                <select
+                  value={newMeeting.meeting_type}
+                  onChange={(e) =>
+                    setNewMeeting({ ...newMeeting, meeting_type: e.target.value as Meeting['meeting_type'] })
+                  }
+                >
+                  <option value="internal">Intern</option>
+                  <option value="external">Extern</option>
+                  <option value="one_on_one">1:1</option>
+                  <option value="team">Team</option>
+                  <option value="client">Kunde</option>
+                  <option value="other">Sonstiges</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Dauer (Min)</label>
+                <input
+                  type="number"
+                  value={newMeeting.duration_minutes}
+                  onChange={(e) =>
+                    setNewMeeting({ ...newMeeting, duration_minutes: parseInt(e.target.value) || 60 })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Teilnehmer (kommasepariert)</label>
+              <input
+                type="text"
+                value={newMeeting.participants}
+                onChange={(e) => setNewMeeting({ ...newMeeting, participants: e.target.value })}
+                placeholder="Max, Anna, Tim..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Ort</label>
+              <input
+                type="text"
+                value={newMeeting.location}
+                onChange={(e) => setNewMeeting({ ...newMeeting, location: e.target.value })}
+                placeholder="Büro / Zoom / ..."
+              />
+            </div>
+
+            <button className="create-btn" onClick={handleCreateMeeting}>
+              Meeting erstellen
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

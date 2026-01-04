@@ -74,7 +74,6 @@ const relationLabels: Record<string, string> = {
 export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   const [relations, setRelations] = useState<Relation[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {

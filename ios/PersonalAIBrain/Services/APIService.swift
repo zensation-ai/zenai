@@ -168,6 +168,195 @@ class APIService: ObservableObject {
 
         return try decoder.decode(VoiceMemoResponse.self, from: data)
     }
+
+    // MARK: - Meetings
+
+    func fetchMeetings() async throws -> [Meeting] {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let url = URL(string: "\(baseURL)/api/meetings") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let meetingsResponse = try decoder.decode(MeetingsResponse.self, from: data)
+        return meetingsResponse.meetings
+    }
+
+    func createMeeting(title: String, date: Date, meetingType: MeetingType, participants: [String], location: String?) async throws -> Meeting {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let url = URL(string: "\(baseURL)/api/meetings") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let dateFormatter = ISO8601DateFormatter()
+        let body: [String: Any] = [
+            "title": title,
+            "date": dateFormatter.string(from: date),
+            "meeting_type": meetingType.rawValue,
+            "participants": participants,
+            "location": location ?? ""
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 201 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let createResponse = try decoder.decode(CreateMeetingResponse.self, from: data)
+        return createResponse.meeting
+    }
+
+    func getMeetingNotes(meetingId: String) async throws -> MeetingNotes? {
+        guard let url = URL(string: "\(baseURL)/api/meetings/\(meetingId)/notes") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 404 {
+            return nil
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let notesResponse = try decoder.decode(MeetingNotesResponse.self, from: data)
+        return notesResponse.notes
+    }
+
+    func addMeetingNotes(meetingId: String, transcript: String) async throws -> MeetingNotes {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let url = URL(string: "\(baseURL)/api/meetings/\(meetingId)/notes") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 120
+
+        let body = ["transcript": transcript]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let notesResponse = try decoder.decode(AddNotesResponse.self, from: data)
+        return notesResponse.notes
+    }
+
+    // MARK: - Profile
+
+    func getProfileStats() async throws -> ProfileStatsResponse {
+        guard let url = URL(string: "\(baseURL)/api/profile/stats") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        return try JSONDecoder().decode(ProfileStatsResponse.self, from: data)
+    }
+
+    func getRecommendations() async throws -> Recommendations {
+        guard let url = URL(string: "\(baseURL)/api/profile/recommendations") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let recommendationsResponse = try JSONDecoder().decode(RecommendationsResponse.self, from: data)
+        return recommendationsResponse.recommendations
+    }
+
+    func setAutoPriority(enabled: Bool) async throws {
+        guard let url = URL(string: "\(baseURL)/api/profile/auto-priority") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body = ["enabled": enabled]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
+    func trackInteraction(ideaId: String?, interactionType: String) async {
+        guard let url = URL(string: "\(baseURL)/api/profile/track") else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        var body: [String: Any] = ["interaction_type": interactionType]
+        if let ideaId = ideaId {
+            body["idea_id"] = ideaId
+        }
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let _ = try await URLSession.shared.data(for: request)
+        } catch {
+            print("Track interaction failed: \(error)")
+        }
+    }
 }
 
 // MARK: - Response Models
@@ -219,6 +408,42 @@ struct StructuredIdea: Codable {
 
 struct ErrorResponse: Codable {
     let error: String
+}
+
+struct MeetingsResponse: Codable {
+    let meetings: [Meeting]
+}
+
+struct CreateMeetingResponse: Codable {
+    let success: Bool
+    let meeting: Meeting
+}
+
+struct MeetingNotesResponse: Codable {
+    let notes: MeetingNotes?
+}
+
+struct AddNotesResponse: Codable {
+    let success: Bool
+    let notes: MeetingNotes
+}
+
+struct ProfileStatsResponse: Codable {
+    let totalIdeas: Int
+    let totalMeetings: Int
+    let avgIdeasPerDay: Double
+    let autoPriorityEnabled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case totalIdeas = "total_ideas"
+        case totalMeetings = "total_meetings"
+        case avgIdeasPerDay = "avg_ideas_per_day"
+        case autoPriorityEnabled = "auto_priority_enabled"
+    }
+}
+
+struct RecommendationsResponse: Codable {
+    let recommendations: Recommendations
 }
 
 // MARK: - API Errors
