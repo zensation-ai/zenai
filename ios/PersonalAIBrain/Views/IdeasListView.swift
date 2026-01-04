@@ -23,7 +23,7 @@ struct IdeasListView: View {
                         FilterPill(
                             title: "Alle",
                             isSelected: selectedFilter == nil,
-                            color: .blue
+                            color: .zensationOrange
                         ) {
                             selectedFilter = nil
                         }
@@ -41,7 +41,7 @@ struct IdeasListView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 8)
                 }
-                .background(Color(.systemBackground))
+                .background(Color.zensationSurface)
 
                 // Content
                 if isLoading {
@@ -51,7 +51,7 @@ struct IdeasListView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 48))
-                            .foregroundColor(.orange)
+                            .foregroundColor(.zensationWarning)
                         Text(error)
                             .multilineTextAlignment(.center)
                         Button("Erneut versuchen") {
@@ -115,11 +115,11 @@ struct IdeasListView: View {
 
     private func colorFor(_ type: IdeaType) -> Color {
         switch type {
-        case .idea: return .yellow
-        case .task: return .blue
+        case .idea: return .zensationWarning
+        case .task: return .zensationOrange
         case .insight: return .purple
-        case .problem: return .red
-        case .question: return .orange
+        case .problem: return .zensationDanger
+        case .question: return .zensationOrangeLight
         }
     }
 }
@@ -139,7 +139,7 @@ struct FilterPill: View {
                 .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isSelected ? color.opacity(0.2) : Color(.systemGray6))
+                .background(isSelected ? color.opacity(0.2) : Color.zensationSurfaceLight)
                 .foregroundColor(isSelected ? color : .primary)
                 .clipShape(Capsule())
                 .overlay(
@@ -182,7 +182,7 @@ struct IdeaRow: View {
                     .font(.caption)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(Color(.systemGray6))
+                    .background(Color.zensationSurfaceLight)
                     .clipShape(Capsule())
 
                 Spacer()
@@ -197,11 +197,11 @@ struct IdeaRow: View {
 
     private func colorFor(_ type: IdeaType) -> Color {
         switch type {
-        case .idea: return .yellow
-        case .task: return .blue
+        case .idea: return .zensationWarning
+        case .task: return .zensationOrange
         case .insight: return .purple
-        case .problem: return .red
-        case .question: return .orange
+        case .problem: return .zensationDanger
+        case .question: return .zensationOrangeLight
         }
     }
 }
@@ -224,9 +224,9 @@ struct PriorityBadge: View {
 
     private func colorFor(_ priority: Priority) -> Color {
         switch priority {
-        case .low: return .gray
-        case .medium: return .orange
-        case .high: return .red
+        case .low: return .zensationTextMuted
+        case .medium: return .zensationOrange
+        case .high: return .zensationDanger
         }
     }
 }

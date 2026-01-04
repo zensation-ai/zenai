@@ -358,6 +358,94 @@ async function initDatabase() {
     `);
     console.log('   ✅ rate_limits table created\n');
 
+    // ==========================================
+    // PHASE 5: Thought Incubator Tables
+    // ==========================================
+
+    // Thought Clusters - groups of related loose thoughts
+    console.log('2p. Creating thought_clusters table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS thought_clusters (
+        id UUID PRIMARY KEY,
+        user_id VARCHAR(100) DEFAULT 'default',
+
+        -- Generated insight (once consolidated)
+        title VARCHAR(255),
+        summary TEXT,
+        suggested_type VARCHAR(50) CHECK (suggested_type IN ('idea', 'task', 'insight', 'problem', 'question')),
+        suggested_category VARCHAR(50) CHECK (suggested_category IN ('business', 'technical', 'personal', 'learning')),
+
+        -- Consolidation metadata
+        thought_count INTEGER DEFAULT 0,
+        confidence_score FLOAT DEFAULT 0,
+        maturity_score FLOAT DEFAULT 0,
+
+        -- Cluster centroid embedding
+        centroid_embedding vector(768),
+
+        -- Status tracking
+        status VARCHAR(20) DEFAULT 'growing' CHECK (status IN ('growing', 'ready', 'presented', 'consolidated', 'dismissed')),
+
+        -- Final idea reference (if consolidated)
+        consolidated_idea_id UUID REFERENCES ideas(id) ON DELETE SET NULL,
+
+        -- Timestamps
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        presented_at TIMESTAMP WITH TIME ZONE,
+        consolidated_at TIMESTAMP WITH TIME ZONE
+      );
+    `);
+    console.log('   ✅ thought_clusters table created\n');
+
+    // Loose Thoughts - individual unstructured inputs
+    console.log('2q. Creating loose_thoughts table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS loose_thoughts (
+        id UUID PRIMARY KEY,
+        user_id VARCHAR(100) DEFAULT 'default',
+
+        -- Raw content
+        raw_input TEXT NOT NULL,
+        source VARCHAR(20) DEFAULT 'text' CHECK (source IN ('text', 'voice', 'quick_jot')),
+
+        -- Optional user hints (not AI-generated)
+        user_tags JSONB DEFAULT '[]',
+
+        -- Embedding for similarity matching
+        embedding vector(768),
+
+        -- Cluster assignment
+        cluster_id UUID REFERENCES thought_clusters(id) ON DELETE SET NULL,
+        similarity_to_cluster FLOAT,
+
+        -- Processing state
+        is_processed BOOLEAN DEFAULT FALSE,
+        processing_attempts INTEGER DEFAULT 0,
+
+        -- Timestamps
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    console.log('   ✅ loose_thoughts table created\n');
+
+    // Cluster Analysis Log - tracks pattern detection runs
+    console.log('2r. Creating cluster_analysis_log table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cluster_analysis_log (
+        id SERIAL PRIMARY KEY,
+        run_type VARCHAR(20) NOT NULL CHECK (run_type IN ('scheduled', 'manual', 'on_input')),
+        thoughts_analyzed INTEGER DEFAULT 0,
+        clusters_created INTEGER DEFAULT 0,
+        clusters_updated INTEGER DEFAULT 0,
+        clusters_ready INTEGER DEFAULT 0,
+        duration_ms INTEGER,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    console.log('   ✅ cluster_analysis_log table created\n');
+
     // Create indexes
     console.log('3. Creating indexes...');
 
@@ -426,6 +514,28 @@ async function initDatabase() {
     await client.query('CREATE INDEX IF NOT EXISTS slack_messages_ts_idx ON slack_messages(message_ts DESC);');
     await client.query('CREATE INDEX IF NOT EXISTS rate_limits_key_idx ON rate_limits(key, window_start);');
     console.log('   ✅ Phase 4 integration indexes created\n');
+
+    // Phase 5: Thought Incubator indexes
+    await client.query('CREATE INDEX IF NOT EXISTS thought_clusters_status_idx ON thought_clusters(status);');
+    await client.query('CREATE INDEX IF NOT EXISTS thought_clusters_user_idx ON thought_clusters(user_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS thought_clusters_maturity_idx ON thought_clusters(maturity_score DESC);');
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS thought_clusters_centroid_idx
+      ON thought_clusters
+      USING hnsw (centroid_embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 64);
+    `);
+    await client.query('CREATE INDEX IF NOT EXISTS loose_thoughts_cluster_idx ON loose_thoughts(cluster_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS loose_thoughts_user_idx ON loose_thoughts(user_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS loose_thoughts_processed_idx ON loose_thoughts(is_processed);');
+    await client.query('CREATE INDEX IF NOT EXISTS loose_thoughts_created_idx ON loose_thoughts(created_at DESC);');
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS loose_thoughts_embedding_idx
+      ON loose_thoughts
+      USING hnsw (embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 64);
+    `);
+    console.log('   ✅ Phase 5 Thought Incubator indexes created\n');
 
     // Create updated_at trigger
     console.log('4. Creating update trigger...');

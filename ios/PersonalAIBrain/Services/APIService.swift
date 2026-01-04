@@ -7,13 +7,20 @@ class APIService: ObservableObject {
     // For device testing: use your Mac's IP address
     private let baseURL: String
 
+    // WICHTIG: Trage hier deine Mac IP-Adresse ein für iPhone-Nutzung
+    private static let macIPAddress = "192.168.212.104"
+
     @Published var isLoading = false
     @Published var error: String?
 
     init() {
-        // Default to localhost for simulator
-        // Change to your Mac's IP for device testing (e.g., "http://192.168.1.100:3000")
+        #if targetEnvironment(simulator)
+        // Simulator kann localhost verwenden
         self.baseURL = "http://localhost:3000"
+        #else
+        // Echtes Gerät braucht die Mac IP-Adresse
+        self.baseURL = "http://\(APIService.macIPAddress):3000"
+        #endif
     }
 
     // MARK: - Health Check
@@ -358,6 +365,50 @@ class APIService: ObservableObject {
         }
     }
 
+    // MARK: - Swipe Actions
+
+    func sendSwipeAction(ideaId: String, action: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/ideas/\(ideaId)/swipe") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body = ["action": action]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverMessage(errorResponse.error)
+            }
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
+    func archiveIdea(ideaId: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/ideas/\(ideaId)/archive") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverMessage(errorResponse.error)
+            }
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
     // MARK: - Phase 4: Integrations
 
     func getIntegrations() async throws -> [Integration] {
@@ -423,7 +474,14 @@ struct HealthResponse: Codable {
 
 struct IdeasResponse: Codable {
     let ideas: [Idea]
-    let count: Int
+    let pagination: IdeasPagination?
+}
+
+struct IdeasPagination: Codable {
+    let total: Int
+    let limit: Int
+    let offset: Int
+    let hasMore: Bool
 }
 
 struct SearchResponse: Codable {

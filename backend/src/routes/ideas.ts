@@ -4,6 +4,7 @@ import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector, quantizeToBinary } from '../utils/embedding';
 import { trackInteraction } from '../services/user-profile';
 import { triggerWebhook } from '../services/webhooks';
+import { learnFromCorrection, learnFromThought } from '../services/learning-engine';
 
 export const ideasRouter = Router();
 
@@ -243,10 +244,25 @@ ideasRouter.post('/search', async (req, res) => {
 /**
  * PUT /api/ideas/:id
  * Update an idea
+ *
+ * WICHTIG: Bei Änderungen von type/category/priority lernt das System
+ * dass die ursprüngliche LLM-Klassifizierung falsch war!
  */
 ideasRouter.put('/:id', async (req, res) => {
   try {
     const { title, type, category, priority, summary, next_steps, context_needed, keywords } = req.body;
+
+    // Hole alte Werte um Korrekturen zu erkennen
+    const oldIdea = await query(
+      'SELECT type, category, priority FROM ideas WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (oldIdea.rows.length === 0) {
+      return res.status(404).json({ error: 'Idea not found' });
+    }
+
+    const old = oldIdea.rows[0];
 
     const result = await query(
       `UPDATE ideas SET
@@ -274,14 +290,36 @@ ideasRouter.put('/:id', async (req, res) => {
       ]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
+    // KRITISCH: User-Korrektur erkennen und lernen!
+    // Dies verhindert, dass LLM-Fehlinterpretationen sich verfestigen
+    const hasTypeChange = type && type !== old.type;
+    const hasCategoryChange = category && category !== old.category;
+    const hasPriorityChange = priority && priority !== old.priority;
+
+    if (hasTypeChange || hasCategoryChange || hasPriorityChange) {
+      console.log(`User correction detected on idea ${req.params.id}`);
+
+      // Lernen aus der Korrektur (async, non-blocking)
+      learnFromCorrection(req.params.id, {
+        oldType: hasTypeChange ? old.type : undefined,
+        newType: hasTypeChange ? type : undefined,
+        oldCategory: hasCategoryChange ? old.category : undefined,
+        newCategory: hasCategoryChange ? category : undefined,
+        oldPriority: hasPriorityChange ? old.priority : undefined,
+        newPriority: hasPriorityChange ? priority : undefined,
+      }).catch(err => console.log('Background correction learning skipped:', err.message));
+
+      // Zusätzlich: Lerne stark von der korrigierten Idee
+      learnFromThought(req.params.id, 'default', true).catch(err =>
+        console.log('Background learning from corrected idea skipped:', err.message)
+      );
     }
 
-    // Track edit and priority changes for learning
+    // Track edit and priority changes for interaction tracking
     const metadata: Record<string, any> = { action: 'update' };
-    if (priority) {
+    if (hasPriorityChange) {
       metadata.new_priority = priority;
+      metadata.old_priority = old.priority;
       trackInteraction({
         idea_id: req.params.id,
         interaction_type: 'prioritize',
@@ -335,6 +373,130 @@ ideasRouter.delete('/:id', async (req, res) => {
     res.json({ success: true, deletedId: req.params.id });
   } catch (error: any) {
     console.error('Error deleting idea:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /api/ideas/:id/priority
+ * Update idea priority (from swipe actions)
+ *
+ * WICHTIG: Dies ist eine User-Korrektur und löst starkes Lernen aus!
+ */
+ideasRouter.put('/:id/priority', async (req, res) => {
+  try {
+    const { priority } = req.body;
+
+    if (!priority || !['low', 'medium', 'high'].includes(priority)) {
+      return res.status(400).json({ error: 'Invalid priority. Must be low, medium, or high' });
+    }
+
+    // Hole alte Priorität für Korrektur-Lernen
+    const oldResult = await query(
+      'SELECT priority FROM ideas WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (oldResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Idea not found' });
+    }
+
+    const oldPriority = oldResult.rows[0].priority;
+
+    const result = await query(
+      'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
+      [req.params.id, priority]
+    );
+
+    // Lerne aus der Prioritäts-Korrektur (wenn geändert)
+    if (oldPriority !== priority) {
+      learnFromCorrection(req.params.id, {
+        oldPriority,
+        newPriority: priority,
+      }).catch(err => console.log('Background priority correction learning skipped:', err.message));
+
+      // Lerne stark von dieser Idee
+      learnFromThought(req.params.id, 'default', true).catch(err =>
+        console.log('Background learning skipped:', err.message)
+      );
+    }
+
+    trackInteraction({
+      idea_id: req.params.id,
+      interaction_type: 'prioritize',
+      metadata: { new_priority: priority, old_priority: oldPriority, source: 'swipe' },
+    }).catch(() => {});
+
+    res.json({ success: true, idea: result.rows[0] });
+  } catch (error: any) {
+    console.error('Error updating priority:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/ideas/:id/swipe
+ * Handle swipe actions from iOS app
+ */
+ideasRouter.post('/:id/swipe', async (req, res) => {
+  try {
+    const { action } = req.body;
+    const ideaId = req.params.id;
+
+    if (!action || !['priority', 'later', 'archive'].includes(action)) {
+      return res.status(400).json({
+        error: 'Invalid action. Must be priority, later, or archive'
+      });
+    }
+
+    let result;
+    switch (action) {
+      case 'priority':
+        result = await query(
+          'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
+          [ideaId, 'high']
+        );
+        trackInteraction({
+          idea_id: ideaId,
+          interaction_type: 'prioritize',
+          metadata: { new_priority: 'high', source: 'swipe' },
+        }).catch(() => {});
+        break;
+
+      case 'archive':
+        result = await query(
+          'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id, title',
+          [ideaId]
+        );
+        trackInteraction({
+          idea_id: ideaId,
+          interaction_type: 'archive',
+          metadata: { source: 'swipe' },
+        }).catch(() => {});
+        triggerWebhook('idea.archived', { id: ideaId }).catch(() => {});
+        break;
+
+      case 'later':
+        // Just track the interaction, no changes to the idea
+        result = await query(
+          'SELECT id, title FROM ideas WHERE id = $1',
+          [ideaId]
+        );
+        trackInteraction({
+          idea_id: ideaId,
+          interaction_type: 'view',
+          metadata: { action: 'review_later', source: 'swipe' },
+        }).catch(() => {});
+        break;
+    }
+
+    if (!result || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Idea not found' });
+    }
+
+    res.json({ success: true, action, idea: result.rows[0] });
+  } catch (error: any) {
+    console.error('Error handling swipe action:', error);
     res.status(500).json({ error: error.message });
   }
 });

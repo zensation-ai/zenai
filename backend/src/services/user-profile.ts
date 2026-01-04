@@ -14,8 +14,33 @@ export interface UserProfile {
   avg_ideas_per_day: number;
   priority_keywords: { high: string[]; medium: string[]; low: string[] };
   auto_priority_enabled: boolean;
+  // Extended learning fields
+  thinking_patterns?: ThinkingPatterns;
+  language_style?: LanguageStyle;
+  learning_confidence: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface ThinkingPatterns {
+  // How the user typically thinks
+  abstract_vs_concrete: number; // -1 to 1 (abstract to concrete)
+  big_picture_vs_detail: number; // -1 to 1
+  action_oriented: number; // 0 to 1
+  question_frequency: number; // 0 to 1
+  // Common topic transitions
+  topic_chains: string[][]; // e.g. [["business", "technical"], ["personal", "learning"]]
+  // Time-based patterns
+  morning_categories: string[];
+  evening_categories: string[];
+}
+
+export interface LanguageStyle {
+  avg_thought_length: number;
+  common_phrases: string[];
+  vocabulary_complexity: number; // 0 to 1
+  uses_technical_terms: boolean;
+  preferred_language: 'de' | 'en' | 'mixed';
 }
 
 export interface InteractionEvent {
@@ -53,6 +78,9 @@ export async function getUserProfile(profileId: string = 'default'): Promise<Use
     avg_ideas_per_day: row.avg_ideas_per_day,
     priority_keywords: parseJsonb(row.priority_keywords),
     auto_priority_enabled: row.auto_priority_enabled,
+    thinking_patterns: parseJsonb(row.thinking_patterns),
+    language_style: parseJsonb(row.language_style),
+    learning_confidence: parseJsonb(row.productivity_patterns)?.learning_confidence || 0,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -400,6 +428,9 @@ function getDefaultProfile(id: string): UserProfile {
     avg_ideas_per_day: 0,
     priority_keywords: { high: [], medium: [], low: [] },
     auto_priority_enabled: false,
+    thinking_patterns: undefined,
+    language_style: undefined,
+    learning_confidence: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };

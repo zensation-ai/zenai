@@ -13,6 +13,8 @@ import { apiKeysRouter } from './routes/api-keys';
 import { webhooksRouter } from './routes/webhooks';
 import { integrationsRouter } from './routes/integrations';
 import { rateLimiter, cleanupRateLimits } from './middleware/auth';
+// Phase 5: Thought Incubator
+import incubatorRouter from './routes/incubator';
 
 dotenv.config();
 
@@ -38,6 +40,9 @@ app.use('/api/keys', apiKeysRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/integrations', integrationsRouter);
 
+// Phase 5: Thought Incubator
+app.use('/api/incubator', incubatorRouter);
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch(console.error);
@@ -52,12 +57,14 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Start server
 app.listen(PORT, () => {
   console.log(`
-🧠 Personal AI System - Backend (Phase 4)
+🧠 Personal AI System - Backend (Phase 5)
 ==========================================
 Server:      http://localhost:${PORT}
 Ollama:      ${process.env.OLLAMA_URL}
 Database:    postgres://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}
 ==========================================
+Phase 5 APIs:
+  - Incubator:    /api/incubator (NEW!)
 Phase 4 APIs:
   - API Keys:     /api/keys
   - Webhooks:     /api/webhooks

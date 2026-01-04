@@ -1,9 +1,10 @@
 .filter-bar {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  border: 1px solid var(--border-color);
+  background: var(--gradient-card);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .filter-header {
@@ -19,21 +20,22 @@
   gap: 8px;
   background: none;
   border: none;
-  color: var(--text-primary);
-  font-size: 14px;
+  color: var(--text);
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   padding: 8px 12px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
 }
 
 .filter-toggle:hover {
-  background: var(--hover-bg);
+  background: var(--surface-light);
 }
 
 .filter-toggle .filter-icon {
-  transition: transform 0.2s;
+  transition: var(--transition-base);
+  font-size: 0.9rem;
 }
 
 .filter-toggle.expanded .filter-icon {
@@ -41,51 +43,52 @@
 }
 
 .active-count {
-  background: var(--primary);
+  background: var(--gradient-primary);
   color: white;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 10px;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 20px;
   font-weight: 600;
+  box-shadow: 0 2px 6px var(--primary-glow);
 }
 
 .clear-filters {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 0.8rem;
   cursor: pointer;
   padding: 6px 12px;
-  border-radius: 6px;
-  transition: all 0.2s;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
 }
 
 .clear-filters:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
+  background: var(--surface-light);
+  color: var(--text);
 }
 
 .filter-content {
-  margin-top: 16px;
+  margin-top: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--glass-border);
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .filter-group label {
-  font-size: 12px;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .filter-pills {
@@ -98,39 +101,42 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-size: 13px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-fast);
 }
 
 .filter-pill:hover {
   border-color: var(--pill-color, var(--primary));
-  background: color-mix(in srgb, var(--pill-color, var(--primary)) 10%, transparent);
+  color: var(--pill-color, var(--primary));
+  background: color-mix(in srgb, var(--pill-color, var(--primary)) 8%, transparent);
 }
 
 .filter-pill.active {
   background: var(--pill-color, var(--primary));
   border-color: var(--pill-color, var(--primary));
   color: white;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--pill-color, var(--primary)) 40%, transparent);
 }
 
 .pill-icon {
-  font-size: 14px;
+  font-size: 0.9rem;
 }
 
 .pill-count {
-  font-size: 11px;
-  opacity: 0.7;
+  font-size: 0.65rem;
+  opacity: 0.6;
   margin-left: 2px;
 }
 
 .filter-pill.active .pill-count {
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 @media (max-width: 600px) {
@@ -139,7 +145,7 @@
   }
 
   .filter-pill {
-    padding: 5px 10px;
-    font-size: 12px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
   }
 }

@@ -8,6 +8,7 @@ import { transcribeAudio, checkWhisperAvailable } from '../services/whisper';
 import { analyzeRelationships } from '../services/knowledge-graph';
 import { trackInteraction, suggestPriority } from '../services/user-profile';
 import { triggerWebhook } from '../services/webhooks';
+import { learnFromThought, suggestFromLearning } from '../services/learning-engine';
 
 export const voiceMemoRouter = Router();
 
@@ -157,11 +158,29 @@ voiceMemoRouter.post('/', (req, res, next) => {
 
     console.log(`Processing memo: "${transcript.substring(0, 50)}..."`);
 
+    // Get personalized suggestions from learning engine BEFORE structuring
+    const learnedSuggestion = await suggestFromLearning(transcript).catch(() => null);
+
     // 1. Structure with Ollama/Mistral
     const structureStart = Date.now();
     const structured = await structureWithOllama(transcript);
     const structureTime = Date.now() - structureStart;
     console.log(`Structured in ${structureTime}ms`);
+
+    // Apply learned suggestions if confidence is high enough
+    let appliedLearning = false;
+    if (learnedSuggestion && learnedSuggestion.confidence >= 0.5) {
+      if (learnedSuggestion.suggested_category !== structured.category) {
+        console.log(`Learning override: category ${structured.category} -> ${learnedSuggestion.suggested_category}`);
+        structured.category = learnedSuggestion.suggested_category as typeof structured.category;
+        appliedLearning = true;
+      }
+      if (learnedSuggestion.suggested_priority !== structured.priority) {
+        console.log(`Learning override: priority ${structured.priority} -> ${learnedSuggestion.suggested_priority}`);
+        structured.priority = learnedSuggestion.suggested_priority as typeof structured.priority;
+        appliedLearning = true;
+      }
+    }
 
     // 2. Generate embedding
     const embeddingStart = Date.now();
@@ -178,7 +197,7 @@ voiceMemoRouter.post('/', (req, res, next) => {
 
     const totalTime = Date.now() - startTime;
 
-    // Background tasks: Knowledge Graph analysis, user profile tracking, webhooks
+    // Background tasks: Knowledge Graph analysis, user profile tracking, webhooks, learning
     // These run async to not block the response
     Promise.all([
       analyzeRelationships(ideaId).catch((err) =>
@@ -198,6 +217,10 @@ voiceMemoRouter.post('/', (req, res, next) => {
       }).catch((err) =>
         console.log('Background webhook skipped:', err.message)
       ),
+      // Learn from this thought to improve future suggestions
+      learnFromThought(ideaId).catch((err) =>
+        console.log('Background learning skipped:', err.message)
+      ),
     ]);
 
     res.json({
@@ -205,6 +228,8 @@ voiceMemoRouter.post('/', (req, res, next) => {
       ideaId,
       transcript,
       structured,
+      appliedLearning,
+      learningConfidence: learnedSuggestion?.confidence || 0,
       performance: {
         totalMs: totalTime,
         transcriptionMs: transcriptionTime,
@@ -239,22 +264,38 @@ voiceMemoRouter.post('/text', async (req, res) => {
 
     console.log(`Processing text: "${text.substring(0, 50)}..."`);
 
+    // Get personalized suggestions from learning engine BEFORE structuring
+    const learnedSuggestion = await suggestFromLearning(text).catch(() => null);
+
     const structured = await structureWithOllama(text);
     const embedding = await generateEmbedding(text);
 
     const ideaId = uuidv4();
 
-    // Check for suggested priority based on learned patterns
+    // Apply learned suggestions if confidence is high enough
+    // CONFIDENCE_FOR_OVERRIDE ist auf 0.5 gesetzt für schnelleres Lernen
+    let appliedLearning = false;
+    if (learnedSuggestion && learnedSuggestion.confidence >= 0.5) {
+      // Override with learned preferences if significantly different
+      if (learnedSuggestion.suggested_category !== structured.category) {
+        console.log(`Learning override: category ${structured.category} -> ${learnedSuggestion.suggested_category}`);
+        structured.category = learnedSuggestion.suggested_category as typeof structured.category;
+        appliedLearning = true;
+      }
+      if (learnedSuggestion.suggested_priority !== structured.priority) {
+        console.log(`Learning override: priority ${structured.priority} -> ${learnedSuggestion.suggested_priority}`);
+        structured.priority = learnedSuggestion.suggested_priority as typeof structured.priority;
+        appliedLearning = true;
+      }
+    }
+
+    // Also check keyword-based priority suggestion
     const keywords = structured.keywords || [];
     const suggestedPrio = await suggestPriority(keywords);
-    if (suggestedPrio && structured.priority !== suggestedPrio) {
-      console.log(`Auto-priority suggestion: ${suggestedPrio} (was ${structured.priority})`);
-      // Only suggest, don't override - could add metadata for frontend
-    }
 
     await storeIdea(ideaId, structured, text, embedding);
 
-    // Background tasks
+    // Background tasks including learning
     Promise.all([
       analyzeRelationships(ideaId).catch((err) =>
         console.log('Background relationship analysis skipped:', err.message)
@@ -273,13 +314,20 @@ voiceMemoRouter.post('/text', async (req, res) => {
       }).catch((err) =>
         console.log('Background webhook skipped:', err.message)
       ),
+      // Learn from this thought
+      learnFromThought(ideaId).catch((err) =>
+        console.log('Background learning skipped:', err.message)
+      ),
     ]);
 
     res.json({
       success: true,
       ideaId,
+      transcript: text,
       structured,
       suggestedPriority: suggestedPrio,
+      appliedLearning,
+      learningConfidence: learnedSuggestion?.confidence || 0,
       processingTime: Date.now() - startTime,
     });
   } catch (error: any) {

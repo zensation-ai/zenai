@@ -9,9 +9,10 @@ import { IdeaDetail } from './components/IdeaDetail';
 import { MeetingsPage } from './components/MeetingsPage';
 import { ProfileDashboard } from './components/ProfileDashboard';
 import { IntegrationsPage } from './components/IntegrationsPage';
+import { IncubatorPage } from './components/IncubatorPage';
 import './App.css';
 
-type Page = 'ideas' | 'meetings' | 'profile' | 'integrations';
+type Page = 'ideas' | 'meetings' | 'profile' | 'integrations' | 'incubator';
 
 interface StructuredIdea {
   id: string;
@@ -179,6 +180,18 @@ function App() {
     return <IntegrationsPage onBack={() => setCurrentPage('ideas')} />;
   }
 
+  if (currentPage === 'incubator') {
+    return (
+      <IncubatorPage
+        onBack={() => setCurrentPage('ideas')}
+        onIdeaCreated={(ideaId) => {
+          loadIdeas();
+          setCurrentPage('ideas');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -189,6 +202,14 @@ function App() {
           </div>
           <div className="header-right">
             <nav className="header-nav">
+              <button
+                type="button"
+                className="nav-button incubator-nav"
+                onClick={() => setCurrentPage('incubator')}
+                title="Gedanken-Inkubator"
+              >
+                🧠 Inkubator
+              </button>
               <button
                 type="button"
                 className="nav-button"

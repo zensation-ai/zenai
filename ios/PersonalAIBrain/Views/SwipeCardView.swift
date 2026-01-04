@@ -9,10 +9,10 @@ enum SwipeAction {
 
     var color: Color {
         switch self {
-        case .later: return .orange
-        case .archive: return .gray
-        case .priority: return .green
-        case .detail: return .blue
+        case .later: return .zensationWarning
+        case .archive: return .zensationTextMuted
+        case .priority: return .zensationSuccess
+        case .detail: return .zensationOrange
         }
     }
 
@@ -63,8 +63,12 @@ struct SwipeCardView: View {
         ZStack {
             // Card background
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
+                .fill(Color.zensationSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.zensationBorder, lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.25), radius: 12, x: 0, y: 6)
 
             // Action overlay
             if let action = currentAction {
@@ -120,8 +124,8 @@ struct SwipeCardView: View {
                                     .font(.caption)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
-                                    .background(Color.blue.opacity(0.1))
-                                    .foregroundColor(.blue)
+                                    .background(Color.zensationOrange.opacity(0.15))
+                                    .foregroundColor(.zensationOrange)
                                     .clipShape(Capsule())
                             }
                         }
@@ -197,11 +201,11 @@ struct SwipeCardView: View {
 
     private func colorFor(_ type: IdeaType) -> Color {
         switch type {
-        case .idea: return .yellow
-        case .task: return .blue
+        case .idea: return .zensationWarning
+        case .task: return .zensationOrange
         case .insight: return .purple
-        case .problem: return .red
-        case .question: return .orange
+        case .problem: return .zensationDanger
+        case .question: return .zensationOrangeLight
         }
     }
 }
@@ -230,9 +234,9 @@ struct PriorityIndicator: View {
 
     private var priorityColor: Color {
         switch priority {
-        case .low: return .gray
-        case .medium: return .orange
-        case .high: return .red
+        case .low: return .zensationTextMuted
+        case .medium: return .zensationOrange
+        case .high: return .zensationDanger
         }
     }
 }
@@ -252,7 +256,7 @@ struct SwipeCardsView: View {
         NavigationStack {
             ZStack {
                 // Background
-                Color(.systemGroupedBackground)
+                Color.zensationBackground
                     .ignoresSafeArea()
 
                 if isLoading {
@@ -261,7 +265,7 @@ struct SwipeCardsView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 48))
-                            .foregroundColor(.orange)
+                            .foregroundColor(.zensationWarning)
                         Text(error)
                             .multilineTextAlignment(.center)
                         Button("Erneut versuchen") {
@@ -275,7 +279,7 @@ struct SwipeCardsView: View {
                     VStack(spacing: 20) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 80))
-                            .foregroundColor(.green)
+                            .foregroundColor(.zensationSuccess)
 
                         Text("Alle Ideen durchgesehen!")
                             .font(.title2)
@@ -408,10 +412,31 @@ struct SwipeCardsView: View {
     private func handleSwipe(_ action: SwipeAction) {
         guard currentIndex < ideas.count else { return }
 
-        actionHistory.append((ideas[currentIndex], action))
+        let idea = ideas[currentIndex]
+        actionHistory.append((idea, action))
         currentIndex += 1
 
-        // TODO: Persist action to backend/local storage
+        // Send action to backend
+        Task {
+            do {
+                let actionString: String
+                switch action {
+                case .priority:
+                    actionString = "priority"
+                case .archive:
+                    actionString = "archive"
+                case .later:
+                    actionString = "later"
+                case .detail:
+                    return // Don't send detail action
+                }
+                try await apiService.sendSwipeAction(ideaId: idea.id, action: actionString)
+            } catch {
+                print("Failed to sync swipe action: \(error)")
+                // Optionally queue for offline sync
+                OfflineQueueService.shared.enqueueSwipeAction(ideaId: idea.id, action: action)
+            }
+        }
     }
 
     private func performAction(_ action: SwipeAction) {

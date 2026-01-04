@@ -1,21 +1,39 @@
 .search-bar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: border-color 0.2s;
+  gap: 0.875rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: var(--transition-base);
+  position: relative;
+}
+
+.search-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .search-bar:focus-within {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--border-glow), 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .search-icon {
-  font-size: 1.25rem;
-  opacity: 0.5;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.search-bar:focus-within .search-icon {
+  color: var(--primary);
 }
 
 .search-input {
@@ -23,17 +41,19 @@
   background: none;
   border: none;
   color: var(--text);
-  font-size: 1rem;
+  font-size: 0.95rem;
   outline: none;
+  font-weight: 400;
 }
 
 .search-input::placeholder {
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .search-spinner {
   font-size: 1rem;
-  animation: spin 1s linear infinite;
+  color: var(--primary);
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -46,9 +66,9 @@
 }
 
 .search-clear {
-  background: var(--surface-light);
-  border: none;
-  color: var(--text-muted);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -56,11 +76,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  transition: background 0.2s, color 0.2s;
+  font-size: 0.7rem;
+  transition: var(--transition-fast);
 }
 
 .search-clear:hover {
-  background: var(--border);
+  background: var(--surface-hover);
+  border-color: var(--text-secondary);
   color: var(--text);
 }

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="brain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb"/>
+      <stop offset="100%" style="stop-color:#f5576c"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="512" cy="512" r="480" fill="url(#bg)"/>
+
+  <!-- Outer Ring -->
+  <circle cx="512" cy="512" r="440" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
+
+  <!-- Brain Icon -->
+  <g transform="translate(512, 512) scale(12)" filter="url(#glow)">
+    <!-- Left hemisphere -->
+    <path d="M-8 -15 C-20 -15, -25 -5, -25 5 C-25 12, -20 18, -12 20 C-8 21, -4 20, -2 18"
+          fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M-8 -15 C-5 -18, 0 -18, 3 -15"
+          fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M-25 0 C-28 0, -30 3, -28 6 C-26 9, -22 8, -20 5"
+          fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Right hemisphere -->
+    <path d="M8 -15 C20 -15, 25 -5, 25 5 C25 12, 20 18, 12 20 C8 21, 4 20, 2 18"
+          fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M25 0 C28 0, 30 3, 28 6 C26 9, 22 8, 20 5"
+          fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Center line -->
+    <path d="M0 -15 L0 20"
+          fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-dasharray="4,4"/>
+
+    <!-- Neural connections -->
+    <circle cx="-12" cy="-5" r="3" fill="white" opacity="0.8"/>
+    <circle cx="12" cy="-5" r="3" fill="white" opacity="0.8"/>
+    <circle cx="-8" cy="8" r="2.5" fill="white" opacity="0.8"/>
+    <circle cx="8" cy="8" r="2.5" fill="white" opacity="0.8"/>
+    <circle cx="0" cy="0" r="4" fill="white"/>
+
+    <!-- Connection lines -->
+    <line x1="-12" y1="-5" x2="0" y2="0" stroke="white" stroke-width="1.5" opacity="0.6"/>
+    <line x1="12" y1="-5" x2="0" y2="0" stroke="white" stroke-width="1.5" opacity="0.6"/>
+    <line x1="-8" y1="8" x2="0" y2="0" stroke="white" stroke-width="1.5" opacity="0.6"/>
+    <line x1="8" y1="8" x2="0" y2="0" stroke="white" stroke-width="1.5" opacity="0.6"/>
+  </g>
+
+  <!-- Sparkles -->
+  <circle cx="200" cy="300" r="8" fill="white" opacity="0.6"/>
+  <circle cx="824" cy="400" r="6" fill="white" opacity="0.5"/>
+  <circle cx="750" cy="200" r="10" fill="white" opacity="0.4"/>
+  <circle cx="280" cy="750" r="7" fill="white" opacity="0.5"/>
+</svg>
