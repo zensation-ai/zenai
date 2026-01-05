@@ -26,17 +26,6 @@
 		AAA00010C /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00022; };
 		AAA00010D /* MeetingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00023; };
 		AAA00010E /* SwipeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00024; };
-		BBB00001 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00011; };
-		BBB00002 /* ContentViewWithContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00012; };
-		BBB00003 /* ContextSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013; };
-		BBB00004 /* MediaPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00014; };
-		BBB00005 /* OfflineQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00015; };
-		BBB00006 /* StoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00016; };
-		BBB00007 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00017; };
-		BBB00008 /* TrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00018; };
-		BBB00009 /* AIContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00019; };
-		BBB0000A /* TrainingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0001A; };
-		BBB0000B /* APIService+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0001B; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,17 +50,6 @@
 		AAA00022 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		AAA00023 /* MeetingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingsView.swift; sourceTree = "<group>"; };
 		AAA00024 /* SwipeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeCardView.swift; sourceTree = "<group>"; };
-		BBB00011 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
-		BBB00012 /* ContentViewWithContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewWithContext.swift; sourceTree = "<group>"; };
-		BBB00013 /* ContextSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextSwitcherView.swift; sourceTree = "<group>"; };
-		BBB00014 /* MediaPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPickerView.swift; sourceTree = "<group>"; };
-		BBB00015 /* OfflineQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineQueueView.swift; sourceTree = "<group>"; };
-		BBB00016 /* StoriesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesView.swift; sourceTree = "<group>"; };
-		BBB00017 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
-		BBB00018 /* TrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingView.swift; sourceTree = "<group>"; };
-		BBB00019 /* AIContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIContext.swift; sourceTree = "<group>"; };
-		BBB0001A /* TrainingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingModels.swift; sourceTree = "<group>"; };
-		BBB0001B /* APIService+Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Context.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -127,14 +105,6 @@
 				AAA00022 /* ProfileView.swift */,
 				AAA00023 /* MeetingsView.swift */,
 				AAA00024 /* SwipeCardView.swift */,
-				BBB00011 /* CameraView.swift */,
-				BBB00012 /* ContentViewWithContext.swift */,
-				BBB00013 /* ContextSwitcherView.swift */,
-				BBB00014 /* MediaPickerView.swift */,
-				BBB00015 /* OfflineQueueView.swift */,
-				BBB00016 /* StoriesView.swift */,
-				BBB00017 /* ToastView.swift */,
-				BBB00018 /* TrainingView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -145,8 +115,6 @@
 				AAA00017 /* Idea.swift */,
 				AAA0001B /* Meeting.swift */,
 				AAA0001C /* UserProfile.swift */,
-				BBB00019 /* AIContext.swift */,
-				BBB0001A /* TrainingModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -158,7 +126,6 @@
 				AAA00019 /* AudioRecorderService.swift */,
 				AAA0001D /* LocalStorageService.swift */,
 				AAA0001E /* OfflineQueueService.swift */,
-				BBB0001B /* APIService+Context.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -258,17 +225,6 @@
 				AAA00010C /* ProfileView.swift in Sources */,
 				AAA00010D /* MeetingsView.swift in Sources */,
 				AAA00010E /* SwipeCardView.swift in Sources */,
-				BBB00001 /* CameraView.swift in Sources */,
-				BBB00002 /* ContentViewWithContext.swift in Sources */,
-				BBB00003 /* ContextSwitcherView.swift in Sources */,
-				BBB00004 /* MediaPickerView.swift in Sources */,
-				BBB00005 /* OfflineQueueView.swift in Sources */,
-				BBB00006 /* StoriesView.swift in Sources */,
-				BBB00007 /* ToastView.swift in Sources */,
-				BBB00008 /* TrainingView.swift in Sources */,
-				BBB00009 /* AIContext.swift in Sources */,
-				BBB0000A /* TrainingModels.swift in Sources */,
-				BBB0000B /* APIService+Context.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

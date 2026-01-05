@@ -5,6 +5,8 @@ import Combine
 enum QueueItemType: String, Codable {
     case textInput
     case voiceMemo
+    case audioInput
+    case mediaInput
     case swipeAction
 }
 
@@ -30,12 +32,27 @@ struct QueueItem: Identifiable, Codable {
 // MARK: - Text Input Payload
 struct TextInputPayload: Codable {
     let text: String
+    let context: String // "personal" or "work"
 }
 
 // MARK: - Voice Memo Payload
 struct VoiceMemoPayload: Codable {
     let audioFileName: String
     let audioData: Data
+    let context: String // "personal" or "work"
+}
+
+// MARK: - Audio Input Payload
+struct AudioInputPayload: Codable {
+    let audioData: Data
+    let context: String
+}
+
+// MARK: - Media Input Payload
+struct MediaInputPayload: Codable {
+    let mediaData: Data
+    let filename: String
+    let context: String
 }
 
 // MARK: - Swipe Action Payload
@@ -82,14 +99,24 @@ class OfflineQueueService: ObservableObject {
         }
     }
 
-    func enqueueTextInput(_ text: String) {
-        let payload = TextInputPayload(text: text)
+    func enqueueTextInput(_ text: String, context: AIContext) {
+        let payload = TextInputPayload(text: text, context: context.rawValue)
         enqueue(type: .textInput, payload: payload)
     }
 
-    func enqueueVoiceMemo(fileName: String, audioData: Data) {
-        let payload = VoiceMemoPayload(audioFileName: fileName, audioData: audioData)
+    func enqueueVoiceMemo(fileName: String, audioData: Data, context: AIContext) {
+        let payload = VoiceMemoPayload(audioFileName: fileName, audioData: audioData, context: context.rawValue)
         enqueue(type: .voiceMemo, payload: payload)
+    }
+
+    func enqueueAudioInput(_ audioData: Data, context: AIContext) {
+        let payload = AudioInputPayload(audioData: audioData, context: context.rawValue)
+        enqueue(type: .audioInput, payload: payload)
+    }
+
+    func enqueueMediaInput(_ mediaData: Data, filename: String, context: AIContext) {
+        let payload = MediaInputPayload(mediaData: mediaData, filename: filename, context: context.rawValue)
+        enqueue(type: .mediaInput, payload: payload)
     }
 
     func enqueueSwipeAction(ideaId: String, action: SwipeAction) {
@@ -149,13 +176,80 @@ class OfflineQueueService: ObservableObject {
             switch item.type {
             case .textInput:
                 let payload = try JSONDecoder().decode(TextInputPayload.self, from: item.payload)
-                _ = try await apiService.processText(payload.text)
-                return true
+                guard let context = AIContext(rawValue: payload.context) else {
+                    print("Invalid context: \(payload.context)")
+                    return false
+                }
+
+                // Use context-aware endpoint
+                return await withCheckedContinuation { continuation in
+                    apiService.submitVoiceMemo(text: payload.text, context: context) { result in
+                        switch result {
+                        case .success:
+                            continuation.resume(returning: true)
+                        case .failure(let error):
+                            print("❌ Failed to sync text: \(error)")
+                            continuation.resume(returning: false)
+                        }
+                    }
+                }
 
             case .voiceMemo:
                 let payload = try JSONDecoder().decode(VoiceMemoPayload.self, from: item.payload)
-                _ = try await apiService.processVoiceMemo(audioData: payload.audioData, filename: payload.audioFileName)
-                return true
+                guard let context = AIContext(rawValue: payload.context) else {
+                    print("Invalid context: \(payload.context)")
+                    return false
+                }
+
+                return await withCheckedContinuation { continuation in
+                    apiService.submitVoiceMemo(audioData: payload.audioData, context: context) { result in
+                        switch result {
+                        case .success:
+                            continuation.resume(returning: true)
+                        case .failure(let error):
+                            print("❌ Failed to sync voice memo: \(error)")
+                            continuation.resume(returning: false)
+                        }
+                    }
+                }
+
+            case .audioInput:
+                let payload = try JSONDecoder().decode(AudioInputPayload.self, from: item.payload)
+                guard let context = AIContext(rawValue: payload.context) else {
+                    print("Invalid context: \(payload.context)")
+                    return false
+                }
+
+                return await withCheckedContinuation { continuation in
+                    apiService.submitVoiceMemo(audioData: payload.audioData, context: context) { result in
+                        switch result {
+                        case .success:
+                            continuation.resume(returning: true)
+                        case .failure(let error):
+                            print("❌ Failed to sync audio: \(error)")
+                            continuation.resume(returning: false)
+                        }
+                    }
+                }
+
+            case .mediaInput:
+                let payload = try JSONDecoder().decode(MediaInputPayload.self, from: item.payload)
+                guard let context = AIContext(rawValue: payload.context) else {
+                    print("Invalid context: \(payload.context)")
+                    return false
+                }
+
+                return await withCheckedContinuation { continuation in
+                    apiService.submitMedia(data: payload.mediaData, filename: payload.filename, context: context) { result in
+                        switch result {
+                        case .success:
+                            continuation.resume(returning: true)
+                        case .failure(let error):
+                            print("❌ Failed to sync media: \(error)")
+                            continuation.resume(returning: false)
+                        }
+                    }
+                }
 
             case .swipeAction:
                 // For now, swipe actions are stored locally

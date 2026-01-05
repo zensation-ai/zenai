@@ -244,6 +244,8 @@ struct PriorityIndicator: View {
 // MARK: - Swipe Cards Stack View
 struct SwipeCardsView: View {
     @EnvironmentObject var apiService: APIService
+    @EnvironmentObject var contextManager: ContextManager
+
     @State private var ideas: [Idea] = []
     @State private var currentIndex = 0
     @State private var isLoading = false
@@ -251,6 +253,14 @@ struct SwipeCardsView: View {
     @State private var selectedIdea: Idea?
     @State private var showingDetail = false
     @State private var actionHistory: [(Idea, SwipeAction)] = []
+
+    // Toast feedback
+    @State private var showActionToast = false
+    @State private var lastAction: SwipeAction?
+    @State private var lastActionIdea: Idea?
+
+    // Context tracking
+    @State private var lastLoadedContext: AIContext?
 
     var body: some View {
         NavigationStack {
@@ -260,45 +270,76 @@ struct SwipeCardsView: View {
                     .ignoresSafeArea()
 
                 if isLoading {
-                    ProgressView("Lade Ideen...")
+                    // Enhanced loading state with context
+                    VStack(spacing: 20) {
+                        AIBrainView(isActive: true, activityType: .thinking, size: 64)
+                        Text("Lade \(contextManager.currentContext.displayName)-Ideen...")
+                            .font(.headline)
+                            .foregroundColor(.zensationTextMuted)
+                        Text("Suche nach Ideen zum Reviewen")
+                            .font(.caption)
+                            .foregroundColor(.zensationTextMuted)
+
+                        // Context indicator
+                        ContextIndicator(context: contextManager.currentContext)
+                    }
                 } else if let error = errorMessage {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 48))
                             .foregroundColor(.zensationWarning)
+                        Text("Verbindungsproblem")
+                            .font(.headline)
                         Text(error)
+                            .font(.subheadline)
+                            .foregroundColor(.zensationTextMuted)
                             .multilineTextAlignment(.center)
-                        Button("Erneut versuchen") {
-                            Task { await loadIdeas() }
+                        Button(action: { Task { await loadIdeas() } }) {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Erneut versuchen")
+                            }
                         }
                         .buttonStyle(.bordered)
                     }
                     .padding()
                 } else if ideas.isEmpty || currentIndex >= ideas.count {
-                    // Empty state
+                    // Enhanced empty state with context
                     VStack(spacing: 20) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(.zensationSuccess)
+                        AIBrainView(isActive: false, activityType: .idle, size: 80)
 
-                        Text("Alle Ideen durchgesehen!")
+                        Text("Alle \(contextManager.currentContext.displayName)-Ideen durchgesehen!")
                             .font(.title2)
                             .fontWeight(.semibold)
 
-                        Text("Du hast alle deine Ideen bearbeitet.")
+                        Text("Du hast alle \(ideas.count) Ideen im \(contextManager.currentContext.displayName)-Bereich bearbeitet.")
                             .foregroundColor(.zensationTextMuted)
+                            .multilineTextAlignment(.center)
 
+                        // Action summary
                         if !actionHistory.isEmpty {
-                            Button("Letzte Aktion rückgängig") {
-                                undoLastAction()
-                            }
-                            .buttonStyle(.bordered)
+                            actionSummaryView
                         }
 
-                        Button("Neu laden") {
-                            Task { await loadIdeas() }
+                        HStack(spacing: 16) {
+                            if !actionHistory.isEmpty {
+                                Button(action: undoLastAction) {
+                                    HStack {
+                                        Image(systemName: "arrow.uturn.backward")
+                                        Text("Rückgängig")
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                            }
+
+                            Button(action: { Task { await loadIdeas() } }) {
+                                HStack {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Neu laden")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.borderedProminent)
                     }
                     .padding()
                 } else {
@@ -337,39 +378,64 @@ struct SwipeCardsView: View {
 
                         Spacer()
 
-                        // Action buttons
-                        HStack(spacing: 40) {
-                            ActionButton(action: .later) {
+                        // Action buttons with labels
+                        HStack(spacing: 30) {
+                            ActionButtonWithLabel(action: .later) {
                                 performAction(.later)
                             }
 
-                            ActionButton(action: .archive) {
+                            ActionButtonWithLabel(action: .archive) {
                                 performAction(.archive)
                             }
 
-                            ActionButton(action: .priority) {
+                            ActionButtonWithLabel(action: .priority) {
                                 performAction(.priority)
                             }
                         }
-                        .padding(.bottom, 30)
+                        .padding(.bottom, 20)
                     }
                 }
+
+                // Action Toast Overlay
+                VStack {
+                    Spacer()
+                    if showActionToast, let action = lastAction, let idea = lastActionIdea {
+                        SwipeActionToast(action: action, ideaTitle: idea.title) {
+                            undoLastAction()
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .padding(.bottom, 100)
+                    }
+                }
+                .animation(.spring(response: 0.3), value: showActionToast)
             }
             .navigationTitle("Review")
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.zensationSurface, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     if !actionHistory.isEmpty {
                         Button(action: undoLastAction) {
-                            Image(systemName: "arrow.uturn.backward")
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.uturn.backward")
+                                Text("\(actionHistory.count)")
+                                    .font(.caption)
+                            }
                         }
                     }
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if !ideas.isEmpty && currentIndex < ideas.count {
-                        Text("\(currentIndex + 1) / \(ideas.count)")
-                            .font(.caption)
-                            .foregroundColor(.zensationTextMuted)
+                        HStack(spacing: 4) {
+                            Text("\(currentIndex + 1)")
+                                .fontWeight(.semibold)
+                            Text("/")
+                            Text("\(ideas.count)")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.zensationTextMuted)
                     }
                 }
             }
@@ -391,6 +457,60 @@ struct SwipeCardsView: View {
         .task {
             await loadIdeas()
         }
+        .onChange(of: contextManager.currentContext) { oldContext, newContext in
+            // Reload when context changes
+            if lastLoadedContext != newContext {
+                Task {
+                    await loadIdeas()
+                }
+            }
+        }
+    }
+
+    // MARK: - Action Summary View
+    private var actionSummaryView: some View {
+        let priorityCount = actionHistory.filter { $0.1 == .priority }.count
+        let laterCount = actionHistory.filter { $0.1 == .later }.count
+        let archiveCount = actionHistory.filter { $0.1 == .archive }.count
+
+        return HStack(spacing: 20) {
+            if priorityCount > 0 {
+                VStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.zensationSuccess)
+                    Text("\(priorityCount)")
+                        .font(.headline)
+                    Text("Priorität")
+                        .font(.caption2)
+                        .foregroundColor(.zensationTextMuted)
+                }
+            }
+            if laterCount > 0 {
+                VStack(spacing: 4) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundColor(.zensationWarning)
+                    Text("\(laterCount)")
+                        .font(.headline)
+                    Text("Später")
+                        .font(.caption2)
+                        .foregroundColor(.zensationTextMuted)
+                }
+            }
+            if archiveCount > 0 {
+                VStack(spacing: 4) {
+                    Image(systemName: "archivebox")
+                        .foregroundColor(.zensationTextMuted)
+                    Text("\(archiveCount)")
+                        .font(.headline)
+                    Text("Archiviert")
+                        .font(.caption2)
+                        .foregroundColor(.zensationTextMuted)
+                }
+            }
+        }
+        .padding()
+        .background(Color.zensationSurfaceLight)
+        .cornerRadius(12)
     }
 
     private func loadIdeas() async {
@@ -398,9 +518,11 @@ struct SwipeCardsView: View {
         errorMessage = nil
         currentIndex = 0
         actionHistory = []
+        lastLoadedContext = contextManager.currentContext
 
         do {
-            ideas = try await apiService.fetchIdeas()
+            // Fetch ideas for current context
+            ideas = try await apiService.fetchIdeasForContext(context: contextManager.currentContext)
         } catch {
             errorMessage = error.localizedDescription
             ideas = Idea.sampleData
@@ -413,8 +535,24 @@ struct SwipeCardsView: View {
         guard currentIndex < ideas.count else { return }
 
         let idea = ideas[currentIndex]
+
+        // Haptic feedback based on action
+        triggerHapticFeedback(for: action)
+
         actionHistory.append((idea, action))
+        lastAction = action
+        lastActionIdea = idea
         currentIndex += 1
+
+        // Show toast
+        showActionToast = true
+
+        // Auto-hide toast
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            if lastActionIdea?.id == idea.id {
+                showActionToast = false
+            }
+        }
 
         // Send action to backend
         Task {
@@ -433,9 +571,25 @@ struct SwipeCardsView: View {
                 try await apiService.sendSwipeAction(ideaId: idea.id, action: actionString)
             } catch {
                 print("Failed to sync swipe action: \(error)")
-                // Optionally queue for offline sync
                 OfflineQueueService.shared.enqueueSwipeAction(ideaId: idea.id, action: action)
             }
+        }
+    }
+
+    private func triggerHapticFeedback(for action: SwipeAction) {
+        switch action {
+        case .priority:
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        case .archive:
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+        case .later:
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        case .detail:
+            let generator = UISelectionFeedbackGenerator()
+            generator.selectionChanged()
         }
     }
 
@@ -446,8 +600,94 @@ struct SwipeCardsView: View {
     private func undoLastAction() {
         guard !actionHistory.isEmpty else { return }
 
+        // Haptic for undo
+        let generator = UIImpactFeedbackGenerator(style: .rigid)
+        generator.impactOccurred()
+
         actionHistory.removeLast()
         currentIndex = max(0, currentIndex - 1)
+        showActionToast = false
+    }
+}
+
+// MARK: - Swipe Action Toast
+struct SwipeActionToast: View {
+    let action: SwipeAction
+    let ideaTitle: String
+    let onUndo: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: action.icon)
+                .font(.title3)
+                .foregroundColor(action.color)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(actionMessage)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Text(ideaTitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Button("Rückgängig") {
+                onUndo()
+            }
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .foregroundColor(action.color)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(action.color.opacity(0.3), lineWidth: 1)
+        )
+        .padding(.horizontal)
+    }
+
+    private var actionMessage: String {
+        switch action {
+        case .priority: return "Als Priorität markiert"
+        case .later: return "Für später markiert"
+        case .archive: return "Archiviert"
+        case .detail: return "Geöffnet"
+        }
+    }
+}
+
+// MARK: - Action Button with Label
+struct ActionButtonWithLabel: View {
+    let action: SwipeAction
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(action.color.opacity(0.15))
+                        .frame(width: 56, height: 56)
+
+                    Image(systemName: action.icon)
+                        .font(.title2)
+                        .foregroundColor(action.color)
+                }
+
+                Text(action.label)
+                    .font(.caption)
+                    .foregroundColor(.zensationTextMuted)
+            }
+        }
     }
 }
 

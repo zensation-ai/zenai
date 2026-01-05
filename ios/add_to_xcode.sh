@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Script to add files to Xcode project via command line
+PROJECT_DIR="/Users/alexanderbering/Projects/KI-AB/ios"
+PROJECT_FILE="$PROJECT_DIR/PersonalAIBrain.xcodeproj"
+
+echo "Opening Xcode project..."
+open "$PROJECT_FILE"
+
+sleep 3
+
+echo ""
+echo "============================================"
+echo "ANLEITUNG: Dateien zu Xcode hinzufügen"
+echo "============================================"
+echo ""
+echo "Bitte füge folgende 4 Dateien manuell hinzu:"
+echo ""
+echo "1. Models/AIContext.swift"
+echo "   📁 Rechtsklick auf 'Models' → Add Files"
+echo "   📂 Navigiere zu: PersonalAIBrain/Models/AIContext.swift"
+echo ""
+echo "2. Services/APIService+Context.swift"
+echo "   📁 Rechtsklick auf 'Services' → Add Files"
+echo "   📂 Navigiere zu: PersonalAIBrain/Services/APIService+Context.swift"
+echo ""
+echo "3. Views/ContextSwitcherView.swift"
+echo "   📁 Rechtsklick auf 'Views' → Add Files"
+echo "   📂 Navigiere zu: PersonalAIBrain/Views/ContextSwitcherView.swift"
+echo ""
+echo "4. Views/ContentViewWithContext.swift"
+echo "   📁 Rechtsklick auf 'Views' → Add Files"
+echo "   📂 Navigiere zu: PersonalAIBrain/Views/ContentViewWithContext.swift"
+echo ""
+echo "WICHTIG beim Hinzufügen:"
+echo "  ☐ 'Copy items if needed' - NICHT ankreuzen"
+echo "  ☑ 'PersonalAIBrain' Target - auswählen"
+echo ""
+echo "Wenn fertig, drücke Cmd+B zum Kompilieren!"
+echo "============================================"

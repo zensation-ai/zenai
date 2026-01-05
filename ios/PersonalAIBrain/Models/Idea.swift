@@ -120,3 +120,5 @@ extension Idea {
         )
     ]
 }
+
+// Note: AIContext and ContextManager are defined in AIContext.swift

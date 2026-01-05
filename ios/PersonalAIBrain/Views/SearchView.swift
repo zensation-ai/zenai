@@ -2,6 +2,8 @@ import SwiftUI
 
 struct SearchView: View {
     @EnvironmentObject var apiService: APIService
+    @EnvironmentObject var contextManager: ContextManager
+
     @State private var searchText = ""
     @State private var searchResults: [Idea] = []
     @State private var isSearching = false
@@ -52,16 +54,19 @@ struct SearchView: View {
                     .padding()
                     Spacer()
                 } else if !hasSearched {
-                    // Initial state
+                    // Initial state with context
                     Spacer()
                     VStack(spacing: 16) {
                         AIBrainView(isActive: false, activityType: .idle, size: 64)
+
+                        // Context indicator
+                        ContextIndicator(context: contextManager.currentContext)
 
                         Text("Semantische Suche")
                             .font(.title2)
                             .fontWeight(.semibold)
 
-                        Text("Finde verwandte Ideen basierend auf Bedeutung, nicht nur Stichwörtern.")
+                        Text("Finde verwandte \(contextManager.currentContext.displayName)-Ideen basierend auf Bedeutung.")
                             .multilineTextAlignment(.center)
                             .foregroundColor(.zensationTextMuted)
                             .padding(.horizontal)
@@ -132,7 +137,11 @@ struct SearchView: View {
 
         Task {
             do {
-                searchResults = try await apiService.searchIdeas(query: searchText)
+                // Use context-aware search
+                searchResults = try await apiService.searchIdeasInContext(
+                    query: searchText,
+                    context: contextManager.currentContext
+                )
             } catch {
                 errorMessage = error.localizedDescription
                 searchResults = []

@@ -15,6 +15,15 @@ import { integrationsRouter } from './routes/integrations';
 import { rateLimiter, cleanupRateLimits } from './middleware/auth';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
+// Phase 6: Dual-Database Context System
+import { testConnections } from './utils/database-context';
+import { voiceMemoContextRouter } from './routes/voice-memo-context';
+import { contextsRouter } from './routes/contexts';
+// Phase 7: Media & Stories
+import mediaRouter from './routes/media';
+import storiesRouter from './routes/stories';
+// Phase 6: Training
+import { trainingRouter } from './routes/training';
 
 dotenv.config();
 
@@ -43,6 +52,17 @@ app.use('/api/integrations', integrationsRouter);
 // Phase 5: Thought Incubator
 app.use('/api/incubator', incubatorRouter);
 
+// Phase 6: Context-Aware Routes
+app.use('/api', contextsRouter);
+app.use('/api', voiceMemoContextRouter);
+
+// Phase 7: Media & Stories
+app.use('/api', mediaRouter);  // Context-aware media routes: /api/:context/media
+app.use('/api/stories', storiesRouter);
+
+// Phase 6: Training Routes
+app.use('/api', trainingRouter);  // Context-aware training routes: /api/:context/training
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch(console.error);
@@ -55,20 +75,38 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`
-🧠 Personal AI System - Backend (Phase 5)
-==========================================
+🧠 Personal AI System - Backend (Phase 6: Dual-Context)
+========================================================
 Server:      http://localhost:${PORT}
 Ollama:      ${process.env.OLLAMA_URL}
-Database:    postgres://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}
-==========================================
+========================================================
+DUAL-DATABASE ARCHITECTURE:
+  🏠 Personal: postgres://${process.env.DB_HOST}:${process.env.DB_PORT}/personal_ai
+  💼 Work:     postgres://${process.env.DB_HOST}:${process.env.DB_PORT}/work_ai
+========================================================
+Phase 6 APIs (NEW!):
+  - Context-aware routes support /api/:context/...
+  - Personal Persona: Friendly, exploratory
+  - Work Persona: Structured, business-focused
+
 Phase 5 APIs:
-  - Incubator:    /api/incubator (NEW!)
+  - Incubator:    /api/incubator
 Phase 4 APIs:
   - API Keys:     /api/keys
   - Webhooks:     /api/webhooks
   - Integrations: /api/integrations
-==========================================
+========================================================
   `);
+
+  // Test both database connections
+  console.log('Testing database connections...');
+  const dbStatus = await testConnections();
+
+  if (!dbStatus.personal || !dbStatus.work) {
+    console.error('⚠️  Warning: One or more databases are not connected properly');
+  } else {
+    console.log('✅ All databases connected successfully\n');
+  }
 });

@@ -5,7 +5,7 @@ class APIService: ObservableObject {
     // Configure your backend URL here
     // For local development on simulator: use localhost
     // For device testing: use your Mac's IP address
-    private let baseURL: String
+    let baseURL: String  // internal for extension access
 
     // WICHTIG: Trage hier deine Mac IP-Adresse ein für iPhone-Nutzung
     private static let macIPAddress = "192.168.212.104"
@@ -114,6 +114,45 @@ class APIService: ObservableObject {
         decoder.dateDecodingStrategy = .iso8601
 
         let searchResponse = try decoder.decode(SearchResponse.self, from: data)
+        return searchResponse.ideas
+    }
+
+    /// Context-aware search for ideas
+    func searchIdeasInContext(query: String, context: AIContext) async throws -> [Idea] {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas/search") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body = ["query": query, "limit": 20] as [String: Any]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        // Fall back to general search if context endpoint doesn't exist
+        if httpResponse.statusCode == 404 {
+            return try await searchIdeas(query: query)
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+
+        let searchResponse = try decoder.decode(SearchContextResponse.self, from: data)
         return searchResponse.ideas
     }
 
@@ -525,6 +564,13 @@ struct SearchResponse: Codable {
     let ideas: [Idea]
 }
 
+struct SearchContextResponse: Codable {
+    let ideas: [Idea]
+    let query: String?
+    let context: String?
+    let total: Int?
+}
+
 struct VoiceMemoResponse: Codable {
     let success: Bool
     let ideaId: String
@@ -676,4 +722,630 @@ enum APIError: LocalizedError {
             return "Fehler beim Kodieren der Daten"
         }
     }
+}
+
+// MARK: - Context-Aware API Extension (Phase 6)
+
+extension APIService {
+    /// Submit voice memo with audio data
+    func submitVoiceMemo(
+        audioData: Data,
+        context: AIContext,
+        completion: @escaping (Result<VoiceMemoContextResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/voice-memo") else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        // Create multipart form data
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 120
+
+        var body = Data()
+
+        // Add audio file
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
+        body.append(audioData)
+        body.append("\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let data = data,
+                      let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(APIError.invalidResponse))
+                    return
+                }
+
+                guard httpResponse.statusCode == 200 else {
+                    completion(.failure(APIError.serverError(statusCode: httpResponse.statusCode)))
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    let response = try decoder.decode(VoiceMemoContextResponse.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    /// Submit voice memo as text
+    func submitVoiceMemo(
+        text: String,
+        context: AIContext,
+        completion: @escaping (Result<VoiceMemoContextResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/voice-memo") else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60
+
+        let body: [String: Any] = ["text": text]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let data = data,
+                      let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(APIError.invalidResponse))
+                    return
+                }
+
+                guard httpResponse.statusCode == 200 else {
+                    completion(.failure(APIError.serverError(statusCode: httpResponse.statusCode)))
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    let response = try decoder.decode(VoiceMemoContextResponse.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    /// Submit media (photo or video)
+    func submitMedia(
+        data: Data,
+        filename: String,
+        context: AIContext,
+        completion: @escaping (Result<MediaUploadResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/media") else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        // Create multipart form data
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 180 // 3 minutes for video uploads
+
+        var body = Data()
+
+        // Determine content type
+        let contentType: String
+        if filename.hasSuffix(".jpg") || filename.hasSuffix(".jpeg") {
+            contentType = "image/jpeg"
+        } else if filename.hasSuffix(".png") {
+            contentType = "image/png"
+        } else if filename.hasSuffix(".mov") || filename.hasSuffix(".mp4") {
+            contentType = "video/quicktime"
+        } else {
+            contentType = "application/octet-stream"
+        }
+
+        // Add media file
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"media\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        URLSession.shared.dataTask(with: request) { responseData, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let responseData = responseData,
+                      let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(APIError.invalidResponse))
+                    return
+                }
+
+                guard httpResponse.statusCode == 200 else {
+                    completion(.failure(APIError.serverError(statusCode: httpResponse.statusCode)))
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    let response = try decoder.decode(MediaUploadResponse.self, from: responseData)
+                    completion(.success(response))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    /// Submit media (photo or video) with optional voice context
+    func submitMediaWithVoice(
+        mediaData: Data,
+        mediaFilename: String,
+        voiceData: Data?,
+        context: AIContext,
+        completion: @escaping (Result<MediaUploadResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/media-with-voice") else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        // Create multipart form data
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 180 // 3 minutes for uploads
+
+        var body = Data()
+
+        // Determine content type for media
+        let contentType: String
+        if mediaFilename.hasSuffix(".jpg") || mediaFilename.hasSuffix(".jpeg") {
+            contentType = "image/jpeg"
+        } else if mediaFilename.hasSuffix(".png") {
+            contentType = "image/png"
+        } else if mediaFilename.hasSuffix(".mov") || mediaFilename.hasSuffix(".mp4") {
+            contentType = "video/quicktime"
+        } else {
+            contentType = "application/octet-stream"
+        }
+
+        // Add media file
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"media\"; filename=\"\(mediaFilename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
+        body.append(mediaData)
+        body.append("\r\n".data(using: .utf8)!)
+
+        // Add voice file if present
+        if let voice = voiceData {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"voice\"; filename=\"voice.m4a\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
+            body.append(voice)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+        request.httpBody = body
+
+        URLSession.shared.dataTask(with: request) { responseData, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let responseData = responseData,
+                      let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(APIError.invalidResponse))
+                    return
+                }
+
+                guard httpResponse.statusCode == 200 else {
+                    completion(.failure(APIError.serverError(statusCode: httpResponse.statusCode)))
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    let response = try decoder.decode(MediaUploadResponse.self, from: responseData)
+                    completion(.success(response))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    /// Fetch stories (grouped related content)
+    func fetchStories(
+        query: String? = nil,
+        completion: @escaping (Result<[Story], Error>) -> Void
+    ) {
+        var urlString = "\(baseURL)/api/stories"
+        if let query = query {
+            urlString += "?query=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+        }
+
+        guard let url = URL(string: urlString) else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let data = data,
+                      let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(APIError.invalidResponse))
+                    return
+                }
+
+                guard httpResponse.statusCode == 200 else {
+                    completion(.failure(APIError.serverError(statusCode: httpResponse.statusCode)))
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.dateDecodingStrategy = .iso8601
+                    let response = try decoder.decode(StoriesResponse.self, from: data)
+                    completion(.success(response.stories))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    /// Fetch ideas from specific context (callback version)
+    func fetchIdeas(
+        context: AIContext,
+        completion: @escaping (Result<[Idea], Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas") else {
+            completion(.failure(NSError(domain: "Invalid URL", code: -1)))
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let data = data else {
+                    completion(.failure(NSError(domain: "No data", code: -1)))
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    decoder.dateDecodingStrategy = .iso8601
+
+                    let response = try decoder.decode(IdeasContextResponse.self, from: data)
+                    completion(.success(response.ideas))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+
+    /// Fetch ideas for a specific context (async version)
+    func fetchIdeasForContext(context: AIContext) async throws -> [Idea] {
+        // Try context-specific endpoint first
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas") else {
+            throw APIError.invalidURL
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+
+            // If context-specific endpoint doesn't exist, fall back to general endpoint
+            if httpResponse.statusCode == 404 {
+                return try await fetchIdeas()
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                throw APIError.serverError(statusCode: httpResponse.statusCode)
+            }
+
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            decoder.dateDecodingStrategy = .iso8601
+
+            let ideasResponse = try decoder.decode(IdeasContextResponse.self, from: data)
+            return ideasResponse.ideas
+        } catch let error as URLError where error.code == .cannotConnectToHost {
+            // Fall back to general endpoint if context endpoint fails
+            return try await fetchIdeas()
+        }
+    }
+
+    /// Fetch context-specific statistics
+    func fetchContextStats(
+        context: AIContext,
+        completion: @escaping (Result<ContextStatsResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/stats") else {
+            completion(.failure(NSError(domain: "Invalid URL", code: -1)))
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let data = data else {
+                    completion(.failure(NSError(domain: "No data", code: -1)))
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    let stats = try decoder.decode(ContextStatsResponse.self, from: data)
+                    completion(.success(stats))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+}
+
+// MARK: - Context Response Types
+
+struct VoiceMemoContextResponse: Codable {
+    let success: Bool
+    let context: String
+    let persona: String
+    let mode: String
+    let idea: IdeaContextResponse?
+    let thought: ThoughtContextResponse?
+    let message: String?
+    let processingTime: Int
+}
+
+struct IdeaContextResponse: Codable {
+    let id: String
+    let title: String
+    let type: String
+    let category: String
+    let priority: String
+    let summary: String
+}
+
+struct ThoughtContextResponse: Codable {
+    let id: String
+    let rawInput: String
+}
+
+struct ContextStatsResponse: Codable {
+    let context: String
+    let persona: PersonaContextInfo
+    let stats: StatsContextInfo
+}
+
+struct PersonaContextInfo: Codable {
+    let name: String
+    let icon: String
+}
+
+struct StatsContextInfo: Codable {
+    let totalIdeas: Int
+    let looseThoughts: Int
+    let readyClusters: Int
+}
+
+struct IdeasContextResponse: Codable {
+    let ideas: [Idea]
+}
+
+// MARK: - Media Upload Response Types
+
+struct MediaUploadResponse: Codable {
+    let success: Bool
+    let mediaId: String
+    let mediaType: String
+    let url: String?
+    let processingStatus: String
+    let message: String?
+}
+
+// MARK: - Story Response Types
+
+struct StoriesResponse: Codable {
+    let stories: [Story]
+    let total: Int
+}
+
+struct Story: Codable, Identifiable {
+    let id: String
+    let title: String
+    let description: String?
+    let items: [StoryItem]
+    let createdAt: Date
+    let updatedAt: Date
+    let itemCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, items
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case itemCount = "item_count"
+    }
+}
+
+struct StoryItem: Codable, Identifiable {
+    let id: String
+    let type: StoryItemType
+    let content: String
+    let mediaUrl: String?
+    let timestamp: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, content, timestamp
+        case mediaUrl = "media_url"
+    }
+}
+
+enum StoryItemType: String, Codable {
+    case text
+    case audio
+    case photo
+    case video
+    case idea
+}
+
+// MARK: - Training API Extension (Phase 6)
+
+extension APIService {
+    /// Fetch training history for a context
+    func fetchTrainingHistory(context: AIContext) async throws -> [TrainingItem] {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/training") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+
+        let trainingResponse = try decoder.decode(TrainingHistoryResponse.self, from: data)
+        return trainingResponse.trainings
+    }
+
+    /// Submit a new training correction
+    func submitTraining(
+        ideaId: String,
+        context: AIContext,
+        trainingType: TrainingType,
+        correctedCategory: IdeaCategory?,
+        correctedPriority: Priority?,
+        correctedType: IdeaType?,
+        toneFeedback: ToneFeedback?,
+        feedback: String?
+    ) async throws -> TrainingItem {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/training") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+
+        var body: [String: Any] = [
+            "idea_id": ideaId,
+            "training_type": trainingType.rawValue
+        ]
+
+        if let correctedCategory = correctedCategory {
+            body["corrected_category"] = correctedCategory.rawValue
+        }
+        if let correctedPriority = correctedPriority {
+            body["corrected_priority"] = correctedPriority.rawValue
+        }
+        if let correctedType = correctedType {
+            body["corrected_type"] = correctedType.rawValue
+        }
+        if let toneFeedback = toneFeedback {
+            body["tone_feedback"] = toneFeedback.rawValue
+        }
+        if let feedback = feedback {
+            body["feedback"] = feedback
+        }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+
+        let trainingResponse = try decoder.decode(TrainingSubmitResponse.self, from: data)
+        return trainingResponse.training
+    }
+}
+
+// MARK: - Training Response Types
+
+struct TrainingHistoryResponse: Codable {
+    let trainings: [TrainingItem]
+    let total: Int
+}
+
+struct TrainingSubmitResponse: Codable {
+    let success: Bool
+    let training: TrainingItem
+    let message: String?
 }

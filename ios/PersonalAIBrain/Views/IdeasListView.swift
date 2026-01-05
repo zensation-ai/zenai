@@ -2,10 +2,13 @@ import SwiftUI
 
 struct IdeasListView: View {
     @EnvironmentObject var apiService: APIService
+    @EnvironmentObject var contextManager: ContextManager
+
     @State private var ideas: [Idea] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedFilter: IdeaType?
+    @State private var lastLoadedContext: AIContext?
 
     var filteredIdeas: [Idea] {
         if let filter = selectedFilter {
@@ -116,11 +119,14 @@ struct IdeasListView: View {
                 }
                 }
             }
-            .navigationTitle("Meine Ideen")
+            .navigationTitle("\(contextManager.currentContext.displayName)-Ideen")
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(Color.zensationSurface, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    ContextIndicator(context: contextManager.currentContext)
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { Task { await loadIdeas() } }) {
                         Image(systemName: "arrow.clockwise")
@@ -132,16 +138,25 @@ struct IdeasListView: View {
         .task {
             await loadIdeas()
         }
+        .onChange(of: contextManager.currentContext) { oldContext, newContext in
+            // Reload when context changes
+            if lastLoadedContext != newContext {
+                Task {
+                    await loadIdeas()
+                }
+            }
+        }
     }
 
     private func loadIdeas() async {
         isLoading = true
         errorMessage = nil
+        lastLoadedContext = contextManager.currentContext
 
         do {
-            print("🔄 Fetching ideas from API...")
-            ideas = try await apiService.fetchIdeas()
-            print("✅ Successfully loaded \(ideas.count) ideas")
+            print("🔄 Fetching \(contextManager.currentContext.displayName) ideas from API...")
+            ideas = try await apiService.fetchIdeasForContext(context: contextManager.currentContext)
+            print("✅ Successfully loaded \(ideas.count) \(contextManager.currentContext.displayName) ideas")
         } catch {
             print("❌ Error loading ideas: \(error)")
             errorMessage = "Es besteht keine Verbindung zum Backend.\n\nFehler: \(error.localizedDescription)\n\nStelle sicher, dass dein iPhone und Mac im gleichen WLAN sind."
