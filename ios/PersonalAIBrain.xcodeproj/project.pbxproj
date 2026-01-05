@@ -17,6 +17,15 @@
 		AAA00008 /* Idea.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00017; };
 		AAA00009 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00018; };
 		AAA0000A /* AudioRecorderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00019; };
+		AAA0000B /* Meeting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001B; };
+		AAA0000C /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001C; };
+		AAA0000D /* LocalStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001D; };
+		AAA0000E /* OfflineQueueService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001E; };
+		AAA0000F /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001F; };
+		AAA00010B /* AIBrainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00021; };
+		AAA00010C /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00022; };
+		AAA00010D /* MeetingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00023; };
+		AAA00010E /* SwipeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00024; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +41,15 @@
 		AAA00019 /* AudioRecorderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderService.swift; sourceTree = "<group>"; };
 		AAA0001A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AAA00020 /* PersonalAIBrain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalAIBrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAA0001B /* Meeting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meeting.swift; sourceTree = "<group>"; };
+		AAA0001C /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		AAA0001D /* LocalStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStorageService.swift; sourceTree = "<group>"; };
+		AAA0001E /* OfflineQueueService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineQueueService.swift; sourceTree = "<group>"; };
+		AAA0001F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		AAA00021 /* AIBrainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBrainView.swift; sourceTree = "<group>"; };
+		AAA00022 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		AAA00023 /* MeetingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingsView.swift; sourceTree = "<group>"; };
+		AAA00024 /* SwipeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeCardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +79,7 @@
 				AAA00043 /* Views */,
 				AAA00044 /* Models */,
 				AAA00045 /* Services */,
+				AAA00046 /* Theme */,
 			);
 			path = PersonalAIBrain;
 			sourceTree = "<group>";
@@ -82,6 +101,10 @@
 				AAA00014 /* RecordView.swift */,
 				AAA00015 /* SearchView.swift */,
 				AAA00016 /* SettingsView.swift */,
+				AAA00021 /* AIBrainView.swift */,
+				AAA00022 /* ProfileView.swift */,
+				AAA00023 /* MeetingsView.swift */,
+				AAA00024 /* SwipeCardView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -90,6 +113,8 @@
 			isa = PBXGroup;
 			children = (
 				AAA00017 /* Idea.swift */,
+				AAA0001B /* Meeting.swift */,
+				AAA0001C /* UserProfile.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -99,8 +124,18 @@
 			children = (
 				AAA00018 /* APIService.swift */,
 				AAA00019 /* AudioRecorderService.swift */,
+				AAA0001D /* LocalStorageService.swift */,
+				AAA0001E /* OfflineQueueService.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		AAA00046 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				AAA0001F /* AppTheme.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -181,6 +216,15 @@
 				AAA00008 /* Idea.swift in Sources */,
 				AAA00009 /* APIService.swift in Sources */,
 				AAA0000A /* AudioRecorderService.swift in Sources */,
+				AAA0000B /* Meeting.swift in Sources */,
+				AAA0000C /* UserProfile.swift in Sources */,
+				AAA0000D /* LocalStorageService.swift in Sources */,
+				AAA0000E /* OfflineQueueService.swift in Sources */,
+				AAA0000F /* AppTheme.swift in Sources */,
+				AAA00010B /* AIBrainView.swift in Sources */,
+				AAA00010C /* ProfileView.swift in Sources */,
+				AAA00010D /* MeetingsView.swift in Sources */,
+				AAA00010E /* SwipeCardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
