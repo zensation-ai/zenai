@@ -124,11 +124,13 @@ struct IdeasListView: View {
         errorMessage = nil
 
         do {
+            print("🔄 Fetching ideas from API...")
             ideas = try await apiService.fetchIdeas()
+            print("✅ Successfully loaded \(ideas.count) ideas")
         } catch {
-            errorMessage = error.localizedDescription
-            // Show sample data in case of error
-            ideas = Idea.sampleData
+            print("❌ Error loading ideas: \(error)")
+            errorMessage = "Es besteht keine Verbindung zum Backend.\n\nFehler: \(error.localizedDescription)\n\nStelle sicher, dass dein iPhone und Mac im gleichen WLAN sind."
+            ideas = []
         }
 
         isLoading = false

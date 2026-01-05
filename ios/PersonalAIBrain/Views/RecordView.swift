@@ -136,16 +136,20 @@ struct RecordView: View {
         errorMessage = nil
         processingPhase = 0
 
+        print("🎤 Processing audio data: \(data.count) bytes")
+
         // Timer für Phasenwechsel starten
         startProcessingAnimation()
 
         Task {
             do {
+                print("📤 Sending audio to backend...")
                 let response = try await apiService.processVoiceMemo(
                     audioData: data,
                     filename: "recording.wav"
                 )
                 stopProcessingAnimation()
+                print("✅ Audio processed successfully: \(response.structured.title)")
                 processedIdea = response
                 showResult = true
 
@@ -154,7 +158,8 @@ struct RecordView: View {
                 generator.notificationOccurred(.success)
             } catch {
                 stopProcessingAnimation()
-                errorMessage = error.localizedDescription
+                print("❌ Error processing audio: \(error)")
+                errorMessage = "Fehler beim Verarbeiten: \(error.localizedDescription)\n\nStelle sicher, dass Backend läuft und erreichbar ist."
 
                 // Haptisches Feedback bei Fehler
                 let generator = UINotificationFeedbackGenerator()

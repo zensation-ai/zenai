@@ -17,9 +17,11 @@ class APIService: ObservableObject {
         #if targetEnvironment(simulator)
         // Simulator kann localhost verwenden
         self.baseURL = "http://localhost:3000"
+        print("📱 APIService: Using localhost (Simulator)")
         #else
         // Echtes Gerät braucht die Mac IP-Adresse
         self.baseURL = "http://\(APIService.macIPAddress):3000"
+        print("📱 APIService: Using \(self.baseURL) (Real Device)")
         #endif
     }
 
@@ -50,24 +52,40 @@ class APIService: ObservableObject {
         defer { isLoading = false }
 
         guard let url = URL(string: "\(baseURL)/api/ideas") else {
+            print("❌ Invalid URL: \(baseURL)/api/ideas")
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        print("🌐 Fetching from: \(url.absoluteString)")
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Invalid response type")
+                throw APIError.invalidResponse
+            }
+
+            print("📡 Response status: \(httpResponse.statusCode)")
+
+            guard httpResponse.statusCode == 200 else {
+                print("❌ Server error: \(httpResponse.statusCode)")
+                throw APIError.serverError(statusCode: httpResponse.statusCode)
+            }
+
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+
+            let ideasResponse = try decoder.decode(IdeasResponse.self, from: data)
+            print("✅ Decoded \(ideasResponse.ideas.count) ideas")
+            return ideasResponse.ideas
+        } catch let error as URLError {
+            print("❌ Network error: \(error.localizedDescription) (code: \(error.code.rawValue))")
+            throw error
+        } catch {
+            print("❌ Unexpected error: \(error)")
+            throw error
         }
-
-        guard httpResponse.statusCode == 200 else {
-            throw APIError.serverError(statusCode: httpResponse.statusCode)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let ideasResponse = try decoder.decode(IdeasResponse.self, from: data)
-        return ideasResponse.ideas
     }
 
     func searchIdeas(query: String) async throws -> [Idea] {
