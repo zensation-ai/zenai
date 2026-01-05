@@ -1,7 +1,14 @@
 import SwiftUI
 
 struct IdeaDetailView: View {
+    @EnvironmentObject var apiService: APIService
+    @Environment(\.dismiss) private var dismiss
+
     let idea: Idea
+    var onDelete: (() -> Void)?
+
+    @State private var showDeleteConfirm = false
+    @State private var isDeleting = false
 
     var body: some View {
         ScrollView {
@@ -108,6 +115,55 @@ struct IdeaDetailView: View {
         }
         .navigationTitle("Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundColor(.zensationDanger)
+                }
+                .disabled(isDeleting)
+            }
+        }
+        .confirmationDialog(
+            "Gedanke löschen?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Löschen", role: .destructive) {
+                deleteIdea()
+            }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Diese Aktion kann nicht rückgängig gemacht werden.")
+        }
+        .overlay {
+            if isDeleting {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                AIBrainView(isActive: true, activityType: .processing, size: 64)
+            }
+        }
+    }
+
+    private func deleteIdea() {
+        isDeleting = true
+        Task {
+            do {
+                try await apiService.deleteIdea(id: idea.id)
+                await MainActor.run {
+                    onDelete?()
+                    dismiss()
+                }
+            } catch {
+                // Show error - in real app would use alert
+                print("Delete failed: \(error)")
+            }
+            await MainActor.run {
+                isDeleting = false
+            }
+        }
     }
 
     private func colorFor(_ type: IdeaType) -> Color {

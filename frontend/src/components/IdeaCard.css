@@ -71,27 +71,27 @@
   border: 1px solid var(--glass-border);
   border-radius: 50%;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 1rem;
   width: 28px;
   height: 28px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transform: scale(0.8);
+  opacity: 0.5;
   transition: var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .idea-card:hover .delete-button {
   opacity: 1;
-  transform: scale(1);
 }
 
 .delete-button:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.2);
   border-color: var(--danger);
   color: var(--danger);
+  transform: scale(1.1);
 }
 
 .idea-summary {
@@ -121,14 +121,65 @@
   letter-spacing: 0.02em;
 }
 
+/* Category colors */
 .idea-category {
   background: var(--glass-bg);
   color: var(--text-muted);
   border: 1px solid var(--glass-border);
 }
 
+.category-business {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.category-technical {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.category-personal {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.category-learning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Priority colors */
 .idea-priority {
   border: 1px solid currentColor;
+}
+
+.priority-low {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+.priority-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.priority-high {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Deleting state */
+.idea-card.deleting {
+  opacity: 0.5;
+  pointer-events: none;
+  transform: scale(0.98);
 }
 
 .idea-similarity {

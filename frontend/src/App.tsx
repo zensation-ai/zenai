@@ -10,6 +10,8 @@ import { MeetingsPage } from './components/MeetingsPage';
 import { ProfileDashboard } from './components/ProfileDashboard';
 import { IntegrationsPage } from './components/IntegrationsPage';
 import { IncubatorPage } from './components/IncubatorPage';
+import { AIBrain } from './components/AIBrain';
+import { ToastContainer, showToast } from './components/Toast';
 import './App.css';
 
 type Page = 'ideas' | 'meetings' | 'profile' | 'integrations' | 'incubator';
@@ -47,6 +49,12 @@ function App() {
   const [filters, setFilters] = useState<Filters>({ type: null, category: null, priority: null });
   const [selectedIdea, setSelectedIdea] = useState<StructuredIdea | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+
+  // Determine AI activity state
+  const isAIActive = processing || isSearching || isRecording || loading;
+  const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
 
   // Check API health on mount
   useEffect(() => {
@@ -99,8 +107,11 @@ function App() {
 
       setIdeas([newIdea, ...ideas]);
       setTextInput('');
+      showToast('Gedanke erfolgreich strukturiert!', 'success');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to process text');
+      const errorMessage = err.response?.data?.error || 'Verarbeitung fehlgeschlagen';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setProcessing(false);
     }
@@ -112,11 +123,19 @@ function App() {
       return;
     }
 
+    setIsSearching(true);
     try {
       const response = await axios.post('/api/ideas/search', { query, limit: 20 });
       setSearchResults(response.data.ideas);
+      if (response.data.ideas.length === 0) {
+        showToast('Keine passenden Gedanken gefunden', 'info');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Search failed');
+      const errorMessage = err.response?.data?.error || 'Suche fehlgeschlagen';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -184,7 +203,7 @@ function App() {
     return (
       <IncubatorPage
         onBack={() => setCurrentPage('ideas')}
-        onIdeaCreated={(ideaId) => {
+        onIdeaCreated={() => {
           loadIdeas();
           setCurrentPage('ideas');
         }}
@@ -197,6 +216,7 @@ function App() {
       <header className="header">
         <div className="header-content">
           <div className="header-left">
+            <AIBrain isActive={isAIActive} activityType={aiActivityType} ideasCount={ideas.length} />
             <h1>Personal AI Brain</h1>
             <span className="version-badge">v1.0</span>
           </div>
@@ -290,6 +310,7 @@ function App() {
                     setIdeas([newIdea, ...ideas]);
                     setTextInput('');
                   }}
+                  onRecordingChange={setIsRecording}
                   disabled={processing}
                 />
                 <button
@@ -322,7 +343,7 @@ function App() {
 
         {/* Search & Filter Section */}
         <section className="search-filter-section">
-          <SearchBar onSearch={handleSearch} onClear={clearSearch} />
+          <SearchBar onSearch={handleSearch} onClear={clearSearch} isSearching={isSearching} />
           {searchResults && (
             <div className="search-info">
               <span>{searchResults.length} Ergebnisse für semantische Suche</span>
@@ -403,6 +424,9 @@ function App() {
           onNavigate={navigateToIdea}
         />
       )}
+
+      {/* Global Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 }

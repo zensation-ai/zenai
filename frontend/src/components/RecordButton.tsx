@@ -5,6 +5,7 @@ import './RecordButton.css';
 interface RecordButtonProps {
   onTranscript: (transcript: string) => void;
   onProcessed?: (result: ProcessedResult) => void;
+  onRecordingChange?: (isRecording: boolean) => void;
   disabled?: boolean;
 }
 
@@ -23,7 +24,7 @@ interface ProcessedResult {
   };
 }
 
-export function RecordButton({ onTranscript, onProcessed, disabled }: RecordButtonProps) {
+export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled }: RecordButtonProps) {
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -67,6 +68,7 @@ export function RecordButton({ onTranscript, onProcessed, disabled }: RecordButt
       mediaRecorder.start(1000);
       mediaRecorderRef.current = mediaRecorder;
       setRecording(true);
+      onRecordingChange?.(true);
       setDuration(0);
 
       timerRef.current = window.setInterval(() => {
@@ -82,6 +84,7 @@ export function RecordButton({ onTranscript, onProcessed, disabled }: RecordButt
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
+      onRecordingChange?.(false);
 
       if (timerRef.current) {
         clearInterval(timerRef.current);

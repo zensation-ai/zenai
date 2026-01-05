@@ -52,7 +52,6 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
   const [loading, setLoading] = useState(true);
   const [quickThought, setQuickThought] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [selectedCluster, setSelectedCluster] = useState<ThoughtCluster | null>(null);
   const [summarizing, setSummarizing] = useState<string | null>(null);
   const [consolidating, setConsolidating] = useState<string | null>(null);
 

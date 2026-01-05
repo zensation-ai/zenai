@@ -409,6 +409,25 @@ class APIService: ObservableObject {
         }
     }
 
+    func deleteIdea(id: String) async throws {
+        guard let url = URL(string: "\(baseURL)/api/ideas/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverMessage(errorResponse.error)
+            }
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
     // MARK: - Phase 4: Integrations
 
     func getIntegrations() async throws -> [Integration] {

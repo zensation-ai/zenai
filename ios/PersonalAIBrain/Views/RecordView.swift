@@ -233,39 +233,11 @@ struct RecordingIndicator: View {
 
 struct ProcessingIndicator: View {
     let step: (icon: String, text: String)
-    @State private var rotation: Double = 0
-    @State private var scale: CGFloat = 1.0
 
     var body: some View {
         VStack(spacing: 16) {
-            ZStack {
-                // Äußerer pulsierender Ring
-                Circle()
-                    .stroke(Color.zensationOrange.opacity(0.3), lineWidth: 3)
-                    .frame(width: 80, height: 80)
-                    .scaleEffect(scale)
-                    .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: scale)
-
-                // Rotierender Ring
-                Circle()
-                    .trim(from: 0, to: 0.7)
-                    .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: [.zensationOrange, .zensationOrange.opacity(0.3)]),
-                            center: .center
-                        ),
-                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                    )
-                    .frame(width: 70, height: 70)
-                    .rotationEffect(.degrees(rotation))
-
-                // Icon in der Mitte
-                Image(systemName: step.icon)
-                    .font(.system(size: 28))
-                    .foregroundColor(.zensationOrange)
-                    .transition(.scale.combined(with: .opacity))
-                    .id(step.icon)
-            }
+            // AI Brain als zentrales Element
+            AIBrainView(isActive: true, activityType: .transcribing, size: 80)
 
             Text(step.text)
                 .font(.headline)
@@ -282,12 +254,6 @@ struct ProcessingIndicator: View {
                         .frame(width: 8, height: 8)
                         .opacity(stepOpacity(for: index))
                 }
-            }
-        }
-        .onAppear {
-            scale = 1.15
-            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                rotation = 360
             }
         }
     }

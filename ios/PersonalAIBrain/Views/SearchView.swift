@@ -38,7 +38,7 @@ struct SearchView: View {
                 // Content
                 if isSearching {
                     Spacer()
-                    ProgressView("Suche...")
+                    AIBrainView(isActive: true, activityType: .searching, size: 64)
                     Spacer()
                 } else if let error = errorMessage {
                     Spacer()
@@ -55,9 +55,7 @@ struct SearchView: View {
                     // Initial state
                     Spacer()
                     VStack(spacing: 16) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 64))
-                            .foregroundColor(.blue.opacity(0.5))
+                        AIBrainView(isActive: false, activityType: .idle, size: 64)
 
                         Text("Semantische Suche")
                             .font(.title2)

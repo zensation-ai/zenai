@@ -45,8 +45,10 @@ struct IdeasListView: View {
 
                 // Content
                 if isLoading {
-                    ProgressView("Lade Ideen...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    VStack(spacing: 16) {
+                        AIBrainView(isActive: true, activityType: .thinking, size: 64)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle")
@@ -62,20 +64,39 @@ struct IdeasListView: View {
                     .padding()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if filteredIdeas.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 64))
-                            .foregroundColor(.gray)
-                        Text("Keine Ideen gefunden")
-                            .font(.headline)
-                        Text("Nimm deine erste Idee auf!")
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 20) {
+                        AIBrainView(
+                            isActive: false,
+                            activityType: .idle,
+                            size: 80,
+                            ideasCount: ideas.count,
+                            showGreeting: true
+                        )
+
+                        if selectedFilter != nil {
+                            Text("Keine \(selectedFilter?.displayName ?? "") gefunden")
+                                .font(.headline)
+                            Text("Versuche einen anderen Filter")
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("Nimm deine erste Idee auf!")
+                                .foregroundColor(.secondary)
+                        }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List(filteredIdeas) { idea in
-                        NavigationLink(destination: IdeaDetailView(idea: idea)) {
+                        NavigationLink(destination: IdeaDetailView(idea: idea, onDelete: {
+                            ideas.removeAll { $0.id == idea.id }
+                        })) {
                             IdeaRow(idea: idea)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deleteIdea(idea)
+                            } label: {
+                                Label("Löschen", systemImage: "trash")
+                            }
                         }
                     }
                     .listStyle(.plain)
@@ -111,6 +132,17 @@ struct IdeasListView: View {
         }
 
         isLoading = false
+    }
+
+    private func deleteIdea(_ idea: Idea) {
+        Task {
+            do {
+                try await apiService.deleteIdea(id: idea.id)
+                ideas.removeAll { $0.id == idea.id }
+            } catch {
+                errorMessage = "Löschen fehlgeschlagen: \(error.localizedDescription)"
+            }
+        }
     }
 
     private func colorFor(_ type: IdeaType) -> Color {

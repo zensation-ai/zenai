@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
 import './IdeaCard.css';
 
 interface Idea {
@@ -28,28 +30,23 @@ const typeIcons: Record<string, string> = {
   question: '❓',
 };
 
-const categoryColors: Record<string, string> = {
-  business: '#22c55e',
-  technical: '#3b82f6',
-  personal: '#a855f7',
-  learning: '#f59e0b',
-};
-
-const priorityColors: Record<string, string> = {
-  low: '#64748b',
-  medium: '#f59e0b',
-  high: '#ef4444',
-};
-
 export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
-  const handleDelete = async () => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm('Möchtest du diese Idee wirklich löschen?')) return;
 
+    setIsDeleting(true);
     try {
       await axios.delete(`/api/ideas/${idea.id}`);
       onDelete?.(idea.id);
-    } catch (error) {
-      console.error('Delete failed:', error);
+      showToast('Gedanke gelöscht', 'success');
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Löschen fehlgeschlagen';
+      showToast(message, 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -65,28 +62,29 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
   };
 
   return (
-    <div className="idea-card">
+    <div className={`idea-card ${isDeleting ? 'deleting' : ''}`}>
       <div className="idea-header">
         <span className="idea-type">{typeIcons[idea.type] || '📝'}</span>
         <h3 className="idea-title">{idea.title}</h3>
-        <button className="delete-button" onClick={handleDelete} title="Löschen">
-          ×
+        <button
+          type="button"
+          className="delete-button"
+          onClick={handleDelete}
+          disabled={isDeleting}
+          title="Löschen"
+          aria-label="Gedanke löschen"
+        >
+          {isDeleting ? '...' : '×'}
         </button>
       </div>
 
       <p className="idea-summary">{idea.summary}</p>
 
       <div className="idea-meta">
-        <span
-          className="idea-category"
-          style={{ backgroundColor: categoryColors[idea.category] }}
-        >
+        <span className={`idea-category category-${idea.category}`}>
           {idea.category}
         </span>
-        <span
-          className="idea-priority"
-          style={{ backgroundColor: priorityColors[idea.priority] }}
-        >
+        <span className={`idea-priority priority-${idea.priority}`}>
           {idea.priority}
         </span>
         {idea.similarity !== undefined && (
