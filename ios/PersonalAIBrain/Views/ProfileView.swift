@@ -142,7 +142,7 @@ struct StatCard: View {
                 .fontWeight(.bold)
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.zensationTextMuted)
         }
         .frame(maxWidth: .infinity)
         .padding()
@@ -164,7 +164,7 @@ struct InsightsView: View {
                     Image(systemName: "info.circle.fill")
                         .foregroundColor(.blue)
                     Text(insight)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                 }
                 .padding()
                 .background(Color.blue.opacity(0.1))
@@ -214,7 +214,7 @@ struct SuggestedTopicsView: View {
 
             Text("Basierend auf deinen Interessen")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.zensationTextMuted)
 
             FlowLayout(spacing: 8) {
                 ForEach(topics, id: \.self) { topic in
@@ -247,7 +247,7 @@ struct SettingsSectionView: View {
                         .fontWeight(.medium)
                     Text("Automatische Prioritätsvorschläge")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                 }
                 Spacer()
                 Toggle("", isOn: $autoPriorityEnabled)

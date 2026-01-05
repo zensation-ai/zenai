@@ -109,7 +109,7 @@ struct SwipeCardView: View {
                 if let summary = idea.summary {
                     Text(summary)
                         .font(.body)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                         .lineLimit(4)
                 }
 
@@ -136,13 +136,13 @@ struct SwipeCardView: View {
                 HStack {
                     Label(idea.category.displayName, systemImage: "folder")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
 
                     Spacer()
 
                     Text(idea.createdAt.formatted(date: .abbreviated, time: .omitted))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                 }
             }
             .padding(24)
@@ -286,7 +286,7 @@ struct SwipeCardsView: View {
                             .fontWeight(.semibold)
 
                         Text("Du hast alle deine Ideen bearbeitet.")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
 
                         if !actionHistory.isEmpty {
                             Button("Letzte Aktion rückgängig") {
@@ -369,7 +369,7 @@ struct SwipeCardsView: View {
                     if !ideas.isEmpty && currentIndex < ideas.count {
                         Text("\(currentIndex + 1) / \(ideas.count)")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
                 }
             }
@@ -460,7 +460,7 @@ struct SwipeHintsView: View {
             HintLabel(icon: "star.fill", text: "Priorität", direction: .right)
         }
         .font(.caption)
-        .foregroundColor(.secondary)
+        .foregroundColor(.zensationTextMuted)
         .padding(.horizontal, 30)
     }
 }

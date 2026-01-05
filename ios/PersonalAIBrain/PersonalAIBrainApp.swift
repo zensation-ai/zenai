@@ -14,6 +14,7 @@ struct PersonalAIBrainApp: App {
                     .environmentObject(apiService)
                     .environmentObject(localStorageService)
                     .environmentObject(offlineQueueService)
+                    .preferredColorScheme(.dark)
                     .task {
                         // Initial sync on app launch
                         await localStorageService.syncWithServer()

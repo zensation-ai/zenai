@@ -44,12 +44,12 @@ struct MeetingsView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "calendar")
                             .font(.system(size: 60))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                         Text("Keine Meetings")
                             .font(.headline)
                         Text("Erstelle dein erstes Meeting")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
                     Spacer()
                 } else {
@@ -133,35 +133,35 @@ struct MeetingRow: View {
 
             HStack {
                 Image(systemName: "calendar")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
                     .font(.caption)
                 Text(meeting.date, style: .date)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
 
                 Text(meeting.date, style: .time)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
 
                 if let duration = meeting.durationMinutes {
                     Text("• \(duration) Min")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                 }
             }
 
             if !meeting.participants.isEmpty {
                 HStack {
                     Image(systemName: "person.2")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                         .font(.caption)
                     Text(meeting.participants.prefix(3).joined(separator: ", "))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                     if meeting.participants.count > 3 {
                         Text("+\(meeting.participants.count - 3)")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
                 }
             }
@@ -284,18 +284,18 @@ struct MeetingDetailView: View {
                                     .font(.title2)
                                     .fontWeight(.bold)
                                 Text(meeting.date, style: .date)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.zensationTextMuted)
                             }
                         }
 
                         if !meeting.participants.isEmpty {
                             Label(meeting.participants.joined(separator: ", "), systemImage: "person.2")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                         }
 
                         if let location = meeting.location {
                             Label(location, systemImage: "location")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                         }
                     }
                     .padding()
@@ -396,7 +396,7 @@ struct NotesContentView: View {
                 Label("Zusammenfassung", systemImage: "doc.text")
                     .font(.headline)
                 Text(notes.structuredSummary)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
             }
 
             // Topics
@@ -406,7 +406,7 @@ struct NotesContentView: View {
                         .font(.headline)
                     ForEach(notes.topicsDiscussed, id: \.self) { topic in
                         Text("• \(topic)")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
                 }
             }
@@ -442,7 +442,7 @@ struct NotesContentView: View {
                                 if let assignee = item.assignee {
                                     Text(assignee)
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.zensationTextMuted)
                                 }
                             }
                         }

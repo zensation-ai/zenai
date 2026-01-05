@@ -22,7 +22,10 @@ struct RecordView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
+            ZStack {
+                Color.zensationBackground.ignoresSafeArea()
+
+                VStack(spacing: 32) {
                 Spacer()
 
                 // Status Text
@@ -63,14 +66,14 @@ struct RecordView: View {
                     Button("Abbrechen") {
                         audioRecorder.cancelRecording()
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
                 }
 
                 // Error Message
                 if let error = errorMessage {
                     Text(error)
                         .font(.callout)
-                        .foregroundColor(.red)
+                        .foregroundColor(.zensationDanger)
                         .multilineTextAlignment(.center)
                         .padding()
                 }
@@ -83,6 +86,7 @@ struct RecordView: View {
                         Text("Tipps für gute Aufnahmen:")
                             .font(.caption)
                             .fontWeight(.semibold)
+                            .foregroundColor(.zensationText)
 
                         VStack(alignment: .leading, spacing: 4) {
                             TipRow(icon: "speaker.wave.2", text: "Sprich deutlich und nicht zu schnell")
@@ -90,16 +94,20 @@ struct RecordView: View {
                             TipRow(icon: "lightbulb", text: "Nenne Kontext und nächste Schritte")
                         }
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
                     }
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color.zensationSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(.horizontal)
+                }
                 }
             }
             .padding()
             .navigationTitle("Aufnehmen")
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.zensationSurface, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showResult) {
                 if let result = processedIdea {
                     ProcessedIdeaView(response: result) {
@@ -193,13 +201,13 @@ struct IdleIndicator: View {
         VStack(spacing: 8) {
             Image(systemName: "mic.fill")
                 .font(.system(size: 32))
-                .foregroundColor(.secondary)
+                .foregroundColor(.zensationTextMuted)
                 .scaleEffect(isPulsing ? 1.1 : 1.0)
                 .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isPulsing)
 
             Text("Tippe zum Aufnehmen")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.zensationTextMuted)
         }
         .onAppear { isPulsing = true }
     }
@@ -228,7 +236,7 @@ struct RecordingIndicator: View {
 
             Text(time)
                 .font(.system(size: 48, weight: .light, design: .monospaced))
-                .foregroundColor(.primary)
+                .foregroundColor(.zensationText)
         }
         .onAppear { isPulsing = true }
     }
@@ -246,7 +254,7 @@ struct ProcessingIndicator: View {
 
             Text(step.text)
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundColor(.zensationText)
                 .transition(.opacity)
                 .id(step.text)
                 .animation(.easeInOut, value: step.text)
@@ -472,7 +480,7 @@ struct ProcessedIdeaView: View {
                             Label(response.structured.priority.capitalized, systemImage: "flag")
                         }
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
 
                         if let summary = response.structured.summary {
                             Text(summary)
@@ -493,7 +501,7 @@ struct ProcessedIdeaView: View {
                                     .font(.caption)
                                 }
                             }
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                         }
                     }
                     .padding()
@@ -509,7 +517,7 @@ struct ProcessedIdeaView: View {
 
                             Text(transcript)
                                 .font(.callout)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                                 .italic()
                         }
                         .padding()

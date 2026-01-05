@@ -16,7 +16,10 @@ struct IdeasListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            ZStack {
+                Color.zensationBackground.ignoresSafeArea()
+
+                VStack(spacing: 0) {
                 // Filter Pills
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -55,11 +58,13 @@ struct IdeasListView: View {
                             .font(.system(size: 48))
                             .foregroundColor(.zensationWarning)
                         Text(error)
+                            .foregroundColor(.zensationText)
                             .multilineTextAlignment(.center)
                         Button("Erneut versuchen") {
                             Task { await loadIdeas() }
                         }
                         .buttonStyle(.bordered)
+                        .tint(.zensationOrange)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -76,11 +81,12 @@ struct IdeasListView: View {
                         if selectedFilter != nil {
                             Text("Keine \(selectedFilter?.displayName ?? "") gefunden")
                                 .font(.headline)
+                                .foregroundColor(.zensationText)
                             Text("Versuche einen anderen Filter")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                         } else {
                             Text("Nimm deine erste Idee auf!")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -91,6 +97,8 @@ struct IdeasListView: View {
                         })) {
                             IdeaRow(idea: idea)
                         }
+                        .listRowBackground(Color.zensationBackground)
+                        .listRowSeparatorTint(.zensationBorder)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 deleteIdea(idea)
@@ -100,16 +108,23 @@ struct IdeasListView: View {
                         }
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.zensationBackground)
                     .refreshable {
                         await loadIdeas()
                     }
                 }
+                }
             }
             .navigationTitle("Meine Ideen")
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.zensationSurface, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { Task { await loadIdeas() } }) {
                         Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.zensationOrange)
                     }
                 }
             }
@@ -174,7 +189,7 @@ struct FilterPill: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(isSelected ? color.opacity(0.2) : Color.zensationSurfaceLight)
-                .foregroundColor(isSelected ? color : .primary)
+                .foregroundColor(isSelected ? color : .zensationText)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
@@ -197,6 +212,7 @@ struct IdeaRow: View {
 
                 Text(idea.title)
                     .font(.headline)
+                    .foregroundColor(.zensationText)
                     .lineLimit(1)
 
                 Spacer()
@@ -207,13 +223,14 @@ struct IdeaRow: View {
             if let summary = idea.summary {
                 Text(summary)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
                     .lineLimit(2)
             }
 
             HStack {
                 Text(idea.category.displayName)
                     .font(.caption)
+                    .foregroundColor(.zensationTextMuted)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
                     .background(Color.zensationSurfaceLight)
@@ -223,7 +240,7 @@ struct IdeaRow: View {
 
                 Text(idea.createdAt.formatted(date: .abbreviated, time: .shortened))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
             }
         }
         .padding(.vertical, 4)

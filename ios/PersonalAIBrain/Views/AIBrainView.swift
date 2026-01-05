@@ -97,7 +97,7 @@ struct AIBrainView: View {
             } else if showGreeting {
                 Text(contextMessage)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .frame(maxWidth: 200)

@@ -22,7 +22,7 @@ struct IdeaDetailView: View {
 
                         Text(idea.type.displayName)
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
 
                         Spacer()
 
@@ -39,7 +39,7 @@ struct IdeaDetailView: View {
                         Text(idea.createdAt.formatted(date: .long, time: .shortened))
                     }
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.zensationTextMuted)
                 }
                 .padding()
                 .background(Color(.systemGray6))
@@ -106,7 +106,7 @@ struct IdeaDetailView: View {
                     SectionCard(title: "Original-Transkript", icon: "waveform") {
                         Text(transcript)
                             .font(.callout)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                             .italic()
                     }
                 }

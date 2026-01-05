@@ -26,7 +26,7 @@ struct SettingsView: View {
                             ProgressView()
                         } else {
                             Text(isConnected ? "Verbunden" : "Nicht verbunden")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                         }
                     }
 
@@ -43,7 +43,7 @@ struct SettingsView: View {
                         Text("Gespeicherte Ideen")
                         Spacer()
                         Text("\(localStats.totalIdeas)")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
 
                     HStack {
@@ -52,7 +52,7 @@ struct SettingsView: View {
                         Text("Nicht synchronisiert")
                         Spacer()
                         Text("\(localStats.unsyncedIdeas)")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
 
                     HStack {
@@ -61,7 +61,7 @@ struct SettingsView: View {
                         Text("Swipe-Aktionen")
                         Spacer()
                         Text("\(localStats.totalSwipeActions)")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
 
                     Button(action: syncNow) {
@@ -84,7 +84,7 @@ struct SettingsView: View {
                         Text("Ausstehende Aktionen")
                         Spacer()
                         Text("\(offlineQueueService.queuedItems.count)")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
 
                     if !offlineQueueService.queuedItems.isEmpty {
@@ -101,7 +101,7 @@ struct SettingsView: View {
                         Text("URL")
                         Spacer()
                         Text("localhost:3000")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
 
                     NavigationLink("API Dokumentation") {
@@ -115,14 +115,14 @@ struct SettingsView: View {
                         Text("Version")
                         Spacer()
                         Text("1.0.0")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
 
                     HStack {
                         Text("Build")
                         Spacer()
                         Text("Phase 2 MVP")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
 
                     Link(destination: URL(string: "https://github.com")!) {
@@ -130,7 +130,7 @@ struct SettingsView: View {
                             Text("GitHub Repository")
                             Spacer()
                             Image(systemName: "arrow.up.right.square")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                         }
                     }
                 }
@@ -293,7 +293,7 @@ struct EndpointRow: View {
 
             Text(description)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.zensationTextMuted)
         }
     }
 }

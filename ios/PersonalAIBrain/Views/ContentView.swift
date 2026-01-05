@@ -42,6 +42,9 @@ struct ContentView: View {
                 .tag(4)
         }
         .tint(.zensationOrange)
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarBackground(Color.zensationSurface, for: .tabBar)
+        .toolbarColorScheme(.dark, for: .tabBar)
     }
 }
 

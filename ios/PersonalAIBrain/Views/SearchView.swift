@@ -14,7 +14,7 @@ struct SearchView: View {
                 // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.zensationTextMuted)
 
                     TextField("Semantische Suche...", text: $searchText)
                         .textFieldStyle(.plain)
@@ -26,7 +26,7 @@ struct SearchView: View {
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.zensationTextMuted)
                         }
                     }
                 }
@@ -63,7 +63,7 @@ struct SearchView: View {
 
                         Text("Finde verwandte Ideen basierend auf Bedeutung, nicht nur Stichwörtern.")
                             .multilineTextAlignment(.center)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                             .padding(.horizontal)
 
                         // Example queries
@@ -95,9 +95,9 @@ struct SearchView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
                             .font(.largeTitle)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                         Text("Keine Ergebnisse für \"\(searchText)\"")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.zensationTextMuted)
                     }
                     Spacer()
                 } else {
