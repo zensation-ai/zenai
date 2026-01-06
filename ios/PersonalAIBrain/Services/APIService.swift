@@ -149,7 +149,7 @@ class APIService: ObservableObject {
         }
 
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        // Don't use convertFromSnakeCase - Idea model has its own CodingKeys
         decoder.dateDecodingStrategy = .iso8601
 
         let searchResponse = try decoder.decode(SearchContextResponse.self, from: data)
@@ -1068,7 +1068,7 @@ extension APIService {
 
                 do {
                     let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    // Don't use convertFromSnakeCase - Idea model has its own CodingKeys
                     decoder.dateDecodingStrategy = .iso8601
 
                     let response = try decoder.decode(IdeasContextResponse.self, from: data)
@@ -1082,36 +1082,60 @@ extension APIService {
 
     /// Fetch ideas for a specific context (async version)
     func fetchIdeasForContext(context: AIContext) async throws -> [Idea] {
+        print("🔍 fetchIdeasForContext called for context: \(context.rawValue)")
+
         // Try context-specific endpoint first
         guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas") else {
+            print("❌ Invalid URL for context endpoint")
             throw APIError.invalidURL
         }
+
+        print("🌐 Trying context endpoint: \(url.absoluteString)")
 
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
 
             guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Invalid HTTP response")
                 throw APIError.invalidResponse
             }
 
+            print("📡 Context endpoint response: \(httpResponse.statusCode)")
+
             // If context-specific endpoint doesn't exist, fall back to general endpoint
             if httpResponse.statusCode == 404 {
+                print("⚠️ Context endpoint returned 404, falling back to general endpoint")
                 return try await fetchIdeas()
             }
 
             guard httpResponse.statusCode == 200 else {
+                print("❌ Context endpoint error: \(httpResponse.statusCode)")
                 throw APIError.serverError(statusCode: httpResponse.statusCode)
             }
 
             let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            // Don't use convertFromSnakeCase - Idea model has its own CodingKeys
             decoder.dateDecodingStrategy = .iso8601
 
-            let ideasResponse = try decoder.decode(IdeasContextResponse.self, from: data)
-            return ideasResponse.ideas
+            do {
+                let ideasResponse = try decoder.decode(IdeasContextResponse.self, from: data)
+                print("✅ Decoded \(ideasResponse.ideas.count) ideas for context '\(context.rawValue)'")
+                return ideasResponse.ideas
+            } catch {
+                print("❌ Decoding IdeasContextResponse failed: \(error)")
+                // Try to print raw JSON for debugging
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("📄 Raw JSON (first 500 chars): \(String(jsonString.prefix(500)))")
+                }
+                throw error
+            }
         } catch let error as URLError where error.code == .cannotConnectToHost {
             // Fall back to general endpoint if context endpoint fails
+            print("⚠️ Cannot connect to context endpoint, falling back to general endpoint")
             return try await fetchIdeas()
+        } catch {
+            print("❌ fetchIdeasForContext error: \(error)")
+            throw error
         }
     }
 

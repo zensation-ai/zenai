@@ -514,6 +514,7 @@ struct SwipeCardsView: View {
     }
 
     private func loadIdeas() async {
+        print("🎴 SwipeCardsView.loadIdeas() called")
         isLoading = true
         errorMessage = nil
         currentIndex = 0
@@ -521,14 +522,20 @@ struct SwipeCardsView: View {
         lastLoadedContext = contextManager.currentContext
 
         do {
-            // Fetch ideas for current context
-            ideas = try await apiService.fetchIdeasForContext(context: contextManager.currentContext)
+            print("🔄 SwipeCardsView: Fetching \(contextManager.currentContext.displayName) ideas...")
+            let fetchedIdeas = try await apiService.fetchIdeasForContext(context: contextManager.currentContext)
+            print("✅ SwipeCardsView: Received \(fetchedIdeas.count) ideas from API")
+            ideas = fetchedIdeas
+            print("📊 SwipeCardsView: ideas array now has \(ideas.count) items")
         } catch {
+            print("❌ SwipeCardsView: Error loading ideas: \(error)")
             errorMessage = error.localizedDescription
             ideas = Idea.sampleData
+            print("⚠️ SwipeCardsView: Using sample data, count = \(ideas.count)")
         }
 
         isLoading = false
+        print("🎴 SwipeCardsView: isLoading = false, ideas.count = \(ideas.count)")
     }
 
     private func handleSwipe(_ action: SwipeAction) {

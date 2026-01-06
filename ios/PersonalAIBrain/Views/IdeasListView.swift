@@ -149,21 +149,25 @@ struct IdeasListView: View {
     }
 
     private func loadIdeas() async {
+        print("📋 IdeasListView.loadIdeas() called")
         isLoading = true
         errorMessage = nil
         lastLoadedContext = contextManager.currentContext
 
         do {
-            print("🔄 Fetching \(contextManager.currentContext.displayName) ideas from API...")
-            ideas = try await apiService.fetchIdeasForContext(context: contextManager.currentContext)
-            print("✅ Successfully loaded \(ideas.count) \(contextManager.currentContext.displayName) ideas")
+            print("🔄 IdeasListView: Fetching \(contextManager.currentContext.displayName) ideas...")
+            let fetchedIdeas = try await apiService.fetchIdeasForContext(context: contextManager.currentContext)
+            print("✅ IdeasListView: Received \(fetchedIdeas.count) ideas from API")
+            ideas = fetchedIdeas
+            print("📊 IdeasListView: ideas array now has \(ideas.count) items")
         } catch {
-            print("❌ Error loading ideas: \(error)")
+            print("❌ IdeasListView: Error loading ideas: \(error)")
             errorMessage = "Es besteht keine Verbindung zum Backend.\n\nFehler: \(error.localizedDescription)\n\nStelle sicher, dass dein iPhone und Mac im gleichen WLAN sind."
             ideas = []
         }
 
         isLoading = false
+        print("📋 IdeasListView: isLoading = false, ideas.count = \(ideas.count)")
     }
 
     private func deleteIdea(_ idea: Idea) {
