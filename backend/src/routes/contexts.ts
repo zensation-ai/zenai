@@ -46,7 +46,7 @@ router.get('/:context/ideas', async (req: Request, res: Response) => {
         next_steps, context_needed, keywords, raw_transcript,
         created_at, updated_at
       FROM ideas
-      WHERE archived = false
+      WHERE is_archived = false
     `;
 
     const params: any[] = [];
@@ -76,7 +76,7 @@ router.get('/:context/ideas', async (req: Request, res: Response) => {
     const result = await pool.query(query, params);
 
     // Get total count
-    const countResult = await pool.query('SELECT COUNT(*) FROM ideas WHERE archived = false');
+    const countResult = await pool.query('SELECT COUNT(*) FROM ideas WHERE is_archived = false');
     const total = parseInt(countResult.rows[0].count);
 
     res.json({
@@ -126,7 +126,7 @@ router.post('/:context/ideas/search', async (req: Request, res: Response) => {
           plainto_tsquery('german', $1)
         ) as rank
       FROM ideas
-      WHERE archived = false
+      WHERE is_archived = false
         AND to_tsvector('german', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(raw_transcript, ''))
         @@ plainto_tsquery('german', $1)
       ORDER BY rank DESC
