@@ -24,6 +24,8 @@ import mediaRouter from './routes/media';
 import storiesRouter from './routes/stories';
 // Phase 6: Training
 import { trainingRouter } from './routes/training';
+// Error Handling
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -68,11 +70,8 @@ setInterval(() => {
   cleanupRateLimits().catch(console.error);
 }, 60 * 60 * 1000);
 
-// Error handling
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err.message);
-  res.status(500).json({ error: err.message });
-});
+// Error handling - Use centralized error handler
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, async () => {

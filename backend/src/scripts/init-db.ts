@@ -537,6 +537,126 @@ async function initDatabase() {
     `);
     console.log('   ✅ Phase 5 Thought Incubator indexes created\n');
 
+    // ==========================================
+    // PHASE 6 & 7: Dual Context, Media & Stories
+    // ==========================================
+
+    // Add context column to ideas
+    console.log('2s. Adding context column to ideas...');
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'ideas' AND column_name = 'context'
+        ) THEN
+          ALTER TABLE ideas ADD COLUMN context VARCHAR(20) DEFAULT 'personal';
+        END IF;
+      END $$;
+    `);
+    await client.query('CREATE INDEX IF NOT EXISTS ideas_context_idx ON ideas(context);');
+    console.log('   ✅ ideas.context column added\n');
+
+    // Voice Memos table
+    console.log('2t. Creating voice_memos table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS voice_memos (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        raw_text TEXT NOT NULL,
+        context VARCHAR(50) DEFAULT 'personal',
+        embedding vector(768),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    await client.query('CREATE INDEX IF NOT EXISTS voice_memos_context_idx ON voice_memos(context);');
+    await client.query('CREATE INDEX IF NOT EXISTS voice_memos_created_idx ON voice_memos(created_at DESC);');
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS voice_memos_embedding_idx
+      ON voice_memos
+      USING hnsw (embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 64);
+    `);
+    console.log('   ✅ voice_memos table created\n');
+
+    // Media Items table
+    console.log('2u. Creating media_items table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS media_items (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        media_type VARCHAR(20) NOT NULL CHECK (media_type IN ('photo', 'video')),
+        filename VARCHAR(255) NOT NULL,
+        file_path TEXT NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        file_size BIGINT NOT NULL,
+        caption TEXT,
+        context VARCHAR(50) DEFAULT 'personal',
+        embedding vector(768),
+        thumbnail_path TEXT,
+        duration_seconds FLOAT,
+        width INTEGER,
+        height INTEGER,
+        ocr_text TEXT,
+        ai_description TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    await client.query('CREATE INDEX IF NOT EXISTS media_items_type_idx ON media_items(media_type);');
+    await client.query('CREATE INDEX IF NOT EXISTS media_items_context_idx ON media_items(context);');
+    await client.query('CREATE INDEX IF NOT EXISTS media_items_created_idx ON media_items(created_at DESC);');
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS media_items_embedding_idx
+      ON media_items
+      USING hnsw (embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 64);
+    `);
+    console.log('   ✅ media_items table created\n');
+
+    // User Training table
+    console.log('2v. Creating user_training table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_training (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        idea_id UUID REFERENCES ideas(id) ON DELETE SET NULL,
+        context VARCHAR(20) NOT NULL CHECK (context IN ('personal', 'work', 'creative', 'strategic')),
+        training_type VARCHAR(20) NOT NULL CHECK (training_type IN ('category', 'priority', 'type', 'tone', 'general')),
+        original_value VARCHAR(100),
+        corrected_value VARCHAR(100),
+        corrected_category VARCHAR(50),
+        corrected_priority VARCHAR(20),
+        corrected_type VARCHAR(50),
+        tone_feedback VARCHAR(50),
+        feedback TEXT,
+        weight INTEGER DEFAULT 5 CHECK (weight >= 1 AND weight <= 10),
+        applied BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    await client.query('CREATE INDEX IF NOT EXISTS user_training_idea_idx ON user_training(idea_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS user_training_context_idx ON user_training(context);');
+    await client.query('CREATE INDEX IF NOT EXISTS user_training_type_idx ON user_training(training_type);');
+    await client.query('CREATE INDEX IF NOT EXISTS user_training_created_idx ON user_training(created_at DESC);');
+    console.log('   ✅ user_training table created\n');
+
+    // Add preferences to user_profile
+    console.log('2w. Adding preferences to user_profile...');
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'user_profile' AND column_name = 'preferences'
+        ) THEN
+          ALTER TABLE user_profile ADD COLUMN preferences JSONB DEFAULT '{}';
+        END IF;
+      END $$;
+    `);
+    console.log('   ✅ user_profile.preferences column added\n');
+
+    console.log('   ✅ Phase 6 & 7 tables created\n');
+
     // Create updated_at trigger
     console.log('4. Creating update trigger...');
     await client.query(`
