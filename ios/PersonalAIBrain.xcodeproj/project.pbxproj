@@ -37,6 +37,10 @@
 		BBB00009 /* AIContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00019; };
 		BBB0000A /* TrainingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0001A; };
 		BBB0000B /* APIService+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0001B; };
+		CCC00001 /* KnowledgeGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00011; };
+		CCC00002 /* GraphCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00012; };
+		CCC00003 /* GraphModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00013; };
+		CCC00004 /* APIService+KnowledgeGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00014; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +76,10 @@
 		BBB00019 /* AIContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIContext.swift; sourceTree = "<group>"; };
 		BBB0001A /* TrainingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingModels.swift; sourceTree = "<group>"; };
 		BBB0001B /* APIService+Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Context.swift"; sourceTree = "<group>"; };
+		CCC00011 /* KnowledgeGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeGraphView.swift; sourceTree = "<group>"; };
+		CCC00012 /* GraphCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphCanvasView.swift; sourceTree = "<group>"; };
+		CCC00013 /* GraphModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphModels.swift; sourceTree = "<group>"; };
+		CCC00014 /* APIService+KnowledgeGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+KnowledgeGraph.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,8 +143,19 @@
 				BBB00016 /* StoriesView.swift */,
 				BBB00017 /* ToastView.swift */,
 				BBB00018 /* TrainingView.swift */,
+				CCC00030 /* KnowledgeGraph */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		CCC00030 /* KnowledgeGraph */ = {
+			isa = PBXGroup;
+			children = (
+				CCC00011 /* KnowledgeGraphView.swift */,
+				CCC00012 /* GraphCanvasView.swift */,
+				CCC00013 /* GraphModels.swift */,
+			);
+			path = KnowledgeGraph;
 			sourceTree = "<group>";
 		};
 		AAA00044 /* Models */ = {
@@ -159,6 +178,7 @@
 				AAA0001D /* LocalStorageService.swift */,
 				AAA0001E /* OfflineQueueService.swift */,
 				BBB0001B /* APIService+Context.swift */,
+				CCC00014 /* APIService+KnowledgeGraph.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -269,6 +289,10 @@
 				BBB00009 /* AIContext.swift in Sources */,
 				BBB0000A /* TrainingModels.swift in Sources */,
 				BBB0000B /* APIService+Context.swift in Sources */,
+				CCC00001 /* KnowledgeGraphView.swift in Sources */,
+				CCC00002 /* GraphCanvasView.swift in Sources */,
+				CCC00003 /* GraphModels.swift in Sources */,
+				CCC00004 /* APIService+KnowledgeGraph.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

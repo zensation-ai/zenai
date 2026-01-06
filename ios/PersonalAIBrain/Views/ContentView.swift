@@ -39,12 +39,19 @@ struct ContentView: View {
                 }
                 .tag(3)
 
+            // Knowledge Graph - Phase 8
+            KnowledgeGraphView()
+                .tabItem {
+                    Label("Graph", systemImage: "network")
+                }
+                .tag(4)
+
             // Profile & Settings
             ProfileView()
                 .tabItem {
                     Label("Profil", systemImage: "person.circle.fill")
                 }
-                .tag(4)
+                .tag(5)
         }
         .tint(contextManager.currentContext.color)
         .toolbarBackground(.visible, for: .tabBar)

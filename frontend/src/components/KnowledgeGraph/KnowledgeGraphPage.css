@@ -1,0 +1,434 @@
+/* Knowledge Graph Page Styles */
+/* Using Zensation Dark Theme */
+
+.knowledge-graph-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background, #060d14);
+  color: var(--text, #f0f4f8);
+}
+
+/* Header */
+.graph-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 24px;
+  background: var(--surface, rgba(15, 31, 46, 0.6));
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.graph-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.back-button {
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--text, #f0f4f8);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background: var(--surface-hover, rgba(26, 48, 64, 0.5));
+  border-color: var(--primary, #ff6b35);
+}
+
+.graph-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.graph-stats span {
+  padding: 6px 12px;
+  background: var(--surface-light, rgba(26, 48, 64, 0.5));
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-muted, #8ba3b8);
+}
+
+/* Main Container */
+.graph-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  overflow: hidden;
+}
+
+/* Topic Sidebar */
+.topic-sidebar {
+  background: var(--surface, rgba(15, 31, 46, 0.6));
+  border-right: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  color: var(--text, #f0f4f8);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.action-button:hover:not(:disabled) {
+  background: var(--primary, #ff6b35);
+  border-color: var(--primary, #ff6b35);
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Topic List */
+.topic-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.topic-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface-light, rgba(26, 48, 64, 0.5));
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text, #f0f4f8);
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.topic-chip:hover {
+  background: var(--surface-hover, rgba(26, 48, 64, 0.7));
+}
+
+.topic-chip.active {
+  background: var(--surface-hover, rgba(26, 48, 64, 0.7));
+  border-color: var(--primary, #ff6b35);
+}
+
+.topic-icon {
+  font-size: 16px;
+}
+
+.topic-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topic-count {
+  background: var(--surface, rgba(15, 31, 46, 0.8));
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-muted, #8ba3b8);
+}
+
+.no-topics {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted, #8ba3b8);
+}
+
+.generate-button {
+  margin-top: 12px;
+  background: var(--primary, #ff6b35);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.generate-button:hover:not(:disabled) {
+  background: var(--primary-hover, #ff8c5a);
+}
+
+.generate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Legend */
+.graph-legend {
+  padding: 16px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.graph-legend h3 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted, #8ba3b8);
+  letter-spacing: 0.5px;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted, #8ba3b8);
+}
+
+.legend-color {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* Graph Main Area */
+.graph-main {
+  position: relative;
+  background: var(--background, #060d14);
+}
+
+.graph-main .react-flow {
+  background: var(--background, #060d14);
+}
+
+.graph-main .react-flow__minimap {
+  background: var(--surface, rgba(15, 31, 46, 0.8));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+}
+
+.graph-main .react-flow__controls {
+  background: var(--surface, rgba(15, 31, 46, 0.8));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.graph-main .react-flow__controls button {
+  background: var(--surface, rgba(15, 31, 46, 0.8));
+  border-color: var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--text, #f0f4f8);
+}
+
+.graph-main .react-flow__controls button:hover {
+  background: var(--surface-hover, rgba(26, 48, 64, 0.7));
+}
+
+.graph-panel {
+  display: flex;
+  gap: 8px;
+}
+
+.graph-panel button {
+  background: var(--surface, rgba(15, 31, 46, 0.8));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--text, #f0f4f8);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.graph-panel button:hover {
+  background: var(--primary, #ff6b35);
+  border-color: var(--primary, #ff6b35);
+}
+
+/* Node Detail Panel */
+.node-detail-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 280px;
+  background: var(--surface, rgba(15, 31, 46, 0.95));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #8ba3b8);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: var(--text, #f0f4f8);
+}
+
+.panel-content {
+  padding: 16px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: var(--text-muted, #8ba3b8);
+  min-width: 80px;
+}
+
+.type-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.type-idea { background: #60a5fa; }
+.type-task { background: #34d399; }
+.type-insight { background: #a78bfa; }
+.type-problem { background: #f87171; }
+.type-question { background: #fbbf24; color: #000; }
+
+.priority-low { color: #34d399; }
+.priority-medium { color: #fbbf24; }
+.priority-high { color: #f87171; }
+
+.topic-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.view-idea-button {
+  width: 100%;
+  margin-top: 16px;
+  background: var(--primary, #ff6b35);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.view-idea-button:hover {
+  background: var(--primary-hover, #ff8c5a);
+}
+
+/* Loading State */
+.graph-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--surface-light, rgba(26, 48, 64, 0.5));
+  border-top-color: var(--primary, #ff6b35);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* React Flow Node Styles Override */
+.react-flow__node {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.react-flow__node:hover {
+  transform: scale(1.05);
+  z-index: 1000 !important;
+}
+
+.react-flow__node.selected {
+  box-shadow: 0 0 0 2px var(--primary, #ff6b35) !important;
+}
+
+/* React Flow Edge Labels */
+.react-flow__edge-text {
+  font-size: 10px;
+}

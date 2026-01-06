@@ -12,9 +12,10 @@ import { IntegrationsPage } from './components/IntegrationsPage';
 import { IncubatorPage } from './components/IncubatorPage';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
+import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
 import './App.css';
 
-type Page = 'ideas' | 'meetings' | 'profile' | 'integrations' | 'incubator';
+type Page = 'ideas' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph';
 
 interface StructuredIdea {
   id: string;
@@ -211,6 +212,21 @@ function App() {
     );
   }
 
+  if (currentPage === 'knowledge-graph') {
+    return (
+      <KnowledgeGraphPage
+        onBack={() => setCurrentPage('ideas')}
+        onSelectIdea={(ideaId) => {
+          const idea = ideas.find(i => i.id === ideaId);
+          if (idea) {
+            setSelectedIdea(idea);
+            setCurrentPage('ideas');
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -229,6 +245,14 @@ function App() {
                 title="Gedanken-Inkubator"
               >
                 🧠 Inkubator
+              </button>
+              <button
+                type="button"
+                className="nav-button graph-nav"
+                onClick={() => setCurrentPage('knowledge-graph')}
+                title="Knowledge Graph"
+              >
+                🕸️ Graph
               </button>
               <button
                 type="button"
