@@ -562,7 +562,7 @@ struct RecordContextView: View {
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     switch result {
-                    case .success(let response):
+                    case .success(_):
                         // Media doesn't return structured data yet, show generic success
                         lastResult = ProcessingResult(
                             title: "Media hochgeladen",
@@ -680,6 +680,8 @@ struct RecordContextView: View {
 }
 
 #Preview {
-    ContentView()
-        .environmentObject(APIService())
+    let apiService = APIService()
+    return ContentView()
+        .environmentObject(apiService)
+        .environmentObject(OfflineQueueService(apiService: apiService))
 }

@@ -6,7 +6,7 @@
  * thoughts, and surfaces emerging themes when they're ready.
  */
 
-import { pool } from '../utils/database';
+import { getPool, AIContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import { v4 as uuidv4 } from 'uuid';
 import { learnFromThought } from './learning-engine';
@@ -63,8 +63,10 @@ export async function addLooseThought(
   rawInput: string,
   source: 'text' | 'voice' | 'quick_jot' = 'text',
   userTags: string[] = [],
-  userId: string = 'default'
+  userId: string = 'default',
+  context: AIContext = 'personal'
 ): Promise<LooseThought> {
+  const pool = getPool(context);
   const client = await pool.connect();
   const id = uuidv4();
 
@@ -84,7 +86,7 @@ export async function addLooseThought(
     const thought = result.rows[0];
 
     // Trigger async cluster analysis (non-blocking)
-    setImmediate(() => analyzeAndAssignCluster(id).catch(console.error));
+    setImmediate(() => analyzeAndAssignCluster(id, context).catch(console.error));
 
     return {
       id: thought.id,
@@ -103,7 +105,8 @@ export async function addLooseThought(
 /**
  * Analyze a single thought and assign to existing or new cluster
  */
-async function analyzeAndAssignCluster(thoughtId: string): Promise<void> {
+async function analyzeAndAssignCluster(thoughtId: string, context: AIContext = 'personal'): Promise<void> {
+  const pool = getPool(context);
   const client = await pool.connect();
   const startTime = Date.now();
 
@@ -274,8 +277,10 @@ async function updateClusterMetadata(client: any, clusterId: string): Promise<vo
 export async function getLooseThoughts(
   userId: string = 'default',
   limit: number = 50,
-  includeProcessed: boolean = true
+  includeProcessed: boolean = true,
+  context: AIContext = 'personal'
 ): Promise<LooseThought[]> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {
@@ -298,7 +303,8 @@ export async function getLooseThoughts(
 /**
  * Get clusters ready for presentation
  */
-export async function getReadyClusters(userId: string = 'default'): Promise<ThoughtCluster[]> {
+export async function getReadyClusters(userId: string = 'default', context: AIContext = 'personal'): Promise<ThoughtCluster[]> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {
@@ -330,8 +336,10 @@ export async function getReadyClusters(userId: string = 'default'): Promise<Thou
  */
 export async function getAllClusters(
   userId: string = 'default',
-  includeThoughts: boolean = true
+  includeThoughts: boolean = true,
+  context: AIContext = 'personal'
 ): Promise<ThoughtCluster[]> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {
@@ -374,12 +382,13 @@ export async function getAllClusters(
 /**
  * Generate summary for a cluster using LLM
  */
-export async function generateClusterSummary(clusterId: string): Promise<{
+export async function generateClusterSummary(clusterId: string, context: AIContext = 'personal'): Promise<{
   title: string;
   summary: string;
   suggested_type: string;
   suggested_category: string;
 }> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {
@@ -395,7 +404,7 @@ export async function generateClusterSummary(clusterId: string): Promise<{
       throw new Error('Cluster has no thoughts');
     }
 
-    const thoughts = thoughtsResult.rows.map(t => t.raw_input).join('\n---\n');
+    const thoughts = thoughtsResult.rows.map((t: { raw_input: string }) => t.raw_input).join('\n---\n');
 
     // Use Mistral via axios (matching existing ollama.ts pattern)
     const axios = (await import('axios')).default;
@@ -453,8 +462,10 @@ export async function consolidateCluster(
     type?: string;
     category?: string;
     priority?: string;
-  }
+  },
+  context: AIContext = 'personal'
 ): Promise<string> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {
@@ -472,7 +483,7 @@ export async function consolidateCluster(
 
     // Ensure we have a summary
     if (!cluster.title || !cluster.summary) {
-      await generateClusterSummary(clusterId);
+      await generateClusterSummary(clusterId, context);
       const updated = await client.query(
         `SELECT * FROM thought_clusters WHERE id = $1`,
         [clusterId]
@@ -488,7 +499,7 @@ export async function consolidateCluster(
     );
 
     const rawTranscript = thoughtsResult.rows
-      .map(t => `[${new Date(t.created_at).toLocaleDateString('de-DE')}] ${t.raw_input}`)
+      .map((t: { raw_input: string; created_at: Date }) => `[${new Date(t.created_at).toLocaleDateString('de-DE')}] ${t.raw_input}`)
       .join('\n\n');
 
     // Generate embedding for the idea
@@ -535,7 +546,8 @@ export async function consolidateCluster(
 /**
  * Dismiss a cluster (user decides it's not useful)
  */
-export async function dismissCluster(clusterId: string): Promise<void> {
+export async function dismissCluster(clusterId: string, context: AIContext = 'personal'): Promise<void> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {
@@ -551,7 +563,8 @@ export async function dismissCluster(clusterId: string): Promise<void> {
 /**
  * Mark a cluster as presented to the user
  */
-export async function markClusterPresented(clusterId: string): Promise<void> {
+export async function markClusterPresented(clusterId: string, context: AIContext = 'personal'): Promise<void> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {
@@ -569,12 +582,13 @@ export async function markClusterPresented(clusterId: string): Promise<void> {
 /**
  * Run batch pattern detection on all unprocessed thoughts
  */
-export async function runBatchAnalysis(userId: string = 'default'): Promise<{
+export async function runBatchAnalysis(userId: string = 'default', context: AIContext = 'personal'): Promise<{
   thoughts_analyzed: number;
   clusters_created: number;
   clusters_updated: number;
   clusters_ready: number;
 }> {
+  const pool = getPool(context);
   const client = await pool.connect();
   const startTime = Date.now();
 
@@ -597,7 +611,7 @@ export async function runBatchAnalysis(userId: string = 'default'): Promise<{
         [userId]
       );
 
-      await analyzeAndAssignCluster(thought.id);
+      await analyzeAndAssignCluster(thought.id, context);
 
       const afterCount = await client.query(
         `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
@@ -643,7 +657,7 @@ export async function runBatchAnalysis(userId: string = 'default'): Promise<{
 /**
  * Get incubator statistics
  */
-export async function getIncubatorStats(userId: string = 'default'): Promise<{
+export async function getIncubatorStats(userId: string = 'default', context: AIContext = 'personal'): Promise<{
   total_thoughts: number;
   unprocessed_thoughts: number;
   total_clusters: number;
@@ -651,6 +665,7 @@ export async function getIncubatorStats(userId: string = 'default'): Promise<{
   growing_clusters: number;
   consolidated_clusters: number;
 }> {
+  const pool = getPool(context);
   const client = await pool.connect();
 
   try {

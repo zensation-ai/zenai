@@ -154,4 +154,5 @@ struct SearchView: View {
 #Preview {
     SearchView()
         .environmentObject(APIService())
+        .environmentObject(ContextManager())
 }

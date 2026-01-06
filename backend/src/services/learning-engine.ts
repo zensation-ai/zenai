@@ -58,8 +58,8 @@ export async function suggestFromLearning(
   const client = await pool.connect();
 
   try {
-    // Zähle vorhandene Ideen
-    const countResult = await client.query('SELECT COUNT(*) as count FROM ideas');
+    // Zähle vorhandene Ideen (excluding archived)
+    const countResult = await client.query('SELECT COUNT(*) as count FROM ideas WHERE is_archived = false');
     const ideaCount = parseInt(countResult.rows[0].count);
 
     // Schon ab 3 Ideen anfangen zu lernen
@@ -780,9 +780,10 @@ async function updateTopicChains(
   currentCategory: string
 ): Promise<void> {
   try {
-    // Get last idea's category (excluding current)
+    // Get last idea's category (excluding current and archived)
     const lastIdea = await client.query(
       `SELECT category FROM ideas
+       WHERE is_archived = false
        ORDER BY created_at DESC
        OFFSET 1 LIMIT 1`
     );
@@ -834,7 +835,7 @@ async function updateLearningConfidence(
   try {
     const result = await client.query(
       `SELECT
-         (SELECT COUNT(*) FROM ideas) as idea_count,
+         (SELECT COUNT(*) FROM ideas WHERE is_archived = false) as idea_count,
          (SELECT COUNT(*) FROM loose_thoughts WHERE user_id = $1) as thought_count,
          (SELECT COUNT(*) FROM user_interactions) as interaction_count`,
       [userId]

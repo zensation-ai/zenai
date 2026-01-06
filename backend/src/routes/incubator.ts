@@ -2,6 +2,7 @@
  * Thought Incubator API Routes
  *
  * Endpoints for managing loose thoughts that incubate into structured ideas
+ * Now with dual-context support (personal/work)
  */
 
 import { Router, Request, Response } from 'express';
@@ -19,8 +20,15 @@ import {
 } from '../services/thought-incubator';
 import { runDailyLearning, getPersonalizedPromptContext } from '../services/learning-engine';
 import { getUserProfile, getRecommendations } from '../services/user-profile';
+import { AIContext, isValidContext } from '../utils/database-context';
 
 const router = Router();
+
+// Helper to extract and validate context from request
+function getContextFromRequest(req: Request): AIContext {
+  const context = (req.query.context as string) || (req.body?.context as string) || 'personal';
+  return isValidContext(context) ? context : 'personal';
+}
 
 /**
  * POST /api/incubator/thought
@@ -29,6 +37,7 @@ const router = Router();
 router.post('/thought', async (req: Request, res: Response) => {
   try {
     const { text, source = 'text', tags = [], userId = 'default' } = req.body;
+    const context = getContextFromRequest(req);
 
     if (!text || text.trim().length === 0) {
       return res.status(400).json({ error: 'Text ist erforderlich' });
@@ -38,12 +47,14 @@ router.post('/thought', async (req: Request, res: Response) => {
       text.trim(),
       source,
       tags,
-      userId
+      userId,
+      context
     );
 
     res.status(201).json({
       success: true,
       thought,
+      context,
       message: 'Gedanke wurde zum Inkubator hinzugefügt',
     });
   } catch (error) {
@@ -61,12 +72,14 @@ router.get('/thoughts', async (req: Request, res: Response) => {
     const userId = (req.query.userId as string) || 'default';
     const limit = parseInt(req.query.limit as string) || 50;
     const includeProcessed = req.query.includeProcessed !== 'false';
+    const context = getContextFromRequest(req);
 
-    const thoughts = await getLooseThoughts(userId, limit, includeProcessed);
+    const thoughts = await getLooseThoughts(userId, limit, includeProcessed, context);
 
     res.json({
       thoughts,
       count: thoughts.length,
+      context,
     });
   } catch (error) {
     console.error('Error fetching loose thoughts:', error);
@@ -82,12 +95,14 @@ router.get('/clusters', async (req: Request, res: Response) => {
   try {
     const userId = (req.query.userId as string) || 'default';
     const includeThoughts = req.query.includeThoughts !== 'false';
+    const context = getContextFromRequest(req);
 
-    const clusters = await getAllClusters(userId, includeThoughts);
+    const clusters = await getAllClusters(userId, includeThoughts, context);
 
     res.json({
       clusters,
       count: clusters.length,
+      context,
     });
   } catch (error) {
     console.error('Error fetching clusters:', error);
@@ -102,13 +117,15 @@ router.get('/clusters', async (req: Request, res: Response) => {
 router.get('/clusters/ready', async (req: Request, res: Response) => {
   try {
     const userId = (req.query.userId as string) || 'default';
+    const context = getContextFromRequest(req);
 
-    const clusters = await getReadyClusters(userId);
+    const clusters = await getReadyClusters(userId, context);
 
     res.json({
       clusters,
       count: clusters.length,
       hasNew: clusters.some(c => c.status === 'ready'),
+      context,
     });
   } catch (error) {
     console.error('Error fetching ready clusters:', error);
@@ -123,12 +140,14 @@ router.get('/clusters/ready', async (req: Request, res: Response) => {
 router.post('/clusters/:id/summarize', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const context = getContextFromRequest(req);
 
-    const summary = await generateClusterSummary(id);
+    const summary = await generateClusterSummary(id, context);
 
     res.json({
       success: true,
       ...summary,
+      context,
     });
   } catch (error) {
     console.error('Error generating cluster summary:', error);
@@ -144,17 +163,19 @@ router.post('/clusters/:id/consolidate', async (req: Request, res: Response) => 
   try {
     const { id } = req.params;
     const { title, type, category, priority } = req.body;
+    const context = getContextFromRequest(req);
 
     const ideaId = await consolidateCluster(id, {
       title,
       type,
       category,
       priority,
-    });
+    }, context);
 
     res.json({
       success: true,
       ideaId,
+      context,
       message: 'Cluster wurde zu einer Idee konsolidiert',
     });
   } catch (error) {
@@ -170,11 +191,13 @@ router.post('/clusters/:id/consolidate', async (req: Request, res: Response) => 
 router.post('/clusters/:id/dismiss', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const context = getContextFromRequest(req);
 
-    await dismissCluster(id);
+    await dismissCluster(id, context);
 
     res.json({
       success: true,
+      context,
       message: 'Cluster wurde verworfen',
     });
   } catch (error) {
@@ -190,11 +213,13 @@ router.post('/clusters/:id/dismiss', async (req: Request, res: Response) => {
 router.post('/clusters/:id/presented', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const context = getContextFromRequest(req);
 
-    await markClusterPresented(id);
+    await markClusterPresented(id, context);
 
     res.json({
       success: true,
+      context,
     });
   } catch (error) {
     console.error('Error marking cluster as presented:', error);
@@ -209,12 +234,14 @@ router.post('/clusters/:id/presented', async (req: Request, res: Response) => {
 router.post('/analyze', async (req: Request, res: Response) => {
   try {
     const userId = (req.body.userId as string) || 'default';
+    const context = getContextFromRequest(req);
 
-    const result = await runBatchAnalysis(userId);
+    const result = await runBatchAnalysis(userId, context);
 
     res.json({
       success: true,
       ...result,
+      context,
     });
   } catch (error) {
     console.error('Error running batch analysis:', error);
@@ -229,10 +256,14 @@ router.post('/analyze', async (req: Request, res: Response) => {
 router.get('/stats', async (req: Request, res: Response) => {
   try {
     const userId = (req.query.userId as string) || 'default';
+    const context = getContextFromRequest(req);
 
-    const stats = await getIncubatorStats(userId);
+    const stats = await getIncubatorStats(userId, context);
 
-    res.json(stats);
+    res.json({
+      ...stats,
+      context,
+    });
   } catch (error) {
     console.error('Error fetching incubator stats:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });

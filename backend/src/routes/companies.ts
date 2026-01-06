@@ -75,7 +75,7 @@ companiesRouter.get('/:id', async (req, res) => {
       query('SELECT * FROM companies WHERE id = $1', [req.params.id]),
       query(
         `SELECT
-          (SELECT COUNT(*) FROM ideas WHERE company_id = $1) as ideas_count,
+          (SELECT COUNT(*) FROM ideas WHERE company_id = $1 AND is_archived = false) as ideas_count,
           (SELECT COUNT(*) FROM meetings WHERE company_id = $1) as meetings_count`,
         [req.params.id]
       ),
@@ -189,12 +189,12 @@ companiesRouter.get('/:id/ideas', async (req, res) => {
       query(
         `SELECT id, title, type, category, priority, summary, created_at
          FROM ideas
-         WHERE company_id = $1
+         WHERE company_id = $1 AND is_archived = false
          ORDER BY created_at DESC
          LIMIT $2 OFFSET $3`,
         [req.params.id, limit, offset]
       ),
-      query('SELECT COUNT(*) as total FROM ideas WHERE company_id = $1', [req.params.id]),
+      query('SELECT COUNT(*) as total FROM ideas WHERE company_id = $1 AND is_archived = false', [req.params.id]),
     ]);
 
     res.json({
@@ -263,15 +263,15 @@ companiesRouter.get('/:id/stats', async (req, res) => {
       recentActivity,
     ] = await Promise.all([
       query(
-        `SELECT type, COUNT(*) as count FROM ideas WHERE company_id = $1 GROUP BY type`,
+        `SELECT type, COUNT(*) as count FROM ideas WHERE company_id = $1 AND is_archived = false GROUP BY type`,
         [req.params.id]
       ),
       query(
-        `SELECT category, COUNT(*) as count FROM ideas WHERE company_id = $1 GROUP BY category`,
+        `SELECT category, COUNT(*) as count FROM ideas WHERE company_id = $1 AND is_archived = false GROUP BY category`,
         [req.params.id]
       ),
       query(
-        `SELECT priority, COUNT(*) as count FROM ideas WHERE company_id = $1 GROUP BY priority`,
+        `SELECT priority, COUNT(*) as count FROM ideas WHERE company_id = $1 AND is_archived = false GROUP BY priority`,
         [req.params.id]
       ),
       query(
@@ -280,7 +280,7 @@ companiesRouter.get('/:id/stats', async (req, res) => {
       ),
       query(
         `SELECT DATE(created_at) as date, COUNT(*) as count
-         FROM ideas WHERE company_id = $1
+         FROM ideas WHERE company_id = $1 AND is_archived = false
          GROUP BY DATE(created_at)
          ORDER BY date DESC
          LIMIT 30`,

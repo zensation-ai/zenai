@@ -10,16 +10,16 @@ export const ideasRouter = Router();
 
 /**
  * GET /api/ideas/stats/summary
- * Get statistics about ideas
+ * Get statistics about ideas (excluding archived)
  * NOTE: Must be defined BEFORE /:id route to avoid being caught by it
  */
 ideasRouter.get('/stats/summary', async (req, res) => {
   try {
     const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-      query('SELECT COUNT(*) as total FROM ideas'),
-      query('SELECT type, COUNT(*) as count FROM ideas GROUP BY type'),
-      query('SELECT category, COUNT(*) as count FROM ideas GROUP BY category'),
-      query('SELECT priority, COUNT(*) as count FROM ideas GROUP BY priority'),
+      query('SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
+      query('SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
+      query('SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
+      query('SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
     ]);
 
     res.json({
@@ -67,14 +67,14 @@ ideasRouter.get('/', async (req, res) => {
       `SELECT id, title, type, category, priority, summary,
               next_steps, context_needed, keywords, created_at, updated_at
        FROM ideas
-       WHERE 1=1 ${whereClause}
+       WHERE is_archived = false ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     );
 
     const countResult = await query(
-      `SELECT COUNT(*) as total FROM ideas WHERE 1=1 ${whereClause}`,
+      `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false ${whereClause}`,
       params
     );
 

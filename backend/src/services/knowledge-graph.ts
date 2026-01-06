@@ -267,7 +267,7 @@ export async function getGraphStats(): Promise<{
   avgRelationsPerIdea: number;
   relationTypes: Record<string, number>;
 }> {
-  const ideasCount = await query('SELECT COUNT(*) FROM ideas');
+  const ideasCount = await query('SELECT COUNT(*) FROM ideas WHERE is_archived = false');
   const relationsCount = await query('SELECT COUNT(*) FROM idea_relations');
   const relationTypes = await query(`
     SELECT relation_type, COUNT(*) as count

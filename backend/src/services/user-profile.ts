@@ -303,9 +303,10 @@ export async function getRecommendations(profileId: string = 'default'): Promise
  * Update user interest embedding based on recent ideas
  */
 export async function updateInterestEmbedding(profileId: string = 'default'): Promise<void> {
-  // Get recent ideas to build interest profile
+  // Get recent ideas to build interest profile (excluding archived)
   const recentIdeas = await query(
     `SELECT title, summary, keywords FROM ideas
+     WHERE is_archived = false
      ORDER BY created_at DESC
      LIMIT 50`
   );
@@ -345,19 +346,19 @@ export async function getPersonalizedIdeas(
   );
 
   if (profileResult.rows.length === 0 || !profileResult.rows[0].interest_embedding) {
-    // Fall back to recent ideas
+    // Fall back to recent ideas (excluding archived)
     const result = await query(
-      `SELECT * FROM ideas ORDER BY created_at DESC LIMIT $1`,
+      `SELECT * FROM ideas WHERE is_archived = false ORDER BY created_at DESC LIMIT $1`,
       [limit]
     );
     return result.rows;
   }
 
-  // Find ideas similar to user interests
+  // Find ideas similar to user interests (excluding archived)
   const result = await query(
     `SELECT *, embedding <-> $1 as distance
      FROM ideas
-     WHERE embedding IS NOT NULL
+     WHERE embedding IS NOT NULL AND is_archived = false
      ORDER BY distance
      LIMIT $2`,
     [profileResult.rows[0].interest_embedding, limit]
@@ -370,8 +371,8 @@ export async function getPersonalizedIdeas(
  * Recalculate profile statistics
  */
 export async function recalculateStats(profileId: string = 'default'): Promise<void> {
-  // Count total ideas
-  const ideasCount = await query('SELECT COUNT(*) FROM ideas');
+  // Count total ideas (excluding archived)
+  const ideasCount = await query('SELECT COUNT(*) FROM ideas WHERE is_archived = false');
 
   // Count total meetings
   const meetingsCount = await query('SELECT COUNT(*) FROM meetings');

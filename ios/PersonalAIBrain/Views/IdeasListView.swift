@@ -304,4 +304,5 @@ struct PriorityBadge: View {
 #Preview {
     IdeasListView()
         .environmentObject(APIService())
+        .environmentObject(ContextManager())
 }

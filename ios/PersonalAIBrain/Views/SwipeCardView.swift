@@ -758,4 +758,5 @@ struct ActionButton: View {
 #Preview {
     SwipeCardsView()
         .environmentObject(APIService())
+        .environmentObject(ContextManager())
 }

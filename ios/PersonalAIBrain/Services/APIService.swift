@@ -13,6 +13,41 @@ class APIService: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
+    /// Shared decoder configured for PostgreSQL timestamps
+    private static func createDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        configureDecoderDateStrategy(decoder)
+        return decoder
+    }
+
+    /// Shared decoder with snake_case key conversion (for models without CodingKeys)
+    private static func createSnakeCaseDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        configureDecoderDateStrategy(decoder)
+        return decoder
+    }
+
+    /// Configure decoder for PostgreSQL timestamps with optional milliseconds
+    private static func configureDecoderDateStrategy(_ decoder: JSONDecoder) {
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            // Try with milliseconds first (PostgreSQL format)
+            if let date = dateFormatter.date(from: dateString) {
+                return date
+            }
+            // Fall back to without milliseconds
+            dateFormatter.formatOptions = [.withInternetDateTime]
+            if let date = dateFormatter.date(from: dateString) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format: \(dateString)")
+        }
+    }
+
     init() {
         #if targetEnvironment(simulator)
         // Simulator kann localhost verwenden
@@ -73,10 +108,7 @@ class APIService: ObservableObject {
                 throw APIError.serverError(statusCode: httpResponse.statusCode)
             }
 
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-
-            let ideasResponse = try decoder.decode(IdeasResponse.self, from: data)
+            let ideasResponse = try Self.createDecoder().decode(IdeasResponse.self, from: data)
             print("✅ Decoded \(ideasResponse.ideas.count) ideas")
             return ideasResponse.ideas
         } catch let error as URLError {
@@ -110,10 +142,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let searchResponse = try decoder.decode(SearchResponse.self, from: data)
+        let searchResponse = try Self.createDecoder().decode(SearchResponse.self, from: data)
         return searchResponse.ideas
     }
 
@@ -148,11 +177,8 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: httpResponse.statusCode)
         }
 
-        let decoder = JSONDecoder()
-        // Don't use convertFromSnakeCase - Idea model has its own CodingKeys
-        decoder.dateDecodingStrategy = .iso8601
-
-        let searchResponse = try decoder.decode(SearchContextResponse.self, from: data)
+        // Use createDecoder() - Idea model has its own CodingKeys
+        let searchResponse = try Self.createDecoder().decode(SearchContextResponse.self, from: data)
         return searchResponse.ideas
     }
 
@@ -198,10 +224,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: httpResponse.statusCode)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        return try decoder.decode(VoiceMemoResponse.self, from: data)
+        return try Self.createDecoder().decode(VoiceMemoResponse.self, from: data)
     }
 
     func processText(_ text: String) async throws -> VoiceMemoResponse {
@@ -227,10 +250,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        return try decoder.decode(VoiceMemoResponse.self, from: data)
+        return try Self.createDecoder().decode(VoiceMemoResponse.self, from: data)
     }
 
     // MARK: - Meetings
@@ -250,10 +270,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let meetingsResponse = try decoder.decode(MeetingsResponse.self, from: data)
+        let meetingsResponse = try Self.createDecoder().decode(MeetingsResponse.self, from: data)
         return meetingsResponse.meetings
     }
 
@@ -286,10 +303,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let createResponse = try decoder.decode(CreateMeetingResponse.self, from: data)
+        let createResponse = try Self.createDecoder().decode(CreateMeetingResponse.self, from: data)
         return createResponse.meeting
     }
 
@@ -312,10 +326,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: httpResponse.statusCode)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let notesResponse = try decoder.decode(MeetingNotesResponse.self, from: data)
+        let notesResponse = try Self.createDecoder().decode(MeetingNotesResponse.self, from: data)
         return notesResponse.notes
     }
 
@@ -342,10 +353,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let notesResponse = try decoder.decode(AddNotesResponse.self, from: data)
+        let notesResponse = try Self.createDecoder().decode(AddNotesResponse.self, from: data)
         return notesResponse.notes
     }
 
@@ -534,10 +542,7 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let eventsResponse = try decoder.decode(CalendarEventsResponse.self, from: data)
+        let eventsResponse = try Self.createDecoder().decode(CalendarEventsResponse.self, from: data)
         return eventsResponse.events
     }
 }
@@ -776,9 +781,7 @@ extension APIService {
                 }
 
                 do {
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let response = try decoder.decode(VoiceMemoContextResponse.self, from: data)
+                    let response = try Self.createSnakeCaseDecoder().decode(VoiceMemoContextResponse.self, from: data)
                     completion(.success(response))
                 } catch {
                     completion(.failure(error))
@@ -831,9 +834,7 @@ extension APIService {
                 }
 
                 do {
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let response = try decoder.decode(VoiceMemoContextResponse.self, from: data)
+                    let response = try Self.createSnakeCaseDecoder().decode(VoiceMemoContextResponse.self, from: data)
                     completion(.success(response))
                 } catch {
                     completion(.failure(error))
@@ -904,9 +905,7 @@ extension APIService {
                 }
 
                 do {
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let response = try decoder.decode(MediaUploadResponse.self, from: responseData)
+                    let response = try Self.createSnakeCaseDecoder().decode(MediaUploadResponse.self, from: responseData)
                     completion(.success(response))
                 } catch {
                     completion(.failure(error))
@@ -988,9 +987,7 @@ extension APIService {
                 }
 
                 do {
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let response = try decoder.decode(MediaUploadResponse.self, from: responseData)
+                    let response = try Self.createSnakeCaseDecoder().decode(MediaUploadResponse.self, from: responseData)
                     completion(.success(response))
                 } catch {
                     completion(.failure(error))
@@ -1033,9 +1030,7 @@ extension APIService {
                 }
 
                 do {
-                    let decoder = JSONDecoder()
-                    decoder.dateDecodingStrategy = .iso8601
-                    let response = try decoder.decode(StoriesResponse.self, from: data)
+                    let response = try Self.createDecoder().decode(StoriesResponse.self, from: data)
                     completion(.success(response.stories))
                 } catch {
                     completion(.failure(error))
@@ -1067,11 +1062,8 @@ extension APIService {
                 }
 
                 do {
-                    let decoder = JSONDecoder()
-                    // Don't use convertFromSnakeCase - Idea model has its own CodingKeys
-                    decoder.dateDecodingStrategy = .iso8601
-
-                    let response = try decoder.decode(IdeasContextResponse.self, from: data)
+                    // Use createDecoder() - Idea model has its own CodingKeys
+                    let response = try Self.createDecoder().decode(IdeasContextResponse.self, from: data)
                     completion(.success(response.ideas))
                 } catch {
                     completion(.failure(error))
@@ -1113,12 +1105,9 @@ extension APIService {
                 throw APIError.serverError(statusCode: httpResponse.statusCode)
             }
 
-            let decoder = JSONDecoder()
-            // Don't use convertFromSnakeCase - Idea model has its own CodingKeys
-            decoder.dateDecodingStrategy = .iso8601
-
+            // Use createDecoder() - Idea model has its own CodingKeys
             do {
-                let ideasResponse = try decoder.decode(IdeasContextResponse.self, from: data)
+                let ideasResponse = try Self.createDecoder().decode(IdeasContextResponse.self, from: data)
                 print("✅ Decoded \(ideasResponse.ideas.count) ideas for context '\(context.rawValue)'")
                 return ideasResponse.ideas
             } catch {
@@ -1162,9 +1151,7 @@ extension APIService {
                 }
 
                 do {
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let stats = try decoder.decode(ContextStatsResponse.self, from: data)
+                    let stats = try Self.createSnakeCaseDecoder().decode(ContextStatsResponse.self, from: data)
                     completion(.success(stats))
                 } catch {
                     completion(.failure(error))
@@ -1294,11 +1281,7 @@ extension APIService {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
-
-        let trainingResponse = try decoder.decode(TrainingHistoryResponse.self, from: data)
+        let trainingResponse = try Self.createSnakeCaseDecoder().decode(TrainingHistoryResponse.self, from: data)
         return trainingResponse.trainings
     }
 
@@ -1352,11 +1335,7 @@ extension APIService {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
-
-        let trainingResponse = try decoder.decode(TrainingSubmitResponse.self, from: data)
+        let trainingResponse = try Self.createSnakeCaseDecoder().decode(TrainingSubmitResponse.self, from: data)
         return trainingResponse.training
     }
 }
