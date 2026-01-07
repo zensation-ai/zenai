@@ -324,3 +324,150 @@ export function rowToIdea(row: IdeaRow): Idea {
     viewed_count: row.viewed_count
   };
 }
+
+// ============================================
+// Database Query Types
+// ============================================
+
+export type QueryParams = (string | number | boolean | null | string[] | number[])[];
+
+// ============================================
+// Knowledge Graph Types
+// ============================================
+
+export type RelationType =
+  | 'similar_to'
+  | 'builds_on'
+  | 'contradicts'
+  | 'supports'
+  | 'enables'
+  | 'part_of'
+  | 'related_tech';
+
+export interface IdeaRelation {
+  sourceId: string;
+  targetId: string;
+  relationType: RelationType;
+  strength: number;
+  reason: string;
+}
+
+export interface GraphNode {
+  id: string;
+  title: string;
+  type: IdeaType;
+  category: IdeaCategory;
+  priority: Priority;
+  topicId?: string | null;
+  topicName?: string | null;
+  topicColor?: string | null;
+  position?: { x: number; y: number };
+}
+
+export interface GraphEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  relationType: RelationType;
+  strength: number;
+  reason?: string | null;
+}
+
+// ============================================
+// Webhook Types
+// ============================================
+
+export type WebhookEventType =
+  | 'idea.created'
+  | 'idea.updated'
+  | 'idea.deleted'
+  | 'idea.archived'
+  | 'meeting.created'
+  | 'meeting.updated';
+
+export interface WebhookPayload {
+  event: WebhookEventType;
+  data: Record<string, unknown>;
+  timestamp: string;
+}
+
+// ============================================
+// Structured Idea from Ollama
+// ============================================
+
+export interface StructuredIdea {
+  title: string;
+  type: IdeaType;
+  category: IdeaCategory;
+  priority: Priority;
+  summary: string;
+  next_steps: string[];
+  context_needed: string[];
+  keywords: string[];
+}
+
+// ============================================
+// Search Types
+// ============================================
+
+export interface SearchResult {
+  id: string;
+  title: string;
+  summary: string | null;
+  type: IdeaType;
+  category: IdeaCategory;
+  priority: Priority;
+  distance: number;
+  similarity: number;
+  keywords: string[];
+}
+
+// ============================================
+// Incubator Types
+// ============================================
+
+export interface IncubatorThought {
+  id: string;
+  text: string;
+  structured: StructuredIdea | null;
+  embedding: number[] | null;
+  status: 'pending' | 'processing' | 'structured' | 'promoted' | 'archived';
+  promoted_idea_id: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// ============================================
+// Error Codes
+// ============================================
+
+export const ErrorCodes = {
+  // Validation Errors (400)
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INVALID_INPUT: 'INVALID_INPUT',
+  MISSING_FIELD: 'MISSING_FIELD',
+  INVALID_FORMAT: 'INVALID_FORMAT',
+
+  // Authentication Errors (401)
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  INVALID_API_KEY: 'INVALID_API_KEY',
+  EXPIRED_API_KEY: 'EXPIRED_API_KEY',
+
+  // Not Found Errors (404)
+  NOT_FOUND: 'NOT_FOUND',
+  IDEA_NOT_FOUND: 'IDEA_NOT_FOUND',
+  MEETING_NOT_FOUND: 'MEETING_NOT_FOUND',
+  MEDIA_NOT_FOUND: 'MEDIA_NOT_FOUND',
+
+  // Conflict Errors (409)
+  CONFLICT: 'CONFLICT',
+  DUPLICATE: 'DUPLICATE',
+
+  // Server Errors (500)
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  DATABASE_ERROR: 'DATABASE_ERROR',
+  OLLAMA_ERROR: 'OLLAMA_ERROR',
+  WHISPER_ERROR: 'WHISPER_ERROR',
+} as const;
+
+export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];

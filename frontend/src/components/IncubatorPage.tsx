@@ -5,7 +5,7 @@
  * Shows clusters of related thoughts and allows consolidation.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import './IncubatorPage.css';
 
@@ -55,25 +55,44 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
   const [summarizing, setSummarizing] = useState<string | null>(null);
   const [consolidating, setConsolidating] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Refs for cleanup to prevent memory leaks
+  const isMountedRef = useRef<boolean>(true);
+  const timeoutRef = useRef<number | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLoading(true);
     try {
       const [clustersRes, statsRes] = await Promise.all([
         axios.get('/api/incubator/clusters'),
         axios.get('/api/incubator/stats'),
       ]);
-      setClusters(clustersRes.data.clusters);
-      setStats(statsRes.data);
+      if (isMountedRef.current) {
+        setClusters(clustersRes.data.clusters);
+        setStats(statsRes.data);
+      }
     } catch (error) {
       console.error('Failed to load incubator data:', error);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadData();
+
+    return () => {
+      isMountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [loadData]);
 
   const submitQuickThought = async () => {
     if (!quickThought.trim()) return;
@@ -84,13 +103,21 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         text: quickThought,
         source: 'quick_jot',
       });
-      setQuickThought('');
-      // Reload after short delay to allow processing
-      setTimeout(loadData, 500);
+      if (isMountedRef.current) {
+        setQuickThought('');
+        // Reload after short delay to allow processing - with cleanup
+        timeoutRef.current = window.setTimeout(() => {
+          if (isMountedRef.current) {
+            loadData();
+          }
+        }, 500);
+      }
     } catch (error) {
       console.error('Failed to submit thought:', error);
     } finally {
-      setSubmitting(false);
+      if (isMountedRef.current) {
+        setSubmitting(false);
+      }
     }
   };
 

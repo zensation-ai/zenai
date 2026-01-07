@@ -114,3 +114,45 @@ export async function checkOllamaHealth(): Promise<{ available: boolean; models:
     return { available: false, models: [] };
   }
 }
+
+/**
+ * Generic LLM call that returns parsed JSON
+ * Use this for custom prompts that don't follow the StructuredIdea format
+ */
+export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | null> {
+  try {
+    const response = await axios.post(
+      `${OLLAMA_URL}/api/generate`,
+      {
+        model: MODEL,
+        prompt,
+        stream: false,
+        options: {
+          num_predict: 1000,
+          temperature: 0.3,
+          top_p: 0.9,
+        },
+      },
+      { timeout: 60000 }
+    );
+
+    const responseText = response.data.response.trim();
+
+    // Try to extract JSON from response
+    // Handle both array and object formats
+    const arrayMatch = responseText.match(/\[[\s\S]*\]/);
+    const objectMatch = responseText.match(/\{[\s\S]*\}/);
+
+    let jsonStr = responseText;
+    if (arrayMatch) {
+      jsonStr = arrayMatch[0];
+    } else if (objectMatch) {
+      jsonStr = objectMatch[0];
+    }
+
+    return JSON.parse(jsonStr) as T;
+  } catch (error: any) {
+    console.error('Ollama JSON query error:', error.message);
+    return null;
+  }
+}

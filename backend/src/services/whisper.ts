@@ -64,12 +64,13 @@ function runWhisperCLI(
   outputPath: string
 ): Promise<{ text: string; language: string }> {
   return new Promise((resolve, reject) => {
+    const outputDir = path.dirname(outputPath);
     const args = [
       inputPath,
       '--model', WHISPER_MODEL,
       '--language', 'de', // Force German - keine Auto-Erkennung
       '--output_format', 'json',
-      '--output_dir', path.dirname(outputPath),
+      '--output_dir', outputDir,
       '--task', 'transcribe',
       '--fp16', 'False', // Stabiler auf CPU
     ];
@@ -105,32 +106,50 @@ function runWhisperCLI(
         return;
       }
 
-      // Read the JSON output
-      const jsonOutputPath = inputPath.replace(/\.[^.]+$/, '.json');
+      // Whisper outputs files in the output_dir with the input filename (minus extension)
+      // So input-12345.wav becomes input-12345.json in the output_dir
+      const inputBasename = path.basename(inputPath, path.extname(inputPath));
+
+      // Try multiple possible output paths
+      const possibleJsonPaths = [
+        path.join(outputDir, `${inputBasename}.json`),  // Standard: output_dir/input-12345.json
+        inputPath.replace(/\.[^.]+$/, '.json'),          // Fallback: same dir as input
+      ];
+
+      const possibleTxtPaths = [
+        path.join(outputDir, `${inputBasename}.txt`),
+        inputPath.replace(/\.[^.]+$/, '.txt'),
+      ];
 
       try {
-        if (fs.existsSync(jsonOutputPath)) {
-          const jsonContent = fs.readFileSync(jsonOutputPath, 'utf-8');
-          const result = JSON.parse(jsonContent);
+        // Try to find and read JSON output
+        for (const jsonPath of possibleJsonPaths) {
+          if (fs.existsSync(jsonPath)) {
+            const jsonContent = fs.readFileSync(jsonPath, 'utf-8');
+            const result = JSON.parse(jsonContent);
 
-          // Cleanup the json file
-          fs.unlinkSync(jsonOutputPath);
+            // Cleanup the json file
+            try { fs.unlinkSync(jsonPath); } catch { /* ignore cleanup errors */ }
 
-          resolve({
-            text: result.text?.trim() || '',
-            language: result.language || 'de',
-          });
-        } else {
-          // Fallback: read txt file
-          const txtOutputPath = inputPath.replace(/\.[^.]+$/, '.txt');
-          if (fs.existsSync(txtOutputPath)) {
-            const text = fs.readFileSync(txtOutputPath, 'utf-8').trim();
-            fs.unlinkSync(txtOutputPath);
-            resolve({ text, language: 'de' });
-          } else {
-            reject(new Error('No output file found from Whisper'));
+            resolve({
+              text: result.text?.trim() || '',
+              language: result.language || 'de',
+            });
+            return;
           }
         }
+
+        // Fallback: try txt files
+        for (const txtPath of possibleTxtPaths) {
+          if (fs.existsSync(txtPath)) {
+            const text = fs.readFileSync(txtPath, 'utf-8').trim();
+            try { fs.unlinkSync(txtPath); } catch { /* ignore cleanup errors */ }
+            resolve({ text, language: 'de' });
+            return;
+          }
+        }
+
+        reject(new Error(`No output file found from Whisper. Checked: ${possibleJsonPaths.join(', ')}`));
       } catch (error) {
         reject(error);
       }

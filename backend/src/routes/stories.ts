@@ -138,11 +138,14 @@ async function findStoriesByQuery(
 }
 
 /**
- * Get all pre-computed story clusters using DBSCAN-like clustering
+ * Get all pre-computed story clusters using optimized batch clustering
+ *
+ * OPTIMIZED: Uses a single SQL query with cross-join similarity instead of N+1 queries
  */
 async function getAllStories(): Promise<any[]> {
-  // Get all items with embeddings
-  const allItems = await query(
+  // Get all items with embeddings and pre-compute similarities in SQL
+  // This avoids N+1 query problem by using a single batch query
+  const clusterResult = await query(
     `
     WITH combined_items AS (
       SELECT
@@ -155,7 +158,7 @@ async function getAllStories(): Promise<any[]> {
         NULL as media_type,
         NULL as file_path
       FROM ideas
-      WHERE embedding IS NOT NULL
+      WHERE embedding IS NOT NULL AND is_archived = false
 
       UNION ALL
 
@@ -184,93 +187,94 @@ async function getAllStories(): Promise<any[]> {
         NULL as file_path
       FROM voice_memos
       WHERE embedding IS NOT NULL
+    ),
+    -- Pre-compute all pairwise similarities above threshold
+    similarities AS (
+      SELECT
+        a.id as source_id,
+        b.id as target_id,
+        1 - (a.embedding <=> b.embedding) as similarity
+      FROM combined_items a
+      CROSS JOIN combined_items b
+      WHERE a.id < b.id  -- Avoid duplicates and self-joins
+        AND 1 - (a.embedding <=> b.embedding) > 0.75
     )
-    SELECT * FROM combined_items
-    ORDER BY created_at DESC
+    SELECT
+      ci.*,
+      COALESCE(
+        json_agg(
+          json_build_object('target_id', s.target_id, 'similarity', s.similarity)
+        ) FILTER (WHERE s.target_id IS NOT NULL),
+        '[]'::json
+      ) as similar_items
+    FROM combined_items ci
+    LEFT JOIN similarities s ON ci.id = s.source_id OR ci.id = s.target_id
+    GROUP BY ci.id, ci.item_type, ci.content, ci.context, ci.embedding, ci.created_at, ci.media_type, ci.file_path
+    ORDER BY ci.created_at DESC
+    LIMIT 200
     `
   );
 
-  if (allItems.rows.length === 0) {
+  if (clusterResult.rows.length === 0) {
     return [];
   }
 
-  // Simple clustering: For each item, find similar items
-  // and group them together
-  const clusters: Map<string, any[]> = new Map();
+  // Build clusters from pre-computed similarities (thread-safe in-memory)
+  const itemMap = new Map<string, any>();
   const processed = new Set<string>();
+  const clusters: Map<string, any[]> = new Map();
 
-  for (const item of allItems.rows) {
+  // First pass: build item map
+  for (const item of clusterResult.rows) {
+    itemMap.set(item.id, item);
+  }
+
+  // Second pass: build clusters
+  for (const item of clusterResult.rows) {
     if (processed.has(item.id)) continue;
 
-    // Find similar items
-    const similarItems = await query(
-      `
-      WITH combined_items AS (
-        SELECT
-          id,
-          'idea' as item_type,
-          title as content,
-          context,
-          embedding,
-          created_at,
-          NULL as media_type,
-          NULL as file_path
-        FROM ideas
-        WHERE embedding IS NOT NULL
+    const similarItemIds: string[] = [];
 
-        UNION ALL
+    // Parse similar items from the JSON aggregation
+    if (Array.isArray(item.similar_items)) {
+      for (const sim of item.similar_items) {
+        if (sim.target_id && sim.target_id !== item.id && !processed.has(sim.target_id)) {
+          similarItemIds.push(sim.target_id);
+        }
+      }
+    }
 
-        SELECT
-          id,
-          'media' as item_type,
-          COALESCE(caption, filename) as content,
-          context,
-          embedding,
-          created_at,
-          media_type,
-          file_path
-        FROM media_items
-        WHERE embedding IS NOT NULL
+    // Also check reverse relationships (where this item is the target)
+    for (const [otherId, otherItem] of itemMap) {
+      if (otherId === item.id || processed.has(otherId)) continue;
+      if (Array.isArray(otherItem.similar_items)) {
+        for (const sim of otherItem.similar_items) {
+          if (sim.target_id === item.id && !similarItemIds.includes(otherId)) {
+            similarItemIds.push(otherId);
+          }
+        }
+      }
+    }
 
-        UNION ALL
-
-        SELECT
-          id,
-          'voice_memo' as item_type,
-          raw_text as content,
-          context,
-          embedding,
-          created_at,
-          NULL as media_type,
-          NULL as file_path
-        FROM voice_memos
-        WHERE embedding IS NOT NULL
-      )
-      SELECT
-        *,
-        1 - (embedding <=> $1::vector) as similarity
-      FROM combined_items
-      WHERE id != $2
-        AND 1 - (embedding <=> $1::vector) > 0.75
-      ORDER BY similarity DESC
-      `,
-      [item.embedding, item.id]
-    );
-
-    if (similarItems.rows.length >= 1) {
+    if (similarItemIds.length >= 1) {
       // Create cluster
-      const clusterItems = [item, ...similarItems.rows];
-      clusterItems.forEach(i => processed.add(i.id));
+      const clusterItems = [item];
+      processed.add(item.id);
 
-      // Generate cluster title from most common words
-      const title = generateClusterTitle(clusterItems);
+      for (const simId of similarItemIds) {
+        const simItem = itemMap.get(simId);
+        if (simItem && !processed.has(simId)) {
+          clusterItems.push(simItem);
+          processed.add(simId);
+        }
+      }
 
       clusters.set(item.id, clusterItems.map(formatStoryItem));
     }
   }
 
   // Convert clusters to stories
-  const stories = Array.from(clusters.entries()).map(([id, items]) => ({
+  const stories = Array.from(clusters.entries()).map(([_id, items]) => ({
     id: crypto.randomUUID(),
     title: generateTitleFromItems(items),
     description: `${items.length} verwandte Inhalte`,
@@ -325,11 +329,5 @@ function generateTitleFromItems(items: any[]): string {
   return `Story (${items.length} Items)`;
 }
 
-/**
- * Generate cluster title
- */
-function generateClusterTitle(items: any[]): string {
-  return generateTitleFromItems(items.map(formatStoryItem));
-}
 
 export default router;

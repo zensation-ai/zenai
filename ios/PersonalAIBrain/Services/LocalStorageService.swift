@@ -131,25 +131,40 @@ class LocalStorageService: ObservableObject {
             }
 
             if let nextSteps = idea.nextSteps {
-                let json = try? JSONEncoder().encode(nextSteps)
-                let jsonString = json.flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
-                sqlite3_bind_text(statement, 7, (jsonString as NSString).utf8String, -1, nil)
+                do {
+                    let json = try JSONEncoder().encode(nextSteps)
+                    let jsonString = String(data: json, encoding: .utf8) ?? "[]"
+                    sqlite3_bind_text(statement, 7, (jsonString as NSString).utf8String, -1, nil)
+                } catch {
+                    print("Error encoding nextSteps: \(error.localizedDescription)")
+                    sqlite3_bind_text(statement, 7, ("[]" as NSString).utf8String, -1, nil)
+                }
             } else {
                 sqlite3_bind_null(statement, 7)
             }
 
             if let contextNeeded = idea.contextNeeded {
-                let json = try? JSONEncoder().encode(contextNeeded)
-                let jsonString = json.flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
-                sqlite3_bind_text(statement, 8, (jsonString as NSString).utf8String, -1, nil)
+                do {
+                    let json = try JSONEncoder().encode(contextNeeded)
+                    let jsonString = String(data: json, encoding: .utf8) ?? "[]"
+                    sqlite3_bind_text(statement, 8, (jsonString as NSString).utf8String, -1, nil)
+                } catch {
+                    print("Error encoding contextNeeded: \(error.localizedDescription)")
+                    sqlite3_bind_text(statement, 8, ("[]" as NSString).utf8String, -1, nil)
+                }
             } else {
                 sqlite3_bind_null(statement, 8)
             }
 
             if let keywords = idea.keywords {
-                let json = try? JSONEncoder().encode(keywords)
-                let jsonString = json.flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
-                sqlite3_bind_text(statement, 9, (jsonString as NSString).utf8String, -1, nil)
+                do {
+                    let json = try JSONEncoder().encode(keywords)
+                    let jsonString = String(data: json, encoding: .utf8) ?? "[]"
+                    sqlite3_bind_text(statement, 9, (jsonString as NSString).utf8String, -1, nil)
+                } catch {
+                    print("Error encoding keywords: \(error.localizedDescription)")
+                    sqlite3_bind_text(statement, 9, ("[]" as NSString).utf8String, -1, nil)
+                }
             } else {
                 sqlite3_bind_null(statement, 9)
             }
@@ -235,19 +250,34 @@ class LocalStorageService: ObservableObject {
         let nextSteps: [String]? = {
             guard let cString = sqlite3_column_text(statement, 6) else { return nil }
             let jsonString = String(cString: cString)
-            return try? JSONDecoder().decode([String].self, from: jsonString.data(using: .utf8) ?? Data())
+            do {
+                return try JSONDecoder().decode([String].self, from: jsonString.data(using: .utf8) ?? Data())
+            } catch {
+                print("Error decoding nextSteps JSON: \(error.localizedDescription)")
+                return nil
+            }
         }()
 
         let contextNeeded: [String]? = {
             guard let cString = sqlite3_column_text(statement, 7) else { return nil }
             let jsonString = String(cString: cString)
-            return try? JSONDecoder().decode([String].self, from: jsonString.data(using: .utf8) ?? Data())
+            do {
+                return try JSONDecoder().decode([String].self, from: jsonString.data(using: .utf8) ?? Data())
+            } catch {
+                print("Error decoding contextNeeded JSON: \(error.localizedDescription)")
+                return nil
+            }
         }()
 
         let keywords: [String]? = {
             guard let cString = sqlite3_column_text(statement, 8) else { return nil }
             let jsonString = String(cString: cString)
-            return try? JSONDecoder().decode([String].self, from: jsonString.data(using: .utf8) ?? Data())
+            do {
+                return try JSONDecoder().decode([String].self, from: jsonString.data(using: .utf8) ?? Data())
+            } catch {
+                print("Error decoding keywords JSON: \(error.localizedDescription)")
+                return nil
+            }
         }()
 
         let rawTranscript = sqlite3_column_text(statement, 9).map { String(cString: $0) }

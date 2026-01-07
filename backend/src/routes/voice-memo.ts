@@ -127,12 +127,8 @@ voiceMemoRouter.post('/', (req, res, next) => {
     let transcript: string;
     let transcriptionTime = 0;
 
-    console.log('Request body keys:', Object.keys(req.body));
-    console.log('File present:', !!req.file);
-
     // Check if audio file was uploaded
     if (req.file) {
-      console.log(`Received audio file: ${req.file.originalname} (${req.file.size} bytes)`);
 
       // Transcribe audio with Whisper
       const transcribeStart = Date.now();
@@ -143,7 +139,6 @@ voiceMemoRouter.post('/', (req, res, next) => {
       transcriptionTime = Date.now() - transcribeStart;
 
       transcript = transcriptionResult.text;
-      console.log(`Transcribed in ${transcriptionTime}ms: "${transcript.substring(0, 50)}..."`);
     } else {
       // Fall back to transcript in body
       transcript = req.body.transcript || req.body.text;
@@ -156,45 +151,31 @@ voiceMemoRouter.post('/', (req, res, next) => {
       });
     }
 
-    console.log(`Processing memo: "${transcript.substring(0, 50)}..."`);
-
     // Get personalized suggestions from learning engine BEFORE structuring
     const learnedSuggestion = await suggestFromLearning(transcript).catch(() => null);
 
     // 1. Structure with Ollama/Mistral
     const structureStart = Date.now();
     const structured = await structureWithOllama(transcript);
-    const structureTime = Date.now() - structureStart;
-    console.log(`Structured in ${structureTime}ms`);
-
     // Apply learned suggestions if confidence is high enough
     let appliedLearning = false;
     if (learnedSuggestion && learnedSuggestion.confidence >= 0.5) {
       if (learnedSuggestion.suggested_category !== structured.category) {
-        console.log(`Learning override: category ${structured.category} -> ${learnedSuggestion.suggested_category}`);
         structured.category = learnedSuggestion.suggested_category as typeof structured.category;
         appliedLearning = true;
       }
       if (learnedSuggestion.suggested_priority !== structured.priority) {
-        console.log(`Learning override: priority ${structured.priority} -> ${learnedSuggestion.suggested_priority}`);
         structured.priority = learnedSuggestion.suggested_priority as typeof structured.priority;
         appliedLearning = true;
       }
     }
 
     // 2. Generate embedding
-    const embeddingStart = Date.now();
     const embedding = await generateEmbedding(transcript);
-    const embeddingTime = Date.now() - embeddingStart;
-    console.log(`Embedding generated in ${embeddingTime}ms (${embedding.length} dimensions)`);
 
     // 3. Store in database
     const ideaId = uuidv4();
-    const storeStart = Date.now();
     await storeIdea(ideaId, structured, transcript, embedding);
-    const storeTime = Date.now() - storeStart;
-    console.log(`Stored in ${storeTime}ms`);
-
     const totalTime = Date.now() - startTime;
 
     // Background tasks: Knowledge Graph analysis, user profile tracking, webhooks, learning
@@ -233,9 +214,6 @@ voiceMemoRouter.post('/', (req, res, next) => {
       performance: {
         totalMs: totalTime,
         transcriptionMs: transcriptionTime,
-        structureMs: structureTime,
-        embeddingMs: embeddingTime,
-        storeMs: storeTime,
         embeddingDimensions: embedding.length,
       },
     });

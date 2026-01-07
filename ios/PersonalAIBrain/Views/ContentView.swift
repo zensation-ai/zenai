@@ -680,8 +680,7 @@ struct RecordContextView: View {
 }
 
 #Preview {
-    let apiService = APIService()
-    return ContentView()
-        .environmentObject(apiService)
-        .environmentObject(OfflineQueueService(apiService: apiService))
+    ContentView()
+        .environmentObject(APIService())
+        .environmentObject(OfflineQueueService.shared)
 }

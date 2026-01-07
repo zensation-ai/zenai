@@ -16,7 +16,7 @@ import { rateLimiter, cleanupRateLimits } from './middleware/auth';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
-import { testConnections } from './utils/database-context';
+import { testConnections, setupGracefulShutdown } from './utils/database-context';
 import { voiceMemoContextRouter } from './routes/voice-memo-context';
 import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
@@ -72,6 +72,9 @@ setInterval(() => {
 
 // Error handling - Use centralized error handler
 app.use(errorHandler);
+
+// Setup graceful shutdown for database connections
+setupGracefulShutdown();
 
 // Start server
 app.listen(PORT, async () => {

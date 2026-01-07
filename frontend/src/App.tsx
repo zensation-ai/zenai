@@ -12,6 +12,7 @@ import { IntegrationsPage } from './components/IntegrationsPage';
 import { IncubatorPage } from './components/IncubatorPage';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
 import './App.css';
 
@@ -82,8 +83,9 @@ function App() {
       const response = await axios.get('/api/ideas?limit=100');
       setIdeas(response.data.ideas);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load ideas');
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      setError(axiosError.response?.data?.error || 'Failed to load ideas');
     } finally {
       setLoading(false);
     }
@@ -109,8 +111,9 @@ function App() {
       setIdeas([newIdea, ...ideas]);
       setTextInput('');
       showToast('Gedanke erfolgreich strukturiert!', 'success');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Verarbeitung fehlgeschlagen';
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      const errorMessage = axiosError.response?.data?.error || 'Verarbeitung fehlgeschlagen';
       setError(errorMessage);
       showToast(errorMessage, 'error');
     } finally {
@@ -131,8 +134,9 @@ function App() {
       if (response.data.ideas.length === 0) {
         showToast('Keine passenden Gedanken gefunden', 'info');
       }
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Suche fehlgeschlagen';
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      const errorMessage = axiosError.response?.data?.error || 'Suche fehlgeschlagen';
       setError(errorMessage);
       showToast(errorMessage, 'error');
     } finally {
@@ -228,6 +232,7 @@ function App() {
   }
 
   return (
+    <ErrorBoundary>
     <div className="app">
       <header className="header">
         <div className="header-content">
@@ -452,6 +457,7 @@ function App() {
       {/* Global Toast Notifications */}
       <ToastContainer />
     </div>
+    </ErrorBoundary>
   );
 }
 

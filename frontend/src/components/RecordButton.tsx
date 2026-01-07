@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './RecordButton.css';
 
@@ -32,6 +32,32 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isMountedRef = useRef<boolean>(true);
+
+  // Cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+
+      // Clear timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
+      // Stop media recorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+
+      // Stop all tracks
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
 
   const startRecording = async () => {
     try {
@@ -102,8 +128,6 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
       const extension = mimeType.includes('wav') ? 'wav' : mimeType.includes('webm') ? 'webm' : 'ogg';
       formData.append('audio', audioBlob, `recording.${extension}`);
 
-      console.log(`Sending audio: ${audioBlob.size} bytes, type: ${mimeType}`);
-
       // Send to backend
       const response = await axios.post('/api/voice-memo', formData, {
         headers: {
@@ -111,8 +135,6 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
         },
         timeout: 300000, // 5 minute timeout for transcription
       });
-
-      console.log('Response:', response.data);
 
       // Callback with transcript
       if (response.data.transcript) {
@@ -127,12 +149,17 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
           structured: response.data.structured,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Processing error:', error);
-      const errorMessage = error.response?.data?.error || error.message;
-      alert(`Fehler bei der Verarbeitung: ${errorMessage}`);
+      const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
+      const errorMessage = axiosError.response?.data?.error || axiosError.message || 'Unknown error';
+      if (isMountedRef.current) {
+        alert(`Fehler bei der Verarbeitung: ${errorMessage}`);
+      }
     } finally {
-      setProcessing(false);
+      if (isMountedRef.current) {
+        setProcessing(false);
+      }
     }
   };
 

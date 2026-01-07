@@ -80,11 +80,51 @@ export function isValidContext(context: string): context is AIContext {
  * Gracefully close all database connections
  */
 export async function closeAllPools(): Promise<void> {
-  await Promise.all([
-    pools.personal.end(),
-    pools.work.end(),
-  ]);
-  console.log('All database pools closed');
+  console.log('Closing database connections...');
+  try {
+    await Promise.all([
+      pools.personal.end(),
+      pools.work.end(),
+    ]);
+    console.log('✅ All database pools closed');
+  } catch (error) {
+    console.error('❌ Error closing database pools:', error);
+    throw error;
+  }
+}
+
+/**
+ * Setup graceful shutdown handlers
+ * Call this in main.ts to ensure connections are closed on exit
+ */
+export function setupGracefulShutdown(): void {
+  const shutdown = async (signal: string) => {
+    console.log(`\n📴 Received ${signal}. Starting graceful shutdown...`);
+
+    try {
+      await closeAllPools();
+      console.log('✅ Graceful shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  // Handle different termination signals
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
+  // Handle uncaught exceptions gracefully
+  process.on('uncaughtException', async (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    await closeAllPools().catch(console.error);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  });
 }
 
 /**

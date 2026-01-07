@@ -500,7 +500,7 @@ struct StoryItemDetail: View {
                     .foregroundColor(.zensationText)
 
                 // Media attachment
-                if let mediaUrl = item.mediaUrl {
+                if item.mediaUrl != nil {
                     HStack(spacing: 6) {
                         Image(systemName: "paperclip")
                             .font(.caption2)
@@ -540,7 +540,7 @@ struct StoryItemDetail: View {
         switch type {
         case .text: return .blue
         case .audio: return .purple
-        case .photo: return .purple
+        case .photo: return .green
         case .video: return .red
         case .idea: return .orange
         }

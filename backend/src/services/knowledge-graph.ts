@@ -1,6 +1,6 @@
 import { query } from '../utils/database';
 import { queryContext, AIContext } from '../utils/database-context';
-import { structureWithOllama } from '../utils/ollama';
+import { queryOllamaJSON } from '../utils/ollama';
 import { getTopics, Topic } from './topic-clustering';
 
 /**
@@ -77,11 +77,30 @@ export async function analyzeRelationships(ideaId: string): Promise<IdeaRelation
   return relationships;
 }
 
+interface SourceIdea {
+  id: string;
+  title: string;
+  summary?: string;
+  keywords?: string[];
+  embedding?: number[];
+}
+
+interface LLMRelationResponse {
+  targetIndex: number;
+  relationType: string;
+  strength: number;
+  reason?: string;
+}
+
+const VALID_RELATION_TYPES: RelationType[] = [
+  'similar_to', 'builds_on', 'contradicts', 'supports', 'enables', 'part_of', 'related_tech'
+];
+
 /**
  * Use Mistral to analyze relationships between ideas
  */
 async function analyzeWithLLM(
-  sourceIdea: any,
+  sourceIdea: SourceIdea,
   candidates: RelatedIdea[]
 ): Promise<IdeaRelation[]> {
   const prompt = `Du analysierst Beziehungen zwischen Ideen. Antworte NUR mit validem JSON.
@@ -102,30 +121,64 @@ Antworte EXAKT in diesem JSON-Format (nur das Array, kein Text davor/danach):
 Wenn keine Beziehungen: []`;
 
   try {
-    const response = await structureWithOllama(prompt);
+    // Use generic JSON query for relationship analysis
+    const response = await queryOllamaJSON<LLMRelationResponse[] | { relationships?: LLMRelationResponse[]; relations?: LLMRelationResponse[]; data?: LLMRelationResponse[] }>(prompt);
 
-    // Parse the response - it might be wrapped in an object
-    let relations: any[] = [];
-    const responseAny = response as any;
-    if (Array.isArray(responseAny)) {
-      relations = responseAny;
-    } else if (responseAny.relationships) {
-      relations = responseAny.relationships;
-    } else if (responseAny.relations) {
-      relations = responseAny.relations;
+    // Safely parse the response with validation
+    let relations: LLMRelationResponse[] = [];
+
+    // Handle different response formats
+    if (response === null || response === undefined) {
+      console.log('LLM returned null/undefined response');
+      return [];
     }
 
-    // Map to proper structure
+    if (Array.isArray(response)) {
+      relations = response;
+    } else if (typeof response === 'object') {
+      // Try common wrapper properties
+      if (Array.isArray(response.relationships)) {
+        relations = response.relationships;
+      } else if (Array.isArray(response.relations)) {
+        relations = response.relations;
+      } else if (Array.isArray(response.data)) {
+        relations = response.data;
+      } else {
+        console.log('LLM returned unexpected object structure');
+        return [];
+      }
+    } else {
+      console.log('LLM returned unexpected type:', typeof response);
+      return [];
+    }
+
+    // Validate and map to proper structure
     return relations
-      .filter((r: any) => r.targetIndex && r.relationType && r.strength > 0.5)
-      .map((r: any) => ({
-        sourceId: sourceIdea.id,
-        targetId: candidates[r.targetIndex - 1]?.id,
-        relationType: r.relationType as RelationType,
-        strength: r.strength,
-        reason: r.reason || '',
-      }))
-      .filter((r: IdeaRelation) => r.targetId); // Filter out invalid targets
+      .filter((r): r is LLMRelationResponse => {
+        // Validate required fields
+        if (!r || typeof r !== 'object') return false;
+        if (typeof r.targetIndex !== 'number' || r.targetIndex < 1 || r.targetIndex > candidates.length) return false;
+        if (typeof r.relationType !== 'string') return false;
+        if (typeof r.strength !== 'number' || r.strength < 0 || r.strength > 1) return false;
+        if (r.strength <= 0.5) return false;
+        return true;
+      })
+      .map((r): IdeaRelation => {
+        // Normalize relation type to valid value
+        let relationType: RelationType = 'similar_to';
+        if (VALID_RELATION_TYPES.includes(r.relationType as RelationType)) {
+          relationType = r.relationType as RelationType;
+        }
+
+        return {
+          sourceId: sourceIdea.id,
+          targetId: candidates[r.targetIndex - 1]?.id,
+          relationType,
+          strength: Math.min(1, Math.max(0, r.strength)), // Clamp to 0-1
+          reason: typeof r.reason === 'string' ? r.reason : '',
+        };
+      })
+      .filter((r): r is IdeaRelation => !!r.targetId); // Filter out invalid targets
   } catch (error) {
     console.error('LLM relationship analysis failed:', error);
     return [];

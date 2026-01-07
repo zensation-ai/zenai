@@ -197,9 +197,25 @@ router.get('/media-file/:id', async (req: Request, res: Response) => {
 
     const mediaItem = result.rows[0];
 
-    // Serve the actual file
+    // Security: Validate file path to prevent path traversal attacks
     const filePath = mediaItem.file_path;
-    res.sendFile(filePath);
+    const uploadDir = path.join(__dirname, '../../uploads');
+    const resolvedPath = path.resolve(filePath);
+
+    // Ensure the resolved path is within the uploads directory
+    if (!resolvedPath.startsWith(path.resolve(uploadDir))) {
+      console.error('❌ Path traversal attempt detected:', filePath);
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check if file exists
+    try {
+      await fs.access(resolvedPath);
+    } catch {
+      return res.status(404).json({ error: 'File not found on disk' });
+    }
+
+    res.sendFile(resolvedPath);
 
   } catch (error) {
     console.error('❌ Error fetching media:', error);
@@ -497,7 +513,16 @@ router.get('/media/:id/thumbnail', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Thumbnail not yet generated' });
     }
 
-    res.sendFile(thumbnail_path);
+    // Security: Validate thumbnail path to prevent path traversal attacks
+    const uploadDir = path.join(__dirname, '../../uploads');
+    const resolvedPath = path.resolve(thumbnail_path);
+
+    if (!resolvedPath.startsWith(path.resolve(uploadDir))) {
+      console.error('❌ Path traversal attempt detected:', thumbnail_path);
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.sendFile(resolvedPath);
 
   } catch (error) {
     console.error('❌ Error fetching thumbnail:', error);

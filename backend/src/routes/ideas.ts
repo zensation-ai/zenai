@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
-import { formatForPgVector, quantizeToBinary } from '../utils/embedding';
+import { formatForPgVector } from '../utils/embedding';
 import { trackInteraction } from '../services/user-profile';
 import { triggerWebhook } from '../services/webhooks';
 import { learnFromCorrection, learnFromThought } from '../services/learning-engine';
@@ -122,10 +122,11 @@ ideasRouter.get('/:id', async (req, res) => {
     trackInteraction({
       idea_id: req.params.id,
       interaction_type: 'view',
-    }).catch(() => {});
+    }).catch((err) => console.log('Background view tracking skipped:', err.message));
 
     // Increment view count
-    query('UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id]).catch(() => {});
+    query('UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
+      .catch((err) => console.log('Background view count update skipped:', err.message));
 
     res.json({
       ...row,
@@ -181,7 +182,8 @@ ideasRouter.post('/search', async (req, res) => {
 
     // Stage 1: Fast binary search (get top 50 candidates)
     const binarySearchStart = Date.now();
-    const queryBinary = quantizeToBinary(queryEmbedding);
+    // Note: queryBinary could be used for Hamming distance search with embedding_binary column
+    // Currently using standard vector search for simplicity
 
     // For binary search, we use bit_count for hamming distance
     // Note: This requires the embedding_binary column to be populated
@@ -324,20 +326,20 @@ ideasRouter.put('/:id', async (req, res) => {
         idea_id: req.params.id,
         interaction_type: 'prioritize',
         metadata,
-      }).catch(() => {});
+      }).catch((err) => console.log('Background prioritize tracking skipped:', err.message));
     } else {
       trackInteraction({
         idea_id: req.params.id,
         interaction_type: 'edit',
         metadata,
-      }).catch(() => {});
+      }).catch((err) => console.log('Background edit tracking skipped:', err.message));
     }
 
     // Phase 4: Trigger webhook
     triggerWebhook('idea.updated', {
       id: req.params.id,
       ...result.rows[0]
-    }).catch(() => {});
+    }).catch((err) => console.log('Background webhook skipped:', err.message));
 
     res.json(result.rows[0]);
   } catch (error: any) {
@@ -363,12 +365,12 @@ ideasRouter.delete('/:id', async (req, res) => {
       idea_id: req.params.id,
       interaction_type: 'archive',
       metadata: { action: 'delete' },
-    }).catch(() => {});
+    }).catch((err) => console.log('Background delete tracking skipped:', err.message));
 
     // Phase 4: Trigger webhook
     triggerWebhook('idea.deleted', {
       id: req.params.id
-    }).catch(() => {});
+    }).catch((err) => console.log('Background webhook skipped:', err.message));
 
     res.json({ success: true, deletedId: req.params.id });
   } catch (error: any) {
@@ -425,7 +427,7 @@ ideasRouter.put('/:id/priority', async (req, res) => {
       idea_id: req.params.id,
       interaction_type: 'prioritize',
       metadata: { new_priority: priority, old_priority: oldPriority, source: 'swipe' },
-    }).catch(() => {});
+    }).catch((err) => console.log('Background priority tracking skipped:', err.message));
 
     res.json({ success: true, idea: result.rows[0] });
   } catch (error: any) {
@@ -460,7 +462,7 @@ ideasRouter.post('/:id/swipe', async (req, res) => {
           idea_id: ideaId,
           interaction_type: 'prioritize',
           metadata: { new_priority: 'high', source: 'swipe' },
-        }).catch(() => {});
+        }).catch((err) => console.log('Background swipe priority tracking skipped:', err.message));
         break;
 
       case 'archive':
@@ -472,8 +474,9 @@ ideasRouter.post('/:id/swipe', async (req, res) => {
           idea_id: ideaId,
           interaction_type: 'archive',
           metadata: { source: 'swipe' },
-        }).catch(() => {});
-        triggerWebhook('idea.archived', { id: ideaId }).catch(() => {});
+        }).catch((err) => console.log('Background swipe archive tracking skipped:', err.message));
+        triggerWebhook('idea.archived', { id: ideaId })
+          .catch((err) => console.log('Background archive webhook skipped:', err.message));
         break;
 
       case 'later':
@@ -486,7 +489,7 @@ ideasRouter.post('/:id/swipe', async (req, res) => {
           idea_id: ideaId,
           interaction_type: 'view',
           metadata: { action: 'review_later', source: 'swipe' },
-        }).catch(() => {});
+        }).catch((err) => console.log('Background swipe later tracking skipped:', err.message));
         break;
     }
 
@@ -520,12 +523,12 @@ ideasRouter.put('/:id/archive', async (req, res) => {
       idea_id: req.params.id,
       interaction_type: 'archive',
       metadata: { action: 'archive' },
-    }).catch(() => {});
+    }).catch((err) => console.log('Background archive tracking skipped:', err.message));
 
     // Phase 4: Trigger webhook
     triggerWebhook('idea.archived', {
       id: req.params.id
-    }).catch(() => {});
+    }).catch((err) => console.log('Background archive webhook skipped:', err.message));
 
     res.json({ success: true, archivedId: req.params.id });
   } catch (error: any) {
