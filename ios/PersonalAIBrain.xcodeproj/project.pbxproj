@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DDD00001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DDD00010; };
 		AAA00001 /* PersonalAIBrainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00010; };
 		AAA00002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00011; };
 		AAA00003 /* IdeasListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00012; };
@@ -80,6 +81,7 @@
 		CCC00012 /* GraphCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphCanvasView.swift; sourceTree = "<group>"; };
 		CCC00013 /* GraphModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphModels.swift; sourceTree = "<group>"; };
 		CCC00014 /* APIService+KnowledgeGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+KnowledgeGraph.swift"; sourceTree = "<group>"; };
+		DDD00010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +108,7 @@
 			children = (
 				AAA00010 /* PersonalAIBrainApp.swift */,
 				AAA0001A /* Info.plist */,
+				DDD00010 /* Assets.xcassets */,
 				AAA00043 /* Views */,
 				AAA00044 /* Models */,
 				AAA00045 /* Services */,
@@ -249,6 +252,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DDD00001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

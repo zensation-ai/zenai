@@ -11,39 +11,47 @@ struct IdeaDetailView: View {
     @State private var isDeleting = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Image(systemName: idea.type.icon)
-                            .font(.title2)
-                            .foregroundColor(colorFor(idea.type))
+        ZStack {
+            Color.zensationBackground.ignoresSafeArea()
 
-                        Text(idea.type.displayName)
-                            .font(.subheadline)
-                            .foregroundColor(.zensationTextMuted)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: idea.type.icon)
+                                .font(.title2)
+                                .foregroundColor(colorFor(idea.type))
 
-                        Spacer()
+                            Text(idea.type.displayName)
+                                .font(.subheadline)
+                                .foregroundColor(.zensationTextMuted)
 
-                        PriorityBadge(priority: idea.priority)
+                            Spacer()
+
+                            PriorityBadge(priority: idea.priority)
+                        }
+
+                        Text(idea.title)
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(.zensationText)
+
+                        HStack {
+                            Label(idea.category.displayName, systemImage: "folder")
+                            Spacer()
+                            Text(idea.createdAt.formatted(date: .long, time: .shortened))
+                        }
+                        .font(.caption)
+                        .foregroundColor(.zensationTextMuted)
                     }
-
-                    Text(idea.title)
-                        .font(.title)
-                        .fontWeight(.bold)
-
-                    HStack {
-                        Label(idea.category.displayName, systemImage: "folder")
-                        Spacer()
-                        Text(idea.createdAt.formatted(date: .long, time: .shortened))
-                    }
-                    .font(.caption)
-                    .foregroundColor(.zensationTextMuted)
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding()
+                    .background(Color.zensationSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.zensationBorder, lineWidth: 1)
+                    )
 
                 // Summary
                 if let summary = idea.summary {
@@ -113,8 +121,12 @@ struct IdeaDetailView: View {
             }
             .padding()
         }
+        }
         .navigationTitle("Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(Color.zensationSurface, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(role: .destructive) {
@@ -188,18 +200,24 @@ struct SectionCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: icon)
+                    .foregroundColor(.zensationOrange)
                 Text(title)
                     .fontWeight(.semibold)
+                    .foregroundColor(.zensationText)
             }
             .font(.headline)
 
             content
+                .foregroundColor(.zensationText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.systemBackground))
+        .background(Color.zensationSurface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.zensationBorder, lineWidth: 1)
+        )
     }
 }
 
