@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { testConnection } from '../utils/database';
+import { testConnections } from '../utils/database-context';
 import { checkOllamaHealth } from '../utils/ollama';
 
 export const healthRouter = Router();
@@ -8,19 +8,28 @@ healthRouter.get('/', async (req, res) => {
   const startTime = Date.now();
 
   const [dbHealth, ollamaHealth] = await Promise.all([
-    testConnection().catch(() => false),
+    testConnections().catch(() => ({ personal: false, work: false })),
     checkOllamaHealth(),
   ]);
 
+  const allDbHealthy = dbHealth.personal && dbHealth.work;
+  const anyDbHealthy = dbHealth.personal || dbHealth.work;
+
   const status = {
-    status: dbHealth && ollamaHealth.available ? 'healthy' : 'degraded',
+    status: allDbHealthy && ollamaHealth.available ? 'healthy' :
+            (anyDbHealthy ? 'degraded' : 'unhealthy'),
     timestamp: new Date().toISOString(),
     responseTime: Date.now() - startTime,
     services: {
-      database: {
-        status: dbHealth ? 'connected' : 'disconnected',
-        host: process.env.DB_HOST,
-        database: process.env.DB_NAME,
+      databases: {
+        personal: {
+          status: dbHealth.personal ? 'connected' : 'disconnected',
+          database: 'personal_ai',
+        },
+        work: {
+          status: dbHealth.work ? 'connected' : 'disconnected',
+          database: 'work_ai',
+        },
       },
       ollama: {
         status: ollamaHealth.available ? 'connected' : 'disconnected',
@@ -30,5 +39,7 @@ healthRouter.get('/', async (req, res) => {
     },
   };
 
-  res.status(status.status === 'healthy' ? 200 : 503).json(status);
+  const httpStatus = status.status === 'healthy' ? 200 :
+                     status.status === 'degraded' ? 200 : 503;
+  res.status(httpStatus).json(status);
 });

@@ -12,6 +12,16 @@ dotenv.config();
 
 export type AIContext = 'personal' | 'work';
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Validate if a string is a valid UUID v4
+ */
+export function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
+
 // Connection pools for each context
 const pools: Record<AIContext, Pool> = {
   personal: new Pool({
@@ -167,5 +177,7 @@ export async function query(text: string, params?: any[]): Promise<QueryResult> 
   return queryContext('personal', text, params);
 }
 
-// Export original database.ts functions for compatibility
-export * from './database';
+// Note: We intentionally don't re-export from './database' to avoid conflicts
+// The local query() and pool exports (pointing to personal_ai) provide backward compatibility
+// For context-aware queries, use queryContext() with explicit context parameter
+// Import { testConnection, getClient } from './database' if those functions are needed

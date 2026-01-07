@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { query } from '../utils/database';
+import { Router, Request, Response, NextFunction } from 'express';
+import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { trackInteraction } from '../services/user-profile';
@@ -9,17 +9,37 @@ import { learnFromCorrection, learnFromThought } from '../services/learning-engi
 export const ideasRouter = Router();
 
 /**
+ * Get context from request header or query param, default to 'personal'
+ */
+function getContext(req: Request): AIContext {
+  const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
+  return isValidContext(context) ? context : 'personal';
+}
+
+/**
+ * Middleware to validate UUID parameter
+ */
+function validateUUID(req: Request, res: Response, next: NextFunction) {
+  const id = req.params.id;
+  if (id && !isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid ID format. Must be a valid UUID.' });
+  }
+  next();
+}
+
+/**
  * GET /api/ideas/stats/summary
  * Get statistics about ideas (excluding archived)
  * NOTE: Must be defined BEFORE /:id route to avoid being caught by it
  */
 ideasRouter.get('/stats/summary', async (req, res) => {
   try {
+    const ctx = getContext(req);
     const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-      query('SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
-      query('SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
-      query('SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
-      query('SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
+      queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
+      queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
+      queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
+      queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
     ]);
 
     res.json({
@@ -40,6 +60,7 @@ ideasRouter.get('/stats/summary', async (req, res) => {
  */
 ideasRouter.get('/', async (req, res) => {
   try {
+    const ctx = getContext(req);
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     const offset = parseInt(req.query.offset as string) || 0;
     const type = req.query.type as string;
@@ -63,7 +84,8 @@ ideasRouter.get('/', async (req, res) => {
       params.push(priority);
     }
 
-    const result = await query(
+    const result = await queryContext(
+      ctx,
       `SELECT id, title, type, category, priority, summary,
               next_steps, context_needed, keywords, created_at, updated_at
        FROM ideas
@@ -73,7 +95,8 @@ ideasRouter.get('/', async (req, res) => {
       [...params, limit, offset]
     );
 
-    const countResult = await query(
+    const countResult = await queryContext(
+      ctx,
       `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false ${whereClause}`,
       params
     );
@@ -102,9 +125,11 @@ ideasRouter.get('/', async (req, res) => {
  * GET /api/ideas/:id
  * Get a single idea by ID
  */
-ideasRouter.get('/:id', async (req, res) => {
+ideasRouter.get('/:id', validateUUID, async (req, res) => {
   try {
-    const result = await query(
+    const ctx = getContext(req);
+    const result = await queryContext(
+      ctx,
       `SELECT id, title, type, category, priority, summary,
               next_steps, context_needed, keywords, raw_transcript,
               created_at, updated_at
@@ -125,7 +150,7 @@ ideasRouter.get('/:id', async (req, res) => {
     }).catch((err) => console.log('Background view tracking skipped:', err.message));
 
     // Increment view count
-    query('UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
+    queryContext(ctx, 'UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
       .catch((err) => console.log('Background view count update skipped:', err.message));
 
     res.json({
@@ -150,6 +175,7 @@ ideasRouter.post('/search', async (req, res) => {
   const startTime = Date.now();
 
   try {
+    const ctx = getContext(req);
     const { query: searchQuery, limit = 10 } = req.body;
 
     if (!searchQuery) {
@@ -161,7 +187,8 @@ ideasRouter.post('/search', async (req, res) => {
 
     if (queryEmbedding.length === 0) {
       // Fallback to text search if embedding fails
-      const textResult = await query(
+      const textResult = await queryContext(
+        ctx,
         `SELECT id, title, type, category, priority, summary,
                 next_steps, context_needed, keywords, created_at
          FROM ideas
@@ -187,7 +214,8 @@ ideasRouter.post('/search', async (req, res) => {
 
     // For binary search, we use bit_count for hamming distance
     // Note: This requires the embedding_binary column to be populated
-    const candidatesResult = await query(
+    const candidatesResult = await queryContext(
+      ctx,
       `SELECT id, title, embedding
        FROM ideas
        WHERE embedding IS NOT NULL
@@ -204,7 +232,8 @@ ideasRouter.post('/search', async (req, res) => {
 
     let finalResults;
     if (candidateIds.length > 0) {
-      finalResults = await query(
+      finalResults = await queryContext(
+        ctx,
         `SELECT id, title, type, category, priority, summary,
                 next_steps, context_needed, keywords, created_at,
                 embedding <-> $1 as distance
@@ -250,12 +279,14 @@ ideasRouter.post('/search', async (req, res) => {
  * WICHTIG: Bei Änderungen von type/category/priority lernt das System
  * dass die ursprüngliche LLM-Klassifizierung falsch war!
  */
-ideasRouter.put('/:id', async (req, res) => {
+ideasRouter.put('/:id', validateUUID, async (req, res) => {
   try {
+    const ctx = getContext(req);
     const { title, type, category, priority, summary, next_steps, context_needed, keywords } = req.body;
 
     // Hole alte Werte um Korrekturen zu erkennen
-    const oldIdea = await query(
+    const oldIdea = await queryContext(
+      ctx,
       'SELECT type, category, priority FROM ideas WHERE id = $1',
       [req.params.id]
     );
@@ -266,7 +297,8 @@ ideasRouter.put('/:id', async (req, res) => {
 
     const old = oldIdea.rows[0];
 
-    const result = await query(
+    const result = await queryContext(
+      ctx,
       `UPDATE ideas SET
         title = COALESCE($2, title),
         type = COALESCE($3, type),
@@ -352,9 +384,10 @@ ideasRouter.put('/:id', async (req, res) => {
  * DELETE /api/ideas/:id
  * Delete an idea
  */
-ideasRouter.delete('/:id', async (req, res) => {
+ideasRouter.delete('/:id', validateUUID, async (req, res) => {
   try {
-    const result = await query('DELETE FROM ideas WHERE id = $1 RETURNING id', [req.params.id]);
+    const ctx = getContext(req);
+    const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 RETURNING id', [req.params.id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Idea not found' });
@@ -385,8 +418,9 @@ ideasRouter.delete('/:id', async (req, res) => {
  *
  * WICHTIG: Dies ist eine User-Korrektur und löst starkes Lernen aus!
  */
-ideasRouter.put('/:id/priority', async (req, res) => {
+ideasRouter.put('/:id/priority', validateUUID, async (req, res) => {
   try {
+    const ctx = getContext(req);
     const { priority } = req.body;
 
     if (!priority || !['low', 'medium', 'high'].includes(priority)) {
@@ -394,7 +428,8 @@ ideasRouter.put('/:id/priority', async (req, res) => {
     }
 
     // Hole alte Priorität für Korrektur-Lernen
-    const oldResult = await query(
+    const oldResult = await queryContext(
+      ctx,
       'SELECT priority FROM ideas WHERE id = $1',
       [req.params.id]
     );
@@ -405,7 +440,8 @@ ideasRouter.put('/:id/priority', async (req, res) => {
 
     const oldPriority = oldResult.rows[0].priority;
 
-    const result = await query(
+    const result = await queryContext(
+      ctx,
       'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
       [req.params.id, priority]
     );
@@ -440,8 +476,9 @@ ideasRouter.put('/:id/priority', async (req, res) => {
  * POST /api/ideas/:id/swipe
  * Handle swipe actions from iOS app
  */
-ideasRouter.post('/:id/swipe', async (req, res) => {
+ideasRouter.post('/:id/swipe', validateUUID, async (req, res) => {
   try {
+    const ctx = getContext(req);
     const { action } = req.body;
     const ideaId = req.params.id;
 
@@ -454,7 +491,8 @@ ideasRouter.post('/:id/swipe', async (req, res) => {
     let result;
     switch (action) {
       case 'priority':
-        result = await query(
+        result = await queryContext(
+          ctx,
           'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
           [ideaId, 'high']
         );
@@ -466,7 +504,8 @@ ideasRouter.post('/:id/swipe', async (req, res) => {
         break;
 
       case 'archive':
-        result = await query(
+        result = await queryContext(
+          ctx,
           'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id, title',
           [ideaId]
         );
@@ -481,7 +520,8 @@ ideasRouter.post('/:id/swipe', async (req, res) => {
 
       case 'later':
         // Just track the interaction, no changes to the idea
-        result = await query(
+        result = await queryContext(
+          ctx,
           'SELECT id, title FROM ideas WHERE id = $1',
           [ideaId]
         );
@@ -508,9 +548,11 @@ ideasRouter.post('/:id/swipe', async (req, res) => {
  * PUT /api/ideas/:id/archive
  * Archive an idea (soft delete)
  */
-ideasRouter.put('/:id/archive', async (req, res) => {
+ideasRouter.put('/:id/archive', validateUUID, async (req, res) => {
   try {
-    const result = await query(
+    const ctx = getContext(req);
+    const result = await queryContext(
+      ctx,
       'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id',
       [req.params.id]
     );
