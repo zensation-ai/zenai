@@ -57,7 +57,7 @@ function parseConnectionString(url: string): {
     host,
     database: parsed.pathname.slice(1),
     isInternalRailway,
-    sslEnabled: !!sslConfig && sslConfig !== false,
+    sslEnabled: typeof sslConfig === 'object',
     operation: 'parseConnectionString',
   });
 
