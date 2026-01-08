@@ -7,6 +7,7 @@ struct MeetingsView: View {
     @State private var showingNewMeeting = false
     @State private var selectedMeeting: Meeting?
     @State private var filter: MeetingFilter = .all
+    @State private var errorMessage: String?
 
     enum MeetingFilter {
         case all, scheduled, completed
@@ -88,6 +89,13 @@ struct MeetingsView: View {
             .task {
                 await loadMeetingsAsync()
             }
+            .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
+                Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "")
+            }
         }
     }
 
@@ -102,7 +110,7 @@ struct MeetingsView: View {
         do {
             meetings = try await apiService.fetchMeetings()
         } catch {
-            print("Failed to load meetings: \(error)")
+            errorMessage = "Meetings konnten nicht geladen werden: \(error.localizedDescription)"
         }
         isLoading = false
     }
@@ -189,6 +197,7 @@ struct NewMeetingView: View {
     @State private var participants = ""
     @State private var location = ""
     @State private var isSubmitting = false
+    @State private var errorMessage: String?
 
     let onCreated: (Meeting) -> Void
 
@@ -229,6 +238,13 @@ struct NewMeetingView: View {
                     .disabled(title.isEmpty || isSubmitting)
                 }
             }
+            .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
+                Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "")
+            }
         }
     }
 
@@ -251,7 +267,7 @@ struct NewMeetingView: View {
                 onCreated(meeting)
                 dismiss()
             } catch {
-                print("Create meeting failed: \(error)")
+                errorMessage = "Meeting konnte nicht erstellt werden: \(error.localizedDescription)"
             }
             isSubmitting = false
         }
@@ -268,6 +284,7 @@ struct MeetingDetailView: View {
     @State private var showingAddNotes = false
     @State private var transcript = ""
     @State private var isProcessing = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationView {
@@ -361,6 +378,13 @@ struct MeetingDetailView: View {
             .task {
                 await loadNotes()
             }
+            .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
+                Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "")
+            }
         }
     }
 
@@ -368,7 +392,7 @@ struct MeetingDetailView: View {
         do {
             notes = try await apiService.getMeetingNotes(meetingId: meeting.id)
         } catch {
-            print("Failed to load notes: \(error)")
+            errorMessage = "Notizen konnten nicht geladen werden: \(error.localizedDescription)"
         }
         isLoading = false
     }
@@ -379,7 +403,7 @@ struct MeetingDetailView: View {
             do {
                 notes = try await apiService.addMeetingNotes(meetingId: meeting.id, transcript: transcript)
             } catch {
-                print("Failed to process notes: \(error)")
+                errorMessage = "Notizen konnten nicht verarbeitet werden: \(error.localizedDescription)"
             }
             isProcessing = false
         }

@@ -787,11 +787,14 @@ exportRouter.get('/backup', async (req: Request, res: Response) => {
   try {
     const ctx = getContext(req);
 
+    // Safety limit to prevent memory exhaustion (adjust as needed)
+    const MAX_BACKUP_ROWS = 10000;
+
     const [ideasResult, meetingsResult, clustersResult, thoughtsResult] = await Promise.all([
-      queryContext(ctx, `SELECT * FROM ideas ORDER BY created_at DESC`),
-      queryContext(ctx, `SELECT * FROM meetings ORDER BY meeting_date DESC`),
-      queryContext(ctx, `SELECT * FROM thought_clusters ORDER BY created_at DESC`),
-      queryContext(ctx, `SELECT * FROM loose_thoughts ORDER BY created_at DESC`),
+      queryContext(ctx, `SELECT * FROM ideas ORDER BY created_at DESC LIMIT ${MAX_BACKUP_ROWS}`),
+      queryContext(ctx, `SELECT * FROM meetings ORDER BY meeting_date DESC LIMIT ${MAX_BACKUP_ROWS}`),
+      queryContext(ctx, `SELECT * FROM thought_clusters ORDER BY created_at DESC LIMIT ${MAX_BACKUP_ROWS}`),
+      queryContext(ctx, `SELECT * FROM loose_thoughts ORDER BY created_at DESC LIMIT ${MAX_BACKUP_ROWS}`),
     ]);
 
     const backup = {

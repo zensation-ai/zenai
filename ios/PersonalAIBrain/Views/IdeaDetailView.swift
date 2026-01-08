@@ -9,6 +9,7 @@ struct IdeaDetailView: View {
 
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
+    @State private var errorMessage: String?
 
     var body: some View {
         ZStack {
@@ -157,6 +158,13 @@ struct IdeaDetailView: View {
                 AIBrainView(isActive: true, activityType: .processing, size: 64)
             }
         }
+        .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "")
+        }
     }
 
     private func deleteIdea() {
@@ -169,8 +177,9 @@ struct IdeaDetailView: View {
                     dismiss()
                 }
             } catch {
-                // Show error - in real app would use alert
-                print("Delete failed: \(error)")
+                await MainActor.run {
+                    errorMessage = "Gedanke konnte nicht gelöscht werden: \(error.localizedDescription)"
+                }
             }
             await MainActor.run {
                 isDeleting = false

@@ -54,7 +54,7 @@ struct CreateTextIdeaIntent: AppIntent {
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         // Send text to backend
         do {
-            let apiService = APIService()
+            let apiService = APIService.shared
             let contextValue = context == .personal ? "personal" : "work"
             let idea = try await apiService.processText(text, context: contextValue)
             return .result(value: "Idee '\(idea.title)' wurde erstellt!")
@@ -84,7 +84,7 @@ struct SearchIdeasIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let apiService = APIService()
+        let apiService = APIService.shared
         let contextValue = context == .personal ? "personal" : "work"
 
         do {
@@ -114,7 +114,7 @@ struct GetRecentIdeasIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let apiService = APIService()
+        let apiService = APIService.shared
         let contextValue = context == .personal ? "personal" : "work"
 
         do {
@@ -211,7 +211,7 @@ struct GetDailyDigestIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let apiService = APIService()
+        let apiService = APIService.shared
         let contextValue = context == .personal ? "personal" : "work"
 
         do {
@@ -244,7 +244,7 @@ struct GetWeeklyInsightsIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let apiService = APIService()
+        let apiService = APIService.shared
 
         do {
             if let digest = try await apiService.getLatestDigest(type: "weekly", context: context == .personal ? .personal : .work) {
@@ -283,7 +283,7 @@ struct GetProductivityScoreIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let apiService = APIService()
+        let apiService = APIService.shared
 
         do {
             let score = try await apiService.getProductivityScore(context: context == .personal ? .personal : .work)
@@ -332,7 +332,7 @@ struct GenerateDigestIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let apiService = APIService()
+        let apiService = APIService.shared
         let typeString = digestType == .daily ? "daily" : "weekly"
 
         do {

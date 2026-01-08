@@ -125,6 +125,14 @@ struct RecordView: View {
                     }
                 }
             }
+            .onDisappear {
+                // Clean up timer to prevent memory leak
+                stopProcessingAnimation()
+                // Stop recording if active
+                if audioRecorder.isRecording {
+                    audioRecorder.cancelRecording()
+                }
+            }
         }
     }
 

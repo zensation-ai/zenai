@@ -8,12 +8,28 @@ final class IncubatorService {
 
     private init() {}
 
+    // MARK: - URL Building (safe, no force unwrap)
+
+    private func buildURL(path: String, queryItems: [URLQueryItem] = []) throws -> URL {
+        var components = URLComponents(string: AppEnvironment.apiBaseURL)
+        components?.path += path
+        if !queryItems.isEmpty {
+            components?.queryItems = queryItems
+        }
+        guard let url = components?.url else {
+            throw IncubatorError.serverError("Invalid URL: \(path)")
+        }
+        return url
+    }
+
     // MARK: - Thoughts
 
     /// Add a new loose thought to the incubator
     func addThought(_ text: String, source: String = "app", tags: [String] = []) async throws -> LooseThought {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/thought?context=\(context.rawValue)")!
+        let url = try buildURL(path: "/incubator/thought", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ])
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -48,7 +64,11 @@ final class IncubatorService {
     /// Get all loose thoughts
     func getThoughts(limit: Int = 50, includeProcessed: Bool = false) async throws -> [LooseThought] {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/thoughts?context=\(context.rawValue)&limit=\(limit)&includeProcessed=\(includeProcessed)")!
+        let url = try buildURL(path: "/incubator/thoughts", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue),
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "includeProcessed", value: String(includeProcessed))
+        ])
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
@@ -70,7 +90,9 @@ final class IncubatorService {
     /// Get all thought clusters
     func getClusters() async throws -> [ThoughtCluster] {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters?context=\(context.rawValue)")!
+        let url = try buildURL(path: "/incubator/clusters", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ])
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
@@ -90,7 +112,9 @@ final class IncubatorService {
     /// Get clusters ready for consolidation
     func getReadyClusters() async throws -> [ThoughtCluster] {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters/ready?context=\(context.rawValue)")!
+        let url = try buildURL(path: "/incubator/clusters/ready", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ])
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
@@ -110,7 +134,9 @@ final class IncubatorService {
     /// Consolidate a cluster into a structured idea
     func consolidateCluster(_ clusterId: String) async throws -> ConsolidateResponse {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters/\(clusterId)/consolidate?context=\(context.rawValue)")!
+        let url = try buildURL(path: "/incubator/clusters/\(clusterId)/consolidate", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ])
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -133,7 +159,9 @@ final class IncubatorService {
     /// Dismiss a cluster
     func dismissCluster(_ clusterId: String) async throws {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters/\(clusterId)/dismiss?context=\(context.rawValue)")!
+        let url = try buildURL(path: "/incubator/clusters/\(clusterId)/dismiss", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ])
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -155,7 +183,9 @@ final class IncubatorService {
     /// Get incubator statistics
     func getStats() async throws -> IncubatorStats {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/stats?context=\(context.rawValue)")!
+        let url = try buildURL(path: "/incubator/stats", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ])
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
@@ -176,7 +206,9 @@ final class IncubatorService {
     /// Trigger batch analysis to find new clusters
     func runBatchAnalysis() async throws {
         let context = ContextManager.shared.currentContext
-        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/analyze?context=\(context.rawValue)")!
+        let url = try buildURL(path: "/incubator/analyze", queryItems: [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ])
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

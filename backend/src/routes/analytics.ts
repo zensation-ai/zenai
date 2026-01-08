@@ -184,39 +184,41 @@ analyticsRouter.get('/:context/analytics/timeline', async (req: Request, res: Re
     });
   }
 
-  const intervalMap: Record<string, string> = {
-    day: '24 hours',
-    week: '7 days',
-    month: '30 days',
-    year: '365 days',
+  // Whitelist-based interval mapping (prevents SQL injection)
+  const intervalDaysMap: Record<string, number> = {
+    day: 1,
+    week: 7,
+    month: 30,
+    year: 365,
   };
 
-  const interval = intervalMap[period as string] || '7 days';
+  const intervalDays = intervalDaysMap[period as string] || 7;
+  const intervalLabel = `${intervalDays} days`;
 
   try {
     const ctx = context as AIContext;
 
-    // Hourly breakdown
+    // Hourly breakdown (parameterized query)
     const hourlyResult = await queryContext(ctx, `
       SELECT
         EXTRACT(HOUR FROM created_at) as hour,
         COUNT(*) as count
       FROM ideas
-      WHERE created_at > NOW() - INTERVAL '${interval}'
+      WHERE created_at > NOW() - MAKE_INTERVAL(days => $1)
       GROUP BY hour
       ORDER BY hour
-    `);
+    `, [intervalDays]);
 
-    // Day of week breakdown
+    // Day of week breakdown (parameterized query)
     const dowResult = await queryContext(ctx, `
       SELECT
         EXTRACT(DOW FROM created_at) as dow,
         COUNT(*) as count
       FROM ideas
-      WHERE created_at > NOW() - INTERVAL '${interval}'
+      WHERE created_at > NOW() - MAKE_INTERVAL(days => $1)
       GROUP BY dow
       ORDER BY dow
-    `);
+    `, [intervalDays]);
 
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -224,7 +226,7 @@ analyticsRouter.get('/:context/analytics/timeline', async (req: Request, res: Re
       success: true,
       data: {
         period,
-        interval,
+        interval: intervalLabel,
         byHour: hourlyResult.rows.map(r => ({
           hour: parseInt(r.hour),
           count: parseInt(r.count),

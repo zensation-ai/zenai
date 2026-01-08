@@ -170,7 +170,7 @@ class OfflineQueueService: ObservableObject {
     }
 
     private func processItem(_ item: QueueItem) async -> Bool {
-        let apiService = APIService()
+        let apiService = APIService.shared
 
         do {
             switch item.type {
@@ -307,7 +307,7 @@ class OfflineQueueService: ObservableObject {
     }
 
     private func checkConnectivity() async {
-        let apiService = APIService()
+        let apiService = APIService.shared
         let wasOnline = isOnline
         isOnline = await apiService.checkHealth()
 

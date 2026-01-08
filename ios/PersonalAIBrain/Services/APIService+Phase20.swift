@@ -18,7 +18,8 @@ extension APIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 60 // AI generation can take time
 
-        request.httpBody = try JSONEncoder().encode(["date": nil as String?])
+        // Send empty object - date is optional, server will use current date
+        request.httpBody = "{}".data(using: .utf8)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 

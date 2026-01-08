@@ -196,11 +196,13 @@ digestRouter.post('/:context/digest/generate/weekly', async (req: Request, res: 
   try {
     const ctx = context as AIContext;
 
-    // Calculate week boundaries
+    // Calculate week boundaries (handle Sunday correctly)
     const today = new Date();
     const dayOfWeek = today.getDay();
+    // Sunday (0) should go back 6 days, Monday (1) stays, etc.
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const monday = new Date(today);
-    monday.setDate(today.getDate() - dayOfWeek + 1 + (weekOffset * 7));
+    monday.setDate(today.getDate() - daysToMonday + (weekOffset * 7));
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
 
@@ -551,12 +553,17 @@ function calculateStats(ideas: any[]): DigestStats & { topCategories: string[], 
     .slice(0, 3)
     .map(([type]) => type);
 
+  // Calculate unique days for accurate avgPerDay
+  const uniqueDays = new Set(ideas.map(i =>
+    new Date(i.created_at).toISOString().split('T')[0]
+  )).size || 1;
+
   return {
     totalIdeas: ideas.length,
     byType,
     byCategory,
     byPriority,
-    avgPerDay: ideas.length,
+    avgPerDay: Math.round((ideas.length / uniqueDays) * 10) / 10,
     topCategories,
     topTypes
   };

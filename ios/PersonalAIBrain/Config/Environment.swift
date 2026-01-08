@@ -5,26 +5,39 @@ import Foundation
 /// Named AppEnvironment to avoid conflict with SwiftUI's @Environment
 enum AppEnvironment {
 
+    // MARK: - Production Configuration
+
+    /// Set this to your Railway production URL after deployment
+    /// Format: https://your-app-name.up.railway.app
+    private static let productionURL: String? = nil // Set after Railway deployment
+
     // MARK: - API Configuration
 
     /// The base URL for the API backend
-    /// - For Simulator: Uses localhost
-    /// - For Device: Uses configured IP or defaults to localhost
+    /// Priority: 1. Production URL (if set), 2. Info.plist, 3. Environment var, 4. Development IP
     static var apiBaseURL: String {
+        // Always use production URL if configured (for Release builds)
+        #if !DEBUG
+        if let prodURL = productionURL, !prodURL.isEmpty {
+            return prodURL
+        }
+        #endif
+
         #if targetEnvironment(simulator)
         return "http://localhost:3000"
         #else
-        // Check for custom API URL in environment or Info.plist
-        if let customURL = ProcessInfo.processInfo.environment["API_BASE_URL"] {
-            return customURL
-        }
-
+        // Check for custom API URL in Info.plist (for TestFlight/App Store)
         if let plistURL = Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String,
            !plistURL.isEmpty {
             return plistURL
         }
 
-        // Default: Use the configured development IP
+        // Check environment variable
+        if let customURL = ProcessInfo.processInfo.environment["API_BASE_URL"] {
+            return customURL
+        }
+
+        // Default: Use the configured development IP for local testing
         return "http://\(developmentIP):3000"
         #endif
     }
@@ -39,6 +52,11 @@ enum AppEnvironment {
         }
         // Fallback to default
         return "192.168.212.104"
+    }
+
+    /// Check if using production backend
+    static var isProduction: Bool {
+        productionURL != nil && !isDebug
     }
 
     // MARK: - Environment Detection

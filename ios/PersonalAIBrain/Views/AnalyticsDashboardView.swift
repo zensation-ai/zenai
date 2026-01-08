@@ -64,7 +64,7 @@ struct AnalyticsDashboardView: View {
         .onAppear {
             viewModel.loadDashboard()
         }
-        .onChange(of: selectedPeriod) { _ in
+        .onChange(of: selectedPeriod) { _, _ in
             viewModel.loadDashboard()
         }
     }
@@ -566,7 +566,7 @@ class AnalyticsViewModel: ObservableObject {
     @Published var comparison: ComparisonData?
     @Published var isLoading = false
 
-    private let apiService = APIService()
+    private let apiService = APIService.shared
 
     func loadDashboard() {
         Task {

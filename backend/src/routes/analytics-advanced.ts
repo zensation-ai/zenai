@@ -490,11 +490,10 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', async (req: Reques
   try {
     const ctx = context as AIContext;
 
-    const intervalMap: Record<string, string> = {
-      week: '7 days',
-      month: '30 days'
-    };
-    const interval = intervalMap[period as string] || '7 days';
+    // Validate period to prevent SQL injection - only allow known values
+    const validPeriods = ['week', 'month'] as const;
+    const safePeriod = validPeriods.includes(period as any) ? period : 'week';
+    const intervalDays = safePeriod === 'month' ? 30 : 7;
 
     const [currentPeriod, previousPeriod] = await Promise.all([
       queryContext(ctx, `
@@ -505,9 +504,9 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', async (req: Reques
           COUNT(*) FILTER (WHERE type = 'idea') as ideas,
           COUNT(DISTINCT DATE(created_at)) as active_days
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '${interval}'
+        WHERE created_at > NOW() - INTERVAL '1 day' * $1
           AND is_archived = false
-      `),
+      `, [intervalDays]),
       queryContext(ctx, `
         SELECT
           COUNT(*) as total,
@@ -516,10 +515,10 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', async (req: Reques
           COUNT(*) FILTER (WHERE type = 'idea') as ideas,
           COUNT(DISTINCT DATE(created_at)) as active_days
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '${interval}' - INTERVAL '${interval}'
-          AND created_at <= NOW() - INTERVAL '${interval}'
+        WHERE created_at > NOW() - INTERVAL '1 day' * $1 * 2
+          AND created_at <= NOW() - INTERVAL '1 day' * $1
           AND is_archived = false
-      `)
+      `, [intervalDays])
     ]);
 
     const current = currentPeriod.rows[0];
@@ -556,7 +555,7 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', async (req: Reques
           ideas: calcChange(current.ideas, previous.ideas),
           activeDays: calcChange(current.active_days, previous.active_days)
         },
-        period
+        period: safePeriod
       }
     });
   } catch (error) {

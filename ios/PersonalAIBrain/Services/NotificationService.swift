@@ -62,7 +62,7 @@ class NotificationService: NSObject, ObservableObject {
         let tokenString = token.map { String(format: "%02.2hhx", $0) }.joined()
         print("📱 Push Token: \(tokenString)")
 
-        let apiService = APIService()
+        let apiService = APIService.shared
 
         do {
             try await apiService.registerPushToken(

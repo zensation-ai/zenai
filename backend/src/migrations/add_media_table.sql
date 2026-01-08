@@ -1,4 +1,5 @@
 -- Create media_items table for photos and videos
+-- Note: Embedding dimension is 768 to match nomic-embed-text and other tables
 CREATE TABLE IF NOT EXISTS media_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     media_type VARCHAR(20) NOT NULL CHECK (media_type IN ('photo', 'video')),
@@ -8,7 +9,7 @@ CREATE TABLE IF NOT EXISTS media_items (
     file_size BIGINT NOT NULL,
     caption TEXT,
     context VARCHAR(50),
-    embedding vector(384),
+    embedding vector(768),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

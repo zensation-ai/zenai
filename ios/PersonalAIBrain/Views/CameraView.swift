@@ -15,6 +15,7 @@ struct CameraView: View {
     @State private var showVoiceOption = false
     @State private var capturedMediaData: Data?
     @State private var capturedFilename: String?
+    @State private var errorMessage: String?
 
     var body: some View {
         ZStack {
@@ -178,6 +179,13 @@ struct CameraView: View {
         } message: {
             Text("Bitte erlaube den Kamera-Zugriff in den Einstellungen.")
         }
+        .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "")
+        }
     }
 
     private var captureButtonText: String {
@@ -199,7 +207,7 @@ struct CameraView: View {
                     try await audioRecorder.startRecording()
                     isRecordingVoice = true
                 } catch {
-                    print("Failed to start voice recording: \(error)")
+                    errorMessage = "Sprachaufnahme konnte nicht gestartet werden: \(error.localizedDescription)"
                 }
             }
         }

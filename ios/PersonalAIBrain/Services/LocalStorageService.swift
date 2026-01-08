@@ -40,7 +40,10 @@ class LocalStorageService: ObservableObject {
     }
 
     private func getDocumentsDirectory() -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        guard let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            fatalError("Unable to access documents directory")
+        }
+        return url
     }
 
     private func createTables() {
@@ -418,7 +421,7 @@ class LocalStorageService: ObservableObject {
     func syncWithServer() async {
         syncStatus = .syncing
 
-        let apiService = APIService()
+        let apiService = APIService.shared
 
         do {
             // Fetch latest from server

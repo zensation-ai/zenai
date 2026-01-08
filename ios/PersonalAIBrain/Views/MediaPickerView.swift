@@ -8,6 +8,7 @@ struct MediaPickerView: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedItem: PhotosPickerItem?
     @State private var isLoading = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -47,9 +48,18 @@ struct MediaPickerView: View {
                         isLoading = true
                         await loadMedia(from: item)
                         isLoading = false
-                        dismiss()
+                        if errorMessage == nil {
+                            dismiss()
+                        }
                     }
                 }
+            }
+            .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
+                Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "")
             }
         }
     }
@@ -70,7 +80,7 @@ struct MediaPickerView: View {
                 }
             }
         } catch {
-            print("❌ Error loading media: \(error)")
+            errorMessage = "Medien konnten nicht geladen werden: \(error.localizedDescription)"
         }
     }
 }

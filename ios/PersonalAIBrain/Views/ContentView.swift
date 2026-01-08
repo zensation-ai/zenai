@@ -96,8 +96,10 @@ struct ContentView: View {
         // Check on app launch if we should suggest a different context
         if let suggested = contextManager.suggestContextSwitch() {
             suggestedContext = suggested
-            // Show suggestion after a brief delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            // Show suggestion after a brief delay using Task (auto-cancels with view lifecycle)
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                guard !Task.isCancelled else { return }
                 withAnimation {
                     showContextSuggestion = true
                 }

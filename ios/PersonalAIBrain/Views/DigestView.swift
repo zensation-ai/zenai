@@ -44,6 +44,13 @@ struct DigestView: View {
         .onAppear {
             viewModel.loadDigests()
         }
+        .alert("Fehler", isPresented: .constant(viewModel.error != nil)) {
+            Button("OK") {
+                viewModel.error = nil
+            }
+        } message: {
+            Text(viewModel.error ?? "")
+        }
     }
 }
 
@@ -454,7 +461,7 @@ class DigestViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
-    private let apiService = APIService()
+    private let apiService = APIService.shared
 
     func loadDigests() {
         Task {

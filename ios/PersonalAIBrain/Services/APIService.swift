@@ -1,7 +1,22 @@
 import Foundation
 
+// MARK: - Data Extension for Safe String Appending
+private extension Data {
+    /// Safely append a string as UTF-8 data. Returns false if encoding fails.
+    mutating func appendString(_ string: String) -> Bool {
+        guard let data = string.data(using: .utf8) else {
+            return false
+        }
+        append(data)
+        return true
+    }
+}
+
 @MainActor
 class APIService: ObservableObject {
+    // Shared singleton instance for ViewModels that can't access EnvironmentObject
+    static let shared = APIService()
+
     // API URL is now configured via Environment.swift
     // - Simulator: Uses localhost automatically
     // - Real Device: Configure via Info.plist (DevelopmentIP key) or environment variable
@@ -191,13 +206,13 @@ class APIService: ObservableObject {
 
         var body = Data()
 
-        // Add audio file
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
+        // Add audio file (safe string appending)
+        _ = body.appendString("--\(boundary)\r\n")
+        _ = body.appendString("Content-Disposition: form-data; name=\"audio\"; filename=\"\(filename)\"\r\n")
+        _ = body.appendString("Content-Type: audio/wav\r\n\r\n")
         body.append(audioData)
-        body.append("\r\n".data(using: .utf8)!)
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        _ = body.appendString("\r\n")
+        _ = body.appendString("--\(boundary)--\r\n")
 
         request.httpBody = body
 
@@ -809,21 +824,21 @@ extension APIService {
 
         var body = Data()
 
-        // Add audio file
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
+        // Add audio file (safe string appending)
+        _ = body.appendString("--\(boundary)\r\n")
+        _ = body.appendString("Content-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"\r\n")
+        _ = body.appendString("Content-Type: audio/wav\r\n\r\n")
         body.append(audioData)
-        body.append("\r\n".data(using: .utf8)!)
+        _ = body.appendString("\r\n")
 
         // Add persona if specified
         if let persona = persona {
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"persona\"\r\n\r\n".data(using: .utf8)!)
-            body.append("\(persona)\r\n".data(using: .utf8)!)
+            _ = body.appendString("--\(boundary)\r\n")
+            _ = body.appendString("Content-Disposition: form-data; name=\"persona\"\r\n\r\n")
+            _ = body.appendString("\(persona)\r\n")
         }
 
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        _ = body.appendString("--\(boundary)--\r\n")
 
         request.httpBody = body
 
@@ -949,13 +964,13 @@ extension APIService {
             contentType = "application/octet-stream"
         }
 
-        // Add media file
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"media\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
+        // Add media file (safe string appending)
+        _ = body.appendString("--\(boundary)\r\n")
+        _ = body.appendString("Content-Disposition: form-data; name=\"media\"; filename=\"\(filename)\"\r\n")
+        _ = body.appendString("Content-Type: \(contentType)\r\n\r\n")
         body.append(data)
-        body.append("\r\n".data(using: .utf8)!)
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        _ = body.appendString("\r\n")
+        _ = body.appendString("--\(boundary)--\r\n")
 
         request.httpBody = body
 
@@ -1021,23 +1036,23 @@ extension APIService {
             contentType = "application/octet-stream"
         }
 
-        // Add media file
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"media\"; filename=\"\(mediaFilename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: \(contentType)\r\n\r\n".data(using: .utf8)!)
+        // Add media file (safe string appending)
+        _ = body.appendString("--\(boundary)\r\n")
+        _ = body.appendString("Content-Disposition: form-data; name=\"media\"; filename=\"\(mediaFilename)\"\r\n")
+        _ = body.appendString("Content-Type: \(contentType)\r\n\r\n")
         body.append(mediaData)
-        body.append("\r\n".data(using: .utf8)!)
+        _ = body.appendString("\r\n")
 
         // Add voice file if present
         if let voice = voiceData {
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"voice\"; filename=\"voice.m4a\"\r\n".data(using: .utf8)!)
-            body.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
+            _ = body.appendString("--\(boundary)\r\n")
+            _ = body.appendString("Content-Disposition: form-data; name=\"voice\"; filename=\"voice.m4a\"\r\n")
+            _ = body.appendString("Content-Type: audio/m4a\r\n\r\n")
             body.append(voice)
-            body.append("\r\n".data(using: .utf8)!)
+            _ = body.appendString("\r\n")
         }
 
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        _ = body.appendString("--\(boundary)--\r\n")
 
         request.httpBody = body
 

@@ -7,6 +7,14 @@ import { triggerWebhook } from '../services/webhooks';
 import { learnFromCorrection, learnFromThought } from '../services/learning-engine';
 import { findDuplicates, mergeIdeas } from '../services/duplicate-detection';
 import { logger } from '../utils/logger';
+import {
+  validatePagination,
+  validateIdeaType,
+  validateCategory,
+  validatePriority,
+  validateRequiredString,
+  parseIntSafe,
+} from '../utils/validation';
 
 export const ideasRouter = Router();
 
@@ -63,27 +71,45 @@ ideasRouter.get('/stats/summary', async (req, res) => {
 ideasRouter.get('/', async (req, res) => {
   try {
     const ctx = getContext(req);
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-    const offset = parseInt(req.query.offset as string) || 0;
-    const type = req.query.type as string;
-    const category = req.query.category as string;
-    const priority = req.query.priority as string;
+
+    // Validate pagination
+    const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
+    if (!paginationResult.success) {
+      return res.status(400).json({ error: 'Invalid pagination', details: paginationResult.errors });
+    }
+    const { limit, offset } = paginationResult.data!;
+
+    // Validate filter params
+    const typeResult = validateIdeaType(req.query.type);
+    if (!typeResult.success) {
+      return res.status(400).json({ error: 'Invalid type filter', details: typeResult.errors });
+    }
+
+    const categoryResult = validateCategory(req.query.category);
+    if (!categoryResult.success) {
+      return res.status(400).json({ error: 'Invalid category filter', details: categoryResult.errors });
+    }
+
+    const priorityResult = validatePriority(req.query.priority);
+    if (!priorityResult.success) {
+      return res.status(400).json({ error: 'Invalid priority filter', details: priorityResult.errors });
+    }
 
     let whereClause = '';
     const params: any[] = [];
     let paramIndex = 1;
 
-    if (type) {
+    if (typeResult.data) {
       whereClause += ` AND type = $${paramIndex++}`;
-      params.push(type);
+      params.push(typeResult.data);
     }
-    if (category) {
+    if (categoryResult.data) {
       whereClause += ` AND category = $${paramIndex++}`;
-      params.push(category);
+      params.push(categoryResult.data);
     }
-    if (priority) {
+    if (priorityResult.data) {
       whereClause += ` AND priority = $${paramIndex++}`;
-      params.push(priority);
+      params.push(priorityResult.data);
     }
 
     const result = await queryContext(
@@ -178,11 +204,20 @@ ideasRouter.post('/search', async (req, res) => {
 
   try {
     const ctx = getContext(req);
-    const { query: searchQuery, limit = 10 } = req.body;
 
-    if (!searchQuery) {
-      return res.status(400).json({ error: 'Search query required' });
+    // Validate search query
+    const queryResult = validateRequiredString(req.body.query, 'query', { minLength: 1, maxLength: 500 });
+    if (!queryResult.success) {
+      return res.status(400).json({ error: 'Invalid search query', details: queryResult.errors });
     }
+    const searchQuery = queryResult.data!;
+
+    // Validate limit
+    const limitResult = parseIntSafe(req.body.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
+    if (!limitResult.success) {
+      return res.status(400).json({ error: 'Invalid limit', details: limitResult.errors });
+    }
+    const limit = limitResult.data!;
 
     // Generate embedding for search query
     const queryEmbedding = await generateEmbedding(searchQuery);
@@ -553,8 +588,13 @@ ideasRouter.post('/:id/swipe', validateUUID, async (req, res) => {
 ideasRouter.get('/archived/list', async (req, res) => {
   try {
     const ctx = getContext(req);
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-    const offset = parseInt(req.query.offset as string) || 0;
+
+    // Validate pagination
+    const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
+    if (!paginationResult.success) {
+      return res.status(400).json({ error: 'Invalid pagination', details: paginationResult.errors });
+    }
+    const { limit, offset } = paginationResult.data!;
 
     const result = await queryContext(
       ctx,

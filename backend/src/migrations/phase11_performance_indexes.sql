@@ -62,7 +62,7 @@ ON rate_limits (window_start);
 -- ===========================================
 
 CREATE INDEX IF NOT EXISTS idx_loose_thoughts_user_status
-ON loose_thoughts (user_id, processed, created_at DESC);
+ON loose_thoughts (user_id, is_processed, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_loose_thoughts_cluster
 ON loose_thoughts (cluster_id) WHERE cluster_id IS NOT NULL;

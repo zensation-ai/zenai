@@ -179,8 +179,8 @@ voiceMemoRouter.post('/', (req, res, next) => {
     const totalTime = Date.now() - startTime;
 
     // Background tasks: Knowledge Graph analysis, user profile tracking, webhooks, learning
-    // These run async to not block the response
-    Promise.all([
+    // Fire-and-forget: These run async to not block the response (void indicates intentional no-await)
+    void Promise.allSettled([
       analyzeRelationships(ideaId).catch((err) =>
         console.log('Background relationship analysis skipped:', err.message)
       ),
@@ -274,7 +274,8 @@ voiceMemoRouter.post('/text', async (req, res) => {
     await storeIdea(ideaId, structured, text, embedding);
 
     // Background tasks including learning
-    Promise.all([
+    // Fire-and-forget: void indicates intentional no-await
+    void Promise.allSettled([
       analyzeRelationships(ideaId).catch((err) =>
         console.log('Background relationship analysis skipped:', err.message)
       ),

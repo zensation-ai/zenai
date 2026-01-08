@@ -8,6 +8,7 @@ struct ProfileView: View {
     @State private var isLoading = true
     @State private var autoPriorityEnabled = false
     @State private var showExportSheet = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationView {
@@ -75,6 +76,13 @@ struct ProfileView: View {
             .task {
                 await loadDataAsync()
             }
+            .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
+                Button("OK") {
+                    errorMessage = nil
+                }
+            } message: {
+                Text(errorMessage ?? "")
+            }
         }
     }
 
@@ -94,7 +102,7 @@ struct ProfileView: View {
             recommendations = try await recsTask
             autoPriorityEnabled = stats?.autoPriorityEnabled ?? false
         } catch {
-            print("Failed to load profile: \(error)")
+            errorMessage = "Profil konnte nicht geladen werden: \(error.localizedDescription)"
         }
         isLoading = false
     }
