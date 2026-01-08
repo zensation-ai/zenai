@@ -8,7 +8,3 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-
-# Use EU region for GDPR compliance
-[deploy.region]
-default = "eu-west"
