@@ -34,6 +34,9 @@ import { analyticsRouter } from './routes/analytics';
 import { exportRouter } from './routes/export';
 // Phase 19: Push Notifications
 import { notificationsRouter } from './routes/notifications';
+// Phase 20: Digest & Advanced Analytics
+import { digestRouter } from './routes/digest';
+import { advancedAnalyticsRouter } from './routes/analytics-advanced';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -95,6 +98,10 @@ app.use('/api/export', exportRouter);  // Export routes: /api/export/ideas/pdf, 
 // Phase 19: Push Notifications
 app.use('/api/notifications', notificationsRouter);  // Notification routes: /api/notifications/register, etc.
 
+// Phase 20: Digest & Advanced Analytics
+app.use('/api', digestRouter);  // Digest routes: /api/:context/digest/*
+app.use('/api', advancedAnalyticsRouter);  // Advanced analytics: /api/:context/analytics/dashboard, etc.
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
@@ -109,7 +116,7 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-🧠 Personal AI System - Backend (Phase 19: Push Notifications)
+🧠 Personal AI System - Backend (Phase 20: Digest & Analytics)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
@@ -124,7 +131,16 @@ Phase 6 APIs (NEW!):
   - Personal Persona: Friendly, exploratory
   - Work Persona: Structured, business-focused
 
-Phase 19 APIs (NEW!):
+Phase 20 APIs (NEW!):
+  - Daily Digest:    /api/:context/digest/generate/daily
+  - Weekly Digest:   /api/:context/digest/generate/weekly
+  - Digest History:  /api/:context/digest/history
+  - Analytics Dash:  /api/:context/analytics/dashboard
+  - Productivity:    /api/:context/analytics/productivity-score
+  - Patterns:        /api/:context/analytics/patterns
+  - Goals:           /api/:context/digest/goals
+
+Phase 19 APIs:
   - Push Register:   /api/notifications/register
   - Preferences:     /api/notifications/preferences
   - Send Notif:      /api/notifications/send

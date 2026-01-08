@@ -200,6 +200,168 @@ enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
     }
 }
 
+// MARK: - Phase 20: Daily Digest Intent
+
+struct GetDailyDigestIntent: AppIntent {
+    static var title: LocalizedStringResource = "Tages-Digest abrufen"
+    static var description = IntentDescription("Zeigt die Zusammenfassung deines Tages")
+
+    @Parameter(title: "Kontext", default: .personal)
+    var context: IntentContext
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<String> {
+        let apiService = APIService()
+        let contextValue = context == .personal ? "personal" : "work"
+
+        do {
+            if let digest = try await apiService.getLatestDigest(type: "daily", context: context == .personal ? .personal : .work) {
+                return .result(value: """
+                    \(digest.title)
+
+                    \(digest.summary)
+
+                    Produktivitäts-Score: \(digest.productivityScore)%
+                    Gedanken heute: \(digest.ideasCount)
+                    """)
+            } else {
+                return .result(value: "Noch kein Tages-Digest vorhanden. Erstelle Gedanken, um einen Digest zu generieren.")
+            }
+        } catch {
+            throw IntentError.generic("Fehler: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - Phase 20: Weekly Insights Intent
+
+struct GetWeeklyInsightsIntent: AppIntent {
+    static var title: LocalizedStringResource = "Wochen-Insights abrufen"
+    static var description = IntentDescription("Zeigt die wichtigsten Erkenntnisse deiner Woche")
+
+    @Parameter(title: "Kontext", default: .personal)
+    var context: IntentContext
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<String> {
+        let apiService = APIService()
+
+        do {
+            if let digest = try await apiService.getLatestDigest(type: "weekly", context: context == .personal ? .personal : .work) {
+                var insights = digest.aiInsights.prefix(3).joined(separator: "\n- ")
+                if !insights.isEmpty {
+                    insights = "- " + insights
+                }
+
+                return .result(value: """
+                    \(digest.title)
+
+                    \(digest.summary)
+
+                    Erkenntnisse:
+                    \(insights)
+
+                    Score: \(digest.productivityScore)%
+                    """)
+            } else {
+                return .result(value: "Noch keine Wochen-Insights vorhanden.")
+            }
+        } catch {
+            throw IntentError.generic("Fehler: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - Phase 20: Productivity Score Intent
+
+struct GetProductivityScoreIntent: AppIntent {
+    static var title: LocalizedStringResource = "Produktivitäts-Score abrufen"
+    static var description = IntentDescription("Zeigt deinen aktuellen Produktivitäts-Score")
+
+    @Parameter(title: "Kontext", default: .personal)
+    var context: IntentContext
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<String> {
+        let apiService = APIService()
+
+        do {
+            let score = try await apiService.getProductivityScore(context: context == .personal ? .personal : .work)
+
+            let trendEmoji: String
+            switch score.trend.label {
+            case "Ausgezeichnet": trendEmoji = "🌟"
+            case "Gut": trendEmoji = "👍"
+            case "Moderat": trendEmoji = "📊"
+            default: trendEmoji = "💪"
+            }
+
+            return .result(value: """
+                Produktivitäts-Score: \(score.overall)% \(trendEmoji)
+
+                Output: \(score.breakdown.output.score)%
+                Konsistenz: \(score.breakdown.consistency.score)%
+                Vielfalt: \(score.breakdown.variety.score)%
+                Qualität: \(score.breakdown.quality.score)%
+
+                Status: \(score.trend.label)
+                """)
+        } catch {
+            throw IntentError.generic("Fehler: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - Phase 20: Generate Digest Intent
+
+struct GenerateDigestIntent: AppIntent {
+    static var title: LocalizedStringResource = "Digest generieren"
+    static var description = IntentDescription("Generiert einen neuen Tages- oder Wochen-Digest")
+
+    @Parameter(title: "Typ", default: DigestType.daily)
+    var digestType: DigestType
+
+    @Parameter(title: "Kontext", default: .personal)
+    var context: IntentContext
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Generiere \(\.$digestType) Digest") {
+            \.$context
+        }
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<String> {
+        let apiService = APIService()
+        let typeString = digestType == .daily ? "daily" : "weekly"
+
+        do {
+            let digest = try await apiService.generateDigest(type: typeString, context: context == .personal ? .personal : .work)
+            return .result(value: """
+                \(digest.title) erstellt!
+
+                \(digest.summary)
+
+                Score: \(digest.productivityScore)%
+                """)
+        } catch {
+            throw IntentError.generic("Fehler beim Generieren: \(error.localizedDescription)")
+        }
+    }
+}
+
+enum DigestType: String, AppEnum {
+    case daily
+    case weekly
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Digest-Typ"
+
+    static var caseDisplayRepresentations: [DigestType: DisplayRepresentation] = [
+        .daily: DisplayRepresentation(title: "Tages-Digest", image: .init(systemName: "sun.max")),
+        .weekly: DisplayRepresentation(title: "Wochen-Digest", image: .init(systemName: "calendar"))
+    ]
+}
+
 // MARK: - App Shortcuts Provider
 
 struct PersonalAIBrainShortcuts: AppShortcutsProvider {
@@ -255,6 +417,50 @@ struct PersonalAIBrainShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Gedanke hinzufügen",
             systemImageName: "brain"
+        )
+
+        // Phase 20: New Shortcuts
+        AppShortcut(
+            intent: GetDailyDigestIntent(),
+            phrases: [
+                "Zeige meinen Tages-Digest in \(.applicationName)",
+                "Was habe ich heute gemacht in \(.applicationName)",
+                "Tages-Zusammenfassung in \(.applicationName)"
+            ],
+            shortTitle: "Tages-Digest",
+            systemImageName: "sun.max"
+        )
+
+        AppShortcut(
+            intent: GetWeeklyInsightsIntent(),
+            phrases: [
+                "Zeige meine Wochen-Insights in \(.applicationName)",
+                "Wöchentliche Zusammenfassung in \(.applicationName)",
+                "Was war diese Woche wichtig in \(.applicationName)"
+            ],
+            shortTitle: "Wochen-Insights",
+            systemImageName: "calendar"
+        )
+
+        AppShortcut(
+            intent: GetProductivityScoreIntent(),
+            phrases: [
+                "Wie produktiv bin ich in \(.applicationName)",
+                "Zeige meinen Score in \(.applicationName)",
+                "Produktivitäts-Score in \(.applicationName)"
+            ],
+            shortTitle: "Produktivität",
+            systemImageName: "chart.bar"
+        )
+
+        AppShortcut(
+            intent: GenerateDigestIntent(),
+            phrases: [
+                "Erstelle einen Digest in \(.applicationName)",
+                "Generiere Zusammenfassung in \(.applicationName)"
+            ],
+            shortTitle: "Digest erstellen",
+            systemImageName: "sparkles"
         )
     }
 }

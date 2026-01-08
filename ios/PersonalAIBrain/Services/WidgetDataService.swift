@@ -1,7 +1,7 @@
 import Foundation
 import WidgetKit
 
-/// Phase 13.2: Widget Data Service
+/// Phase 13.2 + Phase 20: Widget Data Service
 /// Shares data between the main app and widgets via App Groups
 final class WidgetDataService {
     static let shared = WidgetDataService()
@@ -9,6 +9,10 @@ final class WidgetDataService {
     private let appGroupID = "group.com.personalai.brain"
     private let recentIdeasKey = "recentIdeas"
     private let totalIdeasKey = "totalIdeas"
+    private let productivityScoreKey = "productivityScore"
+    private let todayCountKey = "todayCount"
+    private let weekCountKey = "weekCount"
+    private let streakKey = "streak"
 
     private var sharedDefaults: UserDefaults? {
         UserDefaults(suiteName: appGroupID)
@@ -62,10 +66,68 @@ final class WidgetDataService {
         refreshWidgets()
     }
 
+    /// Phase 20: Update productivity data for widgets
+    func updateProductivityData(score: Int, todayCount: Int, weekCount: Int, streak: Int) {
+        guard let defaults = sharedDefaults else {
+            print("Widget: App Group not available")
+            return
+        }
+
+        defaults.set(score, forKey: productivityScoreKey)
+        defaults.set(todayCount, forKey: todayCountKey)
+        defaults.set(weekCount, forKey: weekCountKey)
+        defaults.set(streak, forKey: streakKey)
+
+        refreshWidget(kind: "ProductivityWidget")
+    }
+
+    /// Phase 20: Update all widget data at once
+    func updateAllWidgetData(
+        ideas: [Idea],
+        totalCount: Int,
+        productivityScore: Int,
+        todayCount: Int,
+        weekCount: Int,
+        streak: Int
+    ) {
+        guard let defaults = sharedDefaults else {
+            print("Widget: App Group not available")
+            return
+        }
+
+        // Ideas data
+        let widgetIdeas = ideas.prefix(5).map { idea in
+            WidgetIdeaData(
+                id: idea.id,
+                title: idea.title,
+                type: idea.type.rawValue,
+                category: idea.category.rawValue,
+                createdAt: idea.createdAt
+            )
+        }
+
+        if let encoded = try? JSONEncoder().encode(widgetIdeas) {
+            defaults.set(encoded, forKey: recentIdeasKey)
+        }
+        defaults.set(totalCount, forKey: totalIdeasKey)
+
+        // Productivity data
+        defaults.set(productivityScore, forKey: productivityScoreKey)
+        defaults.set(todayCount, forKey: todayCountKey)
+        defaults.set(weekCount, forKey: weekCountKey)
+        defaults.set(streak, forKey: streakKey)
+
+        refreshWidgets()
+    }
+
     /// Clear all widget data
     func clearWidgetData() {
         sharedDefaults?.removeObject(forKey: recentIdeasKey)
         sharedDefaults?.removeObject(forKey: totalIdeasKey)
+        sharedDefaults?.removeObject(forKey: productivityScoreKey)
+        sharedDefaults?.removeObject(forKey: todayCountKey)
+        sharedDefaults?.removeObject(forKey: weekCountKey)
+        sharedDefaults?.removeObject(forKey: streakKey)
         refreshWidgets()
     }
 
