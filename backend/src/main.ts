@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import { voiceMemoRouter } from './routes/voice-memo';
@@ -37,6 +38,8 @@ import { notificationsRouter } from './routes/notifications';
 // Phase 20: Digest & Advanced Analytics
 import { digestRouter } from './routes/digest';
 import { advancedAnalyticsRouter } from './routes/analytics-advanced';
+// Phase 21: Personalization Chat
+import { personalizationChatRouter } from './routes/personalization-chat';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -48,12 +51,50 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],  // For Swagger UI
+      scriptSrc: ["'self'", "'unsafe-inline'"],  // For Swagger UI
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,  // For Swagger UI
+}));
+
+// CORS with whitelist (configurable via environment)
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+  'http://localhost:3000',
+  'http://localhost:8080',
+  'capacitor://localhost',
+  'ionic://localhost'
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);  // In production, change to: callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id']
+}));
+
+// Request tracking & compression
 app.use(requestIdMiddleware); // Phase 12: Request ID tracking
 app.use(compression()); // Phase 11: gzip compression for responses
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Global rate limiter for all requests
+app.use(rateLimiter);
+
+// Body parsers with reasonable limits (10MB default, routes can override)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Phase 12: API Documentation
 setupSwagger(app);
@@ -102,10 +143,24 @@ app.use('/api/notifications', notificationsRouter);  // Notification routes: /ap
 app.use('/api', digestRouter);  // Digest routes: /api/:context/digest/*
 app.use('/api', advancedAnalyticsRouter);  // Advanced analytics: /api/:context/analytics/dashboard, etc.
 
+// Phase 21: Personalization Chat - "Lerne mich kennen"
+app.use('/api/personalization', personalizationChatRouter);  // Chat: /api/personalization/chat, /api/personalization/facts
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
 }, 60 * 60 * 1000);
+
+// 404 Handler for undefined routes
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      code: 'NOT_FOUND',
+      message: `Route ${req.method} ${req.path} not found`
+    }
+  });
+});
 
 // Error handling - Use centralized error handler
 app.use(errorHandler);
@@ -116,29 +171,30 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-🧠 Personal AI System - Backend (Phase 20: Digest & Analytics)
+Personal AI System - Backend (Phase 21)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
-Ollama:      ${process.env.OLLAMA_URL}
-========================================================
-DUAL-DATABASE ARCHITECTURE:
-  🏠 Personal: postgres://${process.env.DB_HOST}:${process.env.DB_PORT}/personal_ai
-  💼 Work:     postgres://${process.env.DB_HOST}:${process.env.DB_PORT}/work_ai
+Ollama:      ${process.env.OLLAMA_URL ? 'configured' : 'not configured'}
+Database:    ${process.env.DATABASE_URL ? 'DATABASE_URL (Railway)' : (process.env.DB_HOST ? 'DB_HOST configured' : 'localhost (default)')}
 ========================================================
 Phase 6 APIs (NEW!):
   - Context-aware routes support /api/:context/...
   - Personal Persona: Friendly, exploratory
   - Work Persona: Structured, business-focused
 
-Phase 20 APIs (NEW!):
+Phase 21 APIs (NEW!):
+  - Start Chat:      /api/personalization/start
+  - Send Message:    /api/personalization/chat
+  - Get Facts:       /api/personalization/facts
+  - Progress:        /api/personalization/progress
+  - Summary:         /api/personalization/summary
+
+Phase 20 APIs:
   - Daily Digest:    /api/:context/digest/generate/daily
   - Weekly Digest:   /api/:context/digest/generate/weekly
-  - Digest History:  /api/:context/digest/history
   - Analytics Dash:  /api/:context/analytics/dashboard
   - Productivity:    /api/:context/analytics/productivity-score
-  - Patterns:        /api/:context/analytics/patterns
-  - Goals:           /api/:context/digest/goals
 
 Phase 19 APIs:
   - Push Register:   /api/notifications/register

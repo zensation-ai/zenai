@@ -3,16 +3,42 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'ai_brain',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'localpass',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+/**
+ * Parse DATABASE_URL into connection config
+ */
+function getPoolConfig() {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (databaseUrl) {
+    // Railway-style DATABASE_URL
+    const parsed = new URL(databaseUrl);
+    return {
+      host: parsed.hostname,
+      port: parseInt(parsed.port || '5432'),
+      user: parsed.username,
+      password: parsed.password,
+      database: parsed.pathname.slice(1),
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    };
+  }
+
+  // Individual environment variables
+  return {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'ai_brain',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'localpass',
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  };
+}
+
+export const pool = new Pool(getPoolConfig());
 
 pool.on('error', (err) => {
   console.error('Unexpected database error:', err);

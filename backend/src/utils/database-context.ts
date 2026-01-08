@@ -29,11 +29,47 @@ export function isValidUUID(id: string): boolean {
 // Pool Configuration (Phase 11 Optimized)
 // ===========================================
 
+/**
+ * Parse DATABASE_URL into connection config
+ * Supports Railway-style URLs: postgresql://user:password@host:port/database
+ */
+function parseConnectionString(url: string): {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
+  ssl?: { rejectUnauthorized: boolean };
+} {
+  const parsed = new URL(url);
+  return {
+    host: parsed.hostname,
+    port: parseInt(parsed.port || '5432'),
+    user: parsed.username,
+    password: parsed.password,
+    database: parsed.pathname.slice(1), // Remove leading /
+    // Enable SSL for production (Railway requires it)
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  };
+}
+
+// Check if DATABASE_URL is provided (Railway style)
+const databaseUrl = process.env.DATABASE_URL;
+const useConnectionString = !!databaseUrl;
+
+// Base config from DATABASE_URL or individual vars
+const baseConfig = useConnectionString && databaseUrl
+  ? parseConnectionString(databaseUrl)
+  : {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'localpass',
+      database: 'personal_ai', // Default for non-URL config
+    };
+
 const POOL_CONFIG = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'localpass',
+  ...baseConfig,
   // Connection pool settings
   max: parseInt(process.env.DB_POOL_SIZE || '20'),
   min: parseInt(process.env.DB_POOL_MIN || '2'),
@@ -46,16 +82,21 @@ const POOL_CONFIG = {
   keepAliveInitialDelayMillis: 10000,
 };
 
+// For Railway (single database), we use the same database for both contexts
+// but prefix tables with context (schema separation can be added later)
+// For local dev, we use separate databases
+const personalConfig = useConnectionString
+  ? { ...POOL_CONFIG } // Use same database from DATABASE_URL
+  : { ...POOL_CONFIG, database: 'personal_ai' };
+
+const workConfig = useConnectionString
+  ? { ...POOL_CONFIG } // Use same database from DATABASE_URL
+  : { ...POOL_CONFIG, database: 'work_ai' };
+
 // Connection pools for each context
 const pools: Record<AIContext, Pool> = {
-  personal: new Pool({
-    ...POOL_CONFIG,
-    database: 'personal_ai',
-  }),
-  work: new Pool({
-    ...POOL_CONFIG,
-    database: 'work_ai',
-  }),
+  personal: new Pool(personalConfig),
+  work: new Pool(workConfig),
 };
 
 // Track pool stats for monitoring
