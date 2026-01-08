@@ -38,7 +38,7 @@ RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/dist ./dist
 
 # Copy SQL migrations (needed for db:init)
-COPY --from=builder /app/src/sql ./src/sql
+COPY --from=builder /app/sql ./sql
 COPY --from=builder /app/src/migrations ./src/migrations
 
 # Create uploads directory
