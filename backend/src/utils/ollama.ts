@@ -37,6 +37,121 @@ export interface StructuredIdea {
   keywords: string[];
 }
 
+// Valid categories and types for database constraints
+const VALID_CATEGORIES = ['business', 'technical', 'personal', 'learning'] as const;
+const VALID_TYPES = ['idea', 'task', 'insight', 'problem', 'question'] as const;
+const VALID_PRIORITIES = ['low', 'medium', 'high'] as const;
+
+// Category mapping for common LLM outputs that don't match our schema
+const CATEGORY_MAPPING: Record<string, typeof VALID_CATEGORIES[number]> = {
+  // Business-related (including German/Work-specific)
+  'marketing': 'business',
+  'sales': 'business',
+  'strategy': 'business',
+  'strategie': 'business',
+  'finance': 'business',
+  'management': 'business',
+  'startup': 'business',
+  'product': 'business',
+  'growth': 'business',
+  'operations': 'business',
+  'kunden': 'business',
+  'ews': 'business',
+  '1komma5': 'business',
+  'team': 'business',
+  'vertrieb': 'business',
+  'verkauf': 'business',
+  // Technical-related
+  'development': 'technical',
+  'engineering': 'technical',
+  'code': 'technical',
+  'programming': 'technical',
+  'software': 'technical',
+  'infrastructure': 'technical',
+  'devops': 'technical',
+  'architecture': 'technical',
+  'technik': 'technical',
+  'tech': 'technical',
+  'it': 'technical',
+  // Personal-related
+  'health': 'personal',
+  'wellness': 'personal',
+  'lifestyle': 'personal',
+  'family': 'personal',
+  'relationships': 'personal',
+  'hobby': 'personal',
+  'creativity': 'personal',
+  'privat': 'personal',
+  'persönlich': 'personal',
+  'familie': 'personal',
+  'gesundheit': 'personal',
+  // Learning-related
+  'education': 'learning',
+  'research': 'learning',
+  'study': 'learning',
+  'training': 'learning',
+  'skills': 'learning',
+  'lernen': 'learning',
+  'weiterbildung': 'learning',
+  'forschung': 'learning',
+};
+
+/**
+ * Normalize category to valid database value
+ */
+export function normalizeCategory(category: string | undefined): typeof VALID_CATEGORIES[number] {
+  if (!category) return 'personal';
+
+  // Handle pipe-separated categories (e.g., "EwS|Strategie|Business")
+  // Take the first part or find the first matching category
+  const parts = category.split('|').map(p => p.toLowerCase().trim());
+
+  for (const part of parts) {
+    // Direct match
+    if (VALID_CATEGORIES.includes(part as typeof VALID_CATEGORIES[number])) {
+      return part as typeof VALID_CATEGORIES[number];
+    }
+
+    // Check mapping
+    if (CATEGORY_MAPPING[part]) {
+      return CATEGORY_MAPPING[part];
+    }
+  }
+
+  // Default fallback
+  return 'business';
+}
+
+/**
+ * Normalize type to valid database value
+ */
+export function normalizeType(type: string | undefined): typeof VALID_TYPES[number] {
+  if (!type) return 'idea';
+
+  const lower = type.toLowerCase().trim();
+
+  if (VALID_TYPES.includes(lower as typeof VALID_TYPES[number])) {
+    return lower as typeof VALID_TYPES[number];
+  }
+
+  return 'idea';
+}
+
+/**
+ * Normalize priority to valid database value
+ */
+export function normalizePriority(priority: string | undefined): typeof VALID_PRIORITIES[number] {
+  if (!priority) return 'medium';
+
+  const lower = priority.toLowerCase().trim();
+
+  if (VALID_PRIORITIES.includes(lower as typeof VALID_PRIORITIES[number])) {
+    return lower as typeof VALID_PRIORITIES[number];
+  }
+
+  return 'medium';
+}
+
 export async function structureWithOllama(transcript: string): Promise<StructuredIdea> {
   const prompt = `${SYSTEM_PROMPT}
 
@@ -70,7 +185,19 @@ STRUCTURED OUTPUT:`;
       jsonStr = jsonMatch[0];
     }
 
-    return JSON.parse(jsonStr);
+    const parsed = JSON.parse(jsonStr);
+
+    // Normalize fields to ensure they match database constraints
+    return {
+      title: parsed.title || 'Unstrukturierte Notiz',
+      type: normalizeType(parsed.type),
+      category: normalizeCategory(parsed.category),
+      priority: normalizePriority(parsed.priority),
+      summary: parsed.summary || '',
+      next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+      context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+    };
   } catch (error: any) {
     console.error('Ollama structuring error:', error.message);
 

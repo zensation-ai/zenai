@@ -71,10 +71,16 @@ function App() {
   const checkHealth = async () => {
     try {
       const response = await axios.get('/api/health');
+      // Support both old (database) and new (databases) format
+      const databases = response.data.services.databases;
+      const dbConnected = databases
+        ? (databases.personal?.status === 'connected' || databases.work?.status === 'connected')
+        : response.data.services.database?.status === 'connected';
+
       setApiStatus({
-        database: response.data.services.database.status === 'connected',
-        ollama: response.data.services.ollama.status === 'connected',
-        models: response.data.services.ollama.models || [],
+        database: dbConnected,
+        ollama: response.data.services.ollama?.status === 'connected',
+        models: response.data.services.ollama?.models || [],
       });
     } catch (err) {
       setApiStatus({ database: false, ollama: false, models: [] });

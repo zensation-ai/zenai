@@ -6,10 +6,11 @@
  */
 
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import { transcribeAudio } from '../services/whisper';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { getPersona, shouldImmediatelyStructure } from '../config/personas';
-import { generateEmbedding } from '../utils/ollama';
+import { generateEmbedding, normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
@@ -18,13 +19,44 @@ export const voiceMemoContextRouter = Router();
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
+// Configure multer for audio file uploads (same as voice-memo.ts)
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'audio/wav',
+      'audio/wave',
+      'audio/x-wav',
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/webm',
+      'audio/ogg',
+      'audio/m4a',
+      'audio/mp4',
+      'audio/x-m4a',
+      'application/octet-stream',
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid audio format: ${file.mimetype}`));
+    }
+  },
+});
+
 /**
  * POST /api/:context/voice-memo
  *
  * Process a voice memo in the specified context (personal or work)
  * Uses context-specific persona for structuring
+ *
+ * Supports both:
+ * - FormData with 'audio' file (from RecordButton)
+ * - JSON with 'text' or 'audioBase64' fields
  */
-voiceMemoContextRouter.post('/:context/voice-memo', async (req: Request, res: Response) => {
+voiceMemoContextRouter.post('/:context/voice-memo', upload.single('audio'), async (req: Request, res: Response) => {
   const { context } = req.params;
 
   // Validate context
@@ -36,21 +68,26 @@ voiceMemoContextRouter.post('/:context/voice-memo', async (req: Request, res: Re
 
   const startTime = Date.now();
   const { audioBase64, text } = req.body;
+  const audioFile = req.file; // From multer (FormData upload)
 
   try {
     let transcript: string;
 
     if (text) {
-      // Direct text input
+      // Direct text input (JSON body)
       transcript = text;
+    } else if (audioFile) {
+      // Audio file from FormData (RecordButton)
+      const transcriptionResult = await transcribeAudio(audioFile.buffer, audioFile.originalname);
+      transcript = transcriptionResult.text;
     } else if (audioBase64) {
-      // Transcribe audio
+      // Base64 audio (JSON body)
       const buffer = Buffer.from(audioBase64, 'base64');
       const transcriptionResult = await transcribeAudio(buffer, 'audio.webm');
       transcript = transcriptionResult.text;
     } else {
       return res.status(400).json({
-        error: 'Either audioBase64 or text required'
+        error: 'Either audio file, audioBase64, or text required'
       });
     }
 
@@ -94,6 +131,11 @@ voiceMemoContextRouter.post('/:context/voice-memo', async (req: Request, res: Re
         context,
         persona: persona.displayName,
         mode: 'structured',
+        // Frontend compatibility: ideaId and structured at top level
+        ideaId,
+        transcript,
+        structured,
+        // Also include idea object for other consumers
         idea: {
           id: ideaId,
           ...structured,
@@ -187,7 +229,19 @@ Strukturiere diesen Gedanken. Antworte NUR mit einem JSON-Objekt (keine Erkläru
     throw new Error('Invalid LLM response - no JSON found');
   }
 
-  return JSON.parse(jsonMatch[0]);
+  const parsed = JSON.parse(jsonMatch[0]);
+
+  // Normalize fields to ensure they match database constraints
+  return {
+    title: parsed.title || 'Unstrukturierte Notiz',
+    type: normalizeType(parsed.type),
+    category: normalizeCategory(parsed.category),
+    priority: normalizePriority(parsed.priority),
+    summary: parsed.summary || '',
+    next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+    context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+    keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+  };
 }
 
 /**
