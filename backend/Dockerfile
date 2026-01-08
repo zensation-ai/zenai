@@ -1,3 +1,4 @@
+# PersonalAIBrain Backend - Railway Deployment
 # Build stage
 FROM node:20-alpine AS builder
 
