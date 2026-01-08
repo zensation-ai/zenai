@@ -9,6 +9,11 @@ struct SettingsView: View {
     @State private var isSyncing = false
     @State private var localStats: LocalStorageStats = LocalStorageStats()
 
+    // Phase 13: Biometric Authentication
+    @State private var biometricEnabled = BiometricService.shared.isEnabled
+    @State private var showBiometricError = false
+    @State private var biometricErrorMessage = ""
+
     var body: some View {
         NavigationStack {
             List {
@@ -95,6 +100,35 @@ struct SettingsView: View {
                     }
                 }
 
+                // Security (Phase 13)
+                Section("Sicherheit") {
+                    if BiometricService.shared.isBiometricAvailable {
+                        Toggle(isOn: $biometricEnabled) {
+                            HStack {
+                                Image(systemName: BiometricService.shared.availableBiometricType.iconName)
+                                    .foregroundColor(.blue)
+                                Text(BiometricService.shared.availableBiometricType.displayName)
+                            }
+                        }
+                        .onChange(of: biometricEnabled) { _, newValue in
+                            toggleBiometric(newValue)
+                        }
+
+                        if biometricEnabled {
+                            Text("App wird bei jedem Start gesperrt")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        HStack {
+                            Image(systemName: "lock.slash")
+                                .foregroundColor(.secondary)
+                            Text("Biometrie nicht verfügbar")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
                 // Backend Configuration
                 Section("Backend") {
                     HStack {
@@ -150,6 +184,13 @@ struct SettingsView: View {
                 checkConnection()
                 loadStats()
             }
+            .alert("Biometrie-Fehler", isPresented: $showBiometricError) {
+                Button("OK") {
+                    showBiometricError = false
+                }
+            } message: {
+                Text(biometricErrorMessage)
+            }
         }
     }
 
@@ -172,6 +213,34 @@ struct SettingsView: View {
 
     private func loadStats() {
         localStats = localStorageService.getStatistics()
+    }
+
+    // Phase 13: Toggle biometric authentication
+    private func toggleBiometric(_ enable: Bool) {
+        if enable {
+            Task {
+                do {
+                    try await BiometricService.shared.enableBiometricAuth()
+                    await MainActor.run {
+                        biometricEnabled = true
+                    }
+                } catch let error as BiometricService.BiometricError {
+                    await MainActor.run {
+                        biometricEnabled = false
+                        biometricErrorMessage = error.localizedDescription ?? "Unbekannter Fehler"
+                        showBiometricError = true
+                    }
+                } catch {
+                    await MainActor.run {
+                        biometricEnabled = false
+                        biometricErrorMessage = error.localizedDescription
+                        showBiometricError = true
+                    }
+                }
+            }
+        } else {
+            BiometricService.shared.disableBiometricAuth()
+        }
     }
 }
 

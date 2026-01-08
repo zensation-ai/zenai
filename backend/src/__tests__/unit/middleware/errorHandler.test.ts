@@ -162,6 +162,7 @@ describe('Error Handler Middleware', () => {
         status: statusMock,
         json: jsonMock,
         setHeader: setHeaderMock,
+        locals: { requestId: 'test-request-id-123' },
       };
       mockReq = {
         method: 'GET',
@@ -187,6 +188,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Test error',
         code: 'TEST_ERROR',
+        requestId: 'test-request-id-123',
       });
     });
 
@@ -200,6 +202,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Invalid input',
         code: 'VALIDATION_ERROR',
+        requestId: 'test-request-id-123',
         details: { name: 'required' },
       });
     });
@@ -215,6 +218,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Rate limit exceeded',
         code: 'RATE_LIMIT_EXCEEDED',
+        requestId: 'test-request-id-123',
         retryAfter: 120,
       });
     });
@@ -230,6 +234,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Resource already exists',
         code: 'DUPLICATE_ENTRY',
+        requestId: 'test-request-id-123',
       });
     });
 
@@ -244,6 +249,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Referenced resource does not exist',
         code: 'REFERENCE_ERROR',
+        requestId: 'test-request-id-123',
       });
     });
 
@@ -258,6 +264,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Database schema error',
         code: 'SCHEMA_ERROR',
+        requestId: 'test-request-id-123',
       });
     });
 
@@ -272,6 +279,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Invalid JSON in request body',
         code: 'INVALID_JSON',
+        requestId: 'test-request-id-123',
       });
     });
 
@@ -288,6 +296,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'An unexpected error occurred',
         code: 'INTERNAL_ERROR',
+        requestId: 'test-request-id-123',
       });
 
       process.env.NODE_ENV = originalEnv;
@@ -305,6 +314,7 @@ describe('Error Handler Middleware', () => {
         success: false,
         error: 'Debug info',
         code: 'INTERNAL_ERROR',
+        requestId: 'test-request-id-123',
       });
 
       process.env.NODE_ENV = originalEnv;

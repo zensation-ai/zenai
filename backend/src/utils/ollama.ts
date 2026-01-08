@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { getCachedEmbedding, cache } from './cache';
+import { logger } from './logger';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const MODEL = 'mistral';
@@ -86,7 +88,19 @@ STRUCTURED OUTPUT:`;
   }
 }
 
+/**
+ * Generate embedding with Redis caching
+ * Phase 11: Embeddings are cached for 7 days to avoid recomputation
+ */
 export async function generateEmbedding(text: string): Promise<number[]> {
+  // Use cached version if available
+  return getCachedEmbedding(text, generateEmbeddingUncached);
+}
+
+/**
+ * Generate embedding without caching (internal use)
+ */
+async function generateEmbeddingUncached(text: string): Promise<number[]> {
   try {
     const response = await axios.post(
       `${OLLAMA_URL}/api/embeddings`,
@@ -99,7 +113,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
     return response.data.embedding;
   } catch (error: any) {
-    console.error('Embedding generation error:', error.message);
+    logger.error('Embedding generation error', error, { operation: 'generateEmbedding' });
     // Return empty embedding on error
     return [];
   }

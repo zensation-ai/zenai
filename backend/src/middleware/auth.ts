@@ -1,11 +1,19 @@
 /**
  * Phase 4: Authentication & Authorization Middleware
  * Supports API Keys and JWT tokens for external integrations
+ *
+ * Phase 9 Security Hardening:
+ * - bcrypt for API key hashing (replaces SHA256)
+ * - Async verification for timing-attack resistance
  */
 
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 import { pool } from '../utils/database';
+import { logger } from '../utils/logger';
+
+const BCRYPT_SALT_ROUNDS = 12;
 
 // Extend Express Request type
 declare global {
@@ -26,21 +34,36 @@ declare global {
 }
 
 /**
- * Hash an API key for secure storage
+ * Hash an API key for secure storage using bcrypt
+ * Phase 9: Upgraded from SHA256 to bcrypt for better security
  */
-export function hashApiKey(key: string): string {
-  return crypto.createHash('sha256').update(key).digest('hex');
+export async function hashApiKey(key: string): Promise<string> {
+  return bcrypt.hash(key, BCRYPT_SALT_ROUNDS);
+}
+
+/**
+ * Verify an API key against a bcrypt hash
+ * Timing-safe comparison to prevent timing attacks
+ */
+export async function verifyApiKey(key: string, hash: string): Promise<boolean> {
+  // Support legacy SHA256 hashes during migration
+  if (hash.length === 64 && /^[a-f0-9]+$/.test(hash)) {
+    const sha256Hash = crypto.createHash('sha256').update(key).digest('hex');
+    return crypto.timingSafeEqual(Buffer.from(sha256Hash), Buffer.from(hash));
+  }
+  // bcrypt verification
+  return bcrypt.compare(key, hash);
 }
 
 /**
  * Generate a new API key
  * Format: ab_live_xxxxxxxxxxxxxxxxxxxx
  */
-export function generateApiKey(): { key: string; prefix: string; hash: string } {
+export async function generateApiKey(): Promise<{ key: string; prefix: string; hash: string }> {
   const randomBytes = crypto.randomBytes(24).toString('hex');
   const key = `ab_live_${randomBytes}`;
   const prefix = key.substring(0, 10);
-  const hash = hashApiKey(key);
+  const hash = await hashApiKey(key);
   return { key, prefix, hash };
 }
 
@@ -68,12 +91,15 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
   }
 
   try {
-    const keyHash = hashApiKey(apiKey);
+    // Extract prefix for fast lookup (first 10 chars: "ab_live_xx")
+    const prefix = apiKey.substring(0, 10);
+
+    // Find key candidates by prefix
     const result = await pool.query(
-      `SELECT id, name, scopes, rate_limit, expires_at, is_active
+      `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
        FROM api_keys
-       WHERE key_hash = $1`,
-      [keyHash]
+       WHERE prefix = $1`,
+      [prefix]
     );
 
     if (result.rows.length === 0) {
@@ -83,7 +109,21 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
       });
     }
 
-    const keyData = result.rows[0];
+    // Verify the key against stored hash(es)
+    let keyData = null;
+    for (const row of result.rows) {
+      if (await verifyApiKey(apiKey, row.key_hash)) {
+        keyData = row;
+        break;
+      }
+    }
+
+    if (!keyData) {
+      return res.status(401).json({
+        error: 'Invalid API key',
+        message: 'The provided API key is not valid'
+      });
+    }
 
     if (!keyData.is_active) {
       return res.status(401).json({
@@ -114,7 +154,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
     next();
   } catch (error) {
-    console.error('API key auth error:', error);
+    logger.error('API key auth error', error instanceof Error ? error : undefined, { operation: 'apiKeyAuth' });
     return res.status(500).json({
       error: 'Authentication error',
       message: 'Failed to validate API key'
@@ -188,7 +228,7 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
 
     next();
   } catch (error) {
-    console.error('Rate limiter error:', error);
+    logger.error('Rate limiter error', error instanceof Error ? error : undefined, { operation: 'rateLimiter' });
     // Don't block requests on rate limiter errors
     next();
   }
@@ -215,26 +255,31 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
   }
 
   try {
-    const keyHash = hashApiKey(apiKey);
+    // Extract prefix for fast lookup
+    const prefix = apiKey.substring(0, 10);
+
     const result = await pool.query(
-      `SELECT id, name, scopes, rate_limit
+      `SELECT id, name, scopes, rate_limit, key_hash
        FROM api_keys
-       WHERE key_hash = $1 AND is_active = true
+       WHERE prefix = $1 AND is_active = true
        AND (expires_at IS NULL OR expires_at > NOW())`,
-      [keyHash]
+      [prefix]
     );
 
-    if (result.rows.length > 0) {
-      const keyData = result.rows[0];
-      req.apiKey = {
-        id: keyData.id,
-        name: keyData.name,
-        scopes: keyData.scopes || ['read'],
-        rateLimit: keyData.rate_limit || 1000
-      };
+    // Verify key against stored hash(es)
+    for (const row of result.rows) {
+      if (await verifyApiKey(apiKey, row.key_hash)) {
+        req.apiKey = {
+          id: row.id,
+          name: row.name,
+          scopes: row.scopes || ['read'],
+          rateLimit: row.rate_limit || 1000
+        };
+        break;
+      }
     }
   } catch (error) {
-    console.error('Optional auth error:', error);
+    logger.error('Optional auth error', error instanceof Error ? error : undefined, { operation: 'optionalAuth' });
   }
 
   next();
@@ -250,8 +295,8 @@ export async function cleanupRateLimits() {
       `DELETE FROM rate_limits
        WHERE window_start < NOW() - INTERVAL '1 hour'`
     );
-    console.log(`Cleaned up ${result.rowCount} old rate limit entries`);
+    logger.info(`Cleaned up ${result.rowCount} old rate limit entries`, { operation: 'cleanupRateLimits' });
   } catch (error) {
-    console.error('Rate limit cleanup error:', error);
+    logger.error('Rate limit cleanup error', error instanceof Error ? error : undefined, { operation: 'cleanupRateLimits' });
   }
 }

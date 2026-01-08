@@ -11,10 +11,18 @@ import { healthRouter } from '../../routes/health';
 // Mock dependencies
 jest.mock('../../utils/database-context', () => ({
   testConnections: jest.fn(),
+  getPoolStats: jest.fn().mockReturnValue({
+    personal: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 100, avgQueryTime: 5 },
+    work: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 50, avgQueryTime: 6 },
+  }),
 }));
 
 jest.mock('../../utils/ollama', () => ({
   checkOllamaHealth: jest.fn(),
+}));
+
+jest.mock('../../utils/cache', () => ({
+  getCacheStats: jest.fn().mockResolvedValue({ connected: true, keys: 42, memory: '1.5M' }),
 }));
 
 import { testConnections } from '../../utils/database-context';

@@ -7,20 +7,35 @@ struct PersonalAIBrainApp: App {
     @StateObject private var offlineQueueService = OfflineQueueService.shared
     @State private var showSplash = true
 
+    // Phase 13: Biometric Lock
+    @State private var isUnlocked = false
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             ZStack {
-                ContentView()
-                    .environmentObject(apiService)
-                    .environmentObject(localStorageService)
-                    .environmentObject(offlineQueueService)
-                    .preferredColorScheme(.dark)
-                    .task {
-                        // Initial sync on app launch
-                        await localStorageService.syncWithServer()
+                // Main Content (only when unlocked or biometric disabled)
+                if isUnlocked || !BiometricService.shared.isEnabled {
+                    ContentView()
+                        .environmentObject(apiService)
+                        .environmentObject(localStorageService)
+                        .environmentObject(offlineQueueService)
+                        .preferredColorScheme(.dark)
+                        .task {
+                            // Initial sync on app launch
+                            await localStorageService.syncWithServer()
+                        }
+                } else {
+                    // Lock Screen
+                    LockScreenView {
+                        withAnimation {
+                            isUnlocked = true
+                        }
                     }
+                    .preferredColorScheme(.dark)
+                }
 
-                // Splash Screen
+                // Splash Screen (shown above everything initially)
                 if showSplash {
                     SplashView()
                         .transition(.opacity)
@@ -28,11 +43,22 @@ struct PersonalAIBrainApp: App {
                 }
             }
             .onAppear {
-                // Splash nach 1.5 Sekunden ausblenden
+                // Check if biometric auth is enabled
+                if !BiometricService.shared.isEnabled {
+                    isUnlocked = true
+                }
+
+                // Hide splash after 1.5 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     withAnimation(.easeOut(duration: 0.5)) {
                         showSplash = false
                     }
+                }
+            }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                // Lock app when going to background (if biometric enabled)
+                if newPhase == .background && BiometricService.shared.isEnabled {
+                    isUnlocked = false
                 }
             }
         }
@@ -58,7 +84,7 @@ struct SplashView: View {
             VStack(spacing: 24) {
                 // Logo mit Animation
                 ZStack {
-                    // Äußerer rotierender Ring
+                    // Outer rotating ring
                     Circle()
                         .trim(from: 0, to: 0.7)
                         .stroke(
@@ -72,7 +98,7 @@ struct SplashView: View {
                         .rotationEffect(.degrees(ringRotation))
                         .scaleEffect(ringScale)
 
-                    // Pulsierender Ring
+                    // Pulsing ring
                     Circle()
                         .stroke(Color.zensationOrange.opacity(0.3), lineWidth: 2)
                         .frame(width: 140, height: 140)

@@ -2,9 +2,48 @@
  * Centralized Error Handling Middleware
  *
  * Provides consistent error responses across all API endpoints.
+ * Phase 9: Added structured logging and standardized error codes.
  */
 
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '../utils/logger';
+
+// ============================================
+// Error Codes (Phase 9)
+// ============================================
+
+export enum ErrorCode {
+  // Validation
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  INVALID_UUID = 'INVALID_UUID',
+  INVALID_CONTEXT = 'INVALID_CONTEXT',
+  INVALID_JSON = 'INVALID_JSON',
+
+  // Authentication
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  INVALID_API_KEY = 'INVALID_API_KEY',
+  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+
+  // Authorization
+  FORBIDDEN = 'FORBIDDEN',
+
+  // Resources
+  NOT_FOUND = 'NOT_FOUND',
+  CONFLICT = 'CONFLICT',
+  DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
+  REFERENCE_ERROR = 'REFERENCE_ERROR',
+
+  // Services
+  WHISPER_ERROR = 'WHISPER_ERROR',
+  OLLAMA_ERROR = 'OLLAMA_ERROR',
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  SCHEMA_ERROR = 'SCHEMA_ERROR',
+  EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
+
+  // System
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+}
 
 // ============================================
 // Custom Error Classes
@@ -92,20 +131,21 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ): void {
-  // Log the error
-  const timestamp = new Date().toISOString();
-  const logData = {
-    timestamp,
+  // Get request ID from response locals (set by requestIdMiddleware)
+  const requestId = res.locals.requestId || 'unknown';
+
+  // Log the error with structured logging
+  const context = {
+    requestId,
     method: req.method,
     path: req.path,
-    error: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    operation: 'errorHandler',
   };
 
   if (err instanceof AppError) {
-    console.error(`[${timestamp}] ${err.code}:`, logData);
+    logger.error(`${err.code}: ${err.message}`, err.isOperational ? undefined : err, context);
   } else {
-    console.error(`[${timestamp}] UNEXPECTED_ERROR:`, logData);
+    logger.error('UNEXPECTED_ERROR', err, context);
   }
 
   // Handle known errors
@@ -113,7 +153,8 @@ export function errorHandler(
     const response: Record<string, unknown> = {
       success: false,
       error: err.message,
-      code: err.code
+      code: err.code,
+      requestId,
     };
 
     // Add specific error details
@@ -140,7 +181,8 @@ export function errorHandler(
         res.status(409).json({
           success: false,
           error: 'Resource already exists',
-          code: 'DUPLICATE_ENTRY'
+          code: 'DUPLICATE_ENTRY',
+          requestId,
         });
         return;
 
@@ -148,7 +190,8 @@ export function errorHandler(
         res.status(400).json({
           success: false,
           error: 'Referenced resource does not exist',
-          code: 'REFERENCE_ERROR'
+          code: 'REFERENCE_ERROR',
+          requestId,
         });
         return;
 
@@ -157,13 +200,14 @@ export function errorHandler(
         res.status(500).json({
           success: false,
           error: 'Database schema error',
-          code: 'SCHEMA_ERROR'
+          code: 'SCHEMA_ERROR',
+          requestId,
         });
         return;
 
       default:
         // Log unknown PostgreSQL errors
-        console.error(`PostgreSQL Error (${pgCode}):`, err);
+        logger.error(`PostgreSQL Error (${pgCode})`, err instanceof Error ? err : undefined, context);
     }
   }
 
@@ -172,7 +216,8 @@ export function errorHandler(
     res.status(400).json({
       success: false,
       error: 'Invalid JSON in request body',
-      code: 'INVALID_JSON'
+      code: 'INVALID_JSON',
+      requestId,
     });
     return;
   }
@@ -183,7 +228,8 @@ export function errorHandler(
     error: process.env.NODE_ENV === 'production'
       ? 'An unexpected error occurred'
       : err.message,
-    code: 'INTERNAL_ERROR'
+    code: 'INTERNAL_ERROR',
+    requestId,
   });
 }
 

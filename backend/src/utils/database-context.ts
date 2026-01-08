@@ -3,10 +3,13 @@
  *
  * Manages dual-database architecture for Private vs. Work contexts.
  * Each context has its own PostgreSQL database with identical schema.
+ *
+ * Phase 11: Optimized connection pooling
  */
 
 import { Pool, QueryResult } from 'pg';
 import dotenv from 'dotenv';
+import { logger } from './logger';
 
 dotenv.config();
 
@@ -22,29 +25,52 @@ export function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id);
 }
 
+// ===========================================
+// Pool Configuration (Phase 11 Optimized)
+// ===========================================
+
+const POOL_CONFIG = {
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'localpass',
+  // Connection pool settings
+  max: parseInt(process.env.DB_POOL_SIZE || '20'),
+  min: parseInt(process.env.DB_POOL_MIN || '2'),
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  // Statement timeout to prevent long-running queries
+  statement_timeout: 30000,
+  // Keep connections alive
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
+};
+
 // Connection pools for each context
 const pools: Record<AIContext, Pool> = {
   personal: new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
+    ...POOL_CONFIG,
     database: 'personal_ai',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'localpass',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
   }),
   work: new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
+    ...POOL_CONFIG,
     database: 'work_ai',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'localpass',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
   }),
 };
+
+// Track pool stats for monitoring
+const poolStats: Record<AIContext, { queries: number; errors: number; slowQueries: number }> = {
+  personal: { queries: 0, errors: 0, slowQueries: 0 },
+  work: { queries: 0, errors: 0, slowQueries: 0 },
+};
+
+// Log pool errors
+(['personal', 'work'] as const).forEach((ctx) => {
+  pools[ctx].on('error', (err) => {
+    logger.error(`Pool error [${ctx}]`, err, { context: ctx, operation: 'poolError' });
+    poolStats[ctx].errors++;
+  });
+});
 
 /**
  * Get the appropriate connection pool for a context
@@ -55,6 +81,7 @@ export function getPool(context: AIContext): Pool {
 
 /**
  * Execute a query in the appropriate context database
+ * Phase 11: Enhanced with query monitoring
  */
 export async function queryContext(
   context: AIContext,
@@ -64,17 +91,31 @@ export async function queryContext(
   const pool = getPool(context);
   const start = Date.now();
 
+  poolStats[context].queries++;
+
   try {
     const result = await pool.query(text, params);
     const duration = Date.now() - start;
 
+    // Log slow queries (>100ms)
     if (duration > 100) {
-      console.log(`[${context}] Slow query (${duration}ms):`, text.substring(0, 100));
+      poolStats[context].slowQueries++;
+      logger.warn(`Slow query [${context}] (${duration}ms)`, {
+        context,
+        duration,
+        query: text.substring(0, 100),
+        operation: 'slowQuery',
+      });
     }
 
     return result;
   } catch (error) {
-    console.error(`[${context}] Query error:`, error);
+    poolStats[context].errors++;
+    logger.error(`Query error [${context}]`, error instanceof Error ? error : undefined, {
+      context,
+      query: text.substring(0, 100),
+      operation: 'queryError',
+    });
     throw error;
   }
 }
@@ -90,15 +131,15 @@ export function isValidContext(context: string): context is AIContext {
  * Gracefully close all database connections
  */
 export async function closeAllPools(): Promise<void> {
-  console.log('Closing database connections...');
+  logger.info('Closing database connections...', { operation: 'shutdown' });
   try {
     await Promise.all([
       pools.personal.end(),
       pools.work.end(),
     ]);
-    console.log('✅ All database pools closed');
+    logger.info('All database pools closed', { operation: 'shutdown' });
   } catch (error) {
-    console.error('❌ Error closing database pools:', error);
+    logger.error('Error closing database pools', error instanceof Error ? error : undefined, { operation: 'shutdown' });
     throw error;
   }
 }
@@ -109,14 +150,14 @@ export async function closeAllPools(): Promise<void> {
  */
 export function setupGracefulShutdown(): void {
   const shutdown = async (signal: string) => {
-    console.log(`\n📴 Received ${signal}. Starting graceful shutdown...`);
+    logger.info(`Received ${signal}. Starting graceful shutdown...`, { signal, operation: 'shutdown' });
 
     try {
       await closeAllPools();
-      console.log('✅ Graceful shutdown complete');
+      logger.info('Graceful shutdown complete', { operation: 'shutdown' });
       process.exit(0);
     } catch (error) {
-      console.error('❌ Error during shutdown:', error);
+      logger.error('Error during shutdown', error instanceof Error ? error : undefined, { operation: 'shutdown' });
       process.exit(1);
     }
   };
@@ -127,13 +168,16 @@ export function setupGracefulShutdown(): void {
 
   // Handle uncaught exceptions gracefully
   process.on('uncaughtException', async (error) => {
-    console.error('❌ Uncaught Exception:', error);
-    await closeAllPools().catch(console.error);
+    logger.error('Uncaught Exception', error, { operation: 'uncaughtException' });
+    await closeAllPools().catch(() => {});
     process.exit(1);
   });
 
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled Rejection', reason instanceof Error ? reason : undefined, {
+      reason: String(reason),
+      operation: 'unhandledRejection',
+    });
   });
 }
 
@@ -152,20 +196,47 @@ export async function testConnections(): Promise<{
   try {
     await queryContext('personal', 'SELECT 1');
     results.personal = true;
-    console.log('✓ Personal database connected');
+    logger.info('Personal database connected', { context: 'personal', operation: 'testConnection' });
   } catch (error) {
-    console.error('✗ Personal database connection failed:', error);
+    logger.error('Personal database connection failed', error instanceof Error ? error : undefined, { context: 'personal', operation: 'testConnection' });
   }
 
   try {
     await queryContext('work', 'SELECT 1');
     results.work = true;
-    console.log('✓ Work database connected');
+    logger.info('Work database connected', { context: 'work', operation: 'testConnection' });
   } catch (error) {
-    console.error('✗ Work database connection failed:', error);
+    logger.error('Work database connection failed', error instanceof Error ? error : undefined, { context: 'work', operation: 'testConnection' });
   }
 
   return results;
+}
+
+/**
+ * Get pool statistics for monitoring
+ */
+export function getPoolStats(): Record<AIContext, {
+  queries: number;
+  errors: number;
+  slowQueries: number;
+  poolSize: number;
+  idleCount: number;
+  waitingCount: number;
+}> {
+  return {
+    personal: {
+      ...poolStats.personal,
+      poolSize: pools.personal.totalCount,
+      idleCount: pools.personal.idleCount,
+      waitingCount: pools.personal.waitingCount,
+    },
+    work: {
+      ...poolStats.work,
+      poolSize: pools.work.totalCount,
+      idleCount: pools.work.idleCount,
+      waitingCount: pools.work.waitingCount,
+    },
+  };
 }
 
 // Backward compatibility: Keep the old single pool export

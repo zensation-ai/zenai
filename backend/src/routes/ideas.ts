@@ -5,6 +5,8 @@ import { formatForPgVector } from '../utils/embedding';
 import { trackInteraction } from '../services/user-profile';
 import { triggerWebhook } from '../services/webhooks';
 import { learnFromCorrection, learnFromThought } from '../services/learning-engine';
+import { findDuplicates, mergeIdeas } from '../services/duplicate-detection';
+import { logger } from '../utils/logger';
 
 export const ideasRouter = Router();
 
@@ -576,5 +578,96 @@ ideasRouter.put('/:id/archive', validateUUID, async (req, res) => {
   } catch (error: any) {
     console.error('Error archiving idea:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ===========================================
+// Phase 10: Duplicate Detection
+// ===========================================
+
+/**
+ * POST /api/ideas/check-duplicates
+ * Check for potential duplicates before creating an idea
+ */
+ideasRouter.post('/check-duplicates', async (req, res) => {
+  try {
+    const ctx = getContext(req);
+    const { content, title, threshold = 0.85 } = req.body;
+
+    if (!content && !title) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Content or title is required' }
+      });
+    }
+
+    const textToCheck = content || title;
+    const result = await findDuplicates(ctx, textToCheck, threshold);
+
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error: any) {
+    logger.error('Check duplicates error', error, { operation: 'checkDuplicates' });
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: error.message }
+    });
+  }
+});
+
+/**
+ * POST /api/ideas/:id/merge
+ * Merge another idea into this one
+ */
+ideasRouter.post('/:id/merge', validateUUID, async (req, res) => {
+  try {
+    const ctx = getContext(req);
+    const primaryId = req.params.id;
+    const { secondaryId } = req.body;
+
+    if (!secondaryId || !isValidUUID(secondaryId)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Valid secondaryId is required' }
+      });
+    }
+
+    if (primaryId === secondaryId) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Cannot merge idea with itself' }
+      });
+    }
+
+    const result = await mergeIdeas(ctx, primaryId, secondaryId);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'MERGE_ERROR', message: result.message }
+      });
+    }
+
+    // Fetch updated primary idea
+    const updated = await queryContext(
+      ctx,
+      `SELECT id, title, content, type, category, priority, summary, keywords, next_steps, created_at, updated_at
+       FROM ideas WHERE id = $1`,
+      [primaryId]
+    );
+
+    res.json({
+      success: true,
+      message: result.message,
+      idea: updated.rows[0],
+    });
+  } catch (error: any) {
+    logger.error('Merge ideas error', error, { operation: 'mergeIdeas' });
+    res.status(500).json({
+      success: false,
+      error: { code: 'INTERNAL_ERROR', message: error.message }
+    });
   }
 });

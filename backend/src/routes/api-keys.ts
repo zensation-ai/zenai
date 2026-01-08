@@ -6,7 +6,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../utils/database';
-import { generateApiKey, hashApiKey, apiKeyAuth, requireScope } from '../middleware/auth';
+import { generateApiKey, apiKeyAuth, requireScope } from '../middleware/auth';
 
 export const apiKeysRouter = Router();
 
@@ -25,7 +25,7 @@ apiKeysRouter.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    const { key, prefix, hash } = generateApiKey();
+    const { key, prefix, hash } = await generateApiKey();
     const id = uuidv4();
 
     let expiresAt = null;
@@ -267,7 +267,7 @@ apiKeysRouter.post('/:id/regenerate', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const { key, prefix, hash } = generateApiKey();
+    const { key, prefix, hash } = await generateApiKey();
 
     const result = await pool.query(
       `UPDATE api_keys

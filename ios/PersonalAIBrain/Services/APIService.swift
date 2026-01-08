@@ -2,13 +2,10 @@ import Foundation
 
 @MainActor
 class APIService: ObservableObject {
-    // Configure your backend URL here
-    // For local development on simulator: use localhost
-    // For device testing: use your Mac's IP address
-    let baseURL: String  // internal for extension access
-
-    // WICHTIG: Trage hier deine Mac IP-Adresse ein für iPhone-Nutzung
-    private static let macIPAddress = "192.168.212.104"
+    // API URL is now configured via Environment.swift
+    // - Simulator: Uses localhost automatically
+    // - Real Device: Configure via Info.plist (DevelopmentIP key) or environment variable
+    let baseURL: String
 
     @Published var isLoading = false
     @Published var error: String?
@@ -49,15 +46,8 @@ class APIService: ObservableObject {
     }
 
     init() {
-        #if targetEnvironment(simulator)
-        // Simulator kann localhost verwenden
-        self.baseURL = "http://localhost:3000"
-        print("📱 APIService: Using localhost (Simulator)")
-        #else
-        // Echtes Gerät braucht die Mac IP-Adresse
-        self.baseURL = "http://\(APIService.macIPAddress):3000"
-        print("📱 APIService: Using \(self.baseURL) (Real Device)")
-        #endif
+        self.baseURL = Environment.apiBaseURL
+        print("📱 APIService: Using \(self.baseURL) (\(Environment.isSimulator ? "Simulator" : "Real Device"))")
     }
 
     // MARK: - Health Check

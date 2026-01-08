@@ -2,12 +2,13 @@
  * Unit Tests for Authentication Middleware
  *
  * Tests API key generation, hashing, and authentication functions.
- * Database-dependent tests use mocks.
+ * Phase 9: Updated for bcrypt hashing with legacy SHA256 support.
  */
 
 import { Request, Response, NextFunction } from 'express';
 import {
   hashApiKey,
+  verifyApiKey,
   generateApiKey,
   requireScope,
 } from '../../../middleware/auth';
@@ -25,40 +26,81 @@ const mockPool = pool as jest.Mocked<typeof pool>;
 
 describe('Authentication Middleware', () => {
   // ===========================================
-  // hashApiKey Tests
+  // hashApiKey Tests (bcrypt)
   // ===========================================
 
   describe('hashApiKey', () => {
-    it('should return consistent hash for same input', () => {
+    it('should return bcrypt hash format', async () => {
       const key = 'ab_live_test123456789';
-      const hash1 = hashApiKey(key);
-      const hash2 = hashApiKey(key);
-      expect(hash1).toBe(hash2);
+      const hash = await hashApiKey(key);
+      // bcrypt hashes start with $2b$ or $2a$
+      expect(hash).toMatch(/^\$2[ab]\$\d{2}\$/);
     });
 
-    it('should return different hash for different input', () => {
-      const key1 = 'ab_live_test123456789';
-      const key2 = 'ab_live_test987654321';
-      const hash1 = hashApiKey(key1);
-      const hash2 = hashApiKey(key2);
+    it('should return different hashes for same input (due to salt)', async () => {
+      const key = 'ab_live_test123456789';
+      const hash1 = await hashApiKey(key);
+      const hash2 = await hashApiKey(key);
+      // bcrypt generates different hashes each time due to random salt
       expect(hash1).not.toBe(hash2);
     });
 
-    it('should return 64 character hex string (SHA256)', () => {
+    it('should handle empty string', async () => {
+      const hash = await hashApiKey('');
+      expect(hash).toMatch(/^\$2[ab]\$\d{2}\$/);
+    });
+
+    it('should handle special characters', async () => {
+      const hash = await hashApiKey('ab_live_!@#$%^&*()');
+      expect(hash).toMatch(/^\$2[ab]\$\d{2}\$/);
+    });
+
+    it('should handle unicode characters', async () => {
+      const hash = await hashApiKey('ab_live_über_test_日本語');
+      expect(hash).toMatch(/^\$2[ab]\$\d{2}\$/);
+    });
+  });
+
+  // ===========================================
+  // verifyApiKey Tests
+  // ===========================================
+
+  describe('verifyApiKey', () => {
+    it('should verify bcrypt hash correctly', async () => {
       const key = 'ab_live_test123456789';
-      const hash = hashApiKey(key);
-      expect(hash).toHaveLength(64);
-      expect(hash).toMatch(/^[0-9a-f]{64}$/);
+      const hash = await hashApiKey(key);
+
+      const isValid = await verifyApiKey(key, hash);
+      expect(isValid).toBe(true);
     });
 
-    it('should handle empty string', () => {
-      const hash = hashApiKey('');
-      expect(hash).toHaveLength(64);
+    it('should reject wrong key against bcrypt hash', async () => {
+      const key = 'ab_live_test123456789';
+      const wrongKey = 'ab_live_wrongkey123';
+      const hash = await hashApiKey(key);
+
+      const isValid = await verifyApiKey(wrongKey, hash);
+      expect(isValid).toBe(false);
     });
 
-    it('should handle special characters', () => {
-      const hash = hashApiKey('ab_live_!@#$%^&*()');
-      expect(hash).toHaveLength(64);
+    it('should verify legacy SHA256 hash for migration', async () => {
+      const crypto = await import('crypto');
+      const key = 'ab_live_legacytest';
+      // Simulate legacy SHA256 hash
+      const legacyHash = crypto.createHash('sha256').update(key).digest('hex');
+
+      const isValid = await verifyApiKey(key, legacyHash);
+      expect(isValid).toBe(true);
+    });
+
+    it('should reject wrong key against legacy SHA256 hash', async () => {
+      const crypto = await import('crypto');
+      const key = 'ab_live_legacytest';
+      const wrongKey = 'ab_live_wrongkey';
+      const legacyHash = crypto.createHash('sha256').update(key).digest('hex');
+
+      const isValid = await verifyApiKey(wrongKey, legacyHash);
+      expect(isValid).toBe(false);
     });
   });
 
@@ -67,32 +109,37 @@ describe('Authentication Middleware', () => {
   // ===========================================
 
   describe('generateApiKey', () => {
-    it('should generate key with correct prefix format', () => {
-      const { key, prefix, hash } = generateApiKey();
+    it('should generate key with correct prefix format', async () => {
+      const { key, prefix, hash } = await generateApiKey();
       expect(key).toMatch(/^ab_live_[0-9a-f]{48}$/);
       expect(prefix).toBe(key.substring(0, 10));
       expect(key.startsWith('ab_live_')).toBe(true);
     });
 
-    it('should generate unique keys', () => {
+    it('should generate unique keys', async () => {
       const keys = new Set<string>();
-      for (let i = 0; i < 100; i++) {
-        const { key } = generateApiKey();
+      for (let i = 0; i < 10; i++) {
+        const { key } = await generateApiKey();
         keys.add(key);
       }
-      expect(keys.size).toBe(100);
+      expect(keys.size).toBe(10);
     });
 
-    it('should return correct hash for generated key', () => {
-      const { key, hash } = generateApiKey();
-      const expectedHash = hashApiKey(key);
-      expect(hash).toBe(expectedHash);
+    it('should return verifiable hash for generated key', async () => {
+      const { key, hash } = await generateApiKey();
+      const isValid = await verifyApiKey(key, hash);
+      expect(isValid).toBe(true);
     });
 
-    it('should generate key of correct length', () => {
-      const { key } = generateApiKey();
+    it('should generate key of correct length', async () => {
+      const { key } = await generateApiKey();
       // ab_live_ (8) + 48 hex chars = 56 total
       expect(key).toHaveLength(56);
+    });
+
+    it('should generate bcrypt hash', async () => {
+      const { hash } = await generateApiKey();
+      expect(hash).toMatch(/^\$2[ab]\$\d{2}\$/);
     });
   });
 
@@ -262,28 +309,28 @@ describe('Authentication Middleware', () => {
   // ===========================================
 
   describe('Hash Security', () => {
-    it('should not be reversible', () => {
+    it('should not be reversible', async () => {
       const originalKey = 'ab_live_secret123';
-      const hash = hashApiKey(originalKey);
+      const hash = await hashApiKey(originalKey);
 
       // Hash should not contain the original key
       expect(hash).not.toContain('secret');
       expect(hash).not.toContain('ab_live');
     });
 
-    it('should be case sensitive', () => {
+    it('should be case sensitive', async () => {
       const key1 = 'ab_live_ABC';
       const key2 = 'ab_live_abc';
-      const hash1 = hashApiKey(key1);
-      const hash2 = hashApiKey(key2);
+      const hash1 = await hashApiKey(key1);
+      const hash2 = await hashApiKey(key2);
 
-      expect(hash1).not.toBe(hash2);
-    });
+      // Verify both keys against their respective hashes
+      expect(await verifyApiKey(key1, hash1)).toBe(true);
+      expect(await verifyApiKey(key2, hash2)).toBe(true);
 
-    it('should handle unicode characters', () => {
-      const hash = hashApiKey('ab_live_über_test_日本語');
-      expect(hash).toHaveLength(64);
-      expect(hash).toMatch(/^[0-9a-f]{64}$/);
+      // Cross-verify should fail
+      expect(await verifyApiKey(key1, hash2)).toBe(false);
+      expect(await verifyApiKey(key2, hash1)).toBe(false);
     });
   });
 });

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import { voiceMemoRouter } from './routes/voice-memo';
 import { ideasRouter } from './routes/ideas';
@@ -13,6 +14,7 @@ import { apiKeysRouter } from './routes/api-keys';
 import { webhooksRouter } from './routes/webhooks';
 import { integrationsRouter } from './routes/integrations';
 import { rateLimiter, cleanupRateLimits } from './middleware/auth';
+import { requestIdMiddleware } from './middleware/requestId';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
@@ -24,8 +26,15 @@ import mediaRouter from './routes/media';
 import storiesRouter from './routes/stories';
 // Phase 6: Training
 import { trainingRouter } from './routes/training';
+// Phase 10: Offline Sync
+import { syncRouter } from './routes/sync';
+// Phase 10: Analytics
+import { analyticsRouter } from './routes/analytics';
+// Phase 12: Developer Experience
+import { setupSwagger } from './utils/swagger';
 // Error Handling
 import { errorHandler } from './middleware/errorHandler';
+import { logger } from './utils/logger';
 
 dotenv.config();
 
@@ -33,9 +42,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(requestIdMiddleware); // Phase 12: Request ID tracking
+app.use(compression()); // Phase 11: gzip compression for responses
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Phase 12: API Documentation
+setupSwagger(app);
 
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);
@@ -65,9 +79,15 @@ app.use('/api/stories', storiesRouter);
 // Phase 6: Training Routes
 app.use('/api', trainingRouter);  // Context-aware training routes: /api/:context/training
 
+// Phase 10: Offline Sync Routes
+app.use('/api', syncRouter);  // Context-aware sync routes: /api/:context/sync/*
+
+// Phase 10: Analytics Routes
+app.use('/api', analyticsRouter);  // Context-aware analytics: /api/:context/analytics/*
+
 // Cleanup rate limits every hour
 setInterval(() => {
-  cleanupRateLimits().catch(console.error);
+  cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
 }, 60 * 60 * 1000);
 
 // Error handling - Use centralized error handler
@@ -79,9 +99,10 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-🧠 Personal AI System - Backend (Phase 6: Dual-Context)
+🧠 Personal AI System - Backend (Phase 12: Developer Experience)
 ========================================================
 Server:      http://localhost:${PORT}
+API Docs:    http://localhost:${PORT}/api-docs
 Ollama:      ${process.env.OLLAMA_URL}
 ========================================================
 DUAL-DATABASE ARCHITECTURE:
@@ -103,12 +124,12 @@ Phase 4 APIs:
   `);
 
   // Test both database connections
-  console.log('Testing database connections...');
+  logger.info('Testing database connections...');
   const dbStatus = await testConnections();
 
   if (!dbStatus.personal || !dbStatus.work) {
-    console.error('⚠️  Warning: One or more databases are not connected properly');
+    logger.warn('One or more databases are not connected properly', { dbStatus });
   } else {
-    console.log('✅ All databases connected successfully\n');
+    logger.info('All databases connected successfully', { dbStatus });
   }
 });
