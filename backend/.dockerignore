@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build output (we build fresh in container)
+dist
+
+# Development files
+*.ts
+!*.d.ts
+tsconfig.json
+.eslintrc*
+.prettierrc*
+jest.config.*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment (handled by Railway)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*
+.dockerignore
+
+# Tests
+__tests__
+*.test.ts
+*.spec.ts
+coverage
+
+# Uploads (handled separately in production)
+uploads/*
+!uploads/.gitkeep
+
+# Documentation
+README.md
+docs
