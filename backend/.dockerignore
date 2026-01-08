@@ -5,10 +5,7 @@ npm-debug.log*
 # Build output (we build fresh in container)
 dist
 
-# Development files
-*.ts
-!*.d.ts
-tsconfig.json
+# Development/lint config
 .eslintrc*
 .prettierrc*
 jest.config.*
