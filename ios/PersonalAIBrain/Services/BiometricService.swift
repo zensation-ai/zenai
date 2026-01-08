@@ -151,7 +151,7 @@ final class BiometricService {
 
     // MARK: - Private Helpers
 
-    private func mapLAError(_ error: NSError) -> BiometricError {
+    private func mapLAError(_ error: Error) -> BiometricError {
         guard let laError = error as? LAError else {
             return .unknown(error)
         }

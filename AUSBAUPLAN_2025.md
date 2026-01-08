@@ -915,5 +915,54 @@ struct QuickCaptureWidget: Widget {
 
 ---
 
+## Phase 14: iOS Widgets & Siri (✅ ABGESCHLOSSEN)
+
+### Implementiert:
+- **Home Screen Widgets**: Small, Medium, Large
+- **Lock Screen Widgets**: Circular, Rectangular, Inline (iOS 16+)
+- **Siri Shortcuts**: 6 Intents (Aufnahme, Text, Suche, Letzte Ideen, Gedanken, Kontext)
+- **Deep Link Handler**: `personalai://` URL-Scheme für Navigation
+- **App-übergreifende Navigation**: Widget → App → spezifische View
+
+### Dokumentation:
+Siehe `ios/PHASE_14_COMPLETE.md`
+
+---
+
+## Phase 15: Web-App Dual-Context System ✅ ABGESCHLOSSEN
+
+### Ziel:
+Die Web-Anwendung soll wie die iOS-App zwischen **Personal** und **Work** Kontext unterscheiden können.
+
+### Implementierte Features:
+
+#### A. Context Switcher Component ✅
+- `frontend/src/components/ContextSwitcher.tsx`
+- Toggle zwischen Personal (🏠) und Work (💼)
+- Persistenz in localStorage
+- Visuelles Feedback (Farben, Icons)
+- Automatische Context-Vorschläge basierend auf Uhrzeit
+
+#### B. API-Aufrufe angepasst ✅
+- Ideas laden: `/api/{context}/ideas`
+- Voice Memo: `/api/{context}/voice-memo`
+- Search: `/api/{context}/ideas/search`
+- RecordButton mit Context-Support
+
+#### C. UI-Anpassungen ✅
+- Context-Switcher im Header
+- Farbschema je nach Kontext:
+  - Personal: Orange Theme
+  - Work: Blau Theme
+- CSS-Variablen für `[data-context="work"]`
+
+#### D. State Management ✅
+- `useContextState()` Hook
+- localStorage Persistenz
+- Document attribute `data-context` für CSS-Theming
+
+---
+
 *Erstellt: Januar 2025*
-*Nächste Review: Nach Phase 9 Abschluss*
+*Letzte Aktualisierung: Januar 2026 (Phase 15 abgeschlossen)*
+*Nächste Phase: Performance-Optimierung oder weitere Features nach Bedarf*

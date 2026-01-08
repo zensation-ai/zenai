@@ -42,6 +42,14 @@
 		CCC00002 /* GraphCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00012; };
 		CCC00003 /* GraphModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00013; };
 		CCC00004 /* APIService+KnowledgeGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00014; };
+		AAD00084 /* BiometricService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00085; };
+		AAD00086 /* IncubatorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00087; };
+		AAD00088 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00089; };
+		AAD00090 /* WidgetDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00091; };
+		AAE00092 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE00093; };
+		AAF00095 /* Incubator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00096; };
+		AAF00099 /* LockScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00100; };
+		AAF00101 /* IncubatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00102; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -82,6 +90,14 @@
 		CCC00013 /* GraphModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphModels.swift; sourceTree = "<group>"; };
 		CCC00014 /* APIService+KnowledgeGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+KnowledgeGraph.swift"; sourceTree = "<group>"; };
 		DDD00010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AAD00085 /* BiometricService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricService.swift; sourceTree = "<group>"; };
+		AAD00087 /* IncubatorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncubatorService.swift; sourceTree = "<group>"; };
+		AAD00089 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		AAD00091 /* WidgetDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataService.swift; sourceTree = "<group>"; };
+		AAE00093 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		AAF00096 /* Incubator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Incubator.swift; sourceTree = "<group>"; };
+		AAF00100 /* LockScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenView.swift; sourceTree = "<group>"; };
+		AAF00102 /* IncubatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncubatorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +129,7 @@
 				AAA00044 /* Models */,
 				AAA00045 /* Services */,
 				AAA00046 /* Theme */,
+				AAE00094 /* Config */,
 			);
 			path = PersonalAIBrain;
 			sourceTree = "<group>";
@@ -147,6 +164,8 @@
 				BBB00017 /* ToastView.swift */,
 				BBB00018 /* TrainingView.swift */,
 				CCC00030 /* KnowledgeGraph */,
+				AAF00100 /* LockScreenView.swift */,
+				AAF00102 /* IncubatorView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -169,6 +188,7 @@
 				AAA0001C /* UserProfile.swift */,
 				BBB00019 /* AIContext.swift */,
 				BBB0001A /* TrainingModels.swift */,
+				AAF00096 /* Incubator.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -182,6 +202,10 @@
 				AAA0001E /* OfflineQueueService.swift */,
 				BBB0001B /* APIService+Context.swift */,
 				CCC00014 /* APIService+KnowledgeGraph.swift */,
+				AAD00085 /* BiometricService.swift */,
+				AAD00087 /* IncubatorService.swift */,
+				AAD00089 /* KeychainService.swift */,
+				AAD00091 /* WidgetDataService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -192,6 +216,14 @@
 				AAA0001F /* AppTheme.swift */,
 			);
 			path = Theme;
+			sourceTree = "<group>";
+		};
+		AAE00094 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				AAE00093 /* Environment.swift */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -297,6 +329,14 @@
 				CCC00002 /* GraphCanvasView.swift in Sources */,
 				CCC00003 /* GraphModels.swift in Sources */,
 				CCC00004 /* APIService+KnowledgeGraph.swift in Sources */,
+				AAD00084 /* BiometricService.swift in Sources */,
+				AAD00086 /* IncubatorService.swift in Sources */,
+				AAD00088 /* KeychainService.swift in Sources */,
+				AAD00090 /* WidgetDataService.swift in Sources */,
+				AAE00092 /* Environment.swift in Sources */,
+				AAF00095 /* Incubator.swift in Sources */,
+				AAF00099 /* LockScreenView.swift in Sources */,
+				AAF00101 /* IncubatorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

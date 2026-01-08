@@ -3,12 +3,14 @@ import SwiftUI
 struct IdeasListView: View {
     @EnvironmentObject var apiService: APIService
     @EnvironmentObject var contextManager: ContextManager
+    @EnvironmentObject var deepLinkManager: DeepLinkManager
 
     @State private var ideas: [Idea] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedFilter: IdeaType?
     @State private var lastLoadedContext: AIContext?
+    @State private var navigationPath = NavigationPath()
 
     var filteredIdeas: [Idea] {
         if let filter = selectedFilter {
@@ -18,7 +20,7 @@ struct IdeasListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 Color.zensationBackground.ignoresSafeArea()
 
@@ -95,9 +97,7 @@ struct IdeasListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List(filteredIdeas) { idea in
-                        NavigationLink(destination: IdeaDetailView(idea: idea, onDelete: {
-                            ideas.removeAll { $0.id == idea.id }
-                        })) {
+                        NavigationLink(value: idea) {
                             IdeaRow(idea: idea)
                         }
                         .listRowBackground(Color.zensationBackground)
@@ -118,6 +118,12 @@ struct IdeasListView: View {
                     }
                 }
                 }
+            }
+            .navigationDestination(for: Idea.self) { idea in
+                IdeaDetailView(idea: idea, onDelete: {
+                    ideas.removeAll { $0.id == idea.id }
+                    navigationPath.removeLast()
+                })
             }
             .navigationTitle("\(contextManager.currentContext.displayName)-Ideen")
             .toolbarBackground(.visible, for: .navigationBar)
@@ -144,6 +150,17 @@ struct IdeasListView: View {
                 Task {
                     await loadIdeas()
                 }
+            }
+        }
+        // Phase 14: Handle deep link navigation to specific idea
+        .onChange(of: deepLinkManager.selectedIdeaId) { _, ideaId in
+            if let ideaId = ideaId {
+                // Find the idea in our list and navigate to it
+                if let idea = ideas.first(where: { $0.id == ideaId }) {
+                    navigationPath.append(idea)
+                }
+                // Clear the deep link after handling
+                deepLinkManager.selectedIdeaId = nil
             }
         }
     }
@@ -305,4 +322,5 @@ struct PriorityBadge: View {
     IdeasListView()
         .environmentObject(APIService())
         .environmentObject(ContextManager())
+        .environmentObject(DeepLinkManager.shared)
 }

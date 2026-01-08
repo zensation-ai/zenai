@@ -386,8 +386,8 @@ struct StoryDetailView: View {
 
                         // Stats
                         HStack(spacing: 20) {
-                            StatItem(icon: "doc.fill", value: "\(story.itemCount)", label: "Inhalte")
-                            StatItem(icon: "clock", value: story.createdAt.formatted(date: .abbreviated, time: .omitted), label: "Erstellt")
+                            StoryStatItem(icon: "doc.fill", value: "\(story.itemCount)", label: "Inhalte")
+                            StoryStatItem(icon: "clock", value: story.createdAt.formatted(date: .abbreviated, time: .omitted), label: "Erstellt")
                         }
                     }
                     .padding()
@@ -427,8 +427,8 @@ struct StoryDetailView: View {
     }
 }
 
-// MARK: - Stat Item
-struct StatItem: View {
+// MARK: - Story Stat Item
+struct StoryStatItem: View {
     let icon: String
     let value: String
     let label: String

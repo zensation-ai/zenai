@@ -7,6 +7,7 @@ interface RecordButtonProps {
   onProcessed?: (result: ProcessedResult) => void;
   onRecordingChange?: (isRecording: boolean) => void;
   disabled?: boolean;
+  context?: 'personal' | 'work';
 }
 
 interface ProcessedResult {
@@ -24,7 +25,7 @@ interface ProcessedResult {
   };
 }
 
-export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled }: RecordButtonProps) {
+export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled, context = 'personal' }: RecordButtonProps) {
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -128,8 +129,8 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
       const extension = mimeType.includes('wav') ? 'wav' : mimeType.includes('webm') ? 'webm' : 'ogg';
       formData.append('audio', audioBlob, `recording.${extension}`);
 
-      // Send to backend
-      const response = await axios.post('/api/voice-memo', formData, {
+      // Send to backend with context
+      const response = await axios.post(`/api/${context}/voice-memo`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

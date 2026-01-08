@@ -13,6 +13,7 @@ import { IncubatorPage } from './components/IncubatorPage';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ContextSwitcher, useContextState } from './components/ContextSwitcher';
 import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
 import './App.css';
 
@@ -54,15 +55,18 @@ function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
 
+  // Context state (personal/work)
+  const [context, setContext] = useContextState();
+
   // Determine AI activity state
   const isAIActive = processing || isSearching || isRecording || loading;
   const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
 
-  // Check API health on mount
+  // Check API health on mount and reload ideas when context changes
   useEffect(() => {
     checkHealth();
     loadIdeas();
-  }, []);
+  }, [context]);
 
   const checkHealth = async () => {
     try {
@@ -80,12 +84,20 @@ function App() {
   const loadIdeas = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/ideas?limit=100');
+      // Load ideas for the current context
+      const response = await axios.get(`/api/${context}/ideas?limit=100`);
       setIdeas(response.data.ideas);
       setError(null);
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { error?: string } } };
-      setError(axiosError.response?.data?.error || 'Failed to load ideas');
+      // Fallback to general endpoint if context-specific fails
+      try {
+        const fallbackResponse = await axios.get('/api/ideas?limit=100');
+        setIdeas(fallbackResponse.data.ideas);
+        setError(null);
+      } catch (fallbackErr: unknown) {
+        const axiosError = fallbackErr as { response?: { data?: { error?: string } } };
+        setError(axiosError.response?.data?.error || 'Failed to load ideas');
+      }
     } finally {
       setLoading(false);
     }
@@ -98,7 +110,8 @@ function App() {
     setError(null);
 
     try {
-      const response = await axios.post('/api/voice-memo/text', {
+      // Submit text to context-specific endpoint
+      const response = await axios.post(`/api/${context}/voice-memo`, {
         text: textInput,
       });
 
@@ -129,7 +142,8 @@ function App() {
 
     setIsSearching(true);
     try {
-      const response = await axios.post('/api/ideas/search', { query, limit: 20 });
+      // Search within current context
+      const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 });
       setSearchResults(response.data.ideas);
       if (response.data.ideas.length === 0) {
         showToast('Keine passenden Gedanken gefunden', 'info');
@@ -240,6 +254,7 @@ function App() {
             <AIBrain isActive={isAIActive} activityType={aiActivityType} ideasCount={ideas.length} />
             <h1>Personal AI Brain</h1>
             <span className="version-badge">v1.0</span>
+            <ContextSwitcher context={context} onContextChange={setContext} />
           </div>
           <div className="header-right">
             <nav className="header-nav">
@@ -341,6 +356,7 @@ function App() {
                   }}
                   onRecordingChange={setIsRecording}
                   disabled={processing}
+                  context={context}
                 />
                 <button
                   className="submit-button"

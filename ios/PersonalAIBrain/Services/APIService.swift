@@ -46,8 +46,8 @@ class APIService: ObservableObject {
     }
 
     init() {
-        self.baseURL = Environment.apiBaseURL
-        print("📱 APIService: Using \(self.baseURL) (\(Environment.isSimulator ? "Simulator" : "Real Device"))")
+        self.baseURL = AppEnvironment.apiBaseURL
+        print("📱 APIService: Using \(self.baseURL) (\(AppEnvironment.isSimulator ? "Simulator" : "Real Device"))")
     }
 
     // MARK: - Health Check

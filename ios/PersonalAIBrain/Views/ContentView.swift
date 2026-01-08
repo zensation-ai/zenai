@@ -3,14 +3,14 @@ import SwiftUI
 // MARK: - Main Content View with Context Support
 struct ContentView: View {
     @EnvironmentObject var apiService: APIService
+    @EnvironmentObject var deepLinkManager: DeepLinkManager
     @StateObject private var contextManager = ContextManager()
 
-    @State private var selectedTab = 0
     @State private var showContextSuggestion = false
     @State private var suggestedContext: AIContext?
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $deepLinkManager.selectedTab) {
             // Swipe Review
             SwipeCardsView()
                 .tabItem {
@@ -173,84 +173,70 @@ struct RecordContextView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Main content
-                VStack(spacing: 24) {
-                    // Persona Description
-                    VStack(spacing: 8) {
-                        Text(context.icon)
-                            .font(.system(size: 60))
+                // Main content - wrapped in ScrollView for keyboard avoidance
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // Persona Description
+                            VStack(spacing: 8) {
+                                Text(context.icon)
+                                    .font(.system(size: 60))
 
-                        Text(context.displayName)
-                            .font(.title2.bold())
+                                Text(context.displayName)
+                                    .font(.title2.bold())
 
-                        Text(context.personaDescription)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
+                                Text(context.personaDescription)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            .padding(.top, 32)
+
+                            // Connection & Queue Status
+                            statusIndicators
+
+                            // Media Input Tabs
+                            Picker("Input-Typ", selection: $selectedTab) {
+                                Text("🎤 Audio").tag(MediaInputTab.audio)
+                                Text("📸 Foto").tag(MediaInputTab.photo)
+                                Text("🎥 Video").tag(MediaInputTab.video)
+                            }
+                            .pickerStyle(.segmented)
                             .padding(.horizontal)
-                    }
-                    .padding(.top, 32)
+                            .disabled(isProcessing)
 
-                    // Connection & Queue Status
-                    statusIndicators
+                            // Content based on selected tab or processing state
+                            if isProcessing {
+                                processingView
+                            } else {
+                                switch selectedTab {
+                                case .audio:
+                                    audioInputView
+                                case .photo:
+                                    mediaInputView(type: .photo, icon: "camera.fill", title: "Foto aufnehmen")
+                                case .video:
+                                    mediaInputView(type: .video, icon: "video.fill", title: "Video aufnehmen")
+                                }
+                            }
 
-                    // Media Input Tabs
-                    Picker("Input-Typ", selection: $selectedTab) {
-                        Text("🎤 Audio").tag(MediaInputTab.audio)
-                        Text("📸 Foto").tag(MediaInputTab.photo)
-                        Text("🎥 Video").tag(MediaInputTab.video)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-                    .disabled(isProcessing)
+                            // Quick Text Input
+                            if !isProcessing {
+                                textInputSection
+                                    .id("textInput")
+                            }
 
-                    Spacer()
+                            // Error Message
+                            if case .error(let message) = processingState {
+                                errorView(message: message)
+                            }
 
-                    // Content based on selected tab or processing state
-                    if isProcessing {
-                        processingView
-                    } else {
-                        switch selectedTab {
-                        case .audio:
-                            audioInputView
-                        case .photo:
-                            mediaInputView(type: .photo, icon: "camera.fill", title: "Foto aufnehmen")
-                        case .video:
-                            mediaInputView(type: .video, icon: "video.fill", title: "Video aufnehmen")
+                            // Bottom padding for keyboard
+                            Spacer()
+                                .frame(height: 20)
                         }
                     }
-
-                    // Quick Text Input
-                    if !isProcessing {
-                        textInputSection
-                    }
-
-                    // Error Message
-                    if case .error(let message) = processingState {
-                        errorView(message: message)
-                    }
-
-                    Spacer()
-                }
-                .navigationTitle("Aufnehmen")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        ContextIndicator(context: context)
-                    }
-                }
-                .sheet(isPresented: $showMediaPicker) {
-                    MediaPickerView(mediaType: mediaType) { data, filename in
-                        handleMediaSelected(data: data, filename: filename)
-                    }
-                }
-                .fullScreenCover(isPresented: $showCamera) {
-                    CameraView(mediaType: mediaType) { data, filename in
-                        handleMediaSelected(data: data, filename: filename)
-                    }
-                }
-                .sheet(isPresented: $showQueueDetails) {
-                    OfflineQueueView()
+                    .scrollDismissesKeyboard(.interactively)
                 }
 
                 // Result overlay
@@ -273,6 +259,26 @@ struct RecordContextView: View {
                 }
             }
             .animation(.spring(response: 0.3), value: showResultCard)
+            .navigationTitle("Aufnehmen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    ContextIndicator(context: context)
+                }
+            }
+            .sheet(isPresented: $showMediaPicker) {
+                MediaPickerView(mediaType: mediaType) { data, filename in
+                    handleMediaSelected(data: data, filename: filename)
+                }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraView(mediaType: mediaType) { data, filename in
+                    handleMediaSelected(data: data, filename: filename)
+                }
+            }
+            .sheet(isPresented: $showQueueDetails) {
+                OfflineQueueView()
+            }
         }
     }
 
@@ -448,9 +454,25 @@ struct RecordContextView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            TextField(context.placeholderText, text: $recordedText, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(3...6)
+            TextEditor(text: $recordedText)
+                .frame(minHeight: 80, maxHeight: 120)
+                .padding(8)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(.systemGray4), lineWidth: 1)
+                )
+                .overlay(alignment: .topLeading) {
+                    if recordedText.isEmpty {
+                        Text(context.placeholderText)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 16)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .scrollContentBackground(.hidden)
 
             Button(action: submitText) {
                 HStack {
@@ -683,4 +705,5 @@ struct RecordContextView: View {
     ContentView()
         .environmentObject(APIService())
         .environmentObject(OfflineQueueService.shared)
+        .environmentObject(DeepLinkManager.shared)
 }

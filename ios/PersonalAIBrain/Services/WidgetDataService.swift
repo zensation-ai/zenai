@@ -85,7 +85,7 @@ final class WidgetDataService {
 extension LocalStorageService {
     /// Update widgets after data changes
     func updateWidgets() {
-        let ideas = getAllIdeas()
+        let ideas = localIdeas
         let totalCount = ideas.count
         WidgetDataService.shared.updateWidgetData(ideas: Array(ideas.prefix(5)), totalCount: totalCount)
     }

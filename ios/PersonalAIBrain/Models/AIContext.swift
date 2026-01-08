@@ -61,6 +61,8 @@ enum AIContext: String, Codable, CaseIterable {
 
 /// Manages the current AI context and provides intelligent context switching suggestions
 class ContextManager: ObservableObject {
+    static let shared = ContextManager()
+
     @Published var currentContext: AIContext {
         didSet {
             // Save to UserDefaults

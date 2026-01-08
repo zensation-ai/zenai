@@ -1,5 +1,7 @@
 import Foundation
 
+// Note: Response types are defined in Models/Incubator.swift
+
 /// Service for interacting with the Thought Incubator API
 final class IncubatorService {
     static let shared = IncubatorService()
@@ -10,13 +12,13 @@ final class IncubatorService {
 
     /// Add a new loose thought to the incubator
     func addThought(_ text: String, source: String = "app", tags: [String] = []) async throws -> LooseThought {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/thought?context=\(context.rawValue)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/thought?context=\(context.rawValue)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = Environment.Timeouts.standard
+        request.timeoutInterval = AppEnvironment.Timeouts.standard
 
         let body: [String: Any] = [
             "text": text,
@@ -29,7 +31,7 @@ final class IncubatorService {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 201 else {
-            throw APIError.serverError("Failed to add thought")
+            throw IncubatorError.serverError("Failed to add thought")
         }
 
         struct Response: Codable {
@@ -45,16 +47,16 @@ final class IncubatorService {
 
     /// Get all loose thoughts
     func getThoughts(limit: Int = 50, includeProcessed: Bool = false) async throws -> [LooseThought] {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/thoughts?context=\(context.rawValue)&limit=\(limit)&includeProcessed=\(includeProcessed)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/thoughts?context=\(context.rawValue)&limit=\(limit)&includeProcessed=\(includeProcessed)")!
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = Environment.Timeouts.standard
+        request.timeoutInterval = AppEnvironment.Timeouts.standard
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.serverError("Failed to fetch thoughts")
+            throw IncubatorError.serverError("Failed to fetch thoughts")
         }
 
         let decoder = JSONDecoder()
@@ -67,16 +69,16 @@ final class IncubatorService {
 
     /// Get all thought clusters
     func getClusters() async throws -> [ThoughtCluster] {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/clusters?context=\(context.rawValue)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters?context=\(context.rawValue)")!
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = Environment.Timeouts.standard
+        request.timeoutInterval = AppEnvironment.Timeouts.standard
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.serverError("Failed to fetch clusters")
+            throw IncubatorError.serverError("Failed to fetch clusters")
         }
 
         let decoder = JSONDecoder()
@@ -87,16 +89,16 @@ final class IncubatorService {
 
     /// Get clusters ready for consolidation
     func getReadyClusters() async throws -> [ThoughtCluster] {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/clusters/ready?context=\(context.rawValue)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters/ready?context=\(context.rawValue)")!
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = Environment.Timeouts.standard
+        request.timeoutInterval = AppEnvironment.Timeouts.standard
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.serverError("Failed to fetch ready clusters")
+            throw IncubatorError.serverError("Failed to fetch ready clusters")
         }
 
         let decoder = JSONDecoder()
@@ -107,13 +109,13 @@ final class IncubatorService {
 
     /// Consolidate a cluster into a structured idea
     func consolidateCluster(_ clusterId: String) async throws -> ConsolidateResponse {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/clusters/\(clusterId)/consolidate?context=\(context.rawValue)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters/\(clusterId)/consolidate?context=\(context.rawValue)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = Environment.Timeouts.aiProcessing
+        request.timeoutInterval = AppEnvironment.Timeouts.aiProcessing
 
         let body = ["context": context.rawValue]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -121,7 +123,7 @@ final class IncubatorService {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.serverError("Failed to consolidate cluster")
+            throw IncubatorError.serverError("Failed to consolidate cluster")
         }
 
         let decoder = JSONDecoder()
@@ -130,13 +132,13 @@ final class IncubatorService {
 
     /// Dismiss a cluster
     func dismissCluster(_ clusterId: String) async throws {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/clusters/\(clusterId)/dismiss?context=\(context.rawValue)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/clusters/\(clusterId)/dismiss?context=\(context.rawValue)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = Environment.Timeouts.standard
+        request.timeoutInterval = AppEnvironment.Timeouts.standard
 
         let body = ["context": context.rawValue]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -144,7 +146,7 @@ final class IncubatorService {
         let (_, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.serverError("Failed to dismiss cluster")
+            throw IncubatorError.serverError("Failed to dismiss cluster")
         }
     }
 
@@ -152,16 +154,16 @@ final class IncubatorService {
 
     /// Get incubator statistics
     func getStats() async throws -> IncubatorStats {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/stats?context=\(context.rawValue)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/stats?context=\(context.rawValue)")!
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = Environment.Timeouts.standard
+        request.timeoutInterval = AppEnvironment.Timeouts.standard
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.serverError("Failed to fetch stats")
+            throw IncubatorError.serverError("Failed to fetch stats")
         }
 
         let decoder = JSONDecoder()
@@ -173,13 +175,13 @@ final class IncubatorService {
 
     /// Trigger batch analysis to find new clusters
     func runBatchAnalysis() async throws {
-        let context = AIContextManager.shared.currentContext
-        let url = URL(string: "\(Environment.apiBaseURL)/incubator/analyze?context=\(context.rawValue)")!
+        let context = ContextManager.shared.currentContext
+        let url = URL(string: "\(AppEnvironment.apiBaseURL)/incubator/analyze?context=\(context.rawValue)")!
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = Environment.Timeouts.aiProcessing
+        request.timeoutInterval = AppEnvironment.Timeouts.aiProcessing
 
         let body = ["context": context.rawValue]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -187,14 +189,14 @@ final class IncubatorService {
         let (_, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw APIError.serverError("Failed to run batch analysis")
+            throw IncubatorError.serverError("Failed to run batch analysis")
         }
     }
 }
 
-// MARK: - API Error
+// MARK: - Incubator Error
 
-enum APIError: LocalizedError {
+enum IncubatorError: LocalizedError {
     case serverError(String)
     case networkError(Error)
     case decodingError(Error)

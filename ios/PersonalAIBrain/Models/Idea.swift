@@ -1,6 +1,6 @@
 import Foundation
 
-struct Idea: Identifiable, Codable {
+struct Idea: Identifiable, Codable, Hashable {
     let id: String
     let title: String
     let type: IdeaType

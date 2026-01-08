@@ -134,6 +134,12 @@ struct QuickCaptureWidgetView: View {
             MediumWidgetView(entry: entry)
         case .systemLarge:
             LargeWidgetView(entry: entry)
+        case .accessoryCircular:
+            AccessoryCircularView(entry: entry)
+        case .accessoryRectangular:
+            AccessoryRectangularView(entry: entry)
+        case .accessoryInline:
+            AccessoryInlineView(entry: entry)
         default:
             SmallWidgetView(entry: entry)
         }
@@ -394,6 +400,77 @@ struct LargeWidgetView: View {
     }
 }
 
+// MARK: - Lock Screen Widgets (iOS 16+)
+
+struct AccessoryCircularView: View {
+    let entry: WidgetEntry
+
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+
+            VStack(spacing: 2) {
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 20))
+                    .foregroundColor(.orange)
+
+                Text("\(entry.totalIdeas)")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.primary)
+            }
+        }
+        .widgetURL(URL(string: "personalai://record"))
+    }
+}
+
+struct AccessoryRectangularView: View {
+    let entry: WidgetEntry
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "brain.head.profile")
+                .font(.title2)
+                .foregroundColor(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("AI Brain")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+
+                if let latestIdea = entry.recentIdeas.first {
+                    Text(latestIdea.title)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("\(entry.totalIdeas) Ideen")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Spacer()
+        }
+        .widgetURL(URL(string: "personalai://record"))
+    }
+}
+
+struct AccessoryInlineView: View {
+    let entry: WidgetEntry
+
+    var body: some View {
+        Label {
+            if let latestIdea = entry.recentIdeas.first {
+                Text(latestIdea.title)
+            } else {
+                Text("\(entry.totalIdeas) Ideen in AI Brain")
+            }
+        } icon: {
+            Image(systemName: "brain.head.profile")
+        }
+    }
+}
+
 // MARK: - Widget Configuration
 
 @main
@@ -406,7 +483,14 @@ struct PersonalAIBrainWidget: Widget {
         }
         .configurationDisplayName("Personal AI Brain")
         .description("Schnellzugriff auf deine Ideen")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([
+            .systemSmall,
+            .systemMedium,
+            .systemLarge,
+            .accessoryCircular,      // Lock Screen circular widget
+            .accessoryRectangular,   // Lock Screen rectangular widget
+            .accessoryInline         // Lock Screen inline widget
+        ])
     }
 }
 
@@ -452,6 +536,40 @@ struct PersonalAIBrainWidget_Previews: PreviewProvider {
             ))
             .previewContext(WidgetPreviewContext(family: .systemLarge))
             .previewDisplayName("Large")
+
+            // Lock Screen Widgets
+            QuickCaptureWidgetView(entry: WidgetEntry(
+                date: Date(),
+                recentIdeas: [
+                    WidgetIdea(id: "1", title: "App Architektur planen", type: "task", category: "work", createdAt: Date())
+                ],
+                totalIdeas: 42,
+                configuration: nil
+            ))
+            .previewContext(WidgetPreviewContext(family: .accessoryCircular))
+            .previewDisplayName("Circular")
+
+            QuickCaptureWidgetView(entry: WidgetEntry(
+                date: Date(),
+                recentIdeas: [
+                    WidgetIdea(id: "1", title: "App Architektur planen", type: "task", category: "work", createdAt: Date())
+                ],
+                totalIdeas: 42,
+                configuration: nil
+            ))
+            .previewContext(WidgetPreviewContext(family: .accessoryRectangular))
+            .previewDisplayName("Rectangular")
+
+            QuickCaptureWidgetView(entry: WidgetEntry(
+                date: Date(),
+                recentIdeas: [
+                    WidgetIdea(id: "1", title: "App Architektur planen", type: "task", category: "work", createdAt: Date())
+                ],
+                totalIdeas: 42,
+                configuration: nil
+            ))
+            .previewContext(WidgetPreviewContext(family: .accessoryInline))
+            .previewDisplayName("Inline")
         }
     }
 }

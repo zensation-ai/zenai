@@ -1,10 +1,88 @@
 import SwiftUI
 
+// MARK: - Deep Link Handler
+enum DeepLink: Equatable {
+    case record
+    case text
+    case search
+    case incubator
+    case idea(String)
+    case stories
+    case graph
+    case profile
+    case settings
+
+    static func from(url: URL) -> DeepLink? {
+        guard url.scheme == "personalai" else { return nil }
+
+        let path = url.host ?? url.path
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+
+        switch path {
+        case "record": return .record
+        case "text": return .text
+        case "search": return .search
+        case "incubator": return .incubator
+        case "stories": return .stories
+        case "graph": return .graph
+        case "profile": return .profile
+        case "settings": return .settings
+        case "idea":
+            if let ideaId = pathComponents.first {
+                return .idea(ideaId)
+            }
+            return nil
+        default:
+            // Handle URLs like personalai://idea/uuid
+            if path.hasPrefix("idea/") {
+                let ideaId = String(path.dropFirst(5))
+                return .idea(ideaId)
+            }
+            return nil
+        }
+    }
+}
+
+// MARK: - Deep Link Manager
+class DeepLinkManager: ObservableObject {
+    static let shared = DeepLinkManager()
+
+    @Published var pendingDeepLink: DeepLink?
+    @Published var selectedTab: Int = 2 // Default to record tab
+    @Published var selectedIdeaId: String?
+    @Published var showSearch: Bool = false
+
+    func handle(_ deepLink: DeepLink) {
+        switch deepLink {
+        case .record:
+            selectedTab = 2 // Record tab
+        case .text:
+            selectedTab = 2 // Record tab (text input is there)
+        case .search:
+            selectedTab = 1 // Ideas tab
+            showSearch = true
+        case .incubator:
+            selectedTab = 0 // Review/Swipe tab (incubator is there)
+        case .idea(let id):
+            selectedTab = 1 // Ideas tab
+            selectedIdeaId = id
+        case .stories:
+            selectedTab = 3 // Stories tab
+        case .graph:
+            selectedTab = 4 // Knowledge Graph tab
+        case .profile, .settings:
+            selectedTab = 5 // Profile tab
+        }
+        pendingDeepLink = nil
+    }
+}
+
 @main
 struct PersonalAIBrainApp: App {
     @StateObject private var apiService = APIService()
     @StateObject private var localStorageService = LocalStorageService.shared
     @StateObject private var offlineQueueService = OfflineQueueService.shared
+    @StateObject private var deepLinkManager = DeepLinkManager.shared
     @State private var showSplash = true
 
     // Phase 13: Biometric Lock
@@ -20,6 +98,7 @@ struct PersonalAIBrainApp: App {
                         .environmentObject(apiService)
                         .environmentObject(localStorageService)
                         .environmentObject(offlineQueueService)
+                        .environmentObject(deepLinkManager)
                         .preferredColorScheme(.dark)
                         .task {
                             // Initial sync on app launch
@@ -59,6 +138,24 @@ struct PersonalAIBrainApp: App {
                 // Lock app when going to background (if biometric enabled)
                 if newPhase == .background && BiometricService.shared.isEnabled {
                     isUnlocked = false
+                }
+            }
+            // Phase 14: URL Scheme Handler for Widget & Siri Deep Links
+            .onOpenURL { url in
+                print("📱 Received deep link: \(url)")
+                if let deepLink = DeepLink.from(url: url) {
+                    if isUnlocked || !BiometricService.shared.isEnabled {
+                        deepLinkManager.handle(deepLink)
+                    } else {
+                        // Store for after unlock
+                        deepLinkManager.pendingDeepLink = deepLink
+                    }
+                }
+            }
+            .onChange(of: isUnlocked) { _, newValue in
+                // Handle pending deep link after unlock
+                if newValue, let pending = deepLinkManager.pendingDeepLink {
+                    deepLinkManager.handle(pending)
                 }
             }
         }

@@ -2,7 +2,8 @@ import Foundation
 
 /// Environment configuration for the app
 /// Allows configuring API URL without hardcoding IP addresses
-enum Environment {
+/// Named AppEnvironment to avoid conflict with SwiftUI's @Environment
+enum AppEnvironment {
 
     // MARK: - API Configuration
 
@@ -68,4 +69,11 @@ enum Environment {
 
     /// Extended timeout for media uploads
     static let mediaUploadTimeout: TimeInterval = 180
+
+    /// Structured timeouts for different operations
+    enum Timeouts {
+        static let standard: TimeInterval = 30
+        static let aiProcessing: TimeInterval = 120
+        static let upload: TimeInterval = 180
+    }
 }
