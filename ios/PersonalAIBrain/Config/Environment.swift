@@ -9,7 +9,7 @@ enum AppEnvironment {
 
     /// Set this to your Railway production URL after deployment
     /// Format: https://your-app-name.up.railway.app
-    private static let productionURL: String? = nil // Set after Railway deployment
+    private static let productionURL: String? = "https://ki-ab-production.up.railway.app"
 
     // MARK: - API Configuration
 
