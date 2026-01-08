@@ -30,6 +30,10 @@ import { trainingRouter } from './routes/training';
 import { syncRouter } from './routes/sync';
 // Phase 10: Analytics
 import { analyticsRouter } from './routes/analytics';
+// Phase 18: Export System
+import { exportRouter } from './routes/export';
+// Phase 19: Push Notifications
+import { notificationsRouter } from './routes/notifications';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -85,6 +89,12 @@ app.use('/api', syncRouter);  // Context-aware sync routes: /api/:context/sync/*
 // Phase 10: Analytics Routes
 app.use('/api', analyticsRouter);  // Context-aware analytics: /api/:context/analytics/*
 
+// Phase 18: Export System
+app.use('/api/export', exportRouter);  // Export routes: /api/export/ideas/pdf, /api/export/ideas/csv, etc.
+
+// Phase 19: Push Notifications
+app.use('/api/notifications', notificationsRouter);  // Notification routes: /api/notifications/register, etc.
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
@@ -99,7 +109,7 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-🧠 Personal AI System - Backend (Phase 12: Developer Experience)
+🧠 Personal AI System - Backend (Phase 19: Push Notifications)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
@@ -113,6 +123,19 @@ Phase 6 APIs (NEW!):
   - Context-aware routes support /api/:context/...
   - Personal Persona: Friendly, exploratory
   - Work Persona: Structured, business-focused
+
+Phase 19 APIs (NEW!):
+  - Push Register:   /api/notifications/register
+  - Preferences:     /api/notifications/preferences
+  - Send Notif:      /api/notifications/send
+  - History:         /api/notifications/history
+
+Phase 18 APIs:
+  - Export PDF:      /api/export/ideas/pdf
+  - Export Markdown: /api/export/ideas/markdown
+  - Export CSV:      /api/export/ideas/csv
+  - Export JSON:     /api/export/ideas/json
+  - Full Backup:     /api/export/backup
 
 Phase 5 APIs:
   - Incubator:    /api/incubator

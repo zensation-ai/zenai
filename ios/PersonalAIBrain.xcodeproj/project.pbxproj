@@ -52,6 +52,9 @@
 		AAF00101 /* IncubatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00102; };
 		EEE00001 /* ArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE00002; };
 		EEE00003 /* PersonaSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE00004; };
+		AAE00095 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE00096; };
+		AAF00103 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00104; };
+		AAF00105 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00106; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -102,6 +105,9 @@
 		AAF00102 /* IncubatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncubatorView.swift; sourceTree = "<group>"; };
 		EEE00002 /* ArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveView.swift; sourceTree = "<group>"; };
 		EEE00004 /* PersonaSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaSelectorView.swift; sourceTree = "<group>"; };
+		AAE00096 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		AAF00104 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		AAF00106 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -172,6 +178,8 @@
 				AAF00102 /* IncubatorView.swift */,
 				EEE00002 /* ArchiveView.swift */,
 				EEE00004 /* PersonaSelectorView.swift */,
+				AAE00096 /* ExportView.swift */,
+				AAF00106 /* NotificationSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -212,6 +220,7 @@
 				AAD00087 /* IncubatorService.swift */,
 				AAD00089 /* KeychainService.swift */,
 				AAD00091 /* WidgetDataService.swift */,
+				AAF00104 /* NotificationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -345,6 +354,9 @@
 				AAF00101 /* IncubatorView.swift in Sources */,
 				EEE00001 /* ArchiveView.swift in Sources */,
 				EEE00003 /* PersonaSelectorView.swift in Sources */,
+				AAE00095 /* ExportView.swift in Sources */,
+				AAF00103 /* NotificationService.swift in Sources */,
+				AAF00105 /* NotificationSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

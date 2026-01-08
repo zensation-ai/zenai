@@ -2,10 +2,12 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var apiService: APIService
+    @EnvironmentObject var contextManager: ContextManager
     @State private var stats: ProfileStatsResponse?
     @State private var recommendations: Recommendations?
     @State private var isLoading = true
     @State private var autoPriorityEnabled = false
+    @State private var showExportSheet = false
 
     var body: some View {
         NavigationView {
@@ -44,6 +46,12 @@ struct ProfileView: View {
                             autoPriorityEnabled: $autoPriorityEnabled,
                             onToggle: toggleAutoPriority
                         )
+
+                        // Export Section - Phase 18
+                        ExportSectionView(showExportSheet: $showExportSheet)
+
+                        // Notification Settings - Phase 19
+                        NotificationSettingsSection()
                     }
                     .padding()
                 }
@@ -51,10 +59,18 @@ struct ProfileView: View {
             .navigationTitle("Dein Profil")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: loadData) {
-                        Image(systemName: "arrow.clockwise")
+                    HStack(spacing: 12) {
+                        Button(action: { showExportSheet = true }) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        Button(action: loadData) {
+                            Image(systemName: "arrow.clockwise")
+                        }
                     }
                 }
+            }
+            .sheet(isPresented: $showExportSheet) {
+                ExportView(context: $contextManager.currentContext)
             }
             .task {
                 await loadDataAsync()
@@ -262,7 +278,41 @@ struct SettingsSectionView: View {
     }
 }
 
+// MARK: - Export Section (Phase 18)
+
+struct ExportSectionView: View {
+    @Binding var showExportSheet: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Export & Backup", systemImage: "square.and.arrow.up")
+                .font(.headline)
+
+            Button(action: { showExportSheet = true }) {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("Daten exportieren")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                        Text("PDF, Markdown, CSV, JSON")
+                            .font(.caption)
+                            .foregroundColor(.zensationTextMuted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+            }
+        }
+    }
+}
+
 #Preview {
     ProfileView()
         .environmentObject(APIService())
+        .environmentObject(ContextManager())
 }

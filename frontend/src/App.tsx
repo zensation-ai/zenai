@@ -15,6 +15,7 @@ import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ContextSwitcher, useContextState } from './components/ContextSwitcher';
 import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
+import { ExportMenu } from './components/ExportMenu';
 import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
 import './App.css';
 
@@ -426,6 +427,7 @@ function App() {
               >
                 ⚙️ Integrationen
               </button>
+              <ExportMenu context={context} ideasCount={ideas.length} />
             </nav>
             <div className="status-indicators">
               <span

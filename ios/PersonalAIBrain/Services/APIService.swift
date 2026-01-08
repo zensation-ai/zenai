@@ -1425,3 +1425,224 @@ struct TrainingSubmitResponse: Codable {
     let training: TrainingItem
     let message: String?
 }
+
+// MARK: - Export
+
+extension APIService {
+    enum ExportFormat: String, CaseIterable {
+        case pdf = "pdf"
+        case markdown = "markdown"
+        case csv = "csv"
+        case json = "json"
+        case backup = "backup"
+
+        var displayName: String {
+            switch self {
+            case .pdf: return "PDF Report"
+            case .markdown: return "Markdown"
+            case .csv: return "CSV / Excel"
+            case .json: return "JSON"
+            case .backup: return "Vollst. Backup"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .pdf: return "doc.fill"
+            case .markdown: return "doc.text"
+            case .csv: return "tablecells"
+            case .json: return "curlybraces"
+            case .backup: return "externaldrive.fill"
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .pdf: return "Professioneller Bericht"
+            case .markdown: return "Obsidian, Notion kompatibel"
+            case .csv: return "Tabellenkalkulation"
+            case .json: return "Strukturiertes Format"
+            case .backup: return "Alle Daten inkl. Meetings"
+            }
+        }
+
+        var mimeType: String {
+            switch self {
+            case .pdf: return "application/pdf"
+            case .markdown: return "text/markdown"
+            case .csv: return "text/csv"
+            case .json, .backup: return "application/json"
+            }
+        }
+
+        var fileExtension: String {
+            switch self {
+            case .pdf: return "pdf"
+            case .markdown: return "md"
+            case .csv: return "csv"
+            case .json, .backup: return "json"
+            }
+        }
+    }
+
+    /// Export ideas in specified format
+    func exportIdeas(format: ExportFormat, context: AIContext = .personal, includeArchived: Bool = false) async throws -> URL {
+        let endpoint: String
+        switch format {
+        case .backup:
+            endpoint = "\(baseURL)/api/export/backup"
+        default:
+            endpoint = "\(baseURL)/api/export/ideas/\(format.rawValue)"
+        }
+
+        var components = URLComponents(string: endpoint)!
+        components.queryItems = [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ]
+        if includeArchived && format != .backup {
+            components.queryItems?.append(URLQueryItem(name: "includeArchived", value: "true"))
+        }
+
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        // Save to temporary file
+        let timestamp = ISO8601DateFormatter().string(from: Date()).prefix(10)
+        let filename: String
+        if format == .backup {
+            filename = "brain-backup-\(context.rawValue)-\(timestamp).\(format.fileExtension)"
+        } else {
+            filename = "ideas-\(context.rawValue)-\(timestamp).\(format.fileExtension)"
+        }
+
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(filename)
+
+        try data.write(to: fileURL)
+
+        return fileURL
+    }
+
+    /// Export single idea
+    func exportIdea(ideaId: String, format: ExportFormat, context: AIContext = .personal) async throws -> URL {
+        guard format == .pdf || format == .markdown else {
+            throw APIError.serverError(statusCode: 400)
+        }
+
+        let endpoint = "\(baseURL)/api/export/ideas/\(ideaId)/\(format.rawValue)"
+
+        guard var components = URLComponents(string: endpoint) else {
+            throw APIError.invalidURL
+        }
+        components.queryItems = [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ]
+
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let filename = "idea-\(ideaId.prefix(8)).\(format.fileExtension)"
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(filename)
+
+        try data.write(to: fileURL)
+
+        return fileURL
+    }
+
+    /// Export meetings
+    func exportMeetings(format: ExportFormat, context: AIContext = .personal) async throws -> URL {
+        guard format == .pdf || format == .csv else {
+            throw APIError.serverError(statusCode: 400)
+        }
+
+        let endpoint = "\(baseURL)/api/export/meetings/\(format.rawValue)"
+
+        guard var components = URLComponents(string: endpoint) else {
+            throw APIError.invalidURL
+        }
+        components.queryItems = [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ]
+
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let timestamp = ISO8601DateFormatter().string(from: Date()).prefix(10)
+        let filename = "meetings-\(context.rawValue)-\(timestamp).\(format.fileExtension)"
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(filename)
+
+        try data.write(to: fileURL)
+
+        return fileURL
+    }
+
+    /// Export incubator (thought clusters)
+    func exportIncubator(context: AIContext = .personal) async throws -> URL {
+        let endpoint = "\(baseURL)/api/export/incubator/markdown"
+
+        guard var components = URLComponents(string: endpoint) else {
+            throw APIError.invalidURL
+        }
+        components.queryItems = [
+            URLQueryItem(name: "context", value: context.rawValue)
+        ]
+
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let timestamp = ISO8601DateFormatter().string(from: Date()).prefix(10)
+        let filename = "incubator-\(context.rawValue)-\(timestamp).md"
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(filename)
+
+        try data.write(to: fileURL)
+
+        return fileURL
+    }
+}
