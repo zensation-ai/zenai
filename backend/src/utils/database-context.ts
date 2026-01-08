@@ -39,17 +39,35 @@ function parseConnectionString(url: string): {
   user: string;
   password: string;
   database: string;
-  ssl?: { rejectUnauthorized: boolean };
+  ssl?: { rejectUnauthorized: boolean } | false;
 } {
   const parsed = new URL(url);
+  const host = parsed.hostname;
+
+  // Railway internal connections (.railway.internal) don't need SSL
+  // External connections should use SSL
+  const isInternalRailway = host.endsWith('.railway.internal');
+  const sslConfig = isInternalRailway
+    ? false // No SSL for internal Railway network
+    : process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : undefined;
+
+  logger.info('Database connection config', {
+    host,
+    database: parsed.pathname.slice(1),
+    isInternalRailway,
+    sslEnabled: !!sslConfig && sslConfig !== false,
+    operation: 'parseConnectionString',
+  });
+
   return {
-    host: parsed.hostname,
+    host,
     port: parseInt(parsed.port || '5432'),
     user: parsed.username,
     password: parsed.password,
     database: parsed.pathname.slice(1), // Remove leading /
-    // Enable SSL for production (Railway requires it)
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+    ssl: sslConfig,
   };
 }
 

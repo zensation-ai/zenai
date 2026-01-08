@@ -12,13 +12,23 @@ function getPoolConfig() {
   if (databaseUrl) {
     // Railway-style DATABASE_URL
     const parsed = new URL(databaseUrl);
+    const host = parsed.hostname;
+
+    // Railway internal connections (.railway.internal) don't need SSL
+    const isInternalRailway = host.endsWith('.railway.internal');
+    const sslConfig = isInternalRailway
+      ? false
+      : process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : undefined;
+
     return {
-      host: parsed.hostname,
+      host,
       port: parseInt(parsed.port || '5432'),
       user: parsed.username,
       password: parsed.password,
       database: parsed.pathname.slice(1),
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+      ssl: sslConfig,
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
