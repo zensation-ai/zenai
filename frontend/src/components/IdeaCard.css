@@ -66,12 +66,20 @@
   color: var(--text);
 }
 
-.delete-button {
+.idea-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.delete-button,
+.archive-button,
+.restore-button {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 50%;
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 0.85rem;
   width: 28px;
   height: 28px;
   cursor: pointer;
@@ -83,7 +91,9 @@
   flex-shrink: 0;
 }
 
-.idea-card:hover .delete-button {
+.idea-card:hover .delete-button,
+.idea-card:hover .archive-button,
+.idea-card:hover .restore-button {
   opacity: 1;
 }
 
@@ -91,6 +101,20 @@
   background: rgba(239, 68, 68, 0.2);
   border-color: var(--danger);
   color: var(--danger);
+  transform: scale(1.1);
+}
+
+.archive-button:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.restore-button:hover {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: #22c55e;
+  color: #22c55e;
   transform: scale(1.1);
 }
 

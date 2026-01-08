@@ -46,12 +46,19 @@ struct ContentView: View {
                 }
                 .tag(4)
 
+            // Archive - Phase 17
+            ArchiveView()
+                .tabItem {
+                    Label("Archiv", systemImage: "archivebox.fill")
+                }
+                .tag(5)
+
             // Profile & Settings
             ProfileView()
                 .tabItem {
                     Label("Profil", systemImage: "person.circle.fill")
                 }
-                .tag(5)
+                .tag(6)
         }
         .tint(contextManager.currentContext.color)
         .toolbarBackground(.visible, for: .tabBar)

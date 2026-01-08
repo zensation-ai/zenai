@@ -9,7 +9,14 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { transcribeAudio } from '../services/whisper';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
-import { getPersona, shouldImmediatelyStructure } from '../config/personas';
+import {
+  getSubPersona,
+  getAvailablePersonas,
+  isValidPersonaForContext,
+  shouldImmediatelyStructure,
+  SubPersonaId,
+  SubPersonaConfig,
+} from '../config/personas';
 import { generateEmbedding, normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
@@ -55,6 +62,8 @@ const upload = multer({
  * Supports both:
  * - FormData with 'audio' file (from RecordButton)
  * - JSON with 'text' or 'audioBase64' fields
+ *
+ * Optional 'persona' parameter to select a specific sub-persona
  */
 voiceMemoContextRouter.post('/:context/voice-memo', upload.single('audio'), async (req: Request, res: Response) => {
   const { context } = req.params;
@@ -67,8 +76,15 @@ voiceMemoContextRouter.post('/:context/voice-memo', upload.single('audio'), asyn
   }
 
   const startTime = Date.now();
-  const { audioBase64, text } = req.body;
+  const { audioBase64, text, persona: personaId } = req.body;
   const audioFile = req.file; // From multer (FormData upload)
+
+  // Validate persona if provided
+  if (personaId && !isValidPersonaForContext(context as AIContext, personaId)) {
+    return res.status(400).json({
+      error: `Invalid persona "${personaId}" for context "${context}". Use GET /api/${context}/personas to see available personas.`
+    });
+  }
 
   try {
     let transcript: string;
@@ -91,12 +107,13 @@ voiceMemoContextRouter.post('/:context/voice-memo', upload.single('audio'), asyn
       });
     }
 
-    const persona = getPersona(context as AIContext);
-    const immediateStructure = shouldImmediatelyStructure(context as AIContext);
+    // Get the selected persona (or default for context)
+    const persona = getSubPersona(context as AIContext, personaId as SubPersonaId | undefined);
+    const immediateStructure = shouldImmediatelyStructure(context as AIContext, personaId as SubPersonaId | undefined);
 
     if (immediateStructure) {
       // WORK MODE: Structure immediately
-      const structured = await structureThoughtWithPersona(transcript, context as AIContext);
+      const structured = await structureThoughtWithPersona(transcript, context as AIContext, personaId as SubPersonaId | undefined);
 
       // Generate embedding
       const embedding = await generateEmbedding(structured.summary + ' ' + structured.title);
@@ -189,9 +206,10 @@ voiceMemoContextRouter.post('/:context/voice-memo', upload.single('audio'), asyn
  */
 async function structureThoughtWithPersona(
   transcript: string,
-  context: AIContext
+  context: AIContext,
+  personaId?: SubPersonaId
 ): Promise<any> {
-  const persona = getPersona(context);
+  const persona = getSubPersona(context, personaId);
 
   const prompt = `${persona.systemPrompt}
 
@@ -265,11 +283,12 @@ voiceMemoContextRouter.get('/:context/stats', async (req: Request, res: Response
       queryContext(context as AIContext, "SELECT COUNT(*) as count FROM thought_clusters WHERE status = 'ready'"),
     ]);
 
-    const persona = getPersona(context as AIContext);
+    const persona = getSubPersona(context as AIContext);
 
     res.json({
       context,
       persona: {
+        id: persona.id,
         name: persona.displayName,
         icon: persona.icon,
       },
@@ -283,4 +302,34 @@ voiceMemoContextRouter.get('/:context/stats', async (req: Request, res: Response
     console.error(`Error fetching stats for ${context}:`, error);
     res.status(500).json({ error: error.message });
   }
+});
+
+/**
+ * GET /api/:context/personas
+ *
+ * Get available personas for a context
+ */
+voiceMemoContextRouter.get('/:context/personas', (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    return res.status(400).json({
+      error: 'Invalid context. Must be "personal" or "work"'
+    });
+  }
+
+  const personas = getAvailablePersonas(context as AIContext);
+  const defaultPersona = getSubPersona(context as AIContext);
+
+  res.json({
+    context,
+    default: defaultPersona.id,
+    personas: personas.map(p => ({
+      id: p.id,
+      displayName: p.displayName,
+      icon: p.icon,
+      description: p.description,
+      isDefault: p.id === defaultPersona.id,
+    })),
+  });
 });

@@ -8,6 +8,7 @@ interface RecordButtonProps {
   onRecordingChange?: (isRecording: boolean) => void;
   disabled?: boolean;
   context?: 'personal' | 'work';
+  persona?: string | null;
 }
 
 interface ProcessedResult {
@@ -25,7 +26,7 @@ interface ProcessedResult {
   };
 }
 
-export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled, context = 'personal' }: RecordButtonProps) {
+export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled, context = 'personal', persona }: RecordButtonProps) {
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -128,6 +129,11 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
       const formData = new FormData();
       const extension = mimeType.includes('wav') ? 'wav' : mimeType.includes('webm') ? 'webm' : 'ogg';
       formData.append('audio', audioBlob, `recording.${extension}`);
+
+      // Add persona if selected
+      if (persona) {
+        formData.append('persona', persona);
+      }
 
       // Send to backend with context
       const response = await axios.post(`/api/${context}/voice-memo`, formData, {

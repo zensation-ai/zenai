@@ -20,6 +20,10 @@ interface Idea {
 interface IdeaCardProps {
   idea: Idea;
   onDelete?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  isArchived?: boolean;
+  context?: 'personal' | 'work';
 }
 
 const typeIcons: Record<string, string> = {
@@ -30,8 +34,9 @@ const typeIcons: Record<string, string> = {
   question: '❓',
 };
 
-export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
+export function IdeaCard({ idea, onDelete, onArchive, onRestore, isArchived = false, context = 'personal' }: IdeaCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,6 +52,36 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
       showToast(message, 'error');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsArchiving(true);
+    try {
+      await axios.put(`/api/${context}/ideas/${idea.id}/archive`);
+      onArchive?.(idea.id);
+      showToast('Gedanke archiviert', 'success');
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Archivierung fehlgeschlagen';
+      showToast(message, 'error');
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const handleRestore = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsArchiving(true);
+    try {
+      await axios.put(`/api/${context}/ideas/${idea.id}/restore`);
+      onRestore?.(idea.id);
+      showToast('Gedanke wiederhergestellt', 'success');
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Wiederherstellung fehlgeschlagen';
+      showToast(message, 'error');
+    } finally {
+      setIsArchiving(false);
     }
   };
 
@@ -66,16 +101,41 @@ export function IdeaCard({ idea, onDelete }: IdeaCardProps) {
       <div className="idea-header">
         <span className="idea-type">{typeIcons[idea.type] || '📝'}</span>
         <h3 className="idea-title">{idea.title}</h3>
-        <button
-          type="button"
-          className="delete-button"
-          onClick={handleDelete}
-          disabled={isDeleting}
-          title="Löschen"
-          aria-label="Gedanke löschen"
-        >
-          {isDeleting ? '...' : '×'}
-        </button>
+        <div className="idea-actions">
+          {isArchived ? (
+            <button
+              type="button"
+              className="restore-button"
+              onClick={handleRestore}
+              disabled={isArchiving}
+              title="Wiederherstellen"
+              aria-label="Gedanke wiederherstellen"
+            >
+              {isArchiving ? '...' : '↩'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="archive-button"
+              onClick={handleArchive}
+              disabled={isArchiving}
+              title="Archivieren"
+              aria-label="Gedanke archivieren"
+            >
+              {isArchiving ? '...' : '📥'}
+            </button>
+          )}
+          <button
+            type="button"
+            className="delete-button"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            title="Löschen"
+            aria-label="Gedanke löschen"
+          >
+            {isDeleting ? '...' : '×'}
+          </button>
+        </div>
       </div>
 
       <p className="idea-summary">{idea.summary}</p>

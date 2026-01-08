@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RecordView: View {
     @EnvironmentObject var apiService: APIService
+    @ObservedObject var contextManager = ContextManager.shared
     @StateObject private var audioRecorder = AudioRecorderService()
 
     @State private var isProcessing = false
@@ -108,6 +109,14 @@ struct RecordView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(Color.zensationSurface, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    ContextIndicator(context: contextManager.currentContext)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    PersonaMenu(contextManager: contextManager)
+                }
+            }
             .sheet(isPresented: $showResult) {
                 if let result = processedIdea {
                     ProcessedIdeaView(response: result) {
@@ -144,28 +153,66 @@ struct RecordView: View {
         errorMessage = nil
         processingPhase = 0
 
+        let context = contextManager.currentContext
+        let persona = contextManager.currentPersonaId
+
         print("🎤 Processing audio data: \(data.count) bytes")
+        print("📋 Context: \(context.rawValue), Persona: \(persona)")
 
         // Timer für Phasenwechsel starten
         startProcessingAnimation()
 
-        Task {
-            do {
-                print("📤 Sending audio to backend...")
-                let response = try await apiService.processVoiceMemo(
-                    audioData: data,
-                    filename: "recording.wav"
-                )
-                stopProcessingAnimation()
-                print("✅ Audio processed successfully: \(response.structured.title)")
-                processedIdea = response
-                showResult = true
+        print("📤 Sending audio to backend with persona...")
+        apiService.submitVoiceMemo(audioData: data, context: context, persona: persona) { result in
+            stopProcessingAnimation()
+
+            switch result {
+            case .success(let response):
+                print("✅ Audio processed successfully")
+
+                // Convert context response to VoiceMemoResponse for display
+                if let idea = response.idea {
+                    processedIdea = VoiceMemoResponse(
+                        success: response.success,
+                        ideaId: idea.id,
+                        transcript: nil,
+                        structured: StructuredIdea(
+                            title: idea.title,
+                            type: idea.type,
+                            category: idea.category,
+                            priority: idea.priority,
+                            summary: idea.summary,
+                            nextSteps: nil,
+                            contextNeeded: nil,
+                            keywords: nil
+                        )
+                    )
+                    showResult = true
+                } else if response.thought != nil {
+                    // For incubated thoughts, show a simple message
+                    processedIdea = VoiceMemoResponse(
+                        success: response.success,
+                        ideaId: response.thought?.id ?? "unknown",
+                        transcript: nil,
+                        structured: StructuredIdea(
+                            title: "Gedanke notiert",
+                            type: "thought",
+                            category: "personal",
+                            priority: "medium",
+                            summary: response.message ?? "Dein Gedanke wird inkubiert...",
+                            nextSteps: nil,
+                            contextNeeded: nil,
+                            keywords: nil
+                        )
+                    )
+                    showResult = true
+                }
 
                 // Haptisches Feedback bei Erfolg
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
-            } catch {
-                stopProcessingAnimation()
+
+            case .failure(let error):
                 print("❌ Error processing audio: \(error)")
                 errorMessage = "Fehler beim Verarbeiten: \(error.localizedDescription)\n\nStelle sicher, dass Backend läuft und erreichbar ist."
 

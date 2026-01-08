@@ -547,6 +547,87 @@ ideasRouter.post('/:id/swipe', validateUUID, async (req, res) => {
 });
 
 /**
+ * GET /api/ideas/archived
+ * List all archived ideas with pagination
+ */
+ideasRouter.get('/archived/list', async (req, res) => {
+  try {
+    const ctx = getContext(req);
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const result = await queryContext(
+      ctx,
+      `SELECT id, title, type, category, priority, summary,
+              next_steps, context_needed, keywords, created_at, updated_at
+       FROM ideas
+       WHERE is_archived = true
+       ORDER BY updated_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const countResult = await queryContext(
+      ctx,
+      'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true'
+    );
+
+    res.json({
+      ideas: result.rows.map(row => ({
+        ...row,
+        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+      })),
+      pagination: {
+        total: parseInt(countResult.rows[0].total),
+        limit,
+        offset,
+        hasMore: offset + limit < parseInt(countResult.rows[0].total),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching archived ideas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /api/ideas/:id/restore
+ * Restore an archived idea
+ */
+ideasRouter.put('/:id/restore', validateUUID, async (req, res) => {
+  try {
+    const ctx = getContext(req);
+    const result = await queryContext(
+      ctx,
+      'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Archived idea not found' });
+    }
+
+    trackInteraction({
+      idea_id: req.params.id,
+      interaction_type: 'view',
+      metadata: { action: 'restore' },
+    }).catch((err) => console.log('Background restore tracking skipped:', err.message));
+
+    triggerWebhook('idea.updated', {
+      id: req.params.id,
+      action: 'restored'
+    }).catch((err) => console.log('Background restore webhook skipped:', err.message));
+
+    res.json({ success: true, restoredId: req.params.id, idea: result.rows[0] });
+  } catch (error: any) {
+    console.error('Error restoring idea:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * PUT /api/ideas/:id/archive
  * Archive an idea (soft delete)
  */

@@ -14,10 +14,11 @@ import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ContextSwitcher, useContextState } from './components/ContextSwitcher';
+import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
 import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
 import './App.css';
 
-type Page = 'ideas' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph';
+type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph';
 
 interface StructuredIdea {
   id: string;
@@ -54,9 +55,14 @@ function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isSearching, setIsSearching] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [archivedIdeas, setArchivedIdeas] = useState<StructuredIdea[]>([]);
+  const [archivedCount, setArchivedCount] = useState(0);
 
   // Context state (personal/work)
   const [context, setContext] = useContextState();
+
+  // Persona state (per context)
+  const [selectedPersona, setSelectedPersona] = usePersonaState(context);
 
   // Determine AI activity state
   const isAIActive = processing || isSearching || isRecording || loading;
@@ -66,7 +72,15 @@ function App() {
   useEffect(() => {
     checkHealth();
     loadIdeas();
+    loadArchivedCount();
   }, [context]);
+
+  // Load archived ideas when switching to archive page
+  useEffect(() => {
+    if (currentPage === 'archive') {
+      loadArchivedIdeas();
+    }
+  }, [currentPage, context]);
 
   const checkHealth = async () => {
     try {
@@ -109,6 +123,43 @@ function App() {
     }
   };
 
+  const loadArchivedIdeas = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`/api/${context}/ideas/archived?limit=100`);
+      setArchivedIdeas(response.data.ideas);
+      setArchivedCount(response.data.pagination.total);
+    } catch (err) {
+      console.error('Failed to load archived ideas:', err);
+      setArchivedIdeas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadArchivedCount = async () => {
+    try {
+      const response = await axios.get(`/api/${context}/ideas/archived?limit=1`);
+      setArchivedCount(response.data.pagination.total);
+    } catch (err) {
+      setArchivedCount(0);
+    }
+  };
+
+  const handleArchive = (id: string) => {
+    setIdeas(ideas.filter(i => i.id !== id));
+    setArchivedCount(prev => prev + 1);
+  };
+
+  const handleRestore = (id: string) => {
+    const restored = archivedIdeas.find(i => i.id === id);
+    if (restored) {
+      setArchivedIdeas(archivedIdeas.filter(i => i.id !== id));
+      setIdeas([restored, ...ideas]);
+      setArchivedCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
   const submitText = async () => {
     if (!textInput.trim()) return;
 
@@ -119,6 +170,7 @@ function App() {
       // Submit text to context-specific endpoint
       const response = await axios.post(`/api/${context}/voice-memo`, {
         text: textInput,
+        persona: selectedPersona,
       });
 
       const newIdea: StructuredIdea = {
@@ -251,6 +303,63 @@ function App() {
     );
   }
 
+  if (currentPage === 'archive') {
+    return (
+      <ErrorBoundary>
+        <div className="app archive-page">
+          <header className="header">
+            <div className="header-content">
+              <div className="header-left">
+                <button type="button" className="back-button" onClick={() => setCurrentPage('ideas')}>
+                  ← Zurück
+                </button>
+                <h1>📥 Archiv</h1>
+                <span className="archive-count">{archivedCount} archiviert</span>
+              </div>
+              <div className="header-right">
+                <ContextSwitcher context={context} onContextChange={setContext} />
+              </div>
+            </div>
+          </header>
+          <main className="main">
+            <section className="ideas-section">
+              <div className="section-header">
+                <h2>Archivierte Gedanken</h2>
+              </div>
+              {loading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner large" />
+                  <p>Lade Archiv...</p>
+                </div>
+              ) : archivedIdeas.length === 0 ? (
+                <div className="empty-state">
+                  <span className="empty-icon">📭</span>
+                  <h3>Archiv ist leer</h3>
+                  <p>Archivierte Gedanken erscheinen hier.</p>
+                </div>
+              ) : (
+                <div className={`ideas-${viewMode}`}>
+                  {archivedIdeas.map((idea) => (
+                    <div key={idea.id} className="idea-wrapper">
+                      <IdeaCard
+                        idea={idea}
+                        onDelete={(id) => setArchivedIdeas(archivedIdeas.filter((i) => i.id !== id))}
+                        onRestore={handleRestore}
+                        isArchived={true}
+                        context={context}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </main>
+        </div>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
     <div className="app">
@@ -261,9 +370,22 @@ function App() {
             <h1>Personal AI Brain</h1>
             <span className="version-badge">v1.0</span>
             <ContextSwitcher context={context} onContextChange={setContext} />
+            <PersonaSelector
+              context={context}
+              selectedPersona={selectedPersona}
+              onPersonaChange={setSelectedPersona}
+            />
           </div>
           <div className="header-right">
             <nav className="header-nav">
+              <button
+                type="button"
+                className={`nav-button archive-nav ${archivedCount > 0 ? 'has-items' : ''}`}
+                onClick={() => setCurrentPage('archive')}
+                title="Archiv"
+              >
+                📥 Archiv {archivedCount > 0 && <span className="badge">{archivedCount}</span>}
+              </button>
               <button
                 type="button"
                 className="nav-button incubator-nav"
@@ -363,6 +485,7 @@ function App() {
                   onRecordingChange={setIsRecording}
                   disabled={processing}
                   context={context}
+                  persona={selectedPersona}
                 />
                 <button
                   className="submit-button"
@@ -455,6 +578,8 @@ function App() {
                   <IdeaCard
                     idea={idea}
                     onDelete={(id) => setIdeas(ideas.filter((i) => i.id !== id))}
+                    onArchive={handleArchive}
+                    context={context}
                   />
                 </div>
               ))}

@@ -483,6 +483,68 @@ class APIService: ObservableObject {
         }
     }
 
+    // MARK: - Phase 17: Archive
+
+    /// Archive an idea (context-aware)
+    func archiveIdea(id: String, context: AIContext) async throws {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas/\(id)/archive") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverMessage(errorResponse.error)
+            }
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
+    /// Restore an archived idea (context-aware)
+    func restoreIdea(id: String, context: AIContext) async throws {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas/\(id)/restore") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverMessage(errorResponse.error)
+            }
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
+    /// Fetch archived ideas for a context
+    func fetchArchivedIdeas(context: AIContext) async throws -> [Idea] {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas/archived") else {
+            throw APIError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let ideasResponse = try Self.createDecoder().decode(IdeasResponse.self, from: data)
+        return ideasResponse.ideas
+    }
+
     // MARK: - Phase 4: Integrations
 
     func getIntegrations() async throws -> [Integration] {
@@ -723,9 +785,14 @@ enum APIError: LocalizedError {
 
 extension APIService {
     /// Submit voice memo with audio data
+    /// - Parameters:
+    ///   - audioData: Audio data to transcribe
+    ///   - context: The AI context (personal/work)
+    ///   - persona: Optional persona ID (e.g., "companion", "coach", "coordinator")
     func submitVoiceMemo(
         audioData: Data,
         context: AIContext,
+        persona: String? = nil,
         completion: @escaping (Result<VoiceMemoContextResponse, Error>) -> Void
     ) {
         guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/voice-memo") else {
@@ -748,6 +815,14 @@ extension APIService {
         body.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
         body.append(audioData)
         body.append("\r\n".data(using: .utf8)!)
+
+        // Add persona if specified
+        if let persona = persona {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"persona\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(persona)\r\n".data(using: .utf8)!)
+        }
+
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
 
         request.httpBody = body
@@ -781,9 +856,14 @@ extension APIService {
     }
 
     /// Submit voice memo as text
+    /// - Parameters:
+    ///   - text: The text to process
+    ///   - context: The AI context (personal/work)
+    ///   - persona: Optional persona ID (e.g., "companion", "coach", "coordinator")
     func submitVoiceMemo(
         text: String,
         context: AIContext,
+        persona: String? = nil,
         completion: @escaping (Result<VoiceMemoContextResponse, Error>) -> Void
     ) {
         guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/voice-memo") else {
@@ -796,7 +876,10 @@ extension APIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 60
 
-        let body: [String: Any] = ["text": text]
+        var body: [String: Any] = ["text": text]
+        if let persona = persona {
+            body["persona"] = persona
+        }
 
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)

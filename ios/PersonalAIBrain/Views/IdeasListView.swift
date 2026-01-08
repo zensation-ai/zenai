@@ -102,12 +102,19 @@ struct IdeasListView: View {
                         }
                         .listRowBackground(Color.zensationBackground)
                         .listRowSeparatorTint(.zensationBorder)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 deleteIdea(idea)
                             } label: {
                                 Label("Löschen", systemImage: "trash")
                             }
+
+                            Button {
+                                archiveIdea(idea)
+                            } label: {
+                                Label("Archiv", systemImage: "archivebox")
+                            }
+                            .tint(.blue)
                         }
                     }
                     .listStyle(.plain)
@@ -194,6 +201,17 @@ struct IdeasListView: View {
                 ideas.removeAll { $0.id == idea.id }
             } catch {
                 errorMessage = "Löschen fehlgeschlagen: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func archiveIdea(_ idea: Idea) {
+        Task {
+            do {
+                try await apiService.archiveIdea(id: idea.id, context: contextManager.currentContext)
+                ideas.removeAll { $0.id == idea.id }
+            } catch {
+                errorMessage = "Archivierung fehlgeschlagen: \(error.localizedDescription)"
             }
         }
     }
