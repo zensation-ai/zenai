@@ -24,6 +24,10 @@
     <true/>
     <key>NSMicrophoneUsageDescription</key>
     <string>Die App benötigt Zugriff auf das Mikrofon, um Sprachmemos aufzunehmen und zu transkribieren.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Die App benötigt Zugriff auf die Kamera, um Fotos und Videos von Ideen aufzunehmen.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Die App benötigt Zugriff auf deine Fotos, um Bilder zu deinen Ideen hinzuzufügen.</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>
@@ -53,8 +57,18 @@
     <dict>
         <key>NSAllowsLocalNetworking</key>
         <true/>
-        <key>NSAllowsArbitraryLoads</key>
-        <true/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>ki-ab-production.up.railway.app</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+            </dict>
+        </dict>
     </dict>
     <key>CFBundleURLTypes</key>
     <array>
