@@ -48,6 +48,9 @@ struct ProfileView: View {
                             onToggle: toggleAutoPriority
                         )
 
+                        // Personalization - Phase 21
+                        PersonalizationSectionView()
+
                         // Export Section - Phase 18
                         ExportSectionView(showExportSheet: $showExportSheet)
 
@@ -282,6 +285,37 @@ struct SettingsSectionView: View {
             .padding()
             .background(Color(.systemGray6))
             .cornerRadius(12)
+        }
+    }
+}
+
+// MARK: - Personalization Section (Phase 21)
+
+struct PersonalizationSectionView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Personalisierung", systemImage: "person.crop.circle.badge.sparkles")
+                .font(.headline)
+
+            NavigationLink(destination: PersonalizationChatView()) {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("Lerne mich kennen")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                        Text("Hilf der KI, dich besser zu verstehen")
+                            .font(.caption)
+                            .foregroundColor(.zensationTextMuted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+            }
         }
     }
 }
