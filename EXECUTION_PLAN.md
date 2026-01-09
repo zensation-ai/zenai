@@ -79,33 +79,37 @@ abgeschlossen hast. Committe nach jedem abgeschlossenen Block.
 
 ### Tasks
 
-- [ ] **2.1** OpenAI Service erstellen/erweitern:
-  - Datei: `backend/src/services/openai.ts`
-  - Funktionen: `structureIdea()`, `generateSummary()`, `extractKeywords()`
+- [x] **2.1** OpenAI Service erstellen/erweitern:
+  - Datei: `backend/src/services/openai.ts` ✅
+  - Funktionen: `structureWithOpenAI()`, `generateOpenAIResponse()`, `extractKeywords()` ✅
+  - AI Service facade: `backend/src/services/ai.ts` ✅
 
-- [ ] **2.2** Environment Variable dokumentieren:
+- [x] **2.2** Environment Variable dokumentieren:
   ```
   OPENAI_API_KEY=sk-...
   OPENAI_MODEL=gpt-4o-mini (oder gpt-4o)
-  ```
+  ``` ✅ Updated in .env.example
 
-- [ ] **2.3** Ollama-Service mit Fallback erweitern:
+- [x] **2.3** AI Service mit Fallback erweitern:
   ```typescript
-  // In backend/src/services/ollama.ts oder neuer service:
-  // Wenn OPENAI_API_KEY gesetzt → OpenAI nutzen
-  // Sonst → Ollama versuchen
-  // Sonst → Basis-Strukturierung ohne KI
-  ```
+  // In backend/src/services/ai.ts:
+  // Priority: OpenAI → Ollama → Basic fallback
+  ``` ✅ Implemented with automatic fallback
 
-- [ ] **2.4** Voice Memo Route anpassen:
-  - `backend/src/routes/voice-memo.ts`
-  - OpenAI für Strukturierung nutzen wenn verfügbar
+- [x] **2.4** Personalization Chat Route anpassen:
+  - `backend/src/routes/personalization-chat.ts` ✅
+  - OpenAI für fact extraction und response generation ✅
+  - Fallback to Ollama wenn OpenAI nicht verfügbar ✅
 
-- [ ] **2.5** Railway Environment Variable setzen:
+- [x] **2.5** Health endpoint erweitert:
+  - Shows OpenAI configuration status ✅
+  - Shows primary AI service (openai/ollama/basic) ✅
+
+- [ ] **2.6** Railway Environment Variable setzen:
   - Railway Dashboard → Variables → OPENAI_API_KEY hinzufügen
   - (User muss eigenen Key eintragen)
 
-- [ ] **2.6** Testen und Commit:
+- [ ] **2.7** Testen und Commit:
   ```bash
   git add -A && git commit -m "Add OpenAI integration as Ollama alternative
 

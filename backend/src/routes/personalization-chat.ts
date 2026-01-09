@@ -10,12 +10,14 @@
 import { Router, Request, Response } from 'express';
 import { query } from '../utils/database';
 import { logger } from '../utils/logger';
-import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { generateOpenAIResponse, isOpenAIAvailable } from '../services/openai';
+import axios from 'axios';
 
 export const personalizationChatRouter = Router();
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+const USE_AI = isOpenAIAvailable() || process.env.OLLAMA_URL; // Use AI if OpenAI or Ollama available
 
 // ===========================================
 // Types
@@ -470,29 +472,47 @@ async function extractFactsFromMessage(
 ): Promise<PersonalFact[]> {
   const lastAiMessage = [...history].reverse().find(m => m.role === 'ai')?.message || '';
 
-  const prompt = `Du bist ein Assistent, der persönliche Fakten aus Gesprächen extrahiert.
+  const systemPrompt = `Du bist ein Assistent, der persönliche Fakten aus Gesprächen extrahiert.
 
-Letzte Frage: "${lastAiMessage}"
-Benutzer-Antwort: "${message}"
-
-Extrahiere alle persönlichen Fakten aus der Antwort. Antworte NUR mit einem JSON-Array.
+Extrahiere alle persönlichen Fakten aus der Antwort. Antworte NUR mit einem JSON-Object mit einem "facts" Array.
 Kategorien: basic_info, personality, work_life, goals_dreams, interests_hobbies, communication_style, decision_making, daily_routines, values_beliefs, challenges
 
 Beispiel-Format:
-[
-  {"category": "basic_info", "factKey": "name", "factValue": "Max", "confidence": 0.95},
-  {"category": "interests_hobbies", "factKey": "hobby", "factValue": "Lesen", "confidence": 0.8}
-]
+{
+  "facts": [
+    {"category": "basic_info", "factKey": "name", "factValue": "Max", "confidence": 0.95},
+    {"category": "interests_hobbies", "factKey": "hobby", "factValue": "Lesen", "confidence": 0.8}
+  ]
+}
 
-Wenn keine Fakten extrahiert werden können, antworte mit [].
-Antworte NUR mit dem JSON-Array, nichts anderes.`;
+Wenn keine Fakten extrahiert werden können, antworte mit {"facts": []}.`;
 
+  const userPrompt = `Letzte Frage: "${lastAiMessage}"
+Benutzer-Antwort: "${message}"`;
+
+  // Try OpenAI first
+  if (isOpenAIAvailable()) {
+    try {
+      logger.info('Extracting facts with OpenAI');
+      const response = await generateOpenAIResponse(systemPrompt, userPrompt);
+      const parsed = JSON.parse(response);
+      const facts = parsed.facts || [];
+      return facts.filter((f: any) =>
+        f.category && f.factKey && f.factValue && f.confidence
+      );
+    } catch (error) {
+      logger.warn('OpenAI fact extraction failed, trying Ollama', { error });
+    }
+  }
+
+  // Fallback to Ollama
   try {
+    logger.info('Extracting facts with Ollama');
     const response = await axios.post(
       `${OLLAMA_URL}/api/generate`,
       {
         model: 'mistral:latest',
-        prompt,
+        prompt: `${systemPrompt}\n\n${userPrompt}`,
         stream: false,
         options: { temperature: 0.3, num_predict: 500 }
       },
@@ -500,16 +520,17 @@ Antworte NUR mit dem JSON-Array, nichts anderes.`;
     );
 
     const text = response.data.response;
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
 
     if (jsonMatch) {
-      const facts = JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      const facts = parsed.facts || [];
       return facts.filter((f: any) =>
         f.category && f.factKey && f.factValue && f.confidence
       );
     }
   } catch (error) {
-    logger.warn('Fact extraction failed', { error });
+    logger.warn('Ollama fact extraction failed', { error });
   }
 
   return [];
@@ -563,10 +584,14 @@ async function generateAIResponse(
     `${m.role === 'ai' ? 'KI' : 'Benutzer'}: ${m.message}`
   ).join('\n');
 
-  const prompt = `Du bist eine freundliche, einfühlsame KI, die einen Menschen besser kennenlernen möchte.
+  const systemPrompt = `Du bist eine freundliche, einfühlsame KI, die einen Menschen besser kennenlernen möchte.
 Du führst ein natürliches Gespräch und stellst am Ende eine neue Frage.
 
-Was du über den Benutzer weißt:
+Antworte natürlich und warmherzig auf das Gesagte. Zeige echtes Interesse.
+Baue die nächste Frage geschickt ein. Halte dich kurz (2-3 Sätze + Frage).
+Sprich Deutsch und duze den Benutzer.`;
+
+  const userPrompt = `Was du über den Benutzer weißt:
 ${existingFacts || 'Noch nicht viel'}
 
 ${newFacts.length > 0 ? `Gerade gelernt: ${newFacts.map(f => f.factValue).join(', ')}` : ''}
@@ -575,18 +600,35 @@ Bisheriges Gespräch:
 ${conversationHistory}
 
 Nächste Frage die du stellen solltest (zum Thema ${getTopicLabel(nextTopic)}):
-"${nextQuestion}"
+"${nextQuestion}"`;
 
-Antworte natürlich und warmherzig auf das Gesagte. Zeige echtes Interesse.
-Baue die nächste Frage geschickt ein. Halte dich kurz (2-3 Sätze + Frage).
-Sprich Deutsch und duze den Benutzer.`;
+  // Try OpenAI first
+  if (isOpenAIAvailable()) {
+    try {
+      logger.info('Generating AI response with OpenAI');
+      const response = await generateOpenAIResponse(systemPrompt, userPrompt);
 
+      // Update topic stats
+      await query(`
+        UPDATE personalization_topics
+        SET questions_asked = questions_asked + 1, last_asked_at = NOW()
+        WHERE topic = $1
+      `, [nextTopic]);
+
+      return response;
+    } catch (error) {
+      logger.warn('OpenAI response generation failed, trying Ollama', { error });
+    }
+  }
+
+  // Fallback to Ollama
   try {
+    logger.info('Generating AI response with Ollama');
     const response = await axios.post(
       `${OLLAMA_URL}/api/generate`,
       {
         model: 'mistral:latest',
-        prompt,
+        prompt: `${systemPrompt}\n\n${userPrompt}`,
         stream: false,
         options: { temperature: 0.8, num_predict: 300 }
       },
@@ -608,19 +650,29 @@ Sprich Deutsch und duze den Benutzer.`;
 }
 
 async function generateUserSummary(factsText: string): Promise<string> {
-  const prompt = `Basierend auf diesen Fakten über einen Benutzer, schreibe eine kurze, freundliche Zusammenfassung (3-4 Sätze) in der ersten Person, als würdest du den Benutzer beschreiben.
+  const systemPrompt = `Basierend auf diesen Fakten über einen Benutzer, schreibe eine kurze, freundliche Zusammenfassung (3-4 Sätze) in der ersten Person, als würdest du den Benutzer beschreiben. Schreibe auf Deutsch, warmherzig und persönlich.`;
 
-Fakten:
-${factsText}
+  const userPrompt = `Fakten:
+${factsText}`;
 
-Schreibe die Zusammenfassung auf Deutsch, warmherzig und persönlich.`;
+  // Try OpenAI first
+  if (isOpenAIAvailable()) {
+    try {
+      logger.info('Generating user summary with OpenAI');
+      return await generateOpenAIResponse(systemPrompt, userPrompt);
+    } catch (error) {
+      logger.warn('OpenAI summary generation failed, trying Ollama', { error });
+    }
+  }
 
+  // Fallback to Ollama
   try {
+    logger.info('Generating user summary with Ollama');
     const response = await axios.post(
       `${OLLAMA_URL}/api/generate`,
       {
         model: 'mistral:latest',
-        prompt,
+        prompt: `${systemPrompt}\n\n${userPrompt}`,
         stream: false,
         options: { temperature: 0.7, num_predict: 200 }
       },

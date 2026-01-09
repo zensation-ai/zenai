@@ -3,7 +3,7 @@
  *
  * Provides comprehensive system health information including:
  * - Database connections (personal & work)
- * - Ollama AI service status
+ * - AI services (OpenAI, Ollama)
  * - Redis cache status
  * - Connection pool statistics
  * - System info (uptime, version, memory)
@@ -13,6 +13,7 @@ import { Router } from 'express';
 import { testConnections, getPoolStats } from '../utils/database-context';
 import { checkOllamaHealth } from '../utils/ollama';
 import { getCacheStats } from '../utils/cache';
+import { getAvailableServices } from '../services/ai';
 
 // Version from package.json - read at startup
 const packageJson = require('../../package.json');
@@ -38,15 +39,17 @@ healthRouter.get('/', async (req, res) => {
   ]);
 
   const poolStats = getPoolStats();
+  const aiServices = getAvailableServices();
 
   const allDbHealthy = dbHealth.personal && dbHealth.work;
   const anyDbHealthy = dbHealth.personal || dbHealth.work;
+  const anyAiAvailable = aiServices.openai || ollamaHealth.available;
 
   // Calculate overall status
-  // Healthy: All DBs + Ollama connected
+  // Healthy: All DBs + at least one AI service
   // Degraded: At least one DB working
   // Unhealthy: No databases available
-  const isHealthy = allDbHealthy && ollamaHealth.available;
+  const isHealthy = allDbHealthy && anyAiAvailable;
   const isDegraded = anyDbHealthy;
 
   const status = {
@@ -71,10 +74,17 @@ healthRouter.get('/', async (req, res) => {
           pool: poolStats.work,
         },
       },
-      ollama: {
-        status: ollamaHealth.available ? 'connected' : 'disconnected',
-        url: process.env.OLLAMA_URL,
-        models: ollamaHealth.models,
+      ai: {
+        primary: aiServices.primary,
+        openai: {
+          status: aiServices.openai ? 'configured' : 'not_configured',
+          model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        },
+        ollama: {
+          status: ollamaHealth.available ? 'connected' : 'disconnected',
+          url: process.env.OLLAMA_URL,
+          models: ollamaHealth.models,
+        },
       },
       cache: {
         status: cacheStats.connected ? 'connected' : 'disconnected',
