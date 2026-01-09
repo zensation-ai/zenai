@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
-import { query } from '../utils/database';
+import { queryContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
+import { formatForPgVector } from '../utils/embedding';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -56,59 +57,26 @@ async function findStoriesByQuery(
   // 1. Generate embedding for search query
   const queryEmbedding = await generateEmbedding(searchQuery);
 
-  // 2. Find all items (ideas, media, voice memos) similar to the query
-  const similarItems = await query(
+  // 2. Find all ideas similar to the query
+  const similarItems = await queryContext(
+    'personal',
     `
-    WITH combined_items AS (
-      SELECT
-        id,
-        'idea' as item_type,
-        title as content,
-        context,
-        embedding,
-        created_at,
-        NULL as media_type,
-        NULL as file_path
-      FROM ideas
-      WHERE embedding IS NOT NULL
-
-      UNION ALL
-
-      SELECT
-        id,
-        'media' as item_type,
-        COALESCE(caption, filename) as content,
-        context,
-        embedding,
-        created_at,
-        media_type,
-        file_path
-      FROM media_items
-      WHERE embedding IS NOT NULL
-
-      UNION ALL
-
-      SELECT
-        id,
-        'voice_memo' as item_type,
-        raw_text as content,
-        context,
-        embedding,
-        created_at,
-        NULL as media_type,
-        NULL as file_path
-      FROM voice_memos
-      WHERE embedding IS NOT NULL
-    )
     SELECT
-      *,
-      1 - (embedding <=> $1::vector) as similarity
-    FROM combined_items
-    WHERE 1 - (embedding <=> $1::vector) > $2
+      id,
+      'idea' as item_type,
+      title as content,
+      context,
+      embedding,
+      created_at,
+      1 - (embedding <=> $1::vector(768)) as similarity
+    FROM ideas
+    WHERE embedding IS NOT NULL
+      AND 1 - (embedding <=> $1::vector(768)) > $2
+      AND is_archived = FALSE
     ORDER BY similarity DESC
     LIMIT 100
     `,
-    [`[${queryEmbedding.join(',')}]`, similarityThreshold]
+    [formatForPgVector(queryEmbedding), similarityThreshold]
   );
 
   if (similarItems.rows.length < minItems) {
@@ -143,9 +111,10 @@ async function findStoriesByQuery(
  * OPTIMIZED: Uses a single SQL query with cross-join similarity instead of N+1 queries
  */
 async function getAllStories(): Promise<any[]> {
-  // Get all items with embeddings and pre-compute similarities in SQL
+  // Get all ideas with embeddings and pre-compute similarities in SQL
   // This avoids N+1 query problem by using a single batch query
-  const clusterResult = await query(
+  const clusterResult = await queryContext(
+    'personal',
     `
     WITH combined_items AS (
       SELECT
@@ -154,39 +123,9 @@ async function getAllStories(): Promise<any[]> {
         title as content,
         context,
         embedding,
-        created_at,
-        NULL as media_type,
-        NULL as file_path
+        created_at
       FROM ideas
       WHERE embedding IS NOT NULL AND is_archived = false
-
-      UNION ALL
-
-      SELECT
-        id,
-        'media' as item_type,
-        COALESCE(caption, filename) as content,
-        context,
-        embedding,
-        created_at,
-        media_type,
-        file_path
-      FROM media_items
-      WHERE embedding IS NOT NULL
-
-      UNION ALL
-
-      SELECT
-        id,
-        'voice_memo' as item_type,
-        raw_text as content,
-        context,
-        embedding,
-        created_at,
-        NULL as media_type,
-        NULL as file_path
-      FROM voice_memos
-      WHERE embedding IS NOT NULL
     ),
     -- Pre-compute all pairwise similarities above threshold
     similarities AS (
@@ -209,7 +148,7 @@ async function getAllStories(): Promise<any[]> {
       ) as similar_items
     FROM combined_items ci
     LEFT JOIN similarities s ON ci.id = s.source_id OR ci.id = s.target_id
-    GROUP BY ci.id, ci.item_type, ci.content, ci.context, ci.embedding, ci.created_at, ci.media_type, ci.file_path
+    GROUP BY ci.id, ci.item_type, ci.content, ci.context, ci.embedding, ci.created_at
     ORDER BY ci.created_at DESC
     LIMIT 200
     `
@@ -295,7 +234,6 @@ function formatStoryItem(row: any): any {
     id: row.id,
     type: row.item_type,
     content: row.content,
-    media_url: row.file_path ? `/api/media/${row.id}` : null,
     timestamp: row.created_at
   };
 }
