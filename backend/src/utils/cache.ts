@@ -48,9 +48,8 @@ function getClient(): Redis | null {
       });
 
       redis.on('error', (err) => {
-        if (isConnected) {
-          logger.error('Redis error', err);
-        }
+        console.error('❌ Redis connection error:', err.message);
+        logger.error('Redis error', err);
         isConnected = false;
       });
 
@@ -59,8 +58,9 @@ function getClient(): Redis | null {
       });
 
       // Attempt connection
-      redis.connect().catch(() => {
-        // Silently handle - lazyConnect will retry
+      redis.connect().catch((err) => {
+        console.error('❌ Redis initial connection failed:', err.message);
+        logger.warn('Redis initial connection failed', err);
       });
     } catch (error) {
       logger.warn('Redis initialization failed, caching disabled');
