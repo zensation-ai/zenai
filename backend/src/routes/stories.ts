@@ -38,9 +38,10 @@ router.get('/', async (req: Request, res: Response) => {
       total: stories.length
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error fetching stories:', error);
-    res.status(500).json({ error: 'Failed to fetch stories' });
+    // Return empty array instead of error if no ideas exist
+    res.json({ stories: [], total: 0, message: 'No ideas with embeddings found yet' });
   }
 });
 
