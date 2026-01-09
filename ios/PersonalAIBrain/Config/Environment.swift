@@ -14,18 +14,17 @@ enum AppEnvironment {
     // MARK: - API Configuration
 
     /// The base URL for the API backend
-    /// Priority: 1. Production URL (if set), 2. Info.plist, 3. Environment var, 4. Development IP
+    /// Priority: Simulator→localhost, Real Device→Production URL, Fallback→Development IP
     static var apiBaseURL: String {
-        // Always use production URL if configured (for Release builds)
-        #if !DEBUG
+        #if targetEnvironment(simulator)
+        // Simulator always uses localhost (backend running on Mac)
+        return "http://localhost:3000"
+        #else
+        // Real device: Use production URL if configured
         if let prodURL = productionURL, !prodURL.isEmpty {
             return prodURL
         }
-        #endif
 
-        #if targetEnvironment(simulator)
-        return "http://localhost:3000"
-        #else
         // Check for custom API URL in Info.plist (for TestFlight/App Store)
         if let plistURL = Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String,
            !plistURL.isEmpty {
@@ -37,7 +36,7 @@ enum AppEnvironment {
             return customURL
         }
 
-        // Default: Use the configured development IP for local testing
+        // Fallback: Use development IP for local testing
         return "http://\(developmentIP):3000"
         #endif
     }
