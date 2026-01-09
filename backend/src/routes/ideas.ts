@@ -150,6 +150,50 @@ ideasRouter.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/ideas/recommendations
+ * Get personalized idea recommendations based on user profile
+ * Uses user's interest embedding for relevance scoring
+ * NOTE: Must be defined BEFORE /:id route to avoid being caught by it
+ */
+ideasRouter.get('/recommendations', async (req, res) => {
+  const startTime = Date.now();
+
+  try {
+    const ctx = getContext(req);
+
+    // Validate limit
+    const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
+    if (!limitResult.success) {
+      return res.status(400).json({ error: 'Invalid limit', details: limitResult.errors });
+    }
+    const limit = limitResult.data!;
+
+    // Use Supabase function to get recommendations
+    const result = await queryContext(
+      ctx,
+      `SELECT * FROM get_idea_recommendations($1, $2)`,
+      [ctx, limit]
+    );
+
+    const totalTime = Date.now() - startTime;
+
+    res.json({
+      ideas: result.rows.map(row => ({
+        ...row,
+        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+      })),
+      personalized: result.rows.length > 0 && result.rows[0].relevance_score > 0,
+      processingTime: totalTime,
+    });
+  } catch (error: any) {
+    console.error('Recommendations error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/ideas/:id
  * Get a single idea by ID
  */
@@ -195,9 +239,8 @@ ideasRouter.get('/:id', validateUUID, async (req, res) => {
 
 /**
  * POST /api/ideas/search
- * Semantic search for similar ideas using 2-stage search
- * Stage 1: Fast binary search for candidates
- * Stage 2: Rerank with full precision embeddings
+ * Semantic search using Supabase pgvector function
+ * Uses optimized HNSW index for fast similarity search
  */
 ideasRouter.post('/search', async (req, res) => {
   const startTime = Date.now();
@@ -219,8 +262,14 @@ ideasRouter.post('/search', async (req, res) => {
     }
     const limit = limitResult.data!;
 
+    // Validate threshold
+    const thresholdResult = parseIntSafe(req.body.threshold?.toString(), { default: 0.5, min: 0, max: 1, fieldName: 'threshold' });
+    const threshold = thresholdResult.success ? thresholdResult.data! : 0.5;
+
     // Generate embedding for search query
+    const embeddingStart = Date.now();
     const queryEmbedding = await generateEmbedding(searchQuery);
+    const embeddingTime = Date.now() - embeddingStart;
 
     if (queryEmbedding.length === 0) {
       // Fallback to text search if embedding fails
@@ -242,69 +291,84 @@ ideasRouter.post('/search', async (req, res) => {
       });
     }
 
-    // 2-Stage Vector Search
-
-    // Stage 1: Fast binary search (get top 50 candidates)
-    const binarySearchStart = Date.now();
-    // Note: queryBinary could be used for Hamming distance search with embedding_binary column
-    // Currently using standard vector search for simplicity
-
-    // For binary search, we use bit_count for hamming distance
-    // Note: This requires the embedding_binary column to be populated
-    const candidatesResult = await queryContext(
+    // Use Supabase function for optimized vector search
+    const searchStart = Date.now();
+    const result = await queryContext(
       ctx,
-      `SELECT id, title, embedding
-       FROM ideas
-       WHERE embedding IS NOT NULL
-       ORDER BY embedding <-> $1
-       LIMIT 50`,
-      [formatForPgVector(queryEmbedding)]
+      `SELECT * FROM search_ideas_by_embedding($1::vector(768), $2, $3, $4)`,
+      [formatForPgVector(queryEmbedding), ctx, threshold, limit]
     );
+    const searchTime = Date.now() - searchStart;
 
-    const binarySearchTime = Date.now() - binarySearchStart;
-
-    // Stage 2: Rerank with full precision (if we have candidates)
-    const rerankStart = Date.now();
-    const candidateIds = candidatesResult.rows.map(r => r.id);
-
-    let finalResults;
-    if (candidateIds.length > 0) {
-      finalResults = await queryContext(
-        ctx,
-        `SELECT id, title, type, category, priority, summary,
-                next_steps, context_needed, keywords, created_at,
-                embedding <-> $1 as distance
-         FROM ideas
-         WHERE id = ANY($2)
-         ORDER BY distance
-         LIMIT $3`,
-        [formatForPgVector(queryEmbedding), candidateIds, limit]
-      );
-    } else {
-      finalResults = { rows: [] };
-    }
-
-    const rerankTime = Date.now() - rerankStart;
     const totalTime = Date.now() - startTime;
 
     res.json({
-      ideas: finalResults.rows.map(row => ({
+      ideas: result.rows.map(row => ({
         ...row,
         next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
         context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
         keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-        similarity: row.distance ? 1 - row.distance : null,
       })),
-      searchType: '2-stage-vector',
+      searchType: 'supabase-function',
       performance: {
         totalMs: totalTime,
-        binarySearchMs: binarySearchTime,
-        rerankMs: rerankTime,
-        candidatesFound: candidateIds.length,
+        embeddingMs: embeddingTime,
+        searchMs: searchTime,
+        resultsFound: result.rows.length,
       },
     });
   } catch (error: any) {
     console.error('Search error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/ideas/:id/similar
+ * Find similar ideas using Supabase function
+ * Uses pre-computed embeddings for instant results
+ */
+ideasRouter.get('/:id/similar', validateUUID, async (req, res) => {
+  const startTime = Date.now();
+
+  try {
+    const ctx = getContext(req);
+    const ideaId = req.params.id;
+
+    // Validate limit
+    const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 5, min: 1, max: 20, fieldName: 'limit' });
+    if (!limitResult.success) {
+      return res.status(400).json({ error: 'Invalid limit', details: limitResult.errors });
+    }
+    const limit = limitResult.data!;
+
+    // Check if idea exists
+    const ideaCheck = await queryContext(ctx, 'SELECT id FROM ideas WHERE id = $1', [ideaId]);
+    if (ideaCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Idea not found' });
+    }
+
+    // Use Supabase function to find similar ideas
+    const result = await queryContext(
+      ctx,
+      `SELECT * FROM find_similar_ideas($1::uuid, $2, $3)`,
+      [ideaId, ctx, limit]
+    );
+
+    const totalTime = Date.now() - startTime;
+
+    res.json({
+      ideas: result.rows.map(row => ({
+        ...row,
+        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+      })),
+      sourceIdeaId: ideaId,
+      processingTime: totalTime,
+    });
+  } catch (error: any) {
+    console.error('Similar ideas error:', error);
     res.status(500).json({ error: error.message });
   }
 });
