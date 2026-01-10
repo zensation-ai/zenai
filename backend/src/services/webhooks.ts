@@ -304,9 +304,14 @@ export async function testWebhook(webhookId: string): Promise<{ success: boolean
  * Clean up old webhook deliveries
  */
 export async function cleanupWebhookDeliveries(daysToKeep: number = 30): Promise<number> {
+  // Validate daysToKeep to prevent negative values or excessive retention
+  const safeDays = Math.max(1, Math.min(Math.floor(daysToKeep), 365));
+
+  // Use parameterized query to prevent SQL injection
   const result = await pool.query(
     `DELETE FROM webhook_deliveries
-     WHERE created_at < NOW() - INTERVAL '${daysToKeep} days'`
+     WHERE created_at < NOW() - INTERVAL '1 day' * $1`,
+    [safeDays]
   );
 
   return result.rowCount || 0;

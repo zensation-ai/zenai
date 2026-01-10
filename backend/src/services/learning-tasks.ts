@@ -134,8 +134,8 @@ export async function createLearningTask(
     const result = await client.query(
       `INSERT INTO daily_learning_tasks
        (id, user_id, context, topic, description, category, priority,
-        target_completion_date, learning_outline, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        target_completion_date, learning_outline, start_date, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW(), NOW())
        RETURNING *`,
       [
         id,

@@ -47,6 +47,13 @@ function parseConnectionString(url: string): {
   // Railway internal connections (.railway.internal) don't need SSL
   // External connections should use SSL
   const isInternalRailway = host.endsWith('.railway.internal');
+  // SECURITY NOTE: rejectUnauthorized: false disables SSL certificate validation.
+  // This is acceptable for:
+  // - Internal Railway connections (no SSL needed)
+  // - Development environments
+  // - Managed database services (e.g., Supabase, Railway) where the connection is trusted
+  // For production with self-managed databases, consider setting rejectUnauthorized: true
+  // and providing proper CA certificates via NODE_EXTRA_CA_CERTS or ssl.ca option.
   const sslConfig = isInternalRailway
     ? false // No SSL for internal Railway network
     : process.env.NODE_ENV === 'production'
@@ -88,9 +95,9 @@ const baseConfig = useConnectionString && databaseUrl
 
 const POOL_CONFIG = {
   ...baseConfig,
-  // Connection pool settings
-  max: parseInt(process.env.DB_POOL_SIZE || '20'),
-  min: parseInt(process.env.DB_POOL_MIN || '2'),
+  // Connection pool settings - reduced for Supabase Session mode
+  max: parseInt(process.env.DB_POOL_SIZE || '5'),
+  min: parseInt(process.env.DB_POOL_MIN || '1'),
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
   // Statement timeout to prevent long-running queries
@@ -138,6 +145,9 @@ export function getPool(context: AIContext): Pool {
   return pools[context];
 }
 
+// Type for SQL query parameters - allows common PostgreSQL parameter types
+type QueryParam = string | number | boolean | Date | null | undefined | Buffer | object;
+
 /**
  * Execute a query in the appropriate context database
  * Phase 11: Enhanced with query monitoring
@@ -145,7 +155,7 @@ export function getPool(context: AIContext): Pool {
 export async function queryContext(
   context: AIContext,
   text: string,
-  params?: any[]
+  params?: QueryParam[]
 ): Promise<QueryResult> {
   const pool = getPool(context);
   const start = Date.now();
@@ -303,9 +313,12 @@ export function getPoolStats(): Record<AIContext, {
 export const pool = pools.personal;
 
 // Keep the old query function for existing code (uses personal context)
-export async function query(text: string, params?: any[]): Promise<QueryResult> {
+export async function query(text: string, params?: QueryParam[]): Promise<QueryResult> {
   return queryContext('personal', text, params);
 }
+
+// Export QueryParam type for use in other modules
+export type { QueryParam };
 
 // Note: We intentionally don't re-export from './database' to avoid conflicts
 // The local query() and pool exports (pointing to personal_ai) provide backward compatibility

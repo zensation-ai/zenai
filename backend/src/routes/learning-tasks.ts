@@ -6,10 +6,26 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { AIContext } from '../utils/database-context';
+import { AIContext, isValidUUID } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+
+// Input validation helpers
+const MAX_TOPIC_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 5000;
+const MAX_NOTES_LENGTH = 10000;
+
+function validateTaskId(id: string): void {
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid task ID format. Must be a valid UUID.');
+  }
+}
+
+function sanitizeString(input: string | undefined, maxLength: number): string | undefined {
+  if (!input) return undefined;
+  return input.trim().slice(0, maxLength);
+}
 import {
   createLearningTask,
   getLearningTasks,
@@ -41,12 +57,30 @@ router.get('/:context/learning-tasks', apiKeyAuth, asyncHandler(async (req: Requ
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
+  // Validate and parse pagination parameters
+  let parsedLimit: number | undefined;
+  let parsedOffset: number | undefined;
+
+  if (limit) {
+    parsedLimit = parseInt(limit as string, 10);
+    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+      throw new ValidationError('Invalid limit. Must be between 1 and 100.');
+    }
+  }
+
+  if (offset) {
+    parsedOffset = parseInt(offset as string, 10);
+    if (isNaN(parsedOffset) || parsedOffset < 0) {
+      throw new ValidationError('Invalid offset. Must be 0 or greater.');
+    }
+  }
+
   const result = await getLearningTasks(
     {
       status: status as string,
       category: category as string,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined,
+      limit: parsedLimit,
+      offset: parsedOffset,
     },
     'default',
     context as AIContext
@@ -76,14 +110,26 @@ router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), async
     throw new ValidationError('Topic is required');
   }
 
+  if (topic.length > MAX_TOPIC_LENGTH) {
+    throw new ValidationError(`Topic too long. Maximum ${MAX_TOPIC_LENGTH} characters.`);
+  }
+
+  if (description && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new ValidationError(`Description too long. Maximum ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+
   if (category && !LEARNING_CATEGORIES.includes(category)) {
     throw new ValidationError(`Invalid category. Valid options: ${LEARNING_CATEGORIES.join(', ')}`);
   }
 
+  if (priority && !['low', 'medium', 'high'].includes(priority)) {
+    throw new ValidationError('Invalid priority. Valid options: low, medium, high');
+  }
+
   const task = await createLearningTask(
-    topic,
+    sanitizeString(topic, MAX_TOPIC_LENGTH)!,
     {
-      description,
+      description: sanitizeString(description, MAX_DESCRIPTION_LENGTH),
       category,
       priority,
       target_completion_date: target_completion_date ? new Date(target_completion_date) : undefined,
@@ -113,6 +159,8 @@ router.get('/:context/learning-tasks/:id', apiKeyAuth, asyncHandler(async (req: 
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
+  validateTaskId(id);
+
   const task = await getLearningTask(id, context as AIContext);
 
   if (!task) {
@@ -141,13 +189,23 @@ router.put('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), as
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
+  validateTaskId(id);
+
   if (category && !LEARNING_CATEGORIES.includes(category)) {
     throw new ValidationError(`Invalid category. Valid options: ${LEARNING_CATEGORIES.join(', ')}`);
   }
 
+  if (priority && !['low', 'medium', 'high'].includes(priority)) {
+    throw new ValidationError('Invalid priority. Valid options: low, medium, high');
+  }
+
+  if (status && !['active', 'paused', 'completed', 'archived'].includes(status)) {
+    throw new ValidationError('Invalid status. Valid options: active, paused, completed, archived');
+  }
+
   const updates: Record<string, unknown> = {};
-  if (topic !== undefined) updates.topic = topic;
-  if (description !== undefined) updates.description = description;
+  if (topic !== undefined) updates.topic = sanitizeString(topic, MAX_TOPIC_LENGTH);
+  if (description !== undefined) updates.description = sanitizeString(description, MAX_DESCRIPTION_LENGTH);
   if (category !== undefined) updates.category = category;
   if (priority !== undefined) updates.priority = priority;
   if (status !== undefined) updates.status = status;
@@ -183,6 +241,8 @@ router.delete('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'),
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
+  validateTaskId(id);
+
   const deleted = await deleteLearningTask(id, context as AIContext);
 
   if (!deleted) {
@@ -207,6 +267,29 @@ router.post('/:context/learning-tasks/:id/session', apiKeyAuth, requireScope('wr
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
+  validateTaskId(id);
+
+  // Validate session_type if provided
+  if (session_type && !['study', 'practice', 'review', 'quiz', 'reflection'].includes(session_type)) {
+    throw new ValidationError('Invalid session_type. Valid options: study, practice, review, quiz, reflection');
+  }
+
+  // Validate duration_minutes if provided
+  if (duration_minutes !== undefined) {
+    const duration = typeof duration_minutes === 'string' ? parseInt(duration_minutes, 10) : duration_minutes;
+    if (isNaN(duration) || duration < 0 || duration > 1440) {
+      throw new ValidationError('Invalid duration_minutes. Must be between 0 and 1440 (24 hours).');
+    }
+  }
+
+  // Validate understanding_level if provided
+  if (understanding_level !== undefined) {
+    const level = typeof understanding_level === 'string' ? parseInt(understanding_level, 10) : understanding_level;
+    if (isNaN(level) || level < 1 || level > 5) {
+      throw new ValidationError('Invalid understanding_level. Must be between 1 and 5.');
+    }
+  }
+
   // Verify task exists
   const task = await getLearningTask(id, context as AIContext);
   if (!task) {
@@ -217,11 +300,11 @@ router.post('/:context/learning-tasks/:id/session', apiKeyAuth, requireScope('wr
     id,
     {
       session_type,
-      duration_minutes,
-      notes,
-      key_learnings,
-      questions,
-      understanding_level,
+      duration_minutes: typeof duration_minutes === 'string' ? parseInt(duration_minutes, 10) : duration_minutes,
+      notes: sanitizeString(notes, MAX_NOTES_LENGTH),
+      key_learnings: Array.isArray(key_learnings) ? key_learnings.slice(0, 20) : undefined,
+      questions: Array.isArray(questions) ? questions.slice(0, 20) : undefined,
+      understanding_level: typeof understanding_level === 'string' ? parseInt(understanding_level, 10) : understanding_level,
     },
     'default',
     context as AIContext
@@ -252,9 +335,20 @@ router.get('/:context/learning-tasks/:id/sessions', apiKeyAuth, asyncHandler(asy
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
+  validateTaskId(id);
+
+  // Validate and parse limit
+  let parsedLimit = 20;
+  if (limit) {
+    parsedLimit = parseInt(limit as string, 10);
+    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+      throw new ValidationError('Invalid limit. Must be between 1 and 100.');
+    }
+  }
+
   const sessions = await getStudySessions(
     id,
-    limit ? parseInt(limit as string) : 20,
+    parsedLimit,
     context as AIContext
   );
 
@@ -274,6 +368,8 @@ router.post('/:context/learning-tasks/:id/generate-outline', apiKeyAuth, require
   if (!['personal', 'work'].includes(context)) {
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
+
+  validateTaskId(id);
 
   const task = await getLearningTask(id, context as AIContext);
   if (!task) {
@@ -362,6 +458,10 @@ router.post('/:context/learning-insights/:insightId/acknowledge', apiKeyAuth, re
 
   if (!['personal', 'work'].includes(context)) {
     throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  if (!isValidUUID(insightId)) {
+    throw new ValidationError('Invalid insight ID format. Must be a valid UUID.');
   }
 
   const acknowledged = await acknowledgeInsight(insightId, context as AIContext);

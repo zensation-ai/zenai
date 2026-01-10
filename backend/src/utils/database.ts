@@ -17,6 +17,9 @@ function getPoolConfig() {
 
     // Railway internal connections (.railway.internal) don't need SSL
     const isInternalRailway = host.endsWith('.railway.internal');
+    // SECURITY NOTE: rejectUnauthorized: false disables SSL certificate validation.
+    // This is acceptable for managed database services (Supabase, Railway).
+    // For self-managed production databases, use proper CA certificates.
     const sslConfig = isInternalRailway
       ? false
       : process.env.NODE_ENV === 'production'
@@ -30,9 +33,9 @@ function getPoolConfig() {
       password: parsed.password,
       database: parsed.pathname.slice(1),
       ssl: sslConfig,
-      max: 20,
+      max: 5,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 5000,
     };
   }
 
@@ -55,7 +58,10 @@ pool.on('error', (err) => {
   logger.error('Unexpected database error', err instanceof Error ? err : undefined);
 });
 
-export async function query(text: string, params?: any[]) {
+// Type for SQL query parameters - allows common PostgreSQL parameter types
+type QueryParam = string | number | boolean | Date | null | undefined | Buffer | object;
+
+export async function query(text: string, params?: QueryParam[]) {
   const start = Date.now();
   const result = await pool.query(text, params);
   const duration = Date.now() - start;

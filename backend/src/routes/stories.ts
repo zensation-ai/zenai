@@ -5,7 +5,8 @@ import { formatForPgVector } from '../utils/embedding';
 import { apiKeyAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { parseIntSafe, parseFloatSafe } from '../utils/validation';
 
 const router = express.Router();
 
@@ -16,14 +17,36 @@ const router = express.Router();
  * Example: All content related to "Firmengründung" grouped together
  */
 router.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const { query: searchQuery, minItems = '2', similarityThreshold = '0.7' } = req.query;
+  const { query: searchQuery, minItems, similarityThreshold } = req.query;
+
+  // Validate and parse minItems
+  const minItemsResult = parseIntSafe(minItems as string | undefined, {
+    default: 2,
+    min: 1,
+    max: 100,
+    fieldName: 'minItems'
+  });
+  if (!minItemsResult.success) {
+    throw new ValidationError('Invalid minItems parameter. Must be an integer between 1 and 100.');
+  }
+
+  // Validate and parse similarityThreshold
+  const thresholdResult = parseFloatSafe(similarityThreshold as string | undefined, {
+    default: 0.7,
+    min: 0,
+    max: 1,
+    fieldName: 'similarityThreshold'
+  });
+  if (!thresholdResult.success) {
+    throw new ValidationError('Invalid similarityThreshold parameter. Must be a number between 0 and 1.');
+  }
 
   // If a search query is provided, find related stories
   if (searchQuery && typeof searchQuery === 'string') {
     const stories = await findStoriesByQuery(
       searchQuery,
-      parseInt(minItems as string),
-      parseFloat(similarityThreshold as string)
+      minItemsResult.data!,
+      thresholdResult.data!
     );
 
     return res.json({

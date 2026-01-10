@@ -6,9 +6,71 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../utils/database';
+import { isValidUUID } from '../utils/database-context';
 import { generateApiKey, apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+
+// Input validation constants
+const MAX_NAME_LENGTH = 100;
+const MIN_RATE_LIMIT = 1;
+const MAX_RATE_LIMIT = 100000;
+const MIN_EXPIRES_IN = 3600; // 1 hour minimum
+const MAX_EXPIRES_IN = 31536000; // 1 year maximum
+const VALID_SCOPES = ['read', 'write', 'admin'] as const;
+
+function validateApiKeyId(id: string): void {
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid API key ID format. Must be a valid UUID.');
+  }
+}
+
+function validateName(name: unknown): string {
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    throw new ValidationError('Name is required and must be a non-empty string.');
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    throw new ValidationError(`Name too long. Maximum ${MAX_NAME_LENGTH} characters.`);
+  }
+  return name.trim();
+}
+
+function validateScopes(scopes: unknown): string[] {
+  if (!scopes) return ['read'];
+  if (!Array.isArray(scopes)) {
+    throw new ValidationError('Scopes must be an array.');
+  }
+  for (const scope of scopes) {
+    if (typeof scope !== 'string' || !VALID_SCOPES.includes(scope as any)) {
+      throw new ValidationError(`Invalid scope: ${scope}. Valid scopes: ${VALID_SCOPES.join(', ')}`);
+    }
+  }
+  return scopes as string[];
+}
+
+function validateRateLimit(rateLimit: unknown): number {
+  if (rateLimit === undefined || rateLimit === null) return 1000;
+  const limit = typeof rateLimit === 'string' ? parseInt(rateLimit, 10) : rateLimit;
+  if (typeof limit !== 'number' || isNaN(limit)) {
+    throw new ValidationError('Rate limit must be a number.');
+  }
+  if (limit < MIN_RATE_LIMIT || limit > MAX_RATE_LIMIT) {
+    throw new ValidationError(`Rate limit must be between ${MIN_RATE_LIMIT} and ${MAX_RATE_LIMIT}.`);
+  }
+  return Math.floor(limit);
+}
+
+function validateExpiresIn(expiresIn: unknown): number | null {
+  if (expiresIn === undefined || expiresIn === null) return null;
+  const seconds = typeof expiresIn === 'string' ? parseInt(expiresIn, 10) : expiresIn;
+  if (typeof seconds !== 'number' || isNaN(seconds)) {
+    throw new ValidationError('ExpiresIn must be a number (seconds).');
+  }
+  if (seconds < MIN_EXPIRES_IN || seconds > MAX_EXPIRES_IN) {
+    throw new ValidationError(`ExpiresIn must be between ${MIN_EXPIRES_IN} (1 hour) and ${MAX_EXPIRES_IN} (1 year) seconds.`);
+  }
+  return Math.floor(seconds);
+}
 
 export const apiKeysRouter = Router();
 
@@ -18,24 +80,26 @@ export const apiKeysRouter = Router();
  * SECURITY: Admin-only endpoint
  */
 apiKeysRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
-  const { name, scopes = ['read'], rateLimit = 1000, expiresIn } = req.body;
+  const { name, scopes, rateLimit, expiresIn } = req.body;
 
-  if (!name) {
-    throw new ValidationError('Please provide a name for the API key', { name: 'required' });
-  }
+  // Validate all inputs
+  const validatedName = validateName(name);
+  const validatedScopes = validateScopes(scopes);
+  const validatedRateLimit = validateRateLimit(rateLimit);
+  const validatedExpiresIn = validateExpiresIn(expiresIn);
 
   const { key, prefix, hash } = await generateApiKey();
   const id = uuidv4();
 
   let expiresAt = null;
-  if (expiresIn) {
-    expiresAt = new Date(Date.now() + expiresIn * 1000);
+  if (validatedExpiresIn) {
+    expiresAt = new Date(Date.now() + validatedExpiresIn * 1000);
   }
 
   await pool.query(
     `INSERT INTO api_keys (id, name, key_hash, key_prefix, scopes, rate_limit, expires_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [id, name, hash, prefix, JSON.stringify(scopes), rateLimit, expiresAt]
+    [id, validatedName, hash, prefix, JSON.stringify(validatedScopes), validatedRateLimit, expiresAt]
   );
 
   res.status(201).json({
@@ -43,11 +107,11 @@ apiKeysRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (r
     message: 'API key created. Save this key - it will not be shown again!',
     apiKey: {
       id,
-      name,
+      name: validatedName,
       key, // Only returned on creation
       prefix,
-      scopes,
-      rateLimit,
+      scopes: validatedScopes,
+      rateLimit: validatedRateLimit,
       expiresAt,
       createdAt: new Date()
     }
@@ -91,6 +155,7 @@ apiKeysRouter.get('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (re
  */
 apiKeysRouter.get('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateApiKeyId(id);
 
   const result = await pool.query(
     `SELECT id, name, key_prefix, scopes, rate_limit, expires_at,
@@ -128,25 +193,33 @@ apiKeysRouter.get('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async 
  */
 apiKeysRouter.patch('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateApiKeyId(id);
+
   const { name, scopes, rateLimit, isActive } = req.body;
 
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: (string | number | boolean | string[])[] = [];
   let paramIndex = 1;
 
   if (name !== undefined) {
+    const validatedName = validateName(name);
     updates.push(`name = $${paramIndex++}`);
-    values.push(name);
+    values.push(validatedName);
   }
   if (scopes !== undefined) {
+    const validatedScopes = validateScopes(scopes);
     updates.push(`scopes = $${paramIndex++}`);
-    values.push(JSON.stringify(scopes));
+    values.push(JSON.stringify(validatedScopes));
   }
   if (rateLimit !== undefined) {
+    const validatedRateLimit = validateRateLimit(rateLimit);
     updates.push(`rate_limit = $${paramIndex++}`);
-    values.push(rateLimit);
+    values.push(validatedRateLimit);
   }
   if (isActive !== undefined) {
+    if (typeof isActive !== 'boolean') {
+      throw new ValidationError('isActive must be a boolean.');
+    }
     updates.push(`is_active = $${paramIndex++}`);
     values.push(isActive);
   }
@@ -191,6 +264,7 @@ apiKeysRouter.patch('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
  */
 apiKeysRouter.delete('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateApiKeyId(id);
 
   const result = await pool.query(
     'DELETE FROM api_keys WHERE id = $1 RETURNING id, name',
@@ -218,6 +292,7 @@ apiKeysRouter.delete('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(asy
  */
 apiKeysRouter.post('/:id/regenerate', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateApiKeyId(id);
 
   const { key, prefix, hash } = await generateApiKey();
 

@@ -217,7 +217,9 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
 };
 
 export async function rateLimiter(req: Request, res: Response, next: NextFunction) {
-  const key = req.apiKey?.id || req.ip || 'anonymous';
+  // Use API key ID, client IP, or fallback to anonymous
+  // req.ip can be undefined if trust proxy is not configured
+  const key = req.apiKey?.id || req.ip || req.socket?.remoteAddress || 'anonymous';
 
   // Check for endpoint-specific limit
   const endpoint = `${req.method}:${req.path}`;
@@ -231,9 +233,9 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
 
     // Upsert rate limit counter
     const result = await pool.query(
-      `INSERT INTO rate_limits (key, window_start, request_count)
+      `INSERT INTO rate_limits (identifier, window_start, request_count)
        VALUES ($1, $2, 1)
-       ON CONFLICT (key, window_start)
+       ON CONFLICT (identifier, window_start)
        DO UPDATE SET request_count = rate_limits.request_count + 1
        RETURNING request_count`,
       [key, windowStart]
@@ -289,7 +291,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
     const result = await pool.query(
       `SELECT id, name, scopes, rate_limit, key_hash
        FROM api_keys
-       WHERE prefix = $1 AND is_active = true
+       WHERE key_prefix = $1 AND is_active = true
        AND (expires_at IS NULL OR expires_at > NOW())`,
       [prefix]
     );

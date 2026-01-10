@@ -8,10 +8,83 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { pool } from '../utils/database';
-import { testWebhook, getWebhookDeliveries } from '../services/webhooks';
+import { isValidUUID } from '../utils/database-context';
+import { testWebhook, getWebhookDeliveries, WebhookEventType } from '../services/webhooks';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+
+// Validation constants
+const MAX_NAME_LENGTH = 100;
+const MIN_RETRY_COUNT = 0;
+const MAX_RETRY_COUNT = 10;
+const MAX_DELIVERIES_LIMIT = 100;
+const DEFAULT_DELIVERIES_LIMIT = 50;
+
+const VALID_WEBHOOK_EVENTS: readonly WebhookEventType[] = [
+  'idea.created', 'idea.updated', 'idea.deleted', 'idea.archived',
+  'meeting.created', 'meeting.updated', 'meeting.completed', 'meeting.notes_added',
+  'calendar.synced', 'slack.message_processed'
+] as const;
+
+function validateWebhookId(id: string): void {
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid webhook ID format. Must be a valid UUID.');
+  }
+}
+
+function validateName(name: unknown): string {
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    throw new ValidationError('Name is required and must be a non-empty string.');
+  }
+  if (name.length > MAX_NAME_LENGTH) {
+    throw new ValidationError(`Name too long. Maximum ${MAX_NAME_LENGTH} characters.`);
+  }
+  return name.trim();
+}
+
+function validateUrl(url: unknown): string {
+  if (!url || typeof url !== 'string') {
+    throw new ValidationError('URL is required.');
+  }
+  try {
+    new URL(url);
+    return url;
+  } catch {
+    throw new ValidationError('Provide a valid webhook URL.');
+  }
+}
+
+function validateEvents(events: unknown): WebhookEventType[] {
+  if (!events || !Array.isArray(events) || events.length === 0) {
+    throw new ValidationError('Provide at least one event type to subscribe to.');
+  }
+  for (const event of events) {
+    if (typeof event !== 'string' || !VALID_WEBHOOK_EVENTS.includes(event as WebhookEventType)) {
+      throw new ValidationError(`Invalid event type: ${event}. Valid events: ${VALID_WEBHOOK_EVENTS.join(', ')}`);
+    }
+  }
+  return events as WebhookEventType[];
+}
+
+function validateRetryCount(retryCount: unknown): number {
+  if (retryCount === undefined || retryCount === null) return 3;
+  const count = typeof retryCount === 'string' ? parseInt(retryCount, 10) : retryCount;
+  if (typeof count !== 'number' || isNaN(count)) {
+    throw new ValidationError('Retry count must be a number.');
+  }
+  if (count < MIN_RETRY_COUNT || count > MAX_RETRY_COUNT) {
+    throw new ValidationError(`Retry count must be between ${MIN_RETRY_COUNT} and ${MAX_RETRY_COUNT}.`);
+  }
+  return Math.floor(count);
+}
+
+function parseDeliveriesLimit(limitStr: string | undefined): number {
+  if (!limitStr) return DEFAULT_DELIVERIES_LIMIT;
+  const limit = parseInt(limitStr, 10);
+  if (isNaN(limit) || limit < 1) return DEFAULT_DELIVERIES_LIMIT;
+  return Math.min(limit, MAX_DELIVERIES_LIMIT);
+}
 
 export const webhooksRouter = Router();
 
@@ -20,22 +93,13 @@ export const webhooksRouter = Router();
  * Create a new webhook endpoint
  */
 webhooksRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
-  const { name, url, events, retryCount = 3, generateSecret = true } = req.body;
+  const { name, url, events, retryCount, generateSecret = true } = req.body;
 
-  if (!name || !url) {
-    throw new ValidationError('Name and URL are required');
-  }
-
-  if (!events || !Array.isArray(events) || events.length === 0) {
-    throw new ValidationError('Provide at least one event type to subscribe to');
-  }
-
-  // Validate URL format
-  try {
-    new URL(url);
-  } catch {
-    throw new ValidationError('Provide a valid webhook URL');
-  }
+  // Validate all inputs
+  const validatedName = validateName(name);
+  const validatedUrl = validateUrl(url);
+  const validatedEvents = validateEvents(events);
+  const validatedRetryCount = validateRetryCount(retryCount);
 
   const id = uuidv4();
   const secret = generateSecret ? crypto.randomBytes(32).toString('hex') : null;
@@ -43,7 +107,7 @@ webhooksRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (
   await pool.query(
     `INSERT INTO webhooks (id, name, url, secret, events, retry_count)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [id, name, url, secret, JSON.stringify(events), retryCount]
+    [id, validatedName, validatedUrl, secret, JSON.stringify(validatedEvents), validatedRetryCount]
   );
 
   res.status(201).json({
@@ -51,11 +115,11 @@ webhooksRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (
     message: 'Webhook created',
     webhook: {
       id,
-      name,
-      url,
+      name: validatedName,
+      url: validatedUrl,
       secret, // Only returned on creation
-      events,
-      retryCount,
+      events: validatedEvents,
+      retryCount: validatedRetryCount,
       isActive: true,
       createdAt: new Date()
     },
@@ -104,6 +168,7 @@ webhooksRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
  */
 webhooksRouter.get('/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateWebhookId(id);
 
   const result = await pool.query(
     `SELECT id, name, url, events, is_active, retry_count,
@@ -141,36 +206,40 @@ webhooksRouter.get('/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Re
  */
 webhooksRouter.patch('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateWebhookId(id);
+
   const { name, url, events, isActive, retryCount } = req.body;
 
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: (string | boolean | number)[] = [];
   let paramIndex = 1;
 
   if (name !== undefined) {
+    const validatedName = validateName(name);
     updates.push(`name = $${paramIndex++}`);
-    values.push(name);
+    values.push(validatedName);
   }
   if (url !== undefined) {
-    try {
-      new URL(url);
-    } catch {
-      throw new ValidationError('Provide a valid webhook URL');
-    }
+    const validatedUrl = validateUrl(url);
     updates.push(`url = $${paramIndex++}`);
-    values.push(url);
+    values.push(validatedUrl);
   }
   if (events !== undefined) {
+    const validatedEvents = validateEvents(events);
     updates.push(`events = $${paramIndex++}`);
-    values.push(JSON.stringify(events));
+    values.push(JSON.stringify(validatedEvents));
   }
   if (isActive !== undefined) {
+    if (typeof isActive !== 'boolean') {
+      throw new ValidationError('isActive must be a boolean.');
+    }
     updates.push(`is_active = $${paramIndex++}`);
     values.push(isActive);
   }
   if (retryCount !== undefined) {
+    const validatedRetryCount = validateRetryCount(retryCount);
     updates.push(`retry_count = $${paramIndex++}`);
-    values.push(retryCount);
+    values.push(validatedRetryCount);
   }
 
   if (updates.length === 0) {
@@ -211,6 +280,7 @@ webhooksRouter.patch('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(asy
  */
 webhooksRouter.delete('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateWebhookId(id);
 
   const result = await pool.query(
     'DELETE FROM webhooks WHERE id = $1 RETURNING id, name',
@@ -237,6 +307,7 @@ webhooksRouter.delete('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(as
  */
 webhooksRouter.post('/:id/test', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateWebhookId(id);
 
   const result = await testWebhook(id);
 
@@ -259,7 +330,8 @@ webhooksRouter.post('/:id/test', apiKeyAuth, requireScope('admin'), asyncHandler
  */
 webhooksRouter.get('/:id/deliveries', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  validateWebhookId(id);
+  const limit = parseDeliveriesLimit(req.query.limit as string | undefined);
 
   // Verify webhook exists
   const webhookResult = await pool.query(
@@ -297,6 +369,7 @@ webhooksRouter.get('/:id/deliveries', apiKeyAuth, asyncHandler(async (req: Reque
  */
 webhooksRouter.post('/:id/secret/regenerate', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateWebhookId(id);
   const newSecret = crypto.randomBytes(32).toString('hex');
 
   const result = await pool.query(

@@ -3,13 +3,38 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { query } from '../utils/database';
+import { isValidUUID } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import crypto from 'crypto';
 import { analyzeImage, extractTextFromImage, analyzeDocument } from '../utils/image-analysis';
 import { generateVideoThumbnail, getVideoInfo, generateVideoGifPreview } from '../utils/video-thumbnails';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+
+// Validation helpers
+const VALID_CONTEXTS = ['personal', 'work'] as const;
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 50;
+
+function validateMediaId(id: string): void {
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid media ID format. Must be a valid UUID.');
+  }
+}
+
+function validateContext(context: string): void {
+  if (!VALID_CONTEXTS.includes(context as any)) {
+    throw new ValidationError(`Invalid context. Valid options: ${VALID_CONTEXTS.join(', ')}`);
+  }
+}
+
+function parseLimit(limitStr: string | undefined): number {
+  if (!limitStr) return DEFAULT_LIMIT;
+  const limit = parseInt(limitStr, 10);
+  if (isNaN(limit) || limit < 1) return DEFAULT_LIMIT;
+  return Math.min(limit, MAX_LIMIT);
+}
 
 const router = express.Router();
 
@@ -77,10 +102,7 @@ router.post('/:context/media', apiKeyAuth, requireScope('write'), upload.single(
   }
 
   // Validate context
-  const validContexts = ['personal', 'work', 'creative', 'strategic'];
-  if (!validContexts.includes(context)) {
-    throw new ValidationError('Invalid context');
-  }
+  validateContext(context);
 
   // Determine media type
   const mediaType = file.mimetype.startsWith('image/') ? 'photo' : 'video';
@@ -159,7 +181,7 @@ router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Resp
   }
 
   queryStr += ` ORDER BY created_at DESC LIMIT $${paramCount}`;
-  params.push(parseInt(limit as string));
+  params.push(parseLimit(limit as string | undefined));
 
   const result = await query(queryStr, params);
 
@@ -175,6 +197,7 @@ router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Resp
  */
 router.get('/media-file/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateMediaId(id);
 
   const result = await query(
     'SELECT * FROM media_items WHERE id = $1',
@@ -313,10 +336,7 @@ router.post('/:context/media-with-voice', apiKeyAuth, requireScope('write'), mul
   }
 
   // Validate context
-  const validContexts = ['personal', 'work', 'creative', 'strategic'];
-  if (!validContexts.includes(context)) {
-    throw new ValidationError('Invalid context');
-  }
+  validateContext(context);
 
   // Determine media type
   const mediaType = mediaFile.mimetype.startsWith('image/') ? 'photo' : 'video';
@@ -397,6 +417,7 @@ router.post('/:context/media-with-voice', apiKeyAuth, requireScope('write'), mul
  */
 router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateMediaId(id);
   const { timestamp = '00:00:01' } = req.body;
 
   // Get media item
@@ -460,6 +481,7 @@ router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHand
  */
 router.get('/media/:id/thumbnail', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateMediaId(id);
 
   const result = await query(
     'SELECT thumbnail_path FROM media_items WHERE id = $1',
@@ -494,6 +516,7 @@ router.get('/media/:id/thumbnail', apiKeyAuth, asyncHandler(async (req: Request,
  */
 router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateMediaId(id);
   const { duration = 3 } = req.body;
 
   // Get media item
@@ -543,6 +566,7 @@ router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHa
  */
 router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateMediaId(id);
 
   const result = await query(
     'SELECT * FROM media_items WHERE id = $1',
