@@ -287,7 +287,7 @@ struct LearningTaskCard: View {
                     }
                 }
                 Spacer()
-                PriorityBadge(priority: task.priority)
+                LearningPriorityBadge(priority: task.priority)
             }
 
             // Progress
@@ -362,7 +362,7 @@ struct LearningTaskCard: View {
     }
 }
 
-struct PriorityBadge: View {
+struct LearningPriorityBadge: View {
     let priority: String
 
     var color: Color {
@@ -598,7 +598,7 @@ struct LearningTaskDetailSheet: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                             Spacer()
-                            PriorityBadge(priority: task.priority)
+                            LearningPriorityBadge(priority: task.priority)
                         }
 
                         if let description = task.description {
