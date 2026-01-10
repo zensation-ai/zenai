@@ -15,6 +15,8 @@ import {
   validateRequiredString,
   parseIntSafe,
 } from '../utils/validation';
+import { apiKeyAuth, optionalAuth, requireScope } from '../middleware/auth';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const ideasRouter = Router();
 
@@ -32,7 +34,7 @@ function getContext(req: Request): AIContext {
 function validateUUID(req: Request, res: Response, next: NextFunction) {
   const id = req.params.id;
   if (id && !isValidUUID(id)) {
-    return res.status(400).json({ error: 'Invalid ID format. Must be a valid UUID.' });
+    throw new ValidationError('Invalid ID format. Must be a valid UUID.');
   }
   next();
 }
@@ -42,112 +44,102 @@ function validateUUID(req: Request, res: Response, next: NextFunction) {
  * Get statistics about ideas (excluding archived)
  * NOTE: Must be defined BEFORE /:id route to avoid being caught by it
  */
-ideasRouter.get('/stats/summary', async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-      queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
-      queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
-      queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
-      queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
-    ]);
+ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
+    queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
+    queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
+    queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
+    queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
+  ]);
 
-    res.json({
-      total: parseInt(totalResult.rows[0].total),
-      byType: typeResult.rows.reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
-      byCategory: categoryResult.rows.reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
-      byPriority: priorityResult.rows.reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
-    });
-  } catch (error: any) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json({
+    total: parseInt(totalResult.rows[0].total),
+    byType: typeResult.rows.reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
+    byCategory: categoryResult.rows.reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
+    byPriority: priorityResult.rows.reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
+  });
+}));
 
 /**
  * GET /api/ideas
  * List all ideas with pagination
  */
-ideasRouter.get('/', async (req, res) => {
-  try {
-    const ctx = getContext(req);
+ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
 
-    // Validate pagination
-    const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
-    if (!paginationResult.success) {
-      return res.status(400).json({ error: 'Invalid pagination', details: paginationResult.errors });
-    }
-    const { limit, offset } = paginationResult.data!;
-
-    // Validate filter params
-    const typeResult = validateIdeaType(req.query.type);
-    if (!typeResult.success) {
-      return res.status(400).json({ error: 'Invalid type filter', details: typeResult.errors });
-    }
-
-    const categoryResult = validateCategory(req.query.category);
-    if (!categoryResult.success) {
-      return res.status(400).json({ error: 'Invalid category filter', details: categoryResult.errors });
-    }
-
-    const priorityResult = validatePriority(req.query.priority);
-    if (!priorityResult.success) {
-      return res.status(400).json({ error: 'Invalid priority filter', details: priorityResult.errors });
-    }
-
-    let whereClause = '';
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (typeResult.data) {
-      whereClause += ` AND type = $${paramIndex++}`;
-      params.push(typeResult.data);
-    }
-    if (categoryResult.data) {
-      whereClause += ` AND category = $${paramIndex++}`;
-      params.push(categoryResult.data);
-    }
-    if (priorityResult.data) {
-      whereClause += ` AND priority = $${paramIndex++}`;
-      params.push(priorityResult.data);
-    }
-
-    const result = await queryContext(
-      ctx,
-      `SELECT id, title, type, category, priority, summary,
-              next_steps, context_needed, keywords, created_at, updated_at
-       FROM ideas
-       WHERE is_archived = false ${whereClause}
-       ORDER BY created_at DESC
-       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-      [...params, limit, offset]
-    );
-
-    const countResult = await queryContext(
-      ctx,
-      `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false ${whereClause}`,
-      params
-    );
-
-    res.json({
-      ideas: result.rows.map(row => ({
-        ...row,
-        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-      })),
-      pagination: {
-        total: parseInt(countResult.rows[0].total),
-        limit,
-        offset,
-        hasMore: offset + limit < parseInt(countResult.rows[0].total),
-      },
-    });
-  } catch (error: any) {
-    console.error('Error fetching ideas:', error);
-    res.status(500).json({ error: error.message });
+  // Validate pagination
+  const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
+  if (!paginationResult.success) {
+    throw new ValidationError('Invalid pagination');
   }
-});
+  const { limit, offset } = paginationResult.data!;
+
+  // Validate filter params
+  const typeResult = validateIdeaType(req.query.type);
+  if (!typeResult.success) {
+    throw new ValidationError('Invalid type filter');
+  }
+
+  const categoryResult = validateCategory(req.query.category);
+  if (!categoryResult.success) {
+    throw new ValidationError('Invalid category filter');
+  }
+
+  const priorityResult = validatePriority(req.query.priority);
+  if (!priorityResult.success) {
+    throw new ValidationError('Invalid priority filter');
+  }
+
+  let whereClause = '';
+  const params: any[] = [];
+  let paramIndex = 1;
+
+  if (typeResult.data) {
+    whereClause += ` AND type = $${paramIndex++}`;
+    params.push(typeResult.data);
+  }
+  if (categoryResult.data) {
+    whereClause += ` AND category = $${paramIndex++}`;
+    params.push(categoryResult.data);
+  }
+  if (priorityResult.data) {
+    whereClause += ` AND priority = $${paramIndex++}`;
+    params.push(priorityResult.data);
+  }
+
+  const result = await queryContext(
+    ctx,
+    `SELECT id, title, type, category, priority, summary,
+            next_steps, context_needed, keywords, created_at, updated_at
+     FROM ideas
+     WHERE is_archived = false ${whereClause}
+     ORDER BY created_at DESC
+     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    [...params, limit, offset]
+  );
+
+  const countResult = await queryContext(
+    ctx,
+    `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false ${whereClause}`,
+    params
+  );
+
+  res.json({
+    ideas: result.rows.map(row => ({
+      ...row,
+      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+    })),
+    pagination: {
+      total: parseInt(countResult.rows[0].total),
+      limit,
+      offset,
+      hasMore: offset + limit < parseInt(countResult.rows[0].total),
+    },
+  });
+}));
 
 /**
  * GET /api/ideas/recommendations
@@ -155,223 +147,200 @@ ideasRouter.get('/', async (req, res) => {
  * Uses user's interest embedding for relevance scoring
  * NOTE: Must be defined BEFORE /:id route to avoid being caught by it
  */
-ideasRouter.get('/recommendations', async (req, res) => {
+ideasRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, res) => {
   const startTime = Date.now();
+  const ctx = getContext(req);
 
-  try {
-    const ctx = getContext(req);
-
-    // Validate limit
-    const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
-    if (!limitResult.success) {
-      return res.status(400).json({ error: 'Invalid limit', details: limitResult.errors });
-    }
-    const limit = limitResult.data!;
-
-    // Use Supabase function to get recommendations
-    const result = await queryContext(
-      ctx,
-      `SELECT * FROM get_idea_recommendations($1, $2)`,
-      [ctx, limit]
-    );
-
-    const totalTime = Date.now() - startTime;
-
-    res.json({
-      ideas: result.rows.map(row => ({
-        ...row,
-        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-      })),
-      personalized: result.rows.length > 0 && result.rows[0].relevance_score > 0,
-      processingTime: totalTime,
-    });
-  } catch (error: any) {
-    console.error('Recommendations error:', error);
-    res.status(500).json({ error: error.message });
+  // Validate limit
+  const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
+  if (!limitResult.success) {
+    throw new ValidationError('Invalid limit');
   }
-});
+  const limit = limitResult.data!;
+
+  // Use Supabase function to get recommendations
+  const result = await queryContext(
+    ctx,
+    `SELECT * FROM get_idea_recommendations($1, $2)`,
+    [ctx, limit]
+  );
+
+  const totalTime = Date.now() - startTime;
+
+  res.json({
+    ideas: result.rows.map(row => ({
+      ...row,
+      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+    })),
+    personalized: result.rows.length > 0 && result.rows[0].relevance_score > 0,
+    processingTime: totalTime,
+  });
+}));
 
 /**
  * GET /api/ideas/:id
  * Get a single idea by ID
  */
-ideasRouter.get('/:id', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const result = await queryContext(
-      ctx,
-      `SELECT id, title, type, category, priority, summary,
-              next_steps, context_needed, keywords, raw_transcript,
-              created_at, updated_at
-       FROM ideas WHERE id = $1`,
-      [req.params.id]
-    );
+ideasRouter.get('/:id', apiKeyAuth, validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const result = await queryContext(
+    ctx,
+    `SELECT id, title, type, category, priority, summary,
+            next_steps, context_needed, keywords, raw_transcript,
+            created_at, updated_at
+     FROM ideas WHERE id = $1`,
+    [req.params.id]
+  );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
-
-    const row = result.rows[0];
-
-    // Track view interaction for learning
-    trackInteraction({
-      idea_id: req.params.id,
-      interaction_type: 'view',
-    }).catch((err) => console.log('Background view tracking skipped:', err.message));
-
-    // Increment view count
-    queryContext(ctx, 'UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
-      .catch((err) => console.log('Background view count update skipped:', err.message));
-
-    res.json({
-      ...row,
-      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-    });
-  } catch (error: any) {
-    console.error('Error fetching idea:', error);
-    res.status(500).json({ error: error.message });
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Idea');
   }
-});
+
+  const row = result.rows[0];
+
+  // Track view interaction for learning
+  trackInteraction({
+    idea_id: req.params.id,
+    interaction_type: 'view',
+  }).catch((err) => logger.debug('Background view tracking skipped', { error: err.message }));
+
+  // Increment view count
+  queryContext(ctx, 'UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
+    .catch((err) => logger.debug('Background view count update skipped', { error: err.message }));
+
+  res.json({
+    ...row,
+    next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+    context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+    keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+  });
+}));
 
 /**
  * POST /api/ideas/search
  * Semantic search using Supabase pgvector function
  * Uses optimized HNSW index for fast similarity search
  */
-ideasRouter.post('/search', async (req, res) => {
+ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
   const startTime = Date.now();
+  const ctx = getContext(req);
 
-  try {
-    const ctx = getContext(req);
-
-    // Validate search query
-    const queryResult = validateRequiredString(req.body.query, 'query', { minLength: 1, maxLength: 500 });
-    if (!queryResult.success) {
-      return res.status(400).json({ error: 'Invalid search query', details: queryResult.errors });
-    }
-    const searchQuery = queryResult.data!;
-
-    // Validate limit
-    const limitResult = parseIntSafe(req.body.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
-    if (!limitResult.success) {
-      return res.status(400).json({ error: 'Invalid limit', details: limitResult.errors });
-    }
-    const limit = limitResult.data!;
-
-    // Validate threshold
-    const thresholdResult = parseIntSafe(req.body.threshold?.toString(), { default: 0.5, min: 0, max: 1, fieldName: 'threshold' });
-    const threshold = thresholdResult.success ? thresholdResult.data! : 0.5;
-
-    // Generate embedding for search query
-    const embeddingStart = Date.now();
-    const queryEmbedding = await generateEmbedding(searchQuery);
-    const embeddingTime = Date.now() - embeddingStart;
-
-    if (queryEmbedding.length === 0) {
-      // Fallback to text search if embedding fails
-      const textResult = await queryContext(
-        ctx,
-        `SELECT id, title, type, category, priority, summary,
-                next_steps, context_needed, keywords, created_at
-         FROM ideas
-         WHERE title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1
-         ORDER BY created_at DESC
-         LIMIT $2`,
-        [`%${searchQuery}%`, limit]
-      );
-
-      return res.json({
-        ideas: textResult.rows,
-        searchType: 'text-fallback',
-        processingTime: Date.now() - startTime,
-      });
-    }
-
-    // Use Supabase function for optimized vector search
-    const searchStart = Date.now();
-    const result = await queryContext(
-      ctx,
-      `SELECT * FROM search_ideas_by_embedding($1::vector(768), $2, $3, $4)`,
-      [formatForPgVector(queryEmbedding), ctx, threshold, limit]
-    );
-    const searchTime = Date.now() - searchStart;
-
-    const totalTime = Date.now() - startTime;
-
-    res.json({
-      ideas: result.rows.map(row => ({
-        ...row,
-        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-      })),
-      searchType: 'supabase-function',
-      performance: {
-        totalMs: totalTime,
-        embeddingMs: embeddingTime,
-        searchMs: searchTime,
-        resultsFound: result.rows.length,
-      },
-    });
-  } catch (error: any) {
-    console.error('Search error:', error);
-    res.status(500).json({ error: error.message });
+  // Validate search query
+  const queryResult = validateRequiredString(req.body.query, 'query', { minLength: 1, maxLength: 500 });
+  if (!queryResult.success) {
+    throw new ValidationError('Invalid search query');
   }
-});
+  const searchQuery = queryResult.data!;
+
+  // Validate limit
+  const limitResult = parseIntSafe(req.body.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
+  if (!limitResult.success) {
+    throw new ValidationError('Invalid limit');
+  }
+  const limit = limitResult.data!;
+
+  // Validate threshold
+  const thresholdResult = parseIntSafe(req.body.threshold?.toString(), { default: 0.5, min: 0, max: 1, fieldName: 'threshold' });
+  const threshold = thresholdResult.success ? thresholdResult.data! : 0.5;
+
+  // Generate embedding for search query
+  const embeddingStart = Date.now();
+  const queryEmbedding = await generateEmbedding(searchQuery);
+  const embeddingTime = Date.now() - embeddingStart;
+
+  if (queryEmbedding.length === 0) {
+    // Fallback to text search if embedding fails
+    const textResult = await queryContext(
+      ctx,
+      `SELECT id, title, type, category, priority, summary,
+              next_steps, context_needed, keywords, created_at
+       FROM ideas
+       WHERE title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [`%${searchQuery}%`, limit]
+    );
+
+    return res.json({
+      ideas: textResult.rows,
+      searchType: 'text-fallback',
+      processingTime: Date.now() - startTime,
+    });
+  }
+
+  // Use Supabase function for optimized vector search
+  const searchStart = Date.now();
+  const result = await queryContext(
+    ctx,
+    `SELECT * FROM search_ideas_by_embedding($1::vector(768), $2, $3, $4)`,
+    [formatForPgVector(queryEmbedding), ctx, threshold, limit]
+  );
+  const searchTime = Date.now() - searchStart;
+
+  const totalTime = Date.now() - startTime;
+
+  res.json({
+    ideas: result.rows.map(row => ({
+      ...row,
+      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+    })),
+    searchType: 'supabase-function',
+    performance: {
+      totalMs: totalTime,
+      embeddingMs: embeddingTime,
+      searchMs: searchTime,
+      resultsFound: result.rows.length,
+    },
+  });
+}));
 
 /**
  * GET /api/ideas/:id/similar
  * Find similar ideas using Supabase function
  * Uses pre-computed embeddings for instant results
  */
-ideasRouter.get('/:id/similar', validateUUID, async (req, res) => {
+ideasRouter.get('/:id/similar', apiKeyAuth, validateUUID, asyncHandler(async (req, res) => {
   const startTime = Date.now();
+  const ctx = getContext(req);
+  const ideaId = req.params.id;
 
-  try {
-    const ctx = getContext(req);
-    const ideaId = req.params.id;
-
-    // Validate limit
-    const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 5, min: 1, max: 20, fieldName: 'limit' });
-    if (!limitResult.success) {
-      return res.status(400).json({ error: 'Invalid limit', details: limitResult.errors });
-    }
-    const limit = limitResult.data!;
-
-    // Check if idea exists
-    const ideaCheck = await queryContext(ctx, 'SELECT id FROM ideas WHERE id = $1', [ideaId]);
-    if (ideaCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
-
-    // Use Supabase function to find similar ideas
-    const result = await queryContext(
-      ctx,
-      `SELECT * FROM find_similar_ideas($1::uuid, $2, $3)`,
-      [ideaId, ctx, limit]
-    );
-
-    const totalTime = Date.now() - startTime;
-
-    res.json({
-      ideas: result.rows.map(row => ({
-        ...row,
-        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-      })),
-      sourceIdeaId: ideaId,
-      processingTime: totalTime,
-    });
-  } catch (error: any) {
-    console.error('Similar ideas error:', error);
-    res.status(500).json({ error: error.message });
+  // Validate limit
+  const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 5, min: 1, max: 20, fieldName: 'limit' });
+  if (!limitResult.success) {
+    throw new ValidationError('Invalid limit');
   }
-});
+  const limit = limitResult.data!;
+
+  // Check if idea exists
+  const ideaCheck = await queryContext(ctx, 'SELECT id FROM ideas WHERE id = $1', [ideaId]);
+  if (ideaCheck.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  // Use Supabase function to find similar ideas
+  const result = await queryContext(
+    ctx,
+    `SELECT * FROM find_similar_ideas($1::uuid, $2, $3)`,
+    [ideaId, ctx, limit]
+  );
+
+  const totalTime = Date.now() - startTime;
+
+  res.json({
+    ideas: result.rows.map(row => ({
+      ...row,
+      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+    })),
+    sourceIdeaId: ideaId,
+    processingTime: totalTime,
+  });
+}));
 
 /**
  * PUT /api/ideas/:id
@@ -380,138 +349,128 @@ ideasRouter.get('/:id/similar', validateUUID, async (req, res) => {
  * WICHTIG: Bei Änderungen von type/category/priority lernt das System
  * dass die ursprüngliche LLM-Klassifizierung falsch war!
  */
-ideasRouter.put('/:id', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const { title, type, category, priority, summary, next_steps, context_needed, keywords } = req.body;
+ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const { title, type, category, priority, summary, next_steps, context_needed, keywords } = req.body;
 
-    // Hole alte Werte um Korrekturen zu erkennen
-    const oldIdea = await queryContext(
-      ctx,
-      'SELECT type, category, priority FROM ideas WHERE id = $1',
-      [req.params.id]
-    );
+  // Hole alte Werte um Korrekturen zu erkennen
+  const oldIdea = await queryContext(
+    ctx,
+    'SELECT type, category, priority FROM ideas WHERE id = $1',
+    [req.params.id]
+  );
 
-    if (oldIdea.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
-
-    const old = oldIdea.rows[0];
-
-    const result = await queryContext(
-      ctx,
-      `UPDATE ideas SET
-        title = COALESCE($2, title),
-        type = COALESCE($3, type),
-        category = COALESCE($4, category),
-        priority = COALESCE($5, priority),
-        summary = COALESCE($6, summary),
-        next_steps = COALESCE($7, next_steps),
-        context_needed = COALESCE($8, context_needed),
-        keywords = COALESCE($9, keywords),
-        updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [
-        req.params.id,
-        title,
-        type,
-        category,
-        priority,
-        summary,
-        next_steps ? JSON.stringify(next_steps) : null,
-        context_needed ? JSON.stringify(context_needed) : null,
-        keywords ? JSON.stringify(keywords) : null,
-      ]
-    );
-
-    // KRITISCH: User-Korrektur erkennen und lernen!
-    // Dies verhindert, dass LLM-Fehlinterpretationen sich verfestigen
-    const hasTypeChange = type && type !== old.type;
-    const hasCategoryChange = category && category !== old.category;
-    const hasPriorityChange = priority && priority !== old.priority;
-
-    if (hasTypeChange || hasCategoryChange || hasPriorityChange) {
-      console.log(`User correction detected on idea ${req.params.id}`);
-
-      // Lernen aus der Korrektur (async, non-blocking)
-      learnFromCorrection(req.params.id, {
-        oldType: hasTypeChange ? old.type : undefined,
-        newType: hasTypeChange ? type : undefined,
-        oldCategory: hasCategoryChange ? old.category : undefined,
-        newCategory: hasCategoryChange ? category : undefined,
-        oldPriority: hasPriorityChange ? old.priority : undefined,
-        newPriority: hasPriorityChange ? priority : undefined,
-      }).catch(err => console.log('Background correction learning skipped:', err.message));
-
-      // Zusätzlich: Lerne stark von der korrigierten Idee
-      learnFromThought(req.params.id, 'default', true).catch(err =>
-        console.log('Background learning from corrected idea skipped:', err.message)
-      );
-    }
-
-    // Track edit and priority changes for interaction tracking
-    const metadata: Record<string, any> = { action: 'update' };
-    if (hasPriorityChange) {
-      metadata.new_priority = priority;
-      metadata.old_priority = old.priority;
-      trackInteraction({
-        idea_id: req.params.id,
-        interaction_type: 'prioritize',
-        metadata,
-      }).catch((err) => console.log('Background prioritize tracking skipped:', err.message));
-    } else {
-      trackInteraction({
-        idea_id: req.params.id,
-        interaction_type: 'edit',
-        metadata,
-      }).catch((err) => console.log('Background edit tracking skipped:', err.message));
-    }
-
-    // Phase 4: Trigger webhook
-    triggerWebhook('idea.updated', {
-      id: req.params.id,
-      ...result.rows[0]
-    }).catch((err) => console.log('Background webhook skipped:', err.message));
-
-    res.json(result.rows[0]);
-  } catch (error: any) {
-    console.error('Error updating idea:', error);
-    res.status(500).json({ error: error.message });
+  if (oldIdea.rows.length === 0) {
+    throw new NotFoundError('Idea');
   }
-});
+
+  const old = oldIdea.rows[0];
+
+  const result = await queryContext(
+    ctx,
+    `UPDATE ideas SET
+      title = COALESCE($2, title),
+      type = COALESCE($3, type),
+      category = COALESCE($4, category),
+      priority = COALESCE($5, priority),
+      summary = COALESCE($6, summary),
+      next_steps = COALESCE($7, next_steps),
+      context_needed = COALESCE($8, context_needed),
+      keywords = COALESCE($9, keywords),
+      updated_at = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [
+      req.params.id,
+      title,
+      type,
+      category,
+      priority,
+      summary,
+      next_steps ? JSON.stringify(next_steps) : null,
+      context_needed ? JSON.stringify(context_needed) : null,
+      keywords ? JSON.stringify(keywords) : null,
+    ]
+  );
+
+  // KRITISCH: User-Korrektur erkennen und lernen!
+  // Dies verhindert, dass LLM-Fehlinterpretationen sich verfestigen
+  const hasTypeChange = type && type !== old.type;
+  const hasCategoryChange = category && category !== old.category;
+  const hasPriorityChange = priority && priority !== old.priority;
+
+  if (hasTypeChange || hasCategoryChange || hasPriorityChange) {
+    logger.info('User correction detected', { ideaId: req.params.id });
+
+    // Lernen aus der Korrektur (async, non-blocking)
+    learnFromCorrection(req.params.id, {
+      oldType: hasTypeChange ? old.type : undefined,
+      newType: hasTypeChange ? type : undefined,
+      oldCategory: hasCategoryChange ? old.category : undefined,
+      newCategory: hasCategoryChange ? category : undefined,
+      oldPriority: hasPriorityChange ? old.priority : undefined,
+      newPriority: hasPriorityChange ? priority : undefined,
+    }).catch(err => logger.debug('Background correction learning skipped', { error: err.message }));
+
+    // Zusätzlich: Lerne stark von der korrigierten Idee
+    learnFromThought(req.params.id, 'default', true).catch(err =>
+      logger.debug('Background learning from corrected idea skipped', { error: err.message })
+    );
+  }
+
+  // Track edit and priority changes for interaction tracking
+  const metadata: Record<string, any> = { action: 'update' };
+  if (hasPriorityChange) {
+    metadata.new_priority = priority;
+    metadata.old_priority = old.priority;
+    trackInteraction({
+      idea_id: req.params.id,
+      interaction_type: 'prioritize',
+      metadata,
+    }).catch((err) => logger.debug('Background prioritize tracking skipped', { error: err.message }));
+  } else {
+    trackInteraction({
+      idea_id: req.params.id,
+      interaction_type: 'edit',
+      metadata,
+    }).catch((err) => logger.debug('Background edit tracking skipped', { error: err.message }));
+  }
+
+  // Phase 4: Trigger webhook
+  triggerWebhook('idea.updated', {
+    id: req.params.id,
+    ...result.rows[0]
+  }).catch((err) => logger.debug('Background webhook skipped', { error: err.message }));
+
+  res.json(result.rows[0]);
+}));
 
 /**
  * DELETE /api/ideas/:id
  * Delete an idea
  */
-ideasRouter.delete('/:id', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 RETURNING id', [req.params.id]);
+ideasRouter.delete('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 RETURNING id', [req.params.id]);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
-
-    // Track archive/delete for learning
-    trackInteraction({
-      idea_id: req.params.id,
-      interaction_type: 'archive',
-      metadata: { action: 'delete' },
-    }).catch((err) => console.log('Background delete tracking skipped:', err.message));
-
-    // Phase 4: Trigger webhook
-    triggerWebhook('idea.deleted', {
-      id: req.params.id
-    }).catch((err) => console.log('Background webhook skipped:', err.message));
-
-    res.json({ success: true, deletedId: req.params.id });
-  } catch (error: any) {
-    console.error('Error deleting idea:', error);
-    res.status(500).json({ error: error.message });
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Idea');
   }
-});
+
+  // Track archive/delete for learning
+  trackInteraction({
+    idea_id: req.params.id,
+    interaction_type: 'archive',
+    metadata: { action: 'delete' },
+  }).catch((err) => logger.debug('Background delete tracking skipped', { error: err.message }));
+
+  // Phase 4: Trigger webhook
+  triggerWebhook('idea.deleted', {
+    id: req.params.id
+  }).catch((err) => logger.debug('Background webhook skipped', { error: err.message }));
+
+  res.json({ success: true, deletedId: req.params.id });
+}));
 
 /**
  * PUT /api/ideas/:id/priority
@@ -519,252 +478,225 @@ ideasRouter.delete('/:id', validateUUID, async (req, res) => {
  *
  * WICHTIG: Dies ist eine User-Korrektur und löst starkes Lernen aus!
  */
-ideasRouter.put('/:id/priority', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const { priority } = req.body;
+ideasRouter.put('/:id/priority', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const { priority } = req.body;
 
-    if (!priority || !['low', 'medium', 'high'].includes(priority)) {
-      return res.status(400).json({ error: 'Invalid priority. Must be low, medium, or high' });
-    }
-
-    // Hole alte Priorität für Korrektur-Lernen
-    const oldResult = await queryContext(
-      ctx,
-      'SELECT priority FROM ideas WHERE id = $1',
-      [req.params.id]
-    );
-
-    if (oldResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
-
-    const oldPriority = oldResult.rows[0].priority;
-
-    const result = await queryContext(
-      ctx,
-      'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
-      [req.params.id, priority]
-    );
-
-    // Lerne aus der Prioritäts-Korrektur (wenn geändert)
-    if (oldPriority !== priority) {
-      learnFromCorrection(req.params.id, {
-        oldPriority,
-        newPriority: priority,
-      }).catch(err => console.log('Background priority correction learning skipped:', err.message));
-
-      // Lerne stark von dieser Idee
-      learnFromThought(req.params.id, 'default', true).catch(err =>
-        console.log('Background learning skipped:', err.message)
-      );
-    }
-
-    trackInteraction({
-      idea_id: req.params.id,
-      interaction_type: 'prioritize',
-      metadata: { new_priority: priority, old_priority: oldPriority, source: 'swipe' },
-    }).catch((err) => console.log('Background priority tracking skipped:', err.message));
-
-    res.json({ success: true, idea: result.rows[0] });
-  } catch (error: any) {
-    console.error('Error updating priority:', error);
-    res.status(500).json({ error: error.message });
+  if (!priority || !['low', 'medium', 'high'].includes(priority)) {
+    throw new ValidationError('Invalid priority. Must be low, medium, or high');
   }
-});
+
+  // Hole alte Priorität für Korrektur-Lernen
+  const oldResult = await queryContext(
+    ctx,
+    'SELECT priority FROM ideas WHERE id = $1',
+    [req.params.id]
+  );
+
+  if (oldResult.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  const oldPriority = oldResult.rows[0].priority;
+
+  const result = await queryContext(
+    ctx,
+    'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
+    [req.params.id, priority]
+  );
+
+  // Lerne aus der Prioritäts-Korrektur (wenn geändert)
+  if (oldPriority !== priority) {
+    learnFromCorrection(req.params.id, {
+      oldPriority,
+      newPriority: priority,
+    }).catch(err => logger.debug('Background priority correction learning skipped', { error: err.message }));
+
+    // Lerne stark von dieser Idee
+    learnFromThought(req.params.id, 'default', true).catch(err =>
+      logger.debug('Background learning skipped', { error: err.message })
+    );
+  }
+
+  trackInteraction({
+    idea_id: req.params.id,
+    interaction_type: 'prioritize',
+    metadata: { new_priority: priority, old_priority: oldPriority, source: 'swipe' },
+  }).catch((err) => logger.debug('Background priority tracking skipped', { error: err.message }));
+
+  res.json({ success: true, idea: result.rows[0] });
+}));
 
 /**
  * POST /api/ideas/:id/swipe
  * Handle swipe actions from iOS app
  */
-ideasRouter.post('/:id/swipe', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const { action } = req.body;
-    const ideaId = req.params.id;
+ideasRouter.post('/:id/swipe', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const { action } = req.body;
+  const ideaId = req.params.id;
 
-    if (!action || !['priority', 'later', 'archive'].includes(action)) {
-      return res.status(400).json({
-        error: 'Invalid action. Must be priority, later, or archive'
-      });
-    }
-
-    let result;
-    switch (action) {
-      case 'priority':
-        result = await queryContext(
-          ctx,
-          'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
-          [ideaId, 'high']
-        );
-        trackInteraction({
-          idea_id: ideaId,
-          interaction_type: 'prioritize',
-          metadata: { new_priority: 'high', source: 'swipe' },
-        }).catch((err) => console.log('Background swipe priority tracking skipped:', err.message));
-        break;
-
-      case 'archive':
-        result = await queryContext(
-          ctx,
-          'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id, title',
-          [ideaId]
-        );
-        trackInteraction({
-          idea_id: ideaId,
-          interaction_type: 'archive',
-          metadata: { source: 'swipe' },
-        }).catch((err) => console.log('Background swipe archive tracking skipped:', err.message));
-        triggerWebhook('idea.archived', { id: ideaId })
-          .catch((err) => console.log('Background archive webhook skipped:', err.message));
-        break;
-
-      case 'later':
-        // Just track the interaction, no changes to the idea
-        result = await queryContext(
-          ctx,
-          'SELECT id, title FROM ideas WHERE id = $1',
-          [ideaId]
-        );
-        trackInteraction({
-          idea_id: ideaId,
-          interaction_type: 'view',
-          metadata: { action: 'review_later', source: 'swipe' },
-        }).catch((err) => console.log('Background swipe later tracking skipped:', err.message));
-        break;
-    }
-
-    if (!result || result.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
-
-    res.json({ success: true, action, idea: result.rows[0] });
-  } catch (error: any) {
-    console.error('Error handling swipe action:', error);
-    res.status(500).json({ error: error.message });
+  if (!action || !['priority', 'later', 'archive'].includes(action)) {
+    throw new ValidationError('Invalid action. Must be priority, later, or archive');
   }
-});
+
+  let result;
+  switch (action) {
+    case 'priority':
+      result = await queryContext(
+        ctx,
+        'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
+        [ideaId, 'high']
+      );
+      trackInteraction({
+        idea_id: ideaId,
+        interaction_type: 'prioritize',
+        metadata: { new_priority: 'high', source: 'swipe' },
+      }).catch((err) => logger.debug('Background swipe priority tracking skipped', { error: err.message }));
+      break;
+
+    case 'archive':
+      result = await queryContext(
+        ctx,
+        'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id, title',
+        [ideaId]
+      );
+      trackInteraction({
+        idea_id: ideaId,
+        interaction_type: 'archive',
+        metadata: { source: 'swipe' },
+      }).catch((err) => logger.debug('Background swipe archive tracking skipped', { error: err.message }));
+      triggerWebhook('idea.archived', { id: ideaId })
+        .catch((err) => logger.debug('Background archive webhook skipped', { error: err.message }));
+      break;
+
+    case 'later':
+      // Just track the interaction, no changes to the idea
+      result = await queryContext(
+        ctx,
+        'SELECT id, title FROM ideas WHERE id = $1',
+        [ideaId]
+      );
+      trackInteraction({
+        idea_id: ideaId,
+        interaction_type: 'view',
+        metadata: { action: 'review_later', source: 'swipe' },
+      }).catch((err) => logger.debug('Background swipe later tracking skipped', { error: err.message }));
+      break;
+  }
+
+  if (!result || result.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  res.json({ success: true, action, idea: result.rows[0] });
+}));
 
 /**
  * GET /api/ideas/archived
  * List all archived ideas with pagination
  */
-ideasRouter.get('/archived/list', async (req, res) => {
-  try {
-    const ctx = getContext(req);
+ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
 
-    // Validate pagination
-    const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
-    if (!paginationResult.success) {
-      return res.status(400).json({ error: 'Invalid pagination', details: paginationResult.errors });
-    }
-    const { limit, offset } = paginationResult.data!;
-
-    const result = await queryContext(
-      ctx,
-      `SELECT id, title, type, category, priority, summary,
-              next_steps, context_needed, keywords, created_at, updated_at
-       FROM ideas
-       WHERE is_archived = true
-       ORDER BY updated_at DESC
-       LIMIT $1 OFFSET $2`,
-      [limit, offset]
-    );
-
-    const countResult = await queryContext(
-      ctx,
-      'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true'
-    );
-
-    res.json({
-      ideas: result.rows.map(row => ({
-        ...row,
-        next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-        context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-        keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-      })),
-      pagination: {
-        total: parseInt(countResult.rows[0].total),
-        limit,
-        offset,
-        hasMore: offset + limit < parseInt(countResult.rows[0].total),
-      },
-    });
-  } catch (error: any) {
-    console.error('Error fetching archived ideas:', error);
-    res.status(500).json({ error: error.message });
+  // Validate pagination
+  const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
+  if (!paginationResult.success) {
+    throw new ValidationError('Invalid pagination');
   }
-});
+  const { limit, offset } = paginationResult.data!;
+
+  const result = await queryContext(
+    ctx,
+    `SELECT id, title, type, category, priority, summary,
+            next_steps, context_needed, keywords, created_at, updated_at
+     FROM ideas
+     WHERE is_archived = true
+     ORDER BY updated_at DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+
+  const countResult = await queryContext(
+    ctx,
+    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true'
+  );
+
+  res.json({
+    ideas: result.rows.map(row => ({
+      ...row,
+      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
+      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
+      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
+    })),
+    pagination: {
+      total: parseInt(countResult.rows[0].total),
+      limit,
+      offset,
+      hasMore: offset + limit < parseInt(countResult.rows[0].total),
+    },
+  });
+}));
 
 /**
  * PUT /api/ideas/:id/restore
  * Restore an archived idea
  */
-ideasRouter.put('/:id/restore', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const result = await queryContext(
-      ctx,
-      'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
-      [req.params.id]
-    );
+ideasRouter.put('/:id/restore', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const result = await queryContext(
+    ctx,
+    'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
+    [req.params.id]
+  );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Archived idea not found' });
-    }
-
-    trackInteraction({
-      idea_id: req.params.id,
-      interaction_type: 'view',
-      metadata: { action: 'restore' },
-    }).catch((err) => console.log('Background restore tracking skipped:', err.message));
-
-    triggerWebhook('idea.updated', {
-      id: req.params.id,
-      action: 'restored'
-    }).catch((err) => console.log('Background restore webhook skipped:', err.message));
-
-    res.json({ success: true, restoredId: req.params.id, idea: result.rows[0] });
-  } catch (error: any) {
-    console.error('Error restoring idea:', error);
-    res.status(500).json({ error: error.message });
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Archived idea');
   }
-});
+
+  trackInteraction({
+    idea_id: req.params.id,
+    interaction_type: 'view',
+    metadata: { action: 'restore' },
+  }).catch((err) => logger.debug('Background restore tracking skipped', { error: err.message }));
+
+  triggerWebhook('idea.updated', {
+    id: req.params.id,
+    action: 'restored'
+  }).catch((err) => logger.debug('Background restore webhook skipped', { error: err.message }));
+
+  res.json({ success: true, restoredId: req.params.id, idea: result.rows[0] });
+}));
 
 /**
  * PUT /api/ideas/:id/archive
  * Archive an idea (soft delete)
  */
-ideasRouter.put('/:id/archive', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const result = await queryContext(
-      ctx,
-      'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id',
-      [req.params.id]
-    );
+ideasRouter.put('/:id/archive', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const result = await queryContext(
+    ctx,
+    'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id',
+    [req.params.id]
+  );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Idea not found' });
-    }
-
-    trackInteraction({
-      idea_id: req.params.id,
-      interaction_type: 'archive',
-      metadata: { action: 'archive' },
-    }).catch((err) => console.log('Background archive tracking skipped:', err.message));
-
-    // Phase 4: Trigger webhook
-    triggerWebhook('idea.archived', {
-      id: req.params.id
-    }).catch((err) => console.log('Background archive webhook skipped:', err.message));
-
-    res.json({ success: true, archivedId: req.params.id });
-  } catch (error: any) {
-    console.error('Error archiving idea:', error);
-    res.status(500).json({ error: error.message });
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Idea');
   }
-});
+
+  trackInteraction({
+    idea_id: req.params.id,
+    interaction_type: 'archive',
+    metadata: { action: 'archive' },
+  }).catch((err) => logger.debug('Background archive tracking skipped', { error: err.message }));
+
+  // Phase 4: Trigger webhook
+  triggerWebhook('idea.archived', {
+    id: req.params.id
+  }).catch((err) => logger.debug('Background archive webhook skipped', { error: err.message }));
+
+  res.json({ success: true, archivedId: req.params.id });
+}));
 
 // ===========================================
 // Phase 10: Duplicate Detection
@@ -774,85 +706,57 @@ ideasRouter.put('/:id/archive', validateUUID, async (req, res) => {
  * POST /api/ideas/check-duplicates
  * Check for potential duplicates before creating an idea
  */
-ideasRouter.post('/check-duplicates', async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const { content, title, threshold = 0.85 } = req.body;
+ideasRouter.post('/check-duplicates', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const { content, title, threshold = 0.85 } = req.body;
 
-    if (!content && !title) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Content or title is required' }
-      });
-    }
-
-    const textToCheck = content || title;
-    const result = await findDuplicates(ctx, textToCheck, threshold);
-
-    res.json({
-      success: true,
-      ...result,
-    });
-  } catch (error: any) {
-    logger.error('Check duplicates error', error, { operation: 'checkDuplicates' });
-    res.status(500).json({
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: error.message }
-    });
+  if (!content && !title) {
+    throw new ValidationError('Content or title is required');
   }
-});
+
+  const textToCheck = content || title;
+  const result = await findDuplicates(ctx, textToCheck, threshold);
+
+  res.json({
+    success: true,
+    ...result,
+  });
+}));
 
 /**
  * POST /api/ideas/:id/merge
  * Merge another idea into this one
  */
-ideasRouter.post('/:id/merge', validateUUID, async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const primaryId = req.params.id;
-    const { secondaryId } = req.body;
+ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const primaryId = req.params.id;
+  const { secondaryId } = req.body;
 
-    if (!secondaryId || !isValidUUID(secondaryId)) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Valid secondaryId is required' }
-      });
-    }
-
-    if (primaryId === secondaryId) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Cannot merge idea with itself' }
-      });
-    }
-
-    const result = await mergeIdeas(ctx, primaryId, secondaryId);
-
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'MERGE_ERROR', message: result.message }
-      });
-    }
-
-    // Fetch updated primary idea
-    const updated = await queryContext(
-      ctx,
-      `SELECT id, title, content, type, category, priority, summary, keywords, next_steps, created_at, updated_at
-       FROM ideas WHERE id = $1`,
-      [primaryId]
-    );
-
-    res.json({
-      success: true,
-      message: result.message,
-      idea: updated.rows[0],
-    });
-  } catch (error: any) {
-    logger.error('Merge ideas error', error, { operation: 'mergeIdeas' });
-    res.status(500).json({
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: error.message }
-    });
+  if (!secondaryId || !isValidUUID(secondaryId)) {
+    throw new ValidationError('Valid secondaryId is required');
   }
-});
+
+  if (primaryId === secondaryId) {
+    throw new ValidationError('Cannot merge idea with itself');
+  }
+
+  const result = await mergeIdeas(ctx, primaryId, secondaryId);
+
+  if (!result.success) {
+    throw new ValidationError(result.message);
+  }
+
+  // Fetch updated primary idea
+  const updated = await queryContext(
+    ctx,
+    `SELECT id, title, content, type, category, priority, summary, keywords, next_steps, created_at, updated_at
+     FROM ideas WHERE id = $1`,
+    [primaryId]
+  );
+
+  res.json({
+    success: true,
+    message: result.message,
+    idea: updated.rows[0],
+  });
+}));

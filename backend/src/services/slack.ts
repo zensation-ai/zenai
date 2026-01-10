@@ -8,6 +8,7 @@ import axios from 'axios';
 import { pool } from '../utils/database';
 import { triggerWebhook } from './webhooks';
 import { generateEmbedding, structureWithOllama } from '../utils/ollama';
+import { logger } from '../utils/logger';
 
 // Slack API endpoints
 const SLACK_API_BASE = 'https://slack.com/api';
@@ -228,7 +229,7 @@ export async function sendMessage(
  * Handle Slack event
  */
 export async function handleSlackEvent(event: any): Promise<void> {
-  console.log('📥 Slack event:', event.type);
+  logger.info('Slack event received', { eventType: event.type });
 
   switch (event.type) {
     case 'message':
@@ -480,7 +481,7 @@ async function createIdeaFromCommand(
       ]
     };
   } catch (error) {
-    console.error('Create idea from command error:', error);
+    logger.error('Create idea from command error', error instanceof Error ? error : undefined);
     return {
       response_type: 'ephemeral',
       text: 'Failed to create idea. Please try again.'
@@ -545,7 +546,7 @@ async function searchIdeasFromCommand(query: string): Promise<any> {
       blocks
     };
   } catch (error) {
-    console.error('Search ideas error:', error);
+    logger.error('Search ideas error', error instanceof Error ? error : undefined);
     return {
       response_type: 'ephemeral',
       text: 'Search failed. Please try again.'

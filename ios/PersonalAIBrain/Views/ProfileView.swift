@@ -51,6 +51,9 @@ struct ProfileView: View {
                         // Personalization - Phase 21
                         PersonalizationSectionView()
 
+                        // Learning Tasks - Phase 22
+                        LearningTasksSectionView()
+
                         // Export Section - Phase 18
                         ExportSectionView(showExportSheet: $showExportSheet)
 
@@ -285,6 +288,23 @@ struct SettingsSectionView: View {
             .padding()
             .background(Color(.systemGray6))
             .cornerRadius(12)
+
+            NavigationLink(destination: SettingsView()) {
+                HStack {
+                    Image(systemName: "gearshape.fill")
+                        .foregroundColor(.blue)
+                    Text("Erweiterte Einstellungen")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+            }
         }
     }
 }
@@ -305,6 +325,37 @@ struct PersonalizationSectionView: View {
                             .fontWeight(.medium)
                             .foregroundColor(.primary)
                         Text("Hilf der KI, dich besser zu verstehen")
+                            .font(.caption)
+                            .foregroundColor(.zensationTextMuted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+            }
+        }
+    }
+}
+
+// MARK: - Learning Tasks Section (Phase 22)
+
+struct LearningTasksSectionView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Lernaufgaben", systemImage: "book.fill")
+                .font(.headline)
+
+            NavigationLink(destination: LearningTasksView()) {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("Tägliche Lernaufgaben")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                        Text("Gib der KI Themen zum Lernen")
                             .font(.caption)
                             .foregroundColor(.zensationTextMuted)
                     }

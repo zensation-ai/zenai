@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const notificationsRouter = Router();
 
@@ -27,88 +29,78 @@ interface RegisterTokenRequest {
  * POST /api/notifications/register
  * Register a push notification token
  */
-notificationsRouter.post('/register', async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const { token, platform, deviceId, deviceName } = req.body as RegisterTokenRequest;
+notificationsRouter.post('/register', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getContext(req);
+  const { token, platform, deviceId, deviceName } = req.body as RegisterTokenRequest;
 
-    if (!token || !platform) {
-      return res.status(400).json({ error: 'Token and platform are required' });
-    }
-
-    // Check if token already exists
-    const existing = await queryContext(
-      ctx,
-      `SELECT id FROM push_tokens WHERE token = $1`,
-      [token]
-    );
-
-    if (existing.rows.length > 0) {
-      // Update existing token
-      await queryContext(
-        ctx,
-        `UPDATE push_tokens
-         SET device_name = COALESCE($1, device_name),
-             updated_at = NOW(),
-             is_active = true
-         WHERE token = $2`,
-        [deviceName, token]
-      );
-
-      return res.json({
-        success: true,
-        message: 'Token updated',
-        tokenId: existing.rows[0].id,
-      });
-    }
-
-    // Insert new token
-    const result = await queryContext(
-      ctx,
-      `INSERT INTO push_tokens (token, platform, device_id, device_name, is_active)
-       VALUES ($1, $2, $3, $4, true)
-       RETURNING id`,
-      [token, platform, deviceId || null, deviceName || null]
-    );
-
-    logger.info('Push token registered', { platform, context: ctx });
-
-    res.status(201).json({
-      success: true,
-      message: 'Token registered',
-      tokenId: result.rows[0].id,
-    });
-  } catch (error: any) {
-    logger.error('Token registration failed', error);
-    res.status(500).json({ error: error.message });
+  if (!token || !platform) {
+    throw new ValidationError('Token and platform are required');
   }
-});
+
+  // Check if token already exists
+  const existing = await queryContext(
+    ctx,
+    `SELECT id FROM push_tokens WHERE token = $1`,
+    [token]
+  );
+
+  if (existing.rows.length > 0) {
+    // Update existing token
+    await queryContext(
+      ctx,
+      `UPDATE push_tokens
+       SET device_name = COALESCE($1, device_name),
+           updated_at = NOW(),
+           is_active = true
+       WHERE token = $2`,
+      [deviceName, token]
+    );
+
+    return res.json({
+      success: true,
+      message: 'Token updated',
+      tokenId: existing.rows[0].id,
+    });
+  }
+
+  // Insert new token
+  const result = await queryContext(
+    ctx,
+    `INSERT INTO push_tokens (token, platform, device_id, device_name, is_active)
+     VALUES ($1, $2, $3, $4, true)
+     RETURNING id`,
+    [token, platform, deviceId || null, deviceName || null]
+  );
+
+  logger.info('Push token registered', { platform, context: ctx });
+
+  res.status(201).json({
+    success: true,
+    message: 'Token registered',
+    tokenId: result.rows[0].id,
+  });
+}));
 
 /**
  * DELETE /api/notifications/unregister
  * Unregister a push notification token
  */
-notificationsRouter.delete('/unregister', async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const { token } = req.body;
+notificationsRouter.delete('/unregister', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getContext(req);
+  const { token } = req.body;
 
-    if (!token) {
-      return res.status(400).json({ error: 'Token is required' });
-    }
-
-    await queryContext(
-      ctx,
-      `UPDATE push_tokens SET is_active = false, updated_at = NOW() WHERE token = $1`,
-      [token]
-    );
-
-    res.json({ success: true, message: 'Token unregistered' });
-  } catch (error: any) {
-    logger.error('Token unregistration failed', error);
-    res.status(500).json({ error: error.message });
+  if (!token) {
+    throw new ValidationError('Token is required');
   }
-});
+
+  await queryContext(
+    ctx,
+    `UPDATE push_tokens SET is_active = false, updated_at = NOW() WHERE token = $1`,
+    [token]
+  );
+
+  res.json({ success: true, message: 'Token unregistered' });
+}));
 
 // ============================================
 // Notification Preferences
@@ -127,73 +119,63 @@ interface NotificationPreferences {
  * GET /api/notifications/preferences
  * Get notification preferences
  */
-notificationsRouter.get('/preferences', async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
+notificationsRouter.get('/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getContext(req);
 
-    const result = await queryContext(
-      ctx,
-      `SELECT * FROM notification_preferences LIMIT 1`
-    );
+  const result = await queryContext(
+    ctx,
+    `SELECT * FROM notification_preferences LIMIT 1`
+  );
 
-    if (result.rows.length === 0) {
-      // Return defaults
-      return res.json({
-        clusterReady: true,
-        dailyDigest: false,
-        weeklyInsights: true,
-        priorityReminders: true,
-        quietHoursStart: '22:00',
-        quietHoursEnd: '08:00',
-      });
-    }
-
-    res.json(result.rows[0]);
-  } catch (error: any) {
-    logger.error('Failed to get preferences', error);
-    res.status(500).json({ error: error.message });
+  if (result.rows.length === 0) {
+    // Return defaults
+    return res.json({
+      clusterReady: true,
+      dailyDigest: false,
+      weeklyInsights: true,
+      priorityReminders: true,
+      quietHoursStart: '22:00',
+      quietHoursEnd: '08:00',
+    });
   }
-});
+
+  res.json(result.rows[0]);
+}));
 
 /**
  * PUT /api/notifications/preferences
  * Update notification preferences
  */
-notificationsRouter.put('/preferences', async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const prefs = req.body as NotificationPreferences;
+notificationsRouter.put('/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getContext(req);
+  const prefs = req.body as NotificationPreferences;
 
-    // Upsert preferences
-    await queryContext(
-      ctx,
-      `INSERT INTO notification_preferences
-         (cluster_ready, daily_digest, weekly_insights, priority_reminders, quiet_hours_start, quiet_hours_end)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (id) DO UPDATE SET
-         cluster_ready = EXCLUDED.cluster_ready,
-         daily_digest = EXCLUDED.daily_digest,
-         weekly_insights = EXCLUDED.weekly_insights,
-         priority_reminders = EXCLUDED.priority_reminders,
-         quiet_hours_start = EXCLUDED.quiet_hours_start,
-         quiet_hours_end = EXCLUDED.quiet_hours_end,
-         updated_at = NOW()`,
-      [
-        prefs.clusterReady ?? true,
-        prefs.dailyDigest ?? false,
-        prefs.weeklyInsights ?? true,
-        prefs.priorityReminders ?? true,
-        prefs.quietHoursStart || '22:00',
-        prefs.quietHoursEnd || '08:00',
-      ]
-    );
+  // Upsert preferences
+  await queryContext(
+    ctx,
+    `INSERT INTO notification_preferences
+       (cluster_ready, daily_digest, weekly_insights, priority_reminders, quiet_hours_start, quiet_hours_end)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (id) DO UPDATE SET
+       cluster_ready = EXCLUDED.cluster_ready,
+       daily_digest = EXCLUDED.daily_digest,
+       weekly_insights = EXCLUDED.weekly_insights,
+       priority_reminders = EXCLUDED.priority_reminders,
+       quiet_hours_start = EXCLUDED.quiet_hours_start,
+       quiet_hours_end = EXCLUDED.quiet_hours_end,
+       updated_at = NOW()`,
+    [
+      prefs.clusterReady ?? true,
+      prefs.dailyDigest ?? false,
+      prefs.weeklyInsights ?? true,
+      prefs.priorityReminders ?? true,
+      prefs.quietHoursStart || '22:00',
+      prefs.quietHoursEnd || '08:00',
+    ]
+  );
 
-    res.json({ success: true, message: 'Preferences updated' });
-  } catch (error: any) {
-    logger.error('Failed to update preferences', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json({ success: true, message: 'Preferences updated' });
+}));
 
 // ============================================
 // Notification Events (for triggering)
@@ -218,84 +200,74 @@ interface NotificationPayload {
  * POST /api/notifications/send (internal use / testing)
  * Trigger a notification
  */
-notificationsRouter.post('/send', async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const payload = req.body as NotificationPayload;
+notificationsRouter.post('/send', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getContext(req);
+  const payload = req.body as NotificationPayload;
 
-    if (!payload.type || !payload.title || !payload.body) {
-      return res.status(400).json({ error: 'type, title, and body are required' });
-    }
-
-    // Get active tokens
-    const tokens = await queryContext(
-      ctx,
-      `SELECT token, platform FROM push_tokens WHERE is_active = true`
-    );
-
-    if (tokens.rows.length === 0) {
-      return res.json({
-        success: true,
-        message: 'No active tokens to notify',
-        notifiedCount: 0,
-      });
-    }
-
-    // Log notification event
-    await queryContext(
-      ctx,
-      `INSERT INTO notification_history (type, title, body, data, recipients_count)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [payload.type, payload.title, payload.body, JSON.stringify(payload.data || {}), tokens.rows.length]
-    );
-
-    // In production, this would call APNs/FCM
-    // For now, we just log and return success
-    logger.info('Notification triggered', {
-      type: payload.type,
-      recipients: tokens.rows.length,
-      context: ctx,
-    });
-
-    res.json({
-      success: true,
-      message: 'Notification sent',
-      notifiedCount: tokens.rows.length,
-      // In production: include actual send results
-    });
-  } catch (error: any) {
-    logger.error('Failed to send notification', error);
-    res.status(500).json({ error: error.message });
+  if (!payload.type || !payload.title || !payload.body) {
+    throw new ValidationError('type, title, and body are required');
   }
-});
+
+  // Get active tokens
+  const tokens = await queryContext(
+    ctx,
+    `SELECT token, platform FROM push_tokens WHERE is_active = true`
+  );
+
+  if (tokens.rows.length === 0) {
+    return res.json({
+      success: true,
+      message: 'No active tokens to notify',
+      notifiedCount: 0,
+    });
+  }
+
+  // Log notification event
+  await queryContext(
+    ctx,
+    `INSERT INTO notification_history (type, title, body, data, recipients_count)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [payload.type, payload.title, payload.body, JSON.stringify(payload.data || {}), tokens.rows.length]
+  );
+
+  // In production, this would call APNs/FCM
+  // For now, we just log and return success
+  logger.info('Notification triggered', {
+    type: payload.type,
+    recipients: tokens.rows.length,
+    context: ctx,
+  });
+
+  res.json({
+    success: true,
+    message: 'Notification sent',
+    notifiedCount: tokens.rows.length,
+    // In production: include actual send results
+  });
+}));
 
 /**
  * GET /api/notifications/history
  * Get notification history
  */
-notificationsRouter.get('/history', async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const limit = parseInt(req.query.limit as string) || 20;
+notificationsRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getContext(req);
+  const limit = parseInt(req.query.limit as string) || 20;
 
-    const result = await queryContext(
-      ctx,
-      `SELECT id, type, title, body, data, recipients_count, created_at
-       FROM notification_history
-       ORDER BY created_at DESC
-       LIMIT $1`,
-      [limit]
-    );
+  const result = await queryContext(
+    ctx,
+    `SELECT id, type, title, body, data, recipients_count, created_at
+     FROM notification_history
+     ORDER BY created_at DESC
+     LIMIT $1`,
+    [limit]
+  );
 
-    res.json({
-      notifications: result.rows,
-      total: result.rows.length,
-    });
-  } catch (error: any) {
-    logger.error('Failed to get notification history', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json({
+    notifications: result.rows,
+    total: result.rows.length,
+  });
+}));
 
 // ============================================
 // Scheduled Notification Helpers

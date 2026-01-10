@@ -181,9 +181,9 @@ struct GraphContentView: View {
         VStack(spacing: 0) {
             // Stats bar
             HStack(spacing: 16) {
-                StatBadge(value: "\(graphData.stats.nodeCount)", label: "Ideen")
-                StatBadge(value: "\(graphData.stats.edgeCount)", label: "Verbindungen")
-                StatBadge(value: "\(graphData.stats.topicCount)", label: "Themen")
+                GraphStatBadge(value: "\(graphData.stats.nodeCount)", label: "Ideen")
+                GraphStatBadge(value: "\(graphData.stats.edgeCount)", label: "Verbindungen")
+                GraphStatBadge(value: "\(graphData.stats.topicCount)", label: "Themen")
                 Spacer()
 
                 if isGeneratingTopics || isDiscovering {
@@ -253,7 +253,7 @@ struct GraphContentView: View {
 
 // MARK: - Supporting Views
 
-struct StatBadge: View {
+struct GraphStatBadge: View {
     let value: String
     let label: String
 

@@ -40,6 +40,8 @@ import { digestRouter } from './routes/digest';
 import { advancedAnalyticsRouter } from './routes/analytics-advanced';
 // Phase 21: Personalization Chat
 import { personalizationChatRouter } from './routes/personalization-chat';
+// Phase 22: Learning Tasks
+import { learningTasksRouter } from './routes/learning-tasks';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -77,7 +79,14 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true);  // In production, change to: callback(new Error('Not allowed by CORS'))
+      // SECURITY: Block unauthorized origins in production
+      if (process.env.NODE_ENV === 'production') {
+        logger.warn('CORS blocked unauthorized origin', { origin, operation: 'cors' });
+        callback(new Error('Not allowed by CORS'));
+      } else {
+        // Allow in development for testing
+        callback(null, true);
+      }
     }
   },
   credentials: true,
@@ -146,6 +155,9 @@ app.use('/api', advancedAnalyticsRouter);  // Advanced analytics: /api/:context/
 // Phase 21: Personalization Chat - "Lerne mich kennen"
 app.use('/api/personalization', personalizationChatRouter);  // Chat: /api/personalization/chat, /api/personalization/facts
 
+// Phase 22: Learning Tasks - "Tägliche Lernaufgaben"
+app.use('/api', learningTasksRouter);  // Learning tasks: /api/:context/learning-tasks, /api/:context/learning-stats
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
@@ -171,7 +183,7 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-Personal AI System - Backend (Phase 21)
+Personal AI System - Backend (Phase 22)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
@@ -183,7 +195,14 @@ Phase 6 APIs (NEW!):
   - Personal Persona: Friendly, exploratory
   - Work Persona: Structured, business-focused
 
-Phase 21 APIs (NEW!):
+Phase 22 APIs (NEW!):
+  - Learning Tasks:  /api/:context/learning-tasks
+  - Create Task:     POST /api/:context/learning-tasks
+  - Log Session:     POST /api/:context/learning-tasks/:id/session
+  - Stats:           /api/:context/learning-stats
+  - Daily Summary:   /api/:context/learning-daily-summary
+
+Phase 21 APIs:
   - Start Chat:      /api/personalization/start
   - Send Message:    /api/personalization/chat
   - Get Facts:       /api/personalization/facts

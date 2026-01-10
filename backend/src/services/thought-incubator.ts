@@ -10,6 +10,7 @@ import { getPool, AIContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import { v4 as uuidv4 } from 'uuid';
 import { learnFromThought } from './learning-engine';
+import { logger } from '../utils/logger';
 
 // Types
 export interface LooseThought {
@@ -86,7 +87,9 @@ export async function addLooseThought(
     const thought = result.rows[0];
 
     // Trigger async cluster analysis (non-blocking)
-    setImmediate(() => analyzeAndAssignCluster(id, context).catch(console.error));
+    setImmediate(() => analyzeAndAssignCluster(id, context).catch(err =>
+      logger.error('Cluster analysis failed', err instanceof Error ? err : undefined)
+    ));
 
     return {
       id: thought.id,
@@ -469,6 +472,9 @@ export async function consolidateCluster(
   const client = await pool.connect();
 
   try {
+    // Start transaction
+    await client.query('BEGIN');
+
     // Get cluster with summary
     const clusterResult = await client.query(
       `SELECT * FROM thought_clusters WHERE id = $1`,
@@ -532,12 +538,19 @@ export async function consolidateCluster(
       [clusterId, ideaId]
     );
 
+    // Commit transaction
+    await client.query('COMMIT');
+
     // Learn from the consolidated idea (async, non-blocking)
     learnFromThought(ideaId).catch(err =>
-      console.log('Background learning from consolidated idea skipped:', err.message)
+      logger.debug('Background learning from consolidated idea skipped', { error: err.message })
     );
 
     return ideaId;
+  } catch (error) {
+    // Rollback transaction on error
+    await client.query('ROLLBACK');
+    throw error;
   } finally {
     client.release();
   }

@@ -2,7 +2,10 @@ import express, { Request, Response } from 'express';
 import { queryContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
+import { apiKeyAuth } from '../middleware/auth';
+import { logger } from '../utils/logger';
 import crypto from 'crypto';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 const router = express.Router();
 
@@ -12,38 +15,31 @@ const router = express.Router();
  *
  * Example: All content related to "Firmengründung" grouped together
  */
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const { query: searchQuery, minItems = '2', similarityThreshold = '0.7' } = req.query;
+router.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { query: searchQuery, minItems = '2', similarityThreshold = '0.7' } = req.query;
 
-    // If a search query is provided, find related stories
-    if (searchQuery && typeof searchQuery === 'string') {
-      const stories = await findStoriesByQuery(
-        searchQuery,
-        parseInt(minItems as string),
-        parseFloat(similarityThreshold as string)
-      );
+  // If a search query is provided, find related stories
+  if (searchQuery && typeof searchQuery === 'string') {
+    const stories = await findStoriesByQuery(
+      searchQuery,
+      parseInt(minItems as string),
+      parseFloat(similarityThreshold as string)
+    );
 
-      return res.json({
-        stories,
-        total: stories.length
-      });
-    }
-
-    // Otherwise, return pre-computed story clusters
-    const stories = await getAllStories();
-
-    res.json({
+    return res.json({
       stories,
       total: stories.length
     });
-
-  } catch (error: any) {
-    console.error('❌ Error fetching stories:', error);
-    // Return empty array instead of error if no ideas exist
-    res.json({ stories: [], total: 0, message: 'No ideas with embeddings found yet' });
   }
-});
+
+  // Otherwise, return pre-computed story clusters
+  const stories = await getAllStories();
+
+  res.json({
+    stories,
+    total: stories.length
+  });
+}));
 
 /**
  * Find stories by semantic search query
@@ -53,7 +49,7 @@ async function findStoriesByQuery(
   minItems: number,
   similarityThreshold: number
 ): Promise<any[]> {
-  console.log(`🔍 Finding stories for: "${searchQuery}"`);
+  logger.info('Finding stories', { searchQuery });
 
   // 1. Generate embedding for search query
   const queryEmbedding = await generateEmbedding(searchQuery);

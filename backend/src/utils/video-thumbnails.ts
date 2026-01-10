@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs/promises';
+import { logger } from './logger';
 
 const execAsync = promisify(exec);
 
@@ -79,7 +80,7 @@ export async function generateVideoThumbnail(
       await execAsync(fallbackCmd);
     }
 
-    console.log(`✅ Generated thumbnail: ${thumbnailFilename}`);
+    logger.info('Generated video thumbnail', { thumbnailFilename });
 
     return {
       success: true,
@@ -90,7 +91,7 @@ export async function generateVideoThumbnail(
     };
 
   } catch (error) {
-    console.error('Thumbnail generation error:', error);
+    logger.error('Thumbnail generation error', error instanceof Error ? error : undefined);
     return {
       success: false,
       thumbnailPath: null,
@@ -150,7 +151,7 @@ export async function generateVideoThumbnailStrip(
     };
 
   } catch (error) {
-    console.error('Thumbnail strip generation error:', error);
+    logger.error('Thumbnail strip generation error', error instanceof Error ? error : undefined);
     return {
       success: false,
       thumbnails: [],
@@ -183,7 +184,7 @@ export async function getVideoInfo(videoPath: string): Promise<{
     };
 
   } catch (error) {
-    console.error('Error getting video info:', error);
+    logger.error('Error getting video info', error instanceof Error ? error : undefined);
     return {
       duration: null,
       width: null,
@@ -228,7 +229,7 @@ export async function generateVideoGifPreview(
 
     await execAsync(cmd);
 
-    console.log(`✅ Generated GIF preview: ${gifFilename}`);
+    logger.info('Generated GIF preview', { gifFilename });
 
     return {
       success: true,
@@ -236,7 +237,7 @@ export async function generateVideoGifPreview(
     };
 
   } catch (error) {
-    console.error('GIF generation error:', error);
+    logger.error('GIF generation error', error instanceof Error ? error : undefined);
     return {
       success: false,
       gifPath: null

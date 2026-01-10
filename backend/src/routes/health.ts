@@ -14,6 +14,7 @@ import { testConnections, getPoolStats } from '../utils/database-context';
 import { checkOllamaHealth } from '../utils/ollama';
 import { getCacheStats } from '../utils/cache';
 import { getAvailableServices } from '../services/ai';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 // Version from package.json - read at startup
 const packageJson = require('../../package.json');
@@ -28,7 +29,7 @@ const serverStartTime = Date.now();
  * @route GET /api/health
  * @description Comprehensive health check endpoint
  */
-healthRouter.get('/', async (req, res) => {
+healthRouter.get('/', asyncHandler(async (req, res) => {
   const startTime = Date.now();
 
   // Gather all health checks in parallel
@@ -107,21 +108,21 @@ healthRouter.get('/', async (req, res) => {
   const httpStatus = status.status === 'healthy' ? 200 :
                      status.status === 'degraded' ? 200 : 503;
   res.status(httpStatus).json(status);
-});
+}));
 
 /**
  * @route GET /api/health/live
  * @description Kubernetes liveness probe - minimal check
  */
-healthRouter.get('/live', (req, res) => {
+healthRouter.get('/live', asyncHandler(async (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+}));
 
 /**
  * @route GET /api/health/ready
  * @description Kubernetes readiness probe - checks critical services
  */
-healthRouter.get('/ready', async (req, res) => {
+healthRouter.get('/ready', asyncHandler(async (req, res) => {
   const dbHealth = await testConnections().catch(() => ({ personal: false, work: false }));
 
   const isReady = dbHealth.personal || dbHealth.work;
@@ -142,7 +143,7 @@ healthRouter.get('/ready', async (req, res) => {
       reason: 'No database connections available',
     });
   }
-});
+}));
 
 // Helper functions
 function formatUptime(ms: number): string {

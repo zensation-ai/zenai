@@ -5,8 +5,9 @@
  * on the 768-dimensional embeddings stored in PostgreSQL.
  */
 
-import { queryContext, AIContext } from '../utils/database-context';
+import { queryContext, AIContext, getPool } from '../utils/database-context';
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
@@ -63,7 +64,7 @@ export async function generateTopics(
   const startTime = Date.now();
   const { minClusterSize = 2, maxClusters = 10 } = options;
 
-  console.log(`[Topic Clustering] Starting for context: ${context}`);
+  logger.info('Topic clustering started', { context });
 
   // 1. Get all ideas with embeddings
   const ideasResult = await queryContext(context, `
@@ -84,10 +85,10 @@ export async function generateTopics(
       embedding: parseEmbedding(row.embedding),
     }));
 
-  console.log(`[Topic Clustering] Found ${ideas.length} ideas with embeddings`);
+  logger.debug('Found ideas with embeddings', { count: ideas.length });
 
   if (ideas.length < minClusterSize * 2) {
-    console.log('[Topic Clustering] Not enough ideas for clustering');
+    logger.debug('Not enough ideas for clustering', { count: ideas.length, minRequired: minClusterSize * 2 });
     return {
       success: false,
       topicsCreated: 0,
@@ -99,84 +100,102 @@ export async function generateTopics(
 
   // 2. Determine optimal number of clusters
   const k = Math.min(maxClusters, Math.max(2, Math.floor(ideas.length / 3)));
-  console.log(`[Topic Clustering] Using k=${k} clusters`);
+  logger.debug('Determined optimal cluster count', { k, ideaCount: ideas.length });
 
   // 3. Run K-Means clustering
   const clusters = kMeansClustering(ideas, k, 20);
 
   // 4. Filter out small clusters
   const validClusters = clusters.filter(c => c.ideaIds.length >= minClusterSize);
-  console.log(`[Topic Clustering] ${validClusters.length} valid clusters (>= ${minClusterSize} ideas)`);
+  logger.debug('Valid clusters found', { validCount: validClusters.length, minClusterSize });
 
-  // 5. Clear existing auto-generated topics
-  await queryContext(context, `
-    DELETE FROM idea_topic_memberships
-    WHERE topic_id IN (
-      SELECT id FROM idea_topics WHERE context = $1 AND is_auto_generated = TRUE
-    )
-  `, [context]);
+  // 5-6. Database operations in transaction
+  const pool = getPool(context);
+  const client = await pool.connect();
 
-  await queryContext(context, `
-    DELETE FROM idea_topics WHERE context = $1 AND is_auto_generated = TRUE
-  `, [context]);
-
-  // 6. Create new topics with LLM-generated names
   let topicsCreated = 0;
   let ideasAssigned = 0;
 
-  for (let i = 0; i < validClusters.length; i++) {
-    const cluster = validClusters[i];
-    const clusterIdeas = ideas.filter(idea => cluster.ideaIds.includes(idea.id));
+  try {
+    // Start transaction
+    await client.query('BEGIN');
 
-    // Generate topic name and description using LLM
-    const topicInfo = await labelCluster(clusterIdeas);
+    // Clear existing auto-generated topics
+    await client.query(`
+      DELETE FROM idea_topic_memberships
+      WHERE topic_id IN (
+        SELECT id FROM idea_topics WHERE context = $1 AND is_auto_generated = TRUE
+      )
+    `, [context]);
 
-    // Calculate centroid embedding
-    const centroid = cluster.centroid;
-    const centroidStr = `[${centroid.join(',')}]`;
+    await client.query(`
+      DELETE FROM idea_topics WHERE context = $1 AND is_auto_generated = TRUE
+    `, [context]);
 
-    // Create topic
-    const topicResult = await queryContext(context, `
-      INSERT INTO idea_topics (context, name, description, color, icon, centroid_embedding, is_auto_generated, confidence_score)
-      VALUES ($1, $2, $3, $4, $5, $6::vector, TRUE, $7)
-      RETURNING id
-    `, [
-      context,
-      topicInfo.name,
-      topicInfo.description,
-      TOPIC_COLORS[i % TOPIC_COLORS.length],
-      TOPIC_ICONS[i % TOPIC_ICONS.length],
-      centroidStr,
-      cluster.coherence,
-    ]);
+    // Create new topics with LLM-generated names
+    for (let i = 0; i < validClusters.length; i++) {
+      const cluster = validClusters[i];
+      const clusterIdeas = ideas.filter(idea => cluster.ideaIds.includes(idea.id));
 
-    const topicId = topicResult.rows[0].id;
-    topicsCreated++;
+      // Generate topic name and description using LLM
+      const topicInfo = await labelCluster(clusterIdeas);
 
-    // Assign ideas to topic
-    for (const ideaId of cluster.ideaIds) {
-      const membershipScore = calculateMembershipScore(
-        ideas.find(i => i.id === ideaId)!.embedding,
-        centroid
-      );
+      // Calculate centroid embedding
+      const centroid = cluster.centroid;
+      const centroidStr = `[${centroid.join(',')}]`;
 
-      await queryContext(context, `
-        INSERT INTO idea_topic_memberships (idea_id, topic_id, membership_score, is_primary)
-        VALUES ($1, $2, $3, TRUE)
-        ON CONFLICT (idea_id, topic_id) DO UPDATE SET membership_score = $3
-      `, [ideaId, topicId, membershipScore]);
+      // Create topic
+      const topicResult = await client.query(`
+        INSERT INTO idea_topics (context, name, description, color, icon, centroid_embedding, is_auto_generated, confidence_score)
+        VALUES ($1, $2, $3, $4, $5, $6::vector, TRUE, $7)
+        RETURNING id
+      `, [
+        context,
+        topicInfo.name,
+        topicInfo.description,
+        TOPIC_COLORS[i % TOPIC_COLORS.length],
+        TOPIC_ICONS[i % TOPIC_ICONS.length],
+        centroidStr,
+        cluster.coherence,
+      ]);
 
-      // Update primary_topic_id on idea
-      await queryContext(context, `
-        UPDATE ideas SET primary_topic_id = $1 WHERE id = $2
-      `, [topicId, ideaId]);
+      const topicId = topicResult.rows[0].id;
+      topicsCreated++;
 
-      ideasAssigned++;
+      // Assign ideas to topic
+      for (const ideaId of cluster.ideaIds) {
+        const membershipScore = calculateMembershipScore(
+          ideas.find(i => i.id === ideaId)!.embedding,
+          centroid
+        );
+
+        await client.query(`
+          INSERT INTO idea_topic_memberships (idea_id, topic_id, membership_score, is_primary)
+          VALUES ($1, $2, $3, TRUE)
+          ON CONFLICT (idea_id, topic_id) DO UPDATE SET membership_score = $3
+        `, [ideaId, topicId, membershipScore]);
+
+        // Update primary_topic_id on idea
+        await client.query(`
+          UPDATE ideas SET primary_topic_id = $1 WHERE id = $2
+        `, [topicId, ideaId]);
+
+        ideasAssigned++;
+      }
     }
+
+    // Commit transaction
+    await client.query('COMMIT');
+  } catch (error) {
+    // Rollback transaction on error
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
 
   const processingTime = Date.now() - startTime;
-  console.log(`[Topic Clustering] Complete: ${topicsCreated} topics, ${ideasAssigned} ideas assigned in ${processingTime}ms`);
+  logger.info('Topic clustering complete', { topicsCreated, ideasAssigned, processingTime });
 
   return {
     success: true,
@@ -252,7 +271,7 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
     }
 
     if (converged) {
-      console.log(`[K-Means] Converged at iteration ${iteration + 1}`);
+      logger.debug('K-Means converged', { iteration: iteration + 1 });
       break;
     }
   }
@@ -365,7 +384,7 @@ Antworte NUR mit validem JSON in diesem Format:
       };
     }
   } catch (error) {
-    console.error('[Topic Clustering] LLM labeling failed:', error);
+    logger.error('LLM labeling failed', error instanceof Error ? error : undefined);
   }
 
   // Fallback: use first idea's title
@@ -518,72 +537,89 @@ export async function mergeTopics(
 ): Promise<Topic | null> {
   if (topicIds.length < 2) return null;
 
-  // Get all ideas from all topics
-  const ideasResult = await queryContext(context, `
-    SELECT DISTINCT idea_id
-    FROM idea_topic_memberships
-    WHERE topic_id = ANY($1)
-  `, [topicIds]);
+  const pool = getPool(context);
+  const client = await pool.connect();
 
-  const ideaIds = ideasResult.rows.map(r => r.idea_id);
+  try {
+    // Start transaction
+    await client.query('BEGIN');
 
-  // Calculate new centroid (average of all idea embeddings)
-  const embeddingsResult = await queryContext(context, `
-    SELECT embedding
-    FROM ideas
-    WHERE id = ANY($1) AND embedding IS NOT NULL
-  `, [ideaIds]);
+    // Get all ideas from all topics
+    const ideasResult = await client.query(`
+      SELECT DISTINCT idea_id
+      FROM idea_topic_memberships
+      WHERE topic_id = ANY($1)
+    `, [topicIds]);
 
-  const dim = 768;
-  const newCentroid = new Array(dim).fill(0);
-  let count = 0;
+    const ideaIds = ideasResult.rows.map(r => r.idea_id);
 
-  for (const row of embeddingsResult.rows) {
-    const embedding = parseEmbedding(row.embedding);
-    for (let d = 0; d < dim; d++) {
-      newCentroid[d] += embedding[d];
+    // Calculate new centroid (average of all idea embeddings)
+    const embeddingsResult = await client.query(`
+      SELECT embedding
+      FROM ideas
+      WHERE id = ANY($1) AND embedding IS NOT NULL
+    `, [ideaIds]);
+
+    const dim = 768;
+    const newCentroid = new Array(dim).fill(0);
+    let count = 0;
+
+    for (const row of embeddingsResult.rows) {
+      const embedding = parseEmbedding(row.embedding);
+      for (let d = 0; d < dim; d++) {
+        newCentroid[d] += embedding[d];
+      }
+      count++;
     }
-    count++;
-  }
 
-  if (count > 0) {
-    for (let d = 0; d < dim; d++) {
-      newCentroid[d] /= count;
+    if (count > 0) {
+      for (let d = 0; d < dim; d++) {
+        newCentroid[d] /= count;
+      }
     }
+
+    // Delete old topics and memberships
+    await client.query(`
+      DELETE FROM idea_topic_memberships WHERE topic_id = ANY($1)
+    `, [topicIds]);
+
+    await client.query(`
+      DELETE FROM idea_topics WHERE id = ANY($1)
+    `, [topicIds]);
+
+    // Create new merged topic
+    const centroidStr = `[${newCentroid.join(',')}]`;
+    const newTopicResult = await client.query(`
+      INSERT INTO idea_topics (context, name, color, icon, centroid_embedding, is_auto_generated)
+      VALUES ($1, $2, $3, $4, $5::vector, FALSE)
+      RETURNING id
+    `, [context, newName, TOPIC_COLORS[0], '🔗', centroidStr]);
+
+    const newTopicId = newTopicResult.rows[0].id;
+
+    // Reassign all ideas
+    for (const ideaId of ideaIds) {
+      await client.query(`
+        INSERT INTO idea_topic_memberships (idea_id, topic_id, membership_score, is_primary)
+        VALUES ($1, $2, 1.0, TRUE)
+      `, [ideaId, newTopicId]);
+
+      await client.query(`
+        UPDATE ideas SET primary_topic_id = $1 WHERE id = $2
+      `, [newTopicId, ideaId]);
+    }
+
+    // Commit transaction
+    await client.query('COMMIT');
+
+    return getTopicWithIdeas(context, newTopicId).then(r => r?.topic || null);
+  } catch (error) {
+    // Rollback transaction on error
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
-
-  // Delete old topics and memberships
-  await queryContext(context, `
-    DELETE FROM idea_topic_memberships WHERE topic_id = ANY($1)
-  `, [topicIds]);
-
-  await queryContext(context, `
-    DELETE FROM idea_topics WHERE id = ANY($1)
-  `, [topicIds]);
-
-  // Create new merged topic
-  const centroidStr = `[${newCentroid.join(',')}]`;
-  const newTopicResult = await queryContext(context, `
-    INSERT INTO idea_topics (context, name, color, icon, centroid_embedding, is_auto_generated)
-    VALUES ($1, $2, $3, $4, $5::vector, FALSE)
-    RETURNING id
-  `, [context, newName, TOPIC_COLORS[0], '🔗', centroidStr]);
-
-  const newTopicId = newTopicResult.rows[0].id;
-
-  // Reassign all ideas
-  for (const ideaId of ideaIds) {
-    await queryContext(context, `
-      INSERT INTO idea_topic_memberships (idea_id, topic_id, membership_score, is_primary)
-      VALUES ($1, $2, 1.0, TRUE)
-    `, [ideaId, newTopicId]);
-
-    await queryContext(context, `
-      UPDATE ideas SET primary_topic_id = $1 WHERE id = $2
-    `, [newTopicId, ideaId]);
-  }
-
-  return getTopicWithIdeas(context, newTopicId).then(r => r?.topic || null);
 }
 
 // ============================================

@@ -13,6 +13,7 @@
 import { pool, query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
+import { logger } from '../utils/logger';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
@@ -64,7 +65,7 @@ export async function suggestFromLearning(
 
     // Schon ab 3 Ideen anfangen zu lernen
     if (ideaCount < CONFIG.MIN_SAMPLES_FOR_SUGGESTIONS) {
-      console.log(`Learning: Nur ${ideaCount} Ideen, brauche mindestens ${CONFIG.MIN_SAMPLES_FOR_SUGGESTIONS}`);
+      logger.debug('Learning: Not enough ideas for suggestions', { ideaCount, minRequired: CONFIG.MIN_SAMPLES_FOR_SUGGESTIONS });
       return null;
     }
 
@@ -91,7 +92,7 @@ export async function suggestFromLearning(
     try {
       inputEmbedding = await generateEmbedding(text);
     } catch (err) {
-      console.log('Learning: Embedding generation failed, using keyword-only mode');
+      logger.debug('Learning: Embedding generation failed, using keyword-only mode');
     }
 
     // Initialize counters
@@ -223,7 +224,14 @@ export async function suggestFromLearning(
       reasons.push('gelernte Priority-Keywords');
     }
 
-    console.log(`Learning suggestion: type=${suggestedType} (${typeConfidence.toFixed(2)}), cat=${suggestedCategory} (${categoryConfidence.toFixed(2)}), prio=${suggestedPriority} (${priorityConfidence.toFixed(2)})`);
+    logger.debug('Learning suggestion', {
+      type: suggestedType,
+      typeConfidence: typeConfidence.toFixed(2),
+      category: suggestedCategory,
+      categoryConfidence: categoryConfidence.toFixed(2),
+      priority: suggestedPriority,
+      priorityConfidence: priorityConfidence.toFixed(2)
+    });
 
     return {
       suggested_type: suggestedType,
@@ -236,7 +244,7 @@ export async function suggestFromLearning(
     };
 
   } catch (error) {
-    console.error('Learning suggestion error:', error);
+    logger.error('Learning suggestion error', error instanceof Error ? error : undefined);
     return null;
   } finally {
     client.release();
@@ -289,7 +297,7 @@ export async function learnFromThought(
     );
 
     if (ideaResult.rows.length === 0) {
-      console.log(`Learning: Idea ${ideaId} not found`);
+      logger.debug('Learning: Idea not found', { ideaId });
       return;
     }
 
@@ -297,7 +305,14 @@ export async function learnFromThought(
 
     // Lernstärke: User-Korrekturen zählen 5x mehr als LLM-Klassifizierungen
     const learningWeight = isUserCorrected ? 5 : 1;
-    console.log(`Learning from idea: ${ideaId} (${idea.type}/${idea.category}/${idea.priority}) [weight: ${learningWeight}x, user_corrected: ${isUserCorrected}]`);
+    logger.debug('Learning from idea', {
+      ideaId,
+      type: idea.type,
+      category: idea.category,
+      priority: idea.priority,
+      learningWeight,
+      isUserCorrected
+    });
 
     // Stelle sicher, dass Profil existiert
     await client.query(
@@ -342,10 +357,10 @@ export async function learnFromThought(
     // 10. Decay alte Präferenzen (verhindert Verfestigung)
     await applyPreferenceDecay(client, userId);
 
-    console.log(`Learning complete for idea: ${ideaId}`);
+    logger.debug('Learning complete for idea', { ideaId });
 
   } catch (error) {
-    console.error('Learning from thought error:', error);
+    logger.error('Learning from thought error', error instanceof Error ? error : undefined);
   } finally {
     client.release();
   }
@@ -370,7 +385,7 @@ export async function learnFromCorrection(
   const client = await pool.connect();
 
   try {
-    console.log(`Learning from user correction on idea ${ideaId}:`, corrections);
+    logger.debug('Learning from user correction', { ideaId, corrections });
 
     // Stelle sicher, dass Profil existiert
     await client.query(
@@ -382,13 +397,19 @@ export async function learnFromCorrection(
     if (corrections.oldCategory && corrections.newCategory && corrections.oldCategory !== corrections.newCategory) {
       await decrementPreference(client, userId, 'preferred_categories', corrections.oldCategory, 3);
       await incrementPreference(client, userId, 'preferred_categories', corrections.newCategory, 5);
-      console.log(`  Category correction: ${corrections.oldCategory} (-3) -> ${corrections.newCategory} (+5)`);
+      logger.debug('Category correction learned', {
+        from: corrections.oldCategory,
+        to: corrections.newCategory
+      });
     }
 
     if (corrections.oldType && corrections.newType && corrections.oldType !== corrections.newType) {
       await decrementPreference(client, userId, 'preferred_types', corrections.oldType, 3);
       await incrementPreference(client, userId, 'preferred_types', corrections.newType, 5);
-      console.log(`  Type correction: ${corrections.oldType} (-3) -> ${corrections.newType} (+5)`);
+      logger.debug('Type correction learned', {
+        from: corrections.oldType,
+        to: corrections.newType
+      });
     }
 
     // Priority-Keywords: Entferne Keywords von falscher Priorität
@@ -401,7 +422,7 @@ export async function learnFromCorrection(
         const keywords = parseJsonb(ideaResult.rows[0].keywords) || [];
         // Lerne die richtige Priorität für diese Keywords
         await learnPriorityKeywords(client, userId, keywords, corrections.newPriority);
-        console.log(`  Priority keywords updated for: ${keywords.join(', ')}`);
+        logger.debug('Priority keywords updated', { keywords });
       }
     }
 
@@ -409,7 +430,7 @@ export async function learnFromCorrection(
     await reduceConfidenceAfterError(client, userId);
 
   } catch (error) {
-    console.error('Learning from correction error:', error);
+    logger.error('Learning from correction error', error instanceof Error ? error : undefined);
   } finally {
     client.release();
   }
@@ -431,9 +452,9 @@ async function reduceConfidenceAfterError(client: any, userId: string): Promise<
        WHERE id = $1`,
       [userId]
     );
-    console.log('  Confidence reduced by 0.05 due to correction');
+    logger.debug('Confidence reduced by 0.05 due to correction');
   } catch (error) {
-    console.error('Error reducing confidence:', error);
+    logger.error('Error reducing confidence', error instanceof Error ? error : undefined);
   }
 }
 
@@ -485,7 +506,7 @@ async function applyPreferenceDecay(client: any, userId: string): Promise<void> 
       );
     }
   } catch (error) {
-    console.error('Error applying preference decay:', error);
+    logger.error('Error applying preference decay', error instanceof Error ? error : undefined);
   }
 }
 
@@ -512,7 +533,7 @@ async function incrementPreference(
       [userId, [key], key, weight]
     );
   } catch (error) {
-    console.error(`Error incrementing ${field}.${key}:`, error);
+    logger.error('Error incrementing field', error instanceof Error ? error : undefined, { field, key });
   }
 }
 
@@ -539,7 +560,7 @@ async function decrementPreference(
       [userId, [key], key, weight]
     );
   } catch (error) {
-    console.error(`Error decrementing ${field}.${key}:`, error);
+    logger.error('Error decrementing field', error instanceof Error ? error : undefined, { field, key });
   }
 }
 
@@ -568,7 +589,7 @@ async function incrementTopicInterest(
       [userId, [normalizedTopic], normalizedTopic, weight]
     );
   } catch (error) {
-    console.error(`Error incrementing topic ${normalizedTopic}:`, error);
+    logger.error('Error incrementing topic', error instanceof Error ? error : undefined, { topic: normalizedTopic });
   }
 }
 
@@ -626,7 +647,7 @@ async function learnPriorityKeywords(
       [userId, JSON.stringify(priorityKeywords)]
     );
   } catch (error) {
-    console.error('Error learning priority keywords:', error);
+    logger.error('Error learning priority keywords', error instanceof Error ? error : undefined);
   }
 }
 
@@ -707,7 +728,7 @@ async function updateThinkingPatterns(
       [userId, JSON.stringify(patterns)]
     );
   } catch (error) {
-    console.error('Error updating thinking patterns:', error);
+    logger.error('Error updating thinking patterns', error instanceof Error ? error : undefined);
   }
 }
 
@@ -767,7 +788,7 @@ async function updateLanguageStyle(
       [userId, JSON.stringify(style)]
     );
   } catch (error) {
-    console.error('Error updating language style:', error);
+    logger.error('Error updating language style', error instanceof Error ? error : undefined);
   }
 }
 
@@ -821,7 +842,7 @@ async function updateTopicChains(
       );
     }
   } catch (error) {
-    console.error('Error updating topic chains:', error);
+    logger.error('Error updating topic chains', error instanceof Error ? error : undefined);
   }
 }
 
@@ -864,7 +885,7 @@ async function updateLearningConfidence(
       [userId, confidence]
     );
   } catch (error) {
-    console.error('Error updating learning confidence:', error);
+    logger.error('Error updating learning confidence', error instanceof Error ? error : undefined);
   }
 }
 
@@ -986,7 +1007,7 @@ export async function runDailyLearning(userId: string = 'default'): Promise<{
     };
 
   } catch (error) {
-    console.error('Daily learning error:', error);
+    logger.error('Daily learning error', error instanceof Error ? error : undefined);
     return { insights: [], patterns_updated: false, confidence: 0 };
   } finally {
     client.release();
@@ -1024,7 +1045,7 @@ async function updateInterestEmbedding(
       );
     }
   } catch (error) {
-    console.error('Error updating interest embedding:', error);
+    logger.error('Error updating interest embedding', error instanceof Error ? error : undefined);
   }
 }
 
@@ -1080,7 +1101,7 @@ export async function getPersonalizedPromptContext(
     return contextParts.length > 1 ? contextParts.join('\n') : '';
 
   } catch (error) {
-    console.error('Error getting personalized context:', error);
+    logger.error('Error getting personalized context', error instanceof Error ? error : undefined);
     return '';
   } finally {
     client.release();

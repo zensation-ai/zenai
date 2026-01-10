@@ -1,6 +1,8 @@
 /**
  * Phase 4: Integrations Routes
  * Manage external integrations (Microsoft, Slack, etc.)
+ * SECURITY: All endpoints require authentication (handles OAuth tokens!)
+ * NOTE: OAuth callbacks should validate state parameter instead of API key
  */
 
 import { Router, Request, Response } from 'express';
@@ -8,6 +10,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../utils/database';
 import * as microsoft from '../services/microsoft';
 import * as slack from '../services/slack';
+import { apiKeyAuth, requireScope, optionalAuth } from '../middleware/auth';
+import { logger } from '../utils/logger';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const integrationsRouter = Router();
 
@@ -19,157 +24,133 @@ export const integrationsRouter = Router();
  * GET /api/integrations
  * List all available integrations and their status
  */
-integrationsRouter.get('/', async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, provider, name, is_enabled, config, sync_settings,
-              last_sync_at, sync_status, error_message, created_at
-       FROM integrations
-       ORDER BY provider`
-    );
+integrationsRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const result = await pool.query(
+    `SELECT id, provider, name, is_enabled, config, sync_settings,
+            last_sync_at, sync_status, error_message, created_at
+     FROM integrations
+     ORDER BY provider`
+  );
 
-    // Check connection status for each provider
-    const microsoftConnected = await microsoft.isMicrosoftConnected();
-    const slackConnected = await slack.isSlackConnected();
+  // Check connection status for each provider
+  const microsoftConnected = await microsoft.isMicrosoftConnected();
+  const slackConnected = await slack.isSlackConnected();
 
-    // Default integrations if none exist
-    const defaultIntegrations = [
-      {
-        id: 'microsoft',
-        provider: 'microsoft',
-        name: 'Microsoft 365',
-        description: 'Sync Outlook calendar events and create ideas from meetings',
-        isEnabled: false,
-        isConnected: microsoftConnected,
-        features: ['Calendar Sync', 'Meeting Import', 'Create Events']
-      },
-      {
-        id: 'slack',
-        provider: 'slack',
-        name: 'Slack',
-        description: 'Create ideas from Slack messages and get notifications',
-        isEnabled: false,
-        isConnected: slackConnected,
-        features: ['Message to Idea', 'Slash Commands', 'Notifications']
-      }
-    ];
+  // Default integrations if none exist
+  const defaultIntegrations = [
+    {
+      id: 'microsoft',
+      provider: 'microsoft',
+      name: 'Microsoft 365',
+      description: 'Sync Outlook calendar events and create ideas from meetings',
+      isEnabled: false,
+      isConnected: microsoftConnected,
+      features: ['Calendar Sync', 'Meeting Import', 'Create Events']
+    },
+    {
+      id: 'slack',
+      provider: 'slack',
+      name: 'Slack',
+      description: 'Create ideas from Slack messages and get notifications',
+      isEnabled: false,
+      isConnected: slackConnected,
+      features: ['Message to Idea', 'Slash Commands', 'Notifications']
+    }
+  ];
 
-    // Merge database results with defaults
-    const integrations = defaultIntegrations.map(def => {
-      const dbRecord = result.rows.find(r => r.provider === def.provider);
-      return {
-        ...def,
-        isEnabled: dbRecord?.is_enabled || false,
-        config: dbRecord?.config || {},
-        syncSettings: dbRecord?.sync_settings || { auto_sync: false, sync_interval_minutes: 60 },
-        lastSyncAt: dbRecord?.last_sync_at,
-        syncStatus: dbRecord?.sync_status || 'idle',
-        errorMessage: dbRecord?.error_message
-      };
-    });
+  // Merge database results with defaults
+  const integrations = defaultIntegrations.map(def => {
+    const dbRecord = result.rows.find(r => r.provider === def.provider);
+    return {
+      ...def,
+      isEnabled: dbRecord?.is_enabled || false,
+      config: dbRecord?.config || {},
+      syncSettings: dbRecord?.sync_settings || { auto_sync: false, sync_interval_minutes: 60 },
+      lastSyncAt: dbRecord?.last_sync_at,
+      syncStatus: dbRecord?.sync_status || 'idle',
+      errorMessage: dbRecord?.error_message
+    };
+  });
 
-    res.json({
-      success: true,
-      integrations
-    });
-  } catch (error) {
-    console.error('List integrations error:', error);
-    res.status(500).json({
-      error: 'Failed to list integrations',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    integrations
+  });
+}));
 
 /**
  * GET /api/integrations/:provider
  * Get specific integration details
  */
-integrationsRouter.get('/:provider', async (req: Request, res: Response) => {
-  try {
-    const { provider } = req.params;
+integrationsRouter.get('/:provider', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { provider } = req.params;
 
-    const result = await pool.query(
-      `SELECT id, provider, name, is_enabled, config, sync_settings,
-              last_sync_at, sync_status, error_message, created_at
-       FROM integrations
-       WHERE provider = $1`,
-      [provider]
-    );
+  const result = await pool.query(
+    `SELECT id, provider, name, is_enabled, config, sync_settings,
+            last_sync_at, sync_status, error_message, created_at
+     FROM integrations
+     WHERE provider = $1`,
+    [provider]
+  );
 
-    let isConnected = false;
-    if (provider === 'microsoft') {
-      isConnected = await microsoft.isMicrosoftConnected();
-    } else if (provider === 'slack') {
-      isConnected = await slack.isSlackConnected();
-    }
-
-    const row = result.rows[0];
-
-    res.json({
-      success: true,
-      integration: {
-        id: row?.id || provider,
-        provider,
-        name: row?.name || provider.charAt(0).toUpperCase() + provider.slice(1),
-        isEnabled: row?.is_enabled || false,
-        isConnected,
-        config: row?.config || {},
-        syncSettings: row?.sync_settings || { auto_sync: false, sync_interval_minutes: 60 },
-        lastSyncAt: row?.last_sync_at,
-        syncStatus: row?.sync_status || 'idle',
-        errorMessage: row?.error_message
-      }
-    });
-  } catch (error) {
-    console.error('Get integration error:', error);
-    res.status(500).json({
-      error: 'Failed to get integration',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+  let isConnected = false;
+  if (provider === 'microsoft') {
+    isConnected = await microsoft.isMicrosoftConnected();
+  } else if (provider === 'slack') {
+    isConnected = await slack.isSlackConnected();
   }
-});
+
+  const row = result.rows[0];
+
+  res.json({
+    success: true,
+    integration: {
+      id: row?.id || provider,
+      provider,
+      name: row?.name || provider.charAt(0).toUpperCase() + provider.slice(1),
+      isEnabled: row?.is_enabled || false,
+      isConnected,
+      config: row?.config || {},
+      syncSettings: row?.sync_settings || { auto_sync: false, sync_interval_minutes: 60 },
+      lastSyncAt: row?.last_sync_at,
+      syncStatus: row?.sync_status || 'idle',
+      errorMessage: row?.error_message
+    }
+  });
+}));
 
 /**
  * PATCH /api/integrations/:provider
  * Update integration settings
  */
-integrationsRouter.patch('/:provider', async (req: Request, res: Response) => {
-  try {
-    const { provider } = req.params;
-    const { isEnabled, syncSettings, config } = req.body;
+integrationsRouter.patch('/:provider', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { provider } = req.params;
+  const { isEnabled, syncSettings, config } = req.body;
 
-    // Upsert integration record
-    await pool.query(
-      `INSERT INTO integrations (id, provider, name, is_enabled, config, sync_settings)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (id) DO UPDATE SET
-         is_enabled = COALESCE($4, integrations.is_enabled),
-         config = COALESCE($5, integrations.config),
-         sync_settings = COALESCE($6, integrations.sync_settings),
-         updated_at = NOW()`,
-      [
-        provider,
-        provider,
-        provider.charAt(0).toUpperCase() + provider.slice(1),
-        isEnabled,
-        config ? JSON.stringify(config) : null,
-        syncSettings ? JSON.stringify(syncSettings) : null
-      ]
-    );
+  // Upsert integration record
+  await pool.query(
+    `INSERT INTO integrations (id, provider, name, is_enabled, config, sync_settings)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (id) DO UPDATE SET
+       is_enabled = COALESCE($4, integrations.is_enabled),
+       config = COALESCE($5, integrations.config),
+       sync_settings = COALESCE($6, integrations.sync_settings),
+       updated_at = NOW()`,
+    [
+      provider,
+      provider,
+      provider.charAt(0).toUpperCase() + provider.slice(1),
+      isEnabled,
+      config ? JSON.stringify(config) : null,
+      syncSettings ? JSON.stringify(syncSettings) : null
+    ]
+  );
 
-    res.json({
-      success: true,
-      message: 'Integration settings updated'
-    });
-  } catch (error) {
-    console.error('Update integration error:', error);
-    res.status(500).json({
-      error: 'Failed to update integration',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    message: 'Integration settings updated'
+  });
+}));
 
 // ==========================================
 // Microsoft Integration
@@ -179,121 +160,102 @@ integrationsRouter.patch('/:provider', async (req: Request, res: Response) => {
  * GET /api/integrations/microsoft/auth
  * Get Microsoft OAuth authorization URL
  */
-integrationsRouter.get('/microsoft/auth', async (req: Request, res: Response) => {
-  try {
-    const clientId = process.env.MICROSOFT_CLIENT_ID;
-    const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:3000/api/integrations/microsoft/callback';
+integrationsRouter.get('/microsoft/auth', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const clientId = process.env.MICROSOFT_CLIENT_ID;
+  const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:3000/api/integrations/microsoft/callback';
 
-    if (!clientId) {
-      return res.status(400).json({
-        error: 'Microsoft not configured',
-        message: 'Set MICROSOFT_CLIENT_ID environment variable'
-      });
-    }
-
-    const state = uuidv4();
-
-    // Store state for verification
-    await pool.query(
-      `INSERT INTO rate_limits (key, window_start, request_count)
-       VALUES ($1, NOW(), 1)
-       ON CONFLICT (key, window_start) DO NOTHING`,
-      [`oauth_state_${state}`]
-    );
-
-    const authUrl = microsoft.getAuthorizationUrl(clientId, redirectUri, state);
-
-    res.json({
-      success: true,
-      authUrl,
-      state
-    });
-  } catch (error) {
-    console.error('Microsoft auth URL error:', error);
-    res.status(500).json({
-      error: 'Failed to generate auth URL',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+  if (!clientId) {
+    throw new ValidationError('Microsoft not configured. Set MICROSOFT_CLIENT_ID environment variable');
   }
-});
+
+  const state = uuidv4();
+
+  // Store state for verification
+  await pool.query(
+    `INSERT INTO rate_limits (key, window_start, request_count)
+     VALUES ($1, NOW(), 1)
+     ON CONFLICT (key, window_start) DO NOTHING`,
+    [`oauth_state_${state}`]
+  );
+
+  const authUrl = microsoft.getAuthorizationUrl(clientId, redirectUri, state);
+
+  res.json({
+    success: true,
+    authUrl,
+    state
+  });
+}));
 
 /**
  * GET /api/integrations/microsoft/callback
  * Handle Microsoft OAuth callback
  */
-integrationsRouter.get('/microsoft/callback', async (req: Request, res: Response) => {
-  try {
-    const { code, state, error: oauthError } = req.query;
+integrationsRouter.get('/microsoft/callback', asyncHandler(async (req: Request, res: Response) => {
+  const { code, state, error: oauthError } = req.query;
 
-    if (oauthError) {
-      return res.redirect(`/settings/integrations?error=${oauthError}`);
-    }
-
-    if (!code || !state) {
-      return res.redirect('/settings/integrations?error=missing_params');
-    }
-
-    const clientId = process.env.MICROSOFT_CLIENT_ID!;
-    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
-    const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:3000/api/integrations/microsoft/callback';
-
-    // Exchange code for tokens
-    const tokens = await microsoft.exchangeCodeForTokens(
-      code as string,
-      clientId,
-      clientSecret,
-      redirectUri
-    );
-
-    // Get user profile
-    const profile = await microsoft.getUserProfile(tokens.accessToken);
-
-    // Store tokens
-    await microsoft.storeTokens(tokens, 'default', {
-      email: profile.email,
-      displayName: profile.displayName
-    });
-
-    // Enable integration
-    await pool.query(
-      `INSERT INTO integrations (id, provider, name, is_enabled, config)
-       VALUES ('microsoft', 'microsoft', 'Microsoft 365', true, $1)
-       ON CONFLICT (id) DO UPDATE SET is_enabled = true, config = $1, updated_at = NOW()`,
-      [JSON.stringify({ email: profile.email, displayName: profile.displayName })]
-    );
-
-    res.redirect('/settings/integrations?success=microsoft');
-  } catch (error) {
-    console.error('Microsoft callback error:', error);
-    res.redirect('/settings/integrations?error=auth_failed');
+  if (oauthError) {
+    return res.redirect(`/settings/integrations?error=${oauthError}`);
   }
-});
+
+  if (!code || !state) {
+    return res.redirect('/settings/integrations?error=missing_params');
+  }
+
+  const clientId = process.env.MICROSOFT_CLIENT_ID!;
+  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
+  const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:3000/api/integrations/microsoft/callback';
+
+  // Exchange code for tokens
+  const tokens = await microsoft.exchangeCodeForTokens(
+    code as string,
+    clientId,
+    clientSecret,
+    redirectUri
+  );
+
+  // Get user profile
+  const profile = await microsoft.getUserProfile(tokens.accessToken);
+
+  // Store tokens
+  await microsoft.storeTokens(tokens, 'default', {
+    email: profile.email,
+    displayName: profile.displayName
+  });
+
+  // Enable integration
+  await pool.query(
+    `INSERT INTO integrations (id, provider, name, is_enabled, config)
+     VALUES ('microsoft', 'microsoft', 'Microsoft 365', true, $1)
+     ON CONFLICT (id) DO UPDATE SET is_enabled = true, config = $1, updated_at = NOW()`,
+    [JSON.stringify({ email: profile.email, displayName: profile.displayName })]
+  );
+
+  res.redirect('/settings/integrations?success=microsoft');
+}));
 
 /**
  * POST /api/integrations/microsoft/sync
  * Trigger calendar sync
  */
-integrationsRouter.post('/microsoft/sync', async (req: Request, res: Response) => {
+integrationsRouter.post('/microsoft/sync', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { startDate, endDate, createMeetings = true } = req.body;
+
+  const clientId = process.env.MICROSOFT_CLIENT_ID!;
+  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
+
+  const accessToken = await microsoft.getValidAccessToken(clientId, clientSecret);
+
+  if (!accessToken) {
+    throw new ValidationError('Microsoft account not connected. Please authenticate first.');
+  }
+
+  // Update sync status
+  await pool.query(
+    `UPDATE integrations SET sync_status = 'syncing' WHERE provider = 'microsoft'`
+  );
+
   try {
-    const { startDate, endDate, createMeetings = true } = req.body;
-
-    const clientId = process.env.MICROSOFT_CLIENT_ID!;
-    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
-
-    const accessToken = await microsoft.getValidAccessToken(clientId, clientSecret);
-
-    if (!accessToken) {
-      return res.status(401).json({
-        error: 'Not connected',
-        message: 'Microsoft account not connected. Please authenticate first.'
-      });
-    }
-
-    // Update sync status
-    await pool.query(
-      `UPDATE integrations SET sync_status = 'syncing' WHERE provider = 'microsoft'`
-    );
-
     const result = await microsoft.syncCalendarEvents(accessToken, {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -306,67 +268,45 @@ integrationsRouter.post('/microsoft/sync', async (req: Request, res: Response) =
       result
     });
   } catch (error) {
-    console.error('Microsoft sync error:', error);
-
     await pool.query(
       `UPDATE integrations
        SET sync_status = 'error', error_message = $1
        WHERE provider = 'microsoft'`,
       [error instanceof Error ? error.message : 'Unknown error']
     );
-
-    res.status(500).json({
-      error: 'Sync failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+    throw error;
   }
-});
+}));
 
 /**
  * GET /api/integrations/microsoft/events
  * Get upcoming synced calendar events
  */
-integrationsRouter.get('/microsoft/events', async (req: Request, res: Response) => {
-  try {
-    const hours = parseInt(req.query.hours as string) || 24;
-    const limit = parseInt(req.query.limit as string) || 10;
+integrationsRouter.get('/microsoft/events', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const hours = parseInt(req.query.hours as string) || 24;
+  const limit = parseInt(req.query.limit as string) || 10;
 
-    const events = await microsoft.getUpcomingEvents(hours, limit);
+  const events = await microsoft.getUpcomingEvents(hours, limit);
 
-    res.json({
-      success: true,
-      count: events.length,
-      events
-    });
-  } catch (error) {
-    console.error('Get events error:', error);
-    res.status(500).json({
-      error: 'Failed to get events',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    count: events.length,
+    events
+  });
+}));
 
 /**
  * DELETE /api/integrations/microsoft
  * Disconnect Microsoft integration
  */
-integrationsRouter.delete('/microsoft', async (req: Request, res: Response) => {
-  try {
-    await microsoft.disconnectMicrosoft();
+integrationsRouter.delete('/microsoft', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  await microsoft.disconnectMicrosoft();
 
-    res.json({
-      success: true,
-      message: 'Microsoft disconnected'
-    });
-  } catch (error) {
-    console.error('Disconnect Microsoft error:', error);
-    res.status(500).json({
-      error: 'Failed to disconnect',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    message: 'Microsoft disconnected'
+  });
+}));
 
 // ==========================================
 // Slack Integration
@@ -376,162 +316,117 @@ integrationsRouter.delete('/microsoft', async (req: Request, res: Response) => {
  * GET /api/integrations/slack/auth
  * Get Slack OAuth authorization URL
  */
-integrationsRouter.get('/slack/auth', async (req: Request, res: Response) => {
-  try {
-    const clientId = process.env.SLACK_CLIENT_ID;
-    const redirectUri = process.env.SLACK_REDIRECT_URI || 'http://localhost:3000/api/integrations/slack/callback';
+integrationsRouter.get('/slack/auth', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const clientId = process.env.SLACK_CLIENT_ID;
+  const redirectUri = process.env.SLACK_REDIRECT_URI || 'http://localhost:3000/api/integrations/slack/callback';
 
-    if (!clientId) {
-      return res.status(400).json({
-        error: 'Slack not configured',
-        message: 'Set SLACK_CLIENT_ID environment variable'
-      });
-    }
-
-    const state = uuidv4();
-    const authUrl = slack.getAuthorizationUrl(clientId, redirectUri, state);
-
-    res.json({
-      success: true,
-      authUrl,
-      state
-    });
-  } catch (error) {
-    console.error('Slack auth URL error:', error);
-    res.status(500).json({
-      error: 'Failed to generate auth URL',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+  if (!clientId) {
+    throw new ValidationError('Slack not configured. Set SLACK_CLIENT_ID environment variable');
   }
-});
+
+  const state = uuidv4();
+  const authUrl = slack.getAuthorizationUrl(clientId, redirectUri, state);
+
+  res.json({
+    success: true,
+    authUrl,
+    state
+  });
+}));
 
 /**
  * GET /api/integrations/slack/callback
  * Handle Slack OAuth callback
  */
-integrationsRouter.get('/slack/callback', async (req: Request, res: Response) => {
-  try {
-    const { code, error: oauthError } = req.query;
+integrationsRouter.get('/slack/callback', asyncHandler(async (req: Request, res: Response) => {
+  const { code, error: oauthError } = req.query;
 
-    if (oauthError) {
-      return res.redirect(`/settings/integrations?error=${oauthError}`);
-    }
-
-    if (!code) {
-      return res.redirect('/settings/integrations?error=missing_code');
-    }
-
-    const clientId = process.env.SLACK_CLIENT_ID!;
-    const clientSecret = process.env.SLACK_CLIENT_SECRET!;
-    const redirectUri = process.env.SLACK_REDIRECT_URI || 'http://localhost:3000/api/integrations/slack/callback';
-
-    const tokens = await slack.exchangeCodeForTokens(
-      code as string,
-      clientId,
-      clientSecret,
-      redirectUri
-    );
-
-    await slack.storeTokens(tokens, 'default');
-
-    // Enable integration
-    await pool.query(
-      `INSERT INTO integrations (id, provider, name, is_enabled, config)
-       VALUES ('slack', 'slack', 'Slack', true, $1)
-       ON CONFLICT (id) DO UPDATE SET is_enabled = true, config = $1, updated_at = NOW()`,
-      [JSON.stringify({ team: tokens.teamName, teamId: tokens.teamId })]
-    );
-
-    res.redirect('/settings/integrations?success=slack');
-  } catch (error) {
-    console.error('Slack callback error:', error);
-    res.redirect('/settings/integrations?error=auth_failed');
+  if (oauthError) {
+    return res.redirect(`/settings/integrations?error=${oauthError}`);
   }
-});
+
+  if (!code) {
+    return res.redirect('/settings/integrations?error=missing_code');
+  }
+
+  const clientId = process.env.SLACK_CLIENT_ID!;
+  const clientSecret = process.env.SLACK_CLIENT_SECRET!;
+  const redirectUri = process.env.SLACK_REDIRECT_URI || 'http://localhost:3000/api/integrations/slack/callback';
+
+  const tokens = await slack.exchangeCodeForTokens(
+    code as string,
+    clientId,
+    clientSecret,
+    redirectUri
+  );
+
+  await slack.storeTokens(tokens, 'default');
+
+  // Enable integration
+  await pool.query(
+    `INSERT INTO integrations (id, provider, name, is_enabled, config)
+     VALUES ('slack', 'slack', 'Slack', true, $1)
+     ON CONFLICT (id) DO UPDATE SET is_enabled = true, config = $1, updated_at = NOW()`,
+    [JSON.stringify({ team: tokens.teamName, teamId: tokens.teamId })]
+  );
+
+  res.redirect('/settings/integrations?success=slack');
+}));
 
 /**
  * POST /api/integrations/slack/events
  * Slack Events API endpoint
  */
-integrationsRouter.post('/slack/events', async (req: Request, res: Response) => {
-  try {
-    const { type, challenge, event } = req.body;
+integrationsRouter.post('/slack/events', asyncHandler(async (req: Request, res: Response) => {
+  const { type, challenge, event } = req.body;
 
-    // URL verification challenge
-    if (type === 'url_verification') {
-      return res.json({ challenge });
-    }
-
-    // Handle events
-    if (type === 'event_callback' && event) {
-      await slack.handleSlackEvent(event);
-    }
-
-    res.status(200).send();
-  } catch (error) {
-    console.error('Slack event error:', error);
-    res.status(500).send();
+  // URL verification challenge
+  if (type === 'url_verification') {
+    return res.json({ challenge });
   }
-});
+
+  // Handle events
+  if (type === 'event_callback' && event) {
+    await slack.handleSlackEvent(event);
+  }
+
+  res.status(200).send();
+}));
 
 /**
  * POST /api/integrations/slack/commands
  * Slack Slash Commands endpoint
  */
-integrationsRouter.post('/slack/commands', async (req: Request, res: Response) => {
-  try {
-    const { command, text, user_id, channel_id, response_url } = req.body;
+integrationsRouter.post('/slack/commands', asyncHandler(async (req: Request, res: Response) => {
+  const { command, text, user_id, channel_id, response_url } = req.body;
 
-    const result = await slack.handleSlashCommand(command, text, user_id, channel_id, response_url);
+  const result = await slack.handleSlashCommand(command, text, user_id, channel_id, response_url);
 
-    res.json(result);
-  } catch (error) {
-    console.error('Slack command error:', error);
-    res.json({
-      response_type: 'ephemeral',
-      text: 'An error occurred processing your command'
-    });
-  }
-});
+  res.json(result);
+}));
 
 /**
  * GET /api/integrations/slack/channels
  * Get list of Slack channels
  */
-integrationsRouter.get('/slack/channels', async (req: Request, res: Response) => {
-  try {
-    const channels = await slack.getChannels();
+integrationsRouter.get('/slack/channels', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const channels = await slack.getChannels();
 
-    res.json({
-      success: true,
-      channels
-    });
-  } catch (error) {
-    console.error('Get Slack channels error:', error);
-    res.status(500).json({
-      error: 'Failed to get channels',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    channels
+  });
+}));
 
 /**
  * DELETE /api/integrations/slack
  * Disconnect Slack integration
  */
-integrationsRouter.delete('/slack', async (req: Request, res: Response) => {
-  try {
-    await slack.disconnectSlack();
+integrationsRouter.delete('/slack', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  await slack.disconnectSlack();
 
-    res.json({
-      success: true,
-      message: 'Slack disconnected'
-    });
-  } catch (error) {
-    console.error('Disconnect Slack error:', error);
-    res.status(500).json({
-      error: 'Failed to disconnect',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+  res.json({
+    success: true,
+    message: 'Slack disconnected'
+  });
+}));

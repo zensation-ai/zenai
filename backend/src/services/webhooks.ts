@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import axios from 'axios';
 import { pool } from '../utils/database';
+import { logger } from '../utils/logger';
 
 // Webhook event types
 export type WebhookEventType =
@@ -173,19 +174,19 @@ async function retryWebhook(
     const result = await deliverWebhook(webhook, payload, attempt);
 
     if (result.success) {
-      console.log(`✅ Webhook ${webhook.name} delivered successfully on attempt ${attempt}`);
+      logger.info('Webhook delivered successfully', { webhookName: webhook.name, attempt });
       return;
     }
 
     if (attempt < maxRetries) {
       // Exponential backoff: 1s, 4s, 9s
       const delay = attempt * attempt * 1000;
-      console.log(`⏳ Webhook ${webhook.name} failed, retrying in ${delay}ms...`);
+      logger.debug('Webhook delivery failed, retrying', { webhookName: webhook.name, delay, attempt });
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
-  console.log(`❌ Webhook ${webhook.name} failed after ${maxRetries} attempts`);
+  logger.warn('Webhook delivery failed after retries', { webhookName: webhook.name, maxRetries });
 }
 
 /**
@@ -206,16 +207,16 @@ export async function triggerWebhook(event: WebhookEventType, data: any): Promis
       data
     };
 
-    console.log(`📤 Triggering ${webhooks.length} webhook(s) for event: ${event}`);
+    logger.info('Triggering webhooks', { webhookCount: webhooks.length, event });
 
     // Deliver webhooks in parallel (don't wait for response)
     webhooks.forEach(webhook => {
       retryWebhook(webhook, payload, webhook.retryCount).catch(err => {
-        console.error(`Webhook ${webhook.name} error:`, err);
+        logger.error('Webhook error', err instanceof Error ? err : undefined, { webhookName: webhook.name });
       });
     });
   } catch (error) {
-    console.error('Trigger webhook error:', error);
+    logger.error('Trigger webhook error', error instanceof Error ? error : undefined);
   }
 }
 

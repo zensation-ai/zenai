@@ -11,6 +11,8 @@
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { apiKeyAuth } from '../middleware/auth';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const advancedAnalyticsRouter = Router();
 
@@ -22,18 +24,14 @@ export const advancedAnalyticsRouter = Router();
  * GET /api/:context/analytics/dashboard
  * Get comprehensive analytics dashboard data
  */
-advancedAnalyticsRouter.get('/:context/analytics/dashboard', async (req: Request, res: Response) => {
+advancedAnalyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'INVALID_CONTEXT', message: 'Context must be "personal" or "work"' }
-    });
+    throw new ValidationError('Context must be "personal" or "work"');
   }
 
-  try {
-    const ctx = context as AIContext;
+  const ctx = context as AIContext;
 
     const [
       summary,
@@ -166,72 +164,62 @@ advancedAnalyticsRouter.get('/:context/analytics/dashboard', async (req: Request
       `)
     ]);
 
-    const summaryRow = summary.rows[0];
-    const goalRow = goalProgress.rows[0];
-    const streakRow = streakInfo.rows[0] || { current_streak: 0, longest_streak: 0 };
+  const summaryRow = summary.rows[0];
+  const goalRow = goalProgress.rows[0];
+  const streakRow = streakInfo.rows[0] || { current_streak: 0, longest_streak: 0 };
 
-    res.json({
-      success: true,
-      data: {
-        summary: {
-          total: parseInt(summaryRow?.total || '0'),
-          today: parseInt(summaryRow?.today || '0'),
-          thisWeek: parseInt(summaryRow?.this_week || '0'),
-          thisMonth: parseInt(summaryRow?.this_month || '0'),
-          highPriority: parseInt(summaryRow?.high_priority || '0')
+  res.json({
+    success: true,
+    data: {
+      summary: {
+        total: parseInt(summaryRow?.total || '0'),
+        today: parseInt(summaryRow?.today || '0'),
+        thisWeek: parseInt(summaryRow?.this_week || '0'),
+        thisMonth: parseInt(summaryRow?.this_month || '0'),
+        highPriority: parseInt(summaryRow?.high_priority || '0')
+      },
+      goals: {
+        daily: {
+          target: parseInt(goalRow?.daily_ideas_target || '3'),
+          current: parseInt(goalRow?.today_count || '0'),
+          progress: Math.min(100, Math.round((parseInt(goalRow?.today_count || '0') / parseInt(goalRow?.daily_ideas_target || '3')) * 100))
         },
-        goals: {
-          daily: {
-            target: parseInt(goalRow?.daily_ideas_target || '3'),
-            current: parseInt(goalRow?.today_count || '0'),
-            progress: Math.min(100, Math.round((parseInt(goalRow?.today_count || '0') / parseInt(goalRow?.daily_ideas_target || '3')) * 100))
-          },
-          weekly: {
-            target: parseInt(goalRow?.weekly_ideas_target || '15'),
-            current: parseInt(goalRow?.week_count || '0'),
-            progress: Math.min(100, Math.round((parseInt(goalRow?.week_count || '0') / parseInt(goalRow?.weekly_ideas_target || '15')) * 100))
-          }
-        },
-        streaks: {
-          current: parseInt(streakRow.current_streak),
-          longest: parseInt(streakRow.longest_streak)
-        },
-        trends: {
-          weekly: weeklyTrend.rows.map(r => ({
-            week: r.week,
-            count: parseInt(r.count)
-          })),
-          monthly: monthlyTrend.rows.map(r => ({
-            month: r.month,
-            count: parseInt(r.count)
-          })),
-          byCategory: formatCategoryTrend(categoryTrend.rows)
-        },
-        activity: {
-          byHour: fillHourlyGaps(hourlyActivity.rows)
-        },
-        highlights: recentHighlights.rows.map(r => ({
-          id: r.id,
-          title: r.title,
-          type: r.type,
-          category: r.category,
-          priority: r.priority,
-          createdAt: r.created_at
+        weekly: {
+          target: parseInt(goalRow?.weekly_ideas_target || '15'),
+          current: parseInt(goalRow?.week_count || '0'),
+          progress: Math.min(100, Math.round((parseInt(goalRow?.week_count || '0') / parseInt(goalRow?.weekly_ideas_target || '15')) * 100))
+        }
+      },
+      streaks: {
+        current: parseInt(streakRow.current_streak),
+        longest: parseInt(streakRow.longest_streak)
+      },
+      trends: {
+        weekly: weeklyTrend.rows.map(r => ({
+          week: r.week,
+          count: parseInt(r.count)
         })),
-        generatedAt: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    logger.error('Analytics dashboard error', error instanceof Error ? error : undefined, {
-      context,
-      operation: 'analyticsDashboard'
-    });
-    res.status(500).json({
-      success: false,
-      error: { code: 'DATABASE_ERROR', message: 'Failed to fetch analytics dashboard' }
-    });
-  }
-});
+        monthly: monthlyTrend.rows.map(r => ({
+          month: r.month,
+          count: parseInt(r.count)
+        })),
+        byCategory: formatCategoryTrend(categoryTrend.rows)
+      },
+      activity: {
+        byHour: fillHourlyGaps(hourlyActivity.rows)
+      },
+      highlights: recentHighlights.rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        type: r.type,
+        category: r.category,
+        priority: r.priority,
+        createdAt: r.created_at
+      })),
+      generatedAt: new Date().toISOString()
+    }
+  });
+}));
 
 // ===========================================
 // Productivity Score
@@ -241,18 +229,14 @@ advancedAnalyticsRouter.get('/:context/analytics/dashboard', async (req: Request
  * GET /api/:context/analytics/productivity-score
  * Get current productivity score with breakdown
  */
-advancedAnalyticsRouter.get('/:context/analytics/productivity-score', async (req: Request, res: Response) => {
+advancedAnalyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'INVALID_CONTEXT', message: 'Context must be "personal" or "work"' }
-    });
+    throw new ValidationError('Context must be "personal" or "work"');
   }
 
-  try {
-    const ctx = context as AIContext;
+  const ctx = context as AIContext;
 
     const [weeklyStats, consistency, variety, quality] = await Promise.all([
       // Weekly output
@@ -287,70 +271,60 @@ advancedAnalyticsRouter.get('/:context/analytics/productivity-score', async (req
       `)
     ]);
 
-    const weeklyCount = parseInt(weeklyStats.rows[0]?.count || '0');
-    const activeDays = parseInt(consistency.rows[0]?.active_days || '0');
-    const categoryCount = parseInt(variety.rows[0]?.categories || '0');
-    const qualityCount = parseInt(quality.rows[0]?.quality_count || '0');
-    const totalCount = parseInt(quality.rows[0]?.total || '1');
+  const weeklyCount = parseInt(weeklyStats.rows[0]?.count || '0');
+  const activeDays = parseInt(consistency.rows[0]?.active_days || '0');
+  const categoryCount = parseInt(variety.rows[0]?.categories || '0');
+  const qualityCount = parseInt(quality.rows[0]?.quality_count || '0');
+  const totalCount = parseInt(quality.rows[0]?.total || '1');
 
-    // Calculate scores (0-100)
-    const outputScore = Math.min(100, (weeklyCount / 15) * 100);
-    const consistencyScore = Math.min(100, (activeDays / 7) * 100);
-    const varietyScore = Math.min(100, (categoryCount / 4) * 100);
-    const qualityScore = Math.min(100, (qualityCount / totalCount) * 100 * 2);
+  // Calculate scores (0-100)
+  const outputScore = Math.min(100, (weeklyCount / 15) * 100);
+  const consistencyScore = Math.min(100, (activeDays / 7) * 100);
+  const varietyScore = Math.min(100, (categoryCount / 4) * 100);
+  const qualityScore = Math.min(100, (qualityCount / totalCount) * 100 * 2);
 
-    const overallScore = Math.round(
-      (outputScore * 0.4) +
-      (consistencyScore * 0.3) +
-      (varietyScore * 0.15) +
-      (qualityScore * 0.15)
-    );
+  const overallScore = Math.round(
+    (outputScore * 0.4) +
+    (consistencyScore * 0.3) +
+    (varietyScore * 0.15) +
+    (qualityScore * 0.15)
+  );
 
-    res.json({
-      success: true,
-      data: {
-        overall: overallScore,
-        breakdown: {
-          output: {
-            score: Math.round(outputScore),
-            label: 'Produktivität',
-            description: `${weeklyCount} Gedanken diese Woche`,
-            weight: 40
-          },
-          consistency: {
-            score: Math.round(consistencyScore),
-            label: 'Konsistenz',
-            description: `${activeDays} von 7 Tagen aktiv`,
-            weight: 30
-          },
-          variety: {
-            score: Math.round(varietyScore),
-            label: 'Vielfalt',
-            description: `${categoryCount} verschiedene Kategorien`,
-            weight: 15
-          },
-          quality: {
-            score: Math.round(qualityScore),
-            label: 'Qualität',
-            description: `${qualityCount} hochwertige Einträge`,
-            weight: 15
-          }
+  res.json({
+    success: true,
+    data: {
+      overall: overallScore,
+      breakdown: {
+        output: {
+          score: Math.round(outputScore),
+          label: 'Produktivität',
+          description: `${weeklyCount} Gedanken diese Woche`,
+          weight: 40
         },
-        trend: overallScore >= 70 ? 'excellent' : overallScore >= 50 ? 'good' : overallScore >= 30 ? 'moderate' : 'needs_improvement',
-        period: 'last 7 days'
-      }
-    });
-  } catch (error) {
-    logger.error('Productivity score error', error instanceof Error ? error : undefined, {
-      context,
-      operation: 'productivityScore'
-    });
-    res.status(500).json({
-      success: false,
-      error: { code: 'DATABASE_ERROR', message: 'Failed to calculate productivity score' }
-    });
-  }
-});
+        consistency: {
+          score: Math.round(consistencyScore),
+          label: 'Konsistenz',
+          description: `${activeDays} von 7 Tagen aktiv`,
+          weight: 30
+        },
+        variety: {
+          score: Math.round(varietyScore),
+          label: 'Vielfalt',
+          description: `${categoryCount} verschiedene Kategorien`,
+          weight: 15
+        },
+        quality: {
+          score: Math.round(qualityScore),
+          label: 'Qualität',
+          description: `${qualityCount} hochwertige Einträge`,
+          weight: 15
+        }
+      },
+      trend: overallScore >= 70 ? 'excellent' : overallScore >= 50 ? 'good' : overallScore >= 30 ? 'moderate' : 'needs_improvement',
+      period: 'last 7 days'
+    }
+  });
+}));
 
 // ===========================================
 // Pattern Analysis
@@ -360,18 +334,14 @@ advancedAnalyticsRouter.get('/:context/analytics/productivity-score', async (req
  * GET /api/:context/analytics/patterns
  * Analyze patterns in idea creation
  */
-advancedAnalyticsRouter.get('/:context/analytics/patterns', async (req: Request, res: Response) => {
+advancedAnalyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'INVALID_CONTEXT', message: 'Context must be "personal" or "work"' }
-    });
+    throw new ValidationError('Context must be "personal" or "work"');
   }
 
-  try {
-    const ctx = context as AIContext;
+  const ctx = context as AIContext;
 
     const [peakHours, peakDays, categoryPatterns, typePatterns] = await Promise.all([
       // Peak hours
@@ -423,50 +393,40 @@ advancedAnalyticsRouter.get('/:context/analytics/patterns', async (req: Request,
       `)
     ]);
 
-    const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
-    res.json({
-      success: true,
-      data: {
-        peakTimes: {
-          hours: peakHours.rows.map(r => ({
-            hour: parseInt(r.hour),
-            label: `${r.hour}:00 - ${parseInt(r.hour) + 1}:00`,
-            count: parseInt(r.count)
-          })),
-          days: peakDays.rows.map(r => ({
-            day: parseInt(r.dow),
-            label: dayNames[parseInt(r.dow)],
-            count: parseInt(r.count)
-          }))
-        },
-        preferences: {
-          categories: categoryPatterns.rows.map(r => ({
-            name: r.category,
-            count: parseInt(r.count),
-            percentage: parseFloat(r.percentage)
-          })),
-          types: typePatterns.rows.map(r => ({
-            name: r.type,
-            count: parseInt(r.count),
-            percentage: parseFloat(r.percentage)
-          }))
-        },
-        insights: generatePatternInsights(peakHours.rows, peakDays.rows, categoryPatterns.rows, dayNames),
-        period: 'last 30 days'
-      }
-    });
-  } catch (error) {
-    logger.error('Pattern analysis error', error instanceof Error ? error : undefined, {
-      context,
-      operation: 'patternAnalysis'
-    });
-    res.status(500).json({
-      success: false,
-      error: { code: 'DATABASE_ERROR', message: 'Failed to analyze patterns' }
-    });
-  }
-});
+  res.json({
+    success: true,
+    data: {
+      peakTimes: {
+        hours: peakHours.rows.map(r => ({
+          hour: parseInt(r.hour),
+          label: `${r.hour}:00 - ${parseInt(r.hour) + 1}:00`,
+          count: parseInt(r.count)
+        })),
+        days: peakDays.rows.map(r => ({
+          day: parseInt(r.dow),
+          label: dayNames[parseInt(r.dow)],
+          count: parseInt(r.count)
+        }))
+      },
+      preferences: {
+        categories: categoryPatterns.rows.map(r => ({
+          name: r.category,
+          count: parseInt(r.count),
+          percentage: parseFloat(r.percentage)
+        })),
+        types: typePatterns.rows.map(r => ({
+          name: r.type,
+          count: parseInt(r.count),
+          percentage: parseFloat(r.percentage)
+        }))
+      },
+      insights: generatePatternInsights(peakHours.rows, peakDays.rows, categoryPatterns.rows, dayNames),
+      period: 'last 30 days'
+    }
+  });
+}));
 
 // ===========================================
 // Comparison Analytics
@@ -476,24 +436,20 @@ advancedAnalyticsRouter.get('/:context/analytics/patterns', async (req: Request,
  * GET /api/:context/analytics/comparison
  * Compare current period with previous period
  */
-advancedAnalyticsRouter.get('/:context/analytics/comparison', async (req: Request, res: Response) => {
+advancedAnalyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { period = 'week' } = req.query;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'INVALID_CONTEXT', message: 'Context must be "personal" or "work"' }
-    });
+    throw new ValidationError('Context must be "personal" or "work"');
   }
 
-  try {
-    const ctx = context as AIContext;
+  const ctx = context as AIContext;
 
-    // Validate period to prevent SQL injection - only allow known values
-    const validPeriods = ['week', 'month'] as const;
-    const safePeriod = validPeriods.includes(period as any) ? period : 'week';
-    const intervalDays = safePeriod === 'month' ? 30 : 7;
+  // Validate period to prevent SQL injection - only allow known values
+  const validPeriods = ['week', 'month'] as const;
+  const safePeriod = validPeriods.includes(period as any) ? period : 'week';
+  const intervalDays = safePeriod === 'month' ? 30 : 7;
 
     const [currentPeriod, previousPeriod] = await Promise.all([
       queryContext(ctx, `
@@ -521,54 +477,44 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', async (req: Reques
       `, [intervalDays])
     ]);
 
-    const current = currentPeriod.rows[0];
-    const previous = previousPeriod.rows[0];
+  const current = currentPeriod.rows[0];
+  const previous = previousPeriod.rows[0];
 
-    const calcChange = (curr: string, prev: string) => {
-      const c = parseInt(curr || '0');
-      const p = parseInt(prev || '0');
-      if (p === 0) return c > 0 ? 100 : 0;
-      return Math.round(((c - p) / p) * 100);
-    };
+  const calcChange = (curr: string, prev: string) => {
+    const c = parseInt(curr || '0');
+    const p = parseInt(prev || '0');
+    if (p === 0) return c > 0 ? 100 : 0;
+    return Math.round(((c - p) / p) * 100);
+  };
 
-    res.json({
-      success: true,
-      data: {
-        current: {
-          total: parseInt(current.total),
-          highPriority: parseInt(current.high_priority),
-          tasks: parseInt(current.tasks),
-          ideas: parseInt(current.ideas),
-          activeDays: parseInt(current.active_days)
-        },
-        previous: {
-          total: parseInt(previous.total),
-          highPriority: parseInt(previous.high_priority),
-          tasks: parseInt(previous.tasks),
-          ideas: parseInt(previous.ideas),
-          activeDays: parseInt(previous.active_days)
-        },
-        changes: {
-          total: calcChange(current.total, previous.total),
-          highPriority: calcChange(current.high_priority, previous.high_priority),
-          tasks: calcChange(current.tasks, previous.tasks),
-          ideas: calcChange(current.ideas, previous.ideas),
-          activeDays: calcChange(current.active_days, previous.active_days)
-        },
-        period: safePeriod
-      }
-    });
-  } catch (error) {
-    logger.error('Comparison analytics error', error instanceof Error ? error : undefined, {
-      context,
-      operation: 'comparisonAnalytics'
-    });
-    res.status(500).json({
-      success: false,
-      error: { code: 'DATABASE_ERROR', message: 'Failed to fetch comparison analytics' }
-    });
-  }
-});
+  res.json({
+    success: true,
+    data: {
+      current: {
+        total: parseInt(current.total),
+        highPriority: parseInt(current.high_priority),
+        tasks: parseInt(current.tasks),
+        ideas: parseInt(current.ideas),
+        activeDays: parseInt(current.active_days)
+      },
+      previous: {
+        total: parseInt(previous.total),
+        highPriority: parseInt(previous.high_priority),
+        tasks: parseInt(previous.tasks),
+        ideas: parseInt(previous.ideas),
+        activeDays: parseInt(previous.active_days)
+      },
+      changes: {
+        total: calcChange(current.total, previous.total),
+        highPriority: calcChange(current.high_priority, previous.high_priority),
+        tasks: calcChange(current.tasks, previous.tasks),
+        ideas: calcChange(current.ideas, previous.ideas),
+        activeDays: calcChange(current.active_days, previous.active_days)
+      },
+      period: safePeriod
+    }
+  });
+}));
 
 // ===========================================
 // Helper Functions

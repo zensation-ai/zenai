@@ -100,6 +100,34 @@ struct SettingsView: View {
                     }
                 }
 
+                // API Key Management
+                Section("API-Zugang") {
+                    if APIKeyManager.shared.hasAPIKey() {
+                        HStack {
+                            Image(systemName: "key.fill")
+                                .foregroundColor(.green)
+                            Text("API Key konfiguriert")
+                            Spacer()
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                        }
+
+                        NavigationLink("API Key ändern") {
+                            APIKeySetupView()
+                        }
+                    } else {
+                        HStack {
+                            Image(systemName: "key.slash")
+                                .foregroundColor(.red)
+                            Text("Kein API Key")
+                            Spacer()
+                            NavigationLink("Einrichten") {
+                                APIKeySetupView()
+                            }
+                        }
+                    }
+                }
+
                 // Security (Phase 13)
                 Section("Sicherheit") {
                     if BiometricService.shared.isBiometricAvailable {
@@ -134,7 +162,17 @@ struct SettingsView: View {
                     HStack {
                         Text("URL")
                         Spacer()
-                        Text("localhost:3000")
+                        Text(apiService.baseURL)
+                            .font(.caption)
+                            .foregroundColor(.zensationTextMuted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                    }
+
+                    HStack {
+                        Text("Umgebung")
+                        Spacer()
+                        Text(AppEnvironment.isSimulator ? "Simulator" : "Gerät")
                             .foregroundColor(.zensationTextMuted)
                     }
 

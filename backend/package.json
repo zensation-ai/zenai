@@ -14,7 +14,9 @@
     "test:coverage": "jest --coverage",
     "test:redis": "ts-node src/scripts/test-redis-v2.ts",
     "test:supabase": "ts-node src/scripts/test-supabase.ts",
-    "migrate:supabase": "ts-node src/scripts/migrate-to-supabase.ts"
+    "migrate:supabase": "ts-node src/scripts/migrate-to-supabase.ts",
+    "create-ios-key": "ts-node scripts/create-ios-api-key.ts",
+    "create-web-key": "ts-node scripts/create-web-api-key.ts"
   },
   "keywords": [
     "ai",

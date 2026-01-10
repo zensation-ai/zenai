@@ -13,16 +13,6 @@ struct RecordVoiceMemoIntent: AppIntent {
     static var openAppWhenRun: Bool = true
 
     @MainActor
-    func perform() async throws -> some IntentResult & OpensIntent {
-        // Open app to record view
-        return .result(opensIntent: OpenRecordViewIntent())
-    }
-}
-
-struct OpenRecordViewIntent: OpenIntent {
-    static var title: LocalizedStringResource = "Aufnahme öffnen"
-
-    @MainActor
     func perform() async throws -> some IntentResult {
         // Navigate to record view via URL scheme
         if let url = URL(string: "personalai://record") {
@@ -168,7 +158,7 @@ struct SwitchContextIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         let newContext: AIContext = context == .personal ? .personal : .work
-        AIContextManager.shared.currentContext = newContext
+        ContextManager.shared.currentContext = newContext
         return .result(value: "Kontext gewechselt zu: \(newContext == .personal ? "Persönlich" : "Arbeit")")
     }
 }
@@ -381,8 +371,7 @@ struct PersonalAIBrainShortcuts: AppShortcutsProvider {
             intent: CreateTextIdeaIntent(),
             phrases: [
                 "Erstelle eine Idee in \(.applicationName)",
-                "Neue Idee in \(.applicationName)",
-                "Erfasse \(\.$text) in \(.applicationName)"
+                "Neue Idee in \(.applicationName)"
             ],
             shortTitle: "Idee erfassen",
             systemImageName: "lightbulb"
@@ -392,8 +381,7 @@ struct PersonalAIBrainShortcuts: AppShortcutsProvider {
             intent: SearchIdeasIntent(),
             phrases: [
                 "Suche in \(.applicationName)",
-                "Finde \(\.$query) in \(.applicationName)",
-                "Suche nach \(\.$query) in \(.applicationName)"
+                "Finde Ideen in \(.applicationName)"
             ],
             shortTitle: "Ideen suchen",
             systemImageName: "magnifyingglass"
@@ -413,7 +401,7 @@ struct PersonalAIBrainShortcuts: AppShortcutsProvider {
             intent: AddThoughtIntent(),
             phrases: [
                 "Füge Gedanken hinzu in \(.applicationName)",
-                "Neuer Gedanke: \(\.$thought) in \(.applicationName)"
+                "Neuer Gedanke in \(.applicationName)"
             ],
             shortTitle: "Gedanke hinzufügen",
             systemImageName: "brain"

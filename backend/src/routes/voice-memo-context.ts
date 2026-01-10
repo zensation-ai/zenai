@@ -21,6 +21,9 @@ import { generateEmbedding, normalizeCategory, normalizeType, normalizePriority 
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { logger } from '../utils/logger';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const voiceMemoContextRouter = Router();
 
@@ -65,14 +68,12 @@ const upload = multer({
  *
  * Optional 'persona' parameter to select a specific sub-persona
  */
-voiceMemoContextRouter.post('/:context/voice-memo', upload.single('audio'), async (req: Request, res: Response) => {
+voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('write'), upload.single('audio'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   // Validate context
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      error: 'Invalid context. Must be "personal" or "work"'
-    });
+    throw new ValidationError('Invalid context. Must be "personal" or "work"');
   }
 
   const startTime = Date.now();
@@ -81,125 +82,113 @@ voiceMemoContextRouter.post('/:context/voice-memo', upload.single('audio'), asyn
 
   // Validate persona if provided
   if (personaId && !isValidPersonaForContext(context as AIContext, personaId)) {
-    return res.status(400).json({
-      error: `Invalid persona "${personaId}" for context "${context}". Use GET /api/${context}/personas to see available personas.`
-    });
+    throw new ValidationError(`Invalid persona "${personaId}" for context "${context}". Use GET /api/${context}/personas to see available personas.`);
   }
 
-  try {
-    let transcript: string;
+  let transcript: string;
 
-    if (text) {
-      // Direct text input (JSON body)
-      transcript = text;
-    } else if (audioFile) {
-      // Audio file from FormData (RecordButton)
-      const transcriptionResult = await transcribeAudio(audioFile.buffer, audioFile.originalname);
-      transcript = transcriptionResult.text;
-    } else if (audioBase64) {
-      // Base64 audio (JSON body)
-      const buffer = Buffer.from(audioBase64, 'base64');
-      const transcriptionResult = await transcribeAudio(buffer, 'audio.webm');
-      transcript = transcriptionResult.text;
-    } else {
-      return res.status(400).json({
-        error: 'Either audio file, audioBase64, or text required'
-      });
-    }
+  if (text) {
+    // Direct text input (JSON body)
+    transcript = text;
+  } else if (audioFile) {
+    // Audio file from FormData (RecordButton)
+    const transcriptionResult = await transcribeAudio(audioFile.buffer, audioFile.originalname);
+    transcript = transcriptionResult.text;
+  } else if (audioBase64) {
+    // Base64 audio (JSON body)
+    const buffer = Buffer.from(audioBase64, 'base64');
+    const transcriptionResult = await transcribeAudio(buffer, 'audio.webm');
+    transcript = transcriptionResult.text;
+  } else {
+    throw new ValidationError('Either audio file, audioBase64, or text required');
+  }
 
-    // Get the selected persona (or default for context)
-    const persona = getSubPersona(context as AIContext, personaId as SubPersonaId | undefined);
-    const immediateStructure = shouldImmediatelyStructure(context as AIContext, personaId as SubPersonaId | undefined);
+  // Get the selected persona (or default for context)
+  const persona = getSubPersona(context as AIContext, personaId as SubPersonaId | undefined);
+  const immediateStructure = shouldImmediatelyStructure(context as AIContext, personaId as SubPersonaId | undefined);
 
-    if (immediateStructure) {
-      // WORK MODE: Structure immediately
-      const structured = await structureThoughtWithPersona(transcript, context as AIContext, personaId as SubPersonaId | undefined);
+  if (immediateStructure) {
+    // WORK MODE: Structure immediately
+    const structured = await structureThoughtWithPersona(transcript, context as AIContext, personaId as SubPersonaId | undefined);
 
-      // Generate embedding
-      const embedding = await generateEmbedding(structured.summary + ' ' + structured.title);
+    // Generate embedding
+    const embedding = await generateEmbedding(structured.summary + ' ' + structured.title);
 
-      // Save to work database
-      const ideaId = uuidv4();
-      await queryContext(
-        context as AIContext,
-        `INSERT INTO ideas
-         (id, title, type, category, priority, summary, raw_transcript, embedding,
-          next_steps, context_needed, keywords, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-        [
-          ideaId,
-          structured.title,
-          structured.type,
-          structured.category,
-          structured.priority,
-          structured.summary,
-          transcript,
-          embedding.length > 0 ? formatForPgVector(embedding) : null,
-          JSON.stringify(structured.next_steps || []),
-          JSON.stringify(structured.context_needed || []),
-          JSON.stringify(structured.keywords || []),
-        ]
-      );
-
-      const duration = Date.now() - startTime;
-
-      return res.json({
-        success: true,
-        context,
-        persona: persona.displayName,
-        mode: 'structured',
-        // Frontend compatibility: ideaId and structured at top level
+    // Save to work database
+    const ideaId = uuidv4();
+    await queryContext(
+      context as AIContext,
+      `INSERT INTO ideas
+       (id, title, type, category, priority, summary, raw_transcript, embedding,
+        next_steps, context_needed, keywords, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+      [
         ideaId,
+        structured.title,
+        structured.type,
+        structured.category,
+        structured.priority,
+        structured.summary,
         transcript,
-        structured,
-        // Also include idea object for other consumers
-        idea: {
-          id: ideaId,
-          ...structured,
-        },
-        processingTime: duration,
-      });
+        embedding.length > 0 ? formatForPgVector(embedding) : null,
+        JSON.stringify(structured.next_steps || []),
+        JSON.stringify(structured.context_needed || []),
+        JSON.stringify(structured.keywords || []),
+      ]
+    );
 
-    } else {
-      // PERSONAL MODE: Add to incubator first
-      const embedding = await generateEmbedding(transcript);
-      const thoughtId = uuidv4();
+    const duration = Date.now() - startTime;
 
-      await queryContext(
-        context as AIContext,
-        `INSERT INTO loose_thoughts
-         (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
-         VALUES ($1, 'default', $2, 'voice', '[]', $3, false, NOW())`,
-        [
-          thoughtId,
-          transcript,
-          embedding.length > 0 ? formatForPgVector(embedding) : null,
-        ]
-      );
+    return res.json({
+      success: true,
+      context,
+      persona: persona.displayName,
+      mode: 'structured',
+      // Frontend compatibility: ideaId and structured at top level
+      ideaId,
+      transcript,
+      structured,
+      // Also include idea object for other consumers
+      idea: {
+        id: ideaId,
+        ...structured,
+      },
+      processingTime: duration,
+    });
 
-      const duration = Date.now() - startTime;
+  } else {
+    // PERSONAL MODE: Add to incubator first
+    const embedding = await generateEmbedding(transcript);
+    const thoughtId = uuidv4();
 
-      return res.json({
-        success: true,
-        context,
-        persona: persona.displayName,
-        mode: 'incubated',
-        thought: {
-          id: thoughtId,
-          raw_input: transcript,
-        },
-        message: `${persona.icon} ${persona.displayName}: Ich habe deinen Gedanken notiert. Er inkubiert jetzt und ich suche nach Mustern...`,
-        processingTime: duration,
-      });
-    }
+    await queryContext(
+      context as AIContext,
+      `INSERT INTO loose_thoughts
+       (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
+       VALUES ($1, 'default', $2, 'voice', '[]', $3, false, NOW())`,
+      [
+        thoughtId,
+        transcript,
+        embedding.length > 0 ? formatForPgVector(embedding) : null,
+      ]
+    );
 
-  } catch (error: any) {
-    console.error(`Error processing voice memo in ${context} context:`, error);
-    return res.status(500).json({
-      error: error.message
+    const duration = Date.now() - startTime;
+
+    return res.json({
+      success: true,
+      context,
+      persona: persona.displayName,
+      mode: 'incubated',
+      thought: {
+        id: thoughtId,
+        raw_input: transcript,
+      },
+      message: `${persona.icon} ${persona.displayName}: Ich habe deinen Gedanken notiert. Er inkubiert jetzt und ich suche nach Mustern...`,
+      processingTime: duration,
     });
   }
-});
+}));
 
 /**
  * Structure a thought using context-specific persona
@@ -267,49 +256,42 @@ Strukturiere diesen Gedanken. Antworte NUR mit einem JSON-Objekt (keine Erkläru
  *
  * Get statistics for a specific context
  */
-voiceMemoContextRouter.get('/:context/stats', async (req: Request, res: Response) => {
+voiceMemoContextRouter.get('/:context/stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      error: 'Invalid context. Must be "personal" or "work"'
-    });
+    throw new ValidationError('Invalid context. Must be "personal" or "work"');
   }
 
-  try {
-    const [ideasCount, thoughtsCount, clustersCount] = await Promise.all([
-      queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM ideas'),
-      queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM loose_thoughts'),
-      queryContext(context as AIContext, "SELECT COUNT(*) as count FROM thought_clusters WHERE status = 'ready'"),
-    ]);
+  const [ideasCount, thoughtsCount, clustersCount] = await Promise.all([
+    queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM ideas'),
+    queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM loose_thoughts'),
+    queryContext(context as AIContext, "SELECT COUNT(*) as count FROM thought_clusters WHERE status = 'ready'"),
+  ]);
 
-    const persona = getSubPersona(context as AIContext);
+  const persona = getSubPersona(context as AIContext);
 
-    res.json({
-      context,
-      persona: {
-        id: persona.id,
-        name: persona.displayName,
-        icon: persona.icon,
-      },
-      stats: {
-        total_ideas: parseInt(ideasCount.rows[0].count),
-        loose_thoughts: parseInt(thoughtsCount.rows[0].count),
-        ready_clusters: parseInt(clustersCount.rows[0].count),
-      },
-    });
-  } catch (error: any) {
-    console.error(`Error fetching stats for ${context}:`, error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  res.json({
+    context,
+    persona: {
+      id: persona.id,
+      name: persona.displayName,
+      icon: persona.icon,
+    },
+    stats: {
+      total_ideas: parseInt(ideasCount.rows[0].count),
+      loose_thoughts: parseInt(thoughtsCount.rows[0].count),
+      ready_clusters: parseInt(clustersCount.rows[0].count),
+    },
+  });
+}));
 
 /**
  * GET /api/:context/personas
  *
  * Get available personas for a context
  */
-voiceMemoContextRouter.get('/:context/personas', (req: Request, res: Response) => {
+voiceMemoContextRouter.get('/:context/personas', apiKeyAuth, (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {

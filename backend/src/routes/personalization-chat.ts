@@ -5,6 +5,7 @@
  * - AI asks thoughtful questions
  * - Extracts and stores personal facts
  * - Builds a comprehensive user profile over time
+ * SECURITY: All endpoints require authentication - handles sensitive personal data
  */
 
 import { Router, Request, Response } from 'express';
@@ -13,6 +14,8 @@ import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { generateOpenAIResponse, isOpenAIAvailable } from '../services/openai';
 import axios from 'axios';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const personalizationChatRouter = Router();
 
@@ -110,86 +113,75 @@ const TOPIC_QUESTIONS: Record<string, string[]> = {
  * POST /api/personalization/chat
  * Send a message and get AI response
  */
-personalizationChatRouter.post('/chat', async (req: Request, res: Response) => {
+personalizationChatRouter.post('/chat', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { sessionId, message } = req.body;
 
   if (!message) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'MISSING_MESSAGE', message: 'Message is required' }
-    });
+    throw new ValidationError('Message is required');
   }
 
-  try {
-    const currentSessionId = sessionId || uuidv4();
+  const currentSessionId = sessionId || uuidv4();
 
-    // Store user message
-    await query(`
-      INSERT INTO personalization_conversations (session_id, role, message)
-      VALUES ($1, 'user', $2)
-    `, [currentSessionId, message]);
+  // Store user message
+  await query(`
+    INSERT INTO personalization_conversations (session_id, role, message)
+    VALUES ($1, 'user', $2)
+  `, [currentSessionId, message]);
 
-    // Get conversation history
-    const historyResult = await query(`
-      SELECT role, message FROM personalization_conversations
-      WHERE session_id = $1
-      ORDER BY created_at ASC
-      LIMIT 20
-    `, [currentSessionId]);
+  // Get conversation history
+  const historyResult = await query(`
+    SELECT role, message FROM personalization_conversations
+    WHERE session_id = $1
+    ORDER BY created_at ASC
+    LIMIT 20
+  `, [currentSessionId]);
 
-    // Get existing facts about user
-    const factsResult = await query(`
-      SELECT category, fact_key, fact_value FROM personal_facts
-      ORDER BY created_at DESC
-      LIMIT 30
-    `);
+  // Get existing facts about user
+  const factsResult = await query(`
+    SELECT category, fact_key, fact_value FROM personal_facts
+    ORDER BY created_at DESC
+    LIMIT 30
+  `);
 
-    const existingFacts = factsResult.rows.map(r =>
-      `${r.category}: ${r.fact_key} = ${r.fact_value}`
-    ).join('\n');
+  const existingFacts = factsResult.rows.map(r =>
+    `${r.category}: ${r.fact_key} = ${r.fact_value}`
+  ).join('\n');
 
-    // Extract facts from user message
-    const extractedFacts = await extractFactsFromMessage(message, historyResult.rows);
+  // Extract facts from user message
+  const extractedFacts = await extractFactsFromMessage(message, historyResult.rows);
 
-    // Store extracted facts
-    for (const fact of extractedFacts) {
-      await storeFact(fact, message);
+  // Store extracted facts
+  for (const fact of extractedFacts) {
+    await storeFact(fact, message);
+  }
+
+  // Generate AI response
+  const aiResponse = await generateAIResponse(
+    historyResult.rows,
+    existingFacts,
+    extractedFacts
+  );
+
+  // Store AI response
+  await query(`
+    INSERT INTO personalization_conversations (session_id, role, message, facts_extracted)
+    VALUES ($1, 'ai', $2, $3)
+  `, [currentSessionId, aiResponse, JSON.stringify(extractedFacts)]);
+
+  res.json({
+    success: true,
+    data: {
+      sessionId: currentSessionId,
+      response: aiResponse,
+      factsLearned: extractedFacts.length,
+      newFacts: extractedFacts.map(f => ({
+        category: f.category,
+        key: f.factKey,
+        value: f.factValue
+      }))
     }
-
-    // Generate AI response
-    const aiResponse = await generateAIResponse(
-      historyResult.rows,
-      existingFacts,
-      extractedFacts
-    );
-
-    // Store AI response
-    await query(`
-      INSERT INTO personalization_conversations (session_id, role, message, facts_extracted)
-      VALUES ($1, 'ai', $2, $3)
-    `, [currentSessionId, aiResponse, JSON.stringify(extractedFacts)]);
-
-    res.json({
-      success: true,
-      data: {
-        sessionId: currentSessionId,
-        response: aiResponse,
-        factsLearned: extractedFacts.length,
-        newFacts: extractedFacts.map(f => ({
-          category: f.category,
-          key: f.factKey,
-          value: f.factValue
-        }))
-      }
-    });
-  } catch (error) {
-    logger.error('Personalization chat error', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { code: 'CHAT_ERROR', message: 'Failed to process chat message' }
-    });
-  }
-});
+  });
+}));
 
 // ===========================================
 // Get Initial Question
@@ -199,53 +191,45 @@ personalizationChatRouter.post('/chat', async (req: Request, res: Response) => {
  * GET /api/personalization/start
  * Get the first question to start a conversation
  */
-personalizationChatRouter.get('/start', async (req: Request, res: Response) => {
-  try {
-    // Find least explored topic
-    const topicResult = await query(`
-      SELECT topic, questions_asked, completion_level
-      FROM personalization_topics
-      ORDER BY completion_level ASC, questions_asked ASC
-      LIMIT 1
-    `);
+personalizationChatRouter.get('/start', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  // Find least explored topic
+  const topicResult = await query(`
+    SELECT topic, questions_asked, completion_level
+    FROM personalization_topics
+    ORDER BY completion_level ASC, questions_asked ASC
+    LIMIT 1
+  `);
 
-    const topic = topicResult.rows[0]?.topic || 'basic_info';
-    const question = await getNextQuestion(topic);
-    const sessionId = uuidv4();
+  const topic = topicResult.rows[0]?.topic || 'basic_info';
+  const question = await getNextQuestion(topic);
+  const sessionId = uuidv4();
 
-    // Store the AI's opening message
-    const greeting = `Hallo! Ich würde dich gerne besser kennenlernen, damit ich dir noch besser helfen kann.
+  // Store the AI's opening message
+  const greeting = `Hallo! Ich würde dich gerne besser kennenlernen, damit ich dir noch besser helfen kann.
 
 ${question}`;
 
-    await query(`
-      INSERT INTO personalization_conversations (session_id, role, message)
-      VALUES ($1, 'ai', $2)
-    `, [sessionId, greeting]);
+  await query(`
+    INSERT INTO personalization_conversations (session_id, role, message)
+    VALUES ($1, 'ai', $2)
+  `, [sessionId, greeting]);
 
-    // Update topic stats
-    await query(`
-      UPDATE personalization_topics
-      SET questions_asked = questions_asked + 1, last_asked_at = NOW()
-      WHERE topic = $1
-    `, [topic]);
+  // Update topic stats
+  await query(`
+    UPDATE personalization_topics
+    SET questions_asked = questions_asked + 1, last_asked_at = NOW()
+    WHERE topic = $1
+  `, [topic]);
 
-    res.json({
-      success: true,
-      data: {
-        sessionId,
-        message: greeting,
-        currentTopic: topic
-      }
-    });
-  } catch (error) {
-    logger.error('Start personalization error', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { code: 'START_ERROR', message: 'Failed to start conversation' }
-    });
-  }
-});
+  res.json({
+    success: true,
+    data: {
+      sessionId,
+      message: greeting,
+      currentTopic: topic
+    }
+  });
+}));
 
 // ===========================================
 // Get Learned Facts
@@ -255,56 +239,48 @@ ${question}`;
  * GET /api/personalization/facts
  * Get all learned facts about the user
  */
-personalizationChatRouter.get('/facts', async (req: Request, res: Response) => {
-  try {
-    const { category } = req.query;
+personalizationChatRouter.get('/facts', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { category } = req.query;
 
-    let queryStr = `
-      SELECT id, category, fact_key, fact_value, confidence, source, created_at
-      FROM personal_facts
-    `;
-    const params: any[] = [];
+  let queryStr = `
+    SELECT id, category, fact_key, fact_value, confidence, source, created_at
+    FROM personal_facts
+  `;
+  const params: any[] = [];
 
-    if (category) {
-      queryStr += ` WHERE category = $1`;
-      params.push(category);
+  if (category) {
+    queryStr += ` WHERE category = $1`;
+    params.push(category);
+  }
+
+  queryStr += ` ORDER BY category, created_at DESC`;
+
+  const result = await query(queryStr, params);
+
+  // Group by category
+  const factsByCategory: Record<string, any[]> = {};
+  for (const row of result.rows) {
+    if (!factsByCategory[row.category]) {
+      factsByCategory[row.category] = [];
     }
-
-    queryStr += ` ORDER BY category, created_at DESC`;
-
-    const result = await query(queryStr, params);
-
-    // Group by category
-    const factsByCategory: Record<string, any[]> = {};
-    for (const row of result.rows) {
-      if (!factsByCategory[row.category]) {
-        factsByCategory[row.category] = [];
-      }
-      factsByCategory[row.category].push({
-        id: row.id,
-        key: row.fact_key,
-        value: row.fact_value,
-        confidence: parseFloat(row.confidence),
-        source: row.source,
-        createdAt: row.created_at
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        factsByCategory,
-        totalFacts: result.rows.length
-      }
-    });
-  } catch (error) {
-    logger.error('Get facts error', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { code: 'FACTS_ERROR', message: 'Failed to get facts' }
+    factsByCategory[row.category].push({
+      id: row.id,
+      key: row.fact_key,
+      value: row.fact_value,
+      confidence: parseFloat(row.confidence),
+      source: row.source,
+      createdAt: row.created_at
     });
   }
-});
+
+  res.json({
+    success: true,
+    data: {
+      factsByCategory,
+      totalFacts: result.rows.length
+    }
+  });
+}));
 
 // ===========================================
 // Get Learning Progress
@@ -314,52 +290,44 @@ personalizationChatRouter.get('/facts', async (req: Request, res: Response) => {
  * GET /api/personalization/progress
  * Get learning progress by topic
  */
-personalizationChatRouter.get('/progress', async (req: Request, res: Response) => {
-  try {
-    const topicsResult = await query(`
-      SELECT topic, questions_asked, completion_level, last_asked_at
-      FROM personalization_topics
-      ORDER BY topic
-    `);
+personalizationChatRouter.get('/progress', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const topicsResult = await query(`
+    SELECT topic, questions_asked, completion_level, last_asked_at
+    FROM personalization_topics
+    ORDER BY topic
+  `);
 
-    const factsCount = await query(`
-      SELECT category, COUNT(*) as count
-      FROM personal_facts
-      GROUP BY category
-    `);
+  const factsCount = await query(`
+    SELECT category, COUNT(*) as count
+    FROM personal_facts
+    GROUP BY category
+  `);
 
-    const factsCounts: Record<string, number> = {};
-    factsCount.rows.forEach(r => {
-      factsCounts[r.category] = parseInt(r.count);
-    });
+  const factsCounts: Record<string, number> = {};
+  factsCount.rows.forEach(r => {
+    factsCounts[r.category] = parseInt(r.count);
+  });
 
-    const topics = topicsResult.rows.map(t => ({
-      topic: t.topic,
-      label: getTopicLabel(t.topic),
-      questionsAsked: t.questions_asked,
-      completionLevel: parseFloat(t.completion_level),
-      factsLearned: factsCounts[t.topic] || 0,
-      lastAskedAt: t.last_asked_at
-    }));
+  const topics = topicsResult.rows.map(t => ({
+    topic: t.topic,
+    label: getTopicLabel(t.topic),
+    questionsAsked: t.questions_asked,
+    completionLevel: parseFloat(t.completion_level),
+    factsLearned: factsCounts[t.topic] || 0,
+    lastAskedAt: t.last_asked_at
+  }));
 
-    const overallProgress = topics.reduce((sum, t) => sum + t.completionLevel, 0) / topics.length;
+  const overallProgress = topics.reduce((sum, t) => sum + t.completionLevel, 0) / topics.length;
 
-    res.json({
-      success: true,
-      data: {
-        topics,
-        overallProgress: Math.round(overallProgress * 100),
-        totalFactsLearned: Object.values(factsCounts).reduce((a, b) => a + b, 0)
-      }
-    });
-  } catch (error) {
-    logger.error('Get progress error', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { code: 'PROGRESS_ERROR', message: 'Failed to get progress' }
-    });
-  }
-});
+  res.json({
+    success: true,
+    data: {
+      topics,
+      overallProgress: Math.round(overallProgress * 100),
+      totalFactsLearned: Object.values(factsCounts).reduce((a, b) => a + b, 0)
+    }
+  });
+}));
 
 // ===========================================
 // Delete Fact
@@ -369,24 +337,16 @@ personalizationChatRouter.get('/progress', async (req: Request, res: Response) =
  * DELETE /api/personalization/facts/:id
  * Delete a specific fact
  */
-personalizationChatRouter.delete('/facts/:id', async (req: Request, res: Response) => {
+personalizationChatRouter.delete('/facts/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  try {
-    await query('DELETE FROM personal_facts WHERE id = $1', [id]);
+  await query('DELETE FROM personal_facts WHERE id = $1', [id]);
 
-    res.json({
-      success: true,
-      message: 'Fact deleted'
-    });
-  } catch (error) {
-    logger.error('Delete fact error', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { code: 'DELETE_ERROR', message: 'Failed to delete fact' }
-    });
-  }
-});
+  res.json({
+    success: true,
+    message: 'Fact deleted'
+  });
+}));
 
 // ===========================================
 // Get User Summary
@@ -396,46 +356,38 @@ personalizationChatRouter.delete('/facts/:id', async (req: Request, res: Respons
  * GET /api/personalization/summary
  * Get AI-generated summary of what's been learned
  */
-personalizationChatRouter.get('/summary', async (req: Request, res: Response) => {
-  try {
-    const factsResult = await query(`
-      SELECT category, fact_key, fact_value
-      FROM personal_facts
-      ORDER BY category, created_at DESC
-    `);
+personalizationChatRouter.get('/summary', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const factsResult = await query(`
+    SELECT category, fact_key, fact_value
+    FROM personal_facts
+    ORDER BY category, created_at DESC
+  `);
 
-    if (factsResult.rows.length === 0) {
-      return res.json({
-        success: true,
-        data: {
-          summary: 'Ich kenne dich noch nicht so gut. Lass uns ein Gespräch starten!',
-          factCount: 0
-        }
-      });
-    }
-
-    // Generate summary with AI
-    const factsText = factsResult.rows.map(r =>
-      `${r.category}: ${r.fact_key} = ${r.fact_value}`
-    ).join('\n');
-
-    const summary = await generateUserSummary(factsText);
-
-    res.json({
+  if (factsResult.rows.length === 0) {
+    return res.json({
       success: true,
       data: {
-        summary,
-        factCount: factsResult.rows.length
+        summary: 'Ich kenne dich noch nicht so gut. Lass uns ein Gespräch starten!',
+        factCount: 0
       }
     });
-  } catch (error) {
-    logger.error('Get summary error', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { code: 'SUMMARY_ERROR', message: 'Failed to generate summary' }
-    });
   }
-});
+
+  // Generate summary with AI
+  const factsText = factsResult.rows.map(r =>
+    `${r.category}: ${r.fact_key} = ${r.fact_value}`
+  ).join('\n');
+
+  const summary = await generateUserSummary(factsText);
+
+  res.json({
+    success: true,
+    data: {
+      summary,
+      factCount: factsResult.rows.length
+    }
+  });
+}));
 
 // ===========================================
 // Helper Functions

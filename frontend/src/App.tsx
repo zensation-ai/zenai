@@ -92,10 +92,15 @@ function App() {
         ? (databases.personal?.status === 'connected' || databases.work?.status === 'connected')
         : response.data.services.database?.status === 'connected';
 
+      // AI services are under services.ai (not services.ollama directly)
+      const aiServices = response.data.services.ai;
+      const ollamaConnected = aiServices?.ollama?.status === 'connected';
+      const ollamaModels = aiServices?.ollama?.models || [];
+
       setApiStatus({
         database: dbConnected,
-        ollama: response.data.services.ollama?.status === 'connected',
-        models: response.data.services.ollama?.models || [],
+        ollama: ollamaConnected,
+        models: ollamaModels,
       });
     } catch (err) {
       setApiStatus({ database: false, ollama: false, models: [] });

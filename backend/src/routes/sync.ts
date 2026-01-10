@@ -10,6 +10,8 @@
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const syncRouter = Router();
 
@@ -57,23 +59,17 @@ interface SyncResult {
  * POST /api/:context/sync/swipe-actions
  * Sync offline swipe actions
  */
-syncRouter.post('/:context/sync/swipe-actions', async (req: Request, res: Response) => {
+syncRouter.post('/:context/sync/swipe-actions', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'INVALID_CONTEXT', message: 'Context must be "personal" or "work"' }
-    });
+    throw new ValidationError('Context must be "personal" or "work"');
   }
 
   const { actions } = req.body as { actions: SwipeAction[] };
 
   if (!Array.isArray(actions) || actions.length === 0) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'VALIDATION_ERROR', message: 'Actions array is required' }
-    });
+    throw new ValidationError('Actions array is required');
   }
 
   const results = await Promise.allSettled(
@@ -100,7 +96,7 @@ syncRouter.post('/:context/sync/swipe-actions', async (req: Request, res: Respon
       errors,
     },
   });
-});
+}));
 
 async function processSwipeAction(context: AIContext, action: SwipeAction, index: number): Promise<void> {
   if (!isValidUUID(action.ideaId)) {
@@ -141,14 +137,11 @@ async function processSwipeAction(context: AIContext, action: SwipeAction, index
  * POST /api/:context/sync/batch
  * Batch sync multiple item types at once
  */
-syncRouter.post('/:context/sync/batch', async (req: Request, res: Response) => {
+syncRouter.post('/:context/sync/batch', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'INVALID_CONTEXT', message: 'Context must be "personal" or "work"' }
-    });
+    throw new ValidationError('Context must be "personal" or "work"');
   }
 
   const {
@@ -195,7 +188,7 @@ syncRouter.post('/:context/sync/batch', async (req: Request, res: Response) => {
     success: true,
     data: results,
   });
-});
+}));
 
 async function processVoiceMemosBatch(
   context: AIContext,
@@ -285,37 +278,26 @@ async function processTrainingFeedbackBatch(
  * GET /api/:context/sync/status
  * Get sync status and pending items count
  */
-syncRouter.get('/:context/sync/status', async (req: Request, res: Response) => {
+syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    return res.status(400).json({
-      success: false,
-      error: { code: 'INVALID_CONTEXT', message: 'Context must be "personal" or "work"' }
-    });
+    throw new ValidationError('Context must be "personal" or "work"');
   }
 
-  try {
-    // Get last sync info and counts
-    const [ideasCount, recentCount] = await Promise.all([
-      queryContext(context as AIContext, `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false`),
-      queryContext(context as AIContext, `SELECT COUNT(*) as recent FROM ideas WHERE created_at > NOW() - INTERVAL '24 hours'`),
-    ]);
+  // Get last sync info and counts
+  const [ideasCount, recentCount] = await Promise.all([
+    queryContext(context as AIContext, `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false`),
+    queryContext(context as AIContext, `SELECT COUNT(*) as recent FROM ideas WHERE created_at > NOW() - INTERVAL '24 hours'`),
+  ]);
 
-    res.json({
-      success: true,
-      data: {
-        context,
-        totalIdeas: parseInt(ideasCount.rows[0]?.total || '0'),
-        recentIdeas: parseInt(recentCount.rows[0]?.recent || '0'),
-        lastCheck: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    logger.error('Sync status error', error instanceof Error ? error : undefined, { context, operation: 'syncStatus' });
-    res.status(500).json({
-      success: false,
-      error: { code: 'DATABASE_ERROR', message: 'Failed to get sync status' }
-    });
-  }
-});
+  res.json({
+    success: true,
+    data: {
+      context,
+      totalIdeas: parseInt(ideasCount.rows[0]?.total || '0'),
+      recentIdeas: parseInt(recentCount.rows[0]?.recent || '0'),
+      lastCheck: new Date().toISOString(),
+    },
+  });
+}));

@@ -1,6 +1,7 @@
 import { query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
+import { logger } from '../utils/logger';
 
 export interface UserProfile {
   id: string;
@@ -97,7 +98,9 @@ export async function trackInteraction(event: InteractionEvent): Promise<void> {
   );
 
   // Trigger profile learning in background
-  updateProfileFromInteraction(event).catch(console.error);
+  updateProfileFromInteraction(event).catch(err =>
+    logger.error('Profile update from interaction failed', err instanceof Error ? err : undefined)
+  );
 }
 
 /**

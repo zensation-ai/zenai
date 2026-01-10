@@ -1,5 +1,6 @@
 import { Pool, PoolClient } from 'pg';
 import dotenv from 'dotenv';
+import { logger } from './logger';
 
 dotenv.config();
 
@@ -51,7 +52,7 @@ function getPoolConfig() {
 export const pool = new Pool(getPoolConfig());
 
 pool.on('error', (err) => {
-  console.error('Unexpected database error:', err);
+  logger.error('Unexpected database error', err instanceof Error ? err : undefined);
 });
 
 export async function query(text: string, params?: any[]) {
@@ -60,7 +61,7 @@ export async function query(text: string, params?: any[]) {
   const duration = Date.now() - start;
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Query executed in ${duration}ms`);
+    logger.debug('Query executed', { duration });
   }
 
   return result;
@@ -73,10 +74,10 @@ export async function getClient(): Promise<PoolClient> {
 export async function testConnection(): Promise<boolean> {
   try {
     const result = await pool.query('SELECT NOW()');
-    console.log('Database connected:', result.rows[0].now);
+    logger.info('Database connected', { timestamp: result.rows[0].now });
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    logger.error('Database connection failed', error instanceof Error ? error : undefined);
     return false;
   }
 }

@@ -8,6 +8,7 @@ struct ContentView: View {
 
     @State private var showContextSuggestion = false
     @State private var suggestedContext: AIContext?
+    @State private var showAPIKeySetup = false
 
     var body: some View {
         TabView(selection: $deepLinkManager.selectedTab) {
@@ -87,9 +88,21 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            checkAPIKey()
             checkForContextSuggestion()
         }
+        .sheet(isPresented: $showAPIKeySetup) {
+            APIKeySetupView()
+        }
         .environmentObject(contextManager)
+    }
+
+    private func checkAPIKey() {
+        // Check if API key is stored in Keychain
+        if !APIKeyManager.shared.hasAPIKey() {
+            // Show API key setup sheet
+            showAPIKeySetup = true
+        }
     }
 
     private func checkForContextSuggestion() {

@@ -65,6 +65,83 @@ class APIService: ObservableObject {
         print("📱 APIService: Using \(self.baseURL) (\(AppEnvironment.isSimulator ? "Simulator" : "Real Device"))")
     }
 
+    // MARK: - API Key Authentication
+
+    /// Create an authenticated URLRequest with API key from Keychain
+    /// - Parameters:
+    ///   - url: The URL for the request
+    ///   - method: HTTP method (GET, POST, PUT, DELETE, etc.)
+    /// - Returns: Configured URLRequest with Authorization header
+    /// - Throws: APIError.unauthorized if no API key is stored
+    private func createAuthenticatedRequest(
+        url: URL,
+        method: String = "GET"
+    ) throws -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Get API key from Keychain
+        guard let apiKey = APIKeyManager.shared.getAPIKey() else {
+            print("❌ No API key found in Keychain")
+            throw APIError.unauthorized
+        }
+
+        // Add Authorization header
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        return request
+    }
+
+    /// Create an authenticated URLRequest with body data
+    /// - Parameters:
+    ///   - url: The URL for the request
+    ///   - method: HTTP method
+    ///   - body: Request body data
+    /// - Returns: Configured URLRequest with Authorization header and body
+    /// - Throws: APIError.unauthorized if no API key is stored
+    private func createAuthenticatedRequest(
+        url: URL,
+        method: String,
+        body: Data
+    ) throws -> URLRequest {
+        var request = try createAuthenticatedRequest(url: url, method: method)
+        request.httpBody = body
+        return request
+    }
+
+    /// Create an authenticated multipart/form-data request
+    /// - Parameters:
+    ///   - url: The URL for the request
+    ///   - boundary: Multipart boundary string
+    ///   - body: Multipart body data
+    ///   - timeout: Request timeout interval
+    /// - Returns: Configured URLRequest with Authorization header
+    /// - Throws: APIError.unauthorized if no API key is stored
+    private func createAuthenticatedMultipartRequest(
+        url: URL,
+        boundary: String,
+        body: Data,
+        timeout: TimeInterval = 120
+    ) throws -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = timeout
+
+        // Get API key from Keychain
+        guard let apiKey = APIKeyManager.shared.getAPIKey() else {
+            print("❌ No API key found in Keychain")
+            throw APIError.unauthorized
+        }
+
+        // Add Authorization header
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.httpBody = body
+
+        return request
+    }
+
     // MARK: - Health Check
 
     func checkHealth() async -> Bool {
@@ -99,7 +176,8 @@ class APIService: ObservableObject {
         print("🌐 Fetching from: \(url.absoluteString)")
 
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+            let request = try createAuthenticatedRequest(url: url, method: "GET")
+            let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 print("❌ Invalid response type")
@@ -133,12 +211,9 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         let body = ["query": query, "limit": 10] as [String: Any]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -160,12 +235,9 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         let body = ["query": query, "limit": 20] as [String: Any]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -199,11 +271,6 @@ class APIService: ObservableObject {
 
         // Create multipart form data
         let boundary = UUID().uuidString
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 120 // 2 minutes for transcription
-
         var body = Data()
 
         // Add audio file (safe string appending)
@@ -214,8 +281,7 @@ class APIService: ObservableObject {
         _ = body.appendString("\r\n")
         _ = body.appendString("--\(boundary)--\r\n")
 
-        request.httpBody = body
-
+        let request = try createAuthenticatedMultipartRequest(url: url, boundary: boundary, body: body, timeout: 120)
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -240,13 +306,10 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60
-
         let body = ["text": text]
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try JSONEncoder().encode(body)
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        request.timeoutInterval = 60
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -268,7 +331,8 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -287,10 +351,6 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         let dateFormatter = ISO8601DateFormatter()
         let body: [String: Any] = [
             "title": title,
@@ -299,7 +359,8 @@ class APIService: ObservableObject {
             "participants": participants,
             "location": location ?? ""
         ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -317,7 +378,8 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
@@ -343,13 +405,10 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 120
-
         let body = ["transcript": transcript]
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try JSONEncoder().encode(body)
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        request.timeoutInterval = 120
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -369,7 +428,8 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -384,7 +444,8 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -400,12 +461,9 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         let body = ["enabled": enabled]
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try JSONEncoder().encode(body)
+        let request = try createAuthenticatedRequest(url: url, method: "PUT", body: bodyData)
 
         let (_, response) = try await URLSession.shared.data(for: request)
 
@@ -418,17 +476,14 @@ class APIService: ObservableObject {
     func trackInteraction(ideaId: String?, interactionType: String) async {
         guard let url = URL(string: "\(baseURL)/api/profile/track") else { return }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         var body: [String: Any] = ["interaction_type": interactionType]
         if let ideaId = ideaId {
             body["idea_id"] = ideaId
         }
 
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let bodyData = try JSONSerialization.data(withJSONObject: body)
+            let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
             let _ = try await URLSession.shared.data(for: request)
         } catch {
             print("Track interaction failed: \(error)")
@@ -442,12 +497,9 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         let body = ["action": action]
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try JSONEncoder().encode(body)
+        let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -465,9 +517,7 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-
+        let request = try createAuthenticatedRequest(url: url, method: "PUT")
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -484,9 +534,7 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-
+        let request = try createAuthenticatedRequest(url: url, method: "DELETE")
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -506,9 +554,7 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-
+        let request = try createAuthenticatedRequest(url: url, method: "PUT")
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -526,9 +572,7 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-
+        let request = try createAuthenticatedRequest(url: url, method: "PUT")
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -549,7 +593,8 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -567,7 +612,8 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -583,8 +629,7 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        var request = try createAuthenticatedRequest(url: url, method: "POST")
         request.timeoutInterval = 60
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -602,7 +647,8 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -779,6 +825,7 @@ enum APIError: LocalizedError {
     case serverError(statusCode: Int)
     case serverMessage(String)
     case encodingError
+    case unauthorized
 
     var errorDescription: String? {
         switch self {
@@ -792,6 +839,8 @@ enum APIError: LocalizedError {
             return message
         case .encodingError:
             return "Fehler beim Kodieren der Daten"
+        case .unauthorized:
+            return "Nicht autorisiert - API-Key fehlt oder ungültig"
         }
     }
 }
@@ -817,11 +866,6 @@ extension APIService {
 
         // Create multipart form data
         let boundary = UUID().uuidString
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 120
-
         var body = Data()
 
         // Add audio file (safe string appending)
@@ -840,7 +884,13 @@ extension APIService {
 
         _ = body.appendString("--\(boundary)--\r\n")
 
-        request.httpBody = body
+        let request: URLRequest
+        do {
+            request = try createAuthenticatedMultipartRequest(url: url, boundary: boundary, body: body, timeout: 120)
+        } catch {
+            completion(.failure(error))
+            return
+        }
 
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
@@ -886,18 +936,23 @@ extension APIService {
             return
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60
-
         var body: [String: Any] = ["text": text]
         if let persona = persona {
             body["persona"] = persona
         }
 
+        let bodyData: Data
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            bodyData = try JSONSerialization.data(withJSONObject: body)
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        var request: URLRequest
+        do {
+            request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+            request.timeoutInterval = 60
         } catch {
             completion(.failure(error))
             return
@@ -945,11 +1000,6 @@ extension APIService {
 
         // Create multipart form data
         let boundary = UUID().uuidString
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 180 // 3 minutes for video uploads
-
         var body = Data()
 
         // Determine content type
@@ -972,7 +1022,13 @@ extension APIService {
         _ = body.appendString("\r\n")
         _ = body.appendString("--\(boundary)--\r\n")
 
-        request.httpBody = body
+        let request: URLRequest
+        do {
+            request = try createAuthenticatedMultipartRequest(url: url, boundary: boundary, body: body, timeout: 180)
+        } catch {
+            completion(.failure(error))
+            return
+        }
 
         URLSession.shared.dataTask(with: request) { responseData, response, error in
             DispatchQueue.main.async {
@@ -1017,11 +1073,6 @@ extension APIService {
 
         // Create multipart form data
         let boundary = UUID().uuidString
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 180 // 3 minutes for uploads
-
         var body = Data()
 
         // Determine content type for media
@@ -1054,7 +1105,13 @@ extension APIService {
 
         _ = body.appendString("--\(boundary)--\r\n")
 
-        request.httpBody = body
+        let request: URLRequest
+        do {
+            request = try createAuthenticatedMultipartRequest(url: url, boundary: boundary, body: body, timeout: 180)
+        } catch {
+            completion(.failure(error))
+            return
+        }
 
         URLSession.shared.dataTask(with: request) { responseData, response, error in
             DispatchQueue.main.async {
@@ -1099,7 +1156,15 @@ extension APIService {
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        let request: URLRequest
+        do {
+            request = try createAuthenticatedRequest(url: url, method: "GET")
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     completion(.failure(error))
@@ -1137,7 +1202,15 @@ extension APIService {
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        let request: URLRequest
+        do {
+            request = try createAuthenticatedRequest(url: url, method: "GET")
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     completion(.failure(error))
@@ -1173,7 +1246,8 @@ extension APIService {
         print("🌐 Trying context endpoint: \(url.absoluteString)")
 
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+            let request = try createAuthenticatedRequest(url: url, method: "GET")
+            let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 print("❌ Invalid HTTP response")
@@ -1226,7 +1300,15 @@ extension APIService {
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        let request: URLRequest
+        do {
+            request = try createAuthenticatedRequest(url: url, method: "GET")
+        } catch {
+            completion(.failure(error))
+            return
+        }
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     completion(.failure(error))
@@ -1362,7 +1444,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -1388,11 +1471,6 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 30
-
         var body: [String: Any] = [
             "idea_id": ideaId,
             "training_type": trainingType.rawValue
@@ -1414,7 +1492,9 @@ extension APIService {
             body["feedback"] = feedback
         }
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        request.timeoutInterval = 30
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -1522,7 +1602,7 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
+        var request = try createAuthenticatedRequest(url: url, method: "GET")
         request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -1568,7 +1648,7 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
+        var request = try createAuthenticatedRequest(url: url, method: "GET")
         request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -1606,7 +1686,7 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
+        var request = try createAuthenticatedRequest(url: url, method: "GET")
         request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -1641,7 +1721,7 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
+        var request = try createAuthenticatedRequest(url: url, method: "GET")
         request.setValue(context.rawValue, forHTTPHeaderField: "X-AI-Context")
 
         let (data, response) = try await URLSession.shared.data(for: request)

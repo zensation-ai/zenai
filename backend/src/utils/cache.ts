@@ -48,8 +48,7 @@ function getClient(): Redis | null {
       });
 
       redis.on('error', (err) => {
-        console.error('❌ Redis connection error:', err.message);
-        logger.error('Redis error', err);
+        logger.error('Redis error', err instanceof Error ? err : undefined);
         isConnected = false;
       });
 
@@ -59,8 +58,7 @@ function getClient(): Redis | null {
 
       // Attempt connection
       redis.connect().catch((err) => {
-        console.error('❌ Redis initial connection failed:', err.message);
-        logger.warn('Redis initial connection failed', err);
+        logger.warn('Redis initial connection failed', { error: err instanceof Error ? err.message : String(err) });
       });
     } catch (error) {
       logger.warn('Redis initialization failed, caching disabled');

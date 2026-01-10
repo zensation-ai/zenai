@@ -2,6 +2,7 @@ import { query } from '../utils/database';
 import { queryContext, AIContext } from '../utils/database-context';
 import { queryOllamaJSON } from '../utils/ollama';
 import { getTopics, Topic } from './topic-clustering';
+import { logger } from '../utils/logger';
 
 /**
  * Advanced Knowledge Graph Service
@@ -129,7 +130,7 @@ Wenn keine Beziehungen: []`;
 
     // Handle different response formats
     if (response === null || response === undefined) {
-      console.log('LLM returned null/undefined response');
+      logger.debug('LLM returned null/undefined response');
       return [];
     }
 
@@ -144,11 +145,11 @@ Wenn keine Beziehungen: []`;
       } else if (Array.isArray(response.data)) {
         relations = response.data;
       } else {
-        console.log('LLM returned unexpected object structure');
+        logger.debug('LLM returned unexpected object structure');
         return [];
       }
     } else {
-      console.log('LLM returned unexpected type:', typeof response);
+      logger.debug('LLM returned unexpected type', { type: typeof response });
       return [];
     }
 
@@ -180,7 +181,7 @@ Wenn keine Beziehungen: []`;
       })
       .filter((r): r is IdeaRelation => !!r.targetId); // Filter out invalid targets
   } catch (error) {
-    console.error('LLM relationship analysis failed:', error);
+    logger.error('LLM relationship analysis failed', error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -606,7 +607,7 @@ export async function discoverAllRelationships(
   }
 
   const ideaIds = ideasResult.rows.map(r => r.id);
-  console.log(`[Graph Discovery] Analyzing ${ideaIds.length} ideas`);
+  logger.info('Graph discovery started', { ideaCount: ideaIds.length });
 
   let newRelationships = 0;
   let processed = 0;
@@ -621,7 +622,7 @@ export async function discoverAllRelationships(
         newRelationships += relations.length;
         processed++;
       } catch (error) {
-        console.error(`[Graph Discovery] Failed for idea ${ideaId}:`, error);
+        logger.error('Graph discovery failed for idea', error instanceof Error ? error : undefined, { ideaId });
       }
     }
 
@@ -632,7 +633,7 @@ export async function discoverAllRelationships(
   }
 
   const processingTime = Date.now() - startTime;
-  console.log(`[Graph Discovery] Complete: ${newRelationships} relationships from ${processed} ideas in ${processingTime}ms`);
+  logger.info('Graph discovery complete', { newRelationships, processed, processingTime });
 
   return {
     newRelationships,

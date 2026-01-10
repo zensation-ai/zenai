@@ -55,6 +55,16 @@
 		AAE00095 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE00096; };
 		AAF00103 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00104; };
 		AAF00105 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00106; };
+		FFF00001 /* APIKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00002; };
+		FFF00003 /* APIKeySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00004; };
+		FFF00005 /* DigestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00006; };
+		FFF00007 /* AnalyticsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00008; };
+		FFF00009 /* PersonalizationChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00010; };
+		FFF00011 /* APIService+Phase20.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00012; };
+		FFF00013 /* APIService+Personalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00014; };
+		FFF00015 /* AppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00016; };
+		GGG00001 /* LearningTasksService.swift in Sources */ = {isa = PBXBuildFile; fileRef = GGG00002; };
+		GGG00003 /* LearningTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GGG00004; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -108,6 +118,16 @@
 		AAE00096 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
 		AAF00104 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		AAF00106 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		FFF00002 /* APIKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyManager.swift; sourceTree = "<group>"; };
+		FFF00004 /* APIKeySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySetupView.swift; sourceTree = "<group>"; };
+		FFF00006 /* DigestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestView.swift; sourceTree = "<group>"; };
+		FFF00008 /* AnalyticsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsDashboardView.swift; sourceTree = "<group>"; };
+		FFF00010 /* PersonalizationChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationChatView.swift; sourceTree = "<group>"; };
+		FFF00012 /* APIService+Phase20.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Phase20.swift"; sourceTree = "<group>"; };
+		FFF00014 /* APIService+Personalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Personalization.swift"; sourceTree = "<group>"; };
+		FFF00016 /* AppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntents.swift; sourceTree = "<group>"; };
+		GGG00002 /* LearningTasksService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTasksService.swift; sourceTree = "<group>"; };
+		GGG00004 /* LearningTasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTasksView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +160,7 @@
 				AAA00045 /* Services */,
 				AAA00046 /* Theme */,
 				AAE00094 /* Config */,
+				FFF00017 /* Intents */,
 			);
 			path = PersonalAIBrain;
 			sourceTree = "<group>";
@@ -180,6 +201,11 @@
 				EEE00004 /* PersonaSelectorView.swift */,
 				AAE00096 /* ExportView.swift */,
 				AAF00106 /* NotificationSettingsView.swift */,
+				FFF00004 /* APIKeySetupView.swift */,
+				FFF00006 /* DigestView.swift */,
+				FFF00008 /* AnalyticsDashboardView.swift */,
+				FFF00010 /* PersonalizationChatView.swift */,
+				GGG00004 /* LearningTasksView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -221,6 +247,10 @@
 				AAD00089 /* KeychainService.swift */,
 				AAD00091 /* WidgetDataService.swift */,
 				AAF00104 /* NotificationService.swift */,
+				FFF00002 /* APIKeyManager.swift */,
+				FFF00012 /* APIService+Phase20.swift */,
+				FFF00014 /* APIService+Personalization.swift */,
+				GGG00002 /* LearningTasksService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -239,6 +269,14 @@
 				AAE00093 /* Environment.swift */,
 			);
 			path = Config;
+			sourceTree = "<group>";
+		};
+		FFF00017 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				FFF00016 /* AppIntents.swift */,
+			);
+			path = Intents;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -357,6 +395,16 @@
 				AAE00095 /* ExportView.swift in Sources */,
 				AAF00103 /* NotificationService.swift in Sources */,
 				AAF00105 /* NotificationSettingsView.swift in Sources */,
+				FFF00001 /* APIKeyManager.swift in Sources */,
+				FFF00003 /* APIKeySetupView.swift in Sources */,
+				FFF00005 /* DigestView.swift in Sources */,
+				FFF00007 /* AnalyticsDashboardView.swift in Sources */,
+				FFF00009 /* PersonalizationChatView.swift in Sources */,
+				FFF00011 /* APIService+Phase20.swift in Sources */,
+				FFF00013 /* APIService+Personalization.swift in Sources */,
+				FFF00015 /* AppIntents.swift in Sources */,
+				GGG00001 /* LearningTasksService.swift in Sources */,
+				GGG00003 /* LearningTasksView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

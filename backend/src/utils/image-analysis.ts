@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { logger } from './logger';
 
 const execAsync = promisify(exec);
 
@@ -47,7 +48,7 @@ export async function analyzeImage(imagePath: string, context: string = 'general
     });
 
     if (!response.ok) {
-      console.error('Ollama vision model not available, using fallback');
+      logger.warn('Ollama vision model not available, using fallback');
       return getFallbackAnalysis(context);
     }
 
@@ -58,7 +59,7 @@ export async function analyzeImage(imagePath: string, context: string = 'general
     return parseAnalysisResponse(analysisText, context);
 
   } catch (error) {
-    console.error('Image analysis error:', error);
+    logger.error('Image analysis error', error instanceof Error ? error : undefined);
     return getFallbackAnalysis(context);
   }
 }

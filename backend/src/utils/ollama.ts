@@ -199,7 +199,7 @@ STRUCTURED OUTPUT:`;
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
     };
   } catch (error: any) {
-    console.error('Ollama structuring error:', error.message);
+    logger.error('Ollama structuring error', error instanceof Error ? error : undefined);
 
     // Return a fallback structure
     return {
@@ -293,7 +293,7 @@ export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | 
 
     return JSON.parse(jsonStr) as T;
   } catch (error: any) {
-    console.error('Ollama JSON query error:', error.message);
+    logger.error('Ollama JSON query error', error instanceof Error ? error : undefined);
     return null;
   }
 }

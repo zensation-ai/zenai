@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios, { AxiosInstance } from 'axios';
 import { pool } from '../utils/database';
 import { triggerWebhook } from './webhooks';
+import { logger } from '../utils/logger';
 
 // Microsoft Graph API endpoints
 const GRAPH_API_BASE = 'https://graph.microsoft.com/v1.0';
@@ -197,7 +198,7 @@ export async function getValidAccessToken(
 
       return newTokens.accessToken;
     } catch (error) {
-      console.error('Failed to refresh Microsoft token:', error);
+      logger.error('Failed to refresh Microsoft token', error instanceof Error ? error : undefined);
       return null;
     }
   }

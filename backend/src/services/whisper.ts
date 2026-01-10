@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { logger } from '../utils/logger';
 
 const WHISPER_MODEL = process.env.WHISPER_MODEL || 'base';
 
@@ -40,7 +41,7 @@ export async function transcribeAudio(
     const transcription = await runWhisperCLI(tempInputPath, tempOutputPath);
 
     const duration = Date.now() - startTime;
-    console.log(`Transcription completed in ${duration}ms`);
+    logger.info('Transcription completed', { duration });
 
     return {
       text: transcription.text,
@@ -75,7 +76,7 @@ function runWhisperCLI(
       '--fp16', 'False', // Stabiler auf CPU
     ];
 
-    console.log(`Running: whisper ${args.join(' ')}`);
+    logger.debug('Running Whisper CLI', { args: args.join(' ') });
 
     // Ensure ffmpeg and SSL certificates are available
     const homeDir = process.env.HOME || '';
@@ -101,7 +102,7 @@ function runWhisperCLI(
 
     whisperProcess.on('close', (code) => {
       if (code !== 0) {
-        console.error('Whisper stderr:', stderr);
+        logger.error('Whisper process failed', new Error(`Whisper exited with code ${code}`), { stderr });
         reject(new Error(`Whisper exited with code ${code}`));
         return;
       }

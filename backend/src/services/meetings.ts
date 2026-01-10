@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { query } from '../utils/database';
 import { structureWithOllama, generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
+import { logger } from '../utils/logger';
 
 export interface Meeting {
   id: string;
@@ -188,7 +189,7 @@ STRUKTURIERTE NOTIZEN:`;
   try {
     structured = await structureWithOllama(prompt);
   } catch (error) {
-    console.error('Failed to structure meeting notes:', error);
+    logger.error('Failed to structure meeting notes', error instanceof Error ? error : undefined);
     structured = {
       structured_summary: transcript.substring(0, 200),
       key_decisions: [],

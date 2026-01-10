@@ -98,7 +98,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     const result = await pool.query(
       `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
        FROM api_keys
-       WHERE prefix = $1`,
+       WHERE key_prefix = $1`,
       [prefix]
     );
 
@@ -193,10 +193,38 @@ export function requireScope(scope: string) {
  * Rate limiting middleware
  * Uses sliding window algorithm with database tracking
  */
+/**
+ * Endpoint-specific rate limits for critical operations
+ */
+const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  // Heavy computation endpoints - stricter limits
+  'POST:/api/personal/topics/generate': { limit: 2, windowMs: 60 * 1000 }, // 2/min
+  'POST:/api/work/topics/generate': { limit: 2, windowMs: 60 * 1000 }, // 2/min
+  'POST:/api/personal/incubator/consolidate': { limit: 5, windowMs: 60 * 1000 }, // 5/min
+  'POST:/api/work/incubator/consolidate': { limit: 5, windowMs: 60 * 1000 }, // 5/min
+  'POST:/api/personal/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 }, // 3/min
+  'POST:/api/work/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 }, // 3/min
+
+  // Media uploads - moderate limits
+  'POST:/api/media': { limit: 20, windowMs: 60 * 1000 }, // 20/min
+  'POST:/api/voice-memos': { limit: 30, windowMs: 60 * 1000 }, // 30/min
+
+  // Write operations - moderate limits
+  'POST:/api/personal/ideas': { limit: 60, windowMs: 60 * 1000 }, // 60/min
+  'POST:/api/work/ideas': { limit: 60, windowMs: 60 * 1000 }, // 60/min
+  'PUT:/api/personal/ideas': { limit: 100, windowMs: 60 * 1000 }, // 100/min
+  'PUT:/api/work/ideas': { limit: 100, windowMs: 60 * 1000 }, // 100/min
+};
+
 export async function rateLimiter(req: Request, res: Response, next: NextFunction) {
   const key = req.apiKey?.id || req.ip || 'anonymous';
-  const limit = req.apiKey?.rateLimit || 100; // Default 100 for non-authenticated
-  const windowMs = 60 * 1000; // 1 minute window
+
+  // Check for endpoint-specific limit
+  const endpoint = `${req.method}:${req.path}`;
+  const endpointConfig = ENDPOINT_LIMITS[endpoint];
+
+  const limit = endpointConfig?.limit || req.apiKey?.rateLimit || 100; // Default 100 for non-authenticated
+  const windowMs = endpointConfig?.windowMs || 60 * 1000; // Default 1 minute window
 
   try {
     const windowStart = new Date(Math.floor(Date.now() / windowMs) * windowMs);
