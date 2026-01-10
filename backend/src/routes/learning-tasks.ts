@@ -93,7 +93,7 @@ router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), async
     context as AIContext
   );
 
-  logger.info('Learning task created', { taskId: task.id, topic, context });
+  logger.info('Learning task created', { taskId: task.id, topic, context: context as AIContext });
 
   res.status(201).json({
     success: true,
