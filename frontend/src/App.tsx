@@ -20,6 +20,7 @@ import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
 import { LearningDashboard } from './components/LearningDashboard';
 import { Onboarding } from './components/Onboarding';
 import { safeLocalStorage } from './utils/storage';
+import { getErrorMessage, logError } from './utils/errors';
 import './App.css';
 
 type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning';
@@ -77,21 +78,33 @@ function App() {
 
   // Check API health on mount and reload ideas when context changes
   useEffect(() => {
-    checkHealth();
-    loadIdeas();
-    loadArchivedCount();
+    const abortController = new AbortController();
+
+    const loadData = async () => {
+      await checkHealth(abortController.signal);
+      await loadIdeas(abortController.signal);
+      await loadArchivedCount(abortController.signal);
+    };
+
+    loadData();
+
+    return () => {
+      abortController.abort();
+    };
   }, [context]);
 
   // Load archived ideas when switching to archive page
   useEffect(() => {
     if (currentPage === 'archive') {
-      loadArchivedIdeas();
+      const abortController = new AbortController();
+      loadArchivedIdeas(abortController.signal);
+      return () => abortController.abort();
     }
   }, [currentPage, context]);
 
-  const checkHealth = async () => {
+  const checkHealth = async (signal?: AbortSignal) => {
     try {
-      const response = await axios.get('/api/health');
+      const response = await axios.get('/api/health', { signal });
       // Support both old (database) and new (databases) format
       const databases = response.data.services.databases;
       const dbConnected = databases
@@ -101,60 +114,71 @@ function App() {
       // AI services are under services.ai (not services.ollama directly)
       const aiServices = response.data.services.ai;
       const ollamaConnected = aiServices?.ollama?.status === 'connected';
+      const openaiConfigured = aiServices?.openai?.status === 'configured';
       const ollamaModels = aiServices?.ollama?.models || [];
 
       setApiStatus({
         database: dbConnected,
-        ollama: ollamaConnected,
+        ollama: ollamaConnected || openaiConfigured,
         models: ollamaModels,
       });
     } catch (err) {
-      setApiStatus({ database: false, ollama: false, models: [] });
+      if (!signal?.aborted) {
+        setApiStatus({ database: false, ollama: false, models: [] });
+      }
     }
   };
 
-  const loadIdeas = async () => {
+  const loadIdeas = async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      // Load ideas for the current context
-      const response = await axios.get(`/api/${context}/ideas?limit=100`);
+      const response = await axios.get(`/api/${context}/ideas?limit=100`, { signal });
       setIdeas(response.data.ideas);
       setError(null);
     } catch (err: unknown) {
+      if (signal?.aborted) return;
       // Fallback to general endpoint if context-specific fails
       try {
-        const fallbackResponse = await axios.get('/api/ideas?limit=100');
+        const fallbackResponse = await axios.get('/api/ideas?limit=100', { signal });
         setIdeas(fallbackResponse.data.ideas);
         setError(null);
       } catch (fallbackErr: unknown) {
-        const axiosError = fallbackErr as { response?: { data?: { error?: string } } };
-        setError(axiosError.response?.data?.error || 'Failed to load ideas');
+        if (signal?.aborted) return;
+        logError('loadIdeas', fallbackErr);
+        setError(getErrorMessage(fallbackErr, 'Failed to load ideas'));
       }
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
-  const loadArchivedIdeas = async () => {
+  const loadArchivedIdeas = async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/${context}/ideas/archived?limit=100`);
+      const response = await axios.get(`/api/${context}/ideas/archived?limit=100`, { signal });
       setArchivedIdeas(response.data.ideas);
       setArchivedCount(response.data.pagination.total);
     } catch (err) {
-      console.error('Failed to load archived ideas:', err);
+      if (signal?.aborted) return;
+      logError('loadArchivedIdeas', err);
       setArchivedIdeas([]);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
-  const loadArchivedCount = async () => {
+  const loadArchivedCount = async (signal?: AbortSignal) => {
     try {
-      const response = await axios.get(`/api/${context}/ideas/archived?limit=1`);
+      const response = await axios.get(`/api/${context}/ideas/archived?limit=1`, { signal });
       setArchivedCount(response.data.pagination.total);
     } catch (err) {
-      setArchivedCount(0);
+      if (!signal?.aborted) {
+        setArchivedCount(0);
+      }
     }
   };
 

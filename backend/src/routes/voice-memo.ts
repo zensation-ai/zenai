@@ -158,7 +158,10 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
   }
 
   // Get personalized suggestions from learning engine BEFORE structuring
-  const learnedSuggestion = await suggestFromLearning(transcript).catch(() => null);
+  const learnedSuggestion = await suggestFromLearning(transcript).catch((err) => {
+    logger.warn('Learning suggestion failed, continuing without', { error: err.message });
+    return null;
+  });
 
   // 1. Structure with Ollama/Mistral
   const structureStart = Date.now();
@@ -241,7 +244,10 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), asyncHandler(as
   logger.info('Processing text', { textPreview: text.substring(0, 50) });
 
   // Get personalized suggestions from learning engine BEFORE structuring
-  const learnedSuggestion = await suggestFromLearning(text).catch(() => null);
+  const learnedSuggestion = await suggestFromLearning(text).catch((err) => {
+    logger.warn('Learning suggestion failed, continuing without', { error: err.message });
+    return null;
+  });
 
   const structured = await structureWithOllama(text);
   const embedding = await generateEmbedding(text);

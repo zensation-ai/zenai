@@ -86,8 +86,9 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     apiKey = apiKeyHeader;
   }
 
-  // Development mode: Allow requests without API key
-  if (!apiKey && process.env.NODE_ENV !== 'production') {
+  // Development mode: Allow requests without API key (whitelist approach)
+  const devModeAllowed = process.env.NODE_ENV === 'development' || process.env.ALLOW_DEV_MODE === 'true';
+  if (!apiKey && devModeAllowed) {
     req.apiKey = {
       id: 'dev-mode',
       name: 'Development Mode',
