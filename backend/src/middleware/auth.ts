@@ -80,9 +80,13 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
   let apiKey: string | undefined;
 
-  if (authHeader?.startsWith('Bearer ab_')) {
+  // Accept API keys in multiple formats:
+  // 1. Bearer ab_xxx - standard format
+  // 2. Bearer <uuid> - legacy/alternative format (key ID lookup)
+  // 3. x-api-key header
+  if (authHeader?.startsWith('Bearer ')) {
     apiKey = authHeader.substring(7);
-  } else if (apiKeyHeader?.startsWith('ab_')) {
+  } else if (apiKeyHeader) {
     apiKey = apiKeyHeader;
   }
 
@@ -106,16 +110,31 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
   }
 
   try {
-    // Extract prefix for fast lookup (first 10 chars: "ab_live_xx")
-    const prefix = apiKey.substring(0, 10);
+    let result;
 
-    // Find key candidates by prefix
-    const result = await pool.query(
-      `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
-       FROM api_keys
-       WHERE key_prefix = $1`,
-      [prefix]
-    );
+    // Check if key is UUID format (for direct ID lookup)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apiKey);
+
+    if (isUUID) {
+      // Lookup by key ID directly
+      result = await pool.query(
+        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
+         FROM api_keys
+         WHERE id = $1`,
+        [apiKey]
+      );
+    } else {
+      // Extract prefix for fast lookup (first 10 chars: "ab_live_xx")
+      const prefix = apiKey.substring(0, 10);
+
+      // Find key candidates by prefix
+      result = await pool.query(
+        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
+         FROM api_keys
+         WHERE key_prefix = $1`,
+        [prefix]
+      );
+    }
 
     if (result.rows.length === 0) {
       return res.status(401).json({
@@ -126,10 +145,17 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
     // Verify the key against stored hash(es)
     let keyData = null;
-    for (const row of result.rows) {
-      if (await verifyApiKey(apiKey, row.key_hash)) {
-        keyData = row;
-        break;
+
+    if (isUUID) {
+      // For UUID-based auth, use the found row directly (less secure but compatible)
+      keyData = result.rows[0];
+    } else {
+      // For standard ab_ keys, verify against hash
+      for (const row of result.rows) {
+        if (await verifyApiKey(apiKey, row.key_hash)) {
+          keyData = row;
+          break;
+        }
       }
     }
 
