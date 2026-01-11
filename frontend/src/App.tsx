@@ -525,7 +525,7 @@ function App() {
                 LLM
               </span>
             </div>
-            <button type="button" className="refresh-button" onClick={loadIdeas} title="Neu laden">
+            <button type="button" className="refresh-button" onClick={() => loadIdeas()} title="Neu laden">
               ↻
             </button>
           </div>
