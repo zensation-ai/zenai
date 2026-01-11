@@ -71,7 +71,9 @@ app.use(helmet({
 // CORS with whitelist (configurable via environment)
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
   'http://localhost:3000',
+  'http://localhost:5173',
   'http://localhost:8080',
+  'https://frontend-mu-six-93.vercel.app',
   'capacitor://localhost',
   'ionic://localhost'
 ];
