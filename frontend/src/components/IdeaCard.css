@@ -183,7 +183,7 @@
 
 .priority-low {
   background: rgba(100, 116, 139, 0.15);
-  color: #94a3b8;
+  color: var(--text-muted);
   border-color: rgba(100, 116, 139, 0.3);
 }
 
@@ -269,7 +269,8 @@
 
 .idea-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding-top: 0.75rem;
   margin-top: auto;
   border-top: 1px solid var(--glass-border);
@@ -279,4 +280,14 @@
   font-size: 0.7rem;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* AI Feedback in card footer */
+.idea-footer .ai-feedback.compact {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.idea-card:hover .idea-footer .ai-feedback.compact {
+  opacity: 1;
 }

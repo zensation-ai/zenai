@@ -614,29 +614,28 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
       [userId, CONFIG.BATCH_SIZE]
     );
 
-    let clustersCreated = 0;
-    let clustersUpdated = 0;
+    // PERFORMANCE: Get cluster count once before processing (avoid N+1 queries)
+    const beforeCountResult = await client.query(
+      `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
+      [userId]
+    );
+    const clusterCountBefore = parseInt(beforeCountResult.rows[0].count);
 
+    // Process all thoughts
     for (const thought of unprocessed.rows) {
-      // This will create or update clusters
-      const beforeCount = await client.query(
-        `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
-        [userId]
-      );
-
       await analyzeAndAssignCluster(thought.id, context);
-
-      const afterCount = await client.query(
-        `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
-        [userId]
-      );
-
-      if (parseInt(afterCount.rows[0].count) > parseInt(beforeCount.rows[0].count)) {
-        clustersCreated++;
-      } else {
-        clustersUpdated++;
-      }
     }
+
+    // Get cluster count after processing
+    const afterCountResult = await client.query(
+      `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
+      [userId]
+    );
+    const clusterCountAfter = parseInt(afterCountResult.rows[0].count);
+
+    // Calculate created vs updated
+    const clustersCreated = clusterCountAfter - clusterCountBefore;
+    const clustersUpdated = unprocessed.rows.length - clustersCreated;
 
     // Count ready clusters
     const readyResult = await client.query(

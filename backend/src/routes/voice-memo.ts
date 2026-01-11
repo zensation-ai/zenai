@@ -3,7 +3,7 @@ import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { structureWithOllama, generateEmbedding } from '../utils/ollama';
 import { quantizeToInt8, quantizeToBinary, formatForPgVector } from '../utils/embedding';
-import { query } from '../utils/database';
+import { queryContext, AIContext } from '../utils/database-context';
 import { transcribeAudio, checkWhisperAvailable } from '../services/whisper';
 import { analyzeRelationships } from '../services/knowledge-graph';
 import { trackInteraction, suggestPriority } from '../services/user-profile';
@@ -46,18 +46,22 @@ const upload = multer({
 
 /**
  * Helper function to store idea in database
+ * Note: This legacy endpoint defaults to 'personal' context for backward compatibility
+ * Use /api/:context/voice-memo for explicit context selection
  */
 async function storeIdea(
   ideaId: string,
   structured: any,
   transcript: string,
-  embedding: number[]
+  embedding: number[],
+  context: AIContext = 'personal'
 ) {
   const embeddingInt8 = quantizeToInt8(embedding);
   const embeddingBinary = quantizeToBinary(embedding);
 
   if (embedding.length > 0) {
-    await query(
+    await queryContext(
+      context,
       `INSERT INTO ideas (
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
@@ -86,7 +90,8 @@ async function storeIdea(
       ]
     );
   } else {
-    await query(
+    await queryContext(
+      context,
       `INSERT INTO ideas (
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
@@ -330,11 +335,15 @@ voiceMemoRouter.post('/transcribe', apiKeyAuth, upload.single('audio'), asyncHan
 /**
  * GET /api/voice-memo/whisper-status
  * Check if Whisper is available
+ * SECURITY: Requires authentication to prevent service discovery
  */
-voiceMemoRouter.get('/whisper-status', asyncHandler(async (req, res) => {
+voiceMemoRouter.get('/whisper-status', apiKeyAuth, asyncHandler(async (req, res) => {
   const available = await checkWhisperAvailable();
   res.json({
     whisperAvailable: available,
-    model: process.env.WHISPER_MODEL || 'base',
+    // SECURITY: Don't expose model name in production
+    ...(process.env.NODE_ENV !== 'production' && {
+      model: process.env.WHISPER_MODEL || 'base',
+    }),
   });
 }));

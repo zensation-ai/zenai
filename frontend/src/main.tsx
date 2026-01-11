@@ -3,24 +3,39 @@ import ReactDOM from 'react-dom/client';
 import axios from 'axios';
 import App from './App';
 import './index.css';
+import { safeLocalStorage } from './utils/storage';
+import { ConfirmProvider } from './components/ConfirmDialog';
+import { initializeNative } from './utils/native';
 
-// Default API key for local development
-const DEFAULT_API_KEY = 'ab_live_4cb9e367f27f087e3252a1f2784999e875c538eb2d01e081';
+// API configuration from environment
+const ENV_API_KEY = import.meta.env.VITE_API_KEY;
+const ENV_API_URL = import.meta.env.VITE_API_URL;
 
-// Set default API key if not already set
-if (!localStorage.getItem('apiKey')) {
-  localStorage.setItem('apiKey', DEFAULT_API_KEY);
+// Set base URL for production (Railway backend)
+if (ENV_API_URL) {
+  axios.defaults.baseURL = ENV_API_URL;
 }
 
-// Configure axios to use API key from localStorage
+// Configure axios to use API key from environment or localStorage
 axios.interceptors.request.use((config) => {
-  const apiKey = localStorage.getItem('apiKey') || DEFAULT_API_KEY;
-  config.headers.Authorization = `Bearer ${apiKey}`;
+  const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
+
+  if (apiKey) {
+    config.headers.Authorization = `Bearer ${apiKey}`;
+  } else if (import.meta.env.DEV) {
+    console.warn('No API key configured. Set VITE_API_KEY in .env or localStorage.apiKey');
+  }
+
   return config;
 });
 
+// Initialize native features (Capacitor)
+initializeNative();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ConfirmProvider>
+      <App />
+    </ConfirmProvider>
   </React.StrictMode>
 );

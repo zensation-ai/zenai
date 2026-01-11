@@ -112,6 +112,7 @@ const TOPIC_QUESTIONS: Record<string, string[]> = {
 /**
  * POST /api/personalization/chat
  * Send a message and get AI response
+ * SECURITY: Input validation for message length and session ID format
  */
 personalizationChatRouter.post('/chat', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { sessionId, message } = req.body;
@@ -120,13 +121,25 @@ personalizationChatRouter.post('/chat', apiKeyAuth, asyncHandler(async (req: Req
     throw new ValidationError('Message is required');
   }
 
+  // Validate message length (prevent excessive storage/memory usage)
+  const MAX_MESSAGE_LENGTH = 10000;
+  if (typeof message !== 'string' || message.length > MAX_MESSAGE_LENGTH) {
+    throw new ValidationError(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+  }
+
+  // Validate session ID format if provided
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (sessionId && !uuidRegex.test(sessionId)) {
+    throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
+  }
+
   const currentSessionId = sessionId || uuidv4();
 
-  // Store user message
+  // Store user message (trim to max length for safety)
   await query(`
     INSERT INTO personalization_conversations (session_id, role, message)
     VALUES ($1, 'user', $2)
-  `, [currentSessionId, message]);
+  `, [currentSessionId, message.slice(0, MAX_MESSAGE_LENGTH)]);
 
   // Get conversation history
   const historyResult = await query(`
@@ -336,11 +349,22 @@ personalizationChatRouter.get('/progress', apiKeyAuth, asyncHandler(async (req: 
 /**
  * DELETE /api/personalization/facts/:id
  * Delete a specific fact
+ * SECURITY: Validates UUID format to prevent injection attacks
  */
 personalizationChatRouter.delete('/facts/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  await query('DELETE FROM personal_facts WHERE id = $1', [id]);
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    throw new ValidationError('Invalid fact ID format. Must be a valid UUID.');
+  }
+
+  const result = await query('DELETE FROM personal_facts WHERE id = $1 RETURNING id', [id]);
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Fact');
+  }
 
   res.json({
     success: true,

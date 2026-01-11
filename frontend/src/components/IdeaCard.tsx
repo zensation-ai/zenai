@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { useConfirm } from './ConfirmDialog';
+import { AIFeedback } from './AIFeedback';
+import { getTypeIcon, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
+import { formatDate } from '../utils/dateUtils';
 import './IdeaCard.css';
 
 interface Idea {
@@ -26,29 +30,31 @@ interface IdeaCardProps {
   context?: 'personal' | 'work';
 }
 
-const typeIcons: Record<string, string> = {
-  idea: '💡',
-  task: '✅',
-  insight: '🔍',
-  problem: '⚠️',
-  question: '❓',
-};
-
-export function IdeaCard({ idea, onDelete, onArchive, onRestore, isArchived = false, context = 'personal' }: IdeaCardProps) {
+function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = false, context = 'personal' }: IdeaCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const confirm = useConfirm();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Möchtest du diese Idee wirklich löschen?')) return;
+    const confirmed = await confirm({
+      title: 'Gedanke löschen',
+      message: 'Möchtest du diese Idee wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+      confirmText: 'Löschen',
+      cancelText: 'Abbrechen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     setIsDeleting(true);
     try {
       await axios.delete(`/api/ideas/${idea.id}`);
       onDelete?.(idea.id);
       showToast('Gedanke gelöscht', 'success');
-    } catch (error: any) {
-      const message = error.response?.data?.error || 'Löschen fehlgeschlagen';
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data as { error?: string })?.error || 'Löschen fehlgeschlagen'
+        : 'Löschen fehlgeschlagen';
       showToast(message, 'error');
     } finally {
       setIsDeleting(false);
@@ -62,8 +68,10 @@ export function IdeaCard({ idea, onDelete, onArchive, onRestore, isArchived = fa
       await axios.put(`/api/${context}/ideas/${idea.id}/archive`);
       onArchive?.(idea.id);
       showToast('Gedanke archiviert', 'success');
-    } catch (error: any) {
-      const message = error.response?.data?.error || 'Archivierung fehlgeschlagen';
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data as { error?: string })?.error || 'Archivierung fehlgeschlagen'
+        : 'Archivierung fehlgeschlagen';
       showToast(message, 'error');
     } finally {
       setIsArchiving(false);
@@ -77,29 +85,20 @@ export function IdeaCard({ idea, onDelete, onArchive, onRestore, isArchived = fa
       await axios.put(`/api/${context}/ideas/${idea.id}/restore`);
       onRestore?.(idea.id);
       showToast('Gedanke wiederhergestellt', 'success');
-    } catch (error: any) {
-      const message = error.response?.data?.error || 'Wiederherstellung fehlgeschlagen';
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data as { error?: string })?.error || 'Wiederherstellung fehlgeschlagen'
+        : 'Wiederherstellung fehlgeschlagen';
       showToast(message, 'error');
     } finally {
       setIsArchiving(false);
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <div className={`idea-card ${isDeleting ? 'deleting' : ''}`}>
       <div className="idea-header">
-        <span className="idea-type">{typeIcons[idea.type] || '📝'}</span>
+        <span className="idea-type">{getTypeIcon(idea.type)}</span>
         <h3 className="idea-title">{idea.title}</h3>
         <div className="idea-actions">
           {isArchived ? (
@@ -142,10 +141,10 @@ export function IdeaCard({ idea, onDelete, onArchive, onRestore, isArchived = fa
 
       <div className="idea-meta">
         <span className={`idea-category category-${idea.category}`}>
-          {idea.category}
+          {IDEA_CATEGORIES[idea.category]?.label || idea.category}
         </span>
         <span className={`idea-priority priority-${idea.priority}`}>
-          {idea.priority}
+          {PRIORITIES[idea.priority]?.label || idea.priority}
         </span>
         {idea.similarity !== undefined && (
           <span className="idea-similarity">
@@ -177,7 +176,16 @@ export function IdeaCard({ idea, onDelete, onArchive, onRestore, isArchived = fa
 
       <div className="idea-footer">
         <span className="idea-date">{formatDate(idea.created_at)}</span>
+        <AIFeedback
+          responseType="idea_structuring"
+          originalResponse={`${idea.title}: ${idea.summary}`}
+          context={context}
+          compact
+        />
       </div>
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+export const IdeaCard = memo(IdeaCardComponent);

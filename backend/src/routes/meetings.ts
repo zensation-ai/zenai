@@ -14,6 +14,7 @@ import { transcribeAudio } from '../services/whisper';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { validateUUID } from '../utils/validation';
 
 export const meetingsRouter = Router();
 
@@ -120,6 +121,12 @@ meetingsRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
  * Get a single meeting
  */
 meetingsRouter.get('/:id', apiKeyAuth, asyncHandler(async (req, res) => {
+  // Validate UUID format
+  const uuidResult = validateUUID(req.params.id, 'meeting id');
+  if (!uuidResult.success) {
+    throw new ValidationError('Invalid meeting ID format');
+  }
+
   const meeting = await getMeeting(req.params.id);
 
   if (!meeting) {
@@ -136,6 +143,12 @@ meetingsRouter.get('/:id', apiKeyAuth, asyncHandler(async (req, res) => {
  * Update meeting status
  */
 meetingsRouter.put('/:id/status', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  // Validate UUID format
+  const uuidResult = validateUUID(req.params.id, 'meeting id');
+  if (!uuidResult.success) {
+    throw new ValidationError('Invalid meeting ID format');
+  }
+
   const { status } = req.body;
 
   if (!['scheduled', 'in_progress', 'completed', 'cancelled'].includes(status)) {
@@ -156,6 +169,12 @@ meetingsRouter.put('/:id/status', apiKeyAuth, requireScope('write'), asyncHandle
  * Add notes to a meeting (text or audio)
  */
 meetingsRouter.post('/:id/notes', apiKeyAuth, requireScope('write'), upload.single('audio'), asyncHandler(async (req, res) => {
+  // Validate UUID format
+  const uuidResult = validateUUID(req.params.id, 'meeting id');
+  if (!uuidResult.success) {
+    throw new ValidationError('Invalid meeting ID format');
+  }
+
   const startTime = Date.now();
 
   const meeting = await getMeeting(req.params.id);
@@ -205,6 +224,12 @@ meetingsRouter.post('/:id/notes', apiKeyAuth, requireScope('write'), upload.sing
  * Get notes for a meeting
  */
 meetingsRouter.get('/:id/notes', apiKeyAuth, asyncHandler(async (req, res) => {
+  // Validate UUID format
+  const uuidResult = validateUUID(req.params.id, 'meeting id');
+  if (!uuidResult.success) {
+    throw new ValidationError('Invalid meeting ID format');
+  }
+
   const notes = await getMeetingNotes(req.params.id);
 
   if (!notes) {

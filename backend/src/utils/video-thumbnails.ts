@@ -1,10 +1,43 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
 import { logger } from './logger';
 
-const execAsync = promisify(exec);
+/**
+ * SECURITY: Execute command with spawn (no shell interpolation)
+ * Prevents command injection attacks
+ */
+function spawnAsync(command: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => { stdout += data.toString(); });
+    child.stderr.on('data', (data) => { stderr += data.toString(); });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(new Error(`Command failed with code ${code}: ${stderr}`));
+      }
+    });
+
+    child.on('error', reject);
+  });
+}
+
+/**
+ * SECURITY: Validate video path to prevent path traversal
+ */
+function validateVideoPath(videoPath: string): string {
+  const normalizedPath = path.normalize(videoPath);
+  if (normalizedPath.includes('..') || !path.isAbsolute(normalizedPath)) {
+    throw new Error('Invalid video path');
+  }
+  return normalizedPath;
+}
 
 export interface ThumbnailResult {
   success: boolean;
@@ -34,9 +67,12 @@ export async function generateVideoThumbnail(
   } = options;
 
   try {
+    // SECURITY: Validate video path
+    const safeVideoPath = validateVideoPath(videoPath);
+
     // Ensure ffmpeg is available
     try {
-      await execAsync('which ffmpeg');
+      await spawnAsync('which', ['ffmpeg']);
     } catch {
       return {
         success: false,
@@ -49,8 +85,8 @@ export async function generateVideoThumbnail(
     }
 
     // Generate output path
-    const videoFilename = path.basename(videoPath, path.extname(videoPath));
-    const thumbnailDir = outputDir || path.join(path.dirname(videoPath), 'thumbnails');
+    const videoFilename = path.basename(safeVideoPath, path.extname(safeVideoPath));
+    const thumbnailDir = outputDir || path.join(path.dirname(safeVideoPath), 'thumbnails');
 
     // Create thumbnails directory
     await fs.mkdir(thumbnailDir, { recursive: true });
@@ -59,25 +95,39 @@ export async function generateVideoThumbnail(
     const thumbnailPath = path.join(thumbnailDir, thumbnailFilename);
 
     // Get video info first
-    const videoInfo = await getVideoInfo(videoPath);
+    const videoInfo = await getVideoInfo(safeVideoPath);
 
-    // Generate thumbnail using ffmpeg
+    // Generate thumbnail using ffmpeg (spawn prevents command injection)
     // -ss: seek to timestamp
     // -i: input file
     // -vframes 1: capture 1 frame
     // -vf scale: resize
     // -q:v: quality (1-31, lower is better)
-    const ffmpegCmd = `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -vf "scale=${width}:-1" -q:v ${quality} -y "${thumbnailPath}" 2>/dev/null`;
+    const ffmpegArgs = [
+      '-ss', timestamp,
+      '-i', safeVideoPath,
+      '-vframes', '1',
+      '-vf', `scale=${width}:-1`,
+      '-q:v', quality.toString(),
+      '-y', thumbnailPath
+    ];
 
-    await execAsync(ffmpegCmd);
+    await spawnAsync('ffmpeg', ffmpegArgs);
 
     // Verify thumbnail was created
     try {
       await fs.access(thumbnailPath);
     } catch {
       // If first frame fails, try at 0 seconds
-      const fallbackCmd = `ffmpeg -ss 00:00:00 -i "${videoPath}" -vframes 1 -vf "scale=${width}:-1" -q:v ${quality} -y "${thumbnailPath}" 2>/dev/null`;
-      await execAsync(fallbackCmd);
+      const fallbackArgs = [
+        '-ss', '00:00:00',
+        '-i', safeVideoPath,
+        '-vframes', '1',
+        '-vf', `scale=${width}:-1`,
+        '-q:v', quality.toString(),
+        '-y', thumbnailPath
+      ];
+      await spawnAsync('ffmpeg', fallbackArgs);
     }
 
     logger.info('Generated video thumbnail', { thumbnailFilename });
@@ -162,6 +212,7 @@ export async function generateVideoThumbnailStrip(
 
 /**
  * Get video information using ffprobe
+ * SECURITY: Uses spawn to prevent command injection
  */
 export async function getVideoInfo(videoPath: string): Promise<{
   duration: number | null;
@@ -170,11 +221,28 @@ export async function getVideoInfo(videoPath: string): Promise<{
   codec: string | null;
 }> {
   try {
-    const cmd = `ffprobe -v quiet -print_format json -show_format -show_streams "${videoPath}"`;
-    const { stdout } = await execAsync(cmd);
+    // SECURITY: Validate video path
+    const safeVideoPath = validateVideoPath(videoPath);
+
+    const ffprobeArgs = [
+      '-v', 'quiet',
+      '-print_format', 'json',
+      '-show_format',
+      '-show_streams',
+      safeVideoPath
+    ];
+
+    const { stdout } = await spawnAsync('ffprobe', ffprobeArgs);
     const data = JSON.parse(stdout);
 
-    const videoStream = data.streams?.find((s: any) => s.codec_type === 'video');
+    interface VideoStream {
+      codec_type: string;
+      width?: number;
+      height?: number;
+      codec_name?: string;
+    }
+
+    const videoStream = data.streams?.find((s: VideoStream) => s.codec_type === 'video');
 
     return {
       duration: data.format?.duration ? parseFloat(data.format.duration) : null,
@@ -196,6 +264,7 @@ export async function getVideoInfo(videoPath: string): Promise<{
 
 /**
  * Create animated GIF preview from video
+ * SECURITY: Uses spawn to prevent command injection
  */
 export async function generateVideoGifPreview(
   videoPath: string,
@@ -216,18 +285,28 @@ export async function generateVideoGifPreview(
   } = options;
 
   try {
-    const videoFilename = path.basename(videoPath, path.extname(videoPath));
-    const gifDir = outputDir || path.join(path.dirname(videoPath), 'previews');
+    // SECURITY: Validate video path
+    const safeVideoPath = validateVideoPath(videoPath);
+
+    const videoFilename = path.basename(safeVideoPath, path.extname(safeVideoPath));
+    const gifDir = outputDir || path.join(path.dirname(safeVideoPath), 'previews');
 
     await fs.mkdir(gifDir, { recursive: true });
 
     const gifFilename = `${videoFilename}_preview.gif`;
     const gifPath = path.join(gifDir, gifFilename);
 
-    // Generate GIF using ffmpeg
-    const cmd = `ffmpeg -ss 00:00:01 -i "${videoPath}" -t ${duration} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 -y "${gifPath}" 2>/dev/null`;
+    // Generate GIF using ffmpeg (spawn prevents command injection)
+    const ffmpegArgs = [
+      '-ss', '00:00:01',
+      '-i', safeVideoPath,
+      '-t', duration.toString(),
+      '-vf', `fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`,
+      '-loop', '0',
+      '-y', gifPath
+    ];
 
-    await execAsync(cmd);
+    await spawnAsync('ffmpeg', ffmpegArgs);
 
     logger.info('Generated GIF preview', { gifFilename });
 

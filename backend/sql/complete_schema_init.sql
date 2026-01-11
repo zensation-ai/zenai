@@ -39,6 +39,31 @@ CREATE INDEX IF NOT EXISTS idx_ideas_is_archived ON ideas(is_archived);
 CREATE INDEX IF NOT EXISTS idx_ideas_created_at ON ideas(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ideas_embedding ON ideas USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
 
+-- Data integrity constraints
+DO $$ BEGIN
+    ALTER TABLE ideas ADD CONSTRAINT chk_ideas_type
+        CHECK (type IN ('idea', 'task', 'insight', 'problem', 'question'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE ideas ADD CONSTRAINT chk_ideas_category
+        CHECK (category IN ('business', 'technical', 'personal', 'learning', 'general'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE ideas ADD CONSTRAINT chk_ideas_priority
+        CHECK (priority IN ('low', 'medium', 'high'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE ideas ADD CONSTRAINT chk_ideas_context
+        CHECK (context IN ('personal', 'work'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 -- Voice memos table
 CREATE TABLE IF NOT EXISTS voice_memos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,10 +1,32 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import { logger } from './logger';
 
-const execAsync = promisify(exec);
+/**
+ * SECURITY: Execute command with spawn (no shell interpolation)
+ * Prevents command injection attacks
+ */
+function spawnAsync(command: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => { stdout += data.toString(); });
+    child.stderr.on('data', (data) => { stderr += data.toString(); });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(new Error(`Command failed with code ${code}: ${stderr}`));
+      }
+    });
+
+    child.on('error', reject);
+  });
+}
 
 // Image analysis using Ollama's vision models
 export interface ImageAnalysisResult {
@@ -66,24 +88,31 @@ export async function analyzeImage(imagePath: string, context: string = 'general
 
 /**
  * Extract text from image using OCR (Tesseract)
+ * SECURITY: Uses spawn instead of exec to prevent command injection
  */
 export async function extractTextFromImage(imagePath: string): Promise<string | null> {
   try {
-    // Try to use Tesseract OCR if available
-    const { stdout } = await execAsync(`tesseract "${imagePath}" stdout -l deu+eng 2>/dev/null`);
+    // SECURITY: Validate imagePath to prevent path traversal
+    const normalizedPath = path.normalize(imagePath);
+    if (normalizedPath.includes('..') || !path.isAbsolute(normalizedPath)) {
+      logger.warn('Invalid image path detected', { path: imagePath });
+      return null;
+    }
+
+    // Try to use Tesseract OCR if available (spawn prevents command injection)
+    const { stdout } = await spawnAsync('tesseract', [normalizedPath, 'stdout', '-l', 'deu+eng']);
     const text = stdout.trim();
     return text.length > 5 ? text : null;
   } catch {
     // Tesseract not available, try alternative methods
     try {
-      // Try using macOS Vision framework via swift script
-      const { stdout } = await execAsync(`
-        osascript -e 'use framework "Vision"
-        use scripting additions
-        set imagePath to "${imagePath}"
-        -- Vision OCR would go here
-        return ""'
-      `);
+      // Try using macOS Vision framework via osascript
+      // SECURITY: Use spawn with properly escaped arguments
+      const script = `use framework "Vision"
+use scripting additions
+-- Vision OCR placeholder
+return ""`;
+      const { stdout } = await spawnAsync('osascript', ['-e', script]);
       return stdout.trim() || null;
     } catch {
       return null;

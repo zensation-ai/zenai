@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
 import './RecordButton.css';
 
 interface RecordButtonProps {
@@ -104,7 +105,7 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
       }, 1000);
     } catch (error) {
       console.error('Failed to start recording:', error);
-      alert('Mikrofon-Zugriff verweigert. Bitte erlaube den Zugriff in den Einstellungen.');
+      showToast('Mikrofon-Zugriff verweigert. Bitte erlaube den Zugriff in den Einstellungen.', 'error');
     }
   };
 
@@ -159,9 +160,9 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
     } catch (error: unknown) {
       console.error('Processing error:', error);
       const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
-      const errorMessage = axiosError.response?.data?.error || axiosError.message || 'Unknown error';
+      const errorMessage = axiosError.response?.data?.error || axiosError.message || 'Unbekannter Fehler';
       if (isMountedRef.current) {
-        alert(`Fehler bei der Verarbeitung: ${errorMessage}`);
+        showToast(`Verarbeitung fehlgeschlagen: ${errorMessage}`, 'error');
       }
     } finally {
       if (isMountedRef.current) {

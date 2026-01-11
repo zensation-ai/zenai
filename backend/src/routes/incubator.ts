@@ -20,7 +20,7 @@ import {
 } from '../services/thought-incubator';
 import { runDailyLearning, getPersonalizedPromptContext } from '../services/learning-engine';
 import { getUserProfile, getRecommendations } from '../services/user-profile';
-import { AIContext, isValidContext } from '../utils/database-context';
+import { AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
@@ -31,6 +31,13 @@ const router = Router();
 function getContextFromRequest(req: Request): AIContext {
   const context = (req.query.context as string) || (req.body?.context as string) || 'personal';
   return isValidContext(context) ? context : 'personal';
+}
+
+// Helper to validate cluster ID
+function validateClusterId(id: string): void {
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid cluster ID format. Must be a valid UUID.');
+  }
 }
 
 /**
@@ -122,6 +129,7 @@ router.get('/clusters/ready', apiKeyAuth, asyncHandler(async (req: Request, res:
  */
 router.post('/clusters/:id/summarize', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateClusterId(id);
   const context = getContextFromRequest(req);
 
   const summary = await generateClusterSummary(id, context);
@@ -139,6 +147,7 @@ router.post('/clusters/:id/summarize', apiKeyAuth, requireScope('write'), asyncH
  */
 router.post('/clusters/:id/consolidate', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateClusterId(id);
   const { title, type, category, priority } = req.body;
   const context = getContextFromRequest(req);
 
@@ -163,6 +172,7 @@ router.post('/clusters/:id/consolidate', apiKeyAuth, requireScope('write'), asyn
  */
 router.post('/clusters/:id/dismiss', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateClusterId(id);
   const context = getContextFromRequest(req);
 
   await dismissCluster(id, context);
@@ -180,6 +190,7 @@ router.post('/clusters/:id/dismiss', apiKeyAuth, requireScope('write'), asyncHan
  */
 router.post('/clusters/:id/presented', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  validateClusterId(id);
   const context = getContextFromRequest(req);
 
   await markClusterPresented(id, context);

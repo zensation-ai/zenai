@@ -6,9 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:build": "npm run build && npx cap sync"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
     "axios": "^1.6.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

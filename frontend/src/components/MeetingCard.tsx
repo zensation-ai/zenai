@@ -1,3 +1,6 @@
+import { memo } from 'react';
+import { MEETING_TYPES, MEETING_STATUS } from '../constants/ideaTypes';
+import { formatDateWithWeekday, formatDuration } from '../utils/dateUtils';
 import './MeetingCard.css';
 
 export interface Meeting {
@@ -19,79 +22,52 @@ interface MeetingCardProps {
   hasNotes?: boolean;
 }
 
-const typeIcons: Record<string, string> = {
-  internal: '🏢',
-  external: '🌐',
-  one_on_one: '👥',
-  team: '👨‍👩‍👧‍👦',
-  client: '🤝',
-  other: '📅',
-};
+function MeetingCardComponent({ meeting, onClick, hasNotes }: MeetingCardProps) {
 
-const typeLabels: Record<string, string> = {
-  internal: 'Intern',
-  external: 'Extern',
-  one_on_one: '1:1',
-  team: 'Team',
-  client: 'Kunde',
-  other: 'Sonstiges',
-};
-
-const statusColors: Record<string, string> = {
-  scheduled: '#3b82f6',
-  in_progress: '#f59e0b',
-  completed: '#22c55e',
-  cancelled: '#64748b',
-};
-
-const statusLabels: Record<string, string> = {
-  scheduled: 'Geplant',
-  in_progress: 'Läuft',
-  completed: 'Abgeschlossen',
-  cancelled: 'Abgesagt',
-};
-
-export function MeetingCard({ meeting, onClick, hasNotes }: MeetingCardProps) {
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('de-DE', {
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === 'Enter' || e.key === ' ') && onClick) {
+      e.preventDefault();
+      onClick();
+    }
   };
 
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return null;
-    if (minutes < 60) return `${minutes} Min`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
+  // Use article role for non-clickable, button role for clickable
+  const interactiveProps = onClick ? {
+    onClick,
+    onKeyDown: handleKeyDown,
+    role: 'button' as const,
+    tabIndex: 0,
+  } : {};
+
+  const statusLabel = MEETING_STATUS[meeting.status]?.label || meeting.status;
+  const statusColor = MEETING_STATUS[meeting.status]?.color || '#64748b';
+  const typeIcon = MEETING_TYPES[meeting.meeting_type]?.icon || '📅';
+  const typeLabel = MEETING_TYPES[meeting.meeting_type]?.label || meeting.meeting_type;
 
   return (
-    <div className="meeting-card" onClick={onClick}>
+    <div
+      className="meeting-card"
+      {...interactiveProps}
+      aria-label={`Meeting: ${meeting.title}, ${statusLabel}, ${formatDateWithWeekday(meeting.date)}`}
+    >
       <div className="meeting-header">
-        <span className="meeting-type-icon">{typeIcons[meeting.meeting_type] || '📅'}</span>
+        <span className="meeting-type-icon">{typeIcon}</span>
         <div className="meeting-title-row">
           <h3 className="meeting-title">{meeting.title}</h3>
           {hasNotes && <span className="has-notes-badge" title="Hat Notizen">📝</span>}
         </div>
         <span
           className="meeting-status"
-          style={{ backgroundColor: statusColors[meeting.status] }}
+          style={{ backgroundColor: statusColor }}
         >
-          {statusLabels[meeting.status]}
+          {statusLabel}
         </span>
       </div>
 
       <div className="meeting-info">
         <div className="meeting-date">
           <span className="info-icon">📅</span>
-          {formatDate(meeting.date)}
+          {formatDateWithWeekday(meeting.date)}
         </div>
 
         {meeting.duration_minutes && (
@@ -123,11 +99,14 @@ export function MeetingCard({ meeting, onClick, hasNotes }: MeetingCardProps) {
       )}
 
       <div className="meeting-footer">
-        <span className="meeting-type-label">{typeLabels[meeting.meeting_type]}</span>
-        {meeting.company_id !== 'personal' && (
+        <span className="meeting-type-label">{typeLabel}</span>
+        {meeting.company_id && meeting.company_id !== 'personal' && (
           <span className="meeting-company">{meeting.company_id}</span>
         )}
       </div>
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const MeetingCard = memo(MeetingCardComponent);

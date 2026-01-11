@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import './AIBrain.css';
 
 interface AIBrainProps {
@@ -11,6 +11,7 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0 }:
   const [showTooltip, setShowTooltip] = useState(false);
   const [clickFeedback, setClickFeedback] = useState(false);
   const [greeting, setGreeting] = useState('');
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Activity messages with more personality
   const statusMessages: Record<string, string[]> = {
@@ -54,6 +55,15 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0 }:
     setGreeting(timeGreeting);
   }, []);
 
+  // Cleanup click timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Get random message for variety
   const currentMessage = useMemo(() => {
     const messages = statusMessages[activityType] || statusMessages.thinking;
@@ -74,8 +84,12 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0 }:
   }, [greeting, ideasCount]);
 
   const handleClick = () => {
+    // Clear any existing timeout
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
     setClickFeedback(true);
-    setTimeout(() => setClickFeedback(false), 300);
+    clickTimeoutRef.current = setTimeout(() => setClickFeedback(false), 300);
   };
 
   return (

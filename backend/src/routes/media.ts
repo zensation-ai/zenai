@@ -25,7 +25,7 @@ function validateMediaId(id: string): void {
 
 function validateContext(context: string): void {
   if (!VALID_CONTEXTS.includes(context as any)) {
-    throw new ValidationError(`Invalid context. Valid options: ${VALID_CONTEXTS.join(', ')}`);
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 }
 
@@ -146,7 +146,7 @@ router.post('/:context/media', apiKeyAuth, requireScope('write'), upload.single(
 
   logger.info('Media uploaded', { mediaType, filename: file.filename, contextName: context });
 
-  res.json({
+  res.status(201).json({
     success: true,
     mediaId: mediaItem.id,
     mediaType: mediaItem.media_type,
@@ -396,7 +396,7 @@ router.post('/:context/media-with-voice', apiKeyAuth, requireScope('write'), mul
 
   logger.info('Media with voice uploaded', { mediaType, filename: mediaFile.filename, contextName: context, hasVoice: !!voiceFile });
 
-  res.json({
+  res.status(201).json({
     success: true,
     mediaId: mediaItem.id,
     mediaType: mediaItem.media_type,

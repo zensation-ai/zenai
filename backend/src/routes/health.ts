@@ -28,9 +28,15 @@ const serverStartTime = Date.now();
 /**
  * @route GET /api/health
  * @description Comprehensive health check endpoint
+ * SECURITY: In production, only return minimal info unless authenticated
  */
 healthRouter.get('/', asyncHandler(async (req, res) => {
   const startTime = Date.now();
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Check if request has valid API key (for detailed info)
+  const hasApiKey = req.headers.authorization?.startsWith('Bearer ab_') ||
+                    (req.headers['x-api-key'] as string)?.startsWith('ab_');
 
   // Gather all health checks in parallel
   const [dbHealth, ollamaHealth, cacheStats] = await Promise.all([
@@ -53,6 +59,19 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
   const isHealthy = allDbHealthy && anyAiAvailable;
   const isDegraded = anyDbHealthy;
 
+  // SECURITY: Minimal response in production without API key
+  if (isProduction && !hasApiKey) {
+    const minimalStatus = {
+      status: isHealthy ? 'healthy' : (isDegraded ? 'degraded' : 'unhealthy'),
+      timestamp: new Date().toISOString(),
+      responseTime: Date.now() - startTime,
+    };
+    const httpStatus = minimalStatus.status === 'healthy' ? 200 :
+                       minimalStatus.status === 'degraded' ? 200 : 503;
+    return res.status(httpStatus).json(minimalStatus);
+  }
+
+  // Full response for development or authenticated requests
   const status = {
     status: isHealthy ? 'healthy' : (isDegraded ? 'degraded' : 'unhealthy'),
     timestamp: new Date().toISOString(),
@@ -66,12 +85,10 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
       databases: {
         personal: {
           status: dbHealth.personal ? 'connected' : 'disconnected',
-          database: 'personal_ai',
           pool: poolStats.personal,
         },
         work: {
           status: dbHealth.work ? 'connected' : 'disconnected',
-          database: 'work_ai',
           pool: poolStats.work,
         },
       },
@@ -79,11 +96,9 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
         primary: aiServices.primary,
         openai: {
           status: aiServices.openai ? 'configured' : 'not_configured',
-          model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         },
         ollama: {
           status: ollamaHealth.available ? 'connected' : 'disconnected',
-          url: process.env.OLLAMA_URL,
           models: ollamaHealth.models,
         },
       },
@@ -94,15 +109,18 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
         memory: cacheStats.memory,
       },
     },
-    system: {
-      nodeVersion: process.version,
-      platform: process.platform,
-      memory: {
-        heapUsed: formatBytes(process.memoryUsage().heapUsed),
-        heapTotal: formatBytes(process.memoryUsage().heapTotal),
-        rss: formatBytes(process.memoryUsage().rss),
+    // SECURITY: Only include system info in development
+    ...(isProduction ? {} : {
+      system: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        memory: {
+          heapUsed: formatBytes(process.memoryUsage().heapUsed),
+          heapTotal: formatBytes(process.memoryUsage().heapTotal),
+          rss: formatBytes(process.memoryUsage().rss),
+        },
       },
-    },
+    }),
   };
 
   const httpStatus = status.status === 'healthy' ? 200 :

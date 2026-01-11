@@ -1,0 +1,130 @@
+/* ===========================================
+   Confirm Dialog Styles
+   =========================================== */
+
+.confirm-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.confirm-dialog {
+  background: var(--card-bg, #1e1e2e);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.2s ease-out;
+}
+
+.confirm-dialog-title {
+  margin: 0 0 12px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.confirm-dialog-message {
+  margin: 0 0 24px 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary, #a0a0b0);
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.confirm-dialog-button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.confirm-dialog-button.cancel {
+  background: var(--button-secondary-bg, #3a3a4e);
+  color: var(--text-primary, #fff);
+}
+
+.confirm-dialog-button.cancel:hover {
+  background: var(--button-secondary-hover, #4a4a5e);
+}
+
+.confirm-dialog-button.confirm {
+  color: #fff;
+}
+
+.confirm-dialog-button.confirm-danger {
+  background: #ef4444;
+}
+
+.confirm-dialog-button.confirm-danger:hover {
+  background: #dc2626;
+}
+
+.confirm-dialog-button.confirm-warning {
+  background: #f59e0b;
+}
+
+.confirm-dialog-button.confirm-warning:hover {
+  background: #d97706;
+}
+
+.confirm-dialog-button.confirm-info {
+  background: #3b82f6;
+}
+
+.confirm-dialog-button.confirm-info:hover {
+  background: #2563eb;
+}
+
+.confirm-dialog-button:focus-visible {
+  outline: 2px solid var(--focus-ring, #60a5fa);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Variant-specific title colors */
+.confirm-dialog-danger .confirm-dialog-title {
+  color: #f87171;
+}
+
+.confirm-dialog-warning .confirm-dialog-title {
+  color: #fbbf24;
+}
+
+.confirm-dialog-info .confirm-dialog-title {
+  color: #60a5fa;
+}

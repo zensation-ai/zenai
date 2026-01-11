@@ -95,17 +95,48 @@ const baseConfig = useConnectionString && databaseUrl
 
 const POOL_CONFIG = {
   ...baseConfig,
-  // Connection pool settings - reduced for Supabase Session mode
+  // Connection pool settings - optimized for Supabase
   max: parseInt(process.env.DB_POOL_SIZE || '5'),
   min: parseInt(process.env.DB_POOL_MIN || '1'),
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 60000, // Increased to 60s to reduce reconnections
+  connectionTimeoutMillis: 10000, // Increased to 10s for Supabase latency
   // Statement timeout to prevent long-running queries
   statement_timeout: 30000,
-  // Keep connections alive
+  // Keep connections alive - critical for Supabase
   keepAlive: true,
-  keepAliveInitialDelayMillis: 10000,
+  keepAliveInitialDelayMillis: 5000, // Start keep-alive earlier
 };
+
+// Slow query threshold - 300ms is reasonable for Supabase (200-300ms latency)
+const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD || '300');
+
+// Retry configuration for transient connection errors
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  initialDelayMs: 100,
+  maxDelayMs: 2000,
+  // Error codes that should trigger a retry
+  retryableErrors: ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE', '57P01', '57P03'],
+};
+
+/**
+ * Check if an error is retryable (transient connection issue)
+ */
+function isRetryableError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const errorCode = (error as { code?: string }).code;
+  const errorMessage = error.message || '';
+  return RETRY_CONFIG.retryableErrors.some(
+    code => errorCode === code || errorMessage.includes(code)
+  );
+}
+
+/**
+ * Sleep for a given number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // For Railway (single database), we use the same database for both contexts
 // but prefix tables with context (schema separation can be added later)
@@ -151,6 +182,7 @@ type QueryParam = string | number | boolean | Date | null | undefined | Buffer |
 /**
  * Execute a query in the appropriate context database
  * Phase 11: Enhanced with query monitoring
+ * Phase 23: Added automatic retry for transient errors (ECONNRESET, ETIMEDOUT)
  */
 export async function queryContext(
   context: AIContext,
@@ -159,34 +191,72 @@ export async function queryContext(
 ): Promise<QueryResult> {
   const pool = getPool(context);
   const start = Date.now();
+  let lastError: Error | null = null;
 
   poolStats[context].queries++;
 
-  try {
-    const result = await pool.query(text, params);
-    const duration = Date.now() - start;
+  // Retry loop for transient errors
+  for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+    try {
+      const result = await pool.query(text, params);
+      const duration = Date.now() - start;
 
-    // Log slow queries (>100ms)
-    if (duration > 100) {
-      poolStats[context].slowQueries++;
-      logger.warn(`Slow query [${context}] (${duration}ms)`, {
+      // Log slow queries (using configurable threshold)
+      if (duration > SLOW_QUERY_THRESHOLD_MS) {
+        poolStats[context].slowQueries++;
+        logger.warn(`Slow query [${context}] (${duration}ms)`, {
+          context,
+          duration,
+          query: text.substring(0, 100),
+          operation: 'slowQuery',
+        });
+      }
+
+      // Log successful retry
+      if (attempt > 0) {
+        logger.info(`Query succeeded after ${attempt} retries [${context}]`, {
+          context,
+          attempts: attempt + 1,
+          totalDuration: Date.now() - start,
+          operation: 'queryRetrySuccess',
+        });
+      }
+
+      return result;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Check if we should retry
+      if (attempt < RETRY_CONFIG.maxRetries && isRetryableError(error)) {
+        const delay = Math.min(
+          RETRY_CONFIG.initialDelayMs * Math.pow(2, attempt),
+          RETRY_CONFIG.maxDelayMs
+        );
+        logger.warn(`Retryable error [${context}], attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries}`, {
+          context,
+          attempt: attempt + 1,
+          delay,
+          errorCode: (error as { code?: string }).code,
+          operation: 'queryRetry',
+        });
+        await sleep(delay);
+        continue;
+      }
+
+      // Non-retryable error or max retries reached
+      poolStats[context].errors++;
+      logger.error(`Query error [${context}]${attempt > 0 ? ` after ${attempt + 1} attempts` : ''}`, lastError, {
         context,
-        duration,
         query: text.substring(0, 100),
-        operation: 'slowQuery',
+        attempts: attempt + 1,
+        operation: 'queryError',
       });
+      throw error;
     }
-
-    return result;
-  } catch (error) {
-    poolStats[context].errors++;
-    logger.error(`Query error [${context}]`, error instanceof Error ? error : undefined, {
-      context,
-      query: text.substring(0, 100),
-      operation: 'queryError',
-    });
-    throw error;
   }
+
+  // Should not reach here, but TypeScript needs this
+  throw lastError || new Error('Query failed after retries');
 }
 
 /**
@@ -222,6 +292,8 @@ export function setupGracefulShutdown(): void {
     logger.info(`Received ${signal}. Starting graceful shutdown...`, { signal, operation: 'shutdown' });
 
     try {
+      // Stop health checks first
+      stopConnectionHealthCheck();
       await closeAllPools();
       logger.info('Graceful shutdown complete', { operation: 'shutdown' });
       process.exit(0);
@@ -306,6 +378,57 @@ export function getPoolStats(): Record<AIContext, {
       waitingCount: pools.work.waitingCount,
     },
   };
+}
+
+// Periodic connection health check interval reference
+let healthCheckInterval: NodeJS.Timeout | null = null;
+
+/**
+ * Start periodic connection health checks
+ * Runs a simple query every 5 minutes to keep connections alive
+ * and detect connection issues early
+ */
+export function startConnectionHealthCheck(intervalMs: number = 5 * 60 * 1000): void {
+  if (healthCheckInterval) {
+    logger.warn('Connection health check already running', { operation: 'healthCheck' });
+    return;
+  }
+
+  healthCheckInterval = setInterval(async () => {
+    try {
+      const start = Date.now();
+      await Promise.all([
+        pools.personal.query('SELECT 1'),
+        pools.work.query('SELECT 1'),
+      ]);
+      const duration = Date.now() - start;
+      logger.debug('Connection health check passed', {
+        duration,
+        operation: 'healthCheck',
+      });
+    } catch (error) {
+      logger.error('Connection health check failed', error instanceof Error ? error : undefined, {
+        operation: 'healthCheckFailed',
+      });
+      // The retry logic in queryContext will handle reconnection on next query
+    }
+  }, intervalMs);
+
+  logger.info('Connection health check started', {
+    intervalMs,
+    operation: 'healthCheckStart',
+  });
+}
+
+/**
+ * Stop periodic connection health checks
+ */
+export function stopConnectionHealthCheck(): void {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+    healthCheckInterval = null;
+    logger.info('Connection health check stopped', { operation: 'healthCheckStop' });
+  }
 }
 
 // Backward compatibility: Keep the old single pool export

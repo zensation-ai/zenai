@@ -59,8 +59,11 @@ export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
       setProfile(statsRes.data);
       setRecommendations(recsRes.data.recommendations);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Laden fehlgeschlagen');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
+        : 'Laden fehlgeschlagen';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -71,8 +74,11 @@ export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
       setRecalculating(true);
       await axios.post('/api/profile/recalculate');
       await loadProfile();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Neuberechnung fehlgeschlagen');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string })?.error || 'Neuberechnung fehlgeschlagen'
+        : 'Neuberechnung fehlgeschlagen';
+      setError(message);
     } finally {
       setRecalculating(false);
     }
@@ -89,8 +95,11 @@ export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
         ...profile,
         auto_priority_enabled: !profile.auto_priority_enabled,
       });
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Einstellung fehlgeschlagen');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string })?.error || 'Einstellung fehlgeschlagen'
+        : 'Einstellung fehlgeschlagen';
+      setError(message);
     }
   };
 

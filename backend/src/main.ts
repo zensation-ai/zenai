@@ -19,7 +19,7 @@ import { requestIdMiddleware } from './middleware/requestId';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
-import { testConnections, setupGracefulShutdown } from './utils/database-context';
+import { testConnections, setupGracefulShutdown, startConnectionHealthCheck } from './utils/database-context';
 import { voiceMemoContextRouter } from './routes/voice-memo-context';
 import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
@@ -42,6 +42,8 @@ import { advancedAnalyticsRouter } from './routes/analytics-advanced';
 import { personalizationChatRouter } from './routes/personalization-chat';
 // Phase 22: Learning Tasks
 import { learningTasksRouter } from './routes/learning-tasks';
+// Phase 23: Intelligent Learning System
+import { intelligentLearningRouter } from './routes/intelligent-learning';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -131,7 +133,7 @@ app.use('/api', voiceMemoContextRouter);
 
 // Phase 7: Media & Stories
 app.use('/api', mediaRouter);  // Context-aware media routes: /api/:context/media
-app.use('/api/stories', storiesRouter);
+app.use('/api', storiesRouter);  // Context-aware stories: /api/:context/stories
 
 // Phase 6: Training Routes
 app.use('/api', trainingRouter);  // Context-aware training routes: /api/:context/training
@@ -158,6 +160,9 @@ app.use('/api/personalization', personalizationChatRouter);  // Chat: /api/perso
 // Phase 22: Learning Tasks - "Tägliche Lernaufgaben"
 app.use('/api', learningTasksRouter);  // Learning tasks: /api/:context/learning-tasks, /api/:context/learning-stats
 
+// Phase 23: Intelligent Learning System - "KI lernt kontinuierlich"
+app.use('/api', intelligentLearningRouter);  // /api/:context/focus, /api/:context/feedback, /api/:context/research, /api/:context/suggestions
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
@@ -183,7 +188,7 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-Personal AI System - Backend (Phase 22)
+Personal AI System - Backend (Phase 23)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
@@ -195,7 +200,15 @@ Phase 6 APIs (NEW!):
   - Personal Persona: Friendly, exploratory
   - Work Persona: Structured, business-focused
 
-Phase 22 APIs (NEW!):
+Phase 23 APIs (NEW!):
+  - Domain Focus:    /api/:context/focus
+  - AI Feedback:     /api/:context/feedback
+  - Proactive Res.:  /api/:context/research
+  - AI Suggestions:  /api/:context/suggestions
+  - Learning Dash:   /api/:context/learning/dashboard
+  - Run Learning:    POST /api/:context/learning/run
+
+Phase 22 APIs:
   - Learning Tasks:  /api/:context/learning-tasks
   - Create Task:     POST /api/:context/learning-tasks
   - Log Session:     POST /api/:context/learning-tasks/:id/session
@@ -246,4 +259,8 @@ Phase 4 APIs:
   } else {
     logger.info('All databases connected successfully', { dbStatus });
   }
+
+  // Start periodic connection health checks (every 5 minutes)
+  // This keeps connections alive and detects issues early
+  startConnectionHealthCheck(5 * 60 * 1000);
 });

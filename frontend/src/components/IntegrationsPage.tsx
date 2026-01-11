@@ -5,6 +5,23 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
+import { useConfirm } from './ConfirmDialog';
+
+// Type-safe error extraction
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  const apiError = error as ApiError;
+  return apiError.response?.data?.message || apiError.message || fallback;
+}
 
 interface Integration {
   id: string;
@@ -58,6 +75,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   const [newWebhookName, setNewWebhookName] = useState('');
   const [newWebhookUrl, setNewWebhookUrl] = useState('');
   const [newWebhookEvents, setNewWebhookEvents] = useState<string[]>(['idea.created']);
+  const confirm = useConfirm();
 
   useEffect(() => {
     loadData();
@@ -75,8 +93,8 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       setApiKeys(keysRes.data.apiKeys);
       setWebhooks(webhooksRes.data.webhooks);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load data');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Daten konnten nicht geladen werden'));
     } finally {
       setLoading(false);
     }
@@ -86,18 +104,25 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
     try {
       const response = await axios.get(`/api/integrations/${provider}/auth`);
       window.location.href = response.data.authUrl;
-    } catch (err: any) {
-      setError(err.response?.data?.message || `Failed to connect ${provider}`);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, `Verbindung zu ${provider} fehlgeschlagen`));
     }
   };
 
   const disconnectIntegration = async (provider: string) => {
-    if (!confirm(`${provider} wirklich trennen?`)) return;
+    const confirmed = await confirm({
+      title: 'Integration trennen',
+      message: `Möchtest du ${provider} wirklich trennen? Du müsstest dich erneut anmelden, um die Verbindung wiederherzustellen.`,
+      confirmText: 'Trennen',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/integrations/${provider}`);
+      showToast(`${provider} wurde getrennt`, 'success');
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to disconnect');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Trennung fehlgeschlagen'));
     }
   };
 
@@ -107,9 +132,10 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
         i.provider === provider ? { ...i, syncStatus: 'syncing' as const } : i
       ));
       await axios.post(`/api/integrations/${provider}/sync`);
+      showToast('Synchronisation gestartet', 'success');
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Sync failed');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Synchronisation fehlgeschlagen'));
       loadData();
     }
   };
@@ -123,19 +149,27 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       });
       setCreatedKey(response.data.apiKey.key);
       setNewKeyName('');
+      showToast('API Key erstellt', 'success');
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create API key');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'API Key konnte nicht erstellt werden'));
     }
   };
 
   const deleteApiKey = async (id: string) => {
-    if (!confirm('API Key wirklich löschen?')) return;
+    const confirmed = await confirm({
+      title: 'API Key löschen',
+      message: 'Möchtest du diesen API Key wirklich löschen? Alle Anwendungen, die diesen Key verwenden, verlieren den Zugang.',
+      confirmText: 'Löschen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/keys/${id}`);
+      showToast('API Key gelöscht', 'success');
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete API key');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'API Key konnte nicht gelöscht werden'));
     }
   };
 
@@ -149,28 +183,36 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       });
       setNewWebhookName('');
       setNewWebhookUrl('');
+      showToast('Webhook erstellt', 'success');
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create webhook');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Webhook konnte nicht erstellt werden'));
     }
   };
 
   const deleteWebhook = async (id: string) => {
-    if (!confirm('Webhook wirklich löschen?')) return;
+    const confirmed = await confirm({
+      title: 'Webhook löschen',
+      message: 'Möchtest du diesen Webhook wirklich löschen? Externe Dienste werden keine Benachrichtigungen mehr erhalten.',
+      confirmText: 'Löschen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/webhooks/${id}`);
+      showToast('Webhook gelöscht', 'success');
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete webhook');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Webhook konnte nicht gelöscht werden'));
     }
   };
 
   const testWebhook = async (id: string) => {
     try {
       await axios.post(`/api/webhooks/${id}/test`);
-      alert('Test-Webhook gesendet!');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Test failed');
+      showToast('Test-Webhook gesendet!', 'success');
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err, 'Test fehlgeschlagen'), 'error');
     }
   };
 
@@ -215,7 +257,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
           <code className="api-key-display">{createdKey}</code>
           <button onClick={() => {
             navigator.clipboard.writeText(createdKey);
-            alert('Kopiert!');
+            showToast('In Zwischenablage kopiert!', 'success');
           }}>📋 Kopieren</button>
           <button onClick={() => setCreatedKey(null)}>×</button>
         </div>

@@ -1,8 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { MeetingCard, Meeting } from './MeetingCard';
 import { MeetingDetail } from './MeetingDetail';
+import { showToast } from './Toast';
 import './MeetingsPage.css';
+
+// Type-safe error extraction
+interface ApiError {
+  response?: { data?: { error?: string } };
+  message?: string;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  const apiError = error as ApiError;
+  return apiError.response?.data?.error || apiError.message || fallback;
+}
+
+interface ActionItem {
+  task: string;
+  assignee?: string;
+  due_date?: string;
+  priority: 'low' | 'medium' | 'high';
+  completed: boolean;
+}
+
+interface FollowUp {
+  topic: string;
+  responsible?: string;
+  deadline?: string;
+}
 
 interface MeetingNotes {
   id: string;
@@ -10,9 +36,9 @@ interface MeetingNotes {
   raw_transcript: string;
   structured_summary: string;
   key_decisions: string[];
-  action_items: any[];
+  action_items: ActionItem[];
   topics_discussed: string[];
-  follow_ups: any[];
+  follow_ups: FollowUp[];
   sentiment: 'positive' | 'neutral' | 'negative' | 'mixed';
   created_at: string;
 }
@@ -31,6 +57,9 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
   const [showNewMeeting, setShowNewMeeting] = useState(false);
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed'>('all');
 
+  // Ref to track mount state and prevent updates after unmount
+  const isMountedRef = useRef(true);
+
   // New meeting form state
   const [newMeeting, setNewMeeting] = useState({
     title: '',
@@ -42,32 +71,46 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
   });
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadMeetings();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   const loadMeetings = async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/meetings?limit=50');
+
+      if (!isMountedRef.current) return;
       setMeetings(response.data.meetings);
 
-      // Check which meetings have notes
+      // Check which meetings have notes (batch request for better performance)
+      // Use Promise.all for parallel requests instead of sequential loop
+      const meetingIds = response.data.meetings.map((m: Meeting) => m.id);
+      const notesResults = await Promise.allSettled(
+        meetingIds.map((id: string) => axios.get(`/api/meetings/${id}/notes`))
+      );
+
+      if (!isMountedRef.current) return;
+
       const notesMap: Record<string, boolean> = {};
-      for (const meeting of response.data.meetings) {
-        try {
-          const notesRes = await axios.get(`/api/meetings/${meeting.id}/notes`);
-          notesMap[meeting.id] = !!notesRes.data.notes;
-        } catch {
-          notesMap[meeting.id] = false;
-        }
-      }
+      meetingIds.forEach((id: string, index: number) => {
+        const result = notesResults[index];
+        notesMap[id] = result.status === 'fulfilled' && !!result.value.data.notes;
+      });
       setMeetingNotesMap(notesMap);
 
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Laden fehlgeschlagen');
+    } catch (err: unknown) {
+      if (isMountedRef.current) {
+        setError(getErrorMessage(err, 'Laden fehlgeschlagen'));
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -119,8 +162,11 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
         location: '',
         duration_minutes: 60,
       });
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Meeting erstellen fehlgeschlagen');
+    } catch (err: unknown) {
+      if (isMountedRef.current) {
+        setError(getErrorMessage(err, 'Meeting erstellen fehlgeschlagen'));
+        showToast('Meeting konnte nicht erstellt werden', 'error');
+      }
     }
   };
 

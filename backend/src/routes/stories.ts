@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { queryContext } from '../utils/database-context';
+import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { apiKeyAuth } from '../middleware/auth';
@@ -11,13 +11,19 @@ import { parseIntSafe, parseFloatSafe } from '../utils/validation';
 const router = express.Router();
 
 /**
- * GET /api/stories
+ * GET /api/:context/stories
  * Get automatically grouped content (stories) based on semantic similarity
  *
  * Example: All content related to "Firmengründung" grouped together
  */
-router.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/stories', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
   const { query: searchQuery, minItems, similarityThreshold } = req.query;
+
+  // Validate context
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
 
   // Validate and parse minItems
   const minItemsResult = parseIntSafe(minItems as string | undefined, {
@@ -46,21 +52,24 @@ router.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => 
     const stories = await findStoriesByQuery(
       searchQuery,
       minItemsResult.data!,
-      thresholdResult.data!
+      thresholdResult.data!,
+      context as AIContext
     );
 
     return res.json({
       stories,
-      total: stories.length
+      total: stories.length,
+      context
     });
   }
 
   // Otherwise, return pre-computed story clusters
-  const stories = await getAllStories();
+  const stories = await getAllStories(context as AIContext);
 
   res.json({
     stories,
-    total: stories.length
+    total: stories.length,
+    context
   });
 }));
 
@@ -70,16 +79,17 @@ router.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => 
 async function findStoriesByQuery(
   searchQuery: string,
   minItems: number,
-  similarityThreshold: number
+  similarityThreshold: number,
+  context: AIContext
 ): Promise<any[]> {
-  logger.info('Finding stories', { searchQuery });
+  logger.info('Finding stories', { searchQuery, context });
 
   // 1. Generate embedding for search query
   const queryEmbedding = await generateEmbedding(searchQuery);
 
   // 2. Find all ideas similar to the query
   const similarItems = await queryContext(
-    'personal',
+    context,
     `
     SELECT
       id,
@@ -130,11 +140,11 @@ async function findStoriesByQuery(
  *
  * OPTIMIZED: Uses a single SQL query with cross-join similarity instead of N+1 queries
  */
-async function getAllStories(): Promise<any[]> {
+async function getAllStories(context: AIContext): Promise<any[]> {
   // Get all ideas with embeddings and pre-compute similarities in SQL
   // This avoids N+1 query problem by using a single batch query
   const clusterResult = await queryContext(
-    'personal',
+    context,
     `
     WITH combined_items AS (
       SELECT

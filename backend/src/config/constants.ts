@@ -125,4 +125,39 @@ export const API_LIMITS = {
   MAX_PAGE_SIZE: 100,
   /** Maximum results for graph queries */
   MAX_GRAPH_NODES: 500,
+  /** Default search result limit */
+  DEFAULT_SEARCH_LIMIT: 10,
+  /** Maximum search result limit */
+  MAX_SEARCH_LIMIT: 50,
+  /** Default media list limit */
+  DEFAULT_MEDIA_LIMIT: 50,
 } as const;
+
+// ===========================================
+// Timeout Configuration
+// ===========================================
+export const TIMEOUTS = {
+  /** Quick operations (health checks, simple queries) */
+  QUICK_MS: 5000,
+  /** Standard API operations */
+  STANDARD_MS: 30000,
+  /** LLM generation operations */
+  LLM_GENERATION_MS: 60000,
+  /** Complex LLM operations (learning tasks, consolidation) */
+  LLM_COMPLEX_MS: 90000,
+  /** Webhook delivery timeout */
+  WEBHOOK_DELIVERY_MS: 10000,
+  /** Database statement timeout */
+  DATABASE_STATEMENT_MS: 30000,
+} as const;
+
+// ===========================================
+// Valid Context Types
+// ===========================================
+export const VALID_CONTEXTS = ['personal', 'work'] as const;
+export type AIContext = (typeof VALID_CONTEXTS)[number];
+
+/** Type guard for context validation */
+export function isValidContext(value: unknown): value is AIContext {
+  return typeof value === 'string' && VALID_CONTEXTS.includes(value as AIContext);
+}

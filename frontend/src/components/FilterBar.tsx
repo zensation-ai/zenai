@@ -55,79 +55,91 @@ export function FilterBar({ filters, onFilterChange, counts }: FilterBarProps) {
   };
 
   return (
-    <div className="filter-bar">
+    <div className="filter-bar" role="region" aria-label="Filteroptionen">
       <div className="filter-header">
         <button
+          type="button"
           className={`filter-toggle ${expanded ? 'expanded' : ''}`}
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-controls="filter-content"
         >
-          <span className="filter-icon">🔽</span>
+          <span className="filter-icon" aria-hidden="true">🔽</span>
           Filter
-          {activeCount > 0 && <span className="active-count">{activeCount}</span>}
+          {activeCount > 0 && <span className="active-count" aria-label={`${activeCount} aktive Filter`}>{activeCount}</span>}
         </button>
 
         {activeCount > 0 && (
-          <button className="clear-filters" onClick={clearFilters}>
+          <button type="button" className="clear-filters" onClick={clearFilters} aria-label="Alle Filter zurücksetzen">
             Filter zurücksetzen
           </button>
         )}
       </div>
 
       {expanded && (
-        <div className="filter-content">
+        <div id="filter-content" className="filter-content">
           {/* Type Filter */}
-          <div className="filter-group">
-            <label>Typ</label>
+          <div className="filter-group" role="group" aria-labelledby="filter-type-label">
+            <label id="filter-type-label">Typ</label>
             <div className="filter-pills">
               {typeOptions.map((opt) => (
                 <button
+                  type="button"
                   key={opt.value}
                   className={`filter-pill ${filters.type === opt.value ? 'active' : ''}`}
                   onClick={() => toggleFilter('type', opt.value)}
+                  aria-pressed={filters.type === opt.value}
+                  aria-label={`${opt.label} (${counts.types[opt.value] || 0})`}
                 >
-                  <span className="pill-icon">{opt.icon}</span>
+                  <span className="pill-icon" aria-hidden="true">{opt.icon}</span>
                   {opt.label}
-                  <span className="pill-count">{counts.types[opt.value] || 0}</span>
+                  <span className="pill-count" aria-hidden="true">{counts.types[opt.value] || 0}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Category Filter */}
-          <div className="filter-group">
-            <label>Kategorie</label>
+          <div className="filter-group" role="group" aria-labelledby="filter-category-label">
+            <label id="filter-category-label">Kategorie</label>
             <div className="filter-pills">
               {categoryOptions.map((opt) => (
                 <button
+                  type="button"
                   key={opt.value}
                   className={`filter-pill ${filters.category === opt.value ? 'active' : ''}`}
                   style={{
                     '--pill-color': opt.color,
                   } as React.CSSProperties}
                   onClick={() => toggleFilter('category', opt.value)}
+                  aria-pressed={filters.category === opt.value}
+                  aria-label={`${opt.label} (${counts.categories[opt.value] || 0})`}
                 >
                   {opt.label}
-                  <span className="pill-count">{counts.categories[opt.value] || 0}</span>
+                  <span className="pill-count" aria-hidden="true">{counts.categories[opt.value] || 0}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Priority Filter */}
-          <div className="filter-group">
-            <label>Priorität</label>
+          <div className="filter-group" role="group" aria-labelledby="filter-priority-label">
+            <label id="filter-priority-label">Priorität</label>
             <div className="filter-pills">
               {priorityOptions.map((opt) => (
                 <button
+                  type="button"
                   key={opt.value}
                   className={`filter-pill ${filters.priority === opt.value ? 'active' : ''}`}
                   style={{
                     '--pill-color': opt.color,
                   } as React.CSSProperties}
                   onClick={() => toggleFilter('priority', opt.value)}
+                  aria-pressed={filters.priority === opt.value}
+                  aria-label={`${opt.label} (${counts.priorities[opt.value] || 0})`}
                 >
                   {opt.label}
-                  <span className="pill-count">{counts.priorities[opt.value] || 0}</span>
+                  <span className="pill-count" aria-hidden="true">{counts.priorities[opt.value] || 0}</span>
                 </button>
               ))}
             </div>

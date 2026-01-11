@@ -115,8 +115,11 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
       onNotesAdded(response.data.notes);
       setTranscript('');
       setAudioChunks([]);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Verarbeitung fehlgeschlagen');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string })?.error || 'Verarbeitung fehlgeschlagen'
+        : 'Verarbeitung fehlgeschlagen';
+      setError(message);
     } finally {
       setProcessing(false);
     }

@@ -24,6 +24,11 @@ import axios from 'axios';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+// Phase 23: Proactive Research Integration
+import { processIdeaForResearch } from '../services/proactive-intelligence';
+import { getActiveFocusContext, findMatchingFocus } from '../services/domain-focus';
+// Phase 24: Business Profile Learning
+import { learnFromIdea } from '../services/business-profile-learning';
 
 export const voiceMemoContextRouter = Router();
 
@@ -73,16 +78,23 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
   // Validate context
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
   const startTime = Date.now();
   const { audioBase64, text, persona: personaId } = req.body;
   const audioFile = req.file; // From multer (FormData upload)
 
-  // Validate persona if provided
+  // Auto-fallback to default persona if the provided one is invalid for this context
+  // This handles context switches gracefully (e.g., switching from personal to work while "companion" is selected)
+  let effectivePersonaId = personaId;
   if (personaId && !isValidPersonaForContext(context as AIContext, personaId)) {
-    throw new ValidationError(`Invalid persona "${personaId}" for context "${context}". Use GET /api/${context}/personas to see available personas.`);
+    logger.info('Persona fallback', {
+      requestedPersona: personaId,
+      context,
+      reason: 'Invalid persona for context, using default'
+    });
+    effectivePersonaId = undefined; // Will use context default
   }
 
   let transcript: string;
@@ -104,12 +116,12 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
   }
 
   // Get the selected persona (or default for context)
-  const persona = getSubPersona(context as AIContext, personaId as SubPersonaId | undefined);
-  const immediateStructure = shouldImmediatelyStructure(context as AIContext, personaId as SubPersonaId | undefined);
+  const persona = getSubPersona(context as AIContext, effectivePersonaId as SubPersonaId | undefined);
+  const immediateStructure = shouldImmediatelyStructure(context as AIContext, effectivePersonaId as SubPersonaId | undefined);
 
   if (immediateStructure) {
     // WORK MODE: Structure immediately
-    const structured = await structureThoughtWithPersona(transcript, context as AIContext, personaId as SubPersonaId | undefined);
+    const structured = await structureThoughtWithPersona(transcript, context as AIContext, effectivePersonaId as SubPersonaId | undefined);
 
     // Generate embedding
     const embedding = await generateEmbedding(structured.summary + ' ' + structured.title);
@@ -137,6 +149,52 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
       ]
     );
 
+    // Phase 23: Check for proactive research needs (non-blocking)
+    let proactiveResearch = null;
+    let matchingFocus = null;
+    try {
+      // Check if this idea matches a domain focus
+      matchingFocus = await findMatchingFocus(
+        `${structured.title} ${structured.summary}`,
+        context as AIContext
+      );
+
+      // Check if this idea needs research (tasks with research keywords)
+      proactiveResearch = await processIdeaForResearch(
+        ideaId,
+        `${structured.title} ${structured.summary} ${transcript}`,
+        structured.type,
+        context as AIContext
+      );
+
+      if (proactiveResearch) {
+        logger.info('Proactive research triggered for new idea', {
+          ideaId,
+          researchId: proactiveResearch.id,
+          query: proactiveResearch.research_query,
+        });
+      }
+    } catch (error) {
+      // Don't fail the main request if research fails
+      logger.warn('Proactive research check failed', { ideaId, error });
+    }
+
+    // Phase 24: Learn from this idea for profile building (non-blocking)
+    try {
+      await learnFromIdea(
+        ideaId,
+        structured.title,
+        `${structured.summary || ''} ${transcript}`,
+        structured.type,
+        structured.category,
+        structured.keywords || [],
+        context as AIContext
+      );
+    } catch (error) {
+      // Don't fail if learning fails
+      logger.debug('Profile learning failed', { ideaId });
+    }
+
     const duration = Date.now() - startTime;
 
     return res.json({
@@ -153,6 +211,17 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         id: ideaId,
         ...structured,
       },
+      // Phase 23: Include proactive research if available
+      proactiveResearch: proactiveResearch ? {
+        id: proactiveResearch.id,
+        teaser_title: proactiveResearch.teaser_title,
+        teaser_text: proactiveResearch.teaser_text,
+        status: proactiveResearch.status,
+      } : null,
+      matchingFocus: matchingFocus ? {
+        id: matchingFocus.id,
+        name: matchingFocus.name,
+      } : null,
       processingTime: duration,
     });
 
@@ -200,7 +269,16 @@ async function structureThoughtWithPersona(
 ): Promise<any> {
   const persona = getSubPersona(context, personaId);
 
+  // Phase 23: Get active focus context for enhanced relevance
+  let focusContext = '';
+  try {
+    focusContext = await getActiveFocusContext(context);
+  } catch (error) {
+    logger.warn('Could not get focus context', { error });
+  }
+
   const prompt = `${persona.systemPrompt}
+${focusContext}
 
 Transkript: ${transcript}
 
@@ -260,7 +338,7 @@ voiceMemoContextRouter.get('/:context/stats', apiKeyAuth, asyncHandler(async (re
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
   const [ideasCount, thoughtsCount, clustersCount] = await Promise.all([
@@ -296,7 +374,7 @@ voiceMemoContextRouter.get('/:context/personas', apiKeyAuth, (req: Request, res:
 
   if (!isValidContext(context)) {
     return res.status(400).json({
-      error: 'Invalid context. Must be "personal" or "work"'
+      error: 'Invalid context. Use "personal" or "work".'
     });
   }
 

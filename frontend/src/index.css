@@ -28,10 +28,10 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.05);
 
-  /* Text Colors - Better contrast */
+  /* Text Colors - WCAG AA compliant (4.5:1 contrast ratio) */
   --text: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-secondary: #64748b;
+  --text-muted: #b4c2d1;  /* Improved from #94a3b8 for 4.5:1 contrast */
+  --text-secondary: #8b9db0;  /* Improved from #64748b for accessibility */
 
   /* Borders & Accents */
   --border: rgba(42, 74, 90, 0.6);

@@ -11,14 +11,18 @@ export function SearchBar({ onSearch, onClear, isSearching: externalSearching }:
   const [query, setQuery] = useState('');
   const [localSearching, setLocalSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isSearching = externalSearching ?? localSearching;
 
-  // Cleanup debounce on unmount
+  // Cleanup all timeouts on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
+      }
+      if (resetSearchRef.current) {
+        clearTimeout(resetSearchRef.current);
       }
     };
   }, []);
@@ -39,7 +43,11 @@ export function SearchBar({ onSearch, onClear, isSearching: externalSearching }:
         onSearch(value);
         // Reset local searching after a short delay if no external state
         if (externalSearching === undefined) {
-          setTimeout(() => setLocalSearching(false), 500);
+          // Clear any existing reset timeout
+          if (resetSearchRef.current) {
+            clearTimeout(resetSearchRef.current);
+          }
+          resetSearchRef.current = setTimeout(() => setLocalSearching(false), 500);
         }
       } else {
         onClear();
@@ -50,6 +58,9 @@ export function SearchBar({ onSearch, onClear, isSearching: externalSearching }:
   const handleClear = useCallback(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
+    }
+    if (resetSearchRef.current) {
+      clearTimeout(resetSearchRef.current);
     }
     setQuery('');
     setLocalSearching(false);

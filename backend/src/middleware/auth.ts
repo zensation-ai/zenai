@@ -70,6 +70,9 @@ export async function generateApiKey(): Promise<{ key: string; prefix: string; h
 /**
  * API Key Authentication Middleware
  * Validates API key from Authorization header or x-api-key header
+ *
+ * In development mode (NODE_ENV !== 'production'), allows requests without API key
+ * for easier local testing.
  */
 export async function apiKeyAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -81,6 +84,17 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     apiKey = authHeader.substring(7);
   } else if (apiKeyHeader?.startsWith('ab_')) {
     apiKey = apiKeyHeader;
+  }
+
+  // Development mode: Allow requests without API key
+  if (!apiKey && process.env.NODE_ENV !== 'production') {
+    req.apiKey = {
+      id: 'dev-mode',
+      name: 'Development Mode',
+      scopes: ['read', 'write', 'admin'],
+      rateLimit: 10000
+    };
+    return next();
   }
 
   if (!apiKey) {

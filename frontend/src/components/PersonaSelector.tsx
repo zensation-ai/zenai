@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import type { AIContext } from './ContextSwitcher';
+import { safeLocalStorage } from '../utils/storage';
 
 export interface Persona {
   id: string;
@@ -23,29 +24,54 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
 
   // Load personas when context changes
   useEffect(() => {
+    let isMounted = true;
+    const abortController = new AbortController();
+
     const loadPersonas = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`/api/${context}/personas`);
-        setPersonas(response.data.personas);
+        const response = await axios.get(`/api/${context}/personas`, {
+          signal: abortController.signal
+        });
 
-        // If no persona selected, use the default
-        if (!selectedPersona) {
-          const defaultPersona = response.data.personas.find((p: Persona) => p.isDefault);
+        // Prevent state updates if component unmounted
+        if (!isMounted) return;
+
+        const loadedPersonas = response.data.personas as Persona[];
+        setPersonas(loadedPersonas);
+
+        // Check if current persona is valid for the new context
+        const currentPersonaValid = loadedPersonas.some((p: Persona) => p.id === selectedPersona);
+
+        // If no persona selected OR current persona is invalid for this context, use default
+        // This handles context switches (e.g., "companion" is not valid for "work")
+        if (!selectedPersona || !currentPersonaValid) {
+          const defaultPersona = loadedPersonas.find((p: Persona) => p.isDefault);
           if (defaultPersona) {
             onPersonaChange(defaultPersona.id);
           }
         }
       } catch (error) {
+        // Ignore abort errors
+        if (axios.isCancel(error)) return;
+        if (!isMounted) return;
+
         console.error('Failed to load personas:', error);
         setPersonas([]);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadPersonas();
-  }, [context]);
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
+  }, [context, selectedPersona, onPersonaChange]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -110,24 +136,41 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
   );
 }
 
+// Valid personas per context - must match backend config
+const VALID_PERSONAS: Record<AIContext, string[]> = {
+  personal: ['companion', 'coach', 'creative'],
+  work: ['coordinator', 'analyst', 'strategist'],
+};
+
 // Hook for managing persona state per context
 export function usePersonaState(context: AIContext) {
   const storageKey = `${context}Persona`;
 
   const [persona, setPersona] = useState<string | null>(() => {
-    return localStorage.getItem(storageKey);
+    const saved = safeLocalStorage('get', storageKey);
+    // Validate that saved persona is valid for this context
+    if (saved && VALID_PERSONAS[context]?.includes(saved)) {
+      return saved;
+    }
+    return null; // Will use default
   });
 
   useEffect(() => {
     if (persona) {
-      localStorage.setItem(storageKey, persona);
+      safeLocalStorage('set', storageKey, persona);
     }
   }, [persona, storageKey]);
 
-  // Reset to null (use default) when context changes
+  // Reset persona when context changes - validate against new context's valid personas
   useEffect(() => {
-    const savedPersona = localStorage.getItem(storageKey);
-    setPersona(savedPersona);
+    const savedPersona = safeLocalStorage('get', storageKey);
+    // Only use saved persona if it's valid for this context
+    if (savedPersona && VALID_PERSONAS[context]?.includes(savedPersona)) {
+      setPersona(savedPersona);
+    } else {
+      // Reset to null (will trigger default selection in PersonaSelector)
+      setPersona(null);
+    }
   }, [context, storageKey]);
 
   return [persona, setPersona] as const;

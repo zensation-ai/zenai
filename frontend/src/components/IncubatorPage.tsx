@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
 import './IncubatorPage.css';
 
 interface LooseThought {
@@ -73,6 +74,9 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
       }
     } catch (error) {
       console.error('Failed to load incubator data:', error);
+      if (isMountedRef.current) {
+        showToast('Inkubator konnte nicht geladen werden', 'error');
+      }
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
@@ -114,6 +118,9 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
       }
     } catch (error) {
       console.error('Failed to submit thought:', error);
+      if (isMountedRef.current) {
+        showToast('Gedanke konnte nicht gespeichert werden', 'error');
+      }
     } finally {
       if (isMountedRef.current) {
         setSubmitting(false);
@@ -126,16 +133,24 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
     try {
       const response = await axios.post(`/api/incubator/clusters/${clusterId}/summarize`);
       // Update cluster in state
-      setClusters(clusters.map(c =>
-        c.id === clusterId
-          ? { ...c, title: response.data.title, summary: response.data.summary,
-              suggested_type: response.data.suggested_type, suggested_category: response.data.suggested_category }
-          : c
-      ));
+      if (isMountedRef.current) {
+        setClusters(clusters.map(c =>
+          c.id === clusterId
+            ? { ...c, title: response.data.title, summary: response.data.summary,
+                suggested_type: response.data.suggested_type, suggested_category: response.data.suggested_category }
+            : c
+        ));
+        showToast('Zusammenfassung erstellt', 'success');
+      }
     } catch (error) {
       console.error('Failed to generate summary:', error);
+      if (isMountedRef.current) {
+        showToast('Zusammenfassung fehlgeschlagen', 'error');
+      }
     } finally {
-      setSummarizing(null);
+      if (isMountedRef.current) {
+        setSummarizing(null);
+      }
     }
   };
 
@@ -144,23 +159,37 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
     try {
       const response = await axios.post(`/api/incubator/clusters/${clusterId}/consolidate`);
       // Remove from list and refresh
-      loadData();
-      if (onIdeaCreated) {
-        onIdeaCreated(response.data.ideaId);
+      if (isMountedRef.current) {
+        showToast('Idee wurde erstellt!', 'success');
+        loadData();
+        if (onIdeaCreated) {
+          onIdeaCreated(response.data.ideaId);
+        }
       }
     } catch (error) {
       console.error('Failed to consolidate cluster:', error);
+      if (isMountedRef.current) {
+        showToast('Konsolidierung fehlgeschlagen', 'error');
+      }
     } finally {
-      setConsolidating(null);
+      if (isMountedRef.current) {
+        setConsolidating(null);
+      }
     }
   };
 
   const dismissCluster = async (clusterId: string) => {
     try {
       await axios.post(`/api/incubator/clusters/${clusterId}/dismiss`);
-      loadData();
+      if (isMountedRef.current) {
+        showToast('Cluster verworfen', 'info');
+        loadData();
+      }
     } catch (error) {
       console.error('Failed to dismiss cluster:', error);
+      if (isMountedRef.current) {
+        showToast('Verwerfen fehlgeschlagen', 'error');
+      }
     }
   };
 

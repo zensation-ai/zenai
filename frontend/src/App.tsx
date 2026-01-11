@@ -17,9 +17,12 @@ import { ContextSwitcher, useContextState } from './components/ContextSwitcher';
 import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
 import { ExportMenu } from './components/ExportMenu';
 import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
+import { LearningDashboard } from './components/LearningDashboard';
+import { Onboarding } from './components/Onboarding';
+import { safeLocalStorage } from './utils/storage';
 import './App.css';
 
-type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph';
+type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning';
 
 interface StructuredIdea {
   id: string;
@@ -58,6 +61,9 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [archivedIdeas, setArchivedIdeas] = useState<StructuredIdea[]>([]);
   const [archivedCount, setArchivedCount] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return safeLocalStorage('get', 'onboardingComplete') !== 'true';
+  });
 
   // Context state (personal/work)
   const [context, setContext] = useContextState();
@@ -153,17 +159,20 @@ function App() {
   };
 
   const handleArchive = (id: string) => {
-    setIdeas(ideas.filter(i => i.id !== id));
+    setIdeas(prev => prev.filter(i => i.id !== id));
     setArchivedCount(prev => prev + 1);
   };
 
   const handleRestore = (id: string) => {
-    const restored = archivedIdeas.find(i => i.id === id);
-    if (restored) {
-      setArchivedIdeas(archivedIdeas.filter(i => i.id !== id));
-      setIdeas([restored, ...ideas]);
-      setArchivedCount(prev => Math.max(0, prev - 1));
-    }
+    setArchivedIdeas(prev => {
+      const restored = prev.find(i => i.id === id);
+      if (restored) {
+        setIdeas(prevIdeas => [restored, ...prevIdeas]);
+        setArchivedCount(prevCount => Math.max(0, prevCount - 1));
+        return prev.filter(i => i.id !== id);
+      }
+      return prev;
+    });
   };
 
   const submitText = async () => {
@@ -185,7 +194,7 @@ function App() {
         created_at: new Date().toISOString(),
       };
 
-      setIdeas([newIdea, ...ideas]);
+      setIdeas(prev => [newIdea, ...prev]);
       setTextInput('');
       showToast('Gedanke erfolgreich strukturiert!', 'success');
     } catch (err: unknown) {
@@ -269,43 +278,71 @@ function App() {
     }
   };
 
-  // Render sub-pages
+  // Render sub-pages (all wrapped in ErrorBoundary for crash protection)
   if (currentPage === 'meetings') {
-    return <MeetingsPage onBack={() => setCurrentPage('ideas')} />;
+    return (
+      <ErrorBoundary>
+        <MeetingsPage onBack={() => setCurrentPage('ideas')} />
+      </ErrorBoundary>
+    );
   }
 
   if (currentPage === 'profile') {
-    return <ProfileDashboard onBack={() => setCurrentPage('ideas')} />;
+    return (
+      <ErrorBoundary>
+        <ProfileDashboard onBack={() => setCurrentPage('ideas')} />
+      </ErrorBoundary>
+    );
   }
 
   if (currentPage === 'integrations') {
-    return <IntegrationsPage onBack={() => setCurrentPage('ideas')} />;
+    return (
+      <ErrorBoundary>
+        <IntegrationsPage onBack={() => setCurrentPage('ideas')} />
+      </ErrorBoundary>
+    );
   }
 
   if (currentPage === 'incubator') {
     return (
-      <IncubatorPage
-        onBack={() => setCurrentPage('ideas')}
-        onIdeaCreated={() => {
-          loadIdeas();
-          setCurrentPage('ideas');
-        }}
-      />
+      <ErrorBoundary>
+        <IncubatorPage
+          onBack={() => setCurrentPage('ideas')}
+          onIdeaCreated={() => {
+            loadIdeas();
+            setCurrentPage('ideas');
+          }}
+        />
+      </ErrorBoundary>
     );
   }
 
   if (currentPage === 'knowledge-graph') {
     return (
-      <KnowledgeGraphPage
-        onBack={() => setCurrentPage('ideas')}
-        onSelectIdea={(ideaId) => {
-          const idea = ideas.find(i => i.id === ideaId);
-          if (idea) {
-            setSelectedIdea(idea);
-            setCurrentPage('ideas');
-          }
-        }}
-      />
+      <ErrorBoundary>
+        <KnowledgeGraphPage
+          onBack={() => setCurrentPage('ideas')}
+          onSelectIdea={(ideaId) => {
+            const idea = ideas.find(i => i.id === ideaId);
+            if (idea) {
+              setSelectedIdea(idea);
+              setCurrentPage('ideas');
+            }
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'learning') {
+    return (
+      <ErrorBoundary>
+        <LearningDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
     );
   }
 
@@ -349,7 +386,7 @@ function App() {
                     <div key={idea.id} className="idea-wrapper">
                       <IdeaCard
                         idea={idea}
-                        onDelete={(id) => setArchivedIdeas(archivedIdeas.filter((i) => i.id !== id))}
+                        onDelete={(id) => setArchivedIdeas(prev => prev.filter((i) => i.id !== id))}
                         onRestore={handleRestore}
                         isArchived={true}
                         context={context}
@@ -366,8 +403,16 @@ function App() {
     );
   }
 
+  const handleOnboardingComplete = () => {
+    safeLocalStorage('set', 'onboardingComplete', 'true');
+    setShowOnboarding(false);
+  };
+
   return (
     <ErrorBoundary>
+    {showOnboarding && (
+      <Onboarding context={context} onComplete={handleOnboardingComplete} />
+    )}
     <div className="app">
       <header className="header">
         <div className="header-content">
@@ -419,6 +464,14 @@ function App() {
               <button
                 type="button"
                 className="nav-button"
+                onClick={() => setCurrentPage('learning')}
+                title="KI-Lernzentrum"
+              >
+                🧬 Lernen
+              </button>
+              <button
+                type="button"
+                className="nav-button"
                 onClick={() => setCurrentPage('profile')}
                 title="Profil"
               >
@@ -461,7 +514,11 @@ function App() {
           <div className="input-card">
             <h2>Neuer Gedanke</h2>
             <div className="text-input-container">
+              <label htmlFor="thought-input" className="visually-hidden">
+                Neuer Gedanke eingeben
+              </label>
               <textarea
+                id="thought-input"
                 className="text-input"
                 placeholder="Beschreibe deine Idee, Aufgabe oder Frage..."
                 value={textInput}
@@ -473,6 +530,7 @@ function App() {
                 }}
                 disabled={processing}
                 rows={3}
+                aria-describedby="input-hint"
               />
               <div className="input-actions">
                 <RecordButton
@@ -486,7 +544,7 @@ function App() {
                       keywords: result.structured.keywords || [],
                       created_at: new Date().toISOString(),
                     } as StructuredIdea;
-                    setIdeas([newIdea, ...ideas]);
+                    setIdeas(prev => [newIdea, ...prev]);
                     setTextInput('');
                   }}
                   onRecordingChange={setIsRecording}
@@ -507,7 +565,7 @@ function App() {
                 </button>
               </div>
             </div>
-            <p className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
+            <p id="input-hint" className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
           </div>
         </section>
 
@@ -543,12 +601,14 @@ function App() {
               {searchResults ? 'Suchergebnisse' : 'Deine Gedanken'}
               <span className="count">{filteredIdeas.length}</span>
             </h2>
-            <div className="view-toggle">
+            <div className="view-toggle" role="group" aria-label="Ansicht wählen">
               <button
                 type="button"
                 className={viewMode === 'grid' ? 'active' : ''}
                 onClick={() => setViewMode('grid')}
                 title="Rasteransicht"
+                aria-label="Rasteransicht"
+                aria-pressed={viewMode === 'grid' ? 'true' : 'false'}
               >
                 ⊞
               </button>
@@ -557,6 +617,8 @@ function App() {
                 className={viewMode === 'list' ? 'active' : ''}
                 onClick={() => setViewMode('list')}
                 title="Listenansicht"
+                aria-label="Listenansicht"
+                aria-pressed={viewMode === 'list' ? 'true' : 'false'}
               >
                 ☰
               </button>
@@ -564,13 +626,13 @@ function App() {
           </div>
 
           {loading ? (
-            <div className="loading-state">
-              <div className="loading-spinner large" />
+            <div className="loading-state" role="status" aria-live="polite">
+              <div className="loading-spinner large" aria-hidden="true" />
               <p>Lade Ideen...</p>
             </div>
           ) : filteredIdeas.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">💭</span>
+            <div className="empty-state" role="status">
+              <span className="empty-icon" aria-hidden="true">💭</span>
               <h3>Keine Gedanken gefunden</h3>
               <p>
                 {filters.type || filters.category || filters.priority
@@ -579,12 +641,19 @@ function App() {
               </p>
             </div>
           ) : (
-            <div className={`ideas-${viewMode}`}>
+            <div className={`ideas-${viewMode}`} role="list" aria-label="Gedankenliste">
               {filteredIdeas.map((idea) => (
-                <div key={idea.id} onClick={() => handleIdeaClick(idea)} className="idea-wrapper">
+                <div
+                  key={idea.id}
+                  onClick={() => handleIdeaClick(idea)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleIdeaClick(idea)}
+                  className="idea-wrapper"
+                  role="listitem"
+                  tabIndex={0}
+                >
                   <IdeaCard
                     idea={idea}
-                    onDelete={(id) => setIdeas(ideas.filter((i) => i.id !== id))}
+                    onDelete={(id) => setIdeas(prev => prev.filter((i) => i.id !== id))}
                     onArchive={handleArchive}
                     context={context}
                   />

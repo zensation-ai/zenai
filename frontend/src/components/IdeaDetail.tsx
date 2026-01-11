@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
 import './IdeaDetail.css';
 
 interface Idea {
@@ -75,27 +76,44 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   const [relations, setRelations] = useState<Relation[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [loadingRelations, setLoadingRelations] = useState(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadRelations();
     loadSuggestions();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [idea.id]);
 
   const loadRelations = async () => {
+    setLoadingRelations(true);
     try {
       const response = await axios.get(`/api/knowledge-graph/relations/${idea.id}`);
-      setRelations(response.data.relationships || []);
+      if (isMountedRef.current) {
+        setRelations(response.data.relationships || []);
+      }
     } catch (error) {
       console.error('Failed to load relations:', error);
+      // Silent fail for relations - they're optional
+    } finally {
+      if (isMountedRef.current) {
+        setLoadingRelations(false);
+      }
     }
   };
 
   const loadSuggestions = async () => {
     try {
       const response = await axios.get(`/api/knowledge-graph/suggestions/${idea.id}`);
-      setSuggestions(response.data.suggestions || []);
+      if (isMountedRef.current) {
+        setSuggestions(response.data.suggestions || []);
+      }
     } catch (error) {
       console.error('Failed to load suggestions:', error);
+      // Silent fail for suggestions - they're optional
     }
   };
 
@@ -104,10 +122,18 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
     try {
       await axios.post(`/api/knowledge-graph/analyze/${idea.id}`);
       await loadRelations();
+      if (isMountedRef.current) {
+        showToast('Beziehungen wurden analysiert', 'success');
+      }
     } catch (error) {
       console.error('Failed to analyze relations:', error);
+      if (isMountedRef.current) {
+        showToast('Analyse fehlgeschlagen', 'error');
+      }
     } finally {
-      setAnalyzing(false);
+      if (isMountedRef.current) {
+        setAnalyzing(false);
+      }
     }
   };
 
@@ -207,7 +233,9 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
             </button>
           </div>
 
-          {relations.length > 0 ? (
+          {loadingRelations ? (
+            <div className="loading-indicator">Lade Verknüpfungen...</div>
+          ) : relations.length > 0 ? (
             <div className="relations-list">
               {relations.map((rel, i) => (
                 <div

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { safeLocalStorage } from '../utils/storage';
 
 export type AIContext = 'personal' | 'work';
 
@@ -54,15 +55,17 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
   };
 
   return (
-    <div className="context-switcher">
-      <div className="context-toggle">
+    <div className="context-switcher" role="region" aria-label="Kontext-Auswahl">
+      <div className="context-toggle" role="group" aria-label="Kontext wählen">
         <button
           type="button"
           className={`context-option ${context === 'personal' ? 'active' : ''}`}
           onClick={() => onContextChange('personal')}
           title="Persönlicher Kontext"
+          aria-pressed={context === 'personal'}
+          aria-label="Privater Kontext"
         >
-          <span className="context-icon">🏠</span>
+          <span className="context-icon" aria-hidden="true">🏠</span>
           <span className="context-label">Privat</span>
         </button>
         <button
@@ -70,21 +73,23 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
           className={`context-option ${context === 'work' ? 'active' : ''}`}
           onClick={() => onContextChange('work')}
           title="Arbeits-Kontext"
+          aria-pressed={context === 'work'}
+          aria-label="Arbeits-Kontext"
         >
-          <span className="context-icon">💼</span>
+          <span className="context-icon" aria-hidden="true">💼</span>
           <span className="context-label">Arbeit</span>
         </button>
       </div>
 
       {showSuggestion && suggestedContext && (
-        <div className="context-suggestion">
+        <div className="context-suggestion" role="alert" aria-live="polite">
           <span className="suggestion-text">
             Wechsel zu {suggestedContext === 'personal' ? '🏠 Privat' : '💼 Arbeit'}?
           </span>
-          <button type="button" className="suggestion-accept" onClick={handleSuggestionAccept}>
+          <button type="button" className="suggestion-accept" onClick={handleSuggestionAccept} aria-label="Kontextwechsel akzeptieren">
             Ja
           </button>
-          <button type="button" className="suggestion-dismiss" onClick={handleSuggestionDismiss}>
+          <button type="button" className="suggestion-dismiss" onClick={handleSuggestionDismiss} aria-label="Kontextwechsel ablehnen">
             Nein
           </button>
         </div>
@@ -96,12 +101,12 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
 // Utility hook for context state management
 export function useContextState() {
   const [context, setContext] = useState<AIContext>(() => {
-    const saved = localStorage.getItem('aiContext');
+    const saved = safeLocalStorage('get', 'aiContext');
     return (saved as AIContext) || 'personal';
   });
 
   useEffect(() => {
-    localStorage.setItem('aiContext', context);
+    safeLocalStorage('set', 'aiContext', context);
 
     // Update document class for theming
     document.documentElement.setAttribute('data-context', context);
