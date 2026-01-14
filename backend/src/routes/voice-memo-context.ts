@@ -40,6 +40,8 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
+    // SECURITY: Only allow specific audio MIME types
+    // application/octet-stream removed to prevent arbitrary file uploads
     const allowedTypes = [
       'audio/wav',
       'audio/wave',
@@ -51,7 +53,6 @@ const upload = multer({
       'audio/m4a',
       'audio/mp4',
       'audio/x-m4a',
-      'application/octet-stream',
     ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);

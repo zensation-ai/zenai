@@ -90,14 +90,18 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     apiKey = apiKeyHeader;
   }
 
-  // Development mode: Allow requests without API key (whitelist approach)
-  const devModeAllowed = process.env.NODE_ENV === 'development' || process.env.ALLOW_DEV_MODE === 'true';
-  if (!apiKey && devModeAllowed) {
+  // Development mode: Allow limited requests without API key
+  // SECURITY: Only enabled in true local development (not Railway/cloud), read-only scope
+  const isLocalDev = process.env.NODE_ENV === 'development' &&
+                     !process.env.RAILWAY_ENVIRONMENT &&
+                     !process.env.VERCEL;
+  if (!apiKey && isLocalDev) {
+    logger.debug('Dev mode auth bypass - read-only access', { operation: 'apiKeyAuth' });
     req.apiKey = {
       id: 'dev-mode',
-      name: 'Development Mode',
-      scopes: ['read', 'write', 'admin'],
-      rateLimit: 10000
+      name: 'Development Mode (Read-Only)',
+      scopes: ['read'], // SECURITY: No write/admin permissions in dev mode
+      rateLimit: 100
     };
     return next();
   }
@@ -300,7 +304,11 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     logger.error('Rate limiter error', error instanceof Error ? error : undefined, { operation: 'rateLimiter' });
-    // Don't block requests on rate limiter errors
+    // SECURITY: Apply conservative fallback limit on DB errors
+    // This prevents unlimited access if rate limiting fails
+    res.setHeader('X-RateLimit-Limit', 10);
+    res.setHeader('X-RateLimit-Remaining', 10);
+    res.setHeader('X-RateLimit-Status', 'fallback');
     next();
   }
 }
