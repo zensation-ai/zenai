@@ -231,20 +231,38 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
   } else {
     // PERSONAL MODE: Add to incubator first
-    const embedding = await generateEmbedding(transcript);
+    let embedding: number[] = [];
+    try {
+      embedding = await generateEmbedding(transcript);
+      logger.info('Embedding generated for personal thought', { dimensions: embedding.length });
+    } catch (embeddingError) {
+      logger.warn('Embedding generation failed, proceeding without embedding', { error: embeddingError });
+    }
+
     const thoughtId = uuidv4();
 
-    await queryContext(
-      context as AIContext,
-      `INSERT INTO loose_thoughts
-       (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
-       VALUES ($1, 'default', $2, 'voice', '[]', $3, false, NOW())`,
-      [
+    try {
+      await queryContext(
+        context as AIContext,
+        `INSERT INTO loose_thoughts
+         (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
+         VALUES ($1, 'default', $2, 'voice', '[]'::jsonb, $3, false, NOW())`,
+        [
+          thoughtId,
+          transcript,
+          embedding.length > 0 ? formatForPgVector(embedding) : null,
+        ]
+      );
+      logger.info('Thought saved to loose_thoughts', { thoughtId, context });
+    } catch (dbError: any) {
+      logger.error('Failed to save to loose_thoughts', dbError instanceof Error ? dbError : undefined, {
         thoughtId,
-        transcript,
-        embedding.length > 0 ? formatForPgVector(embedding) : null,
-      ]
-    );
+        context,
+        errorCode: dbError?.code,
+        errorDetail: dbError?.detail,
+      });
+      throw dbError;
+    }
 
     const duration = Date.now() - startTime;
 
