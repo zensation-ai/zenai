@@ -14,6 +14,15 @@ jest.mock('../../services/whisper', () => ({
   checkWhisperAvailable: jest.fn(),
 }));
 
+// Mock auth middleware to bypass authentication in tests
+jest.mock('../../middleware/auth', () => ({
+  apiKeyAuth: jest.fn((req, res, next) => {
+    req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
+    next();
+  }),
+  requireScope: jest.fn(() => (req: any, res: any, next: any) => next()),
+}));
+
 jest.mock('../../utils/ollama', () => ({
   structureWithOllama: jest.fn(),
   generateEmbedding: jest.fn(),

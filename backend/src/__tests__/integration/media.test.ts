@@ -14,6 +14,15 @@ jest.mock('../../utils/database', () => ({
   query: jest.fn(),
 }));
 
+// Mock auth middleware to bypass authentication in tests
+jest.mock('../../middleware/auth', () => ({
+  apiKeyAuth: jest.fn((req, res, next) => {
+    req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
+    next();
+  }),
+  requireScope: jest.fn(() => (req: any, res: any, next: any) => next()),
+}));
+
 jest.mock('../../utils/ollama', () => ({
   generateEmbedding: jest.fn().mockResolvedValue(Array(768).fill(0.1)),
 }));
