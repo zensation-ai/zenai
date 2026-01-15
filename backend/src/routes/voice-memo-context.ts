@@ -17,7 +17,8 @@ import {
   SubPersonaId,
   SubPersonaConfig,
 } from '../config/personas';
-import { generateEmbedding, normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
+import { normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
+import { generateEmbedding } from '../services/ai'; // Unified AI with OpenAI fallback
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
@@ -29,6 +30,8 @@ import { processIdeaForResearch } from '../services/proactive-intelligence';
 import { getActiveFocusContext, findMatchingFocus } from '../services/domain-focus';
 // Phase 24: Business Profile Learning
 import { learnFromIdea } from '../services/business-profile-learning';
+// Unified AI service with OpenAI fallback
+import { isOpenAIAvailable, queryOpenAIJSON } from '../services/openai';
 
 export const voiceMemoContextRouter = Router();
 
@@ -262,6 +265,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
 /**
  * Structure a thought using context-specific persona
+ * Uses OpenAI if available, falls back to Ollama
  */
 async function structureThoughtWithPersona(
   transcript: string,
@@ -278,16 +282,16 @@ async function structureThoughtWithPersona(
     logger.warn('Could not get focus context', { error });
   }
 
-  const prompt = `${persona.systemPrompt}
+  const systemPrompt = `${persona.systemPrompt}
 ${focusContext}
 
-Transkript: ${transcript}
+Du strukturierst Gedanken und Sprachmemos. Antworte NUR mit einem JSON-Objekt.
 
-Strukturiere diesen Gedanken. Antworte NUR mit einem JSON-Objekt (keine Erklärung):
+OUTPUT FORMAT:
 {
   "title": "Kurzer, prägnanter Titel (max 50 Zeichen)",
   "type": "idea|task|problem|question|insight",
-  "category": "${context === 'work' ? 'EwS|1komma5|Kunden|Strategie|Technik|Business|Marketing|Team' : 'personal|family|health|learning|hobby'}",
+  "category": "${context === 'work' ? 'business|technical|personal|learning' : 'personal|business|technical|learning'}",
   "priority": "low|medium|high",
   "summary": "2-3 Sätze Zusammenfassung",
   "next_steps": ["Schritt 1", "Schritt 2"],
@@ -295,39 +299,78 @@ Strukturiere diesen Gedanken. Antworte NUR mit einem JSON-Objekt (keine Erkläru
   "keywords": ["keyword1", "keyword2"]
 }`;
 
-  const response = await axios.post(
-    `${OLLAMA_URL}/api/generate`,
-    {
-      model: persona.modelName,
-      prompt,
-      stream: false,
-      options: {
-        temperature: persona.temperature,
-      },
-    },
-    { timeout: 60000 }
-  );
+  const userPrompt = `Transkript: ${transcript}`;
 
-  const content = response.data.response;
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  // Try OpenAI first (works on Railway)
+  if (isOpenAIAvailable()) {
+    try {
+      logger.info('Structuring with OpenAI', { context, personaId });
+      const parsed = await queryOpenAIJSON<any>(systemPrompt, userPrompt);
 
-  if (!jsonMatch) {
-    throw new Error('Invalid LLM response - no JSON found');
+      return {
+        title: parsed.title || 'Unstrukturierte Notiz',
+        type: normalizeType(parsed.type),
+        category: normalizeCategory(parsed.category),
+        priority: normalizePriority(parsed.priority),
+        summary: parsed.summary || '',
+        next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+        context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+        keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      };
+    } catch (error: any) {
+      logger.warn('OpenAI structuring failed, trying Ollama', { error: error.message });
+    }
   }
 
-  const parsed = JSON.parse(jsonMatch[0]);
+  // Fallback to Ollama (local development)
+  try {
+    const response = await axios.post(
+      `${OLLAMA_URL}/api/generate`,
+      {
+        model: persona.modelName,
+        prompt: `${systemPrompt}\n\n${userPrompt}`,
+        stream: false,
+        options: {
+          temperature: persona.temperature,
+        },
+      },
+      { timeout: 60000 }
+    );
 
-  // Normalize fields to ensure they match database constraints
-  return {
-    title: parsed.title || 'Unstrukturierte Notiz',
-    type: normalizeType(parsed.type),
-    category: normalizeCategory(parsed.category),
-    priority: normalizePriority(parsed.priority),
-    summary: parsed.summary || '',
-    next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
-    context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
-    keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
-  };
+    const content = response.data.response;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error('Invalid LLM response - no JSON found');
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    return {
+      title: parsed.title || 'Unstrukturierte Notiz',
+      type: normalizeType(parsed.type),
+      category: normalizeCategory(parsed.category),
+      priority: normalizePriority(parsed.priority),
+      summary: parsed.summary || '',
+      next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+      context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+    };
+  } catch (error: any) {
+    logger.error('Both OpenAI and Ollama failed', error instanceof Error ? error : undefined);
+
+    // Basic fallback - return unstructured
+    return {
+      title: transcript.substring(0, 50) + (transcript.length > 50 ? '...' : ''),
+      type: 'idea',
+      category: 'personal',
+      priority: 'medium',
+      summary: transcript.substring(0, 200),
+      next_steps: [],
+      context_needed: [],
+      keywords: [],
+    };
+  }
 }
 
 /**
