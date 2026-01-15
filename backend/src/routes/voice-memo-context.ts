@@ -395,42 +395,6 @@ OUTPUT FORMAT:
 }
 
 /**
- * GET /api/:context/debug/schema
- *
- * DEBUG: Check table schema (temporary endpoint for troubleshooting)
- */
-voiceMemoContextRouter.get('/:context/debug/schema', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const { context } = req.params;
-
-  if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
-  }
-
-  const looseThoughtsSchema = await queryContext(
-    context as AIContext,
-    `SELECT column_name, data_type, is_nullable, column_default
-     FROM information_schema.columns
-     WHERE table_name = 'loose_thoughts'
-     ORDER BY ordinal_position`
-  );
-
-  const ideasSchema = await queryContext(
-    context as AIContext,
-    `SELECT column_name, data_type, is_nullable
-     FROM information_schema.columns
-     WHERE table_name = 'ideas'
-     ORDER BY ordinal_position`
-  );
-
-  res.json({
-    context,
-    loose_thoughts_columns: looseThoughtsSchema.rows.map((r: any) => r.column_name),
-    loose_thoughts_details: looseThoughtsSchema.rows,
-    ideas_columns: ideasSchema.rows.map((r: any) => r.column_name),
-  });
-}));
-
-/**
  * GET /api/:context/stats
  *
  * Get statistics for a specific context
