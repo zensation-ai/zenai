@@ -88,6 +88,7 @@ export async function structureWithOpenAI(transcript: string): Promise<Structure
 
 /**
  * Generate embedding using OpenAI
+ * Uses 768 dimensions to match database schema (vector(768))
  */
 export async function generateOpenAIEmbedding(text: string): Promise<number[]> {
   if (!openaiClient) {
@@ -98,6 +99,7 @@ export async function generateOpenAIEmbedding(text: string): Promise<number[]> {
     const response = await openaiClient.embeddings.create({
       model: OPENAI_EMBEDDING_MODEL,
       input: text,
+      dimensions: 768, // Match database vector(768) columns
     });
 
     return response.data[0].embedding;
