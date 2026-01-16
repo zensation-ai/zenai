@@ -18,7 +18,8 @@ extension APIService {
 
         print("[KnowledgeGraph] Fetching full graph for context: \(context)")
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -41,7 +42,8 @@ extension APIService {
 
         print("[KnowledgeGraph] Fetching subgraph for idea: \(ideaId), depth: \(depth)")
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -57,17 +59,14 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 120 // 2 minutes for clustering
-
         let body: [String: Any] = [
             "context": context,
             "minClusterSize": 2,
             "maxClusters": 10
         ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        request.timeoutInterval = 120 // 2 minutes for clustering
 
         print("[KnowledgeGraph] Generating topics for context: \(context)")
 
@@ -91,16 +90,13 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 300 // 5 minutes for analysis
-
         let body: [String: Any] = [
             "context": context,
             "force": false
         ]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        request.timeoutInterval = 300 // 5 minutes for analysis
 
         print("[KnowledgeGraph] Discovering relationships for context: \(context)")
 
@@ -124,7 +120,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -147,7 +144,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -170,8 +168,7 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        var request = try createAuthenticatedRequest(url: url, method: "POST")
         request.timeoutInterval = 60
 
         let (_, response) = try await URLSession.shared.data(for: request)

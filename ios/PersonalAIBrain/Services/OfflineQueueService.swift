@@ -300,10 +300,42 @@ class OfflineQueueService: ObservableObject {
             }
         }
 
-        // Initial check
+        // Initial check with retry logic
         Task {
-            await checkConnectivity()
+            await initialConnectivityCheck()
         }
+    }
+
+    /// Initial connectivity check with retry logic
+    /// Tries up to 3 times with 2-second delays to establish connection at app startup
+    private func initialConnectivityCheck() async {
+        print("📡 OfflineQueue: Starting initial connectivity check...")
+
+        for attempt in 1...3 {
+            let result = await APIService.shared.checkHealth()
+            if result {
+                isOnline = true
+                print("✅ OfflineQueue: Online after attempt \(attempt)")
+
+                // Process any queued items
+                if !queuedItems.isEmpty {
+                    print("📤 OfflineQueue: Processing \(queuedItems.count) queued items...")
+                    await processQueue()
+                }
+                return
+            }
+
+            print("⚠️ OfflineQueue: Connectivity check attempt \(attempt) failed")
+
+            if attempt < 3 {
+                // Wait 2 seconds before retry
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
+
+        // All attempts failed
+        isOnline = false
+        print("❌ OfflineQueue: All connectivity checks failed - operating in offline mode")
     }
 
     private func checkConnectivity() async {
@@ -311,8 +343,20 @@ class OfflineQueueService: ObservableObject {
         let wasOnline = isOnline
         isOnline = await apiService.checkHealth()
 
+        print("📡 OfflineQueue: Connectivity check - wasOnline=\(wasOnline), isOnline=\(isOnline)")
+
         // If we just came online and have queued items, process them
         if isOnline && !wasOnline && !queuedItems.isEmpty {
+            print("🔄 OfflineQueue: Back online! Processing \(queuedItems.count) queued items...")
+            await processQueue()
+        }
+    }
+
+    /// Force a connectivity check and queue processing (can be called from UI)
+    func forceSync() async {
+        print("🔄 OfflineQueue: Force sync requested...")
+        await checkConnectivity()
+        if isOnline && !queuedItems.isEmpty {
             await processQueue()
         }
     }

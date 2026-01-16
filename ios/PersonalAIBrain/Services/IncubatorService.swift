@@ -22,6 +22,12 @@ final class IncubatorService {
         return url
     }
 
+    private func addAuthHeader(to request: inout URLRequest) {
+        if let apiKey = APIKeyManager.shared.getAPIKey() {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+    }
+
     // MARK: - Thoughts
 
     /// Add a new loose thought to the incubator
@@ -35,6 +41,7 @@ final class IncubatorService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = AppEnvironment.Timeouts.standard
+        addAuthHeader(to: &request)
 
         let body: [String: Any] = [
             "text": text,
@@ -72,6 +79,7 @@ final class IncubatorService {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
+        addAuthHeader(to: &request)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -96,6 +104,7 @@ final class IncubatorService {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
+        addAuthHeader(to: &request)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -118,6 +127,7 @@ final class IncubatorService {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
+        addAuthHeader(to: &request)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -142,6 +152,7 @@ final class IncubatorService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = AppEnvironment.Timeouts.aiProcessing
+        addAuthHeader(to: &request)
 
         let body = ["context": context.rawValue]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -167,6 +178,7 @@ final class IncubatorService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = AppEnvironment.Timeouts.standard
+        addAuthHeader(to: &request)
 
         let body = ["context": context.rawValue]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -189,6 +201,7 @@ final class IncubatorService {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = AppEnvironment.Timeouts.standard
+        addAuthHeader(to: &request)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -214,6 +227,7 @@ final class IncubatorService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = AppEnvironment.Timeouts.aiProcessing
+        addAuthHeader(to: &request)
 
         let body = ["context": context.rawValue]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)

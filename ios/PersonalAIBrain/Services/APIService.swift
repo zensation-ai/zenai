@@ -73,7 +73,7 @@ class APIService: ObservableObject {
     ///   - method: HTTP method (GET, POST, PUT, DELETE, etc.)
     /// - Returns: Configured URLRequest with Authorization header
     /// - Throws: APIError.unauthorized if no API key is stored
-    private func createAuthenticatedRequest(
+    func createAuthenticatedRequest(
         url: URL,
         method: String = "GET"
     ) throws -> URLRequest {
@@ -100,7 +100,7 @@ class APIService: ObservableObject {
     ///   - body: Request body data
     /// - Returns: Configured URLRequest with Authorization header and body
     /// - Throws: APIError.unauthorized if no API key is stored
-    private func createAuthenticatedRequest(
+    func createAuthenticatedRequest(
         url: URL,
         method: String,
         body: Data
@@ -145,35 +145,64 @@ class APIService: ObservableObject {
     // MARK: - Health Check
 
     func checkHealth() async -> Bool {
-        guard let url = URL(string: "\(baseURL)/api/health") else { return false }
+        guard let url = URL(string: "\(baseURL)/api/health") else {
+            print("❌ Health check: Invalid URL")
+            return false
+        }
+
+        // Create request with short timeout for health checks
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 10 // 10 second timeout for health check
+        request.httpMethod = "GET"
 
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Health check: Invalid response type")
                 return false
             }
 
-            let healthResponse = try JSONDecoder().decode(HealthResponse.self, from: data)
-            return healthResponse.status == "healthy"
+            // Accept any 2xx status as "online"
+            let isSuccess = (200...299).contains(httpResponse.statusCode)
+
+            if isSuccess {
+                // Try to decode the response to get the status
+                if let healthResponse = try? JSONDecoder().decode(HealthResponse.self, from: data) {
+                    // Both "healthy" and "degraded" mean the API can accept requests
+                    let isOnline = healthResponse.status == "healthy" || healthResponse.status == "degraded"
+                    print("✅ Health check: \(healthResponse.status) (online=\(isOnline))")
+                    return isOnline
+                }
+                // If decoding fails but we got 2xx, assume online
+                print("✅ Health check: HTTP \(httpResponse.statusCode) (assuming online)")
+                return true
+            } else {
+                print("❌ Health check: HTTP \(httpResponse.statusCode)")
+                return false
+            }
+        } catch let error as URLError {
+            print("❌ Health check failed (URLError): \(error.code.rawValue) - \(error.localizedDescription)")
+            return false
         } catch {
-            print("Health check failed: \(error)")
+            print("❌ Health check failed: \(error.localizedDescription)")
             return false
         }
     }
 
     // MARK: - Ideas
 
-    func fetchIdeas() async throws -> [Idea] {
+    /// Fetch ideas (uses current context)
+    func fetchIdeas(context: AIContext? = nil) async throws -> [Idea] {
         isLoading = true
         defer { isLoading = false }
 
-        guard let url = URL(string: "\(baseURL)/api/ideas") else {
-            print("❌ Invalid URL: \(baseURL)/api/ideas")
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/ideas") else {
+            print("❌ Invalid URL for ideas")
             throw APIError.invalidURL
         }
 
-        print("🌐 Fetching from: \(url.absoluteString)")
+        print("🌐 Fetching ideas from: \(url.absoluteString)")
 
         do {
             let request = try createAuthenticatedRequest(url: url, method: "GET")
@@ -203,15 +232,17 @@ class APIService: ObservableObject {
         }
     }
 
-    func searchIdeas(query: String) async throws -> [Idea] {
+    /// Search ideas (uses current context)
+    func searchIdeas(query: String, context: AIContext? = nil) async throws -> [Idea] {
         isLoading = true
         defer { isLoading = false }
 
-        guard let url = URL(string: "\(baseURL)/api/ideas/search") else {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/ideas/search") else {
             throw APIError.invalidURL
         }
 
-        let body = ["query": query, "limit": 10] as [String: Any]
+        let body = ["query": query, "limit": 20] as [String: Any]
         let bodyData = try JSONSerialization.data(withJSONObject: body)
         let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
 
@@ -492,14 +523,17 @@ class APIService: ObservableObject {
 
     // MARK: - Swipe Actions
 
-    func sendSwipeAction(ideaId: String, action: String) async throws {
+    /// Send swipe action (context-aware via header)
+    func sendSwipeAction(ideaId: String, action: String, context: AIContext? = nil) async throws {
+        let ctx = context ?? ContextManager.shared.currentContext
         guard let url = URL(string: "\(baseURL)/api/ideas/\(ideaId)/swipe") else {
             throw APIError.invalidURL
         }
 
         let body = ["action": action]
         let bodyData = try JSONEncoder().encode(body)
-        let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        request.setValue(ctx.rawValue, forHTTPHeaderField: "x-ai-context")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -512,12 +546,15 @@ class APIService: ObservableObject {
         }
     }
 
-    func archiveIdea(ideaId: String) async throws {
+    /// Archive idea (context-aware via header)
+    func archiveIdea(ideaId: String, context: AIContext? = nil) async throws {
+        let ctx = context ?? ContextManager.shared.currentContext
         guard let url = URL(string: "\(baseURL)/api/ideas/\(ideaId)/archive") else {
             throw APIError.invalidURL
         }
 
-        let request = try createAuthenticatedRequest(url: url, method: "PUT")
+        var request = try createAuthenticatedRequest(url: url, method: "PUT")
+        request.setValue(ctx.rawValue, forHTTPHeaderField: "x-ai-context")
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -529,12 +566,15 @@ class APIService: ObservableObject {
         }
     }
 
-    func deleteIdea(id: String) async throws {
+    /// Delete idea (context-aware via header)
+    func deleteIdea(id: String, context: AIContext? = nil) async throws {
+        let ctx = context ?? ContextManager.shared.currentContext
         guard let url = URL(string: "\(baseURL)/api/ideas/\(id)") else {
             throw APIError.invalidURL
         }
 
-        let request = try createAuthenticatedRequest(url: url, method: "DELETE")
+        var request = try createAuthenticatedRequest(url: url, method: "DELETE")
+        request.setValue(ctx.rawValue, forHTTPHeaderField: "x-ai-context")
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -1143,10 +1183,12 @@ extension APIService {
 
     /// Fetch stories (grouped related content)
     func fetchStories(
+        context: AIContext? = nil,
         query: String? = nil,
         completion: @escaping (Result<[Story], Error>) -> Void
     ) {
-        var urlString = "\(baseURL)/api/stories"
+        let ctx = context ?? ContextManager.shared.currentContext
+        var urlString = "\(baseURL)/api/\(ctx.rawValue)/stories"
         if let query = query {
             urlString += "?query=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         }
@@ -1590,7 +1632,9 @@ extension APIService {
             endpoint = "\(baseURL)/api/export/ideas/\(format.rawValue)"
         }
 
-        var components = URLComponents(string: endpoint)!
+        guard var components = URLComponents(string: endpoint) else {
+            throw APIError.invalidURL
+        }
         components.queryItems = [
             URLQueryItem(name: "context", value: context.rawValue)
         ]

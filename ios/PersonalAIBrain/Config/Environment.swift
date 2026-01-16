@@ -41,16 +41,18 @@ enum AppEnvironment {
         #endif
     }
 
-    /// Development IP address for real device testing
-    /// Change this to your Mac's IP address when testing on device
+    /// Development IP address for real device testing (only used when no production URL)
+    /// Configure via Info.plist key "DevelopmentIP" for local testing
     private static var developmentIP: String {
         // Try to read from Info.plist first
         if let ip = Bundle.main.object(forInfoDictionaryKey: "DevelopmentIP") as? String,
            !ip.isEmpty {
             return ip
         }
-        // Fallback to default
-        return "192.168.212.104"
+        // SECURITY: No hardcoded fallback IP - must be configured via Info.plist
+        // This prevents accidental connection to wrong servers in production
+        print("⚠️ Warning: No DevelopmentIP configured in Info.plist - falling back to production URL")
+        return "ki-ab-production.up.railway.app" // Will use HTTPS via production URL check
     }
 
     /// Check if using production backend

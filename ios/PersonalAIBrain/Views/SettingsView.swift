@@ -84,6 +84,15 @@ struct SettingsView: View {
                 // Offline Queue
                 Section("Offline-Warteschlange") {
                     HStack {
+                        Image(systemName: offlineQueueService.isOnline ? "wifi" : "wifi.slash")
+                            .foregroundColor(offlineQueueService.isOnline ? .green : .orange)
+                        Text("Netzwerk-Status")
+                        Spacer()
+                        Text(offlineQueueService.isOnline ? "Online" : "Offline")
+                            .foregroundColor(.zensationTextMuted)
+                    }
+
+                    HStack {
                         Image(systemName: "tray.full")
                             .foregroundColor(.blue)
                         Text("Ausstehende Aktionen")
@@ -91,6 +100,18 @@ struct SettingsView: View {
                         Text("\(offlineQueueService.queuedItems.count)")
                             .foregroundColor(.zensationTextMuted)
                     }
+
+                    Button(action: {
+                        Task {
+                            await offlineQueueService.forceSync()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Verbindung prüfen & synchronisieren")
+                        }
+                    }
+                    .disabled(offlineQueueService.isProcessing)
 
                     if !offlineQueueService.queuedItems.isEmpty {
                         Button("Warteschlange leeren") {
@@ -186,23 +207,25 @@ struct SettingsView: View {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("1.0.0")
+                        Text("1.2")
                             .foregroundColor(.zensationTextMuted)
                     }
 
                     HStack {
                         Text("Build")
                         Spacer()
-                        Text("Phase 2 MVP")
+                        Text("5")
                             .foregroundColor(.zensationTextMuted)
                     }
 
-                    Link(destination: URL(string: "https://github.com")!) {
-                        HStack {
-                            Text("GitHub Repository")
-                            Spacer()
-                            Image(systemName: "arrow.up.right.square")
-                                .foregroundColor(.zensationTextMuted)
+                    if let githubURL = URL(string: "https://github.com") {
+                        Link(destination: githubURL) {
+                            HStack {
+                                Text("GitHub Repository")
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                                    .foregroundColor(.zensationTextMuted)
+                            }
                         }
                     }
                 }
@@ -265,7 +288,7 @@ struct SettingsView: View {
                 } catch let error as BiometricService.BiometricError {
                     await MainActor.run {
                         biometricEnabled = false
-                        biometricErrorMessage = error.localizedDescription ?? "Unbekannter Fehler"
+                        biometricErrorMessage = error.localizedDescription
                         showBiometricError = true
                     }
                 } catch {

@@ -13,13 +13,9 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let bodyData = "{}".data(using: .utf8)!
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
         request.timeoutInterval = 60 // AI generation can take time
-
-        // Send empty object - date is optional, server will use current date
-        request.httpBody = "{}".data(using: .utf8)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -48,7 +44,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -70,7 +67,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -87,7 +85,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -104,13 +103,10 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(goals)
+        let bodyData = try encoder.encode(goals)
+        let request = try createAuthenticatedRequest(url: url, method: "PUT", body: bodyData)
 
         let (_, response) = try await URLSession.shared.data(for: request)
 
@@ -128,7 +124,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -145,7 +142,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -162,7 +160,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -179,7 +178,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -336,13 +336,10 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60
-
         let body = ["text": text]
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try JSONEncoder().encode(body)
+        var request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        request.timeoutInterval = 60
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -402,7 +399,8 @@ extension APIService {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
