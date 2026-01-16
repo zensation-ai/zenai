@@ -551,12 +551,25 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
         }
 
         .page-header {
+          position: sticky;
+          top: 0;
+          z-index: 100;
           display: flex;
           align-items: center;
           gap: 1rem;
           padding: 1rem 2rem;
-          background: var(--bg-secondary);
-          border-bottom: 1px solid var(--border-color);
+          padding-left: 80px; /* Platz für macOS Traffic Lights */
+          background: var(--glass-bg);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          backdrop-filter: blur(20px) saturate(180%);
+          border-bottom: 1px solid var(--glass-border);
+          -webkit-app-region: drag;
+        }
+
+        .page-header button,
+        .page-header a,
+        .page-header input {
+          -webkit-app-region: no-drag;
         }
 
         .back-button {
@@ -565,6 +578,12 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
           color: var(--text-secondary);
           cursor: pointer;
           font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+          .page-header {
+            padding-left: 1rem; /* Kein Traffic Lights auf Mobile */
+          }
         }
 
         .tabs {

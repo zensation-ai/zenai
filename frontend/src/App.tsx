@@ -314,7 +314,7 @@ function App() {
   if (currentPage === 'profile') {
     return (
       <ErrorBoundary>
-        <ProfileDashboard onBack={() => setCurrentPage('ideas')} />
+        <ProfileDashboard onBack={() => setCurrentPage('ideas')} context={context} />
       </ErrorBoundary>
     );
   }

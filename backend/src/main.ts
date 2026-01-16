@@ -8,7 +8,7 @@ import { ideasRouter } from './routes/ideas';
 import { healthRouter } from './routes/health';
 import { knowledgeGraphRouter } from './routes/knowledge-graph';
 import { meetingsRouter } from './routes/meetings';
-import { userProfileRouter } from './routes/user-profile';
+import { userProfileRouter, userProfileContextRouter } from './routes/user-profile';
 import { companiesRouter } from './routes/companies';
 // Phase 4: Enterprise Integration Routes
 import { apiKeysRouter } from './routes/api-keys';
@@ -119,6 +119,7 @@ app.use('/api/ideas', ideasRouter);
 app.use('/api/knowledge-graph', knowledgeGraphRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/profile', userProfileRouter);
+app.use('/api', userProfileContextRouter);  // Context-aware profile routes: /api/:context/profile/*
 app.use('/api/companies', companiesRouter);
 
 // Phase 4: Enterprise Integration Routes

@@ -21,6 +21,7 @@ interface Recommendations {
 
 interface ProfileDashboardProps {
   onBack: () => void;
+  context: string;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -38,7 +39,7 @@ const typeLabels: Record<string, { label: string; icon: string }> = {
   question: { label: 'Fragen', icon: '❓' },
 };
 
-export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
+export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,14 +48,14 @@ export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
 
   useEffect(() => {
     loadProfile();
-  }, []);
+  }, [context]);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
       const [statsRes, recsRes] = await Promise.all([
-        axios.get('/api/profile/stats'),
-        axios.get('/api/profile/recommendations'),
+        axios.get(`/api/${context}/profile/stats`),
+        axios.get(`/api/${context}/profile/recommendations`),
       ]);
       setProfile(statsRes.data);
       setRecommendations(recsRes.data.recommendations);
@@ -72,7 +73,7 @@ export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
   const handleRecalculate = async () => {
     try {
       setRecalculating(true);
-      await axios.post('/api/profile/recalculate');
+      await axios.post(`/api/${context}/profile/recalculate`);
       await loadProfile();
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
@@ -88,7 +89,7 @@ export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
     if (!profile) return;
 
     try {
-      await axios.put('/api/profile/auto-priority', {
+      await axios.put(`/api/${context}/profile/auto-priority`, {
         enabled: !profile.auto_priority_enabled,
       });
       setProfile({
@@ -136,6 +137,9 @@ export function ProfileDashboard({ onBack }: ProfileDashboardProps) {
           ← Zurück
         </button>
         <h1>Dein Profil</h1>
+        <span className={`context-indicator ${context}`}>
+          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+        </span>
         <button
           className="recalculate-btn"
           onClick={handleRecalculate}

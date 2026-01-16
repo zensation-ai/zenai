@@ -2,15 +2,36 @@
   min-height: 100vh;
   background: var(--bg-primary);
   padding: 2rem;
+  padding-top: 0;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .meetings-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 20px;
   margin-bottom: 24px;
+  padding: 1rem 0;
+  padding-left: 80px; /* Platz für macOS Traffic Lights */
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding-right: 2rem;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  -webkit-app-region: drag; /* Electron/macOS only */
+}
+
+/* Buttons im Header müssen klickbar bleiben */
+.meetings-header button,
+.meetings-header a,
+.meetings-header input {
+  -webkit-app-region: no-drag;
 }
 
 .back-button {
@@ -231,10 +252,15 @@
 @media (max-width: 768px) {
   .meetings-page {
     padding: 1rem;
+    padding-top: 0;
   }
 
   .meetings-header {
     flex-wrap: wrap;
+    padding-left: 1rem; /* Kein Traffic Lights auf Mobile */
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-right: 1rem;
   }
 
   .meetings-grid {

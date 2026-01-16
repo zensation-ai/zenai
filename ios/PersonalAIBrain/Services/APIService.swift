@@ -452,10 +452,11 @@ class APIService: ObservableObject {
         return notesResponse.notes
     }
 
-    // MARK: - Profile
+    // MARK: - Profile (Context-Aware)
 
-    func getProfileStats() async throws -> ProfileStatsResponse {
-        guard let url = URL(string: "\(baseURL)/api/profile/stats") else {
+    func getProfileStats(context: AIContext? = nil) async throws -> ProfileStatsResponse {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/profile/stats") else {
             throw APIError.invalidURL
         }
 
@@ -470,8 +471,9 @@ class APIService: ObservableObject {
         return try JSONDecoder().decode(ProfileStatsResponse.self, from: data)
     }
 
-    func getRecommendations() async throws -> Recommendations {
-        guard let url = URL(string: "\(baseURL)/api/profile/recommendations") else {
+    func getRecommendations(context: AIContext? = nil) async throws -> Recommendations {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/profile/recommendations") else {
             throw APIError.invalidURL
         }
 
@@ -487,8 +489,9 @@ class APIService: ObservableObject {
         return recommendationsResponse.recommendations
     }
 
-    func setAutoPriority(enabled: Bool) async throws {
-        guard let url = URL(string: "\(baseURL)/api/profile/auto-priority") else {
+    func setAutoPriority(enabled: Bool, context: AIContext? = nil) async throws {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/profile/auto-priority") else {
             throw APIError.invalidURL
         }
 

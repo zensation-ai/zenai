@@ -5,15 +5,34 @@
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: #e0e0e0;
   padding: 1.5rem;
+  padding-top: 0;
 }
 
 .incubator-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  padding: 1rem 0;
+  padding-left: 80px; /* Platz für macOS Traffic Lights */
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  padding-right: 1.5rem;
+  background: rgba(26, 26, 46, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-app-region: drag; /* Electron/macOS only */
+}
+
+/* Buttons im Header müssen klickbar bleiben */
+.incubator-header button,
+.incubator-header a,
+.incubator-header input {
+  -webkit-app-region: no-drag;
 }
 
 .incubator-header .back-button {
@@ -513,12 +532,17 @@
 @media (max-width: 768px) {
   .incubator-page {
     padding: 1rem;
+    padding-top: 0;
   }
 
   .incubator-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+    padding-left: 1rem; /* Kein Traffic Lights auf Mobile */
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-right: 1rem;
   }
 
   .clusters-grid {
