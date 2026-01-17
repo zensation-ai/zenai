@@ -100,3 +100,77 @@ struct DraftSnippet: Codable, Identifiable {
         case status
     }
 }
+
+// MARK: - Phase 5: Draft Feedback
+
+/// Edit categories for feedback
+enum DraftEditCategory: String, Codable, CaseIterable {
+    case tone
+    case length
+    case content
+    case structure
+    case formatting
+    case accuracy
+
+    var displayName: String {
+        switch self {
+        case .tone: return "Tonalität"
+        case .length: return "Länge"
+        case .content: return "Inhalt"
+        case .structure: return "Struktur"
+        case .formatting: return "Formatierung"
+        case .accuracy: return "Genauigkeit"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .tone: return "theatermasks"
+        case .length: return "ruler"
+        case .content: return "doc.text"
+        case .structure: return "building.2"
+        case .formatting: return "sparkles"
+        case .accuracy: return "target"
+        }
+    }
+}
+
+/// Quality aspects for detailed feedback
+struct DraftQualityAspects: Codable {
+    var accuracy: Int?
+    var tone: Int?
+    var completeness: Int?
+    var relevance: Int?
+    var structure: Int?
+}
+
+/// Detailed feedback request payload
+struct DraftFeedbackRequest: Codable {
+    let rating: Int
+    var feedbackText: String?
+    var contentReusedPercent: Int?
+    var editsDescription: String?
+    var editCategories: [String]?
+    var wasHelpful: Bool?
+    var wouldUseAgain: Bool?
+    var qualityAspects: DraftQualityAspects?
+    var feedbackSource: String = "manual"
+}
+
+/// Quick feedback request
+struct QuickFeedbackRequest: Codable {
+    let isPositive: Bool
+}
+
+/// Feedback response
+struct FeedbackResponse: Codable {
+    let success: Bool
+    let feedbackId: String?
+    let message: String?
+}
+
+/// Copy recorded response
+struct CopyRecordedResponse: Codable {
+    let success: Bool
+    let message: String?
+}

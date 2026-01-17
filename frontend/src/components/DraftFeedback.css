@@ -1,0 +1,660 @@
+/**
+ * Phase 5: Draft Feedback Styles
+ *
+ * Styles for the feedback components including:
+ * - Quick feedback (thumbs up/down)
+ * - Star ratings
+ * - Content reuse slider
+ * - Edit categories
+ * - Quality aspects
+ * - Detailed feedback form
+ * - Feedback prompt popup
+ */
+
+/* ===========================================
+   Quick Feedback
+   =========================================== */
+
+.quick-feedback {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(52, 199, 89, 0.08);
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.quick-feedback.submitted {
+  background: rgba(52, 199, 89, 0.15);
+  justify-content: center;
+}
+
+.feedback-prompt {
+  font-size: 13px;
+  color: #666;
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.feedback-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: #f5f5f5;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedback-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.feedback-btn.positive:hover:not(:disabled) {
+  background: rgba(52, 199, 89, 0.2);
+  border-color: #34c759;
+}
+
+.feedback-btn.negative:hover:not(:disabled) {
+  background: rgba(255, 59, 48, 0.2);
+  border-color: #ff3b30;
+}
+
+.feedback-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feedback-thanks {
+  font-size: 13px;
+  color: #34c759;
+  font-weight: 500;
+}
+
+/* ===========================================
+   Star Rating
+   =========================================== */
+
+.star-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.star-rating-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.stars-container {
+  display: flex;
+  gap: 4px;
+}
+
+.star-rating .star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ddd;
+  transition: all 0.15s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.star-rating .star.filled {
+  color: #ffc107;
+}
+
+.star-rating .star:hover {
+  transform: scale(1.2);
+}
+
+/* Size variants */
+.star-rating.size-small .star {
+  font-size: 18px;
+}
+
+.star-rating.size-normal .star {
+  font-size: 24px;
+}
+
+.star-rating.size-large .star {
+  font-size: 32px;
+}
+
+/* ===========================================
+   Content Reuse Slider
+   =========================================== */
+
+.content-reuse-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #ff3b30 0%, #ffcc00 50%, #34c759 100%);
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  border: 2px solid #34c759;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  border: 2px solid #34c759;
+}
+
+.slider-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slider-value .percent {
+  font-size: 18px;
+  font-weight: 600;
+  color: #34c759;
+}
+
+.slider-value .label {
+  font-size: 12px;
+  color: #888;
+}
+
+/* ===========================================
+   Edit Categories
+   =========================================== */
+
+.edit-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categories-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.categories-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.category-chip:hover {
+  border-color: #34c759;
+  background: rgba(52, 199, 89, 0.05);
+}
+
+.category-chip.selected {
+  border-color: #34c759;
+  background: rgba(52, 199, 89, 0.15);
+  color: #2d9d4f;
+}
+
+.chip-icon {
+  font-size: 14px;
+}
+
+.chip-label {
+  font-weight: 500;
+}
+
+/* ===========================================
+   Quality Aspects
+   =========================================== */
+
+.expand-quality-btn {
+  background: none;
+  border: 1px dashed #ccc;
+  color: #666;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.expand-quality-btn:hover {
+  border-color: #34c759;
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.05);
+}
+
+.quality-aspects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.aspects-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.aspects-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aspect-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aspect-row .star-rating {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+/* ===========================================
+   Draft Feedback Form (Main)
+   =========================================== */
+
+.draft-feedback {
+  margin-top: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.draft-feedback.submitted {
+  background: rgba(52, 199, 89, 0.1);
+  padding: 16px;
+}
+
+.feedback-success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #34c759;
+  font-weight: 500;
+}
+
+.success-icon {
+  font-size: 20px;
+}
+
+.draft-feedback.collapsed {
+  background: transparent;
+}
+
+.open-feedback-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px dashed #34c759;
+  background: rgba(52, 199, 89, 0.05);
+  color: #34c759;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.open-feedback-btn:hover {
+  background: rgba(52, 199, 89, 0.15);
+}
+
+.draft-feedback.expanded {
+  background: white;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  background: #f8f8f8;
+}
+
+.feedback-header h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.close-feedback-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-feedback-btn:hover {
+  color: #333;
+}
+
+.feedback-form {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-section label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.form-section textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-section textarea:focus {
+  outline: none;
+  border-color: #34c759;
+  box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.2);
+}
+
+.main-rating {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.main-rating .star-rating {
+  align-items: center;
+}
+
+/* Helpful section */
+.helpful-section .helpful-buttons,
+.use-again-section .use-again-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.helpful-btn,
+.use-again-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.helpful-btn:hover,
+.use-again-btn:hover {
+  border-color: #34c759;
+}
+
+.helpful-btn.selected,
+.use-again-btn.selected {
+  border-color: #34c759;
+  background: rgba(52, 199, 89, 0.15);
+  color: #2d9d4f;
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  background: #f5f5f5;
+}
+
+.submit-btn {
+  padding: 10px 24px;
+  border: none;
+  background: #34c759;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #2cb24a;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* ===========================================
+   Feedback Prompt (Popup)
+   =========================================== */
+
+.feedback-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.feedback-prompt-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  width: 320px;
+  max-width: 90vw;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.prompt-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+}
+
+.feedback-prompt-card h4 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: #333;
+}
+
+.feedback-prompt-card .star-rating {
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.prompt-skip {
+  padding: 10px 20px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #666;
+  font-size: 14px;
+}
+
+.prompt-skip:hover {
+  background: #f5f5f5;
+}
+
+.prompt-submit {
+  padding: 10px 24px;
+  background: #34c759;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.prompt-submit:hover:not(:disabled) {
+  background: #2cb24a;
+}
+
+.prompt-submit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* ===========================================
+   Responsive
+   =========================================== */
+
+@media (max-width: 480px) {
+  .quick-feedback {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .categories-grid {
+    justify-content: center;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+  }
+
+  .helpful-buttons,
+  .use-again-buttons {
+    flex-direction: column;
+  }
+}

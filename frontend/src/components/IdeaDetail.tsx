@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { QuickFeedback, DraftFeedbackForm, FeedbackPrompt } from './DraftFeedback';
 import './IdeaDetail.css';
 
 interface Idea {
@@ -102,6 +103,10 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   const [draftExpanded, setDraftExpanded] = useState(false);
   const [draftCopied, setDraftCopied] = useState(false);
 
+  // Phase 5: Draft Feedback
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+
   useEffect(() => {
     isMountedRef.current = true;
     loadRelations();
@@ -170,6 +175,21 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
       setDraftCopied(true);
       showToast('In Zwischenablage kopiert', 'success');
       setTimeout(() => setDraftCopied(false), 2000);
+
+      // Phase 5: Record copy and show feedback prompt after delay
+      try {
+        await axios.post(`/api/personal/drafts/${draft.id}/copied`);
+        // Show feedback prompt after 3 seconds if not already given feedback
+        if (!feedbackGiven) {
+          setTimeout(() => {
+            if (isMountedRef.current && !feedbackGiven) {
+              setShowFeedbackPrompt(true);
+            }
+          }, 3000);
+        }
+      } catch (e) {
+        // Ignore tracking errors
+      }
     } catch (error) {
       showToast('Kopieren fehlgeschlagen', 'error');
     }
@@ -275,11 +295,43 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
                     {draftCopied ? '✓ Kopiert' : '📋 Kopieren'}
                   </button>
                 </div>
+
+                {/* Phase 5: Feedback Section */}
+                {!feedbackGiven ? (
+                  <>
+                    <QuickFeedback
+                      draftId={draft.id}
+                      onFeedbackSubmitted={() => setFeedbackGiven(true)}
+                    />
+                    <DraftFeedbackForm
+                      draftId={draft.id}
+                      draftType={draft.draftType}
+                      wordCount={draft.wordCount}
+                      onFeedbackSubmitted={() => setFeedbackGiven(true)}
+                    />
+                  </>
+                ) : (
+                  <div className="feedback-submitted-badge">
+                    ✓ Feedback gegeben
+                  </div>
+                )}
               </div>
             ) : (
               <p className="no-draft">Kein Entwurf verfügbar für diese Aufgabe.</p>
             )}
           </div>
+        )}
+
+        {/* Phase 5: Feedback Prompt Popup */}
+        {showFeedbackPrompt && draft && (
+          <FeedbackPrompt
+            draftId={draft.id}
+            onDismiss={() => setShowFeedbackPrompt(false)}
+            onFeedbackSubmitted={() => {
+              setFeedbackGiven(true);
+              setShowFeedbackPrompt(false);
+            }}
+          />
         )}
 
         {idea.next_steps && idea.next_steps.length > 0 && (

@@ -760,6 +760,70 @@ class APIService: ObservableObject {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
     }
+
+    // MARK: - Phase 5: Enhanced Draft Feedback
+
+    /// Submit quick thumbs up/down feedback
+    func submitQuickFeedback(draftId: String, isPositive: Bool, context: AIContext? = nil) async -> Bool {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/drafts/\(draftId)/feedback/quick") else {
+            return false
+        }
+
+        do {
+            let body = QuickFeedbackRequest(isPositive: isPositive)
+            let bodyData = try JSONEncoder().encode(body)
+            let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return false
+            }
+            return true
+        } catch {
+            print("Quick feedback error: \(error)")
+            return false
+        }
+    }
+
+    /// Submit detailed feedback
+    func submitDetailedFeedback(draftId: String, feedback: DraftFeedbackRequest, context: AIContext? = nil) async -> Bool {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/drafts/\(draftId)/feedback/detailed") else {
+            return false
+        }
+
+        do {
+            let bodyData = try JSONEncoder().encode(feedback)
+            let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return false
+            }
+            return true
+        } catch {
+            print("Detailed feedback error: \(error)")
+            return false
+        }
+    }
+
+    /// Record draft copy event
+    func recordDraftCopy(draftId: String, context: AIContext? = nil) async {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/drafts/\(draftId)/copied") else {
+            return
+        }
+
+        do {
+            let request = try createAuthenticatedRequest(url: url, method: "POST")
+            _ = try await URLSession.shared.data(for: request)
+        } catch {
+            // Ignore tracking errors
+        }
+    }
 }
 
 // MARK: - Response Models

@@ -480,3 +480,18 @@
     justify-content: center;
   }
 }
+
+/* Phase 5: Feedback submitted badge */
+.feedback-submitted-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  background: rgba(52, 199, 89, 0.1);
+  border-radius: 8px;
+  color: #34c759;
+  font-weight: 500;
+  font-size: 14px;
+}

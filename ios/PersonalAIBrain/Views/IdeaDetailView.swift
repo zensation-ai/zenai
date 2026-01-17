@@ -16,6 +16,11 @@ struct IdeaDetailView: View {
     @State private var isLoadingDraft = false
     @State private var showDraftCopied = false
 
+    // Phase 5: Draft Feedback
+    @State private var feedbackGiven = false
+    @State private var showFeedbackSheet = false
+    @State private var showFeedbackPrompt = false
+
     var body: some View {
         ZStack {
             Color.zensationBackground.ignoresSafeArea()
@@ -80,6 +85,7 @@ struct IdeaDetailView: View {
                     } else if let draft = draft {
                         DraftSectionCard(
                             draft: draft,
+                            feedbackGiven: feedbackGiven,
                             onCopy: {
                                 UIPasteboard.general.string = draft.content
                                 showDraftCopied = true
@@ -87,6 +93,24 @@ struct IdeaDetailView: View {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                                     showDraftCopied = false
                                 }
+                                // Phase 5: Record copy and show feedback prompt
+                                Task {
+                                    await apiService.recordDraftCopy(draftId: draft.id)
+                                    if !feedbackGiven {
+                                        try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
+                                        await MainActor.run {
+                                            if !feedbackGiven {
+                                                showFeedbackPrompt = true
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            onFeedbackTap: {
+                                showFeedbackSheet = true
+                            },
+                            onQuickFeedback: {
+                                feedbackGiven = true
                             }
                         )
                     }
@@ -214,6 +238,43 @@ struct IdeaDetailView: View {
                 .animation(.easeInOut, value: showDraftCopied)
             }
         }
+        // Phase 5: Feedback Sheet
+        .sheet(isPresented: $showFeedbackSheet) {
+            if let draft = draft {
+                DraftFeedbackSheet(
+                    draftId: draft.id,
+                    draftType: draft.draftType,
+                    wordCount: draft.wordCount,
+                    onFeedbackSubmitted: {
+                        feedbackGiven = true
+                    }
+                )
+            }
+        }
+        // Phase 5: Feedback Prompt Overlay
+        .overlay {
+            if showFeedbackPrompt, let draft = draft {
+                ZStack {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showFeedbackPrompt = false
+                        }
+
+                    FeedbackPromptSheet(
+                        draftId: draft.id,
+                        onFeedbackSubmitted: {
+                            feedbackGiven = true
+                        },
+                        onDismiss: {
+                            showFeedbackPrompt = false
+                        }
+                    )
+                }
+                .transition(.opacity)
+                .animation(.easeInOut, value: showFeedbackPrompt)
+            }
+        }
         .task {
             // Load draft for tasks
             if idea.type == .task {
@@ -302,8 +363,12 @@ struct SectionCard<Content: View>: View {
 
 struct DraftSectionCard: View {
     let draft: Draft
+    var feedbackGiven: Bool = false
     let onCopy: () -> Void
+    var onFeedbackTap: (() -> Void)?
+    var onQuickFeedback: (() -> Void)?
 
+    @EnvironmentObject var apiService: APIService
     @State private var isExpanded = false
 
     var body: some View {
@@ -355,6 +420,24 @@ struct DraftSectionCard: View {
                 }
 
                 Spacer()
+            }
+
+            // Phase 5: Feedback Section
+            Divider()
+                .padding(.vertical, 4)
+
+            if feedbackGiven {
+                FeedbackSubmittedBadge()
+            } else {
+                VStack(spacing: 10) {
+                    QuickFeedbackView(draftId: draft.id, onFeedbackSubmitted: {
+                        onQuickFeedback?()
+                    })
+
+                    if let onFeedbackTap = onFeedbackTap {
+                        FeedbackButton(action: onFeedbackTap)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
