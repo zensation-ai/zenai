@@ -141,6 +141,20 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     }
 
     if (result.rows.length === 0) {
+      // Dev mode: Allow invalid keys with read-only access
+      const isLocalDev = process.env.NODE_ENV === 'development' &&
+                         !process.env.RAILWAY_ENVIRONMENT &&
+                         !process.env.VERCEL;
+      if (isLocalDev) {
+        logger.debug('Dev mode: Invalid API key bypassed', { operation: 'apiKeyAuth' });
+        req.apiKey = {
+          id: 'dev-mode',
+          name: 'Development Mode (Invalid Key Bypass)',
+          scopes: ['read', 'write'],
+          rateLimit: 100
+        };
+        return next();
+      }
       return res.status(401).json({
         error: 'Invalid API key',
         message: 'The provided API key is not valid'
