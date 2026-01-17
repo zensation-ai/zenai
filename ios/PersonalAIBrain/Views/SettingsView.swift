@@ -178,6 +178,9 @@ struct SettingsView: View {
                     }
                 }
 
+                // Push Notifications
+                NotificationSettingsSection()
+
                 // Backend Configuration
                 Section("Backend") {
                     HStack {

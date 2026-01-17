@@ -158,8 +158,8 @@ app.use('/api', analyticsRouter);  // Context-aware analytics: /api/:context/ana
 // Phase 18: Export System
 app.use('/api/export', exportRouter);  // Export routes: /api/export/ideas/pdf, /api/export/ideas/csv, etc.
 
-// Phase 19: Push Notifications
-app.use('/api/notifications', notificationsRouter);  // Notification routes: /api/notifications/register, etc.
+// Phase 19: Push Notifications (Context-Aware APNs)
+app.use('/api', notificationsRouter);  // Context-aware: /api/:context/notifications/device, etc.
 
 // Phase 20: Digest & Advanced Analytics
 app.use('/api', digestRouter);  // Digest routes: /api/:context/digest/*
@@ -251,11 +251,12 @@ Phase 20 APIs:
   - Analytics Dash:  /api/:context/analytics/dashboard
   - Productivity:    /api/:context/analytics/productivity-score
 
-Phase 19 APIs:
-  - Push Register:   /api/notifications/register
-  - Preferences:     /api/notifications/preferences
-  - Send Notif:      /api/notifications/send
-  - History:         /api/notifications/history
+Phase 19 APIs (APNs Push Notifications):
+  - Register Device: POST /api/:context/notifications/device
+  - Preferences:     GET/PUT /api/:context/notifications/preferences/:deviceId
+  - Send Push:       POST /api/:context/notifications/push
+  - Stats:           GET /api/:context/notifications/stats
+  - Status:          GET /api/:context/notifications/status
 
 Phase 18 APIs:
   - Export PDF:      /api/export/ideas/pdf

@@ -221,15 +221,43 @@ extension NotificationService: UNUserNotificationCenterDelegate {
                     // Navigate to incubator with specific cluster
                     // clusterId available in userInfo if needed for deep linking
                     DeepLinkManager.shared.selectedTab = 2
+
+                case "draft_ready":
+                    // Navigate to idea detail with draft
+                    if let draftId = userInfo["draftId"] as? String {
+                        DeepLinkManager.shared.selectedTab = 1
+                        DeepLinkManager.shared.pendingDraftId = draftId
+                        // Record notification opened
+                        Task {
+                            await self.recordNotificationOpened(notificationId: response.notification.request.identifier)
+                        }
+                    }
+
+                case "feedback_reminder":
+                    // Navigate to draft for feedback
+                    if let draftId = userInfo["draftId"] as? String {
+                        DeepLinkManager.shared.selectedTab = 1
+                        DeepLinkManager.shared.pendingDraftId = draftId
+                    }
+
+                case "idea_connection":
+                    // Navigate to idea
+                    if let ideaId = userInfo["ideaId"] as? String {
+                        DeepLinkManager.shared.selectedTab = 1
+                        DeepLinkManager.shared.selectedIdeaId = ideaId
+                    }
+
                 case "priority_reminder":
                     if let ideaId = userInfo["ideaId"] as? String {
                         // Navigate to idea detail
                         DeepLinkManager.shared.selectedTab = 1
                         DeepLinkManager.shared.selectedIdeaId = ideaId
                     }
+
                 case "daily_reminder":
                     // Navigate to record view
                     DeepLinkManager.shared.selectedTab = 2
+
                 default:
                     break
                 }
@@ -238,31 +266,47 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 
         completionHandler()
     }
+
+    // MARK: - Notification Tracking
+
+    /// Record that a notification was opened
+    func recordNotificationOpened(notificationId: String) async {
+        do {
+            try await APIService.shared.recordNotificationOpened(notificationId: notificationId)
+        } catch {
+            print("❌ Failed to record notification opened: \(error)")
+        }
+    }
 }
 
-// MARK: - APIService Extension for Push Token
+// MARK: - APIService Extension for Push Notifications
 
 extension APIService {
-    /// Register push token with backend
+    /// Register push token with backend (new context-aware API)
     func registerPushToken(token: String, platform: String, deviceId: String?, deviceName: String?) async throws {
-        guard let url = URL(string: "\(baseURL)/api/notifications/register") else {
+        // Try new context-aware endpoint first, fallback to legacy
+        let context = AIContextManager.shared.currentContext.rawValue
+        let deviceModel = UIDevice.current.model
+        let osVersion = UIDevice.current.systemVersion
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+
+        guard let url = URL(string: "\(baseURL)/api/\(context)/notifications/device") else {
             throw APIError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
 
         var body: [String: Any] = [
-            "token": token,
-            "platform": platform,
+            "deviceToken": token,
+            "deviceId": deviceId ?? UUID().uuidString,
+            "deviceName": deviceName ?? UIDevice.current.name,
+            "deviceModel": deviceModel,
+            "osVersion": osVersion,
+            "appVersion": appVersion,
         ]
-        if let deviceId = deviceId {
-            body["deviceId"] = deviceId
-        }
-        if let deviceName = deviceName {
-            body["deviceName"] = deviceName
-        }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -274,33 +318,49 @@ extension APIService {
         }
     }
 
-    /// Get notification preferences
-    func getNotificationPreferences() async throws -> NotificationPreferences {
-        guard let url = URL(string: "\(baseURL)/api/notifications/preferences") else {
+    /// Get notification preferences for current device
+    func getNotificationPreferences() async throws -> PushNotificationPreferences {
+        let context = AIContextManager.shared.currentContext.rawValue
+        let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+
+        guard let url = URL(string: "\(baseURL)/api/\(context)/notifications/preferences/\(deviceId)") else {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
+        struct APIResponse: Codable {
+            let success: Bool
+            let preferences: PushNotificationPreferences
+        }
+
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode(NotificationPreferences.self, from: data)
+        let apiResponse = try decoder.decode(APIResponse.self, from: data)
+        return apiResponse.preferences
     }
 
     /// Update notification preferences
-    func updateNotificationPreferences(_ preferences: NotificationPreferences) async throws {
-        guard let url = URL(string: "\(baseURL)/api/notifications/preferences") else {
+    func updateNotificationPreferences(_ preferences: PushNotificationPreferences) async throws {
+        let context = AIContextManager.shared.currentContext.rawValue
+        let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+
+        guard let url = URL(string: "\(baseURL)/api/\(context)/notifications/preferences/\(deviceId)") else {
             throw APIError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
 
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -313,9 +373,59 @@ extension APIService {
             throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
     }
+
+    /// Record that a notification was opened
+    func recordNotificationOpened(notificationId: String) async throws {
+        let context = AIContextManager.shared.currentContext.rawValue
+
+        guard let url = URL(string: "\(baseURL)/api/\(context)/notifications/\(notificationId)/opened") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
 }
 
-// MARK: - Notification Preferences Model
+// MARK: - Push Notification Preferences Model
+
+struct PushNotificationPreferences: Codable {
+    var draftReady: Bool
+    var draftFeedbackReminder: Bool
+    var ideaConnections: Bool
+    var learningSuggestions: Bool
+    var weeklySummary: Bool
+    var quietHoursEnabled: Bool
+    var quietHoursStart: String?
+    var quietHoursEnd: String?
+    var timezone: String
+    var maxNotificationsPerHour: Int
+    var maxNotificationsPerDay: Int
+
+    static let `default` = PushNotificationPreferences(
+        draftReady: true,
+        draftFeedbackReminder: true,
+        ideaConnections: true,
+        learningSuggestions: true,
+        weeklySummary: false,
+        quietHoursEnabled: false,
+        quietHoursStart: "22:00",
+        quietHoursEnd: "08:00",
+        timezone: "Europe/Berlin",
+        maxNotificationsPerHour: 10,
+        maxNotificationsPerDay: 50
+    )
+}
+
+// MARK: - Legacy Notification Preferences (for backward compatibility)
 
 struct NotificationPreferences: Codable {
     var clusterReady: Bool

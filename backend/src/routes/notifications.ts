@@ -1,8 +1,31 @@
+/**
+ * Push Notifications Routes
+ *
+ * API endpoints for managing push notifications:
+ * - Device token registration (APNs)
+ * - Notification preferences with quiet hours
+ * - Notification history and analytics
+ * - Draft-ready notifications
+ */
+
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import {
+  registerDeviceToken,
+  unregisterDeviceToken,
+  getActiveDeviceTokens,
+  getNotificationPreferences as getPrefs,
+  updateNotificationPreferences as updatePrefs,
+  sendNotification,
+  getNotificationStats,
+  recordNotificationOpened,
+  isPushNotificationsConfigured,
+  getPushNotificationsStatus,
+  NotificationPayload as APNsPayload,
+} from '../services/push-notifications';
 
 export const notificationsRouter = Router();
 
@@ -413,3 +436,350 @@ export async function generateDailyDigest(context: AIContext): Promise<void> {
     logger.error('Failed to generate daily digest', error);
   }
 }
+
+// ============================================
+// APNs Push Notification Routes (Phase: Push Notifications)
+// ============================================
+
+/**
+ * POST /api/:context/notifications/device
+ * Register or update a device token for APNs
+ */
+notificationsRouter.post(
+  '/:context/notifications/device',
+  apiKeyAuth,
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const { deviceToken, deviceId, deviceName, deviceModel, osVersion, appVersion } = req.body;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    if (!deviceToken || typeof deviceToken !== 'string') {
+      throw new ValidationError('deviceToken is required and must be a string');
+    }
+
+    if (!deviceId || typeof deviceId !== 'string') {
+      throw new ValidationError('deviceId is required and must be a string');
+    }
+
+    const result = await registerDeviceToken(context as AIContext, deviceToken, {
+      deviceId,
+      deviceName,
+      deviceModel,
+      osVersion,
+      appVersion,
+    });
+
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to register device token');
+    }
+
+    logger.info('APNs device token registered', { deviceId, context });
+
+    res.json({
+      success: true,
+      tokenId: result.tokenId,
+      message: 'Device token registered successfully',
+    });
+  })
+);
+
+/**
+ * DELETE /api/:context/notifications/device
+ * Unregister a device token from APNs
+ */
+notificationsRouter.delete(
+  '/:context/notifications/device',
+  apiKeyAuth,
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const { deviceToken } = req.body;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    if (!deviceToken) {
+      throw new ValidationError('deviceToken is required');
+    }
+
+    await unregisterDeviceToken(context as AIContext, deviceToken);
+
+    res.json({
+      success: true,
+      message: 'Device token unregistered',
+    });
+  })
+);
+
+/**
+ * GET /api/:context/notifications/devices
+ * Get all active devices for the context
+ */
+notificationsRouter.get(
+  '/:context/notifications/devices',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    const devices = await getActiveDeviceTokens(context as AIContext);
+
+    res.json({
+      success: true,
+      devices: devices.map((d) => ({
+        id: d.id,
+        deviceId: d.deviceId,
+        deviceName: d.deviceName,
+        deviceModel: d.deviceModel,
+        osVersion: d.osVersion,
+        appVersion: d.appVersion,
+        lastUsedAt: d.lastUsedAt,
+      })),
+      count: devices.length,
+    });
+  })
+);
+
+/**
+ * GET /api/:context/notifications/preferences/:deviceId
+ * Get notification preferences for a device
+ */
+notificationsRouter.get(
+  '/:context/notifications/preferences/:deviceId',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context, deviceId } = req.params;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    const preferences = await getPrefs(context as AIContext, deviceId);
+
+    if (!preferences) {
+      // Return default preferences
+      res.json({
+        success: true,
+        preferences: {
+          draftReady: true,
+          draftFeedbackReminder: true,
+          ideaConnections: true,
+          learningSuggestions: true,
+          weeklySummary: false,
+          quietHoursEnabled: false,
+          quietHoursStart: null,
+          quietHoursEnd: null,
+          timezone: 'Europe/Berlin',
+          maxNotificationsPerHour: 10,
+          maxNotificationsPerDay: 50,
+        },
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      preferences,
+    });
+  })
+);
+
+/**
+ * PUT /api/:context/notifications/preferences/:deviceId
+ * Update notification preferences for a device
+ */
+notificationsRouter.put(
+  '/:context/notifications/preferences/:deviceId',
+  apiKeyAuth,
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context, deviceId } = req.params;
+    const {
+      draftReady,
+      draftFeedbackReminder,
+      ideaConnections,
+      learningSuggestions,
+      weeklySummary,
+      quietHoursEnabled,
+      quietHoursStart,
+      quietHoursEnd,
+      timezone,
+    } = req.body;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    // Validate quiet hours format if provided
+    if (quietHoursStart && !/^\d{2}:\d{2}$/.test(quietHoursStart)) {
+      throw new ValidationError('quietHoursStart must be in HH:MM format');
+    }
+    if (quietHoursEnd && !/^\d{2}:\d{2}$/.test(quietHoursEnd)) {
+      throw new ValidationError('quietHoursEnd must be in HH:MM format');
+    }
+
+    const success = await updatePrefs(context as AIContext, deviceId, {
+      draftReady,
+      draftFeedbackReminder,
+      ideaConnections,
+      learningSuggestions,
+      weeklySummary,
+      quietHoursEnabled,
+      quietHoursStart,
+      quietHoursEnd,
+      timezone,
+    });
+
+    if (!success) {
+      throw new Error('Failed to update preferences');
+    }
+
+    res.json({
+      success: true,
+      message: 'Preferences updated',
+    });
+  })
+);
+
+/**
+ * POST /api/:context/notifications/push
+ * Send a push notification via APNs
+ */
+notificationsRouter.post(
+  '/:context/notifications/push',
+  apiKeyAuth,
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const { type, title, body, subtitle, draftId, ideaId, deviceId, data } = req.body;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    if (!type || !title || !body) {
+      throw new ValidationError('type, title, and body are required');
+    }
+
+    const validTypes = [
+      'draft_ready',
+      'feedback_reminder',
+      'idea_connection',
+      'learning_suggestion',
+      'weekly_summary',
+      'custom',
+    ];
+
+    if (!validTypes.includes(type)) {
+      throw new ValidationError(`type must be one of: ${validTypes.join(', ')}`);
+    }
+
+    const payload: APNsPayload = {
+      type,
+      title,
+      body,
+      subtitle,
+      draftId,
+      ideaId,
+      data,
+    };
+
+    const result = await sendNotification(context as AIContext, payload, deviceId);
+
+    res.json({
+      success: result.success,
+      sent: result.sent,
+      failed: result.failed,
+      results: result.results,
+    });
+  })
+);
+
+/**
+ * POST /api/:context/notifications/:notificationId/opened
+ * Record that a notification was opened
+ */
+notificationsRouter.post(
+  '/:context/notifications/:notificationId/opened',
+  apiKeyAuth,
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context, notificationId } = req.params;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    await recordNotificationOpened(context as AIContext, notificationId);
+
+    res.json({
+      success: true,
+      message: 'Notification marked as opened',
+    });
+  })
+);
+
+/**
+ * GET /api/:context/notifications/stats
+ * Get notification statistics
+ */
+notificationsRouter.get(
+  '/:context/notifications/stats',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const { days = '30' } = req.query;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    const stats = await getNotificationStats(context as AIContext, parseInt(days as string, 10));
+
+    res.json({
+      success: true,
+      stats,
+      period: {
+        days: parseInt(days as string, 10),
+      },
+    });
+  })
+);
+
+/**
+ * GET /api/:context/notifications/status
+ * Get push notification configuration status
+ */
+notificationsRouter.get(
+  '/:context/notifications/status',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    const status = getPushNotificationsStatus();
+
+    res.json({
+      success: true,
+      pushNotifications: {
+        configured: status.configured,
+        environment: status.environment,
+      },
+    });
+  })
+);

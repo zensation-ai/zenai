@@ -16,6 +16,7 @@ import { queryContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { isClaudeAvailable, generateClaudeResponse } from './claude';
 import { getOrCreateProfile } from './business-profile-learning';
+import { notifyDraftReady } from './push-notifications';
 
 // ===========================================
 // Types
@@ -321,6 +322,17 @@ export async function generateProactiveDraft(
       wordCount,
       generationTimeMs,
     });
+
+    // 6. Send push notification (async, don't await to not block response)
+    notifyDraftReady(trigger.context, draftId, draftNeed.draftType, trigger.title)
+      .then((sent) => {
+        if (sent) {
+          logger.info('Draft ready notification sent', { draftId, ideaId: trigger.ideaId });
+        }
+      })
+      .catch((err) => {
+        logger.warn('Failed to send draft notification', { error: err, draftId });
+      });
 
     return {
       id: draftId,

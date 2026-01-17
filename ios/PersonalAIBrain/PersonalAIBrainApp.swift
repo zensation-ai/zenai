@@ -7,6 +7,8 @@ enum DeepLink: Equatable {
     case search
     case incubator
     case idea(String)
+    case draft(String)
+    case cluster(String)
     case stories
     case graph
     case profile
@@ -32,11 +34,29 @@ enum DeepLink: Equatable {
                 return .idea(ideaId)
             }
             return nil
+        case "draft":
+            if let draftId = pathComponents.first {
+                return .draft(draftId)
+            }
+            return nil
+        case "cluster":
+            if let clusterId = pathComponents.first {
+                return .cluster(clusterId)
+            }
+            return nil
         default:
             // Handle URLs like personalai://idea/uuid
             if path.hasPrefix("idea/") {
                 let ideaId = String(path.dropFirst(5))
                 return .idea(ideaId)
+            }
+            if path.hasPrefix("draft/") {
+                let draftId = String(path.dropFirst(6))
+                return .draft(draftId)
+            }
+            if path.hasPrefix("cluster/") {
+                let clusterId = String(path.dropFirst(8))
+                return .cluster(clusterId)
             }
             return nil
         }
@@ -52,7 +72,16 @@ class DeepLinkManager: ObservableObject {
     @Published var selectedIdeaId: String?
     @Published var showSearch: Bool = false
 
+    // Push notification specific navigation targets
+    @Published var pendingDraftId: String?
+    @Published var pendingClusterId: String?
+
     func handle(_ deepLink: DeepLink) {
+        // Clear previous pending navigation
+        pendingDraftId = nil
+        pendingClusterId = nil
+        selectedIdeaId = nil
+
         switch deepLink {
         case .record:
             selectedTab = 2 // Record tab
@@ -66,6 +95,12 @@ class DeepLinkManager: ObservableObject {
         case .idea(let id):
             selectedTab = 1 // Ideas tab
             selectedIdeaId = id
+        case .draft(let id):
+            selectedTab = 1 // Ideas tab (drafts are shown in idea detail)
+            pendingDraftId = id
+        case .cluster(let id):
+            selectedTab = 0 // Incubator tab
+            pendingClusterId = id
         case .stories:
             selectedTab = 3 // Stories tab
         case .graph:
@@ -74,6 +109,41 @@ class DeepLinkManager: ObservableObject {
             selectedTab = 5 // Profile tab
         }
         pendingDeepLink = nil
+    }
+
+    // MARK: - Navigation Helpers for Push Notifications
+
+    /// Navigate to a draft (from draft_ready notification)
+    func navigateToDraft(draftId: String) {
+        pendingDraftId = draftId
+        selectedTab = 1
+    }
+
+    /// Navigate to an idea
+    func navigateToIdea(ideaId: String) {
+        selectedIdeaId = ideaId
+        selectedTab = 1
+    }
+
+    /// Navigate to a cluster in incubator
+    func navigateToCluster(clusterId: String) {
+        pendingClusterId = clusterId
+        selectedTab = 0
+    }
+
+    /// Clear pending draft navigation
+    func clearPendingDraft() {
+        pendingDraftId = nil
+    }
+
+    /// Clear pending idea navigation
+    func clearPendingIdea() {
+        selectedIdeaId = nil
+    }
+
+    /// Clear pending cluster navigation
+    func clearPendingCluster() {
+        pendingClusterId = nil
     }
 }
 
