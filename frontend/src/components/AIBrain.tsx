@@ -5,35 +5,38 @@ interface AIBrainProps {
   isActive: boolean;
   activityType?: 'thinking' | 'transcribing' | 'searching' | 'processing';
   ideasCount?: number;
+  size?: 'small' | 'large';
 }
 
-export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0 }: AIBrainProps) {
+export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0, size = 'small' }: AIBrainProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [clickFeedback, setClickFeedback] = useState(false);
   const [greeting, setGreeting] = useState('');
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Activity messages with more personality
+  // Activity messages - human, empathetic, personal
   const statusMessages: Record<string, string[]> = {
     thinking: [
-      'Analysiere deinen Input...',
-      'Verarbeite Gedanken...',
-      'Strukturiere Information...',
+      'Hmm, lass mich nachdenken...',
+      'Interessant! Ich verarbeite das...',
+      'Moment, ich sortiere das für dich...',
+      'Okay, ich verstehe was du meinst...',
     ],
     transcribing: [
-      'Höre zu...',
-      'Transkribiere Audio...',
-      'Wandle Sprache in Text...',
+      'Ich höre dir zu...',
+      'Erzähl weiter, ich bin ganz Ohr...',
+      'Ich fange jedes Wort auf...',
     ],
     searching: [
-      'Durchsuche Embeddings...',
-      'Finde semantische Matches...',
-      'Analysiere Ähnlichkeiten...',
+      'Ich schaue mal in deinen Gedanken...',
+      'Moment, ich suche Verbindungen...',
+      'Ah, da war doch was Ähnliches...',
     ],
     processing: [
-      'Strukturiere mit Mistral...',
-      'Extrahiere Kernpunkte...',
-      'Kategorisiere Gedanken...',
+      'Das ist spannend! Ich strukturiere...',
+      'Okay, ich bringe das in Form...',
+      'Lass mich das für dich aufbereiten...',
+      'Ich erkenne Muster hier...',
     ],
   };
 
@@ -70,16 +73,18 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0 }:
     return messages[Math.floor(Math.random() * messages.length)];
   }, [activityType, isActive]);
 
-  // Idle tooltip with context
+  // Idle tooltip with personality and context
   const idleMessage = useMemo(() => {
     if (ideasCount === 0) {
-      return `${greeting}! Erzähl mir deinen ersten Gedanken.`;
+      return `${greeting}! Ich bin gespannt auf deinen ersten Gedanken 💭`;
     } else if (ideasCount < 5) {
-      return `${greeting}! Du hast ${ideasCount} Gedanken. Weiter so!`;
+      return `${greeting}! Schon ${ideasCount} Gedanken zusammen – ein guter Start! 🌱`;
     } else if (ideasCount < 20) {
-      return `${greeting}! ${ideasCount} Gedanken gespeichert. Ich bin bereit.`;
+      return `${greeting}! ${ideasCount} Gedanken in deinem Brain. Ich lerne dich kennen! 🧠`;
+    } else if (ideasCount < 50) {
+      return `${greeting}! Wow, ${ideasCount} Gedanken! Wir sind ein tolles Team 🤝`;
     } else {
-      return `${greeting}! Beeindruckend - ${ideasCount} Gedanken! Was kommt als nächstes?`;
+      return `${greeting}! ${ideasCount} Gedanken – ich kenne dich richtig gut! ✨`;
     }
   }, [greeting, ideasCount]);
 
@@ -94,7 +99,7 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0 }:
 
   return (
     <div
-      className={`ai-brain-container ${isActive ? 'active' : ''} ${clickFeedback ? 'clicked' : ''}`}
+      className={`ai-brain-container ${isActive ? 'active' : ''} ${clickFeedback ? 'clicked' : ''} ${size === 'large' ? 'large' : ''}`}
       onClick={handleClick}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
@@ -243,12 +248,12 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0 }:
         </div>
       </div>
 
-      {/* Activity label - short version */}
+      {/* Activity label - human, conversational */}
       {isActive && (
         <span className="ai-brain-label">
-          {activityType === 'transcribing' ? 'Höre zu...' :
-           activityType === 'searching' ? 'Suche...' :
-           activityType === 'processing' ? 'Denke...' : 'Arbeite...'}
+          {activityType === 'transcribing' ? '🎧 Ich höre...' :
+           activityType === 'searching' ? '🔍 Schaue nach...' :
+           activityType === 'processing' ? '💭 Denke nach...' : '⚡ Arbeite...'}
         </span>
       )}
     </div>

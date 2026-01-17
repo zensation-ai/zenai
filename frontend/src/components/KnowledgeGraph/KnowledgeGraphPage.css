@@ -5,7 +5,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--background, #060d14);
+  background: var(--background, #0c151c);
   color: var(--text, #f0f4f8);
 }
 
@@ -233,11 +233,11 @@
 /* Graph Main Area */
 .graph-main {
   position: relative;
-  background: var(--background, #060d14);
+  background: var(--background, #0c151c);
 }
 
 .graph-main .react-flow {
-  background: var(--background, #060d14);
+  background: var(--background, #0c151c);
 }
 
 .graph-main .react-flow__minimap {

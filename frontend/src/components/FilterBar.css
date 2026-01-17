@@ -1,10 +1,12 @@
 .filter-bar {
-  background: var(--gradient-card);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
   border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   margin-bottom: 1rem;
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .filter-header {

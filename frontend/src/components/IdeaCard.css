@@ -1,48 +1,66 @@
 .idea-card {
-  background: var(--gradient-card);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
-  transition: var(--transition-base);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
 }
 
+/* Top highlight line for glass effect */
 .idea-card::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 20%;
+  right: 20%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
 }
 
+.idea-card:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 40px rgba(20, 50, 70, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.3);
+  transform: translateY(-4px) scale(1.005);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Shine effect on hover */
 .idea-card::after {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-glow);
-  opacity: 0;
-  transition: var(--transition-base);
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  transition: left 0.5s ease;
   pointer-events: none;
 }
 
-.idea-card:hover {
-  border-color: var(--border-glow);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg), 0 0 30px rgba(255, 107, 53, 0.08);
+.idea-card:hover::after {
+  left: 100%;
 }
 
-.idea-card:hover::after {
-  opacity: 0.15;
+.idea-card:active {
+  transform: translateY(-2px) scale(1);
+  transition-duration: 0.1s;
+  box-shadow: var(--shadow-md);
 }
 
 .idea-header {
@@ -54,7 +72,13 @@
 .idea-type {
   font-size: 1.25rem;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-block;
+}
+
+.idea-card:hover .idea-type {
+  transform: scale(1.15) rotate(-5deg);
+  filter: drop-shadow(0 2px 4px rgba(255, 107, 53, 0.2));
 }
 
 .idea-title {
@@ -75,8 +99,8 @@
 .delete-button,
 .archive-button,
 .restore-button {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: transparent;
+  border: none;
   border-radius: 50%;
   color: var(--text-secondary);
   font-size: 0.85rem;
@@ -86,36 +110,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
-  transition: var(--transition-fast);
+  opacity: 0;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .idea-card:hover .delete-button,
 .idea-card:hover .archive-button,
 .idea-card:hover .restore-button {
-  opacity: 1;
+  opacity: 0.6;
 }
 
 .delete-button:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: var(--danger);
+  background: rgba(255, 59, 48, 0.1);
   color: var(--danger);
-  transform: scale(1.1);
+  opacity: 1 !important;
 }
 
 .archive-button:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: #3b82f6;
-  color: #3b82f6;
-  transform: scale(1.1);
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  opacity: 1 !important;
 }
 
 .restore-button:hover {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: #22c55e;
-  color: #22c55e;
-  transform: scale(1.1);
+  background: rgba(52, 199, 89, 0.1);
+  color: var(--success);
+  opacity: 1 !important;
 }
 
 .idea-summary {
@@ -145,58 +166,51 @@
   letter-spacing: 0.02em;
 }
 
-/* Category colors */
+/* Category colors - Apple style */
 .idea-category {
-  background: var(--glass-bg);
-  color: var(--text-muted);
-  border: 1px solid var(--glass-border);
+  background: var(--surface-light);
+  color: var(--text-secondary);
+  border: none;
 }
 
 .category-business {
-  background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(52, 199, 89, 0.12);
+  color: #248a3d;
 }
 
 .category-technical {
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
-  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(0, 122, 255, 0.12);
+  color: #0055d4;
 }
 
 .category-personal {
-  background: rgba(168, 85, 247, 0.15);
-  color: #a855f7;
-  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(175, 82, 222, 0.12);
+  color: #8944ab;
 }
 
 .category-learning {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(255, 149, 0, 0.12);
+  color: #c77700;
 }
 
-/* Priority colors */
+/* Priority colors - Apple style */
 .idea-priority {
-  border: 1px solid currentColor;
+  border: none;
 }
 
 .priority-low {
-  background: rgba(100, 116, 139, 0.15);
-  color: var(--text-muted);
-  border-color: rgba(100, 116, 139, 0.3);
+  background: rgba(142, 142, 147, 0.12);
+  color: #636366;
 }
 
 .priority-medium {
-  background: rgba(251, 191, 36, 0.18);
-  color: #fbbf24;  /* Brighter yellow for better contrast */
-  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(255, 149, 0, 0.12);
+  color: #c77700;
 }
 
 .priority-high {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(255, 59, 48, 0.12);
+  color: #d70015;
 }
 
 /* Deleting state */
@@ -215,10 +229,10 @@
 
 .idea-steps {
   font-size: 0.8rem;
-  background: rgba(6, 13, 20, 0.4);
+  background: var(--surface-light);
   padding: 0.875rem;
   border-radius: var(--radius-md);
-  border: 1px solid var(--glass-border);
+  border: none;
 }
 
 .idea-steps strong {
@@ -254,17 +268,24 @@
 .keyword {
   font-size: 0.7rem;
   font-weight: 500;
-  padding: 3px 10px;
-  background: rgba(255, 107, 53, 0.08);
-  border: 1px solid rgba(255, 107, 53, 0.15);
+  padding: 4px 10px;
+  background: rgba(255, 107, 53, 0.1);
+  border: none;
   border-radius: 20px;
-  color: var(--primary-light);
-  transition: var(--transition-fast);
+  color: var(--primary-dark);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  position: relative;
 }
 
 .keyword:hover {
-  background: rgba(255, 107, 53, 0.15);
-  border-color: var(--primary);
+  background: rgba(255, 107, 53, 0.2);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+}
+
+.keyword:active {
+  transform: translateY(0) scale(0.95);
 }
 
 .idea-footer {

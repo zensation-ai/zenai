@@ -81,6 +81,38 @@ function App() {
   const isAIActive = processing || isSearching || isRecording || loading;
   const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
 
+  // Dynamic, human greeting based on time and context
+  const getHumanGreeting = () => {
+    const hour = new Date().getHours();
+    const hasIdeas = ideas.length > 0;
+
+    if (!hasIdeas) {
+      // First-time / empty state - welcoming
+      if (hour >= 5 && hour < 12) {
+        return { greeting: 'Guten Morgen! ☀️', subtext: 'Ein neuer Tag voller Möglichkeiten. Was geht dir durch den Kopf?' };
+      } else if (hour >= 12 && hour < 17) {
+        return { greeting: 'Hey, schön dich zu sehen!', subtext: 'Lass uns gemeinsam deine Gedanken sortieren und weiterentwickeln.' };
+      } else if (hour >= 17 && hour < 21) {
+        return { greeting: 'Guten Abend! 🌅', subtext: 'Zeit zum Reflektieren. Welche Ideen beschäftigen dich heute?' };
+      } else {
+        return { greeting: 'Noch wach? 🌙', subtext: 'Die besten Ideen kommen oft nachts. Ich bin hier, um zuzuhören.' };
+      }
+    } else {
+      // Returning user with ideas
+      if (hour >= 5 && hour < 12) {
+        return { greeting: `Guten Morgen! ${ideas.length} Gedanken warten`, subtext: '' };
+      } else if (hour >= 12 && hour < 17) {
+        return { greeting: 'Willkommen zurück! 👋', subtext: '' };
+      } else if (hour >= 17 && hour < 21) {
+        return { greeting: 'Schön, dass du da bist!', subtext: '' };
+      } else {
+        return { greeting: 'Ich bin bereit, wenn du es bist', subtext: '' };
+      }
+    }
+  };
+
+  const humanGreeting = getHumanGreeting();
+
   // Check API health on mount and reload ideas when context changes
   useEffect(() => {
     const abortController = new AbortController();
@@ -478,7 +510,22 @@ function App() {
     {showOnboarding && (
       <Onboarding context={context} onComplete={handleOnboardingComplete} />
     )}
-    <div className="app">
+    <div className="app" data-context={context}>
+      {/* Animated Organic Background */}
+      <div className="ambient-background" aria-hidden="true">
+        <div className="blob-1" />
+        <div className="blob-2" />
+        <div className="blob-3" />
+        <div className="blob-4" />
+        {/* Floating Particles */}
+        <div className="particle particle-1" />
+        <div className="particle particle-2" />
+        <div className="particle particle-3" />
+        <div className="particle particle-4" />
+        <div className="particle particle-5" />
+        <div className="particle particle-6" />
+      </div>
+
       <header className="header">
         <div className="header-content">
           <div className="header-left">
@@ -498,7 +545,7 @@ function App() {
               </button>
               <button
                 type="button"
-                className={`nav-button ${currentPage === 'archive' ? 'active' : ''} ${archivedCount > 0 ? 'has-items' : ''}`}
+                className={`nav-button ${archivedCount > 0 ? 'has-items' : ''}`}
                 onClick={() => setCurrentPage('archive')}
                 title="Archiv"
               >
@@ -563,66 +610,95 @@ function App() {
         </div>
       </header>
 
-      <main className="main">
-        {/* Input Section */}
-        <section className="input-section">
-          <div className="input-card">
-            <h2>Neuer Gedanke</h2>
-            <div className="text-input-container">
-              <label htmlFor="thought-input" className="visually-hidden">
-                Neuer Gedanke eingeben
-              </label>
-              <textarea
-                id="thought-input"
-                className="text-input"
-                placeholder="Beschreibe deine Idee, Aufgabe oder Frage..."
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.metaKey) {
-                    submitText();
-                  }
+      {/* Hero Section with Prominent AI Brain */}
+      <section className={`hero-section ${ideas.length > 0 ? 'compact' : ''}`}>
+        {/* Hero Sparkles */}
+        <div className="hero-sparkle" aria-hidden="true" />
+        <div className="hero-sparkle" aria-hidden="true" />
+        <div className="hero-sparkle" aria-hidden="true" />
+        <div className="hero-sparkle" aria-hidden="true" />
+        <div className="hero-sparkle" aria-hidden="true" />
+        <div className="hero-sparkle" aria-hidden="true" />
+
+        {/* Large AI Brain */}
+        <div className="hero-brain">
+          <AIBrain
+            isActive={isAIActive}
+            activityType={aiActivityType}
+            ideasCount={ideas.length}
+            size="large"
+          />
+        </div>
+
+        {/* Greeting - Human & Personal */}
+        <h2 className="hero-greeting">
+          {humanGreeting.greeting}
+        </h2>
+        {humanGreeting.subtext && (
+          <p className="hero-subtext">
+            {humanGreeting.subtext}
+          </p>
+        )}
+
+        {/* Input Card - Integrated in Hero */}
+        <div className="input-card">
+          <div className="text-input-container">
+            <label htmlFor="thought-input" className="visually-hidden">
+              Neuer Gedanke eingeben
+            </label>
+            <textarea
+              id="thought-input"
+              className="text-input"
+              placeholder="Was geht dir gerade durch den Kopf? Erzähl mir davon..."
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.metaKey) {
+                  submitText();
+                }
+              }}
+              disabled={processing}
+              rows={3}
+              aria-describedby="input-hint"
+            />
+            <div className="input-actions">
+              <RecordButton
+                onTranscript={(transcript) => setTextInput(transcript)}
+                onProcessed={(result) => {
+                  const newIdea: StructuredIdea = {
+                    id: result.ideaId,
+                    ...result.structured,
+                    next_steps: result.structured.next_steps || [],
+                    context_needed: result.structured.context_needed || [],
+                    keywords: result.structured.keywords || [],
+                    created_at: new Date().toISOString(),
+                  } as StructuredIdea;
+                  setIdeas(prev => [newIdea, ...prev]);
+                  setTextInput('');
                 }}
+                onRecordingChange={setIsRecording}
                 disabled={processing}
-                rows={3}
-                aria-describedby="input-hint"
+                context={context}
+                persona={selectedPersona}
               />
-              <div className="input-actions">
-                <RecordButton
-                  onTranscript={(transcript) => setTextInput(transcript)}
-                  onProcessed={(result) => {
-                    const newIdea: StructuredIdea = {
-                      id: result.ideaId,
-                      ...result.structured,
-                      next_steps: result.structured.next_steps || [],
-                      context_needed: result.structured.context_needed || [],
-                      keywords: result.structured.keywords || [],
-                      created_at: new Date().toISOString(),
-                    } as StructuredIdea;
-                    setIdeas(prev => [newIdea, ...prev]);
-                    setTextInput('');
-                  }}
-                  onRecordingChange={setIsRecording}
-                  disabled={processing}
-                  context={context}
-                  persona={selectedPersona}
-                />
-                <button
-                  className="submit-button"
-                  onClick={submitText}
-                  disabled={processing || !textInput.trim()}
-                >
-                  {processing ? (
-                    <span className="loading-spinner" />
-                  ) : (
-                    'Strukturieren'
-                  )}
-                </button>
-              </div>
+              <button
+                className="submit-button"
+                onClick={submitText}
+                disabled={processing || !textInput.trim()}
+              >
+                {processing ? (
+                  <span className="loading-spinner" />
+                ) : (
+                  'Strukturieren'
+                )}
+              </button>
             </div>
-            <p id="input-hint" className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
           </div>
-        </section>
+          <p id="input-hint" className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
+        </div>
+      </section>
+
+      <main className="main">
 
         {/* Error Display */}
         {error && (
@@ -687,13 +763,31 @@ function App() {
             </div>
           ) : filteredIdeas.length === 0 ? (
             <div className="empty-state" role="status">
-              <span className="empty-icon" aria-hidden="true">💭</span>
-              <h3>Keine Gedanken gefunden</h3>
+              <span className="empty-icon" aria-hidden="true">
+                {filters.type || filters.category || filters.priority ? '🔍' : '✨'}
+              </span>
+              <h3>
+                {filters.type || filters.category || filters.priority
+                  ? 'Keine passenden Gedanken'
+                  : 'Bereit für deinen ersten Gedanken'}
+              </h3>
               <p>
                 {filters.type || filters.category || filters.priority
-                  ? 'Versuche andere Filter oder setze sie zurück.'
-                  : 'Tippe oben etwas ein oder nimm ein Sprachmemo auf!'}
+                  ? 'Probiere andere Filter aus oder setze sie zurück, um alle Gedanken zu sehen.'
+                  : 'Schreib einfach drauf los oder nutze das Mikrofon – dein AI Brain kümmert sich um den Rest.'}
               </p>
+              {!(filters.type || filters.category || filters.priority) && (
+                <div className="empty-state-actions">
+                  <div className="empty-state-hint">
+                    <span className="hint-icon">⌨️</span>
+                    <span>Tippen &amp; <span className="hint-key">⌘</span><span className="hint-key">↵</span> zum Absenden</span>
+                  </div>
+                  <div className="empty-state-hint">
+                    <span className="hint-icon">🎙️</span>
+                    <span>Oder einfach sprechen</span>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className={`ideas-${viewMode}`} role="list" aria-label="Gedankenliste">
