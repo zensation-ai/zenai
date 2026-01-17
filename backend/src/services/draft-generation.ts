@@ -204,6 +204,14 @@ async function getActivePatterns(context: AIContext): Promise<TriggerPattern[]> 
        ORDER BY times_used DESC, times_triggered DESC`,
       [context]
     );
+
+    // Fallback to defaults if DB returns empty
+    if (result.rows.length === 0) {
+      logger.info('No patterns in DB, using defaults', { context });
+      return getDefaultPatterns(context);
+    }
+
+    logger.debug('Loaded patterns from DB', { context, count: result.rows.length });
     return result.rows.map(row => ({
       id: row.id,
       draftType: row.draft_type as DraftType,
@@ -241,11 +249,23 @@ export async function generateProactiveDraft(
   const startTime = Date.now();
   const fullText = `${trigger.title} ${trigger.summary} ${trigger.rawTranscript || ''}`;
 
+  logger.info('Starting draft generation check', {
+    ideaId: trigger.ideaId,
+    type: trigger.type,
+    context: trigger.context,
+    textPreview: fullText.substring(0, 100),
+  });
+
   // 1. Prüfe ob Draft benötigt wird
   const draftNeed = await detectDraftNeed(fullText, trigger.type, trigger.context);
 
   if (!draftNeed.detected || draftNeed.confidence < 0.5) {
-    logger.debug('No draft need detected', { ideaId: trigger.ideaId, type: trigger.type });
+    logger.info('No draft need detected', {
+      ideaId: trigger.ideaId,
+      type: trigger.type,
+      detected: draftNeed.detected,
+      confidence: draftNeed.confidence,
+    });
     return null;
   }
 
