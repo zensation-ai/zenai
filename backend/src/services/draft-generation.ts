@@ -314,7 +314,7 @@ export async function generateProactiveDraft(
       relatedIdeaIds: contextData.relatedIdeaIds,
     };
   } catch (error: any) {
-    logger.error('Draft generation failed', { ideaId: trigger.ideaId, error: error.message });
+    logger.error('Draft generation failed', error instanceof Error ? error : undefined, { ideaId: trigger.ideaId });
     return null;
   }
 }
@@ -395,7 +395,7 @@ async function generateDraftContent(
     const content = await generateClaudeResponse(systemPrompt, userPrompt);
     return content;
   } catch (error: any) {
-    logger.error('Claude draft generation failed', { error: error.message });
+    logger.error('Claude draft generation failed', error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -602,7 +602,7 @@ export async function getDraftForIdea(
       relatedIdeaIds: row.related_idea_ids || [],
     };
   } catch (error) {
-    logger.error('Failed to get draft for idea', { ideaId, error });
+    logger.error('Failed to get draft for idea', error instanceof Error ? error : undefined, { ideaId });
     return null;
   }
 }
