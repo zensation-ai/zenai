@@ -28,6 +28,7 @@
   "author": "Alexander Bering",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@supabase/supabase-js": "^2.90.1",
     "@types/pdfkit": "^0.17.4",
     "axios": "^1.6.5",

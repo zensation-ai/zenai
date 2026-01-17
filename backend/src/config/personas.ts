@@ -95,7 +95,7 @@ WICHTIG:
     temperature: 0.7,
     modelName: 'mistral',
     behaviorFlags: {
-      immediateStructuring: false,
+      immediateStructuring: true,  // FIXED: Prevent data loss - save immediately as idea
       suggestConcepts: true,
       proactive: true,
       associative: true,
@@ -140,7 +140,7 @@ WICHTIG:
     temperature: 0.5,
     modelName: 'mistral',
     behaviorFlags: {
-      immediateStructuring: false,
+      immediateStructuring: true,  // FIXED: Prevent data loss - save immediately as idea
       suggestConcepts: true,
       proactive: true,
       associative: false,
@@ -186,7 +186,7 @@ WICHTIG:
     temperature: 0.9,
     modelName: 'mistral',
     behaviorFlags: {
-      immediateStructuring: false,
+      immediateStructuring: true,  // FIXED: Prevent data loss - save immediately as idea
       suggestConcepts: true,
       proactive: true,
       associative: true,

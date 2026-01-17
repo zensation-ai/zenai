@@ -16,14 +16,19 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ContextSwitcher, useContextState } from './components/ContextSwitcher';
 import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
 import { ExportMenu } from './components/ExportMenu';
+import { NavDropdown } from './components/NavDropdown';
+import './components/NavDropdown.css';
 import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
 import { LearningDashboard } from './components/LearningDashboard';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { AutomationDashboard } from './components/AutomationDashboard';
+import { EvolutionDashboard } from './components/EvolutionDashboard';
 import { Onboarding } from './components/Onboarding';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import './App.css';
 
-type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning';
+type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution';
 
 interface StructuredIdea {
   id: string;
@@ -370,6 +375,42 @@ function App() {
     );
   }
 
+  if (currentPage === 'analytics') {
+    return (
+      <ErrorBoundary>
+        <AnalyticsDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'automations') {
+    return (
+      <ErrorBoundary>
+        <AutomationDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'evolution') {
+    return (
+      <ErrorBoundary>
+        <EvolutionDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   if (currentPage === 'archive') {
     return (
       <ErrorBoundary>
@@ -443,87 +484,77 @@ function App() {
           <div className="header-left">
             <AIBrain isActive={isAIActive} activityType={aiActivityType} ideasCount={ideas.length} />
             <h1>Personal AI Brain</h1>
-            <span className="version-badge">v1.0</span>
             <ContextSwitcher context={context} onContextChange={setContext} />
-            <PersonaSelector
-              context={context}
-              selectedPersona={selectedPersona}
-              onPersonaChange={setSelectedPersona}
-            />
           </div>
-          <div className="header-right">
+          <div className="header-center">
             <nav className="header-nav">
               <button
                 type="button"
-                className={`nav-button archive-nav ${archivedCount > 0 ? 'has-items' : ''}`}
+                className={`nav-button ${currentPage === 'ideas' ? 'active' : ''}`}
+                onClick={() => setCurrentPage('ideas')}
+                title="Gedanken"
+              >
+                💭 Gedanken
+              </button>
+              <button
+                type="button"
+                className={`nav-button ${currentPage === 'archive' ? 'active' : ''} ${archivedCount > 0 ? 'has-items' : ''}`}
                 onClick={() => setCurrentPage('archive')}
                 title="Archiv"
               >
                 📥 Archiv {archivedCount > 0 && <span className="badge">{archivedCount}</span>}
               </button>
-              <button
-                type="button"
-                className="nav-button incubator-nav"
-                onClick={() => setCurrentPage('incubator')}
-                title="Gedanken-Inkubator"
-              >
-                🧠 Inkubator
-              </button>
-              <button
-                type="button"
-                className="nav-button graph-nav"
-                onClick={() => setCurrentPage('knowledge-graph')}
-                title="Knowledge Graph"
-              >
-                🕸️ Graph
-              </button>
-              <button
-                type="button"
-                className="nav-button"
-                onClick={() => setCurrentPage('meetings')}
-                title="Meetings"
-              >
-                📅 Meetings
-              </button>
-              <button
-                type="button"
-                className="nav-button"
-                onClick={() => setCurrentPage('learning')}
-                title="KI-Lernzentrum"
-              >
-                🧬 Lernen
-              </button>
-              <button
-                type="button"
-                className="nav-button"
-                onClick={() => setCurrentPage('profile')}
-                title="Profil"
-              >
-                👤 Profil
-              </button>
-              <button
-                type="button"
-                className="nav-button"
-                onClick={() => setCurrentPage('integrations')}
-                title="Integrationen"
-              >
-                ⚙️ Integrationen
-              </button>
+              <NavDropdown
+                label="KI"
+                icon="🧠"
+                items={[
+                  { label: 'Inkubator', icon: '🧠', page: 'incubator' },
+                  { label: 'Lernen', icon: '🧬', page: 'learning' },
+                  { label: 'Evolution', icon: '🌱', page: 'evolution' },
+                ]}
+                currentPage={currentPage}
+                onNavigate={(page) => setCurrentPage(page as Page)}
+              />
+              <NavDropdown
+                label="Analyse"
+                icon="📊"
+                items={[
+                  { label: 'Analytics', icon: '📈', page: 'analytics' },
+                  { label: 'Graph', icon: '🕸️', page: 'knowledge-graph' },
+                  { label: 'Profil', icon: '👤', page: 'profile' },
+                ]}
+                currentPage={currentPage}
+                onNavigate={(page) => setCurrentPage(page as Page)}
+              />
+              <NavDropdown
+                label="Mehr"
+                icon="⚙️"
+                items={[
+                  { label: 'Meetings', icon: '📅', page: 'meetings' },
+                  { label: 'Automationen', icon: '⚡', page: 'automations' },
+                  { label: 'Integrationen', icon: '🔗', page: 'integrations' },
+                ]}
+                currentPage={currentPage}
+                onNavigate={(page) => setCurrentPage(page as Page)}
+              />
               <ExportMenu context={context} ideasCount={ideas.length} />
             </nav>
-            <div className="status-indicators">
+          </div>
+          <div className="header-right">
+            <PersonaSelector
+              context={context}
+              selectedPersona={selectedPersona}
+              onPersonaChange={setSelectedPersona}
+            />
+            <div className="status-indicators compact">
               <span
                 className={`status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}
                 title={apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}
-              >
-                DB
-              </span>
+              />
               <span
                 className={`status-dot ${apiStatus?.ollama ? 'connected' : 'disconnected'}`}
-                title={apiStatus?.ollama ? 'Ollama verbunden' : 'Ollama getrennt'}
-              >
-                LLM
-              </span>
+                title={apiStatus?.ollama ? 'LLM verbunden' : 'LLM getrennt'}
+              />
             </div>
             <button type="button" className="refresh-button" onClick={() => loadIdeas()} title="Neu laden">
               ↻

@@ -14,6 +14,8 @@ import { queryContext, AIContext } from '../utils/database-context';
 import { queryOllamaJSON } from '../utils/ollama';
 import { logger } from '../utils/logger';
 // Note: learning-engine and user-profile modules removed - functionality integrated in business-profile-learning.ts
+// Phase 3 (Vision): Automation suggestions
+import { generateAutomationSuggestions, AutomationSuggestion } from './automation-registry';
 
 // ===========================================
 // Types
@@ -29,6 +31,7 @@ interface DailyLearningResult {
   daily_summary: string;
   key_learnings: string[];
   suggestions_for_tomorrow: string[];
+  automation_suggestions: number;
 }
 
 interface Pattern {
@@ -115,12 +118,25 @@ export async function runDailyLearning(
     // 8. Generiere AI-Vorschläge für morgen
     await generateSuggestionsForTomorrow(context, patterns, todaysIdeas);
 
+    // 9. Generiere Automation-Vorschläge basierend auf Mustern
+    let automationSuggestions: AutomationSuggestion[] = [];
+    try {
+      automationSuggestions = await generateAutomationSuggestions(context);
+      logger.info('Automation suggestions generated', {
+        context,
+        count: automationSuggestions.length,
+      });
+    } catch (error) {
+      logger.warn('Could not generate automation suggestions', { error });
+    }
+
     logger.info('Daily learning completed', {
       context,
       date: dateStr,
       ideasAnalyzed: todaysIdeas.length,
       patternsFound: patterns.length,
       suggestionsGenerated: suggestions.length,
+      automationSuggestions: automationSuggestions.length,
     });
 
     return {
@@ -133,6 +149,7 @@ export async function runDailyLearning(
       daily_summary: summary,
       key_learnings: keyLearnings,
       suggestions_for_tomorrow: suggestions,
+      automation_suggestions: automationSuggestions.length,
     };
   } catch (error) {
     logger.error('Daily learning failed', error instanceof Error ? error : undefined, { context, date: dateStr });
@@ -568,6 +585,7 @@ export async function getDailyLearningHistory(
       daily_summary: row.daily_summary,
       key_learnings: row.key_learnings || [],
       suggestions_for_tomorrow: row.suggestions_for_tomorrow || [],
+      automation_suggestions: row.automation_suggestions || 0,
     }));
   } catch (error) {
     return [];

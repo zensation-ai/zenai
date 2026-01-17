@@ -32,6 +32,8 @@ import { getActiveFocusContext, findMatchingFocus } from '../services/domain-foc
 import { learnFromIdea } from '../services/business-profile-learning';
 // Unified AI service with OpenAI fallback
 import { isOpenAIAvailable, queryOpenAIJSON } from '../services/openai';
+// Claude with personalized context (primary)
+import { isClaudeAvailable, structureWithClaudePersonalized } from '../services/claude';
 
 export const voiceMemoContextRouter = Router();
 
@@ -286,7 +288,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
 /**
  * Structure a thought using context-specific persona
- * Uses OpenAI if available, falls back to Ollama
+ * Priority: Claude (personalized) → OpenAI → Ollama → Basic fallback
  */
 async function structureThoughtWithPersona(
   transcript: string,
@@ -301,6 +303,17 @@ async function structureThoughtWithPersona(
     focusContext = await getActiveFocusContext(context);
   } catch (error) {
     logger.warn('Could not get focus context', { error });
+  }
+
+  // Try Claude first with personalized context (Phase 2: Unified Business Context)
+  if (isClaudeAvailable()) {
+    try {
+      logger.info('Structuring with Claude (personalized)', { context, personaId });
+      const result = await structureWithClaudePersonalized(transcript, context);
+      return result;
+    } catch (error: any) {
+      logger.warn('Claude personalized structuring failed, trying OpenAI', { error: error.message });
+    }
   }
 
   const systemPrompt = `${persona.systemPrompt}
@@ -322,7 +335,7 @@ OUTPUT FORMAT:
 
   const userPrompt = `Transkript: ${transcript}`;
 
-  // Try OpenAI first (works on Railway)
+  // Try OpenAI as fallback (works on Railway)
   if (isOpenAIAvailable()) {
     try {
       logger.info('Structuring with OpenAI', { context, personaId });

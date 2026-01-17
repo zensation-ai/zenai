@@ -23,6 +23,7 @@
 .header a,
 .header input,
 .header .nav-button,
+.header .nav-dropdown,
 .header .refresh-button {
   -webkit-app-region: no-drag;
 }
@@ -33,23 +34,34 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .header-nav {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
 }
 
 .nav-button {
@@ -168,6 +180,26 @@
   background: var(--success);
   box-shadow: 0 0 8px var(--success-glow);
   animation: none;
+}
+
+/* Compact Status Indicators */
+.status-indicators.compact {
+  gap: 6px;
+}
+
+.status-indicators.compact .status-dot {
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  padding: 0;
+  font-size: 0;
+  border: none;
+  background: transparent;
+}
+
+.status-indicators.compact .status-dot::before {
+  width: 10px;
+  height: 10px;
 }
 
 /* Main Content */

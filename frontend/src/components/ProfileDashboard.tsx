@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
 import './ProfileDashboard.css';
 
 interface UserProfile {
@@ -10,6 +11,18 @@ interface UserProfile {
   top_types: [string, number][];
   top_topics: [string, number][];
   auto_priority_enabled: boolean;
+}
+
+interface BusinessProfile {
+  id: string;
+  company_name: string | null;
+  industry: string | null;
+  company_size: string | null;
+  role: string | null;
+  tech_stack: string[];
+  goals: string[];
+  pain_points: string[];
+  communication_style: string | null;
 }
 
 interface Recommendations {
@@ -41,10 +54,20 @@ const typeLabels: Record<string, { label: string; icon: string }> = {
 
 export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    company_name: '',
+    industry: '',
+    role: '',
+    tech_stack: '',
+    goals: '',
+  });
 
   useEffect(() => {
     loadProfile();
@@ -53,12 +76,25 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const [statsRes, recsRes] = await Promise.all([
+      const [statsRes, recsRes, businessRes] = await Promise.all([
         axios.get(`/api/${context}/profile/stats`),
         axios.get(`/api/${context}/profile/recommendations`),
+        axios.get(`/api/${context}/profile`).catch(() => ({ data: { profile: null } })),
       ]);
       setProfile(statsRes.data);
       setRecommendations(recsRes.data.recommendations);
+
+      const bp = businessRes.data.profile;
+      if (bp) {
+        setBusinessProfile(bp);
+        setEditForm({
+          company_name: bp.company_name || '',
+          industry: bp.industry || '',
+          role: bp.role || '',
+          tech_stack: (bp.tech_stack || []).join(', '),
+          goals: (bp.goals || []).join(', '),
+        });
+      }
       setError(null);
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
@@ -67,6 +103,31 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const updates = {
+        company_name: editForm.company_name || null,
+        industry: editForm.industry || null,
+        role: editForm.role || null,
+        tech_stack: editForm.tech_stack.split(',').map(s => s.trim()).filter(Boolean),
+        goals: editForm.goals.split(',').map(s => s.trim()).filter(Boolean),
+      };
+
+      await axios.put(`/api/${context}/profile`, updates);
+      showToast('Profil gespeichert!', 'success');
+      setIsEditing(false);
+      await loadProfile();
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string })?.error || 'Speichern fehlgeschlagen'
+        : 'Speichern fehlgeschlagen';
+      showToast(message, 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -179,6 +240,135 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
             <span className="stat-label">Ideen pro Tag</span>
           </div>
         </div>
+      </div>
+
+      {/* Business Profile Edit */}
+      <div className="business-profile-section">
+        <div className="section-header-row">
+          <h2>🏢 Unternehmensprofil</h2>
+          <button
+            type="button"
+            className={`edit-profile-btn ${isEditing ? 'active' : ''}`}
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? '✕ Abbrechen' : '✏️ Bearbeiten'}
+          </button>
+        </div>
+
+        {isEditing ? (
+          <div className="profile-edit-form">
+            <div className="form-group">
+              <label htmlFor="company_name">Unternehmen</label>
+              <input
+                id="company_name"
+                type="text"
+                value={editForm.company_name}
+                onChange={(e) => setEditForm({ ...editForm, company_name: e.target.value })}
+                placeholder="z.B. Meine GmbH"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="industry">Branche</label>
+              <input
+                id="industry"
+                type="text"
+                value={editForm.industry}
+                onChange={(e) => setEditForm({ ...editForm, industry: e.target.value })}
+                placeholder="z.B. SaaS, E-Commerce, Beratung"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="role">Deine Rolle</label>
+              <input
+                id="role"
+                type="text"
+                value={editForm.role}
+                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                placeholder="z.B. CEO, Developer, Product Manager"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="tech_stack">Tech-Stack (kommagetrennt)</label>
+              <input
+                id="tech_stack"
+                type="text"
+                value={editForm.tech_stack}
+                onChange={(e) => setEditForm({ ...editForm, tech_stack: e.target.value })}
+                placeholder="z.B. React, TypeScript, Supabase"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="goals">Ziele (kommagetrennt)</label>
+              <textarea
+                id="goals"
+                value={editForm.goals}
+                onChange={(e) => setEditForm({ ...editForm, goals: e.target.value })}
+                placeholder="z.B. App launchen, 100 Kunden gewinnen, Prozesse automatisieren"
+                rows={2}
+              />
+            </div>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="save-btn"
+                onClick={handleSaveProfile}
+                disabled={saving}
+              >
+                {saving ? 'Speichern...' : '💾 Speichern'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="profile-display">
+            {businessProfile?.company_name || businessProfile?.industry || businessProfile?.role ? (
+              <>
+                {businessProfile.company_name && (
+                  <div className="profile-item">
+                    <span className="profile-label">Unternehmen:</span>
+                    <span className="profile-value">{businessProfile.company_name}</span>
+                  </div>
+                )}
+                {businessProfile.industry && (
+                  <div className="profile-item">
+                    <span className="profile-label">Branche:</span>
+                    <span className="profile-value">{businessProfile.industry}</span>
+                  </div>
+                )}
+                {businessProfile.role && (
+                  <div className="profile-item">
+                    <span className="profile-label">Rolle:</span>
+                    <span className="profile-value">{businessProfile.role}</span>
+                  </div>
+                )}
+                {businessProfile.tech_stack && businessProfile.tech_stack.length > 0 && (
+                  <div className="profile-item">
+                    <span className="profile-label">Tech-Stack:</span>
+                    <div className="tech-tags">
+                      {businessProfile.tech_stack.map((tech, i) => (
+                        <span key={i} className="tech-tag">{tech}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {businessProfile.goals && businessProfile.goals.length > 0 && (
+                  <div className="profile-item">
+                    <span className="profile-label">Ziele:</span>
+                    <ul className="goals-list">
+                      {businessProfile.goals.map((goal, i) => (
+                        <li key={i}>{goal}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="empty-profile">
+                <p>Noch keine Unternehmensdaten hinterlegt.</p>
+                <p className="hint">Klicke auf "Bearbeiten" um dein Profil anzulegen. Die KI nutzt diese Daten um bessere, personalisierte Antworten zu geben.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Insights */}

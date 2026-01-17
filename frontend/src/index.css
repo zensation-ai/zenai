@@ -30,8 +30,8 @@
 
   /* Text Colors - WCAG AA compliant (4.5:1 contrast ratio) */
   --text: #f8fafc;
-  --text-muted: #b4c2d1;  /* Improved from #94a3b8 for 4.5:1 contrast */
-  --text-secondary: #8b9db0;  /* Improved from #64748b for accessibility */
+  --text-muted: #d0dce8;  /* Brighter for better readability on dark backgrounds */
+  --text-secondary: #a8b9ca;  /* Improved contrast for dates, hints */
 
   /* Borders & Accents */
   --border: rgba(42, 74, 90, 0.6);

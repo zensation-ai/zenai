@@ -85,18 +85,18 @@
 }
 
 .detail-priority.priority-high {
-  background: #fef2f2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;  /* Brighter red for dark theme */
 }
 
 .detail-priority.priority-medium {
-  background: #fffbeb;
-  color: #d97706;
+  background: rgba(251, 191, 36, 0.18);
+  color: #fbbf24;  /* Brighter yellow for dark theme */
 }
 
 .detail-priority.priority-low {
-  background: #f8fafc;
-  color: #64748b;
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;  /* Improved contrast for dark theme */
 }
 
 .detail-title {
@@ -170,8 +170,8 @@
 
 .detail-context li {
   padding: 10px 14px;
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;  /* Bright amber for dark theme */
   border-radius: 8px;
   font-size: 14px;
 }

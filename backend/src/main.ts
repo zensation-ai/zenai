@@ -44,6 +44,12 @@ import { personalizationChatRouter } from './routes/personalization-chat';
 import { learningTasksRouter } from './routes/learning-tasks';
 // Phase 23: Intelligent Learning System
 import { intelligentLearningRouter } from './routes/intelligent-learning';
+// Phase 3 (Vision): Automation Registry
+import { automationsRouter } from './routes/automations';
+// Phase 4 (Vision): Interaction Tracking
+import { interactionsRouter } from './routes/interactions';
+// Phase 5 (Vision): Evolution Analytics
+import { evolutionRouter } from './routes/analytics-evolution';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -165,6 +171,15 @@ app.use('/api', learningTasksRouter);  // Learning tasks: /api/:context/learning
 
 // Phase 23: Intelligent Learning System - "KI lernt kontinuierlich"
 app.use('/api', intelligentLearningRouter);  // /api/:context/focus, /api/:context/feedback, /api/:context/research, /api/:context/suggestions
+
+// Phase 3 (Vision): Automation Registry - "System kennt Automationen"
+app.use('/api', automationsRouter);  // /api/:context/automations, /api/:context/automations/suggestions, /api/:context/automations/stats
+
+// Phase 4 (Vision): Interaction Tracking - "Deep Learning Feedback Loop"
+app.use('/api', interactionsRouter);  // /api/:context/interactions, /api/:context/corrections, /api/:context/patterns
+
+// Phase 5 (Vision): Evolution Analytics - "Wie die KI lernt"
+app.use('/api', evolutionRouter);  // /api/:context/evolution, /api/:context/evolution/timeline, /api/:context/evolution/milestones
 
 // Cleanup rate limits every hour
 setInterval(() => {

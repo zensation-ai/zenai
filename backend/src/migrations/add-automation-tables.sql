@@ -1,0 +1,293 @@
+-- Automation System Tables
+-- Phase 3: Automation Knowledge Base
+-- Run in Supabase SQL Editor
+
+-- ===========================================
+-- 1. Automation Definitions
+-- ===========================================
+-- Stores automation configurations
+
+CREATE TABLE IF NOT EXISTS automation_definitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  context VARCHAR(50) NOT NULL CHECK (context IN ('personal', 'work')),
+
+  -- Basic Info
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+
+  -- Trigger Configuration
+  trigger_type VARCHAR(50) NOT NULL CHECK (trigger_type IN ('webhook', 'schedule', 'event', 'manual', 'pattern')),
+  trigger_config JSONB NOT NULL DEFAULT '{}',
+
+  -- Conditions (must all be true for automation to run)
+  conditions JSONB NOT NULL DEFAULT '[]',
+
+  -- Actions to execute
+  actions JSONB NOT NULL DEFAULT '[]',
+
+  -- Status
+  is_active BOOLEAN DEFAULT TRUE,
+  is_system BOOLEAN DEFAULT FALSE,
+
+  -- Statistics
+  run_count INTEGER DEFAULT 0,
+  success_count INTEGER DEFAULT 0,
+  failure_count INTEGER DEFAULT 0,
+  last_run_at TIMESTAMPTZ,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_automation_definitions_context ON automation_definitions(context);
+CREATE INDEX IF NOT EXISTS idx_automation_definitions_active ON automation_definitions(is_active);
+CREATE INDEX IF NOT EXISTS idx_automation_definitions_trigger ON automation_definitions(trigger_type);
+
+-- Unique constraint for name per context
+CREATE UNIQUE INDEX IF NOT EXISTS idx_automation_definitions_name_unique
+  ON automation_definitions(context, name) WHERE is_active = true;
+
+COMMENT ON TABLE automation_definitions IS 'Stores automation configurations with triggers, conditions, and actions';
+
+-- ===========================================
+-- 2. Automation Suggestions
+-- ===========================================
+-- AI-generated suggestions for new automations
+
+CREATE TABLE IF NOT EXISTS automation_suggestions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  context VARCHAR(50) NOT NULL CHECK (context IN ('personal', 'work')),
+
+  -- Suggestion Info
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+
+  -- Proposed Configuration
+  trigger_type VARCHAR(50) NOT NULL,
+  trigger_config JSONB NOT NULL DEFAULT '{}',
+  actions JSONB NOT NULL DEFAULT '[]',
+
+  -- Analysis Data
+  reasoning TEXT,
+  confidence DECIMAL(3,2) DEFAULT 0.5 CHECK (confidence >= 0 AND confidence <= 1),
+  based_on_pattern VARCHAR(100),
+  sample_matches INTEGER DEFAULT 0,
+
+  -- Status
+  status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'dismissed')),
+  accepted_at TIMESTAMPTZ,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_automation_suggestions_context ON automation_suggestions(context);
+CREATE INDEX IF NOT EXISTS idx_automation_suggestions_status ON automation_suggestions(status);
+CREATE INDEX IF NOT EXISTS idx_automation_suggestions_confidence ON automation_suggestions(confidence DESC);
+
+-- Unique constraint to avoid duplicate suggestions
+CREATE UNIQUE INDEX IF NOT EXISTS idx_automation_suggestions_unique
+  ON automation_suggestions(context, name) WHERE status = 'pending';
+
+COMMENT ON TABLE automation_suggestions IS 'AI-generated suggestions for automations based on usage patterns';
+
+-- ===========================================
+-- 3. Automation Executions
+-- ===========================================
+-- Tracks automation execution history
+
+CREATE TABLE IF NOT EXISTS automation_executions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  automation_id UUID NOT NULL REFERENCES automation_definitions(id) ON DELETE CASCADE,
+
+  -- Execution Data
+  trigger_data JSONB DEFAULT '{}',
+  actions_executed INTEGER DEFAULT 0,
+
+  -- Result
+  success BOOLEAN DEFAULT FALSE,
+  error_message TEXT,
+  duration_ms INTEGER DEFAULT 0,
+
+  -- Timestamp
+  executed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_automation_executions_automation ON automation_executions(automation_id);
+CREATE INDEX IF NOT EXISTS idx_automation_executions_success ON automation_executions(success);
+CREATE INDEX IF NOT EXISTS idx_automation_executions_time ON automation_executions(executed_at DESC);
+
+-- Cleanup old executions (keep last 1000 per automation)
+-- This can be run periodically
+CREATE OR REPLACE FUNCTION cleanup_old_executions()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM automation_executions
+  WHERE id NOT IN (
+    SELECT id FROM (
+      SELECT id, ROW_NUMBER() OVER (
+        PARTITION BY automation_id
+        ORDER BY executed_at DESC
+      ) as rn
+      FROM automation_executions
+    ) ranked
+    WHERE rn <= 1000
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON TABLE automation_executions IS 'Tracks execution history of automations';
+
+-- ===========================================
+-- 4. Automation Notifications
+-- ===========================================
+-- Stores notifications generated by automations
+
+CREATE TABLE IF NOT EXISTS automation_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  context VARCHAR(50) NOT NULL CHECK (context IN ('personal', 'work')),
+
+  -- Notification Content
+  title VARCHAR(200) NOT NULL,
+  message TEXT,
+
+  -- Status
+  is_read BOOLEAN DEFAULT FALSE,
+  read_at TIMESTAMPTZ,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_automation_notifications_context ON automation_notifications(context);
+CREATE INDEX IF NOT EXISTS idx_automation_notifications_unread ON automation_notifications(is_read) WHERE is_read = false;
+CREATE INDEX IF NOT EXISTS idx_automation_notifications_time ON automation_notifications(created_at DESC);
+
+COMMENT ON TABLE automation_notifications IS 'Stores notifications generated by automation actions';
+
+-- ===========================================
+-- 5. Webhook Intelligence (Extend existing webhooks table)
+-- ===========================================
+-- Add learning columns to webhooks table if they don't exist
+
+DO $$
+BEGIN
+  -- Add columns for webhook intelligence
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'webhooks' AND column_name = 'event_type_stats') THEN
+    ALTER TABLE webhooks ADD COLUMN event_type_stats JSONB DEFAULT '{}';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'webhooks' AND column_name = 'category_stats') THEN
+    ALTER TABLE webhooks ADD COLUMN category_stats JSONB DEFAULT '{}';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'webhooks' AND column_name = 'avg_response_time_ms') THEN
+    ALTER TABLE webhooks ADD COLUMN avg_response_time_ms INTEGER DEFAULT 0;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'webhooks' AND column_name = 'total_data_sent_bytes') THEN
+    ALTER TABLE webhooks ADD COLUMN total_data_sent_bytes BIGINT DEFAULT 0;
+  END IF;
+END $$;
+
+-- ===========================================
+-- 6. Useful Views
+-- ===========================================
+
+-- Active automations with stats
+CREATE OR REPLACE VIEW automation_overview AS
+SELECT
+  ad.id,
+  ad.context,
+  ad.name,
+  ad.description,
+  ad.trigger_type,
+  ad.is_active,
+  ad.run_count,
+  ad.success_count,
+  ad.failure_count,
+  CASE
+    WHEN ad.run_count > 0 THEN ROUND(ad.success_count::decimal / ad.run_count * 100, 1)
+    ELSE 0
+  END as success_rate_percent,
+  ad.last_run_at,
+  ad.created_at
+FROM automation_definitions ad
+ORDER BY ad.run_count DESC, ad.created_at DESC;
+
+-- Pending suggestions with high confidence
+CREATE OR REPLACE VIEW high_confidence_suggestions AS
+SELECT
+  id,
+  context,
+  name,
+  description,
+  reasoning,
+  confidence,
+  sample_matches,
+  created_at
+FROM automation_suggestions
+WHERE status = 'pending' AND confidence >= 0.6
+ORDER BY confidence DESC;
+
+-- Recent executions with automation info
+CREATE OR REPLACE VIEW recent_executions AS
+SELECT
+  ae.id,
+  ae.automation_id,
+  ad.name as automation_name,
+  ad.context,
+  ae.success,
+  ae.error_message,
+  ae.duration_ms,
+  ae.executed_at
+FROM automation_executions ae
+JOIN automation_definitions ad ON ae.automation_id = ad.id
+ORDER BY ae.executed_at DESC
+LIMIT 100;
+
+-- ===========================================
+-- 7. Sample System Automations
+-- ===========================================
+-- Optional: Create some default system automations
+
+-- You can uncomment and run this if you want default automations:
+
+/*
+INSERT INTO automation_definitions (context, name, description, trigger_type, trigger_config, actions, is_system)
+VALUES
+  (
+    'work',
+    'High Priority Alert',
+    'Benachrichtigung bei neuen High-Priority Aufgaben',
+    'event',
+    '{"eventName": "idea.created"}',
+    '[{"type": "notification", "config": {"title": "Neue wichtige Aufgabe", "message": "{{title}} wurde erstellt"}, "order": 1}]',
+    true
+  ),
+  (
+    'personal',
+    'Weekly Review Reminder',
+    'Wöchentlicher Review-Reminder am Sonntag',
+    'schedule',
+    '{"cron": "0 18 * * 0"}',
+    '[{"type": "notification", "config": {"title": "Wöchentlicher Review", "message": "Zeit für deinen Wochenrückblick!"}, "order": 1}]',
+    true
+  )
+ON CONFLICT DO NOTHING;
+*/
+
+-- ===========================================
+-- Done!
+-- ===========================================
+-- Run this migration in Supabase SQL Editor
+-- Then verify: SELECT COUNT(*) FROM automation_definitions;

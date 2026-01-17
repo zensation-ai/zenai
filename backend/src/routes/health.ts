@@ -50,7 +50,7 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
 
   const allDbHealthy = dbHealth.personal && dbHealth.work;
   const anyDbHealthy = dbHealth.personal || dbHealth.work;
-  const anyAiAvailable = aiServices.openai || ollamaHealth.available;
+  const anyAiAvailable = aiServices.claude || aiServices.openai || ollamaHealth.available;
 
   // Calculate overall status
   // Healthy: All DBs + at least one AI service
@@ -94,6 +94,9 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
       },
       ai: {
         primary: aiServices.primary,
+        claude: {
+          status: aiServices.claude ? 'configured' : 'not_configured',
+        },
         openai: {
           status: aiServices.openai ? 'configured' : 'not_configured',
         },
