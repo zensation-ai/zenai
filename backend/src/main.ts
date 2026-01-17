@@ -50,6 +50,8 @@ import { automationsRouter } from './routes/automations';
 import { interactionsRouter } from './routes/interactions';
 // Phase 5 (Vision): Evolution Analytics
 import { evolutionRouter } from './routes/analytics-evolution';
+// Phase 25: Proactive Draft Generation
+import { draftsRouter } from './routes/drafts';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -180,6 +182,9 @@ app.use('/api', interactionsRouter);  // /api/:context/interactions, /api/:conte
 
 // Phase 5 (Vision): Evolution Analytics - "Wie die KI lernt"
 app.use('/api', evolutionRouter);  // /api/:context/evolution, /api/:context/evolution/timeline, /api/:context/evolution/milestones
+
+// Phase 25: Proactive Draft Generation - "KI bereitet Entwürfe vor"
+app.use('/api', draftsRouter);  // /api/:context/ideas/:id/draft, /api/:context/drafts
 
 // Cleanup rate limits every hour
 setInterval(() => {

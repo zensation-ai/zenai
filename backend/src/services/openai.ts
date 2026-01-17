@@ -87,8 +87,9 @@ export async function structureWithOpenAI(transcript: string): Promise<Structure
 }
 
 /**
- * Generate embedding using OpenAI
- * Uses 768 dimensions to match database schema (vector(768))
+ * @deprecated Use generateEmbedding from ai.ts instead (uses Ollama nomic-embed-text)
+ * This function is kept for backwards compatibility but is no longer used.
+ * Embeddings are now generated exclusively via Ollama.
  */
 export async function generateOpenAIEmbedding(text: string): Promise<number[]> {
   if (!openaiClient) {

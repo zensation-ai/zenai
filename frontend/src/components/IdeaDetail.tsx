@@ -35,6 +35,15 @@ interface Suggestion {
   similarity: number;
 }
 
+interface Draft {
+  id: string;
+  ideaId: string;
+  draftType: string;
+  content: string;
+  wordCount: number;
+  status: string;
+}
+
 interface IdeaDetailProps {
   idea: Idea;
   onClose: () => void;
@@ -72,6 +81,14 @@ const relationLabels: Record<string, string> = {
   part_of: 'Teil von',
 };
 
+const draftTypeLabels: Record<string, { label: string; icon: string }> = {
+  email: { label: 'E-Mail', icon: '📧' },
+  article: { label: 'Artikel', icon: '📝' },
+  proposal: { label: 'Angebot', icon: '📋' },
+  document: { label: 'Dokument', icon: '📄' },
+  generic: { label: 'Text', icon: '📃' },
+};
+
 export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   const [relations, setRelations] = useState<Relation[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -79,10 +96,20 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   const [loadingRelations, setLoadingRelations] = useState(false);
   const isMountedRef = useRef(true);
 
+  // Phase 25: Draft Support
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [draftExpanded, setDraftExpanded] = useState(false);
+  const [draftCopied, setDraftCopied] = useState(false);
+
   useEffect(() => {
     isMountedRef.current = true;
     loadRelations();
     loadSuggestions();
+    // Load draft for tasks
+    if (idea.type === 'task') {
+      loadDraft();
+    }
     return () => {
       isMountedRef.current = false;
     };
@@ -114,6 +141,37 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
     } catch (error) {
       console.error('Failed to load suggestions:', error);
       // Silent fail for suggestions - they're optional
+    }
+  };
+
+  // Phase 25: Load draft for task
+  const loadDraft = async () => {
+    setLoadingDraft(true);
+    try {
+      const context = localStorage.getItem('ai-context') || 'personal';
+      const response = await axios.get(`/api/${context}/ideas/${idea.id}/draft`);
+      if (isMountedRef.current && response.data.draft) {
+        setDraft(response.data.draft);
+      }
+    } catch (error) {
+      console.error('Failed to load draft:', error);
+      // Silent fail - draft is optional
+    } finally {
+      if (isMountedRef.current) {
+        setLoadingDraft(false);
+      }
+    }
+  };
+
+  const copyDraft = async () => {
+    if (!draft) return;
+    try {
+      await navigator.clipboard.writeText(draft.content);
+      setDraftCopied(true);
+      showToast('In Zwischenablage kopiert', 'success');
+      setTimeout(() => setDraftCopied(false), 2000);
+    } catch (error) {
+      showToast('Kopieren fehlgeschlagen', 'error');
     }
   };
 
@@ -174,6 +232,55 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
           <h3>Zusammenfassung</h3>
           <p className="detail-summary">{idea.summary}</p>
         </div>
+
+        {/* Phase 25: Draft Section for Tasks */}
+        {idea.type === 'task' && (
+          <div className="detail-section draft-section">
+            <h3>
+              {loadingDraft ? '⏳' : draft ? '✨' : '📝'} Entwurf
+            </h3>
+            {loadingDraft ? (
+              <div className="loading-indicator">Lade Entwurf...</div>
+            ) : draft ? (
+              <div className="draft-content">
+                <div className="draft-header">
+                  <span className="draft-type">
+                    {draftTypeLabels[draft.draftType]?.icon || '📄'}{' '}
+                    {draftTypeLabels[draft.draftType]?.label || draft.draftType}
+                  </span>
+                  <span className="draft-word-count">{draft.wordCount} Wörter</span>
+                </div>
+                <div className={`draft-text ${draftExpanded ? 'expanded' : ''}`}>
+                  {draftExpanded
+                    ? draft.content
+                    : draft.content.length > 300
+                    ? draft.content.substring(0, 300) + '...'
+                    : draft.content}
+                </div>
+                <div className="draft-actions">
+                  {draft.content.length > 300 && (
+                    <button
+                      type="button"
+                      className="expand-button"
+                      onClick={() => setDraftExpanded(!draftExpanded)}
+                    >
+                      {draftExpanded ? 'Weniger anzeigen' : 'Mehr anzeigen'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={`copy-button ${draftCopied ? 'copied' : ''}`}
+                    onClick={copyDraft}
+                  >
+                    {draftCopied ? '✓ Kopiert' : '📋 Kopieren'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="no-draft">Kein Entwurf verfügbar für diese Aufgabe.</p>
+            )}
+          </div>
+        )}
 
         {idea.next_steps && idea.next_steps.length > 0 && (
           <div className="detail-section">

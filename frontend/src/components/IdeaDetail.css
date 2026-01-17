@@ -321,6 +321,142 @@
   color: var(--text-secondary);
 }
 
+/* Draft Section - Phase 25 */
+.draft-section {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
+  border: 1px solid rgba(52, 199, 89, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.draft-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.draft-icon {
+  font-size: 24px;
+}
+
+.draft-info {
+  flex: 1;
+}
+
+.draft-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: #34c759;
+  margin: 0 0 2px 0;
+}
+
+.draft-word-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.draft-content {
+  margin-bottom: 16px;
+}
+
+.draft-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  margin: 0;
+  white-space: pre-wrap;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+
+.draft-text.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.draft-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.expand-button {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.expand-button:hover {
+  color: var(--primary-dark);
+}
+
+.copy-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #34c759;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copy-button:hover {
+  background: #2db24d;
+  transform: translateY(-1px);
+}
+
+.copy-button.copied {
+  background: #30d158;
+}
+
+.draft-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.draft-loading .spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(52, 199, 89, 0.2);
+  border-top-color: #34c759;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.no-draft {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+  background: var(--surface-light);
+  border-radius: 8px;
+}
+
 @media (max-width: 600px) {
   .idea-detail-modal {
     padding: 20px;
@@ -333,5 +469,14 @@
 
   .detail-header {
     flex-wrap: wrap;
+  }
+
+  .draft-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copy-button {
+    justify-content: center;
   }
 }

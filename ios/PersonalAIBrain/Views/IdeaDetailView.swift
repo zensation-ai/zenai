@@ -11,6 +11,11 @@ struct IdeaDetailView: View {
     @State private var isDeleting = false
     @State private var errorMessage: String?
 
+    // Phase 25: Draft Support
+    @State private var draft: Draft?
+    @State private var isLoadingDraft = false
+    @State private var showDraftCopied = false
+
     var body: some View {
         ZStack {
             Color.zensationBackground.ignoresSafeArea()
@@ -58,6 +63,32 @@ struct IdeaDetailView: View {
                 if let summary = idea.summary {
                     SectionCard(title: "Zusammenfassung", icon: "doc.text") {
                         Text(summary)
+                    }
+                }
+
+                // Phase 25: Draft Section (for tasks)
+                if idea.type == .task {
+                    if isLoadingDraft {
+                        SectionCard(title: "Entwurf", icon: "doc.badge.gearshape") {
+                            HStack {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                Text("Lade Entwurf...")
+                                    .foregroundColor(.zensationTextMuted)
+                            }
+                        }
+                    } else if let draft = draft {
+                        DraftSectionCard(
+                            draft: draft,
+                            onCopy: {
+                                UIPasteboard.general.string = draft.content
+                                showDraftCopied = true
+                                // Hide after 2 seconds
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    showDraftCopied = false
+                                }
+                            }
+                        )
                     }
                 }
 
@@ -165,6 +196,43 @@ struct IdeaDetailView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .overlay {
+            if showDraftCopied {
+                VStack {
+                    Spacer()
+                    Text("In Zwischenablage kopiert")
+                        .font(.subheadline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.zensationSuccess)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                        .shadow(radius: 4)
+                        .padding(.bottom, 50)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.easeInOut, value: showDraftCopied)
+            }
+        }
+        .task {
+            // Load draft for tasks
+            if idea.type == .task {
+                await loadDraft()
+            }
+        }
+    }
+
+    // MARK: - Draft Loading
+
+    private func loadDraft() async {
+        isLoadingDraft = true
+        do {
+            draft = try await apiService.fetchDraftForIdea(ideaId: idea.id)
+        } catch {
+            // Silently fail - draft is optional
+            print("Failed to load draft: \(error)")
+        }
+        isLoadingDraft = false
     }
 
     private func deleteIdea() {
@@ -226,6 +294,76 @@ struct SectionCard<Content: View>: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.zensationBorder, lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Draft Section Card
+
+struct DraftSectionCard: View {
+    let draft: Draft
+    let onCopy: () -> Void
+
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Image(systemName: draft.draftType.icon)
+                    .foregroundColor(.zensationSuccess)
+                Text("\(draft.draftType.displayName)-Entwurf")
+                    .fontWeight(.semibold)
+                    .foregroundColor(.zensationText)
+
+                Spacer()
+
+                Text("\(draft.wordCount) Wörter")
+                    .font(.caption)
+                    .foregroundColor(.zensationTextMuted)
+            }
+            .font(.headline)
+
+            // Content Preview or Full
+            VStack(alignment: .leading, spacing: 8) {
+                Text(isExpanded ? draft.content : String(draft.content.prefix(200)) + (draft.content.count > 200 ? "..." : ""))
+                    .font(.body)
+                    .foregroundColor(.zensationText)
+                    .lineLimit(isExpanded ? nil : 5)
+
+                if draft.content.count > 200 {
+                    Button(isExpanded ? "Weniger anzeigen" : "Mehr anzeigen") {
+                        withAnimation {
+                            isExpanded.toggle()
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundColor(.blue)
+                }
+            }
+
+            // Actions
+            HStack(spacing: 12) {
+                Button(action: onCopy) {
+                    Label("Kopieren", systemImage: "doc.on.doc")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.zensationSuccess)
+                        .clipShape(Capsule())
+                }
+
+                Spacer()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.zensationSuccess.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.zensationSuccess.opacity(0.3), lineWidth: 1)
         )
     }
 }

@@ -657,6 +657,119 @@ async function initDatabase() {
 
     console.log('   ✅ Phase 6 & 7 tables created\n');
 
+    // ==========================================
+    // PHASE 25: Proactive Draft Generation
+    // ==========================================
+
+    // Idea Drafts table
+    console.log('2x. Creating idea_drafts table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS idea_drafts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        idea_id UUID NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
+        context VARCHAR(50) NOT NULL,
+
+        -- Draft metadata
+        draft_type VARCHAR(50) NOT NULL,
+        trigger_pattern VARCHAR(200),
+        trigger_text VARCHAR(500),
+
+        -- Content
+        content TEXT NOT NULL,
+        word_count INTEGER,
+        language VARCHAR(10) DEFAULT 'de',
+
+        -- Related context
+        related_idea_ids UUID[],
+        research_id UUID,
+        profile_snapshot JSONB,
+
+        -- Status tracking
+        status VARCHAR(20) DEFAULT 'ready',
+        generation_time_ms INTEGER,
+
+        -- User feedback
+        user_rating INTEGER CHECK (user_rating >= 1 AND user_rating <= 5),
+        user_feedback TEXT,
+        edits_made INTEGER DEFAULT 0,
+        content_reused_percent INTEGER,
+
+        -- Timestamps
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        viewed_at TIMESTAMPTZ,
+        used_at TIMESTAMPTZ,
+        discarded_at TIMESTAMPTZ
+      );
+    `);
+    console.log('   ✅ idea_drafts table created\n');
+
+    // Draft Trigger Patterns table
+    console.log('2y. Creating draft_trigger_patterns table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS draft_trigger_patterns (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        context VARCHAR(50) NOT NULL,
+        draft_type VARCHAR(50) NOT NULL,
+        pattern_text VARCHAR(200) NOT NULL,
+        pattern_type VARCHAR(20) NOT NULL,
+        is_active BOOLEAN DEFAULT true,
+        times_triggered INTEGER DEFAULT 0,
+        times_used INTEGER DEFAULT 0,
+        times_discarded INTEGER DEFAULT 0,
+        avg_rating DECIMAL(3,2),
+        success_rate DECIMAL(5,2),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(context, draft_type, pattern_text)
+      );
+    `);
+    console.log('   ✅ draft_trigger_patterns table created\n');
+
+    // Create indexes for draft tables
+    await client.query('CREATE INDEX IF NOT EXISTS idx_idea_drafts_idea ON idea_drafts(idea_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_idea_drafts_context ON idea_drafts(context);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_idea_drafts_status ON idea_drafts(status);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_idea_drafts_type ON idea_drafts(draft_type);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_idea_drafts_created ON idea_drafts(created_at DESC);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_draft_patterns_type ON draft_trigger_patterns(draft_type);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_draft_patterns_active ON draft_trigger_patterns(is_active);');
+    console.log('   ✅ Draft indexes created\n');
+
+    // Insert default trigger patterns
+    console.log('2z. Inserting default draft trigger patterns...');
+    await client.query(`
+      INSERT INTO draft_trigger_patterns (context, draft_type, pattern_text, pattern_type) VALUES
+        ('personal', 'email', 'e-mail schreiben', 'phrase'),
+        ('personal', 'email', 'mail an', 'phrase'),
+        ('personal', 'email', 'antworten auf', 'phrase'),
+        ('personal', 'email', 'nachricht an', 'phrase'),
+        ('personal', 'email', 'kontaktieren', 'keyword'),
+        ('work', 'email', 'e-mail schreiben', 'phrase'),
+        ('work', 'email', 'mail an', 'phrase'),
+        ('work', 'email', 'antwort schreiben', 'phrase'),
+        ('work', 'email', 'kunde kontaktieren', 'phrase'),
+        ('personal', 'article', 'artikel schreiben', 'phrase'),
+        ('personal', 'article', 'blogpost', 'keyword'),
+        ('personal', 'article', 'beitrag über', 'phrase'),
+        ('personal', 'article', 'text verfassen', 'phrase'),
+        ('work', 'article', 'artikel schreiben', 'phrase'),
+        ('work', 'article', 'linkedin post', 'phrase'),
+        ('work', 'article', 'pressemitteilung', 'keyword'),
+        ('work', 'proposal', 'angebot erstellen', 'phrase'),
+        ('work', 'proposal', 'vorschlag schreiben', 'phrase'),
+        ('work', 'proposal', 'pitch vorbereiten', 'phrase'),
+        ('work', 'proposal', 'präsentation erstellen', 'phrase'),
+        ('work', 'document', 'dokumentation', 'keyword'),
+        ('work', 'document', 'anleitung schreiben', 'phrase'),
+        ('work', 'document', 'prozess dokumentieren', 'phrase'),
+        ('personal', 'document', 'notizen aufschreiben', 'phrase')
+      ON CONFLICT (context, draft_type, pattern_text) DO NOTHING;
+    `);
+    console.log('   ✅ Default trigger patterns inserted\n');
+
+    console.log('   ✅ Phase 25 Draft Generation tables created\n');
+
     // Create updated_at trigger
     console.log('4. Creating update trigger...');
     await client.query(`

@@ -701,6 +701,65 @@ class APIService: ObservableObject {
         let eventsResponse = try Self.createDecoder().decode(CalendarEventsResponse.self, from: data)
         return eventsResponse.events
     }
+
+    // MARK: - Phase 25: Proactive Drafts
+
+    /// Fetch draft for an idea
+    func fetchDraftForIdea(ideaId: String, context: AIContext? = nil) async throws -> Draft? {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/ideas/\(ideaId)/draft") else {
+            throw APIError.invalidURL
+        }
+
+        let request = try createAuthenticatedRequest(url: url, method: "GET")
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let draftResponse = try Self.createDecoder().decode(DraftResponse.self, from: data)
+        return draftResponse.draft
+    }
+
+    /// Submit feedback for a draft
+    func submitDraftFeedback(draftId: String, rating: Int, feedback: String? = nil, context: AIContext? = nil) async throws {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/drafts/\(draftId)/feedback") else {
+            throw APIError.invalidURL
+        }
+
+        var body: [String: Any] = ["rating": rating]
+        if let feedback = feedback {
+            body["feedback"] = feedback
+        }
+
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let request = try createAuthenticatedRequest(url: url, method: "PUT", body: bodyData)
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
+    /// Discard a draft
+    func discardDraft(draftId: String, context: AIContext? = nil) async throws {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/drafts/\(draftId)") else {
+            throw APIError.invalidURL
+        }
+
+        let request = try createAuthenticatedRequest(url: url, method: "DELETE")
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
 }
 
 // MARK: - Response Models

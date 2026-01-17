@@ -18,7 +18,7 @@ import {
   SubPersonaConfig,
 } from '../config/personas';
 import { normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
-import { generateEmbedding } from '../services/ai'; // Unified AI with OpenAI fallback
+import { generateEmbedding } from '../services/ai'; // Unified AI - Ollama embeddings
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
@@ -30,7 +30,9 @@ import { processIdeaForResearch } from '../services/proactive-intelligence';
 import { getActiveFocusContext, findMatchingFocus } from '../services/domain-focus';
 // Phase 24: Business Profile Learning
 import { learnFromIdea } from '../services/business-profile-learning';
-// Unified AI service with OpenAI fallback
+// Phase 25: Proactive Draft Generation
+import { generateProactiveDraft, GeneratedDraft } from '../services/draft-generation';
+// OpenAI for JSON queries (text generation only, not embeddings)
 import { isOpenAIAvailable, queryOpenAIJSON } from '../services/openai';
 // Claude with personalized context (primary)
 import { isClaudeAvailable, structureWithClaudePersonalized } from '../services/claude';
@@ -201,6 +203,35 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
       logger.debug('Profile learning failed', { ideaId });
     }
 
+    // Phase 25: Proactive Draft Generation (non-blocking)
+    let proactiveDraft: GeneratedDraft | null = null;
+    try {
+      if (structured.type === 'task') {
+        proactiveDraft = await generateProactiveDraft({
+          ideaId,
+          title: structured.title,
+          summary: structured.summary || '',
+          rawTranscript: transcript,
+          keywords: structured.keywords || [],
+          type: structured.type,
+          category: structured.category,
+          context: context as AIContext,
+        });
+
+        if (proactiveDraft) {
+          logger.info('Proactive draft generated for task', {
+            ideaId,
+            draftId: proactiveDraft.id,
+            draftType: proactiveDraft.draftType,
+            wordCount: proactiveDraft.wordCount,
+          });
+        }
+      }
+    } catch (error) {
+      // Don't fail the main request if draft generation fails
+      logger.warn('Proactive draft generation failed', { ideaId, error });
+    }
+
     const duration = Date.now() - startTime;
 
     return res.json({
@@ -227,6 +258,14 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
       matchingFocus: matchingFocus ? {
         id: matchingFocus.id,
         name: matchingFocus.name,
+      } : null,
+      // Phase 25: Include proactive draft if available
+      proactiveDraft: proactiveDraft ? {
+        id: proactiveDraft.id,
+        draftType: proactiveDraft.draftType,
+        snippet: proactiveDraft.content.substring(0, 200) + (proactiveDraft.content.length > 200 ? '...' : ''),
+        wordCount: proactiveDraft.wordCount,
+        status: proactiveDraft.status,
       } : null,
       processingTime: duration,
     });

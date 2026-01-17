@@ -6,12 +6,11 @@
  * 2. Ollama (if available locally) - Local fallback
  * 3. Basic fallback (no AI)
  *
- * Note: Embeddings use OpenAI or Ollama (Claude doesn't support embeddings)
+ * Note: Embeddings use Ollama only (nomic-embed-text, 768 dimensions)
  */
 
 import { logger } from '../utils/logger';
 import { isClaudeAvailable, structureWithClaude, structureWithClaudePersonalized, generateClaudeResponse } from './claude';
-import { isOpenAIAvailable, generateOpenAIEmbedding } from './openai';
 import { structureWithOllama, generateEmbedding as generateOllamaEmbedding, StructuredIdea } from '../utils/ollama';
 import { AIContext } from '../utils/database-context';
 
@@ -101,21 +100,10 @@ export async function structureIdeaPersonalized(
 }
 
 /**
- * Generate embedding for text
- * Falls back through: OpenAI → Ollama → Empty
+ * Generate embedding for text using Ollama (nomic-embed-text)
+ * Returns 768-dimensional vector for pgvector storage
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
-  // Try OpenAI first
-  if (isOpenAIAvailable()) {
-    try {
-      logger.info('Generating embedding with OpenAI');
-      return await generateOpenAIEmbedding(text);
-    } catch (error: any) {
-      logger.warn('OpenAI embedding failed, falling back to Ollama', { error: error.message });
-    }
-  }
-
-  // Try Ollama as fallback
   try {
     logger.info('Generating embedding with Ollama');
     return await generateOllamaEmbedding(text);
@@ -191,17 +179,14 @@ export async function extractKeywords(text: string, maxKeywords: number = 5): Pr
  */
 export function getAvailableServices(): {
   claude: boolean;
-  openai: boolean;
   ollama: boolean;
   primary: 'claude' | 'ollama' | 'basic';
 } {
   const claude = isClaudeAvailable();
-  const openai = isOpenAIAvailable(); // Still used for embeddings
   const primary = claude ? 'claude' : 'ollama';
 
   return {
     claude,
-    openai,
     ollama: true, // Optimistic - we'll check on actual use
     primary
   };

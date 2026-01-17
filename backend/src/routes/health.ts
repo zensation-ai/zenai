@@ -3,7 +3,7 @@
  *
  * Provides comprehensive system health information including:
  * - Database connections (personal & work)
- * - AI services (OpenAI, Ollama)
+ * - AI services (Claude, Ollama)
  * - Redis cache status
  * - Connection pool statistics
  * - System info (uptime, version, memory)
@@ -50,7 +50,7 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
 
   const allDbHealthy = dbHealth.personal && dbHealth.work;
   const anyDbHealthy = dbHealth.personal || dbHealth.work;
-  const anyAiAvailable = aiServices.claude || aiServices.openai || ollamaHealth.available;
+  const anyAiAvailable = aiServices.claude || ollamaHealth.available;
 
   // Calculate overall status
   // Healthy: All DBs + at least one AI service
@@ -96,9 +96,6 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
         primary: aiServices.primary,
         claude: {
           status: aiServices.claude ? 'configured' : 'not_configured',
-        },
-        openai: {
-          status: aiServices.openai ? 'configured' : 'not_configured',
         },
         ollama: {
           status: ollamaHealth.available ? 'connected' : 'disconnected',
