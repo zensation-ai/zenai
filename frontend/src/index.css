@@ -91,6 +91,17 @@
   --radius-md: 14px;
   --radius-lg: 18px;
   --radius-xl: 24px;
+
+  /* Dark Petrol Header Theme */
+  --header-bg: linear-gradient(135deg, #0f1d2a 0%, #162736 50%, #1a2e3d 100%);
+  --header-bg-solid: #142230;
+  --header-text: #f8fafc;
+  --header-text-muted: #94a3b8;
+  --header-text-secondary: #64748b;
+  --header-border: rgba(255, 255, 255, 0.08);
+  --header-glass: rgba(20, 34, 48, 0.85);
+  --header-hover: rgba(255, 255, 255, 0.08);
+  --header-active: rgba(255, 107, 53, 0.15);
 }
 
 body {
@@ -501,4 +512,97 @@ html {
   textarea {
     min-height: 44px;
   }
+}
+
+/* ============================================
+   GLOBAL LOADING & SPINNER STYLES
+   Consistent loading states across the app
+   ============================================ */
+
+/* Elegant spinner animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Loading spinner utility class */
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+/* Skeleton loading placeholder */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(20, 50, 70, 0.06) 0%,
+    rgba(20, 50, 70, 0.1) 50%,
+    rgba(20, 50, 70, 0.06) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* Disabled/loading state for interactive elements */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Smooth content transitions */
+.fade-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }

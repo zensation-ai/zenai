@@ -5,36 +5,43 @@
 .confirm-dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 29, 42, 0.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: fadeIn 0.15s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .confirm-dialog {
-  background: var(--card-bg, #1e1e2e);
-  border-radius: 12px;
-  padding: 24px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 252, 248, 0.95) 100%);
+  border-radius: var(--radius-lg, 18px);
+  padding: 28px;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.2s ease-out;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.25),
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: dialogSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .confirm-dialog-title {
   margin: 0 0 12px 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary, #fff);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text, #1a2e3d);
+  letter-spacing: -0.02em;
 }
 
 .confirm-dialog-message {
   margin: 0 0 24px 0;
   font-size: 0.95rem;
-  color: var(--text-secondary, #a0a0b0);
-  line-height: 1.5;
+  color: var(--text-muted, #3d5567);
+  line-height: 1.6;
 }
 
 .confirm-dialog-actions {
@@ -44,22 +51,24 @@
 }
 
 .confirm-dialog-button {
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 11px 22px;
+  border-radius: var(--radius-sm, 10px);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   border: none;
 }
 
 .confirm-dialog-button.cancel {
-  background: var(--button-secondary-bg, #3a3a4e);
-  color: var(--text-primary, #fff);
+  background: rgba(20, 50, 70, 0.08);
+  color: var(--text-muted, #3d5567);
+  border: 1px solid rgba(20, 50, 70, 0.12);
 }
 
 .confirm-dialog-button.cancel:hover {
-  background: var(--button-secondary-hover, #4a4a5e);
+  background: rgba(20, 50, 70, 0.12);
+  color: var(--text, #1a2e3d);
 }
 
 .confirm-dialog-button.confirm {
@@ -105,14 +114,14 @@
   }
 }
 
-@keyframes slideUp {
+@keyframes dialogSlideUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
