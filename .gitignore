@@ -18,6 +18,11 @@ build/
 *.swp
 *.swo
 
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
 # OS
 .DS_Store
 Thumbs.db
