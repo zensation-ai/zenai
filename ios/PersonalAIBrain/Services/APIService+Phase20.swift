@@ -380,6 +380,7 @@ extension APIService {
             contextNeeded: [],
             keywords: [],
             rawTranscript: text,
+            context: aiContext,
             createdAt: Date(),
             updatedAt: Date()
         )

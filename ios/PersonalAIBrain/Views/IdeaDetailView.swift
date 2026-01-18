@@ -408,12 +408,13 @@ struct IdeaDetailView: View {
 
     private func loadDraft() async {
         isLoadingDraft = true
-        let currentContext = ContextManager.shared.currentContext
-        print("📝 Loading draft for idea \(idea.id) in context: \(currentContext.rawValue)")
-        print("📝 Idea type: \(idea.type.rawValue)")
+        // Use the idea's own context, fallback to current context if not available
+        let ideaContext = idea.context ?? ContextManager.shared.currentContext
+        print("📝 Loading draft for idea \(idea.id) in context: \(ideaContext.rawValue)")
+        print("📝 Idea type: \(idea.type.rawValue), idea.context: \(idea.context?.rawValue ?? "nil")")
 
         do {
-            let loadedDraft = try await apiService.fetchDraftForIdea(ideaId: idea.id, context: currentContext)
+            let loadedDraft = try await apiService.fetchDraftForIdea(ideaId: idea.id, context: ideaContext)
             draft = loadedDraft
             if let d = loadedDraft {
                 print("✅ Draft loaded successfully: type=\(d.draftType.rawValue), wordCount=\(d.wordCount), status=\(d.status.rawValue)")

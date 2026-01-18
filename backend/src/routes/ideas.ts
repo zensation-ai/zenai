@@ -111,7 +111,7 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary,
-            next_steps, context_needed, keywords, created_at, updated_at
+            next_steps, context_needed, keywords, context, created_at, updated_at
      FROM ideas
      WHERE is_archived = false ${whereClause}
      ORDER BY created_at DESC
@@ -189,7 +189,7 @@ ideasRouter.get('/:id', apiKeyAuth, validateUUID, asyncHandler(async (req, res) 
     ctx,
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, raw_transcript,
-            created_at, updated_at
+            context, created_at, updated_at
      FROM ideas WHERE id = $1`,
     [req.params.id]
   );
@@ -255,7 +255,7 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
     const textResult = await queryContext(
       ctx,
       `SELECT id, title, type, category, priority, summary,
-              next_steps, context_needed, keywords, created_at
+              next_steps, context_needed, keywords, context, created_at
        FROM ideas
        WHERE title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1
        ORDER BY created_at DESC
@@ -609,7 +609,7 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary,
-            next_steps, context_needed, keywords, created_at, updated_at
+            next_steps, context_needed, keywords, context, created_at, updated_at
      FROM ideas
      WHERE is_archived = true
      ORDER BY updated_at DESC

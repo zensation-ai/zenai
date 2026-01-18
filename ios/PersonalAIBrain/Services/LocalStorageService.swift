@@ -296,6 +296,7 @@ class LocalStorageService: ObservableObject {
             contextNeeded: contextNeeded,
             keywords: keywords,
             rawTranscript: rawTranscript,
+            context: nil,  // Local storage doesn't track context
             createdAt: createdAt,
             updatedAt: updatedAt
         )

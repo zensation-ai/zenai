@@ -11,6 +11,7 @@ struct Idea: Identifiable, Codable, Hashable {
     let contextNeeded: [String]?
     let keywords: [String]?
     let rawTranscript: String?
+    let context: AIContext?  // The context (personal/work) this idea belongs to
     let createdAt: Date
     let updatedAt: Date
 
@@ -20,6 +21,7 @@ struct Idea: Identifiable, Codable, Hashable {
         case contextNeeded = "context_needed"
         case keywords
         case rawTranscript = "raw_transcript"
+        case context
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -115,6 +117,7 @@ extension Idea {
             contextNeeded: ["Kenntnisse über RAG-Systeme"],
             keywords: ["RAG", "Photovoltaik", "KI"],
             rawTranscript: "Ich habe eine Idee für ein RAG System...",
+            context: .personal,
             createdAt: Date(),
             updatedAt: Date()
         )
