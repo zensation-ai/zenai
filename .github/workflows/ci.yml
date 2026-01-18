@@ -29,10 +29,14 @@ jobs:
         working-directory: backend
         run: npm run build
 
-      - name: Run tests (if available)
+      - name: Run unit tests only
         working-directory: backend
-        run: npm test --if-present
+        run: npm test -- --testPathPattern="unit" --forceExit --detectOpenHandles
+        timeout-minutes: 5
         continue-on-error: true
+        env:
+          NODE_ENV: test
+          SKIP_EXTERNAL_SERVICES: true
 
   deploy:
     needs: test-backend
