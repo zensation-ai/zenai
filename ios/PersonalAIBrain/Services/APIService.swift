@@ -589,6 +589,55 @@ class APIService: ObservableObject {
         }
     }
 
+    /// Update idea (context-aware via header)
+    func updateIdea(
+        id: String,
+        title: String? = nil,
+        summary: String? = nil,
+        type: IdeaType? = nil,
+        category: IdeaCategory? = nil,
+        priority: Priority? = nil,
+        nextSteps: [String]? = nil,
+        keywords: [String]? = nil,
+        context: AIContext? = nil
+    ) async throws -> Idea {
+        let ctx = context ?? ContextManager.shared.currentContext
+        guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/ideas/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        var body: [String: Any] = [:]
+        if let title = title { body["title"] = title }
+        if let summary = summary { body["summary"] = summary }
+        if let type = type { body["type"] = type.rawValue }
+        if let category = category { body["category"] = category.rawValue }
+        if let priority = priority { body["priority"] = priority.rawValue }
+        if let nextSteps = nextSteps { body["next_steps"] = nextSteps }
+        if let keywords = keywords { body["keywords"] = keywords }
+
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        var request = try createAuthenticatedRequest(url: url, method: "PUT", body: bodyData)
+        request.setValue(ctx.rawValue, forHTTPHeaderField: "x-ai-context")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                throw APIError.serverMessage(errorResponse.error)
+            }
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        struct UpdateResponse: Codable {
+            let idea: Idea
+        }
+
+        let decoder = Self.createDecoder()
+        let result = try decoder.decode(UpdateResponse.self, from: data)
+        return result.idea
+    }
+
     // MARK: - Phase 17: Archive
 
     /// Archive an idea (context-aware)
@@ -823,6 +872,164 @@ class APIService: ObservableObject {
         } catch {
             // Ignore tracking errors
         }
+    }
+
+    // MARK: - Automations
+
+    func fetchAutomations(context: AIContext) async throws -> [Automation] {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/automations") else {
+            throw APIError.invalidURL
+        }
+
+        let request = try createAuthenticatedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        struct AutomationsResponse: Codable {
+            let automations: [Automation]
+        }
+
+        let decoder = Self.createDecoder()
+        let result = try decoder.decode(AutomationsResponse.self, from: data)
+        return result.automations
+    }
+
+    func createAutomation(
+        name: String,
+        description: String?,
+        trigger: AutomationTrigger,
+        context: AIContext
+    ) async throws -> Automation {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/automations") else {
+            throw APIError.invalidURL
+        }
+
+        var body: [String: Any] = [
+            "name": name,
+            "trigger": trigger.rawValue,
+            "actions": [] as [[String: Any]]
+        ]
+        if let description = description {
+            body["description"] = description
+        }
+
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        struct CreateResponse: Codable {
+            let automation: Automation
+        }
+
+        let decoder = Self.createDecoder()
+        let result = try decoder.decode(CreateResponse.self, from: data)
+        return result.automation
+    }
+
+    func updateAutomation(
+        id: String,
+        enabled: Bool,
+        context: AIContext
+    ) async throws -> Automation {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/automations/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        let body = ["enabled": enabled]
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        let request = try createAuthenticatedRequest(url: url, method: "PUT", body: bodyData)
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        struct UpdateResponse: Codable {
+            let automation: Automation
+        }
+
+        let decoder = Self.createDecoder()
+        let result = try decoder.decode(UpdateResponse.self, from: data)
+        return result.automation
+    }
+
+    func runAutomation(id: String, context: AIContext) async throws {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/automations/\(id)/run") else {
+            throw APIError.invalidURL
+        }
+
+        let request = try createAuthenticatedRequest(url: url, method: "POST")
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
+    func deleteAutomation(id: String, context: AIContext) async throws {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/automations/\(id)") else {
+            throw APIError.invalidURL
+        }
+
+        let request = try createAuthenticatedRequest(url: url, method: "DELETE")
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+    }
+
+    // MARK: - Evolution
+
+    func fetchEvolutionData(context: AIContext) async throws -> EvolutionData {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/evolution") else {
+            throw APIError.invalidURL
+        }
+
+        let request = try createAuthenticatedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        let decoder = Self.createDecoder()
+        return try decoder.decode(EvolutionData.self, from: data)
+    }
+
+    func fetchMilestones(context: AIContext) async throws -> [Milestone] {
+        guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/evolution/milestones") else {
+            throw APIError.invalidURL
+        }
+
+        let request = try createAuthenticatedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        }
+
+        struct MilestonesResponse: Codable {
+            let milestones: [Milestone]
+        }
+
+        let decoder = Self.createDecoder()
+        let result = try decoder.decode(MilestonesResponse.self, from: data)
+        return result.milestones
     }
 }
 

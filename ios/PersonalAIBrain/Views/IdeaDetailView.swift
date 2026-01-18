@@ -6,6 +6,7 @@ struct IdeaDetailView: View {
 
     let idea: Idea
     var onDelete: (() -> Void)?
+    var onUpdate: ((Idea) -> Void)?
 
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
@@ -21,6 +22,17 @@ struct IdeaDetailView: View {
     @State private var showFeedbackSheet = false
     @State private var showFeedbackPrompt = false
 
+    // Phase 4: Editing Support
+    @State private var isEditing = false
+    @State private var isSaving = false
+    @State private var editTitle: String = ""
+    @State private var editSummary: String = ""
+    @State private var editType: IdeaType = .idea
+    @State private var editCategory: IdeaCategory = .personal
+    @State private var editPriority: Priority = .medium
+    @State private var editNextSteps: String = ""
+    @State private var editKeywords: String = ""
+
     var body: some View {
         ZStack {
             Color.zensationBackground.ignoresSafeArea()
@@ -29,45 +41,100 @@ struct IdeaDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // Header
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: idea.type.icon)
+                        if isEditing {
+                            // Editing Mode - Type & Priority Pickers
+                            HStack {
+                                Picker("Typ", selection: $editType) {
+                                    ForEach(IdeaType.allCases, id: \.self) { type in
+                                        Label(type.displayName, systemImage: type.icon).tag(type)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .tint(.zensationOrange)
+
+                                Spacer()
+
+                                Picker("Priorität", selection: $editPriority) {
+                                    ForEach(Priority.allCases, id: \.self) { priority in
+                                        Text(priority.displayName).tag(priority)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .tint(priorityColor(editPriority))
+                            }
+
+                            // Editable Title
+                            TextField("Titel", text: $editTitle)
                                 .font(.title2)
-                                .foregroundColor(colorFor(idea.type))
+                                .fontWeight(.bold)
+                                .foregroundColor(.zensationText)
+                                .textFieldStyle(.plain)
 
-                            Text(idea.type.displayName)
-                                .font(.subheadline)
-                                .foregroundColor(.zensationTextMuted)
+                            // Category Picker
+                            HStack {
+                                Picker("Kategorie", selection: $editCategory) {
+                                    ForEach(IdeaCategory.allCases, id: \.self) { category in
+                                        Label(category.displayName, systemImage: "folder").tag(category)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .tint(.zensationTextMuted)
 
-                            Spacer()
+                                Spacer()
 
-                            PriorityBadge(priority: idea.priority)
+                                Text(idea.createdAt.formatted(date: .long, time: .shortened))
+                                    .font(.caption)
+                                    .foregroundColor(.zensationTextMuted)
+                            }
+                        } else {
+                            // Display Mode
+                            HStack {
+                                Image(systemName: idea.type.icon)
+                                    .font(.title2)
+                                    .foregroundColor(colorFor(idea.type))
+
+                                Text(idea.type.displayName)
+                                    .font(.subheadline)
+                                    .foregroundColor(.zensationTextMuted)
+
+                                Spacer()
+
+                                PriorityBadge(priority: idea.priority)
+                            }
+
+                            Text(idea.title)
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(.zensationText)
+
+                            HStack {
+                                Label(idea.category.displayName, systemImage: "folder")
+                                Spacer()
+                                Text(idea.createdAt.formatted(date: .long, time: .shortened))
+                            }
+                            .font(.caption)
+                            .foregroundColor(.zensationTextMuted)
                         }
-
-                        Text(idea.title)
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(.zensationText)
-
-                        HStack {
-                            Label(idea.category.displayName, systemImage: "folder")
-                            Spacer()
-                            Text(idea.createdAt.formatted(date: .long, time: .shortened))
-                        }
-                        .font(.caption)
-                        .foregroundColor(.zensationTextMuted)
                     }
                     .padding()
                     .background(Color.zensationSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.zensationBorder, lineWidth: 1)
+                            .stroke(isEditing ? Color.zensationOrange : Color.zensationBorder, lineWidth: isEditing ? 2 : 1)
                     )
 
                 // Summary
-                if let summary = idea.summary {
+                if isEditing || idea.summary != nil {
                     SectionCard(title: "Zusammenfassung", icon: "doc.text") {
-                        Text(summary)
+                        if isEditing {
+                            TextEditor(text: $editSummary)
+                                .frame(minHeight: 80)
+                                .scrollContentBackground(.hidden)
+                                .foregroundColor(.zensationText)
+                        } else if let summary = idea.summary {
+                            Text(summary)
+                        }
                     }
                 }
 
@@ -117,23 +184,35 @@ struct IdeaDetailView: View {
                 }
 
                 // Next Steps
-                if let nextSteps = idea.nextSteps, !nextSteps.isEmpty {
+                if isEditing || (idea.nextSteps != nil && !idea.nextSteps!.isEmpty) {
                     SectionCard(title: "Nächste Schritte", icon: "checklist") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(nextSteps, id: \.self) { step in
-                                HStack(alignment: .top, spacing: 8) {
-                                    Image(systemName: "circle")
-                                        .font(.caption)
-                                        .foregroundColor(.blue)
-                                    Text(step)
+                        if isEditing {
+                            VStack(alignment: .leading, spacing: 4) {
+                                TextEditor(text: $editNextSteps)
+                                    .frame(minHeight: 60)
+                                    .scrollContentBackground(.hidden)
+                                    .foregroundColor(.zensationText)
+                                Text("Ein Schritt pro Zeile")
+                                    .font(.caption2)
+                                    .foregroundColor(.zensationTextMuted)
+                            }
+                        } else if let nextSteps = idea.nextSteps {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(nextSteps, id: \.self) { step in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: "circle")
+                                            .font(.caption)
+                                            .foregroundColor(.blue)
+                                        Text(step)
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                // Context Needed
-                if let context = idea.contextNeeded, !context.isEmpty {
+                // Context Needed (read-only, generated by AI)
+                if !isEditing, let context = idea.contextNeeded, !context.isEmpty {
                     SectionCard(title: "Benötigter Kontext", icon: "questionmark.circle") {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(context, id: \.self) { item in
@@ -149,17 +228,28 @@ struct IdeaDetailView: View {
                 }
 
                 // Keywords
-                if let keywords = idea.keywords, !keywords.isEmpty {
+                if isEditing || (idea.keywords != nil && !idea.keywords!.isEmpty) {
                     SectionCard(title: "Keywords", icon: "tag") {
-                        FlowLayout(spacing: 8) {
-                            ForEach(keywords, id: \.self) { keyword in
-                                Text(keyword)
-                                    .font(.caption)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(Color.blue.opacity(0.1))
-                                    .foregroundColor(.blue)
-                                    .clipShape(Capsule())
+                        if isEditing {
+                            VStack(alignment: .leading, spacing: 4) {
+                                TextField("Keywords (kommagetrennt)", text: $editKeywords)
+                                    .textFieldStyle(.plain)
+                                    .foregroundColor(.zensationText)
+                                Text("Kommagetrennt eingeben")
+                                    .font(.caption2)
+                                    .foregroundColor(.zensationTextMuted)
+                            }
+                        } else if let keywords = idea.keywords {
+                            FlowLayout(spacing: 8) {
+                                ForEach(keywords, id: \.self) { keyword in
+                                    Text(keyword)
+                                        .font(.caption)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(Color.blue.opacity(0.1))
+                                        .foregroundColor(.blue)
+                                        .clipShape(Capsule())
+                                }
                             }
                         }
                     }
@@ -184,14 +274,45 @@ struct IdeaDetailView: View {
         .toolbarBackground(Color.zensationSurface, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(role: .destructive) {
-                    showDeleteConfirm = true
-                } label: {
-                    Image(systemName: "trash")
-                        .foregroundColor(.zensationDanger)
+            ToolbarItem(placement: .navigationBarLeading) {
+                if isEditing {
+                    Button("Abbrechen") {
+                        isEditing = false
+                    }
+                    .foregroundColor(.zensationTextMuted)
                 }
-                .disabled(isDeleting)
+            }
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                if isEditing {
+                    Button {
+                        saveChanges()
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Text("Speichern")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .disabled(isSaving || editTitle.isEmpty)
+                    .foregroundColor(.zensationOrange)
+                } else {
+                    Button {
+                        startEditing()
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                    .foregroundColor(.zensationOrange)
+
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundColor(.zensationDanger)
+                    }
+                    .disabled(isDeleting)
+                }
             }
         }
         .confirmationDialog(
@@ -316,6 +437,59 @@ struct IdeaDetailView: View {
         }
     }
 
+    // MARK: - Editing
+
+    private func startEditing() {
+        editTitle = idea.title
+        editSummary = idea.summary ?? ""
+        editType = idea.type
+        editCategory = idea.category
+        editPriority = idea.priority
+        editNextSteps = (idea.nextSteps ?? []).joined(separator: "\n")
+        editKeywords = (idea.keywords ?? []).joined(separator: ", ")
+        isEditing = true
+    }
+
+    private func saveChanges() {
+        isSaving = true
+        Task {
+            do {
+                let nextStepsArray = editNextSteps
+                    .split(separator: "\n")
+                    .map { String($0).trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+
+                let keywordsArray = editKeywords
+                    .split(separator: ",")
+                    .map { String($0).trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+
+                let updatedIdea = try await apiService.updateIdea(
+                    id: idea.id,
+                    title: editTitle,
+                    summary: editSummary.isEmpty ? nil : editSummary,
+                    type: editType,
+                    category: editCategory,
+                    priority: editPriority,
+                    nextSteps: nextStepsArray.isEmpty ? nil : nextStepsArray,
+                    keywords: keywordsArray.isEmpty ? nil : keywordsArray
+                )
+
+                await MainActor.run {
+                    onUpdate?(updatedIdea)
+                    isEditing = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Änderungen konnten nicht gespeichert werden: \(error.localizedDescription)"
+                }
+            }
+            await MainActor.run {
+                isSaving = false
+            }
+        }
+    }
+
     private func colorFor(_ type: IdeaType) -> Color {
         switch type {
         case .idea: return .yellow
@@ -323,6 +497,14 @@ struct IdeaDetailView: View {
         case .insight: return .purple
         case .problem: return .red
         case .question: return .orange
+        }
+    }
+
+    private func priorityColor(_ priority: Priority) -> Color {
+        switch priority {
+        case .low: return .zensationTextMuted
+        case .medium: return .zensationOrange
+        case .high: return .zensationDanger
         }
     }
 }

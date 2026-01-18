@@ -54,6 +54,9 @@ struct ProfileView: View {
                         // Learning Tasks - Phase 22
                         LearningTasksSectionView()
 
+                        // AI Features Section
+                        AIFeaturesSectionView()
+
                         // Export Section - Phase 18
                         ExportSectionView(showExportSheet: $showExportSheet)
 
@@ -366,6 +369,71 @@ struct LearningTasksSectionView: View {
                 .padding()
                 .background(Color(.systemGray6))
                 .cornerRadius(12)
+            }
+        }
+    }
+}
+
+// MARK: - AI Features Section
+
+struct AIFeaturesSectionView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("AI Features", systemImage: "brain.head.profile")
+                .font(.headline)
+
+            VStack(spacing: 8) {
+                // Automations
+                NavigationLink(destination: AutomationsView()) {
+                    HStack {
+                        Image(systemName: "bolt.circle.fill")
+                            .foregroundColor(.zensationOrange)
+                            .font(.title2)
+                            .frame(width: 32)
+
+                        VStack(alignment: .leading) {
+                            Text("Automationen")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            Text("Wiederkehrende Aufgaben automatisieren")
+                                .font(.caption)
+                                .foregroundColor(.zensationTextMuted)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                }
+
+                // Evolution
+                NavigationLink(destination: EvolutionView()) {
+                    HStack {
+                        Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
+                            .foregroundColor(.purple)
+                            .font(.title2)
+                            .frame(width: 32)
+
+                        VStack(alignment: .leading) {
+                            Text("AI Evolution")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            Text("Lernfortschritt und Meilensteine")
+                                .font(.caption)
+                                .foregroundColor(.zensationTextMuted)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                }
             }
         }
     }

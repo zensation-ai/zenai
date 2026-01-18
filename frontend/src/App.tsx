@@ -23,12 +23,21 @@ import { LearningDashboard } from './components/LearningDashboard';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { AutomationDashboard } from './components/AutomationDashboard';
 import { EvolutionDashboard } from './components/EvolutionDashboard';
+import { NotificationsPage } from './components/NotificationsPage';
+import { DigestDashboard } from './components/DigestDashboard';
+import { PersonalizationChat } from './components/PersonalizationChat';
+import { LearningTasksDashboard } from './components/LearningTasksDashboard';
+import { MediaGallery } from './components/MediaGallery';
+import { StoriesPage } from './components/StoriesPage';
+import { ExportDashboard } from './components/ExportDashboard';
+import { SyncDashboard } from './components/SyncDashboard';
+import { ProactiveDashboard } from './components/ProactiveDashboard';
 import { Onboarding } from './components/Onboarding';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import './App.css';
 
-type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution';
+type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution' | 'notifications' | 'digest' | 'personalization' | 'learning-tasks' | 'media' | 'stories' | 'export' | 'sync' | 'proactive';
 
 interface StructuredIdea {
   id: string;
@@ -138,6 +147,28 @@ function App() {
       return () => abortController.abort();
     }
   }, [currentPage, context]);
+
+  // Cross-device sync polling (every 30 seconds on ideas page)
+  useEffect(() => {
+    if (currentPage !== 'ideas') return;
+
+    const syncInterval = setInterval(async () => {
+      try {
+        // Silently check for updates
+        const res = await axios.get(`/api/${context}/ideas`);
+        const serverIdeas = res.data.ideas || [];
+
+        // Only update if there are actual changes
+        if (serverIdeas.length !== ideas.length) {
+          setIdeas(serverIdeas);
+        }
+      } catch {
+        // Silently fail on sync errors
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [currentPage, context, ideas.length]);
 
   const checkHealth = async (signal?: AbortSignal) => {
     try {
@@ -443,6 +474,114 @@ function App() {
     );
   }
 
+  if (currentPage === 'notifications') {
+    return (
+      <ErrorBoundary>
+        <NotificationsPage
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'digest') {
+    return (
+      <ErrorBoundary>
+        <DigestDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'personalization') {
+    return (
+      <ErrorBoundary>
+        <PersonalizationChat
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'learning-tasks') {
+    return (
+      <ErrorBoundary>
+        <LearningTasksDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'media') {
+    return (
+      <ErrorBoundary>
+        <MediaGallery
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'stories') {
+    return (
+      <ErrorBoundary>
+        <StoriesPage
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'export') {
+    return (
+      <ErrorBoundary>
+        <ExportDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'sync') {
+    return (
+      <ErrorBoundary>
+        <SyncDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'proactive') {
+    return (
+      <ErrorBoundary>
+        <ProactiveDashboard
+          context={context}
+          onBack={() => setCurrentPage('ideas')}
+        />
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   if (currentPage === 'archive') {
     return (
       <ErrorBoundary>
@@ -557,7 +696,10 @@ function App() {
                 items={[
                   { label: 'Inkubator', icon: '🧠', page: 'incubator' },
                   { label: 'Lernen', icon: '🧬', page: 'learning' },
+                  { label: 'Lernziele', icon: '📚', page: 'learning-tasks' },
+                  { label: 'Proaktiv', icon: '✨', page: 'proactive' },
                   { label: 'Evolution', icon: '🌱', page: 'evolution' },
+                  { label: 'Personalisierung', icon: '👤', page: 'personalization' },
                 ]}
                 currentPage={currentPage}
                 onNavigate={(page) => setCurrentPage(page as Page)}
@@ -567,6 +709,7 @@ function App() {
                 icon="📊"
                 items={[
                   { label: 'Analytics', icon: '📈', page: 'analytics' },
+                  { label: 'Digest', icon: '📊', page: 'digest' },
                   { label: 'Graph', icon: '🕸️', page: 'knowledge-graph' },
                   { label: 'Profil', icon: '👤', page: 'profile' },
                 ]}
@@ -578,8 +721,13 @@ function App() {
                 icon="⚙️"
                 items={[
                   { label: 'Meetings', icon: '📅', page: 'meetings' },
+                  { label: 'Medien', icon: '🖼️', page: 'media' },
+                  { label: 'Stories', icon: '📖', page: 'stories' },
                   { label: 'Automationen', icon: '⚡', page: 'automations' },
                   { label: 'Integrationen', icon: '🔗', page: 'integrations' },
+                  { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications' },
+                  { label: 'Export', icon: '📤', page: 'export' },
+                  { label: 'Sync', icon: '🔄', page: 'sync' },
                 ]}
                 currentPage={currentPage}
                 onNavigate={(page) => setCurrentPage(page as Page)}
