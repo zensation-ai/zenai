@@ -175,8 +175,8 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
       context as AIContext,
       `INSERT INTO ideas
        (id, title, type, category, priority, summary, raw_transcript, embedding,
-        next_steps, context_needed, keywords, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+        next_steps, context_needed, keywords, context, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`,
       [
         ideaId,
         structured.title,
@@ -189,6 +189,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         JSON.stringify(structured.next_steps || []),
         JSON.stringify(structured.context_needed || []),
         JSON.stringify(structured.keywords || []),
+        context, // Add context to ensure idea and draft match
       ]
     );
 
