@@ -3,9 +3,20 @@ import { logger } from '../utils/logger';
 import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
 import { AIContext } from '../utils/database-context';
 import { buildSystemPrompt, trackContextUsage, getUnifiedContext } from './business-context';
+import { withRetry, withCircuitBreaker, isAnthropicRetryable } from '../utils/retry';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+
+// Retry configuration for Claude API calls
+const CLAUDE_RETRY_CONFIG = {
+  maxRetries: 3,
+  initialDelay: 1000,
+  maxDelay: 15000,
+  timeout: 60000, // 60s timeout for API calls
+  isRetryable: isAnthropicRetryable,
+  context: 'claude-api',
+};
 
 // ===========================================
 // Types & Interfaces
@@ -87,50 +98,50 @@ export function isClaudeAvailable(): boolean {
 
 /**
  * Structure transcript using Claude
+ * Now with retry logic and circuit breaker for stability
  */
 export async function structureWithClaude(transcript: string): Promise<StructuredIdea> {
   if (!claudeClient) {
     throw new Error('Claude client not initialized');
   }
 
-  try {
-    const message = await claudeClient.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 500,
-      system: SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: `USER MEMO:\n${transcript}\n\nSTRUCTURED OUTPUT:` }
-      ],
-    });
+  return withCircuitBreaker('claude', async () => {
+    return withRetry(async () => {
+      const message = await claudeClient!.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 500,
+        system: SYSTEM_PROMPT,
+        messages: [
+          { role: 'user', content: `USER MEMO:\n${transcript}\n\nSTRUCTURED OUTPUT:` }
+        ],
+      });
 
-    const responseText = message.content[0]?.type === 'text' ? message.content[0].text : '';
-    if (!responseText) {
-      throw new Error('No response from Claude');
-    }
+      const responseText = message.content[0]?.type === 'text' ? message.content[0].text : '';
+      if (!responseText) {
+        throw new Error('No response from Claude');
+      }
 
-    // Extract JSON from response (Claude might wrap it in markdown)
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in Claude response');
-    }
+      // Extract JSON from response (Claude might wrap it in markdown)
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in Claude response');
+      }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
 
-    // Normalize fields to ensure they match database constraints
-    return {
-      title: parsed.title || 'Unstrukturierte Notiz',
-      type: normalizeType(parsed.type),
-      category: normalizeCategory(parsed.category),
-      priority: normalizePriority(parsed.priority),
-      summary: parsed.summary || '',
-      next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
-      context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
-      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
-    };
-  } catch (error: any) {
-    logger.error('Claude structuring error', error);
-    throw error;
-  }
+      // Normalize fields to ensure they match database constraints
+      return {
+        title: parsed.title || 'Unstrukturierte Notiz',
+        type: normalizeType(parsed.type),
+        category: normalizeCategory(parsed.category),
+        priority: normalizePriority(parsed.priority),
+        summary: parsed.summary || '',
+        next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+        context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+        keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      };
+    }, CLAUDE_RETRY_CONFIG);
+  });
 }
 
 /**
@@ -318,6 +329,7 @@ export function calculateConfidence(
 
 /**
  * Generic Claude call that returns parsed JSON
+ * Now with retry logic for stability
  */
 export async function queryClaudeJSON<T = unknown>(
   systemPrompt: string,
@@ -327,36 +339,36 @@ export async function queryClaudeJSON<T = unknown>(
     throw new Error('Claude client not initialized');
   }
 
-  try {
-    const message = await claudeClient.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages: [
-        { role: 'user', content: userPrompt }
-      ],
-    });
+  return withCircuitBreaker('claude', async () => {
+    return withRetry(async () => {
+      const message = await claudeClient!.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: userPrompt }
+        ],
+      });
 
-    const responseText = message.content[0]?.type === 'text' ? message.content[0].text : '';
-    if (!responseText) {
-      throw new Error('No response from Claude');
-    }
+      const responseText = message.content[0]?.type === 'text' ? message.content[0].text : '';
+      if (!responseText) {
+        throw new Error('No response from Claude');
+      }
 
-    // Extract JSON from response
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in Claude response');
-    }
+      // Extract JSON from response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in Claude response');
+      }
 
-    return JSON.parse(jsonMatch[0]) as T;
-  } catch (error: any) {
-    logger.error('Claude JSON query error', error);
-    throw error;
-  }
+      return JSON.parse(jsonMatch[0]) as T;
+    }, CLAUDE_RETRY_CONFIG);
+  });
 }
 
 /**
  * Generate text response using Claude
+ * Now with retry logic for stability
  */
 export async function generateClaudeResponse(
   systemPrompt: string,
@@ -369,32 +381,31 @@ export async function generateClaudeResponse(
 
   const { maxTokens = 500, temperature } = options;
 
-  try {
-    const requestParams: Anthropic.MessageCreateParams = {
-      model: CLAUDE_MODEL,
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: [
-        { role: 'user', content: userPrompt }
-      ],
-    };
+  return withCircuitBreaker('claude', async () => {
+    return withRetry(async () => {
+      const requestParams: Anthropic.MessageCreateParams = {
+        model: CLAUDE_MODEL,
+        max_tokens: maxTokens,
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: userPrompt }
+        ],
+      };
 
-    if (temperature !== undefined) {
-      requestParams.temperature = temperature;
-    }
+      if (temperature !== undefined) {
+        requestParams.temperature = temperature;
+      }
 
-    const message = await claudeClient.messages.create(requestParams);
+      const message = await claudeClient!.messages.create(requestParams);
 
-    const responseText = message.content[0]?.type === 'text' ? message.content[0].text : '';
-    if (!responseText) {
-      throw new Error('No response from Claude');
-    }
+      const responseText = message.content[0]?.type === 'text' ? message.content[0].text : '';
+      if (!responseText) {
+        throw new Error('No response from Claude');
+      }
 
-    return responseText.trim();
-  } catch (error: any) {
-    logger.error('Claude text generation error', error);
-    throw error;
-  }
+      return responseText.trim();
+    }, CLAUDE_RETRY_CONFIG);
+  });
 }
 
 // ===========================================
