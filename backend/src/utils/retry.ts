@@ -314,3 +314,54 @@ export async function withCircuitBreaker<T>(
     throw error;
   }
 }
+
+/**
+ * Get circuit breaker status for all services
+ * Useful for health checks and monitoring
+ */
+export function getCircuitBreakerStatus(): Record<string, {
+  isOpen: boolean;
+  failures: number;
+  lastFailure: number | null;
+  timeSinceLastFailure: number | null;
+  resetTimeRemaining: number | null;
+}> {
+  const status: Record<string, {
+    isOpen: boolean;
+    failures: number;
+    lastFailure: number | null;
+    timeSinceLastFailure: number | null;
+    resetTimeRemaining: number | null;
+  }> = {};
+
+  // Always include known services even if no state exists
+  const knownServices = ['claude', 'claude-extended'];
+
+  for (const service of knownServices) {
+    const state = circuitBreakers.get(service);
+    if (state) {
+      const timeSinceLastFailure = state.lastFailure ? Date.now() - state.lastFailure : null;
+      const resetTimeRemaining = state.isOpen && state.lastFailure
+        ? Math.max(0, CIRCUIT_BREAKER_CONFIG.resetTimeout - (Date.now() - state.lastFailure))
+        : null;
+
+      status[service] = {
+        isOpen: state.isOpen,
+        failures: state.failures,
+        lastFailure: state.lastFailure || null,
+        timeSinceLastFailure,
+        resetTimeRemaining,
+      };
+    } else {
+      status[service] = {
+        isOpen: false,
+        failures: 0,
+        lastFailure: null,
+        timeSinceLastFailure: null,
+        resetTimeRemaining: null,
+      };
+    }
+  }
+
+  return status;
+}

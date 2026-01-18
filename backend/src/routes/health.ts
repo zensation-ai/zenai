@@ -15,6 +15,9 @@ import { checkOllamaHealth } from '../utils/ollama';
 import { getCacheStats } from '../utils/cache';
 import { getAvailableServices } from '../services/ai';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { getCircuitBreakerStatus } from '../utils/retry';
+import { isClaudeAvailable, generateClaudeResponse } from '../services/claude';
+import { logger } from '../utils/logger';
 
 // Version from package.json - read at startup
 const packageJson = require('../../package.json');
@@ -24,6 +27,43 @@ export const healthRouter = Router();
 
 // Track server start time for uptime calculation
 const serverStartTime = Date.now();
+
+/**
+ * Active Claude API health check
+ * Sends minimal request to verify API connectivity
+ * Only runs if Claude is configured
+ */
+async function checkClaudeHealth(): Promise<{
+  available: boolean;
+  configured: boolean;
+  latencyMs?: number;
+  error?: string;
+}> {
+  const configured = isClaudeAvailable();
+  if (!configured) {
+    return { available: false, configured: false };
+  }
+
+  try {
+    const start = Date.now();
+    // Minimal API call - just check connectivity with very short response
+    await generateClaudeResponse(
+      'Respond with exactly: OK',
+      'Health check',
+      { maxTokens: 5 }
+    );
+    const latencyMs = Date.now() - start;
+    logger.debug('Claude health check passed', { latencyMs });
+    return { available: true, configured: true, latencyMs };
+  } catch (error: any) {
+    logger.warn('Claude health check failed', { error: error.message });
+    return {
+      available: false,
+      configured: true,
+      error: error.message?.substring(0, 100), // Truncate long errors
+    };
+  }
+}
 
 /**
  * @route GET /api/health
@@ -39,25 +79,30 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
                     (req.headers['x-api-key'] as string)?.startsWith('ab_');
 
   // Gather all health checks in parallel
-  const [dbHealth, ollamaHealth, cacheStats] = await Promise.all([
+  const [dbHealth, ollamaHealth, cacheStats, claudeHealth] = await Promise.all([
     testConnections().catch(() => ({ personal: false, work: false })),
     checkOllamaHealth(),
     getCacheStats(),
+    checkClaudeHealth().catch(() => ({ available: false, configured: false, error: 'Health check failed', latencyMs: undefined })),
   ]);
 
   const poolStats = getPoolStats();
   const aiServices = getAvailableServices();
+  const circuitBreakerStatus = getCircuitBreakerStatus();
 
   const allDbHealthy = dbHealth.personal && dbHealth.work;
   const anyDbHealthy = dbHealth.personal || dbHealth.work;
-  const anyAiAvailable = aiServices.claude || ollamaHealth.available;
+  // Use actual Claude availability from active check, not just config
+  const anyAiAvailable = claudeHealth.available || ollamaHealth.available;
+  // Check if any circuit breaker is open (degraded state)
+  const anyCircuitBreakerOpen = Object.values(circuitBreakerStatus).some(cb => cb.isOpen);
 
   // Calculate overall status
-  // Healthy: All DBs + at least one AI service
-  // Degraded: At least one DB working
+  // Healthy: All DBs + at least one AI service + no circuit breakers open
+  // Degraded: At least one DB working OR circuit breaker open
   // Unhealthy: No databases available
-  const isHealthy = allDbHealthy && anyAiAvailable;
-  const isDegraded = anyDbHealthy;
+  const isHealthy = allDbHealthy && anyAiAvailable && !anyCircuitBreakerOpen;
+  const isDegraded = anyDbHealthy || anyCircuitBreakerOpen;
 
   // SECURITY: Minimal response in production without API key
   if (isProduction && !hasApiKey) {
@@ -95,7 +140,16 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
       ai: {
         primary: aiServices.primary,
         claude: {
-          status: aiServices.claude ? 'configured' : 'not_configured',
+          status: claudeHealth.available ? 'healthy' :
+                  claudeHealth.configured ? 'unhealthy' : 'not_configured',
+          configured: claudeHealth.configured,
+          available: claudeHealth.available,
+          latencyMs: claudeHealth.latencyMs,
+          error: claudeHealth.error,
+          circuitBreaker: {
+            standard: circuitBreakerStatus['claude'],
+            extendedThinking: circuitBreakerStatus['claude-extended'],
+          },
         },
         ollama: {
           status: ollamaHealth.available ? 'connected' : 'disconnected',

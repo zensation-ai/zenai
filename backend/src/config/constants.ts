@@ -152,6 +152,26 @@ export const TIMEOUTS = {
 } as const;
 
 // ===========================================
+// Claude API Configuration
+// ===========================================
+export const CLAUDE = {
+  /** Standard timeout for Claude API calls (60s) */
+  TIMEOUT_MS: 60000,
+  /** Extended timeout for Extended Thinking operations (120s) */
+  EXTENDED_THINKING_TIMEOUT_MS: 120000,
+  /** Maximum retries for Claude API calls */
+  MAX_RETRIES: 3,
+  /** Initial retry delay in ms */
+  INITIAL_RETRY_DELAY_MS: 1000,
+  /** Maximum retry delay in ms */
+  MAX_RETRY_DELAY_MS: 15000,
+  /** Circuit breaker failure threshold */
+  CIRCUIT_BREAKER_THRESHOLD: 5,
+  /** Circuit breaker reset timeout in ms */
+  CIRCUIT_BREAKER_RESET_MS: 60000,
+} as const;
+
+// ===========================================
 // Valid Context Types
 // ===========================================
 export const VALID_CONTEXTS = ['personal', 'work'] as const;
