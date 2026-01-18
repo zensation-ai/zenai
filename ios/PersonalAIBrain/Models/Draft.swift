@@ -10,6 +10,7 @@ struct Draft: Codable, Identifiable {
     let content: String
     let wordCount: Int
     let status: DraftStatus
+    let generationTimeMs: Int?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -18,6 +19,7 @@ struct Draft: Codable, Identifiable {
         case content
         case wordCount = "wordCount"
         case status
+        case generationTimeMs = "generationTimeMs"
     }
 }
 

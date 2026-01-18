@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 /// Handles cross-device synchronization for the AI Brain app
 @MainActor

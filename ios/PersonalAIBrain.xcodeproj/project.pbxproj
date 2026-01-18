@@ -7,135 +7,143 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DDD00001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DDD00010; };
-		AAA00001 /* PersonalAIBrainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00010; };
-		AAA00002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00011; };
-		AAA00003 /* IdeasListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00012; };
-		AAA00004 /* IdeaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00013; };
-		AAA00005 /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00014; };
-		AAA00006 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00015; };
-		AAA00007 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00016; };
-		AAA00008 /* Idea.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00017; };
-		AAA00009 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00018; };
-		AAA0000A /* AudioRecorderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00019; };
-		AAA0000B /* Meeting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001B; };
-		AAA0000C /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001C; };
-		AAA0000D /* LocalStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001D; };
-		AAA0000E /* OfflineQueueService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001E; };
-		AAA0000F /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA0001F; };
-		AAA00010B /* AIBrainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00021; };
-		AAA00010C /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00022; };
-		AAA00010D /* MeetingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00023; };
-		AAA00010E /* SwipeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00024; };
-		BBB00001 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00011; };
-		BBB00002 /* ContentViewWithContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00012; };
-		BBB00003 /* ContextSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013; };
-		BBB00004 /* MediaPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00014; };
-		BBB00005 /* OfflineQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00015; };
-		BBB00006 /* StoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00016; };
-		BBB00007 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00017; };
-		BBB00008 /* TrainingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00018; };
-		BBB00009 /* AIContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00019; };
-		BBB0000A /* TrainingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0001A; };
-		BBB0000B /* APIService+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB0001B; };
-		DDD00011 /* Draft.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD00012 /* Draft.swift */; };
-		DDD00013 /* DraftFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD00014 /* DraftFeedbackView.swift */; };
-		CCC00001 /* KnowledgeGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00011; };
-		CCC00002 /* GraphCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00012; };
-		CCC00003 /* GraphModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00013; };
-		CCC00004 /* APIService+KnowledgeGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC00014; };
-		AAD00084 /* BiometricService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00085; };
-		AAD00086 /* IncubatorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00087; };
-		AAD00088 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00089; };
-		AAD00090 /* WidgetDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD00091; };
-		AAE00092 /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE00093; };
-		AAF00095 /* Incubator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00096; };
-		AAF00099 /* LockScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00100; };
-		AAF00101 /* IncubatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00102; };
-		EEE00001 /* ArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE00002; };
-		EEE00003 /* PersonaSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE00004; };
-		AAE00095 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE00096; };
-		AAF00103 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00104; };
-		AAF00105 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF00106; };
-		FFF00001 /* APIKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00002; };
-		FFF00003 /* APIKeySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00004; };
-		FFF00005 /* DigestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00006; };
-		FFF00007 /* AnalyticsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00008; };
-		FFF00009 /* PersonalizationChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00010; };
-		FFF00011 /* APIService+Phase20.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00012; };
-		FFF00013 /* APIService+Personalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00014; };
-		FFF00015 /* AppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF00016; };
-		GGG00001 /* LearningTasksService.swift in Sources */ = {isa = PBXBuildFile; fileRef = GGG00002; };
-		GGG00003 /* LearningTasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GGG00004; };
+		11DB442E9C6A7037FAC2AF31 /* AutomationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64C4491EB1443F2D3BF562A4 /* AutomationsView.swift */; };
+		1A524227A667A23363019A13 /* Milestone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646B475AA1DD127B4DD4AA49 /* Milestone.swift */; };
+		657C431A8AC6389E428D153E /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62A14F458A29DA9A1D04B329 /* SyncService.swift */; };
+		'AAA00001' = {isa = PBXBuildFile; fileRef = AAA00010; };
+		'AAA00002' = {isa = PBXBuildFile; fileRef = AAA00011; };
+		'AAA00003' = {isa = PBXBuildFile; fileRef = AAA00012; };
+		'AAA00004' = {isa = PBXBuildFile; fileRef = AAA00013; };
+		'AAA00005' = {isa = PBXBuildFile; fileRef = AAA00014; };
+		'AAA00006' = {isa = PBXBuildFile; fileRef = AAA00015; };
+		'AAA00007' = {isa = PBXBuildFile; fileRef = AAA00016; };
+		'AAA00008' = {isa = PBXBuildFile; fileRef = AAA00017; };
+		'AAA00009' = {isa = PBXBuildFile; fileRef = AAA00018; };
+		'AAA0000A' = {isa = PBXBuildFile; fileRef = AAA00019; };
+		'AAA0000B' = {isa = PBXBuildFile; fileRef = AAA0001B; };
+		'AAA0000C' = {isa = PBXBuildFile; fileRef = AAA0001C; };
+		'AAA0000D' = {isa = PBXBuildFile; fileRef = AAA0001D; };
+		'AAA0000E' = {isa = PBXBuildFile; fileRef = AAA0001E; };
+		'AAA0000F' = {isa = PBXBuildFile; fileRef = AAA0001F; };
+		'AAA00010B' = {isa = PBXBuildFile; fileRef = AAA00021; };
+		'AAA00010C' = {isa = PBXBuildFile; fileRef = AAA00022; };
+		'AAA00010D' = {isa = PBXBuildFile; fileRef = AAA00023; };
+		'AAA00010E' = {isa = PBXBuildFile; fileRef = AAA00024; };
+		'AAD00084' = {isa = PBXBuildFile; fileRef = AAD00085; };
+		'AAD00086' = {isa = PBXBuildFile; fileRef = AAD00087; };
+		'AAD00088' = {isa = PBXBuildFile; fileRef = AAD00089; };
+		'AAD00090' = {isa = PBXBuildFile; fileRef = AAD00091; };
+		'AAE00092' = {isa = PBXBuildFile; fileRef = AAE00093; };
+		'AAE00095' = {isa = PBXBuildFile; fileRef = AAE00096; };
+		'AAF00095' = {isa = PBXBuildFile; fileRef = AAF00096; };
+		'AAF00099' = {isa = PBXBuildFile; fileRef = AAF00100; };
+		'AAF00101' = {isa = PBXBuildFile; fileRef = AAF00102; };
+		'AAF00103' = {isa = PBXBuildFile; fileRef = AAF00104; };
+		'AAF00105' = {isa = PBXBuildFile; fileRef = AAF00106; };
+		AB5D4DBCB7486C75F119CC62 /* EvolutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB384EFF9C4DD34327AAC518 /* EvolutionView.swift */; };
+		'BBB00001' = {isa = PBXBuildFile; fileRef = BBB00011; };
+		'BBB00002' = {isa = PBXBuildFile; fileRef = BBB00012; };
+		'BBB00003' = {isa = PBXBuildFile; fileRef = BBB00013; };
+		'BBB00004' = {isa = PBXBuildFile; fileRef = BBB00014; };
+		'BBB00005' = {isa = PBXBuildFile; fileRef = BBB00015; };
+		'BBB00006' = {isa = PBXBuildFile; fileRef = BBB00016; };
+		'BBB00007' = {isa = PBXBuildFile; fileRef = BBB00017; };
+		'BBB00008' = {isa = PBXBuildFile; fileRef = BBB00018; };
+		'BBB00009' = {isa = PBXBuildFile; fileRef = BBB00019; };
+		'BBB0000A' = {isa = PBXBuildFile; fileRef = BBB0001A; };
+		'BBB0000B' = {isa = PBXBuildFile; fileRef = BBB0001B; };
+		'CCC00001' = {isa = PBXBuildFile; fileRef = CCC00011; };
+		'CCC00002' = {isa = PBXBuildFile; fileRef = CCC00012; };
+		'CCC00003' = {isa = PBXBuildFile; fileRef = CCC00013; };
+		'CCC00004' = {isa = PBXBuildFile; fileRef = CCC00014; };
+		'DDD00001' = {isa = PBXBuildFile; fileRef = DDD00010; };
+		'DDD00011' = {isa = PBXBuildFile; fileRef = DDD00012; };
+		'DDD00013' = {isa = PBXBuildFile; fileRef = DDD00014; };
+		'EEE00001' = {isa = PBXBuildFile; fileRef = EEE00002; };
+		'EEE00003' = {isa = PBXBuildFile; fileRef = EEE00004; };
+		'FFF00001' = {isa = PBXBuildFile; fileRef = FFF00002; };
+		'FFF00003' = {isa = PBXBuildFile; fileRef = FFF00004; };
+		'FFF00005' = {isa = PBXBuildFile; fileRef = FFF00006; };
+		'FFF00007' = {isa = PBXBuildFile; fileRef = FFF00008; };
+		'FFF00009' = {isa = PBXBuildFile; fileRef = FFF00010; };
+		'FFF00011' = {isa = PBXBuildFile; fileRef = FFF00012; };
+		'FFF00013' = {isa = PBXBuildFile; fileRef = FFF00014; };
+		'FFF00015' = {isa = PBXBuildFile; fileRef = FFF00016; };
+		'GGG00001' = {isa = PBXBuildFile; fileRef = GGG00002; };
+		'GGG00003' = {isa = PBXBuildFile; fileRef = GGG00004; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		AAA00010 /* PersonalAIBrainApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAIBrainApp.swift; sourceTree = "<group>"; };
-		AAA00011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		AAA00012 /* IdeasListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeasListView.swift; sourceTree = "<group>"; };
-		AAA00013 /* IdeaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeaDetailView.swift; sourceTree = "<group>"; };
-		DDD00014 /* DraftFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftFeedbackView.swift; sourceTree = "<group>"; };
-		AAA00014 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
-		AAA00015 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
-		AAA00016 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		AAA00017 /* Idea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Idea.swift; sourceTree = "<group>"; };
-		DDD00012 /* Draft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Draft.swift; sourceTree = "<group>"; };
-		AAA00018 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
-		AAA00019 /* AudioRecorderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderService.swift; sourceTree = "<group>"; };
-		AAA0001A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		AAA00020 /* PersonalAIBrain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalAIBrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AAA0001B /* Meeting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meeting.swift; sourceTree = "<group>"; };
-		AAA0001C /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
-		AAA0001D /* LocalStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStorageService.swift; sourceTree = "<group>"; };
-		AAA0001E /* OfflineQueueService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineQueueService.swift; sourceTree = "<group>"; };
-		AAA0001F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
-		AAA00021 /* AIBrainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBrainView.swift; sourceTree = "<group>"; };
-		AAA00022 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		AAA00023 /* MeetingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingsView.swift; sourceTree = "<group>"; };
-		AAA00024 /* SwipeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeCardView.swift; sourceTree = "<group>"; };
-		BBB00011 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
-		BBB00012 /* ContentViewWithContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewWithContext.swift; sourceTree = "<group>"; };
-		BBB00013 /* ContextSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextSwitcherView.swift; sourceTree = "<group>"; };
-		BBB00014 /* MediaPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPickerView.swift; sourceTree = "<group>"; };
-		BBB00015 /* OfflineQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineQueueView.swift; sourceTree = "<group>"; };
-		BBB00016 /* StoriesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesView.swift; sourceTree = "<group>"; };
-		BBB00017 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
-		BBB00018 /* TrainingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingView.swift; sourceTree = "<group>"; };
-		BBB00019 /* AIContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIContext.swift; sourceTree = "<group>"; };
-		BBB0001A /* TrainingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingModels.swift; sourceTree = "<group>"; };
-		BBB0001B /* APIService+Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Context.swift"; sourceTree = "<group>"; };
-		CCC00011 /* KnowledgeGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeGraphView.swift; sourceTree = "<group>"; };
-		CCC00012 /* GraphCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphCanvasView.swift; sourceTree = "<group>"; };
-		CCC00013 /* GraphModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphModels.swift; sourceTree = "<group>"; };
-		CCC00014 /* APIService+KnowledgeGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+KnowledgeGraph.swift"; sourceTree = "<group>"; };
-		DDD00010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		AAD00085 /* BiometricService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricService.swift; sourceTree = "<group>"; };
-		AAD00087 /* IncubatorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncubatorService.swift; sourceTree = "<group>"; };
-		AAD00089 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
-		AAD00091 /* WidgetDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataService.swift; sourceTree = "<group>"; };
-		AAE00093 /* Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
-		AAF00096 /* Incubator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Incubator.swift; sourceTree = "<group>"; };
-		AAF00100 /* LockScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenView.swift; sourceTree = "<group>"; };
-		AAF00102 /* IncubatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncubatorView.swift; sourceTree = "<group>"; };
-		EEE00002 /* ArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveView.swift; sourceTree = "<group>"; };
-		EEE00004 /* PersonaSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaSelectorView.swift; sourceTree = "<group>"; };
-		AAE00096 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
-		AAF00104 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
-		AAF00106 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
-		FFF00002 /* APIKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyManager.swift; sourceTree = "<group>"; };
-		FFF00004 /* APIKeySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySetupView.swift; sourceTree = "<group>"; };
-		FFF00006 /* DigestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestView.swift; sourceTree = "<group>"; };
-		FFF00008 /* AnalyticsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsDashboardView.swift; sourceTree = "<group>"; };
-		FFF00010 /* PersonalizationChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationChatView.swift; sourceTree = "<group>"; };
-		FFF00012 /* APIService+Phase20.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Phase20.swift"; sourceTree = "<group>"; };
-		FFF00014 /* APIService+Personalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Personalization.swift"; sourceTree = "<group>"; };
-		FFF00016 /* AppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntents.swift; sourceTree = "<group>"; };
-		GGG00002 /* LearningTasksService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTasksService.swift; sourceTree = "<group>"; };
-		GGG00004 /* LearningTasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTasksView.swift; sourceTree = "<group>"; };
+		62A14F458A29DA9A1D04B329 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SyncService.swift; path = PersonalAIBrain/Services/SyncService.swift; sourceTree = SOURCE_ROOT; };
+		646B475AA1DD127B4DD4AA49 /* Milestone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Milestone.swift; path = PersonalAIBrain/Models/Milestone.swift; sourceTree = SOURCE_ROOT; };
+		64C4491EB1443F2D3BF562A4 /* AutomationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutomationsView.swift; path = PersonalAIBrain/Views/AutomationsView.swift; sourceTree = SOURCE_ROOT; };
+		'AAA00010' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAIBrainApp.swift; sourceTree = "<group>"; };
+		'AAA00011' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		'AAA00012' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeasListView.swift; sourceTree = "<group>"; };
+		'AAA00013' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeaDetailView.swift; sourceTree = "<group>"; };
+		'AAA00014' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
+		'AAA00015' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		'AAA00016' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		'AAA00017' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Idea.swift; sourceTree = "<group>"; };
+		'AAA00018' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		'AAA00019' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderService.swift; sourceTree = "<group>"; };
+		'AAA0001A' = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		'AAA0001B' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Meeting.swift; sourceTree = "<group>"; };
+		'AAA0001C' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		'AAA0001D' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStorageService.swift; sourceTree = "<group>"; };
+		'AAA0001E' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineQueueService.swift; sourceTree = "<group>"; };
+		'AAA0001F' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		'AAA00020' = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalAIBrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		'AAA00021' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBrainView.swift; sourceTree = "<group>"; };
+		'AAA00022' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		'AAA00023' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingsView.swift; sourceTree = "<group>"; };
+		'AAA00024' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeCardView.swift; sourceTree = "<group>"; };
+		'AAD00085' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricService.swift; sourceTree = "<group>"; };
+		'AAD00087' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncubatorService.swift; sourceTree = "<group>"; };
+		'AAD00089' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		'AAD00091' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataService.swift; sourceTree = "<group>"; };
+		'AAE00093' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		'AAE00096' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		'AAF00096' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Incubator.swift; sourceTree = "<group>"; };
+		'AAF00100' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenView.swift; sourceTree = "<group>"; };
+		'AAF00102' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncubatorView.swift; sourceTree = "<group>"; };
+		'AAF00104' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		'AAF00106' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		'BBB00011' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		'BBB00012' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewWithContext.swift; sourceTree = "<group>"; };
+		'BBB00013' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextSwitcherView.swift; sourceTree = "<group>"; };
+		'BBB00014' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPickerView.swift; sourceTree = "<group>"; };
+		'BBB00015' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineQueueView.swift; sourceTree = "<group>"; };
+		'BBB00016' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesView.swift; sourceTree = "<group>"; };
+		'BBB00017' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
+		'BBB00018' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingView.swift; sourceTree = "<group>"; };
+		'BBB00019' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIContext.swift; sourceTree = "<group>"; };
+		'BBB0001A' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingModels.swift; sourceTree = "<group>"; };
+		'BBB0001B' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Context.swift"; sourceTree = "<group>"; };
+		CB384EFF9C4DD34327AAC518 /* EvolutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EvolutionView.swift; path = PersonalAIBrain/Views/EvolutionView.swift; sourceTree = SOURCE_ROOT; };
+		'CCC00011' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeGraphView.swift; sourceTree = "<group>"; };
+		'CCC00012' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphCanvasView.swift; sourceTree = "<group>"; };
+		'CCC00013' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphModels.swift; sourceTree = "<group>"; };
+		'CCC00014' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+KnowledgeGraph.swift"; sourceTree = "<group>"; };
+		'DDD00010' = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		'DDD00012' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Draft.swift; sourceTree = "<group>"; };
+		'DDD00014' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftFeedbackView.swift; sourceTree = "<group>"; };
+		'EEE00002' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveView.swift; sourceTree = "<group>"; };
+		'EEE00004' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonaSelectorView.swift; sourceTree = "<group>"; };
+		'FFF00002' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyManager.swift; sourceTree = "<group>"; };
+		'FFF00004' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySetupView.swift; sourceTree = "<group>"; };
+		'FFF00006' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestView.swift; sourceTree = "<group>"; };
+		'FFF00008' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsDashboardView.swift; sourceTree = "<group>"; };
+		'FFF00010' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationChatView.swift; sourceTree = "<group>"; };
+		'FFF00012' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Phase20.swift"; sourceTree = "<group>"; };
+		'FFF00014' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIService+Personalization.swift"; sourceTree = "<group>"; };
+		'FFF00016' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntents.swift; sourceTree = "<group>"; };
+		'GGG00002' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTasksService.swift; sourceTree = "<group>"; };
+		'GGG00004' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearningTasksView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		AAA00030 /* Frameworks */ = {
+		'AAA00030' = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -145,142 +153,146 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		AAA00040 = {
+		'AAA00040' = {
 			isa = PBXGroup;
 			children = (
-				AAA00041 /* PersonalAIBrain */,
-				AAA00042 /* Products */,
+				AAA00041,
+				AAA00042,
+				64C4491EB1443F2D3BF562A4 /* AutomationsView.swift */,
+				CB384EFF9C4DD34327AAC518 /* EvolutionView.swift */,
+				646B475AA1DD127B4DD4AA49 /* Milestone.swift */,
+				62A14F458A29DA9A1D04B329 /* SyncService.swift */,
 			);
 			sourceTree = "<group>";
 		};
-		AAA00041 /* PersonalAIBrain */ = {
+		'AAA00041' = {
 			isa = PBXGroup;
 			children = (
-				AAA00010 /* PersonalAIBrainApp.swift */,
-				AAA0001A /* Info.plist */,
-				DDD00010 /* Assets.xcassets */,
-				AAA00043 /* Views */,
-				AAA00044 /* Models */,
-				AAA00045 /* Services */,
-				AAA00046 /* Theme */,
-				AAE00094 /* Config */,
-				FFF00017 /* Intents */,
+				AAA00010,
+				AAA0001A,
+				DDD00010,
+				AAA00043,
+				AAA00044,
+				AAA00045,
+				AAA00046,
+				AAE00094,
+				FFF00017,
 			);
 			path = PersonalAIBrain;
 			sourceTree = "<group>";
 		};
-		AAA00042 /* Products */ = {
+		'AAA00042' = {
 			isa = PBXGroup;
 			children = (
-				AAA00020 /* PersonalAIBrain.app */,
+				AAA00020,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		AAA00043 /* Views */ = {
+		'AAA00043' = {
 			isa = PBXGroup;
 			children = (
-				AAA00011 /* ContentView.swift */,
-				AAA00012 /* IdeasListView.swift */,
-				AAA00013 /* IdeaDetailView.swift */,
-				DDD00014 /* DraftFeedbackView.swift */,
-				AAA00014 /* RecordView.swift */,
-				AAA00015 /* SearchView.swift */,
-				AAA00016 /* SettingsView.swift */,
-				AAA00021 /* AIBrainView.swift */,
-				AAA00022 /* ProfileView.swift */,
-				AAA00023 /* MeetingsView.swift */,
-				AAA00024 /* SwipeCardView.swift */,
-				BBB00011 /* CameraView.swift */,
-				BBB00012 /* ContentViewWithContext.swift */,
-				BBB00013 /* ContextSwitcherView.swift */,
-				BBB00014 /* MediaPickerView.swift */,
-				BBB00015 /* OfflineQueueView.swift */,
-				BBB00016 /* StoriesView.swift */,
-				BBB00017 /* ToastView.swift */,
-				BBB00018 /* TrainingView.swift */,
-				CCC00030 /* KnowledgeGraph */,
-				AAF00100 /* LockScreenView.swift */,
-				AAF00102 /* IncubatorView.swift */,
-				EEE00002 /* ArchiveView.swift */,
-				EEE00004 /* PersonaSelectorView.swift */,
-				AAE00096 /* ExportView.swift */,
-				AAF00106 /* NotificationSettingsView.swift */,
-				FFF00004 /* APIKeySetupView.swift */,
-				FFF00006 /* DigestView.swift */,
-				FFF00008 /* AnalyticsDashboardView.swift */,
-				FFF00010 /* PersonalizationChatView.swift */,
-				GGG00004 /* LearningTasksView.swift */,
+				AAA00011,
+				AAA00012,
+				AAA00013,
+				DDD00014,
+				AAA00014,
+				AAA00015,
+				AAA00016,
+				AAA00021,
+				AAA00022,
+				AAA00023,
+				AAA00024,
+				BBB00011,
+				BBB00012,
+				BBB00013,
+				BBB00014,
+				BBB00015,
+				BBB00016,
+				BBB00017,
+				BBB00018,
+				CCC00030,
+				AAF00100,
+				AAF00102,
+				EEE00002,
+				EEE00004,
+				AAE00096,
+				AAF00106,
+				FFF00004,
+				FFF00006,
+				FFF00008,
+				FFF00010,
+				GGG00004,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		CCC00030 /* KnowledgeGraph */ = {
+		'AAA00044' = {
 			isa = PBXGroup;
 			children = (
-				CCC00011 /* KnowledgeGraphView.swift */,
-				CCC00012 /* GraphCanvasView.swift */,
-				CCC00013 /* GraphModels.swift */,
-			);
-			path = KnowledgeGraph;
-			sourceTree = "<group>";
-		};
-		AAA00044 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				DDD00012 /* Draft.swift */,
-				AAA00017 /* Idea.swift */,
-				AAA0001B /* Meeting.swift */,
-				AAA0001C /* UserProfile.swift */,
-				BBB00019 /* AIContext.swift */,
-				BBB0001A /* TrainingModels.swift */,
-				AAF00096 /* Incubator.swift */,
+				DDD00012,
+				AAA00017,
+				AAA0001B,
+				AAA0001C,
+				BBB00019,
+				BBB0001A,
+				AAF00096,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		AAA00045 /* Services */ = {
+		'AAA00045' = {
 			isa = PBXGroup;
 			children = (
-				AAA00018 /* APIService.swift */,
-				AAA00019 /* AudioRecorderService.swift */,
-				AAA0001D /* LocalStorageService.swift */,
-				AAA0001E /* OfflineQueueService.swift */,
-				BBB0001B /* APIService+Context.swift */,
-				CCC00014 /* APIService+KnowledgeGraph.swift */,
-				AAD00085 /* BiometricService.swift */,
-				AAD00087 /* IncubatorService.swift */,
-				AAD00089 /* KeychainService.swift */,
-				AAD00091 /* WidgetDataService.swift */,
-				AAF00104 /* NotificationService.swift */,
-				FFF00002 /* APIKeyManager.swift */,
-				FFF00012 /* APIService+Phase20.swift */,
-				FFF00014 /* APIService+Personalization.swift */,
-				GGG00002 /* LearningTasksService.swift */,
+				AAA00018,
+				AAA00019,
+				AAA0001D,
+				AAA0001E,
+				BBB0001B,
+				CCC00014,
+				AAD00085,
+				AAD00087,
+				AAD00089,
+				AAD00091,
+				AAF00104,
+				FFF00002,
+				FFF00012,
+				FFF00014,
+				GGG00002,
 			);
 			path = Services;
 			sourceTree = "<group>";
 		};
-		AAA00046 /* Theme */ = {
+		'AAA00046' = {
 			isa = PBXGroup;
 			children = (
-				AAA0001F /* AppTheme.swift */,
+				AAA0001F,
 			);
 			path = Theme;
 			sourceTree = "<group>";
 		};
-		AAE00094 /* Config */ = {
+		'AAE00094' = {
 			isa = PBXGroup;
 			children = (
-				AAE00093 /* Environment.swift */,
+				AAE00093,
 			);
 			path = Config;
 			sourceTree = "<group>";
 		};
-		FFF00017 /* Intents */ = {
+		'CCC00030' = {
 			isa = PBXGroup;
 			children = (
-				FFF00016 /* AppIntents.swift */,
+				CCC00011,
+				CCC00012,
+				CCC00013,
+			);
+			path = KnowledgeGraph;
+			sourceTree = "<group>";
+		};
+		'FFF00017' = {
+			isa = PBXGroup;
+			children = (
+				FFF00016,
 			);
 			path = Intents;
 			sourceTree = "<group>";
@@ -288,13 +300,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AAA00050 /* PersonalAIBrain */ = {
+		'AAA00050' = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AAA00060;
 			buildPhases = (
-				AAA00051 /* Sources */,
-				AAA00030 /* Frameworks */,
-				AAA00052 /* Resources */,
+				AAA00051,
+				AAA00030,
+				AAA00052,
 			);
 			buildRules = (
 			);
@@ -302,13 +314,13 @@
 			);
 			name = PersonalAIBrain;
 			productName = PersonalAIBrain;
-			productReference = AAA00020 /* PersonalAIBrain.app */;
+			productReference = AAA00020;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		AAA00070 /* Project object */ = {
+		'AAA00070' = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
@@ -329,97 +341,101 @@
 				Base,
 			);
 			mainGroup = AAA00040;
-			productRefGroup = AAA00042 /* Products */;
+			productRefGroup = AAA00042;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AAA00050 /* PersonalAIBrain */,
+				AAA00050,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		AAA00052 /* Resources */ = {
+		'AAA00052' = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DDD00001 /* Assets.xcassets in Resources */,
+				DDD00001,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		AAA00051 /* Sources */ = {
+		'AAA00051' = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DDD00011 /* Draft.swift in Sources */,
-				DDD00013 /* DraftFeedbackView.swift in Sources */,
-				AAA00001 /* PersonalAIBrainApp.swift in Sources */,
-				AAA00002 /* ContentView.swift in Sources */,
-				AAA00003 /* IdeasListView.swift in Sources */,
-				AAA00004 /* IdeaDetailView.swift in Sources */,
-				AAA00005 /* RecordView.swift in Sources */,
-				AAA00006 /* SearchView.swift in Sources */,
-				AAA00007 /* SettingsView.swift in Sources */,
-				AAA00008 /* Idea.swift in Sources */,
-				AAA00009 /* APIService.swift in Sources */,
-				AAA0000A /* AudioRecorderService.swift in Sources */,
-				AAA0000B /* Meeting.swift in Sources */,
-				AAA0000C /* UserProfile.swift in Sources */,
-				AAA0000D /* LocalStorageService.swift in Sources */,
-				AAA0000E /* OfflineQueueService.swift in Sources */,
-				AAA0000F /* AppTheme.swift in Sources */,
-				AAA00010B /* AIBrainView.swift in Sources */,
-				AAA00010C /* ProfileView.swift in Sources */,
-				AAA00010D /* MeetingsView.swift in Sources */,
-				AAA00010E /* SwipeCardView.swift in Sources */,
-				BBB00001 /* CameraView.swift in Sources */,
-				BBB00002 /* ContentViewWithContext.swift in Sources */,
-				BBB00003 /* ContextSwitcherView.swift in Sources */,
-				BBB00004 /* MediaPickerView.swift in Sources */,
-				BBB00005 /* OfflineQueueView.swift in Sources */,
-				BBB00006 /* StoriesView.swift in Sources */,
-				BBB00007 /* ToastView.swift in Sources */,
-				BBB00008 /* TrainingView.swift in Sources */,
-				BBB00009 /* AIContext.swift in Sources */,
-				BBB0000A /* TrainingModels.swift in Sources */,
-				BBB0000B /* APIService+Context.swift in Sources */,
-				CCC00001 /* KnowledgeGraphView.swift in Sources */,
-				CCC00002 /* GraphCanvasView.swift in Sources */,
-				CCC00003 /* GraphModels.swift in Sources */,
-				CCC00004 /* APIService+KnowledgeGraph.swift in Sources */,
-				AAD00084 /* BiometricService.swift in Sources */,
-				AAD00086 /* IncubatorService.swift in Sources */,
-				AAD00088 /* KeychainService.swift in Sources */,
-				AAD00090 /* WidgetDataService.swift in Sources */,
-				AAE00092 /* Environment.swift in Sources */,
-				AAF00095 /* Incubator.swift in Sources */,
-				AAF00099 /* LockScreenView.swift in Sources */,
-				AAF00101 /* IncubatorView.swift in Sources */,
-				EEE00001 /* ArchiveView.swift in Sources */,
-				EEE00003 /* PersonaSelectorView.swift in Sources */,
-				AAE00095 /* ExportView.swift in Sources */,
-				AAF00103 /* NotificationService.swift in Sources */,
-				AAF00105 /* NotificationSettingsView.swift in Sources */,
-				FFF00001 /* APIKeyManager.swift in Sources */,
-				FFF00003 /* APIKeySetupView.swift in Sources */,
-				FFF00005 /* DigestView.swift in Sources */,
-				FFF00007 /* AnalyticsDashboardView.swift in Sources */,
-				FFF00009 /* PersonalizationChatView.swift in Sources */,
-				FFF00011 /* APIService+Phase20.swift in Sources */,
-				FFF00013 /* APIService+Personalization.swift in Sources */,
-				FFF00015 /* AppIntents.swift in Sources */,
-				GGG00001 /* LearningTasksService.swift in Sources */,
-				GGG00003 /* LearningTasksView.swift in Sources */,
+				DDD00011,
+				DDD00013,
+				AAA00001,
+				AAA00002,
+				AAA00003,
+				AAA00004,
+				AAA00005,
+				AAA00006,
+				AAA00007,
+				AAA00008,
+				AAA00009,
+				AAA0000A,
+				AAA0000B,
+				AAA0000C,
+				AAA0000D,
+				AAA0000E,
+				AAA0000F,
+				AAA00010B,
+				AAA00010C,
+				AAA00010D,
+				AAA00010E,
+				BBB00001,
+				BBB00002,
+				BBB00003,
+				BBB00004,
+				BBB00005,
+				BBB00006,
+				BBB00007,
+				BBB00008,
+				BBB00009,
+				BBB0000A,
+				BBB0000B,
+				CCC00001,
+				CCC00002,
+				CCC00003,
+				CCC00004,
+				AAD00084,
+				AAD00086,
+				AAD00088,
+				AAD00090,
+				AAE00092,
+				AAF00095,
+				AAF00099,
+				AAF00101,
+				EEE00001,
+				EEE00003,
+				AAE00095,
+				AAF00103,
+				AAF00105,
+				FFF00001,
+				FFF00003,
+				FFF00005,
+				FFF00007,
+				FFF00009,
+				FFF00011,
+				FFF00013,
+				FFF00015,
+				GGG00001,
+				GGG00003,
+				11DB442E9C6A7037FAC2AF31 /* AutomationsView.swift in Sources */,
+				AB5D4DBCB7486C75F119CC62 /* EvolutionView.swift in Sources */,
+				1A524227A667A23363019A13 /* Milestone.swift in Sources */,
+				657C431A8AC6389E428D153E /* SyncService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		AAA00080 /* Debug */ = {
+		'AAA00080' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -482,7 +498,7 @@
 			};
 			name = Debug;
 		};
-		AAA00081 /* Release */ = {
+		'AAA00081' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -538,7 +554,7 @@
 			};
 			name = Release;
 		};
-		AAA00082 /* Debug */ = {
+		'AAA00082' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -568,7 +584,7 @@
 			};
 			name = Debug;
 		};
-		AAA00083 /* Release */ = {
+		'AAA00083' = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -601,25 +617,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AAA00060 /* Build configuration list for PBXNativeTarget "PersonalAIBrain" */ = {
+		'AAA00060' = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AAA00082 /* Debug */,
-				AAA00083 /* Release */,
+				AAA00082,
+				AAA00083,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AAA00071 /* Build configuration list for PBXProject "PersonalAIBrain" */ = {
+		'AAA00071' = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AAA00080 /* Debug */,
-				AAA00081 /* Release */,
+				AAA00080,
+				AAA00081,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = AAA00070 /* Project object */;
+	rootObject = AAA00070;
 }

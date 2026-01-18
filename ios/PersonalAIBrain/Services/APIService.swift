@@ -760,16 +760,39 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
+        print("📨 Fetching draft from: \(url.absoluteString)")
+
         let request = try createAuthenticatedRequest(url: url, method: "GET")
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.serverError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ Draft fetch: Invalid response type")
+            throw APIError.serverError(statusCode: 0)
         }
 
-        let draftResponse = try Self.createDecoder().decode(DraftResponse.self, from: data)
-        return draftResponse.draft
+        print("📨 Draft fetch HTTP status: \(httpResponse.statusCode)")
+
+        guard httpResponse.statusCode == 200 else {
+            print("❌ Draft fetch failed with status: \(httpResponse.statusCode)")
+            if let responseStr = String(data: data, encoding: .utf8) {
+                print("❌ Response body: \(responseStr.prefix(500))")
+            }
+            throw APIError.serverError(statusCode: httpResponse.statusCode)
+        }
+
+        // Log raw response for debugging
+        if let responseStr = String(data: data, encoding: .utf8) {
+            print("📨 Draft response: \(responseStr.prefix(300))...")
+        }
+
+        do {
+            let draftResponse = try Self.createDecoder().decode(DraftResponse.self, from: data)
+            print("✅ Draft decoded: success=\(draftResponse.success), hasDraft=\(draftResponse.draft != nil)")
+            return draftResponse.draft
+        } catch {
+            print("❌ Draft decode error: \(error)")
+            throw error
+        }
     }
 
     /// Submit feedback for a draft
