@@ -788,3 +788,161 @@ function calculateLayout(
 
   return positions;
 }
+
+// ===========================================
+// Graph-Enhanced Retrieval (Phase D - Agentic RAG)
+// ===========================================
+
+export interface GraphRetrievalResult {
+  id: string;
+  title: string;
+  summary: string;
+  graphScore: number;
+  centrality: number;
+  connectionStrength: number;
+  path?: string[];
+}
+
+export interface GraphRetrievalOptions {
+  maxHops?: number;
+  minStrength?: number;
+  includeCentrality?: boolean;
+}
+
+/**
+ * Graph-enhanced retrieval for Agentic RAG
+ * Finds relevant ideas through knowledge graph traversal
+ */
+export async function graphEnhancedRetrieval(
+  query: string,
+  context: AIContext,
+  seedIdeaIds: string[],
+  options: GraphRetrievalOptions = {}
+): Promise<GraphRetrievalResult[]> {
+  const { maxHops = 2, minStrength = 0.5, includeCentrality = true } = options;
+
+  if (seedIdeaIds.length === 0) {
+    return [];
+  }
+
+  try {
+    // 1. Get directly connected ideas
+    const directResult = await queryContext(
+      context,
+      `SELECT DISTINCT
+         i.id, i.title, i.summary,
+         kc.strength as connection_strength,
+         ARRAY[seed.id::text, i.id::text] as path
+       FROM knowledge_connections kc
+       JOIN ideas i ON (
+         (kc.target_idea_id = i.id AND kc.source_idea_id = ANY($2::uuid[]))
+         OR (kc.source_idea_id = i.id AND kc.target_idea_id = ANY($2::uuid[]))
+       )
+       JOIN unnest($2::uuid[]) as seed(id) ON (
+         kc.source_idea_id = seed.id OR kc.target_idea_id = seed.id
+       )
+       WHERE i.context = $1
+         AND i.is_archived = false
+         AND i.id != ALL($2::uuid[])
+         AND kc.strength >= $3
+       ORDER BY kc.strength DESC
+       LIMIT 20`,
+      [context, seedIdeaIds, minStrength]
+    );
+
+    const results: GraphRetrievalResult[] = directResult.rows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      summary: r.summary || '',
+      graphScore: parseFloat(r.connection_strength) || 0.5,
+      centrality: 0,
+      connectionStrength: parseFloat(r.connection_strength) || 0.5,
+      path: r.path,
+    }));
+
+    // 2. If maxHops > 1, expand to secondary connections
+    if (maxHops > 1 && results.length > 0) {
+      const firstHopIds = results.map(r => r.id);
+      const allIds = [...seedIdeaIds, ...firstHopIds];
+
+      const secondaryResult = await queryContext(
+        context,
+        `SELECT DISTINCT
+           i.id, i.title, i.summary,
+           kc.strength * 0.7 as connection_strength
+         FROM knowledge_connections kc
+         JOIN ideas i ON (
+           (kc.target_idea_id = i.id AND kc.source_idea_id = ANY($2::uuid[]))
+           OR (kc.source_idea_id = i.id AND kc.target_idea_id = ANY($2::uuid[]))
+         )
+         WHERE i.context = $1
+           AND i.is_archived = false
+           AND i.id != ALL($3::uuid[])
+           AND kc.strength >= $4
+         ORDER BY kc.strength DESC
+         LIMIT 10`,
+        [context, firstHopIds, allIds, minStrength]
+      );
+
+      for (const r of secondaryResult.rows) {
+        results.push({
+          id: r.id,
+          title: r.title,
+          summary: r.summary || '',
+          graphScore: parseFloat(r.connection_strength) || 0.3,
+          centrality: 0,
+          connectionStrength: parseFloat(r.connection_strength) || 0.3,
+        });
+      }
+    }
+
+    // 3. Calculate centrality if requested
+    if (includeCentrality && results.length > 0) {
+      const resultIds = results.map(r => r.id);
+
+      const centralityResult = await queryContext(
+        context,
+        `SELECT
+           i.id,
+           (
+             SELECT COUNT(DISTINCT kc2.source_idea_id) + COUNT(DISTINCT kc2.target_idea_id)
+             FROM knowledge_connections kc2
+             WHERE kc2.source_idea_id = i.id OR kc2.target_idea_id = i.id
+           ) as degree_centrality
+         FROM ideas i
+         WHERE i.id = ANY($1::uuid[])`,
+        [resultIds]
+      );
+
+      const centralityMap = new Map<string, number>();
+      const maxCentrality = Math.max(
+        ...centralityResult.rows.map((r: any) => parseInt(r.degree_centrality) || 0),
+        1
+      );
+
+      for (const r of centralityResult.rows) {
+        centralityMap.set(r.id, (parseInt(r.degree_centrality) || 0) / maxCentrality);
+      }
+
+      // Update results with centrality and recalculate score
+      for (const result of results) {
+        result.centrality = centralityMap.get(result.id) || 0;
+        result.graphScore = result.connectionStrength * 0.7 + result.centrality * 0.3;
+      }
+    }
+
+    // Sort by graph score
+    results.sort((a, b) => b.graphScore - a.graphScore);
+
+    logger.debug('Graph-enhanced retrieval complete', {
+      seedCount: seedIdeaIds.length,
+      resultCount: results.length,
+      maxHops,
+    });
+
+    return results;
+  } catch (error) {
+    logger.error('Graph-enhanced retrieval failed', error instanceof Error ? error : undefined);
+    return [];
+  }
+}

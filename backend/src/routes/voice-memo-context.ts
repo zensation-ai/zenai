@@ -35,7 +35,12 @@ import { generateProactiveDraft, GeneratedDraft } from '../services/draft-genera
 // OpenAI for JSON queries (text generation only, not embeddings)
 import { isOpenAIAvailable, queryOpenAIJSON } from '../services/openai';
 // Claude with personalized context (primary)
-import { isClaudeAvailable, structureWithClaudePersonalized } from '../services/claude';
+import {
+  isClaudeAvailable,
+  structureWithClaudePersonalized,
+  calculateConfidence,
+  getConfidenceLevel,
+} from '../services/claude';
 
 export const voiceMemoContextRouter = Router();
 
@@ -234,6 +239,10 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
     const duration = Date.now() - startTime;
 
+    // Phase 27: Calculate confidence scores
+    const confidence = calculateConfidence(structured, transcript);
+    const confidenceLevel = getConfidenceLevel(confidence.overall);
+
     return res.json({
       success: true,
       context,
@@ -248,6 +257,10 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         id: ideaId,
         ...structured,
       },
+      // Phase 27: Confidence scores for UI indicators
+      confidence,
+      confidenceLevel,
+      suggestCorrection: confidenceLevel === 'low',
       // Phase 23: Include proactive research if available
       proactiveResearch: proactiveResearch ? {
         id: proactiveResearch.id,

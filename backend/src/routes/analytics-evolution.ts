@@ -465,3 +465,144 @@ evolutionRouter.get(
     });
   })
 );
+
+// ===========================================
+// AI Evolution Analytics (Phase 28)
+// ===========================================
+
+import { aiEvolutionAnalytics } from '../services/ai-evolution-analytics';
+
+/**
+ * GET /api/:context/evolution/learning-curve
+ * Get the AI learning curve over time
+ */
+evolutionRouter.get(
+  '/:context/evolution/learning-curve',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const days = Math.min(parseInt(req.query.days as string) || 30, 365);
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use "personal" or "work".');
+    }
+
+    const learningCurve = await aiEvolutionAnalytics.calculateLearningCurve(
+      context as AIContext,
+      days
+    );
+
+    res.json({
+      success: true,
+      learningCurve,
+      period_days: days,
+    });
+  })
+);
+
+/**
+ * GET /api/:context/evolution/domain-strengths
+ * Get analysis of which domains the AI handles well
+ */
+evolutionRouter.get(
+  '/:context/evolution/domain-strengths',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use "personal" or "work".');
+    }
+
+    const domainStrengths = await aiEvolutionAnalytics.analyzeDomainStrengths(
+      context as AIContext
+    );
+
+    res.json({
+      success: true,
+      domainStrengths,
+      strongest: domainStrengths[0] || null,
+      weakest: domainStrengths[domainStrengths.length - 1] || null,
+    });
+  })
+);
+
+/**
+ * GET /api/:context/evolution/proactive-effectiveness
+ * Get effectiveness metrics for proactive suggestions
+ */
+evolutionRouter.get(
+  '/:context/evolution/proactive-effectiveness',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const days = Math.min(parseInt(req.query.days as string) || 30, 365);
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use "personal" or "work".');
+    }
+
+    const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness(
+      context as AIContext,
+      days
+    );
+
+    res.json({
+      success: true,
+      effectiveness,
+      period_days: days,
+    });
+  })
+);
+
+/**
+ * GET /api/:context/evolution/insights
+ * Get AI-generated insights and recommendations
+ */
+evolutionRouter.get(
+  '/:context/evolution/insights',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use "personal" or "work".');
+    }
+
+    const insights = await aiEvolutionAnalytics.getInsights(context as AIContext);
+
+    res.json({
+      success: true,
+      insights,
+      generatedAt: new Date().toISOString(),
+    });
+  })
+);
+
+/**
+ * GET /api/:context/evolution/metrics
+ * Get comprehensive evolution metrics
+ */
+evolutionRouter.get(
+  '/:context/evolution/metrics',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const days = Math.min(parseInt(req.query.days as string) || 30, 365);
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use "personal" or "work".');
+    }
+
+    const metrics = await aiEvolutionAnalytics.getEvolutionMetrics(
+      context as AIContext,
+      days
+    );
+
+    res.json({
+      success: true,
+      metrics,
+      period_days: days,
+    });
+  })
+);

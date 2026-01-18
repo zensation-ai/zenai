@@ -52,6 +52,8 @@ import { interactionsRouter } from './routes/interactions';
 import { evolutionRouter } from './routes/analytics-evolution';
 // Phase 25: Proactive Draft Generation
 import { draftsRouter } from './routes/drafts';
+// Phase 27: Proactive Intelligence System
+import proactiveRouter from './routes/proactive';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -186,6 +188,12 @@ app.use('/api', evolutionRouter);  // /api/:context/evolution, /api/:context/evo
 // Phase 25: Proactive Draft Generation - "KI bereitet Entwürfe vor"
 app.use('/api', draftsRouter);  // /api/:context/ideas/:id/draft, /api/:context/drafts
 
+// Phase 27: Proactive Intelligence System - "KI macht proaktive Vorschläge"
+app.use('/api', proactiveRouter);  // /api/:context/proactive/suggestions, /api/:context/proactive/routines, etc.
+
+// Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"
+// Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
+
 // Cleanup rate limits every hour
 setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
@@ -211,19 +219,30 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-Personal AI System - Backend (Phase 23)
+Personal AI System - Backend (Phase 28)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
 Ollama:      ${process.env.OLLAMA_URL ? 'configured' : 'not configured'}
 Database:    ${process.env.DATABASE_URL ? 'DATABASE_URL (Railway)' : (process.env.DB_HOST ? 'DB_HOST configured' : 'localhost (default)')}
 ========================================================
-Phase 6 APIs (NEW!):
-  - Context-aware routes support /api/:context/...
-  - Personal Persona: Friendly, exploratory
-  - Work Persona: Structured, business-focused
+Phase 28 APIs (NEW!):
+  - Learning Curve:      GET /api/:context/evolution/learning-curve
+  - Domain Strengths:    GET /api/:context/evolution/domain-strengths
+  - Proact. Effective.:  GET /api/:context/evolution/proactive-effectiveness
+  - AI Insights:         GET /api/:context/evolution/insights
+  - Full Metrics:        GET /api/:context/evolution/metrics
 
-Phase 23 APIs (NEW!):
+Phase 27 APIs:
+  - Suggestions:     GET /api/:context/proactive/suggestions
+  - Accept/Dismiss:  POST /api/:context/proactive/suggestions/:id/accept|dismiss
+  - Routines:        GET /api/:context/proactive/routines
+  - Analyze:         POST /api/:context/proactive/routines/analyze
+  - Log Action:      POST /api/:context/proactive/actions
+  - Settings:        GET/PUT /api/:context/proactive/settings
+  - Stats:           GET /api/:context/proactive/stats
+
+Phase 23 APIs:
   - Domain Focus:    /api/:context/focus
   - AI Feedback:     /api/:context/feedback
   - Proactive Res.:  /api/:context/research

@@ -357,7 +357,13 @@ export async function generateProactiveDraft(
 
 interface DraftContext {
   profile: Record<string, any> | null;
-  relatedIdeas: Array<{ id: string; title: string; summary: string }>;
+  relatedIdeas: Array<{
+    id: string;
+    title: string;
+    summary: string;
+    keywords?: string[];
+    similarity?: number;
+  }>;
   relatedIdeaIds: string[];
   recentTopics: string[];
 }
@@ -375,31 +381,92 @@ async function gatherContext(trigger: DraftTrigger): Promise<DraftContext> {
     const profile = await getOrCreateProfile(trigger.context);
     context.profile = profile;
 
-    // 2. Ähnliche Ideen laden (für Kontext)
+    // 2. Ähnliche Ideen laden mit semantischer Ähnlichkeit (Batch-optimiert)
+    // Nutzt das Embedding der Trigger-Idee um semantisch ähnliche Ideen zu finden
     const relatedResult = await queryContext(
       trigger.context,
-      `SELECT id, title, summary
-       FROM ideas
-       WHERE context = $1 AND id != $2 AND is_archived = false
-       ORDER BY created_at DESC
-       LIMIT 5`,
+      `WITH target_idea AS (
+        SELECT embedding FROM ideas WHERE id = $2
+      )
+      SELECT
+        i.id,
+        i.title,
+        i.summary,
+        i.keywords,
+        CASE
+          WHEN ti.embedding IS NOT NULL AND i.embedding IS NOT NULL
+          THEN 1 - (i.embedding <=> ti.embedding)
+          ELSE 0.5
+        END as similarity
+      FROM ideas i
+      CROSS JOIN target_idea ti
+      WHERE i.context = $1
+        AND i.id != $2
+        AND i.is_archived = false
+        AND i.embedding IS NOT NULL
+      ORDER BY
+        CASE
+          WHEN ti.embedding IS NOT NULL
+          THEN i.embedding <=> ti.embedding
+          ELSE i.created_at
+        END ASC
+      LIMIT 5`,
       [trigger.context, trigger.ideaId]
     );
-    context.relatedIdeas = relatedResult.rows;
+
+    context.relatedIdeas = relatedResult.rows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      summary: r.summary,
+      keywords: r.keywords,
+      similarity: r.similarity,
+    }));
     context.relatedIdeaIds = relatedResult.rows.map((r: any) => r.id);
 
-    // 3. Aktuelle Themen
+    logger.debug('Gathered related ideas via semantic similarity', {
+      count: context.relatedIdeas.length,
+      topSimilarity: context.relatedIdeas[0]?.similarity,
+    });
+
+    // 3. Aktuelle Themen (optimierte Batch-Query)
     const topicsResult = await queryContext(
       trigger.context,
-      `SELECT DISTINCT unnest(keywords) as topic
-       FROM ideas
-       WHERE context = $1 AND created_at > NOW() - INTERVAL '7 days'
-       LIMIT 10`,
+      `WITH recent_keywords AS (
+        SELECT unnest(keywords) as topic, COUNT(*) as freq
+        FROM ideas
+        WHERE context = $1
+          AND created_at > NOW() - INTERVAL '7 days'
+          AND keywords IS NOT NULL
+        GROUP BY unnest(keywords)
+      )
+      SELECT topic, freq
+      FROM recent_keywords
+      WHERE length(topic) > 2
+      ORDER BY freq DESC
+      LIMIT 10`,
       [trigger.context]
     );
     context.recentTopics = topicsResult.rows.map((r: any) => r.topic);
+
   } catch (error) {
     logger.warn('Failed to gather full context for draft', { error });
+
+    // Fallback: Einfache Query ohne Embeddings
+    try {
+      const fallbackResult = await queryContext(
+        trigger.context,
+        `SELECT id, title, summary
+         FROM ideas
+         WHERE context = $1 AND id != $2 AND is_archived = false
+         ORDER BY created_at DESC
+         LIMIT 5`,
+        [trigger.context, trigger.ideaId]
+      );
+      context.relatedIdeas = fallbackResult.rows;
+      context.relatedIdeaIds = fallbackResult.rows.map((r: any) => r.id);
+    } catch (fallbackError) {
+      logger.error('Fallback context gathering also failed', fallbackError instanceof Error ? fallbackError : undefined);
+    }
   }
 
   return context;
