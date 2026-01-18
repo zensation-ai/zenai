@@ -285,7 +285,7 @@ extension APIService {
     /// Register push token with backend (new context-aware API)
     func registerPushToken(token: String, platform: String, deviceId: String?, deviceName: String?) async throws {
         // Try new context-aware endpoint first, fallback to legacy
-        let context = AIContextManager.shared.currentContext.rawValue
+        let context = ContextManager.shared.currentContext.rawValue
         let deviceModel = UIDevice.current.model
         let osVersion = UIDevice.current.systemVersion
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -297,7 +297,9 @@ extension APIService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        if let apiKey = APIKeyManager.shared.getAPIKey() {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
 
         var body: [String: Any] = [
             "deviceToken": token,
@@ -320,7 +322,7 @@ extension APIService {
 
     /// Get notification preferences for current device
     func getNotificationPreferences() async throws -> PushNotificationPreferences {
-        let context = AIContextManager.shared.currentContext.rawValue
+        let context = ContextManager.shared.currentContext.rawValue
         let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
 
         guard let url = URL(string: "\(baseURL)/api/\(context)/notifications/preferences/\(deviceId)") else {
@@ -328,7 +330,9 @@ extension APIService {
         }
 
         var request = URLRequest(url: url)
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        if let apiKey = APIKeyManager.shared.getAPIKey() {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -350,7 +354,7 @@ extension APIService {
 
     /// Update notification preferences
     func updateNotificationPreferences(_ preferences: PushNotificationPreferences) async throws {
-        let context = AIContextManager.shared.currentContext.rawValue
+        let context = ContextManager.shared.currentContext.rawValue
         let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
 
         guard let url = URL(string: "\(baseURL)/api/\(context)/notifications/preferences/\(deviceId)") else {
@@ -360,7 +364,9 @@ extension APIService {
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        if let apiKey = APIKeyManager.shared.getAPIKey() {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
 
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -376,7 +382,7 @@ extension APIService {
 
     /// Record that a notification was opened
     func recordNotificationOpened(notificationId: String) async throws {
-        let context = AIContextManager.shared.currentContext.rawValue
+        let context = ContextManager.shared.currentContext.rawValue
 
         guard let url = URL(string: "\(baseURL)/api/\(context)/notifications/\(notificationId)/opened") else {
             throw APIError.invalidURL
@@ -384,7 +390,9 @@ extension APIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        if let apiKey = APIKeyManager.shared.getAPIKey() {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
 
         let (_, response) = try await URLSession.shared.data(for: request)
 
