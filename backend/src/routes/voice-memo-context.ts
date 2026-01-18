@@ -32,6 +32,8 @@ import { getActiveFocusContext, findMatchingFocus } from '../services/domain-foc
 import { learnFromIdea } from '../services/business-profile-learning';
 // Phase 25: Proactive Draft Generation
 import { generateProactiveDraft, GeneratedDraft } from '../services/draft-generation';
+// Phase 10: Duplicate Detection
+import { isLikelyDuplicate, findDuplicates } from '../services/duplicate-detection';
 // OpenAI for JSON queries (text generation only, not embeddings)
 import { isOpenAIAvailable, queryOpenAIJSON } from '../services/openai';
 // Claude with personalized context (primary)
@@ -139,6 +141,34 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     // Generate embedding
     const embedding = await generateEmbedding(structured.summary + ' ' + structured.title);
 
+    // Phase 10: Check for duplicates before saving
+    const isDuplicate = await isLikelyDuplicate(
+      context as AIContext,
+      structured.title,
+      transcript
+    );
+
+    if (isDuplicate) {
+      // Find the similar ideas to return to user
+      const duplicates = await findDuplicates(context as AIContext, transcript, 0.85);
+      logger.warn('Duplicate idea detected, rejecting', {
+        title: structured.title,
+        duplicateCount: duplicates.count,
+        firstMatch: duplicates.suggestions[0]?.title,
+      });
+
+      return res.status(409).json({
+        success: false,
+        error: 'duplicate_detected',
+        message: 'Ein sehr ähnlicher Gedanke existiert bereits.',
+        existingIdeas: duplicates.suggestions.map(d => ({
+          id: d.id,
+          title: d.title,
+          similarity: Math.round(d.similarity * 100),
+        })),
+      });
+    }
+
     // Save to work database
     const ideaId = uuidv4();
     await queryContext(
@@ -211,7 +241,19 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     // Phase 25: Proactive Draft Generation (non-blocking)
     let proactiveDraft: GeneratedDraft | null = null;
     try {
+      // Enhanced logging for draft generation debugging
+      logger.info('Draft generation check', {
+        ideaId,
+        type: structured.type,
+        isTask: structured.type === 'task',
+        claudeAvailable: isClaudeAvailable(),
+        title: structured.title,
+        transcriptPreview: transcript.substring(0, 100),
+      });
+
       if (structured.type === 'task') {
+        logger.info('Attempting draft generation for task', { ideaId, title: structured.title });
+
         proactiveDraft = await generateProactiveDraft({
           ideaId,
           title: structured.title,
@@ -230,11 +272,25 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
             draftType: proactiveDraft.draftType,
             wordCount: proactiveDraft.wordCount,
           });
+        } else {
+          logger.info('No draft generated - pattern not matched or Claude unavailable', {
+            ideaId,
+            title: structured.title,
+          });
         }
+      } else {
+        logger.debug('Skipping draft generation - not a task', {
+          ideaId,
+          type: structured.type,
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       // Don't fail the main request if draft generation fails
-      logger.warn('Proactive draft generation failed', { ideaId, error });
+      logger.warn('Proactive draft generation failed', {
+        ideaId,
+        error: error.message || error,
+        stack: error.stack,
+      });
     }
 
     const duration = Date.now() - startTime;

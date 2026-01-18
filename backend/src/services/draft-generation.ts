@@ -255,13 +255,33 @@ export async function generateProactiveDraft(
     type: trigger.type,
     context: trigger.context,
     textPreview: fullText.substring(0, 100),
+    claudeAvailable: isClaudeAvailable(),
   });
+
+  // Check Claude availability first
+  if (!isClaudeAvailable()) {
+    logger.warn('Draft generation skipped - Claude not available', {
+      ideaId: trigger.ideaId,
+      hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+    });
+    return null;
+  }
 
   // 1. Prüfe ob Draft benötigt wird
   const draftNeed = await detectDraftNeed(fullText, trigger.type, trigger.context);
 
+  logger.info('Draft need detection result', {
+    ideaId: trigger.ideaId,
+    detected: draftNeed.detected,
+    draftType: draftNeed.draftType,
+    confidence: draftNeed.confidence,
+    matchedPattern: draftNeed.matchedPattern,
+    extractedTopic: draftNeed.extractedTopic,
+    extractedRecipient: draftNeed.extractedRecipient,
+  });
+
   if (!draftNeed.detected || draftNeed.confidence < 0.5) {
-    logger.info('No draft need detected', {
+    logger.info('No draft need detected or confidence too low', {
       ideaId: trigger.ideaId,
       type: trigger.type,
       detected: draftNeed.detected,
