@@ -3,7 +3,7 @@ import { query } from '../utils/database';
 import { structureWithOllama, generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
-import { parseJsonb } from '../types';
+import { parseJsonbWithDefault } from '../types';
 
 export interface Meeting {
   id: string;
@@ -262,10 +262,10 @@ export async function getMeetingNotes(meetingId: string): Promise<MeetingNotes |
     meeting_id: row.meeting_id,
     raw_transcript: row.raw_transcript,
     structured_summary: row.structured_summary,
-    key_decisions: parseJsonb(row.key_decisions),
-    action_items: parseJsonb(row.action_items),
-    topics_discussed: parseJsonb(row.topics_discussed),
-    follow_ups: parseJsonb(row.follow_ups),
+    key_decisions: parseJsonbWithDefault<string[]>(row.key_decisions, []),
+    action_items: parseJsonbWithDefault<ActionItem[]>(row.action_items, []),
+    topics_discussed: parseJsonbWithDefault<string[]>(row.topics_discussed, []),
+    follow_ups: parseJsonbWithDefault<FollowUp[]>(row.follow_ups, []),
     sentiment: row.sentiment,
     created_at: row.created_at,
   };
@@ -304,10 +304,10 @@ export async function searchMeetings(
       meeting_id: row.meeting_id,
       raw_transcript: row.raw_transcript,
       structured_summary: row.structured_summary,
-      key_decisions: parseJsonb(row.key_decisions),
-      action_items: parseJsonb(row.action_items),
-      topics_discussed: parseJsonb(row.topics_discussed),
-      follow_ups: parseJsonb(row.follow_ups),
+      key_decisions: parseJsonbWithDefault<string[]>(row.key_decisions, []),
+      action_items: parseJsonbWithDefault<ActionItem[]>(row.action_items, []),
+      topics_discussed: parseJsonbWithDefault<string[]>(row.topics_discussed, []),
+      follow_ups: parseJsonbWithDefault<FollowUp[]>(row.follow_ups, []),
       sentiment: row.sentiment,
       created_at: row.created_at,
     },
@@ -343,7 +343,7 @@ export async function getAllActionItems(filters?: {
   const items: { meeting: Meeting; action_item: ActionItem; notes_id: string }[] = [];
 
   for (const row of result.rows) {
-    const actionItems = parseJsonb(row.action_items) as ActionItem[];
+    const actionItems = parseJsonbWithDefault<ActionItem[]>(row.action_items, []);
     for (const item of actionItems) {
       if (filters?.completed !== undefined && item.completed !== filters.completed) {
         continue;
@@ -367,7 +367,7 @@ function formatMeeting(row: any): Meeting {
     title: row.title,
     date: row.date,
     duration_minutes: row.duration_minutes,
-    participants: parseJsonb(row.participants),
+    participants: parseJsonbWithDefault<string[]>(row.participants, []),
     location: row.location,
     meeting_type: row.meeting_type,
     status: row.status,
@@ -376,4 +376,4 @@ function formatMeeting(row: any): Meeting {
   };
 }
 
-// parseJsonb imported from ../types - centralized implementation
+// parseJsonbWithDefault imported from ../types - centralized implementation

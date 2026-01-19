@@ -42,15 +42,15 @@ function escapeCSV(field: unknown): string {
 }
 
 /**
- * Parse JSON fields safely
+ * Parse JSON fields safely - returns string array for export formatting
  */
-function parseJSON(field: unknown): unknown[] {
+function parseJSON(field: unknown): string[] {
   if (!field) return [];
-  if (Array.isArray(field)) return field;
+  if (Array.isArray(field)) return field.map(item => String(item));
   if (typeof field === 'string') {
     try {
       const parsed = JSON.parse(field);
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.map(item => String(item)) : [];
     } catch {
       return [];
     }

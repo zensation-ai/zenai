@@ -2,7 +2,7 @@ import { query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
-import { parseJsonb } from '../types';
+import { parseJsonb, parseJsonbWithDefault } from '../types';
 
 export interface UserProfile {
   id: string;
@@ -68,21 +68,22 @@ export async function getUserProfile(profileId: string = 'default'): Promise<Use
   }
 
   const row = result.rows[0];
+  const productivityPatterns = parseJsonbWithDefault<Record<string, unknown>>(row.productivity_patterns, {});
   return {
     id: row.id,
-    preferred_categories: parseJsonb(row.preferred_categories),
-    preferred_types: parseJsonb(row.preferred_types),
-    topic_interests: parseJsonb(row.topic_interests),
-    active_hours: parseJsonb(row.active_hours),
-    productivity_patterns: parseJsonb(row.productivity_patterns),
+    preferred_categories: parseJsonbWithDefault<Record<string, number>>(row.preferred_categories, {}),
+    preferred_types: parseJsonbWithDefault<Record<string, number>>(row.preferred_types, {}),
+    topic_interests: parseJsonbWithDefault<Record<string, number>>(row.topic_interests, {}),
+    active_hours: parseJsonbWithDefault<Record<string, number>>(row.active_hours, {}),
+    productivity_patterns: productivityPatterns as Record<string, unknown>,
     total_ideas: row.total_ideas,
     total_meetings: row.total_meetings,
     avg_ideas_per_day: row.avg_ideas_per_day,
-    priority_keywords: parseJsonb(row.priority_keywords),
+    priority_keywords: parseJsonbWithDefault<{ high: string[]; medium: string[]; low: string[] }>(row.priority_keywords, { high: [], medium: [], low: [] }),
     auto_priority_enabled: row.auto_priority_enabled,
-    thinking_patterns: parseJsonb(row.thinking_patterns),
-    language_style: parseJsonb(row.language_style),
-    learning_confidence: parseJsonb(row.productivity_patterns)?.learning_confidence || 0,
+    thinking_patterns: parseJsonb<ThinkingPatterns>(row.thinking_patterns) ?? undefined,
+    language_style: parseJsonb<LanguageStyle>(row.language_style) ?? undefined,
+    learning_confidence: (productivityPatterns as { learning_confidence?: number })?.learning_confidence || 0,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -127,7 +128,7 @@ async function updateProfileFromInteraction(event: InteractionEvent): Promise<vo
       await incrementPreference(profileId, 'preferred_types', idea.type);
 
       // Update topic interests based on keywords
-      const keywords = parseJsonb(idea.keywords);
+      const keywords = parseJsonbWithDefault<string[]>(idea.keywords, []);
       for (const keyword of keywords) {
         await incrementTopicInterest(profileId, keyword);
       }
@@ -198,7 +199,10 @@ async function learnPriorityKeywords(
 
   if (profileResult.rows.length === 0) return;
 
-  const priorityKeywords = parseJsonb(profileResult.rows[0].priority_keywords);
+  const priorityKeywords = parseJsonbWithDefault<{ high: string[]; medium: string[]; low: string[] }>(
+    profileResult.rows[0].priority_keywords,
+    { high: [], medium: [], low: [] }
+  );
 
   // Add keywords to the appropriate priority list (limit to 50 per category)
   for (const keyword of keywords) {
@@ -320,7 +324,7 @@ export async function updateInterestEmbedding(profileId: string = 'default'): Pr
   // Combine recent content into interest description
   const interestText = recentIdeas.rows
     .map((row) => {
-      const keywords = parseJsonb(row.keywords).join(', ');
+      const keywords = parseJsonbWithDefault<string[]>(row.keywords, []).join(', ');
       return `${row.title}. ${row.summary || ''}. Keywords: ${keywords}`;
     })
     .join('\n');
