@@ -280,9 +280,25 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
 };
 
 export async function rateLimiter(req: Request, res: Response, next: NextFunction) {
-  // Use API key ID, client IP, or fallback to anonymous
-  // req.ip can be undefined if trust proxy is not configured
-  const key = req.apiKey?.id || req.ip || req.socket?.remoteAddress || 'anonymous';
+  // Use API key ID, client IP, or generate unique identifier
+  // SECURITY: Never use 'anonymous' as it would share limits across all unauthenticated users
+  // For unknown IPs, use a combination of available request info to create a unique identifier
+  let key: string;
+
+  if (req.apiKey?.id) {
+    key = req.apiKey.id;
+  } else if (req.ip) {
+    key = req.ip;
+  } else if (req.socket?.remoteAddress) {
+    key = req.socket.remoteAddress;
+  } else {
+    // SECURITY: Fallback to request-based unique identifier rather than shared 'anonymous'
+    // This prevents rate limit bypass attacks when IP cannot be determined
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const forwarded = req.headers['x-forwarded-for'];
+    const forwardedStr = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+    key = `unknown:${forwardedStr || 'no-ip'}:${userAgent.substring(0, 50)}`;
+  }
 
   // Check for endpoint-specific limit
   const endpoint = `${req.method}:${req.path}`;
@@ -295,10 +311,11 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
     const windowStart = new Date(Math.floor(Date.now() / windowMs) * windowMs);
 
     // Upsert rate limit counter
+    // FIXED: Column name is 'key' not 'identifier' (matches schema in init-db.ts)
     const result = await pool.query(
-      `INSERT INTO rate_limits (identifier, window_start, request_count)
+      `INSERT INTO rate_limits (key, window_start, request_count)
        VALUES ($1, $2, 1)
-       ON CONFLICT (identifier, window_start)
+       ON CONFLICT (key, window_start)
        DO UPDATE SET request_count = rate_limits.request_count + 1
        RETURNING request_count`,
       [key, windowStart]

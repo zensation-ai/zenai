@@ -286,19 +286,46 @@ export type WithTimestamps<T> = T & {
 
 /**
  * Safely parse JSONB fields from database
+ *
+ * IMPORTANT: This is the canonical implementation. Do NOT create duplicate
+ * parseJsonb functions in other files - import this one instead.
+ *
+ * @param value - The value to parse (can be string, object, null, undefined)
+ * @param defaultValue - Optional default to return on parse failure (default: null)
+ * @returns Parsed value or defaultValue on failure
+ *
+ * @example
+ * // Returns parsed object or null
+ * const data = parseJsonb<MyType>(row.json_column);
+ *
+ * // Returns parsed object or empty array
+ * const items = parseJsonb<string[]>(row.items, []);
  */
-export function parseJsonb<T>(value: unknown): T | null {
+export function parseJsonb<T>(value: unknown, defaultValue: T | null = null): T | null {
   if (value === null || value === undefined) {
-    return null;
+    return defaultValue;
+  }
+  if (typeof value === 'object') {
+    // Already parsed (PostgreSQL driver sometimes returns objects directly)
+    return value as T;
   }
   if (typeof value === 'string') {
     try {
       return JSON.parse(value) as T;
     } catch {
-      return null;
+      return defaultValue;
     }
   }
-  return value as T;
+  return defaultValue;
+}
+
+/**
+ * Safely parse JSONB with a required default (never returns null)
+ * Use this when you need a guaranteed non-null return value
+ */
+export function parseJsonbWithDefault<T>(value: unknown, defaultValue: T): T {
+  const result = parseJsonb<T>(value, defaultValue);
+  return result ?? defaultValue;
 }
 
 /**

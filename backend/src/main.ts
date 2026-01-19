@@ -67,6 +67,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// SECURITY: Trust proxy for correct client IP behind reverse proxies (Railway, Vercel, etc.)
+// This ensures rate limiting works correctly with real client IPs
+if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL) {
+  app.set('trust proxy', 1);
+}
+
 // Security Middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -200,9 +206,18 @@ app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessi
 // Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
 
 // Cleanup rate limits every hour
-setInterval(() => {
+// Store interval reference for proper cleanup on shutdown
+const rateLimitCleanupInterval = setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
 }, 60 * 60 * 1000);
+
+// Ensure interval is cleared on process shutdown to prevent memory leaks
+process.on('SIGTERM', () => {
+  clearInterval(rateLimitCleanupInterval);
+});
+process.on('SIGINT', () => {
+  clearInterval(rateLimitCleanupInterval);
+});
 
 // 404 Handler for undefined routes
 app.use((req, res) => {
