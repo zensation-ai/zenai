@@ -34,7 +34,7 @@ import { SyncDashboard } from './components/SyncDashboard';
 import { ProactiveDashboard } from './components/ProactiveDashboard';
 import { Onboarding } from './components/Onboarding';
 import { GeneralChat } from './components/GeneralChat';
-import { SkeletonLoader, ProgressIndicator } from './components/SkeletonLoader';
+import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
