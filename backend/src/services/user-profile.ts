@@ -2,6 +2,7 @@ import { query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
+import { parseJsonb } from '../types';
 
 export interface UserProfile {
   id: string;
@@ -440,13 +441,4 @@ function getDefaultProfile(id: string): UserProfile {
   };
 }
 
-function parseJsonb(value: any): any {
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return {};
-    }
-  }
-  return value || {};
-}
+// parseJsonb imported from ../types - centralized implementation

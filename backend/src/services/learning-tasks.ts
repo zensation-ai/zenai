@@ -8,6 +8,7 @@
 import { getPool, AIContext } from '../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
+import { parseJsonb } from '../types';
 
 // Types
 export interface LearningTask {
@@ -792,14 +793,4 @@ function parseSessionRow(row: Record<string, unknown>): LearningSession {
   };
 }
 
-function parseJsonb(value: unknown): unknown {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return null;
-    }
-  }
-  return value;
-}
+// parseJsonb imported from ../types - centralized implementation

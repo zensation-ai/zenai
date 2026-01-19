@@ -14,6 +14,7 @@ import { pool, query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
+import { parseJsonb } from '../types';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
@@ -1129,18 +1130,7 @@ function getTopN(counts: Record<string, number>, n: number): string[] {
     .map(([key]) => key);
 }
 
-function parseJsonb(value: any): any {
-  if (value === null || value === undefined) return {};
-  if (typeof value === 'object') return value;
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return {};
-    }
-  }
-  return {};
-}
+// parseJsonb imported from ../types - centralized implementation
 
 // ===========================================
 // ENHANCED FEATURE EXTRACTION

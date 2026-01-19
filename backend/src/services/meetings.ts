@@ -3,6 +3,7 @@ import { query } from '../utils/database';
 import { structureWithOllama, generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
+import { parseJsonb } from '../types';
 
 export interface Meeting {
   id: string;
@@ -375,13 +376,4 @@ function formatMeeting(row: any): Meeting {
   };
 }
 
-function parseJsonb(value: any): any {
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return [];
-    }
-  }
-  return value || [];
-}
+// parseJsonb imported from ../types - centralized implementation

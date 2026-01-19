@@ -32,7 +32,7 @@ function formatDate(date: Date | string): string {
 /**
  * Escape CSV field (handle commas, quotes, newlines)
  */
-function escapeCSV(field: any): string {
+function escapeCSV(field: unknown): string {
   if (field === null || field === undefined) return '';
   const str = String(field);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -44,12 +44,13 @@ function escapeCSV(field: any): string {
 /**
  * Parse JSON fields safely
  */
-function parseJSON(field: any): any[] {
+function parseJSON(field: unknown): unknown[] {
   if (!field) return [];
   if (Array.isArray(field)) return field;
   if (typeof field === 'string') {
     try {
-      return JSON.parse(field);
+      const parsed = JSON.parse(field);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }

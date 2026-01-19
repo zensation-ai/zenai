@@ -163,8 +163,13 @@ export const cache = {
     // Generate new value
     const value = await factory();
 
-    // Store in cache (don't await - fire and forget)
-    this.set(key, value, ttl).catch(() => {});
+    // Store in cache (don't await - fire and forget, but log errors)
+    this.set(key, value, ttl).catch(err => {
+      logger.warn('Cache write failed (fire-and-forget)', {
+        key: key.substring(0, 50),
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
+    });
 
     return value;
   },
