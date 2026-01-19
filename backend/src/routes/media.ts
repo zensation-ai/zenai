@@ -52,28 +52,41 @@ const storage = multer.diskStorage({
   }
 });
 
+// Allowed MIME types and extensions for security
+const ALLOWED_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/heic',
+  'video/quicktime',
+  'video/mp4',
+  'audio/wav',
+  'audio/m4a',
+  'audio/mpeg'
+] as const;
+
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.heic', '.mov', '.mp4', '.wav', '.m4a', '.mp3'];
+
 const upload = multer({
   storage,
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit (reduced from 100MB for security)
+    files: 1 // Max 1 file per request
   },
   fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      'image/jpeg',
-      'image/png',
-      'image/heic',
-      'video/quicktime',
-      'video/mp4',
-      'audio/wav',
-      'audio/m4a',
-      'audio/mpeg'
-    ];
-
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only images, videos, and audio allowed.'));
+    // Validate MIME type
+    if (!ALLOWED_MIMES.includes(file.mimetype as typeof ALLOWED_MIMES[number])) {
+      cb(new Error(`Invalid file type: ${file.mimetype}. Only images, videos, and audio allowed.`));
+      return;
     }
+
+    // Validate extension (double-check against MIME spoofing)
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      cb(new Error(`Invalid file extension: ${ext}. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`));
+      return;
+    }
+
+    cb(null, true);
   }
 });
 

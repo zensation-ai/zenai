@@ -67,9 +67,8 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         const lastSession = sessions[0];
         await loadSession(lastSession.id);
       }
-    } catch (err) {
-      // No existing session, that's fine
-      console.log('No existing chat session found');
+    } catch {
+      // No existing session, that's fine - user will start fresh
     } finally {
       setLoading(false);
     }

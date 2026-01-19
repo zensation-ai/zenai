@@ -66,12 +66,30 @@ function parseJSON(field: any): any[] {
  * Export all ideas as PDF report
  * PROTECTED: Requires authentication and read scope
  */
+// Valid values for filtering (allowlist)
+const VALID_TYPES = ['idea', 'task', 'insight', 'problem', 'question'];
+const VALID_CATEGORIES = ['business', 'technical', 'personal', 'learning'];
+const VALID_PRIORITIES = ['low', 'medium', 'high'];
+
+/**
+ * Validate filter parameter against allowlist
+ */
+function validateFilterParam(value: string | undefined, allowlist: string[], paramName: string): string | undefined {
+  if (!value) return undefined;
+  if (!allowlist.includes(value)) {
+    throw new ValidationError(`Invalid ${paramName}: ${value}. Allowed values: ${allowlist.join(', ')}`);
+  }
+  return value;
+}
+
 exportRouter.get('/ideas/pdf', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
   const includeArchived = req.query.includeArchived === 'true';
-  const type = req.query.type as string;
-  const category = req.query.category as string;
-  const priority = req.query.priority as string;
+
+  // Validate filter parameters against allowlist
+  const type = validateFilterParam(req.query.type as string, VALID_TYPES, 'type');
+  const category = validateFilterParam(req.query.category as string, VALID_CATEGORIES, 'category');
+  const priority = validateFilterParam(req.query.priority as string, VALID_PRIORITIES, 'priority');
 
   // Build query
   let whereClause = includeArchived ? '' : 'WHERE is_archived = false';
