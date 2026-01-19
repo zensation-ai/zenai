@@ -87,17 +87,26 @@ app.use(helmet({
 }));
 
 // CORS with whitelist (configurable via environment)
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+// SECURITY: Use ALLOWED_ORIGINS env var in production - don't rely on hardcoded fallbacks
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
-  'https://frontend-mu-six-93.vercel.app',
   'capacitor://localhost',
   'ionic://localhost'
 ];
+
+// Warn if using default origins (should be configured via env in production)
+if (!process.env.ALLOWED_ORIGINS && process.env.NODE_ENV === 'production') {
+  logger.warn('CORS: Using default allowed origins - configure ALLOWED_ORIGINS env var', {
+    operation: 'cors',
+    securityNote: 'Production should have explicit ALLOWED_ORIGINS configured'
+  });
+}
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -106,7 +115,12 @@ app.use(cors({
         logger.warn('CORS blocked unauthorized origin', { origin, operation: 'cors' });
         callback(new Error('Not allowed by CORS'));
       } else {
-        // Allow in development for testing
+        // SECURITY IMPROVEMENT: Log even in development for visibility
+        logger.debug('CORS: Allowing unknown origin in dev mode', {
+          origin,
+          operation: 'cors',
+          note: 'This would be blocked in production'
+        });
         callback(null, true);
       }
     }

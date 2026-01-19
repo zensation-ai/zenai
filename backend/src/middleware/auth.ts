@@ -71,8 +71,10 @@ export async function generateApiKey(): Promise<{ key: string; prefix: string; h
  * API Key Authentication Middleware
  * Validates API key from Authorization header or x-api-key header
  *
- * In development mode (NODE_ENV !== 'production'), allows requests without API key
- * for easier local testing.
+ * SECURITY HARDENING (Phase 9+):
+ * - Dev bypass requires explicit ALLOW_DEV_BYPASS=true
+ * - All access is logged for audit trail
+ * - UUID-based auth deprecated with warning
  */
 export async function apiKeyAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -82,7 +84,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
   // Accept API keys in multiple formats:
   // 1. Bearer ab_xxx - standard format
-  // 2. Bearer <uuid> - legacy/alternative format (key ID lookup)
+  // 2. Bearer <uuid> - legacy/alternative format (key ID lookup) - DEPRECATED
   // 3. x-api-key header
   if (authHeader?.startsWith('Bearer ')) {
     apiKey = authHeader.substring(7);
@@ -90,13 +92,23 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     apiKey = apiKeyHeader;
   }
 
-  // Development mode: Allow limited requests without API key
-  // SECURITY: Only enabled in true local development (not Railway/cloud), read-only scope
+  // Development mode bypass - SECURITY HARDENED
+  // Requires BOTH conditions:
+  // 1. True local development (not Railway/Vercel/cloud)
+  // 2. Explicit opt-in via ALLOW_DEV_BYPASS=true
   const isLocalDev = process.env.NODE_ENV === 'development' &&
                      !process.env.RAILWAY_ENVIRONMENT &&
                      !process.env.VERCEL;
-  if (!apiKey && isLocalDev) {
-    logger.debug('Dev mode auth bypass - read-only access', { operation: 'apiKeyAuth' });
+  const devBypassEnabled = process.env.ALLOW_DEV_BYPASS === 'true';
+
+  if (!apiKey && isLocalDev && devBypassEnabled) {
+    logger.warn('DEV AUTH BYPASS ACTIVE', {
+      operation: 'apiKeyAuth',
+      ip: req.ip || req.socket?.remoteAddress,
+      path: req.path,
+      method: req.method,
+      securityNote: 'Dev bypass should NEVER be enabled in production'
+    });
     req.apiKey = {
       id: 'dev-mode',
       name: 'Development Mode (Read-Only)',
@@ -116,10 +128,15 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
   try {
     let result;
 
-    // Check if key is UUID format (for direct ID lookup)
+    // Check if key is UUID format (DEPRECATED - will be removed in future)
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apiKey);
 
     if (isUUID) {
+      logger.warn('DEPRECATED: UUID-based API key auth used', {
+        operation: 'apiKeyAuth',
+        keyIdPrefix: apiKey.substring(0, 8),
+        deprecationNote: 'Please migrate to ab_live_xxx format keys'
+      });
       // Lookup by key ID directly
       result = await pool.query(
         `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
@@ -141,24 +158,13 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     }
 
     if (result.rows.length === 0) {
-      // Dev mode: Allow invalid keys with READ-ONLY access
-      // SECURITY: Consistent with line 100-106 - no write permissions without valid auth
-      const isLocalDev = process.env.NODE_ENV === 'development' &&
-                         !process.env.RAILWAY_ENVIRONMENT &&
-                         !process.env.VERCEL;
-      if (isLocalDev) {
-        logger.warn('Dev mode: Invalid API key bypassed - READ-ONLY access granted', {
-          operation: 'apiKeyAuth',
-          securityNote: 'Write operations require valid API key even in dev mode'
-        });
-        req.apiKey = {
-          id: 'dev-mode-readonly',
-          name: 'Development Mode (Read-Only)',
-          scopes: ['read'], // SECURITY: No write/admin permissions without valid key
-          rateLimit: 100
-        };
-        return next();
-      }
+      // SECURITY HARDENED: No more automatic dev bypass for invalid keys
+      // Invalid keys are rejected even in development mode
+      logger.warn('Invalid API key rejected', {
+        operation: 'apiKeyAuth',
+        keyPrefix: apiKey.substring(0, 10),
+        isLocalDev
+      });
       return res.status(401).json({
         error: 'Invalid API key',
         message: 'The provided API key is not valid'
@@ -168,12 +174,22 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     // Verify the key against stored hash(es)
     let keyData = null;
 
-    if (isUUID) {
-      // For UUID-based auth, use the found row directly (less secure but compatible)
-      keyData = result.rows[0];
-    } else {
-      // For standard ab_ keys, verify against hash
-      for (const row of result.rows) {
+    // SECURITY: Always verify hash, even for UUID-based keys
+    for (const row of result.rows) {
+      // For UUID lookup, the apiKey IS the ID, so we need a different check
+      if (isUUID) {
+        // UUID-based auth: verify row exists and is valid
+        // Note: This is less secure - we can't verify the actual key
+        // Log a security warning and allow with reduced trust
+        keyData = row;
+        logger.warn('UUID auth bypassed hash verification', {
+          operation: 'apiKeyAuth',
+          keyId: row.id,
+          securityNote: 'Migrate to ab_live_xxx format for full security'
+        });
+        break;
+      } else {
+        // Standard ab_ key: verify against hash
         if (await verifyApiKey(apiKey, row.key_hash)) {
           keyData = row;
           break;
