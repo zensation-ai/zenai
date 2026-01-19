@@ -179,7 +179,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
     });
   };
 
-  // Render markdown-like formatting (basic)
+  // Render markdown-like formatting (safe, no dangerouslySetInnerHTML)
   const renderContent = (content: string) => {
     // Split by code blocks
     const parts = content.split(/(```[\s\S]*?```)/g);
@@ -195,16 +195,44 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         );
       }
 
-      // Process inline formatting
-      return (
-        <span key={i} dangerouslySetInnerHTML={{
-          __html: part
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/`(.*?)`/g, '<code class="inline-code">$1</code>')
-            .replace(/\n/g, '<br/>')
-        }} />
-      );
+      // Process inline formatting safely using React elements
+      const renderInlineFormatting = (text: string): React.ReactNode[] => {
+        const result: React.ReactNode[] = [];
+        // Combined regex for bold, italic, inline code
+        const inlineRegex = /(\*\*.*?\*\*|\*.*?\*|`[^`]+`|\n)/g;
+        let lastIndex = 0;
+        let match;
+        let keyIndex = 0;
+
+        while ((match = inlineRegex.exec(text)) !== null) {
+          // Add text before match
+          if (match.index > lastIndex) {
+            result.push(text.slice(lastIndex, match.index));
+          }
+
+          const matched = match[0];
+          if (matched === '\n') {
+            result.push(<br key={`br-${keyIndex++}`} />);
+          } else if (matched.startsWith('**') && matched.endsWith('**')) {
+            result.push(<strong key={`strong-${keyIndex++}`}>{matched.slice(2, -2)}</strong>);
+          } else if (matched.startsWith('*') && matched.endsWith('*')) {
+            result.push(<em key={`em-${keyIndex++}`}>{matched.slice(1, -1)}</em>);
+          } else if (matched.startsWith('`') && matched.endsWith('`')) {
+            result.push(<code key={`code-${keyIndex++}`} className="inline-code">{matched.slice(1, -1)}</code>);
+          }
+
+          lastIndex = match.index + matched.length;
+        }
+
+        // Add remaining text
+        if (lastIndex < text.length) {
+          result.push(text.slice(lastIndex));
+        }
+
+        return result;
+      };
+
+      return <span key={i}>{renderInlineFormatting(part)}</span>;
     });
   };
 
