@@ -54,6 +54,8 @@ import { evolutionRouter } from './routes/analytics-evolution';
 import { draftsRouter } from './routes/drafts';
 // Phase 27: Proactive Intelligence System
 import proactiveRouter from './routes/proactive';
+// Phase 29: General Chat - ChatGPT-like interface
+import { generalChatRouter } from './routes/general-chat';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -191,6 +193,9 @@ app.use('/api', draftsRouter);  // /api/:context/ideas/:id/draft, /api/:context/
 // Phase 27: Proactive Intelligence System - "KI macht proaktive Vorschläge"
 app.use('/api', proactiveRouter);  // /api/:context/proactive/suggestions, /api/:context/proactive/routines, etc.
 
+// Phase 29: General Chat - ChatGPT-like interface
+app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessions/:id/messages, /api/chat/quick
+
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"
 // Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
 
@@ -219,14 +224,22 @@ setupGracefulShutdown();
 // Start server
 app.listen(PORT, async () => {
   console.log(`
-Personal AI System - Backend (Phase 28)
+Personal AI System - Backend (Phase 29)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
 Ollama:      ${process.env.OLLAMA_URL ? 'configured' : 'not configured'}
 Database:    ${process.env.DATABASE_URL ? 'DATABASE_URL (Railway)' : (process.env.DB_HOST ? 'DB_HOST configured' : 'localhost (default)')}
 ========================================================
-Phase 28 APIs (NEW!):
+Phase 29 APIs (NEW!):
+  - Create Session:    POST /api/chat/sessions
+  - List Sessions:     GET /api/chat/sessions
+  - Get Session:       GET /api/chat/sessions/:id
+  - Send Message:      POST /api/chat/sessions/:id/messages
+  - Delete Session:    DELETE /api/chat/sessions/:id
+  - Quick Chat:        POST /api/chat/quick
+
+Phase 28 APIs:
   - Learning Curve:      GET /api/:context/evolution/learning-curve
   - Domain Strengths:    GET /api/:context/evolution/domain-strengths
   - Proact. Effective.:  GET /api/:context/evolution/proactive-effectiveness

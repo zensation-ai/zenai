@@ -12,7 +12,7 @@
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--header-text-muted, #94a3b8);
+  color: var(--header-text-muted, #c8d4de);
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
@@ -51,7 +51,7 @@
 
 .nav-dropdown-chevron {
   font-size: 0.5rem;
-  opacity: 0.6;
+  opacity: 0.75;
   margin-left: 2px;
 }
 

@@ -113,10 +113,10 @@
 .delete-button,
 .archive-button,
 .restore-button {
-  background: transparent;
+  background: rgba(20, 50, 70, 0.06);
   border: none;
   border-radius: 50%;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 0.85rem;
   width: 30px;
   height: 30px;
@@ -124,7 +124,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
+  opacity: 0.5;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
 }
@@ -132,7 +132,7 @@
 .idea-card:hover .delete-button,
 .idea-card:hover .archive-button,
 .idea-card:hover .restore-button {
-  opacity: 0.5;
+  opacity: 0.8;
 }
 
 .delete-button:hover {

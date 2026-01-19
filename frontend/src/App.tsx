@@ -33,6 +33,7 @@ import { ExportDashboard } from './components/ExportDashboard';
 import { SyncDashboard } from './components/SyncDashboard';
 import { ProactiveDashboard } from './components/ProactiveDashboard';
 import { Onboarding } from './components/Onboarding';
+import { GeneralChat } from './components/GeneralChat';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import './App.css';
@@ -79,6 +80,9 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return safeLocalStorage('get', 'onboardingComplete') !== 'true';
   });
+
+  // Input mode state (voice memo or chat)
+  const [inputMode, setInputMode] = useState<'voice' | 'chat'>('voice');
 
   // Context state (personal/work)
   const [context, setContext] = useContextState();
@@ -789,61 +793,90 @@ function App() {
           </p>
         )}
 
-        {/* Input Card - Integrated in Hero */}
+        {/* Input Card - Integrated in Hero with Tabs */}
         <div className="input-card">
-          <div className="text-input-container">
-            <label htmlFor="thought-input" className="visually-hidden">
-              Neuer Gedanke eingeben
-            </label>
-            <textarea
-              id="thought-input"
-              className="text-input"
-              placeholder="Was geht dir gerade durch den Kopf? Erzähl mir davon..."
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.metaKey) {
-                  submitText();
-                }
-              }}
-              disabled={processing}
-              rows={3}
-              aria-describedby="input-hint"
-            />
-            <div className="input-actions">
-              <RecordButton
-                onTranscript={(transcript) => setTextInput(transcript)}
-                onProcessed={(result) => {
-                  const newIdea: StructuredIdea = {
-                    id: result.ideaId,
-                    ...result.structured,
-                    next_steps: result.structured.next_steps || [],
-                    context_needed: result.structured.context_needed || [],
-                    keywords: result.structured.keywords || [],
-                    created_at: new Date().toISOString(),
-                  } as StructuredIdea;
-                  setIdeas(prev => [newIdea, ...prev]);
-                  setTextInput('');
-                }}
-                onRecordingChange={setIsRecording}
-                disabled={processing}
-                context={context}
-                persona={selectedPersona}
-              />
-              <button
-                className="submit-button"
-                onClick={submitText}
-                disabled={processing || !textInput.trim()}
-              >
-                {processing ? (
-                  <span className="loading-spinner" />
-                ) : (
-                  'Strukturieren'
-                )}
-              </button>
-            </div>
+          {/* Input Mode Tabs */}
+          <div className="input-tabs">
+            <button
+              type="button"
+              className={`input-tab ${inputMode === 'voice' ? 'active' : ''}`}
+              onClick={() => setInputMode('voice')}
+            >
+              🎤 Sprachmemo
+            </button>
+            <button
+              type="button"
+              className={`input-tab ${inputMode === 'chat' ? 'active' : ''}`}
+              onClick={() => setInputMode('chat')}
+            >
+              💬 Chat
+            </button>
           </div>
-          <p id="input-hint" className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
+
+          {/* Voice Memo Mode */}
+          {inputMode === 'voice' && (
+            <>
+              <div className="text-input-container">
+                <label htmlFor="thought-input" className="visually-hidden">
+                  Neuer Gedanke eingeben
+                </label>
+                <textarea
+                  id="thought-input"
+                  className="text-input"
+                  placeholder="Was geht dir gerade durch den Kopf? Erzähl mir davon..."
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.metaKey) {
+                      submitText();
+                    }
+                  }}
+                  disabled={processing}
+                  rows={3}
+                  aria-describedby="input-hint"
+                />
+                <div className="input-actions">
+                  <RecordButton
+                    onTranscript={(transcript) => setTextInput(transcript)}
+                    onProcessed={(result) => {
+                      const newIdea: StructuredIdea = {
+                        id: result.ideaId,
+                        ...result.structured,
+                        next_steps: result.structured.next_steps || [],
+                        context_needed: result.structured.context_needed || [],
+                        keywords: result.structured.keywords || [],
+                        created_at: new Date().toISOString(),
+                      } as StructuredIdea;
+                      setIdeas(prev => [newIdea, ...prev]);
+                      setTextInput('');
+                    }}
+                    onRecordingChange={setIsRecording}
+                    disabled={processing}
+                    context={context}
+                    persona={selectedPersona}
+                  />
+                  <button
+                    type="button"
+                    className="submit-button"
+                    onClick={submitText}
+                    disabled={processing || !textInput.trim()}
+                  >
+                    {processing ? (
+                      <span className="loading-spinner" />
+                    ) : (
+                      'Strukturieren'
+                    )}
+                  </button>
+                </div>
+              </div>
+              <p id="input-hint" className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
+            </>
+          )}
+
+          {/* Chat Mode */}
+          {inputMode === 'chat' && (
+            <GeneralChat context={context} isCompact={ideas.length > 0} />
+          )}
         </div>
       </section>
 

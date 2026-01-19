@@ -351,14 +351,15 @@
 }
 
 .nav-button.incubator-nav {
-  background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(129, 140, 248, 0.15));
-  border-color: rgba(167, 139, 250, 0.4);
-  color: #a78bfa;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(129, 140, 248, 0.2));
+  border-color: rgba(167, 139, 250, 0.5);
+  color: #c4b5fd;
 }
 
 .nav-button.incubator-nav:hover {
-  background: linear-gradient(135deg, rgba(167, 139, 250, 0.25), rgba(129, 140, 248, 0.25));
-  border-color: #a78bfa;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(129, 140, 248, 0.3));
+  border-color: #c4b5fd;
+  color: #ddd6fe;
 }
 
 .header h1 {
@@ -581,6 +582,51 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Input Mode Tabs */
+.input-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1rem;
+  padding: 4px;
+  background: rgba(20, 50, 70, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(20, 50, 70, 0.08);
+}
+
+.input-tab {
+  flex: 1;
+  padding: 0.7rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--radius-md) - 4px);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.input-tab:hover:not(.active) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.input-tab.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+/* Work context tab styling */
+[data-context="work"] .input-tab.active {
+  background: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .text-input-container {

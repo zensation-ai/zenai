@@ -129,7 +129,7 @@
 }
 
 .quick-input-container textarea::placeholder {
-  color: #94a3b8;  /* Improved contrast */
+  color: #7a8fa0;
 }
 
 .submit-thought-button {
@@ -311,7 +311,7 @@
 
 .maturity {
   font-size: 0.8rem;
-  color: #94a3b8;  /* Improved contrast */
+  color: #7a8fa0;
 }
 
 .cluster-content.pending {
@@ -384,12 +384,12 @@
 
 .cluster-thoughts .thought-date {
   font-size: 0.75rem;
-  color: #94a3b8;  /* Improved contrast */
+  color: #7a8fa0;
   white-space: nowrap;
 }
 
 .cluster-thoughts .more {
-  color: #94a3b8;  /* Improved contrast */
+  color: #7a8fa0;
   font-size: 0.8rem;
   font-style: italic;
 }

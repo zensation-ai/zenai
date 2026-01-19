@@ -124,9 +124,9 @@
 
 /* Toast Close Button */
 .toast-close {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   border: none;
-  color: #94a3b8;
+  color: #c8d4de;
   font-size: 1.1rem;
   cursor: pointer;
   padding: 0;
@@ -141,8 +141,8 @@
 }
 
 .toast-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
   transform: scale(1.1);
 }
 
