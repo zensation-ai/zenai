@@ -62,7 +62,7 @@ class APIService: ObservableObject {
 
     init() {
         self.baseURL = AppEnvironment.apiBaseURL
-        print("📱 APIService: Using \(self.baseURL) (\(AppEnvironment.isSimulator ? "Simulator" : "Real Device"))")
+        Logger.info("Using \(self.baseURL) (\(AppEnvironment.isSimulator ? "Simulator" : "Real Device"))", category: .network)
     }
 
     // MARK: - API Key Authentication
@@ -83,7 +83,7 @@ class APIService: ObservableObject {
 
         // Get API key from Keychain
         guard let apiKey = APIKeyManager.shared.getAPIKey() else {
-            print("❌ No API key found in Keychain")
+            Logger.error("No API key found in Keychain", category: .auth)
             throw APIError.unauthorized
         }
 
@@ -131,7 +131,7 @@ class APIService: ObservableObject {
 
         // Get API key from Keychain
         guard let apiKey = APIKeyManager.shared.getAPIKey() else {
-            print("❌ No API key found in Keychain")
+            Logger.error("No API key found in Keychain", category: .auth)
             throw APIError.unauthorized
         }
 
@@ -146,7 +146,7 @@ class APIService: ObservableObject {
 
     func checkHealth() async -> Bool {
         guard let url = URL(string: "\(baseURL)/api/health") else {
-            print("❌ Health check: Invalid URL")
+            Logger.error("Health check: Invalid URL", category: .network)
             return false
         }
 
@@ -158,7 +158,7 @@ class APIService: ObservableObject {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ Health check: Invalid response type")
+                Logger.error("Health check: Invalid response type", category: .network)
                 return false
             }
 
@@ -170,21 +170,21 @@ class APIService: ObservableObject {
                 if let healthResponse = try? JSONDecoder().decode(HealthResponse.self, from: data) {
                     // Both "healthy" and "degraded" mean the API can accept requests
                     let isOnline = healthResponse.status == "healthy" || healthResponse.status == "degraded"
-                    print("✅ Health check: \(healthResponse.status) (online=\(isOnline))")
+                    Logger.info("Health check: \(healthResponse.status) (online=\(isOnline))")
                     return isOnline
                 }
                 // If decoding fails but we got 2xx, assume online
-                print("✅ Health check: HTTP \(httpResponse.statusCode) (assuming online)")
+                Logger.info("Health check: HTTP \(httpResponse.statusCode) (assuming online)")
                 return true
             } else {
-                print("❌ Health check: HTTP \(httpResponse.statusCode)")
+                Logger.error("Health check: HTTP \(httpResponse.statusCode)")
                 return false
             }
         } catch let error as URLError {
-            print("❌ Health check failed (URLError): \(error.code.rawValue) - \(error.localizedDescription)")
+            Logger.error("Health check failed (URLError): \(error.code.rawValue) - \(error.localizedDescription)")
             return false
         } catch {
-            print("❌ Health check failed: \(error.localizedDescription)")
+            Logger.error("Health check failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -198,36 +198,36 @@ class APIService: ObservableObject {
 
         let ctx = context ?? ContextManager.shared.currentContext
         guard let url = URL(string: "\(baseURL)/api/\(ctx.rawValue)/ideas") else {
-            print("❌ Invalid URL for ideas")
+            Logger.error("Invalid URL for ideas")
             throw APIError.invalidURL
         }
 
-        print("🌐 Fetching ideas from: \(url.absoluteString)")
+        Logger.debug("Fetching ideas from: \(url.absoluteString)")
 
         do {
             let request = try createAuthenticatedRequest(url: url, method: "GET")
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ Invalid response type")
+                Logger.error("Invalid response type")
                 throw APIError.invalidResponse
             }
 
-            print("📡 Response status: \(httpResponse.statusCode)")
+            Logger.debug("Response status: \(httpResponse.statusCode)")
 
             guard httpResponse.statusCode == 200 else {
-                print("❌ Server error: \(httpResponse.statusCode)")
+                Logger.error("Server error: \(httpResponse.statusCode)")
                 throw APIError.serverError(statusCode: httpResponse.statusCode)
             }
 
             let ideasResponse = try Self.createDecoder().decode(IdeasResponse.self, from: data)
-            print("✅ Decoded \(ideasResponse.ideas.count) ideas")
+            Logger.info("Decoded \(ideasResponse.ideas.count) ideas")
             return ideasResponse.ideas
         } catch let error as URLError {
-            print("❌ Network error: \(error.localizedDescription) (code: \(error.code.rawValue))")
+            Logger.error("Network error: \(error.localizedDescription) (code: \(error.code.rawValue))")
             throw error
         } catch {
-            print("❌ Unexpected error: \(error)")
+            Logger.error("Unexpected error: \(error)")
             throw error
         }
     }
@@ -520,7 +520,7 @@ class APIService: ObservableObject {
             let request = try createAuthenticatedRequest(url: url, method: "POST", body: bodyData)
             let _ = try await URLSession.shared.data(for: request)
         } catch {
-            print("Track interaction failed: \(error)")
+            Logger.debug("Track interaction failed: \(error)", category: .network)
         }
     }
 
@@ -760,37 +760,37 @@ class APIService: ObservableObject {
             throw APIError.invalidURL
         }
 
-        print("📨 Fetching draft from: \(url.absoluteString)")
+        Logger.debug("Fetching draft from: \(url.absoluteString)", category: .network)
 
         let request = try createAuthenticatedRequest(url: url, method: "GET")
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            print("❌ Draft fetch: Invalid response type")
+            Logger.error("Draft fetch: Invalid response type")
             throw APIError.serverError(statusCode: 0)
         }
 
-        print("📨 Draft fetch HTTP status: \(httpResponse.statusCode)")
+        Logger.debug("Draft fetch HTTP status: \(httpResponse.statusCode)", category: .network)
 
         guard httpResponse.statusCode == 200 else {
-            print("❌ Draft fetch failed with status: \(httpResponse.statusCode)")
+            Logger.error("Draft fetch failed with status: \(httpResponse.statusCode)")
             if let responseStr = String(data: data, encoding: .utf8) {
-                print("❌ Response body: \(responseStr.prefix(500))")
+                Logger.error("Response body: \(responseStr.prefix(500))")
             }
             throw APIError.serverError(statusCode: httpResponse.statusCode)
         }
 
         // Log raw response for debugging
         if let responseStr = String(data: data, encoding: .utf8) {
-            print("📨 Draft response: \(responseStr.prefix(300))...")
+            Logger.debug("Draft response: \(responseStr.prefix(300))...", category: .network)
         }
 
         do {
             let draftResponse = try Self.createDecoder().decode(DraftResponse.self, from: data)
-            print("✅ Draft decoded: success=\(draftResponse.success), hasDraft=\(draftResponse.draft != nil)")
+            Logger.info("Draft decoded: success=\(draftResponse.success), hasDraft=\(draftResponse.draft != nil)")
             return draftResponse.draft
         } catch {
-            print("❌ Draft decode error: \(error)")
+            Logger.error("Draft decode error: \(error)")
             throw error
         }
     }
@@ -854,7 +854,7 @@ class APIService: ObservableObject {
             }
             return true
         } catch {
-            print("Quick feedback error: \(error)")
+            Logger.error("Quick feedback error", error: error, category: .network)
             return false
         }
     }
@@ -877,7 +877,7 @@ class APIService: ObservableObject {
             }
             return true
         } catch {
-            print("Detailed feedback error: \(error)")
+            Logger.error("Detailed feedback error", error: error, category: .network)
             return false
         }
     }
@@ -1633,57 +1633,57 @@ extension APIService {
 
     /// Fetch ideas for a specific context (async version)
     func fetchIdeasForContext(context: AIContext) async throws -> [Idea] {
-        print("🔍 fetchIdeasForContext called for context: \(context.rawValue)")
+        Logger.debug("fetchIdeasForContext called for context: \(context.rawValue)", category: .network)
 
         // Try context-specific endpoint first
         guard let url = URL(string: "\(baseURL)/api/\(context.rawValue)/ideas") else {
-            print("❌ Invalid URL for context endpoint")
+            Logger.error("Invalid URL for context endpoint")
             throw APIError.invalidURL
         }
 
-        print("🌐 Trying context endpoint: \(url.absoluteString)")
+        Logger.debug("Trying context endpoint: \(url.absoluteString)")
 
         do {
             let request = try createAuthenticatedRequest(url: url, method: "GET")
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ Invalid HTTP response")
+                Logger.error("Invalid HTTP response")
                 throw APIError.invalidResponse
             }
 
-            print("📡 Context endpoint response: \(httpResponse.statusCode)")
+            Logger.debug("Context endpoint response: \(httpResponse.statusCode)")
 
             // If context-specific endpoint doesn't exist, fall back to general endpoint
             if httpResponse.statusCode == 404 {
-                print("⚠️ Context endpoint returned 404, falling back to general endpoint")
+                Logger.warning("Context endpoint returned 404, falling back to general endpoint")
                 return try await fetchIdeas()
             }
 
             guard httpResponse.statusCode == 200 else {
-                print("❌ Context endpoint error: \(httpResponse.statusCode)")
+                Logger.error("Context endpoint error: \(httpResponse.statusCode)")
                 throw APIError.serverError(statusCode: httpResponse.statusCode)
             }
 
             // Use createDecoder() - Idea model has its own CodingKeys
             do {
                 let ideasResponse = try Self.createDecoder().decode(IdeasContextResponse.self, from: data)
-                print("✅ Decoded \(ideasResponse.ideas.count) ideas for context '\(context.rawValue)'")
+                Logger.info("Decoded \(ideasResponse.ideas.count) ideas for context '\(context.rawValue)'")
                 return ideasResponse.ideas
             } catch {
-                print("❌ Decoding IdeasContextResponse failed: \(error)")
+                Logger.error("Decoding IdeasContextResponse failed: \(error)")
                 // Try to print raw JSON for debugging
                 if let jsonString = String(data: data, encoding: .utf8) {
-                    print("📄 Raw JSON (first 500 chars): \(String(jsonString.prefix(500)))")
+                    Logger.debug("Raw JSON (first 500 chars): \(String(jsonString.prefix(500)))", category: .network)
                 }
                 throw error
             }
         } catch let error as URLError where error.code == .cannotConnectToHost {
             // Fall back to general endpoint if context endpoint fails
-            print("⚠️ Cannot connect to context endpoint, falling back to general endpoint")
+            Logger.warning("Cannot connect to context endpoint, falling back to general endpoint")
             return try await fetchIdeas()
         } catch {
-            print("❌ fetchIdeasForContext error: \(error)")
+            Logger.error("fetchIdeasForContext error: \(error)")
             throw error
         }
     }
