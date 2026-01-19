@@ -257,20 +257,26 @@ export async function getRelationships(ideaId: string): Promise<IdeaRelation[]> 
 /**
  * Multi-hop reasoning: Find ideas connected through relationships
  */
+/**
+ * Multi-hop reasoning: Find ideas connected through relationships
+ * PERFORMANCE OPTIMIZED: Batch-loads idea details at the end instead of per-path
+ */
 export async function multiHopSearch(
   startIdeaId: string,
   maxHops: number = 2
 ): Promise<{ path: string[]; ideas: any[] }[]> {
-  const paths: { path: string[]; ideas: any[] }[] = [];
+  const rawPaths: string[][] = [];
+  const allIdeaIds = new Set<string>();
 
-  // BFS for multi-hop connections
+  // BFS for multi-hop connections - collect paths first
   const visited = new Set<string>();
   const queue: { ideaId: string; path: string[]; depth: number }[] = [
     { ideaId: startIdeaId, path: [startIdeaId], depth: 0 }
   ];
 
   while (queue.length > 0) {
-    const current = queue.shift()!;
+    const current = queue.shift();
+    if (!current) continue;
 
     if (current.depth >= maxHops) continue;
     if (visited.has(current.ideaId)) continue;
@@ -289,15 +295,9 @@ export async function multiHopSearch(
       const newPath = [...current.path, rel.target_id];
 
       if (current.depth + 1 === maxHops || relations.rows.length === 0) {
-        // Fetch idea details for the path
-        const ideasResult = await query(`
-          SELECT id, title, summary FROM ideas WHERE id = ANY($1)
-        `, [newPath]);
-
-        paths.push({
-          path: newPath,
-          ideas: ideasResult.rows,
-        });
+        // Store path for later processing
+        rawPaths.push(newPath);
+        newPath.forEach(id => allIdeaIds.add(id));
       }
 
       queue.push({
@@ -308,7 +308,26 @@ export async function multiHopSearch(
     }
   }
 
-  return paths;
+  // PERFORMANCE: Batch-load all idea details in a single query
+  if (allIdeaIds.size === 0) {
+    return [];
+  }
+
+  const ideasResult = await query(`
+    SELECT id, title, summary FROM ideas WHERE id = ANY($1)
+  `, [Array.from(allIdeaIds)]);
+
+  // Create lookup map for O(1) access
+  const ideaMap = new Map<string, any>();
+  for (const idea of ideasResult.rows) {
+    ideaMap.set(idea.id, idea);
+  }
+
+  // Build final results using the lookup map
+  return rawPaths.map(path => ({
+    path,
+    ideas: path.map(id => ideaMap.get(id)).filter(Boolean),
+  }));
 }
 
 /**
