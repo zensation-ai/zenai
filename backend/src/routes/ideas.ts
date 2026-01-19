@@ -17,6 +17,7 @@ import {
 } from '../utils/validation';
 import { apiKeyAuth, optionalAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
 
 export const ideasRouter = Router();
 
@@ -126,12 +127,7 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   );
 
   res.json({
-    ideas: result.rows.map(row => ({
-      ...row,
-      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-    })),
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
       total: parseInt(countResult.rows[0].total),
       limit,
@@ -168,12 +164,7 @@ ideasRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, res) =>
   const totalTime = Date.now() - startTime;
 
   res.json({
-    ideas: result.rows.map(row => ({
-      ...row,
-      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-    })),
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     personalized: result.rows.length > 0 && result.rows[0].relevance_score > 0,
     processingTime: totalTime,
   });
@@ -210,12 +201,7 @@ ideasRouter.get('/:id', apiKeyAuth, validateUUID, asyncHandler(async (req, res) 
   queryContext(ctx, 'UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
     .catch((err) => logger.debug('Background view count update skipped', { error: err.message }));
 
-  res.json({
-    ...row,
-    next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-    context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-    keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-  });
+  res.json(parseIdeaRow(row as IdeaDatabaseRow));
 }));
 
 /**
@@ -282,12 +268,7 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
   const totalTime = Date.now() - startTime;
 
   res.json({
-    ideas: result.rows.map(row => ({
-      ...row,
-      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-    })),
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     searchType: 'supabase-function',
     performance: {
       totalMs: totalTime,
@@ -331,12 +312,7 @@ ideasRouter.get('/:id/similar', apiKeyAuth, validateUUID, asyncHandler(async (re
   const totalTime = Date.now() - startTime;
 
   res.json({
-    ideas: result.rows.map(row => ({
-      ...row,
-      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-    })),
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     sourceIdeaId: ideaId,
     processingTime: totalTime,
   });
@@ -387,9 +363,9 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
       category,
       priority,
       summary,
-      next_steps ? JSON.stringify(next_steps) : null,
-      context_needed ? JSON.stringify(context_needed) : null,
-      keywords ? JSON.stringify(keywords) : null,
+      serializeArrayField(next_steps),
+      serializeArrayField(context_needed),
+      serializeArrayField(keywords),
     ]
   );
 
@@ -623,12 +599,7 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
   );
 
   res.json({
-    ideas: result.rows.map(row => ({
-      ...row,
-      next_steps: typeof row.next_steps === 'string' ? JSON.parse(row.next_steps) : row.next_steps,
-      context_needed: typeof row.context_needed === 'string' ? JSON.parse(row.context_needed) : row.context_needed,
-      keywords: typeof row.keywords === 'string' ? JSON.parse(row.keywords) : row.keywords,
-    })),
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
       total: parseInt(countResult.rows[0].total),
       limit,
