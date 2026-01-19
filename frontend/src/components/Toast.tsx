@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Toast.css';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -8,6 +8,8 @@ interface Toast {
   message: string;
   type: ToastType;
   duration?: number;
+  onUndo?: () => void;
+  undoLabel?: string;
 }
 
 // Simple toast store
@@ -18,17 +20,57 @@ const notifyListeners = () => {
   toastListeners.forEach(listener => listener([...toasts]));
 };
 
-export const showToast = (message: string, type: ToastType = 'info', duration: number = 4000) => {
+interface ToastOptions {
+  type?: ToastType;
+  duration?: number;
+  onUndo?: () => void;
+  undoLabel?: string;
+}
+
+/**
+ * Show a toast notification
+ * @param message - The message to display
+ * @param typeOrOptions - Either a ToastType string or a ToastOptions object
+ * @param duration - Duration in ms (default: 4000, use 0 for permanent)
+ */
+export const showToast = (
+  message: string,
+  typeOrOptions: ToastType | ToastOptions = 'info',
+  duration?: number
+): string => {
   const id = Math.random().toString(36).substr(2, 9);
-  toasts = [...toasts, { id, message, type, duration }];
+
+  // Handle both old and new API for backwards compatibility
+  let options: ToastOptions;
+  if (typeof typeOrOptions === 'string') {
+    options = { type: typeOrOptions, duration };
+  } else {
+    options = typeOrOptions;
+  }
+
+  const toast: Toast = {
+    id,
+    message,
+    type: options.type || 'info',
+    duration: options.duration ?? 4000,
+    onUndo: options.onUndo,
+    undoLabel: options.undoLabel || 'Rückgängig',
+  };
+
+  toasts = [...toasts, toast];
   notifyListeners();
 
-  if (duration > 0) {
+  // Auto-dismiss - give extra time if there's an undo option
+  const effectiveDuration = toast.duration ?? 4000;
+  if (effectiveDuration > 0) {
+    const dismissTime = toast.onUndo ? effectiveDuration + 2000 : effectiveDuration;
     setTimeout(() => {
       toasts = toasts.filter(t => t.id !== id);
       notifyListeners();
-    }, duration);
+    }, dismissTime);
   }
+
+  return id;
 };
 
 export const dismissToast = (id: string) => {
@@ -50,6 +92,81 @@ export function useToasts() {
   return localToasts;
 }
 
+// Individual Toast Item with progress bar
+function ToastItem({ toast }: { toast: Toast }) {
+  const [progress, setProgress] = useState(100);
+  const startTimeRef = useRef(Date.now());
+  const duration = toast.onUndo
+    ? (toast.duration ?? 4000) + 2000
+    : toast.duration ?? 4000;
+
+  useEffect(() => {
+    if (duration <= 0) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+      setProgress(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [duration]);
+
+  const handleUndo = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (toast.onUndo) {
+      toast.onUndo();
+      dismissToast(toast.id);
+    }
+  };
+
+  return (
+    <div
+      className={`toast toast-${toast.type}`}
+      onClick={() => dismissToast(toast.id)}
+    >
+      <span className="toast-icon">
+        {toast.type === 'success' && '✓'}
+        {toast.type === 'error' && '✕'}
+        {toast.type === 'warning' && '⚠'}
+        {toast.type === 'info' && 'ℹ'}
+      </span>
+      <span className="toast-message">{toast.message}</span>
+      {toast.onUndo && (
+        <button
+          type="button"
+          className="toast-undo"
+          onClick={handleUndo}
+        >
+          {toast.undoLabel}
+        </button>
+      )}
+      <button
+        type="button"
+        className="toast-close"
+        onClick={(e) => {
+          e.stopPropagation();
+          dismissToast(toast.id);
+        }}
+        aria-label="Schließen"
+      >
+        ×
+      </button>
+      {duration > 0 && (
+        <div
+          className="toast-progress"
+          style={{ width: `${progress}%` }}
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
+}
+
 // Toast container component
 export function ToastContainer() {
   const toastList = useToasts();
@@ -59,30 +176,7 @@ export function ToastContainer() {
   return (
     <div className="toast-container" role="alert" aria-live="polite">
       {toastList.map(toast => (
-        <div
-          key={toast.id}
-          className={`toast toast-${toast.type}`}
-          onClick={() => dismissToast(toast.id)}
-        >
-          <span className="toast-icon">
-            {toast.type === 'success' && '✓'}
-            {toast.type === 'error' && '✕'}
-            {toast.type === 'warning' && '⚠'}
-            {toast.type === 'info' && 'ℹ'}
-          </span>
-          <span className="toast-message">{toast.message}</span>
-          <button
-            type="button"
-            className="toast-close"
-            onClick={(e) => {
-              e.stopPropagation();
-              dismissToast(toast.id);
-            }}
-            aria-label="Schließen"
-          >
-            ×
-          </button>
-        </div>
+        <ToastItem key={toast.id} toast={toast} />
       ))}
     </div>
   );
