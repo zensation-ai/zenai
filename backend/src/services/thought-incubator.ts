@@ -54,7 +54,120 @@ const CONFIG = {
   TIME_WEIGHT_FACTOR: 0.1,
   // Maximum thoughts to analyze in one batch
   BATCH_SIZE: 50,
+  // Advanced maturity scoring weights
+  MATURITY_WEIGHTS: {
+    thoughtCount: 0.30,        // More thoughts = more mature
+    coherence: 0.25,           // How well thoughts cluster together
+    timeSpan: 0.15,            // Thoughts spread over time = recurring theme
+    diversity: 0.15,           // Different sources/times show sustained interest
+    recency: 0.15,             // Recent activity indicates active thinking
+  },
+  // Source diversity bonus
+  SOURCE_DIVERSITY_BONUS: 0.1,
+  // Decay rate for old clusters without new thoughts
+  CLUSTER_DECAY_RATE: 0.02,
+  // Maximum age before decay starts (days)
+  MAX_AGE_BEFORE_DECAY: 7,
 };
+
+/**
+ * Calculate advanced maturity score for a cluster
+ * Considers multiple factors for more accurate readiness assessment
+ */
+async function calculateAdvancedMaturity(
+  client: any,
+  clusterId: string
+): Promise<{ score: number; factors: Record<string, number>; isReady: boolean }> {
+  // Get detailed cluster statistics
+  const statsResult = await client.query(
+    `SELECT
+       COUNT(*) as thought_count,
+       MIN(created_at) as oldest_thought,
+       MAX(created_at) as newest_thought,
+       AVG(similarity_to_cluster) as avg_similarity,
+       COUNT(DISTINCT source) as source_count,
+       COUNT(DISTINCT DATE(created_at)) as active_days,
+       STDDEV(similarity_to_cluster) as similarity_stddev,
+       array_agg(DISTINCT source) as sources
+     FROM loose_thoughts
+     WHERE cluster_id = $1`,
+    [clusterId]
+  );
+
+  const stats = statsResult.rows[0];
+  const thoughtCount = parseInt(stats.thought_count) || 0;
+
+  if (thoughtCount === 0) {
+    return { score: 0, factors: {}, isReady: false };
+  }
+
+  const factors: Record<string, number> = {};
+
+  // Factor 1: Thought count score (diminishing returns after threshold)
+  const countRatio = thoughtCount / CONFIG.MIN_THOUGHTS_FOR_READY;
+  factors.thoughtCount = Math.min(countRatio, 2) / 2; // Cap at 2x threshold
+  if (thoughtCount >= CONFIG.MIN_THOUGHTS_FOR_READY) {
+    factors.thoughtCount = Math.min(1, 0.7 + (thoughtCount - CONFIG.MIN_THOUGHTS_FOR_READY) * 0.1);
+  }
+
+  // Factor 2: Coherence score (how well thoughts fit together)
+  const avgSimilarity = parseFloat(stats.avg_similarity) || 0.5;
+  const similarityStdDev = parseFloat(stats.similarity_stddev) || 0.1;
+  // High average similarity with low variance = coherent cluster
+  factors.coherence = avgSimilarity * (1 - Math.min(similarityStdDev * 2, 0.3));
+
+  // Factor 3: Time span score (recurring theme over time)
+  const oldestDate = stats.oldest_thought ? new Date(stats.oldest_thought) : new Date();
+  const newestDate = stats.newest_thought ? new Date(stats.newest_thought) : new Date();
+  const timeSpanDays = (newestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24);
+  // Thoughts spread over several days indicates sustained interest
+  factors.timeSpan = Math.min(timeSpanDays / 7, 1); // Cap at 1 week
+
+  // Factor 4: Source diversity score (different input methods)
+  const sourceCount = parseInt(stats.source_count) || 1;
+  factors.diversity = Math.min(sourceCount / 3, 1) * (1 + CONFIG.SOURCE_DIVERSITY_BONUS);
+  // Bonus for multiple active days
+  const activeDays = parseInt(stats.active_days) || 1;
+  if (activeDays > 1) {
+    factors.diversity = Math.min(factors.diversity + (activeDays - 1) * 0.1, 1);
+  }
+
+  // Factor 5: Recency score (recent activity)
+  const daysSinceLastThought = (Date.now() - newestDate.getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSinceLastThought <= 1) {
+    factors.recency = 1.0;
+  } else if (daysSinceLastThought <= 3) {
+    factors.recency = 0.8;
+  } else if (daysSinceLastThought <= 7) {
+    factors.recency = 0.5;
+  } else {
+    // Apply decay for older clusters
+    const decayDays = Math.max(0, daysSinceLastThought - CONFIG.MAX_AGE_BEFORE_DECAY);
+    factors.recency = Math.max(0, 0.3 - decayDays * CONFIG.CLUSTER_DECAY_RATE);
+  }
+
+  // Calculate weighted maturity score
+  const weights = CONFIG.MATURITY_WEIGHTS;
+  const score = (
+    factors.thoughtCount * weights.thoughtCount +
+    factors.coherence * weights.coherence +
+    factors.timeSpan * weights.timeSpan +
+    factors.diversity * weights.diversity +
+    factors.recency * weights.recency
+  );
+
+  // Determine if cluster is ready
+  // Ready if: score above threshold AND minimum thoughts met AND good coherence
+  const isReady = score >= CONFIG.MATURITY_THRESHOLD &&
+    thoughtCount >= CONFIG.MIN_THOUGHTS_FOR_READY &&
+    factors.coherence >= 0.5;
+
+  return {
+    score: Math.round(score * 100) / 100,
+    factors,
+    isReady,
+  };
+}
 
 /**
  * Add a new loose thought to the incubator

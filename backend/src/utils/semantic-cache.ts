@@ -425,3 +425,314 @@ export function runCacheCleanup(): { semantic: number; rag: number; embedding: n
     embedding: embeddingCache.cleanup(),
   };
 }
+
+// ===========================================
+// Adaptive Threshold Cache (Enhanced)
+// ===========================================
+
+/**
+ * Adaptive Semantic Cache with dynamic threshold adjustment
+ * Adjusts similarity threshold based on hit rate and cache performance
+ */
+export class AdaptiveSemanticCache<T = unknown> extends SemanticCache<T> {
+  private adaptiveConfig = {
+    /** Target hit rate to aim for */
+    targetHitRate: 0.3,
+    /** Minimum allowed threshold */
+    minThreshold: 0.85,
+    /** Maximum allowed threshold */
+    maxThreshold: 0.99,
+    /** Adjustment step size */
+    adjustmentStep: 0.01,
+    /** Number of requests between adjustments */
+    adjustmentInterval: 100,
+    /** Current dynamic threshold */
+    currentThreshold: 0.95,
+  };
+
+  private requestsSinceAdjustment = 0;
+
+  constructor(config: Partial<SemanticCacheConfig & {
+    targetHitRate?: number;
+    minThreshold?: number;
+    maxThreshold?: number;
+  }> = {}) {
+    super(config);
+
+    if (config.targetHitRate !== undefined) {
+      this.adaptiveConfig.targetHitRate = config.targetHitRate;
+    }
+    if (config.minThreshold !== undefined) {
+      this.adaptiveConfig.minThreshold = config.minThreshold;
+    }
+    if (config.maxThreshold !== undefined) {
+      this.adaptiveConfig.maxThreshold = config.maxThreshold;
+    }
+    this.adaptiveConfig.currentThreshold = config.similarityThreshold ?? 0.95;
+
+    logger.info('AdaptiveSemanticCache initialized', {
+      initialThreshold: this.adaptiveConfig.currentThreshold,
+      targetHitRate: this.adaptiveConfig.targetHitRate,
+    });
+  }
+
+  /**
+   * Get with adaptive threshold adjustment
+   */
+  async get(query: string): Promise<T | null> {
+    const result = await super.get(query);
+
+    this.requestsSinceAdjustment++;
+
+    // Periodically adjust threshold
+    if (this.requestsSinceAdjustment >= this.adaptiveConfig.adjustmentInterval) {
+      this.adjustThreshold();
+      this.requestsSinceAdjustment = 0;
+    }
+
+    return result;
+  }
+
+  /**
+   * Adjust threshold based on hit rate
+   */
+  private adjustThreshold(): void {
+    const stats = this.getStats();
+
+    if (stats.totalRequests < 10) return; // Not enough data
+
+    const hitRate = stats.hitRate;
+    const targetRate = this.adaptiveConfig.targetHitRate;
+
+    // If hit rate is too low, lower threshold to allow more matches
+    if (hitRate < targetRate * 0.8) {
+      this.adaptiveConfig.currentThreshold = Math.max(
+        this.adaptiveConfig.minThreshold,
+        this.adaptiveConfig.currentThreshold - this.adaptiveConfig.adjustmentStep
+      );
+      logger.debug('Adaptive cache: lowering threshold', {
+        newThreshold: this.adaptiveConfig.currentThreshold,
+        hitRate,
+      });
+    }
+    // If hit rate is too high, raise threshold for better precision
+    else if (hitRate > targetRate * 1.3) {
+      this.adaptiveConfig.currentThreshold = Math.min(
+        this.adaptiveConfig.maxThreshold,
+        this.adaptiveConfig.currentThreshold + this.adaptiveConfig.adjustmentStep
+      );
+      logger.debug('Adaptive cache: raising threshold', {
+        newThreshold: this.adaptiveConfig.currentThreshold,
+        hitRate,
+      });
+    }
+  }
+
+  /**
+   * Get current adaptive threshold
+   */
+  getCurrentThreshold(): number {
+    return this.adaptiveConfig.currentThreshold;
+  }
+
+  /**
+   * Get adaptive configuration
+   */
+  getAdaptiveConfig() {
+    return { ...this.adaptiveConfig };
+  }
+}
+
+// ===========================================
+// Cache Warming Utilities
+// ===========================================
+
+/**
+ * Cache warming configuration
+ */
+export interface CacheWarmingConfig {
+  /** Maximum number of entries to warm */
+  maxEntries: number;
+  /** Batch size for parallel processing */
+  batchSize: number;
+  /** Delay between batches in ms */
+  batchDelayMs: number;
+}
+
+/**
+ * Warm cache with frequently accessed queries
+ * @param cache The cache to warm
+ * @param queries Array of query-result pairs to pre-populate
+ * @param config Warming configuration
+ */
+export async function warmCache<T>(
+  cache: SemanticCache<T>,
+  queries: Array<{ query: string; result: T; tags?: string[] }>,
+  config: Partial<CacheWarmingConfig> = {}
+): Promise<{ warmed: number; failed: number; durationMs: number }> {
+  const startTime = Date.now();
+  const {
+    maxEntries = 100,
+    batchSize = 10,
+    batchDelayMs = 100,
+  } = config;
+
+  let warmed = 0;
+  let failed = 0;
+
+  const toProcess = queries.slice(0, maxEntries);
+
+  logger.info('Cache warming started', {
+    totalQueries: toProcess.length,
+    batchSize,
+  });
+
+  for (let i = 0; i < toProcess.length; i += batchSize) {
+    const batch = toProcess.slice(i, i + batchSize);
+
+    await Promise.all(
+      batch.map(async ({ query, result, tags }) => {
+        try {
+          await cache.set(query, result, tags);
+          warmed++;
+        } catch (error) {
+          failed++;
+          logger.debug('Cache warming entry failed', {
+            query: query.substring(0, 50),
+            error: error instanceof Error ? error.message : 'Unknown',
+          });
+        }
+      })
+    );
+
+    // Delay between batches to avoid overwhelming the system
+    if (i + batchSize < toProcess.length && batchDelayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, batchDelayMs));
+    }
+  }
+
+  const durationMs = Date.now() - startTime;
+
+  logger.info('Cache warming completed', {
+    warmed,
+    failed,
+    durationMs,
+  });
+
+  return { warmed, failed, durationMs };
+}
+
+/**
+ * Pre-compute and cache embeddings for a list of texts
+ */
+export async function warmEmbeddingCache(
+  texts: string[],
+  config: Partial<CacheWarmingConfig> = {}
+): Promise<{ warmed: number; failed: number; durationMs: number }> {
+  const startTime = Date.now();
+  const {
+    maxEntries = 200,
+    batchSize = 20,
+    batchDelayMs = 200,
+  } = config;
+
+  let warmed = 0;
+  let failed = 0;
+
+  const toProcess = texts.slice(0, maxEntries);
+
+  for (let i = 0; i < toProcess.length; i += batchSize) {
+    const batch = toProcess.slice(i, i + batchSize);
+
+    await Promise.all(
+      batch.map(async (text) => {
+        try {
+          await getCachedEmbedding(text);
+          warmed++;
+        } catch (error) {
+          failed++;
+        }
+      })
+    );
+
+    if (i + batchSize < toProcess.length && batchDelayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, batchDelayMs));
+    }
+  }
+
+  return {
+    warmed,
+    failed,
+    durationMs: Date.now() - startTime,
+  };
+}
+
+// ===========================================
+// Cache Performance Analysis
+// ===========================================
+
+/**
+ * Analyze cache performance and provide recommendations
+ */
+export function analyzeCachePerformance(cache: SemanticCache): {
+  performance: 'excellent' | 'good' | 'fair' | 'poor';
+  hitRate: number;
+  avgSimilarity: number;
+  recommendations: string[];
+} {
+  const stats = cache.getStats();
+  const recommendations: string[] = [];
+
+  // Determine performance level
+  let performance: 'excellent' | 'good' | 'fair' | 'poor';
+  if (stats.hitRate >= 0.5) {
+    performance = 'excellent';
+  } else if (stats.hitRate >= 0.3) {
+    performance = 'good';
+  } else if (stats.hitRate >= 0.15) {
+    performance = 'fair';
+  } else {
+    performance = 'poor';
+  }
+
+  // Generate recommendations
+  if (stats.hitRate < 0.2) {
+    recommendations.push('Consider lowering the similarity threshold to allow more matches');
+    recommendations.push('Pre-warm the cache with common queries');
+  }
+
+  if (stats.avgHitSimilarity < 0.9 && stats.hits > 10) {
+    recommendations.push('Average hit similarity is low - results may not be highly relevant');
+  }
+
+  if (stats.entryCount < 50 && stats.totalRequests > 100) {
+    recommendations.push('Cache is underutilized - consider increasing entry count or TTL');
+  }
+
+  if (stats.entryCount > 900 && cache.size < 1000) {
+    recommendations.push('Cache is nearly full - consider increasing max entries');
+  }
+
+  return {
+    performance,
+    hitRate: stats.hitRate,
+    avgSimilarity: stats.avgHitSimilarity,
+    recommendations,
+  };
+}
+
+// ===========================================
+// Adaptive Cache Singleton
+// ===========================================
+
+/**
+ * Adaptive semantic cache with automatic threshold adjustment
+ */
+export const adaptiveCache = new AdaptiveSemanticCache({
+  similarityThreshold: 0.93,
+  ttlMs: 20 * 60 * 1000, // 20 minutes
+  maxEntries: 800,
+  targetHitRate: 0.3,
+  minThreshold: 0.85,
+  maxThreshold: 0.98,
+});

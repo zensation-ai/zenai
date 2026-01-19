@@ -324,11 +324,43 @@ class MemoryCoordinator {
   }
 
   // ===========================================
-  // Context Editing (Pruning)
+  // Context Editing (Pruning with Relevance Decay)
   // ===========================================
 
   /**
+   * Calculate time-based relevance decay
+   * Older context becomes less relevant over time
+   */
+  private calculateDecay(timestamp: number | undefined, decayRate: number = 0.05): number {
+    if (!timestamp) return 1.0;
+
+    const ageMs = Date.now() - timestamp;
+    const ageHours = ageMs / (1000 * 60 * 60);
+
+    // Exponential decay: relevance decreases over time
+    // After ~24 hours, relevance is ~30% of original
+    return Math.exp(-decayRate * ageHours);
+  }
+
+  /**
+   * Apply type-based relevance boost
+   * Some context types are inherently more important
+   */
+  private getTypeBoost(type: ContextPart['type']): number {
+    const boosts: Record<ContextPart['type'], number> = {
+      'summary': 1.2,      // Conversation summaries are very important
+      'fact': 1.1,         // Known facts about user
+      'pattern': 1.0,      // Behavioral patterns
+      'document': 0.95,    // Pre-retrieved documents
+      'interaction': 0.9,  // Past interactions
+      'hint': 0.85,        // Contextual hints
+    };
+    return boosts[type] || 1.0;
+  }
+
+  /**
    * Prune irrelevant context parts based on query relevance
+   * Enhanced with time decay and type boosting
    */
   private async pruneContext(
     parts: ContextPart[],
@@ -342,46 +374,110 @@ class MemoryCoordinator {
       const queryEmbedding = await generateEmbedding(query);
 
       if (queryEmbedding.length === 0) {
-        // Fall back to basic filtering
-        return parts.filter(p => p.relevance >= minRelevance);
+        // Fall back to basic filtering with decay
+        return parts
+          .map(p => ({
+            ...p,
+            relevance: p.relevance * this.getTypeBoost(p.type),
+          }))
+          .filter(p => p.relevance >= minRelevance)
+          .sort((a, b) => b.relevance - a.relevance);
       }
 
-      // Score each part based on semantic similarity
+      // Score each part based on semantic similarity, decay, and type
       const scoredParts = await Promise.all(
         parts.map(async part => {
           try {
             const partEmbedding = await generateEmbedding(part.content);
             const similarity = cosineSimilarity(queryEmbedding, partEmbedding);
 
-            // Combine existing relevance with query similarity
-            const combinedRelevance = part.relevance * 0.4 + similarity * 0.6;
+            // Get type-based boost
+            const typeBoost = this.getTypeBoost(part.type);
+
+            // Calculate time decay (if timestamp available in metadata)
+            const timestamp = (part as any).timestamp || Date.now();
+            const decay = this.calculateDecay(timestamp);
+
+            // Calculate position penalty for very long context
+            // Later parts are slightly less important to avoid context overflow
+            const positionPenalty = 1.0; // Could be based on part index if needed
+
+            // Combined relevance calculation
+            // Base relevance (40%) + Semantic similarity (40%) + Type boost (20%)
+            // Then apply decay
+            const baseScore = part.relevance * 0.35 + similarity * 0.45 + typeBoost * 0.2;
+            const decayedScore = baseScore * decay * positionPenalty;
 
             return {
               ...part,
-              relevance: combinedRelevance,
+              relevance: decayedScore,
+              metadata: {
+                originalRelevance: part.relevance,
+                semanticSimilarity: similarity,
+                typeBoost,
+                decay,
+              }
             };
           } catch {
-            return part;
+            return {
+              ...part,
+              relevance: part.relevance * this.getTypeBoost(part.type),
+            };
           }
         })
       );
 
-      // Calculate threshold for top percentile
+      // Calculate dynamic threshold based on distribution
       const relevances = scoredParts.map(p => p.relevance).sort((a, b) => b - a);
+
+      // Use percentile-based threshold with floor
       const thresholdIndex = Math.floor(relevances.length * CONFIG.RELEVANCE_PERCENTILE);
+      const percentileThreshold = relevances[thresholdIndex] || 0;
+
+      // Calculate mean-based threshold for comparison
+      const mean = relevances.reduce((a, b) => a + b, 0) / relevances.length;
+      const stdDev = Math.sqrt(
+        relevances.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / relevances.length
+      );
+      const statisticalThreshold = mean - 0.5 * stdDev;
+
+      // Use the more generous threshold but ensure minimum
       const threshold = Math.max(
-        relevances[thresholdIndex] || 0,
+        Math.min(percentileThreshold, statisticalThreshold),
         minRelevance
       );
 
-      // Filter and sort by relevance
-      return scoredParts
+      // Filter, sort, and apply diversity (avoid too many of same type)
+      const filtered = scoredParts
         .filter(p => p.relevance >= threshold)
         .sort((a, b) => b.relevance - a.relevance);
+
+      // Apply diversity constraint - limit same-type entries
+      const diversified = this.applyDiversity(filtered, 5);
+
+      return diversified;
     } catch (error) {
       logger.debug('Context pruning failed, using basic filter', { error });
       return parts.filter(p => p.relevance >= minRelevance);
     }
+  }
+
+  /**
+   * Apply diversity constraint to avoid too many entries of the same type
+   */
+  private applyDiversity(parts: ContextPart[], maxPerType: number): ContextPart[] {
+    const typeCounts: Record<string, number> = {};
+    const result: ContextPart[] = [];
+
+    for (const part of parts) {
+      const count = typeCounts[part.type] || 0;
+      if (count < maxPerType) {
+        result.push(part);
+        typeCounts[part.type] = count + 1;
+      }
+    }
+
+    return result;
   }
 
   // ===========================================
