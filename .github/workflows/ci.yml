@@ -31,7 +31,7 @@ jobs:
 
       - name: Run unit tests only
         working-directory: backend
-        run: npm test -- --testPathPattern="unit" --forceExit --detectOpenHandles
+        run: npm test -- --testPathPatterns="unit" --forceExit --detectOpenHandles
         timeout-minutes: 5
         env:
           NODE_ENV: test
