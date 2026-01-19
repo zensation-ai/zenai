@@ -162,17 +162,15 @@ function App() {
         const res = await axios.get(`/api/${context}/ideas`);
         const serverIdeas = res.data.ideas || [];
 
-        // Only update if there are actual changes
-        if (serverIdeas.length !== ideas.length) {
-          setIdeas(serverIdeas);
-        }
+        // Update state - React will only re-render if data actually changed
+        setIdeas(serverIdeas);
       } catch {
         // Silently fail on sync errors
       }
     }, 30000); // 30 seconds
 
     return () => clearInterval(syncInterval);
-  }, [currentPage, context, ideas.length]);
+  }, [currentPage, context]); // Removed ideas.length to prevent interval recreation on every change
 
   const checkHealth = async (signal?: AbortSignal) => {
     try {

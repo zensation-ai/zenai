@@ -33,7 +33,6 @@ jobs:
         working-directory: backend
         run: npm test -- --testPathPattern="unit" --forceExit --detectOpenHandles
         timeout-minutes: 5
-        continue-on-error: true
         env:
           NODE_ENV: test
           SKIP_EXTERNAL_SERVICES: true
