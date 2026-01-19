@@ -40,6 +40,13 @@ Dieser Plan dokumentiert alle identifizierten Probleme und deren priorisierte Ab
 - [x] CORS: Warnung für fehlende ALLOWED_ORIGINS Konfiguration
 - [x] CORS: Logging für unbekannte Origins in Dev-Mode
 
+### Commit 3: `12322f3` - Database Performance
+- [x] Security-Indizes für Multi-Tenant-Isolation erstellt
+- [x] Composite (user_id, context) Indizes hinzugefügt
+- [x] SELECT * durch explizite Spalten ersetzt (export, digest, companies)
+- [x] N+1 Query-Pattern in multiHopSearch behoben (Batch-Loading)
+- [x] Context-Filterung in Backup-Queries hinzugefügt
+
 ---
 
 ## PHASE 1: Kritische Sicherheitsprobleme
@@ -575,14 +582,14 @@ redis.set(key, value).catch(err => {
 
 ```
 Phase 1: [██████████] 100% ✅ ABGESCHLOSSEN
-Phase 2: [░░░░░░░░░░]   0%  (0/4 Tasks)
+Phase 2: [████████░░]  75%  (3/4 Tasks) - Vector-Dims ausstehend
 Phase 3: [░░░░░░░░░░]   0%  (0/3 Tasks)
 Phase 4: [░░░░░░░░░░]   0%  (0/3 Tasks)
 Phase 5: [░░░░░░░░░░]   0%  (0/3 Tasks)
 Phase 6: [░░░░░░░░░░]   0%  (0/3 Tasks)
 Phase 7: [░░░░░░░░░░]   0%  (0/3 Tasks)
 
-Gesamt:  [██░░░░░░░░] 17%  (4/24 Tasks)
+Gesamt:  [████░░░░░░] 33%  (8/24 Tasks)
 ```
 
 ### Qualitäts-Metriken (Ziele)
