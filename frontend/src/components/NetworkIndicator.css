@@ -1,0 +1,103 @@
+/* ============================================
+   NETWORK INDICATOR
+   Shows online/offline status
+   ============================================ */
+
+.network-indicator {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  background: var(--header-bg-solid);
+  border: 1px solid var(--header-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.network-indicator.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.network-indicator.offline {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.network-indicator.online {
+  background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.network-icon {
+  font-size: 1.25rem;
+}
+
+.network-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+}
+
+.network-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.4;
+}
+
+/* Status Dot for Header */
+.network-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.network-status-dot.online {
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+}
+
+.network-status-dot.offline {
+  background: #f87171;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+/* Mobile Positioning */
+@media (max-width: 768px) {
+  .network-indicator {
+    bottom: 80px;
+    left: 16px;
+    right: 16px;
+    transform: translateX(0) translateY(100px);
+    max-width: none;
+  }
+
+  .network-indicator.visible {
+    transform: translateX(0) translateY(0);
+  }
+}

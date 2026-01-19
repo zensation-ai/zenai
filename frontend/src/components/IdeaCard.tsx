@@ -3,6 +3,7 @@ import axios from 'axios';
 import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
 import { AIFeedback } from './AIFeedback';
+import { InlineLoader } from './SkeletonLoader';
 import { getTypeIcon, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
 import { formatDate } from '../utils/dateUtils';
 import './IdeaCard.css';
@@ -110,7 +111,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
               title="Wiederherstellen"
               aria-label="Gedanke wiederherstellen"
             >
-              {isArchiving ? '...' : '↩'}
+              {isArchiving ? <InlineLoader size="small" color="muted" /> : '↩'}
             </button>
           ) : (
             <button
@@ -121,7 +122,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
               title="Archivieren"
               aria-label="Gedanke archivieren"
             >
-              {isArchiving ? '...' : '📥'}
+              {isArchiving ? <InlineLoader size="small" color="muted" /> : '📥'}
             </button>
           )}
           <button
@@ -132,7 +133,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
             title="Löschen"
             aria-label="Gedanke löschen"
           >
-            {isDeleting ? '...' : '×'}
+            {isDeleting ? <InlineLoader size="small" color="muted" /> : '×'}
           </button>
         </div>
       </div>

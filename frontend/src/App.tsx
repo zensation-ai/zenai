@@ -34,6 +34,8 @@ import { SyncDashboard } from './components/SyncDashboard';
 import { ProactiveDashboard } from './components/ProactiveDashboard';
 import { Onboarding } from './components/Onboarding';
 import { GeneralChat } from './components/GeneralChat';
+import { SkeletonLoader } from './components/SkeletonLoader';
+import { MobileNav } from './components/MobileNav';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import './App.css';
@@ -609,15 +611,23 @@ function App() {
                 <h2>Archivierte Gedanken</h2>
               </div>
               {loading ? (
-                <div className="loading-state">
-                  <div className="loading-spinner large" />
-                  <p>Lade Archiv...</p>
+                <div className="loading-state" role="status" aria-live="polite">
+                  <SkeletonLoader type="card" count={3} />
                 </div>
               ) : archivedIdeas.length === 0 ? (
                 <div className="empty-state">
                   <span className="empty-icon">📭</span>
                   <h3>Archiv ist leer</h3>
-                  <p>Archivierte Gedanken erscheinen hier.</p>
+                  <p>Archivierte Gedanken erscheinen hier. Archiviere Gedanken, die du aufbewahren aber nicht mehr aktiv nutzen möchtest.</p>
+                  <div className="empty-state-actions">
+                    <button
+                      type="button"
+                      className="empty-state-cta"
+                      onClick={() => setCurrentPage('ideas')}
+                    >
+                      ← Zu deinen Gedanken
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className={`ideas-${viewMode}`}>
@@ -754,9 +764,53 @@ function App() {
                 title={apiStatus?.ollama ? 'LLM verbunden' : 'LLM getrennt'}
               />
             </div>
-            <button type="button" className="refresh-button" onClick={() => loadIdeas()} title="Neu laden">
+            <button type="button" className="refresh-button" onClick={() => loadIdeas()} title="Neu laden" aria-label="Neu laden">
               ↻
             </button>
+            {/* Mobile Navigation */}
+            <MobileNav
+              currentPage={currentPage}
+              onNavigate={(page) => setCurrentPage(page as Page)}
+              archivedCount={archivedCount}
+              navGroups={[
+                {
+                  label: 'KI',
+                  icon: '🧠',
+                  items: [
+                    { label: 'Inkubator', icon: '🧠', page: 'incubator' },
+                    { label: 'Lernen', icon: '🧬', page: 'learning' },
+                    { label: 'Lernziele', icon: '📚', page: 'learning-tasks' },
+                    { label: 'Proaktiv', icon: '✨', page: 'proactive' },
+                    { label: 'Evolution', icon: '🌱', page: 'evolution' },
+                    { label: 'Personalisierung', icon: '👤', page: 'personalization' },
+                  ]
+                },
+                {
+                  label: 'Analyse',
+                  icon: '📊',
+                  items: [
+                    { label: 'Analytics', icon: '📈', page: 'analytics' },
+                    { label: 'Digest', icon: '📊', page: 'digest' },
+                    { label: 'Graph', icon: '🕸️', page: 'knowledge-graph' },
+                    { label: 'Profil', icon: '👤', page: 'profile' },
+                  ]
+                },
+                {
+                  label: 'Mehr',
+                  icon: '⚙️',
+                  items: [
+                    { label: 'Meetings', icon: '📅', page: 'meetings' },
+                    { label: 'Medien', icon: '🖼️', page: 'media' },
+                    { label: 'Stories', icon: '📖', page: 'stories' },
+                    { label: 'Automationen', icon: '⚡', page: 'automations' },
+                    { label: 'Integrationen', icon: '🔗', page: 'integrations' },
+                    { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications' },
+                    { label: 'Export', icon: '📤', page: 'export' },
+                    { label: 'Sync', icon: '🔄', page: 'sync' },
+                  ]
+                }
+              ]}
+            />
           </div>
         </div>
       </header>
@@ -860,14 +914,22 @@ function App() {
                     disabled={processing || !textInput.trim()}
                   >
                     {processing ? (
-                      <span className="loading-spinner" />
+                      <>
+                        <span className="loading-spinner" />
+                        <span>Verarbeite...</span>
+                      </>
                     ) : (
                       'Strukturieren'
                     )}
                   </button>
                 </div>
               </div>
-              <p id="input-hint" className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
+              <div className="input-footer">
+                <p id="input-hint" className="hint">Cmd + Enter zum Absenden | Mikrofon für Sprachaufnahme</p>
+                <span className={`character-counter ${textInput.length > 2000 ? 'warning' : ''} ${textInput.length > 3000 ? 'error' : ''}`}>
+                  {textInput.length.toLocaleString('de-DE')} Zeichen
+                </span>
+              </div>
             </>
           )}
 
@@ -938,8 +1000,7 @@ function App() {
 
           {loading ? (
             <div className="loading-state" role="status" aria-live="polite">
-              <div className="loading-spinner large" aria-hidden="true" />
-              <p>Lade Ideen...</p>
+              <SkeletonLoader type="card" count={3} />
             </div>
           ) : filteredIdeas.length === 0 ? (
             <div className="empty-state" role="status">
@@ -953,10 +1014,20 @@ function App() {
               </h3>
               <p>
                 {filters.type || filters.category || filters.priority
-                  ? 'Probiere andere Filter aus oder setze sie zurück, um alle Gedanken zu sehen.'
+                  ? 'Keine Gedanken entsprechen deinen aktuellen Filterkriterien.'
                   : 'Schreib einfach drauf los oder nutze das Mikrofon – dein AI Brain kümmert sich um den Rest.'}
               </p>
-              {!(filters.type || filters.category || filters.priority) && (
+              {filters.type || filters.category || filters.priority ? (
+                <div className="empty-state-actions">
+                  <button
+                    type="button"
+                    className="empty-state-cta"
+                    onClick={() => setFilters({ type: null, category: null, priority: null })}
+                  >
+                    Filter zurücksetzen
+                  </button>
+                </div>
+              ) : (
                 <div className="empty-state-actions">
                   <div className="empty-state-hint">
                     <span className="hint-icon">⌨️</span>

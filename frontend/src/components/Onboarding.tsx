@@ -23,10 +23,10 @@ const STEPS = [
 ];
 
 const GOAL_OPTIONS = [
-  { id: 'productivity', label: 'Produktivitaet steigern', icon: '🚀' },
+  { id: 'productivity', label: 'Produktivität steigern', icon: '🚀' },
   { id: 'learning', label: 'Neues lernen', icon: '📚' },
   { id: 'organization', label: 'Gedanken organisieren', icon: '🗂️' },
-  { id: 'creativity', label: 'Kreativitaet foerdern', icon: '💡' },
+  { id: 'creativity', label: 'Kreativität fördern', icon: '💡' },
   { id: 'focus', label: 'Fokus verbessern', icon: '🎯' },
   { id: 'tracking', label: 'Ideen festhalten', icon: '📝' },
 ];
@@ -124,14 +124,14 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
                 Die KI passt sich deinem Kontext an und wird mit der Zeit immer besser.
               </p>
               <p className="subtle">
-                Lass uns kurz einrichten, wie du die App nutzen moechtest.
+                Lass uns kurz einrichten, wie du die App nutzen möchtest.
               </p>
             </div>
           )}
 
           {currentStep === 1 && (
             <div className="step-content context-step">
-              <h2>Erzaehl mir von dir</h2>
+              <h2>Erzähl mir von dir</h2>
               <p>Diese Infos helfen der KI, dich besser zu verstehen.</p>
 
               <div className="form-group">
@@ -163,7 +163,7 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
                   type="text"
                   value={data.role}
                   onChange={(e) => setData({ ...data, role: e.target.value })}
-                  placeholder="z.B. Entwickler, Gruender, Student"
+                  placeholder="z.B. Entwickler, Gründer, Student"
                 />
               </div>
             </div>
@@ -171,8 +171,8 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
 
           {currentStep === 2 && (
             <div className="step-content goals-step">
-              <h2>Was moechtest du erreichen?</h2>
-              <p>Waehle aus, was dir wichtig ist (mehrere moeglich).</p>
+              <h2>Was möchtest du erreichen?</h2>
+              <p>Wähle aus, was dir wichtig ist (mehrere möglich).</p>
 
               <div className="goals-grid">
                 {GOAL_OPTIONS.map((goal) => (
@@ -201,7 +201,7 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
               <div className="tips">
                 <h3>Schnellstart-Tipps:</h3>
                 <ul>
-                  <li>Nutze das Mikrofon fuer schnelle Sprachnotizen</li>
+                  <li>Nutze das Mikrofon für schnelle Sprachnotizen</li>
                   <li>Im Lernzentrum siehst du, was die KI gelernt hat</li>
                   <li>Gib Feedback mit 👍/👎 um die KI zu verbessern</li>
                 </ul>
@@ -213,13 +213,13 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
         <div className="onboarding-actions">
           {currentStep > 0 && currentStep < 3 && (
             <button type="button" className="back-btn" onClick={handleBack}>
-              Zurueck
+              Zurück
             </button>
           )}
 
           {currentStep === 0 && (
             <button type="button" className="skip-btn" onClick={handleSkip}>
-              Ueberspringen
+              Überspringen
             </button>
           )}
 
