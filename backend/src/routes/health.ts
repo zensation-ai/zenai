@@ -117,9 +117,9 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
           work: { status: dbHealth.work ? 'connected' : 'disconnected' },
         },
         ai: {
-          primary: availableServices.primary,
+          primary: aiServices.primary,
           claude: { status: claudeHealth.available ? 'healthy' : 'unavailable' },
-          ollama: { status: ollamaStatus.available ? 'connected' : 'disconnected', models: ollamaStatus.models || [] },
+          ollama: { status: ollamaHealth.available ? 'connected' : 'disconnected', models: ollamaHealth.models || [] },
         },
       },
     };
