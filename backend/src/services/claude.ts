@@ -268,64 +268,156 @@ export function getConfidenceLevel(confidence: number): 'high' | 'medium' | 'low
 /**
  * Calculate confidence scores for a structured idea
  * Based on completeness and quality heuristics
+ * Enhanced with multilingual support (DE/EN), semantic patterns, and contextual analysis
  */
 export function calculateConfidence(
   structured: StructuredIdea,
   transcript: string
 ): ConfidenceScores {
-  // Type confidence: based on keyword matches
-  const typeKeywords: Record<string, string[]> = {
-    idea: ['idee', 'vorschlag', 'könnten', 'vielleicht', 'was wäre wenn', 'thought'],
-    task: ['aufgabe', 'muss', 'soll', 'todo', 'erledigen', 'machen', 'deadline', 'task'],
-    problem: ['problem', 'fehler', 'bug', 'issue', 'nicht funktioniert', 'kaputt'],
-    question: ['frage', 'warum', 'wie', 'was', 'wer', 'wann', '?', 'question'],
-    insight: ['erkannt', 'gelernt', 'verstanden', 'insight', 'erkenntnis', 'aha'],
-  };
-
   const lowerTranscript = transcript.toLowerCase();
-  const typeMatches = typeKeywords[structured.type]?.filter(kw =>
-    lowerTranscript.includes(kw)
-  ).length || 0;
-  const typeConfidence = Math.min(0.5 + typeMatches * 0.15, 1.0);
 
-  // Category confidence: based on content relevance
-  const categoryKeywords: Record<string, string[]> = {
-    business: ['business', 'geschäft', 'kunde', 'verkauf', 'meeting', 'projekt'],
-    technical: ['code', 'api', 'software', 'bug', 'feature', 'system', 'datenbank'],
-    personal: ['ich', 'mir', 'mein', 'privat', 'hobby', 'zuhause'],
-    learning: ['lernen', 'kurs', 'buch', 'tutorial', 'verstehen', 'wissen'],
+  // Enhanced type keywords with multilingual support and semantic variations
+  const typeKeywords: Record<string, { de: string[]; en: string[]; patterns: RegExp[] }> = {
+    idea: {
+      de: ['idee', 'vorschlag', 'könnten', 'vielleicht', 'was wäre wenn', 'konzept', 'ansatz', 'möglichkeit', 'option', 'alternativ'],
+      en: ['idea', 'thought', 'concept', 'could', 'maybe', 'what if', 'suggestion', 'proposal', 'approach', 'possibility'],
+      patterns: [/könnte man/i, /was wenn/i, /wie wäre/i, /what about/i, /how about/i, /we could/i],
+    },
+    task: {
+      de: ['aufgabe', 'muss', 'soll', 'todo', 'erledigen', 'machen', 'deadline', 'bis', 'fertig', 'umsetzen', 'implementieren', 'abarbeiten'],
+      en: ['task', 'must', 'should', 'todo', 'complete', 'do', 'deadline', 'finish', 'implement', 'execute', 'deliver', 'action item'],
+      patterns: [/muss ich/i, /sollte ich/i, /i need to/i, /have to/i, /don't forget/i, /nicht vergessen/i, /bis (morgen|heute|nächste)/i],
+    },
+    problem: {
+      de: ['problem', 'fehler', 'bug', 'issue', 'nicht funktioniert', 'kaputt', 'defekt', 'schwierigkeit', 'herausforderung', 'blockiert', 'hängt'],
+      en: ['problem', 'error', 'bug', 'issue', 'broken', 'not working', 'defect', 'difficulty', 'challenge', 'blocked', 'stuck'],
+      patterns: [/funktioniert nicht/i, /geht nicht/i, /doesn't work/i, /won't work/i, /is broken/i, /hat einen fehler/i],
+    },
+    question: {
+      de: ['frage', 'warum', 'wie', 'was', 'wer', 'wann', 'wo', 'wieso', 'weshalb', 'wozu', 'ob'],
+      en: ['question', 'why', 'how', 'what', 'who', 'when', 'where', 'which', 'whether', 'wonder'],
+      patterns: [/\?$/, /\?["\s]/, /frage mich/i, /i wonder/i, /do you know/i, /weißt du/i, /kannst du erklären/i],
+    },
+    insight: {
+      de: ['erkannt', 'gelernt', 'verstanden', 'erkenntnis', 'aha', 'realisiert', 'bemerkt', 'festgestellt', 'entdeckt', 'herausgefunden'],
+      en: ['insight', 'learned', 'understood', 'realized', 'noticed', 'discovered', 'found out', 'figured out', 'recognized', 'eureka'],
+      patterns: [/mir ist aufgefallen/i, /ich habe erkannt/i, /i realized/i, /i noticed/i, /turns out/i, /it seems/i, /interessant.*dass/i],
+    },
   };
 
-  const catMatches = categoryKeywords[structured.category]?.filter(kw =>
-    lowerTranscript.includes(kw)
-  ).length || 0;
-  const categoryConfidence = Math.min(0.5 + catMatches * 0.12, 1.0);
+  // Calculate type confidence with pattern matching
+  let typeMatches = 0;
+  const typeConfig = typeKeywords[structured.type];
+  if (typeConfig) {
+    // Keyword matches (DE + EN)
+    typeMatches += [...typeConfig.de, ...typeConfig.en].filter(kw =>
+      lowerTranscript.includes(kw.toLowerCase())
+    ).length;
+    // Pattern matches (weighted higher)
+    typeMatches += typeConfig.patterns.filter(p => p.test(transcript)).length * 1.5;
+  }
+  const typeConfidence = Math.min(0.4 + typeMatches * 0.12, 1.0);
 
-  // Priority confidence: based on urgency indicators
-  const priorityIndicators: Record<string, string[]> = {
-    high: ['dringend', 'sofort', 'asap', 'wichtig', 'kritisch', 'urgent', 'deadline'],
-    medium: ['bald', 'sollte', 'wichtig', 'relevant'],
-    low: ['irgendwann', 'später', 'nice to have', 'optional'],
+  // Enhanced category keywords with multilingual support
+  const categoryKeywords: Record<string, { de: string[]; en: string[]; patterns: RegExp[] }> = {
+    business: {
+      de: ['business', 'geschäft', 'kunde', 'kunden', 'verkauf', 'meeting', 'projekt', 'umsatz', 'gewinn', 'marketing', 'strategie', 'wettbewerb', 'markt', 'vertrieb', 'partner'],
+      en: ['business', 'customer', 'client', 'sales', 'meeting', 'project', 'revenue', 'profit', 'marketing', 'strategy', 'competition', 'market', 'partnership', 'stakeholder'],
+      patterns: [/mit (dem )?(kunde|client)/i, /im meeting/i, /geschäftlich/i, /business-/i, /b2b|b2c/i],
+    },
+    technical: {
+      de: ['code', 'api', 'software', 'bug', 'feature', 'system', 'datenbank', 'server', 'deployment', 'architektur', 'framework', 'bibliothek', 'funktion', 'klasse', 'interface'],
+      en: ['code', 'api', 'software', 'bug', 'feature', 'system', 'database', 'server', 'deployment', 'architecture', 'framework', 'library', 'function', 'class', 'interface', 'endpoint'],
+      patterns: [/\b(react|vue|angular|node|python|java|typescript|javascript|sql|docker|kubernetes|aws|azure|gcp)\b/i, /\.(ts|js|py|java|go|rs)(\s|$)/i],
+    },
+    personal: {
+      de: ['ich', 'mir', 'mein', 'meine', 'privat', 'hobby', 'zuhause', 'familie', 'freund', 'gesundheit', 'fitness', 'urlaub', 'freizeit'],
+      en: ['i', 'me', 'my', 'mine', 'private', 'hobby', 'home', 'family', 'friend', 'health', 'fitness', 'vacation', 'leisure', 'personal'],
+      patterns: [/für mich (selbst|persönlich)/i, /in meiner freizeit/i, /for myself/i, /my own/i, /work-life/i],
+    },
+    learning: {
+      de: ['lernen', 'kurs', 'buch', 'tutorial', 'verstehen', 'wissen', 'studieren', 'recherchieren', 'nachlesen', 'schulung', 'weiterbildung', 'zertifikat'],
+      en: ['learn', 'course', 'book', 'tutorial', 'understand', 'knowledge', 'study', 'research', 'training', 'certification', 'skill', 'competency'],
+      patterns: [/will.*(lernen|verstehen)/i, /want to (learn|understand)/i, /how does.*work/i, /wie funktioniert/i, /dokumentation lesen/i],
+    },
   };
 
-  const prioMatches = priorityIndicators[structured.priority]?.filter(kw =>
-    lowerTranscript.includes(kw)
-  ).length || 0;
-  const priorityConfidence = prioMatches > 0 ? Math.min(0.6 + prioMatches * 0.15, 1.0) : 0.5;
+  // Calculate category confidence with pattern matching
+  let catMatches = 0;
+  const catConfig = categoryKeywords[structured.category];
+  if (catConfig) {
+    catMatches += [...catConfig.de, ...catConfig.en].filter(kw =>
+      lowerTranscript.includes(kw.toLowerCase())
+    ).length;
+    catMatches += catConfig.patterns.filter(p => p.test(transcript)).length * 1.5;
+  }
+  const categoryConfidence = Math.min(0.4 + catMatches * 0.1, 1.0);
 
-  // Summary confidence: based on completeness
+  // Enhanced priority indicators with contextual patterns
+  const priorityIndicators: Record<string, { de: string[]; en: string[]; patterns: RegExp[] }> = {
+    high: {
+      de: ['dringend', 'sofort', 'asap', 'wichtig', 'kritisch', 'deadline', 'heute', 'morgen', 'blocker', 'notfall', 'eilig', 'priorität'],
+      en: ['urgent', 'immediately', 'asap', 'important', 'critical', 'deadline', 'today', 'tomorrow', 'blocker', 'emergency', 'rush', 'priority'],
+      patterns: [/bis (heute|morgen|übermorgen)/i, /by (today|tomorrow)/i, /muss.*sofort/i, /must.*immediately/i, /höchste priorität/i, /top priority/i, /\bp1\b/i],
+    },
+    medium: {
+      de: ['bald', 'sollte', 'wichtig', 'relevant', 'nächste woche', 'zeitnah', 'demnächst'],
+      en: ['soon', 'should', 'important', 'relevant', 'next week', 'timely', 'shortly'],
+      patterns: [/in den nächsten (tagen|wochen)/i, /in the next (few|couple)/i, /when possible/i, /wenn möglich/i, /\bp2\b/i],
+    },
+    low: {
+      de: ['irgendwann', 'später', 'nice to have', 'optional', 'wäre schön', 'eventuell', 'vielleicht mal', 'backlog'],
+      en: ['sometime', 'later', 'nice to have', 'optional', 'would be nice', 'eventually', 'maybe', 'backlog', 'low priority'],
+      patterns: [/wenn zeit ist/i, /when there's time/i, /nicht dringend/i, /not urgent/i, /\bp3\b/i, /nice.*to.*have/i],
+    },
+  };
+
+  // Calculate priority confidence with pattern matching
+  let prioMatches = 0;
+  const prioConfig = priorityIndicators[structured.priority];
+  if (prioConfig) {
+    prioMatches += [...prioConfig.de, ...prioConfig.en].filter(kw =>
+      lowerTranscript.includes(kw.toLowerCase())
+    ).length;
+    prioMatches += prioConfig.patterns.filter(p => p.test(transcript)).length * 2; // Patterns weighted higher for priority
+  }
+  const priorityConfidence = prioMatches > 0 ? Math.min(0.5 + prioMatches * 0.12, 1.0) : 0.45;
+
+  // Enhanced summary confidence: based on completeness, coherence, and actionability
   const summaryLength = structured.summary?.length || 0;
   const hasSummary = summaryLength > 20;
   const summaryQuality = Math.min(summaryLength / 200, 1.0);
-  const summaryConfidence = hasSummary ? 0.5 + summaryQuality * 0.5 : 0.3;
 
-  // Overall confidence: weighted average
-  const overall = (
-    typeConfidence * 0.3 +
+  // Bonus for actionable summaries (contains verbs, specific details)
+  const hasActionableContent = structured.next_steps?.length > 0 ||
+    /\b(sollte|muss|wird|können|should|must|will|can)\b/i.test(structured.summary || '');
+  const hasKeywords = (structured.keywords?.length || 0) >= 2;
+  const hasContext = (structured.context_needed?.length || 0) > 0;
+
+  const summaryBonus = (hasActionableContent ? 0.1 : 0) + (hasKeywords ? 0.05 : 0) + (hasContext ? 0.05 : 0);
+  const summaryConfidence = hasSummary ? Math.min(0.4 + summaryQuality * 0.4 + summaryBonus, 1.0) : 0.3;
+
+  // Calculate completeness score
+  const completenessFactors = [
+    structured.title && structured.title.length > 5 ? 1 : 0,
+    structured.summary && structured.summary.length > 30 ? 1 : 0,
+    (structured.next_steps?.length || 0) > 0 ? 1 : 0,
+    (structured.keywords?.length || 0) >= 2 ? 1 : 0,
+  ];
+  const completenessScore = completenessFactors.reduce((a, b) => a + b, 0) / completenessFactors.length;
+
+  // Overall confidence: weighted average with completeness factor
+  const baseOverall = (
+    typeConfidence * 0.25 +
     categoryConfidence * 0.25 +
     priorityConfidence * 0.2 +
-    summaryConfidence * 0.25
+    summaryConfidence * 0.2 +
+    completenessScore * 0.1
   );
+
+  // Apply penalty for very short transcripts (less reliable classification)
+  const lengthPenalty = transcript.length < 50 ? 0.85 : (transcript.length < 100 ? 0.92 : 1.0);
+  const overall = baseOverall * lengthPenalty;
 
   return {
     overall: Math.round(overall * 100) / 100,
@@ -763,6 +855,172 @@ export async function queryClaudeJSONAdvanced<T = unknown>(
 // ===========================================
 // Helper Functions
 // ===========================================
+
+/**
+ * Robust JSON extraction from LLM response with multiple fallback strategies
+ * Handles common issues like markdown wrapping, trailing text, malformed JSON
+ */
+export function extractJSONFromResponse(responseText: string): { json: any; method: string } | null {
+  if (!responseText || typeof responseText !== 'string') {
+    logger.debug('JSON extraction: empty or invalid input');
+    return null;
+  }
+
+  const methods = [
+    // Method 1: Direct JSON object
+    () => {
+      const match = responseText.match(/\{[\s\S]*\}/);
+      if (match) {
+        return { json: JSON.parse(match[0]), method: 'direct-object' };
+      }
+      return null;
+    },
+
+    // Method 2: JSON in markdown code block
+    () => {
+      const markdownMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (markdownMatch) {
+        return { json: JSON.parse(markdownMatch[1]), method: 'markdown-block' };
+      }
+      return null;
+    },
+
+    // Method 3: JSON array extraction
+    () => {
+      const arrayMatch = responseText.match(/\[[\s\S]*\]/);
+      if (arrayMatch) {
+        return { json: JSON.parse(arrayMatch[0]), method: 'array' };
+      }
+      return null;
+    },
+
+    // Method 4: Fix common JSON errors (trailing commas, unquoted keys)
+    () => {
+      let fixed = responseText;
+      // Find JSON-like content
+      const jsonMatch = fixed.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return null;
+
+      let jsonStr = jsonMatch[0];
+
+      // Fix trailing commas before closing brackets/braces
+      jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
+
+      // Fix single quotes to double quotes (but not within strings)
+      jsonStr = jsonStr.replace(/'/g, '"');
+
+      // Remove trailing text after closing brace
+      const lastBrace = jsonStr.lastIndexOf('}');
+      if (lastBrace !== -1) {
+        jsonStr = jsonStr.substring(0, lastBrace + 1);
+      }
+
+      return { json: JSON.parse(jsonStr), method: 'fixed-json' };
+    },
+
+    // Method 5: Extract key-value pairs manually and reconstruct
+    () => {
+      const lines = responseText.split('\n');
+      const obj: Record<string, any> = {};
+
+      for (const line of lines) {
+        // Match "key": "value" or "key": value patterns
+        const kvMatch = line.match(/"?(\w+)"?\s*:\s*(?:"([^"]*)"|\[([^\]]*)\]|(\d+(?:\.\d+)?)|(\w+))/);
+        if (kvMatch) {
+          const key = kvMatch[1];
+          if (kvMatch[2] !== undefined) {
+            obj[key] = kvMatch[2]; // String value
+          } else if (kvMatch[3] !== undefined) {
+            // Array value - try to parse
+            try {
+              obj[key] = JSON.parse(`[${kvMatch[3]}]`);
+            } catch {
+              obj[key] = kvMatch[3].split(',').map(s => s.trim().replace(/^["']|["']$/g, ''));
+            }
+          } else if (kvMatch[4] !== undefined) {
+            obj[key] = parseFloat(kvMatch[4]); // Number
+          } else if (kvMatch[5] !== undefined) {
+            const val = kvMatch[5].toLowerCase();
+            obj[key] = val === 'true' ? true : val === 'false' ? false : kvMatch[5];
+          }
+        }
+      }
+
+      if (Object.keys(obj).length > 0) {
+        return { json: obj, method: 'line-parsing' };
+      }
+      return null;
+    },
+  ];
+
+  for (const method of methods) {
+    try {
+      const result = method();
+      if (result) {
+        logger.debug('JSON extraction successful', { method: result.method });
+        return result;
+      }
+    } catch (error) {
+      // Continue to next method
+    }
+  }
+
+  logger.warn('JSON extraction failed with all methods', {
+    responseLength: responseText.length,
+    responsePreview: responseText.substring(0, 200)
+  });
+  return null;
+}
+
+/**
+ * Validate and normalize a structured idea from parsed JSON
+ * Ensures all required fields are present with correct types
+ */
+export function validateAndNormalizeIdea(parsed: any, fallbackTitle?: string): StructuredIdea {
+  // Ensure required fields
+  const title = typeof parsed.title === 'string' && parsed.title.length > 0
+    ? parsed.title.substring(0, 200)
+    : (fallbackTitle || 'Unstrukturierte Notiz');
+
+  const summary = typeof parsed.summary === 'string'
+    ? parsed.summary.substring(0, 1000)
+    : '';
+
+  // Handle next_steps - can be string or array
+  let nextSteps: string[] = [];
+  if (Array.isArray(parsed.next_steps)) {
+    nextSteps = parsed.next_steps.filter((s: any) => typeof s === 'string').slice(0, 10);
+  } else if (typeof parsed.next_steps === 'string') {
+    nextSteps = [parsed.next_steps];
+  }
+
+  // Handle context_needed - can be string or array
+  let contextNeeded: string[] = [];
+  if (Array.isArray(parsed.context_needed)) {
+    contextNeeded = parsed.context_needed.filter((s: any) => typeof s === 'string').slice(0, 10);
+  } else if (typeof parsed.context_needed === 'string') {
+    contextNeeded = [parsed.context_needed];
+  }
+
+  // Handle keywords - can be string or array
+  let keywords: string[] = [];
+  if (Array.isArray(parsed.keywords)) {
+    keywords = parsed.keywords.filter((s: any) => typeof s === 'string').slice(0, 20);
+  } else if (typeof parsed.keywords === 'string') {
+    keywords = parsed.keywords.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
+  }
+
+  return {
+    title,
+    type: normalizeType(parsed.type),
+    category: normalizeCategory(parsed.category),
+    priority: normalizePriority(parsed.priority),
+    summary,
+    next_steps: nextSteps,
+    context_needed: contextNeeded,
+    keywords,
+  };
+}
 
 /**
  * Determine if a task is complex enough to warrant Extended Thinking

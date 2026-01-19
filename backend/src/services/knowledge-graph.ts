@@ -26,7 +26,14 @@ export type RelationType =
   | 'supports'        // Unterstützt eine andere Idee
   | 'enables'         // Ermöglicht eine andere Idee
   | 'part_of'         // Teil eines größeren Konzepts
-  | 'related_tech';   // Verwendet ähnliche Technologie
+  | 'related_tech'    // Verwendet ähnliche Technologie
+  | 'depends_on'      // Hängt von einer anderen Idee ab
+  | 'alternative_to'  // Alternative Lösung
+  | 'extends'         // Erweitert eine bestehende Idee
+  | 'implements'      // Konkrete Implementierung einer abstrakten Idee
+  | 'caused_by'       // Wird verursacht durch
+  | 'precedes'        // Geht einer anderen Idee zeitlich voraus
+  | 'follows';        // Folgt auf eine andere Idee
 
 interface RelatedIdea {
   id: string;
@@ -94,8 +101,34 @@ interface LLMRelationResponse {
 }
 
 const VALID_RELATION_TYPES: RelationType[] = [
-  'similar_to', 'builds_on', 'contradicts', 'supports', 'enables', 'part_of', 'related_tech'
+  'similar_to', 'builds_on', 'contradicts', 'supports', 'enables', 'part_of', 'related_tech',
+  'depends_on', 'alternative_to', 'extends', 'implements', 'caused_by', 'precedes', 'follows'
 ];
+
+// Relationship type metadata for better scoring and UI
+export const RELATION_TYPE_METADATA: Record<RelationType, {
+  label: string;
+  labelDe: string;
+  weight: number;
+  bidirectional: boolean;
+  inverse?: RelationType;
+  color: string;
+}> = {
+  similar_to: { label: 'Similar to', labelDe: 'Ähnlich zu', weight: 0.8, bidirectional: true, color: '#6366f1' },
+  builds_on: { label: 'Builds on', labelDe: 'Baut auf', weight: 0.9, bidirectional: false, inverse: 'part_of', color: '#10b981' },
+  contradicts: { label: 'Contradicts', labelDe: 'Widerspricht', weight: 0.7, bidirectional: true, color: '#ef4444' },
+  supports: { label: 'Supports', labelDe: 'Unterstützt', weight: 0.85, bidirectional: false, color: '#22c55e' },
+  enables: { label: 'Enables', labelDe: 'Ermöglicht', weight: 0.9, bidirectional: false, inverse: 'depends_on', color: '#3b82f6' },
+  part_of: { label: 'Part of', labelDe: 'Teil von', weight: 0.85, bidirectional: false, inverse: 'builds_on', color: '#8b5cf6' },
+  related_tech: { label: 'Related tech', labelDe: 'Ähnliche Technologie', weight: 0.75, bidirectional: true, color: '#f59e0b' },
+  depends_on: { label: 'Depends on', labelDe: 'Hängt ab von', weight: 0.95, bidirectional: false, inverse: 'enables', color: '#dc2626' },
+  alternative_to: { label: 'Alternative to', labelDe: 'Alternative zu', weight: 0.7, bidirectional: true, color: '#14b8a6' },
+  extends: { label: 'Extends', labelDe: 'Erweitert', weight: 0.85, bidirectional: false, color: '#a855f7' },
+  implements: { label: 'Implements', labelDe: 'Implementiert', weight: 0.9, bidirectional: false, color: '#0ea5e9' },
+  caused_by: { label: 'Caused by', labelDe: 'Verursacht durch', weight: 0.8, bidirectional: false, color: '#f97316' },
+  precedes: { label: 'Precedes', labelDe: 'Geht voraus', weight: 0.7, bidirectional: false, inverse: 'follows', color: '#64748b' },
+  follows: { label: 'Follows', labelDe: 'Folgt auf', weight: 0.7, bidirectional: false, inverse: 'precedes', color: '#64748b' },
+};
 
 /**
  * Use Mistral to analyze relationships between ideas

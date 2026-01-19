@@ -154,9 +154,14 @@ class AgenticRAGService {
       // 3. Merge and deduplicate results
       results = this.mergeResults(results, newResults);
 
+      // 3.5. Re-rank results for better ordering
+      results = this.reRankResults(query, results);
+
       // 4. Evaluate results (self-reflection)
       evaluation = await this.evaluateResults(query, results);
-      confidence = evaluation.confidence;
+
+      // 4.5. Calibrate confidence for more accurate assessment
+      confidence = this.calibrateConfidence(evaluation.confidence, results, query);
 
       logger.debug('Evaluation complete', {
         iteration,
@@ -540,29 +545,143 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
   // ===========================================
 
   /**
-   * Merge and deduplicate results
+   * Merge and deduplicate results with advanced scoring
    */
   private mergeResults(
     existing: RetrievalResult[],
     newResults: RetrievalResult[]
   ): RetrievalResult[] {
     const merged = new Map<string, RetrievalResult>();
+    const strategyCounts = new Map<string, number>();
 
     // Add existing results
     for (const result of existing) {
       merged.set(result.id, result);
+      strategyCounts.set(result.id, 1);
     }
 
-    // Add or update with new results (keep higher score)
+    // Add or update with new results
     for (const result of newResults) {
       const current = merged.get(result.id);
-      if (!current || result.score > current.score) {
+      const currentCount = strategyCounts.get(result.id) || 0;
+      strategyCounts.set(result.id, currentCount + 1);
+
+      if (!current) {
         merged.set(result.id, result);
+      } else {
+        // Keep highest score but boost for multiple strategy matches
+        const multiStrategyBoost = (currentCount + 1) * 0.05;
+        const boostedScore = Math.min(Math.max(current.score, result.score) + multiStrategyBoost, 1.0);
+        merged.set(result.id, {
+          ...current,
+          score: boostedScore,
+          metadata: {
+            ...current.metadata,
+            strategyCount: currentCount + 1,
+          }
+        });
       }
     }
 
     // Sort by score and return
     return Array.from(merged.values()).sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Re-rank results using cross-encoder style scoring
+   * Considers multiple factors for final ranking
+   */
+  private reRankResults(
+    query: string,
+    results: RetrievalResult[]
+  ): RetrievalResult[] {
+    if (results.length === 0) return results;
+
+    const queryTerms = new Set(
+      query.toLowerCase().split(/\s+/).filter(t => t.length > 2)
+    );
+
+    return results.map(result => {
+      let reRankScore = result.score;
+
+      // Factor 1: Title keyword overlap (boost)
+      const titleTerms = (result.title || '').toLowerCase().split(/\s+/);
+      const titleOverlap = titleTerms.filter(t => queryTerms.has(t)).length;
+      if (titleOverlap > 0) {
+        reRankScore += titleOverlap * 0.05;
+      }
+
+      // Factor 2: Summary keyword density
+      const summaryTerms = (result.summary || '').toLowerCase().split(/\s+/);
+      const summaryOverlap = summaryTerms.filter(t => queryTerms.has(t)).length;
+      const summaryDensity = summaryTerms.length > 0 ? summaryOverlap / summaryTerms.length : 0;
+      reRankScore += summaryDensity * 0.1;
+
+      // Factor 3: Exact phrase match (significant boost)
+      const contentLower = `${result.title} ${result.summary}`.toLowerCase();
+      if (contentLower.includes(query.toLowerCase())) {
+        reRankScore += 0.15;
+      }
+
+      // Factor 4: Multi-strategy confirmation
+      const strategyCount = result.metadata?.strategyCount || 1;
+      if (strategyCount > 1) {
+        reRankScore += (strategyCount - 1) * 0.03;
+      }
+
+      // Factor 5: Content length penalty for very short summaries
+      if ((result.summary || '').length < 50) {
+        reRankScore *= 0.95;
+      }
+
+      return {
+        ...result,
+        score: Math.min(reRankScore, 1.0),
+        metadata: {
+          ...result.metadata,
+          originalScore: result.score,
+          reRanked: true,
+        }
+      };
+    }).sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Calibrate confidence based on result distribution
+   * Adjusts raw confidence to be more realistic
+   */
+  private calibrateConfidence(
+    rawConfidence: number,
+    results: RetrievalResult[],
+    query: string
+  ): number {
+    if (results.length === 0) return 0;
+
+    // Factor 1: Score distribution - high variance suggests uncertain results
+    const scores = results.map(r => r.score);
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const variance = scores.reduce((sum, s) => sum + Math.pow(s - avgScore, 2), 0) / scores.length;
+    const variancePenalty = variance > 0.1 ? 0.9 : 1.0;
+
+    // Factor 2: Top result gap - large gap from 2nd result suggests good match
+    const topGap = results.length > 1 ? results[0].score - results[1].score : 0;
+    const gapBoost = topGap > 0.15 ? 1.05 : 1.0;
+
+    // Factor 3: Strategy diversity - multiple strategies agreeing is more reliable
+    const strategies = new Set(results.map(r => r.strategy));
+    const diversityBoost = strategies.size >= 2 ? 1.03 : 1.0;
+
+    // Factor 4: Query specificity - specific queries get slight boost
+    const querySpecificity = query.split(/\s+/).length > 3 ? 1.02 : 1.0;
+
+    // Factor 5: Result count - too few results reduces confidence
+    const countFactor = results.length < 3 ? 0.9 : (results.length > 10 ? 0.95 : 1.0);
+
+    // Calculate calibrated confidence
+    const calibrated = rawConfidence * variancePenalty * gapBoost * diversityBoost * querySpecificity * countFactor;
+
+    // Clamp to valid range
+    return Math.min(Math.max(calibrated, 0), 1);
   }
 
   // ===========================================
