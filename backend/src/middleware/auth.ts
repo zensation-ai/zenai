@@ -141,16 +141,20 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     }
 
     if (result.rows.length === 0) {
-      // Dev mode: Allow invalid keys with read-only access
+      // Dev mode: Allow invalid keys with READ-ONLY access
+      // SECURITY: Consistent with line 100-106 - no write permissions without valid auth
       const isLocalDev = process.env.NODE_ENV === 'development' &&
                          !process.env.RAILWAY_ENVIRONMENT &&
                          !process.env.VERCEL;
       if (isLocalDev) {
-        logger.debug('Dev mode: Invalid API key bypassed', { operation: 'apiKeyAuth' });
+        logger.warn('Dev mode: Invalid API key bypassed - READ-ONLY access granted', {
+          operation: 'apiKeyAuth',
+          securityNote: 'Write operations require valid API key even in dev mode'
+        });
         req.apiKey = {
-          id: 'dev-mode',
-          name: 'Development Mode (Invalid Key Bypass)',
-          scopes: ['read', 'write'],
+          id: 'dev-mode-readonly',
+          name: 'Development Mode (Read-Only)',
+          scopes: ['read'], // SECURITY: No write/admin permissions without valid key
           rateLimit: 100
         };
         return next();
