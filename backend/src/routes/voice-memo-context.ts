@@ -353,14 +353,12 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     const thoughtId = uuidv4();
 
     try {
-      // Note: Supabase schema has raw_text (NOT NULL) as original column
-      // raw_input was added later and is nullable
-      // We populate both for compatibility
+      // Schema only has raw_input column (NOT NULL)
       await queryContext(
         context as AIContext,
         `INSERT INTO loose_thoughts
-         (id, user_id, raw_text, raw_input, source, user_tags, embedding, is_processed, created_at)
-         VALUES ($1, 'default', $2, $2, 'voice', '[]'::jsonb, $3, false, NOW())`,
+         (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
+         VALUES ($1, 'default', $2, 'voice', '[]'::jsonb, $3, false, NOW())`,
         [
           thoughtId,
           transcript,
