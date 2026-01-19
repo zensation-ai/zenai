@@ -181,13 +181,14 @@ function App() {
 
       // AI services are under services.ai (not services.ollama directly)
       const aiServices = response.data.services.ai;
+      const claudeAvailable = aiServices?.claude?.status === 'healthy' || aiServices?.claude?.available;
       const ollamaConnected = aiServices?.ollama?.status === 'connected';
       const openaiConfigured = aiServices?.openai?.status === 'configured';
       const ollamaModels = aiServices?.ollama?.models || [];
 
       setApiStatus({
         database: dbConnected,
-        ollama: ollamaConnected || openaiConfigured,
+        ollama: claudeAvailable || ollamaConnected || openaiConfigured,
         models: ollamaModels,
       });
     } catch (err) {

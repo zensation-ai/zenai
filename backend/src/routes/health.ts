@@ -105,11 +105,23 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
   const isDegraded = anyDbHealthy || anyCircuitBreakerOpen;
 
   // SECURITY: Minimal response in production without API key
+  // Include basic service status for frontend health indicators
   if (isProduction && !hasApiKey) {
     const minimalStatus = {
       status: isHealthy ? 'healthy' : (isDegraded ? 'degraded' : 'unhealthy'),
       timestamp: new Date().toISOString(),
       responseTime: Date.now() - startTime,
+      services: {
+        databases: {
+          personal: { status: dbHealth.personal ? 'connected' : 'disconnected' },
+          work: { status: dbHealth.work ? 'connected' : 'disconnected' },
+        },
+        ai: {
+          primary: availableServices.primary,
+          claude: { status: claudeHealth.available ? 'healthy' : 'unavailable' },
+          ollama: { status: ollamaStatus.available ? 'connected' : 'disconnected', models: ollamaStatus.models || [] },
+        },
+      },
     };
     const httpStatus = minimalStatus.status === 'healthy' ? 200 :
                        minimalStatus.status === 'degraded' ? 200 : 503;
