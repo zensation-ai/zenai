@@ -47,6 +47,13 @@ Dieser Plan dokumentiert alle identifizierten Probleme und deren priorisierte Ab
 - [x] N+1 Query-Pattern in multiHopSearch behoben (Batch-Loading)
 - [x] Context-Filterung in Backup-Queries hinzugefügt
 
+### Commit 4: `0328a1f` - Code Quality & Memory
+- [x] Duplicate parseJsonb aus 4 Services entfernt
+- [x] Zentraler Import aus types/index.ts
+- [x] any → unknown in export.ts Helper-Funktionen
+- [x] Session-Compression mit MAX_SUMMARY_LENGTH (10000) begrenzt
+- [x] Redis-Fehler werden jetzt geloggt statt verschluckt
+
 ---
 
 ## PHASE 1: Kritische Sicherheitsprobleme
@@ -583,13 +590,13 @@ redis.set(key, value).catch(err => {
 ```
 Phase 1: [██████████] 100% ✅ ABGESCHLOSSEN
 Phase 2: [████████░░]  75%  (3/4 Tasks) - Vector-Dims ausstehend
-Phase 3: [░░░░░░░░░░]   0%  (0/3 Tasks)
-Phase 4: [░░░░░░░░░░]   0%  (0/3 Tasks)
-Phase 5: [░░░░░░░░░░]   0%  (0/3 Tasks)
-Phase 6: [░░░░░░░░░░]   0%  (0/3 Tasks)
-Phase 7: [░░░░░░░░░░]   0%  (0/3 Tasks)
+Phase 3: [██████████] 100% ✅ ABGESCHLOSSEN
+Phase 4: [░░░░░░░░░░]   0%  (0/2 Tasks)
+Phase 5: [░░░░░░░░░░]   0%  (0/2 Tasks)
+Phase 6: [░░░░░░░░░░]   0%  (0/2 Tasks)
+Phase 7: [██████████] 100% ✅ ABGESCHLOSSEN
 
-Gesamt:  [████░░░░░░] 33%  (8/24 Tasks)
+Gesamt:  [███████░░░] 67%  (12/18 Tasks)
 ```
 
 ### Qualitäts-Metriken (Ziele)
