@@ -1046,10 +1046,16 @@ function App() {
                 <div
                   key={idea.id}
                   onClick={() => handleIdeaClick(idea)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleIdeaClick(idea)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleIdeaClick(idea);
+                    }
+                  }}
                   className="idea-wrapper"
-                  role="listitem"
+                  role="button"
                   tabIndex={0}
+                  aria-label={`Gedanke: ${idea.title}`}
                 >
                   <IdeaCard
                     idea={idea}

@@ -129,6 +129,27 @@
   flex-shrink: 0;
 }
 
+/* Larger touch targets on mobile for accessibility (iOS minimum 44px) */
+@media (pointer: coarse) {
+  .delete-button,
+  .archive-button,
+  .restore-button {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Disabled state for buttons */
+.delete-button:disabled,
+.archive-button:disabled,
+.restore-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .idea-card:hover .delete-button,
 .idea-card:hover .archive-button,
 .idea-card:hover .restore-button {

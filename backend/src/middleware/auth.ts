@@ -318,12 +318,13 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     logger.error('Rate limiter error', error instanceof Error ? error : undefined, { operation: 'rateLimiter' });
-    // SECURITY: Apply conservative fallback limit on DB errors
-    // This prevents unlimited access if rate limiting fails
-    res.setHeader('X-RateLimit-Limit', 10);
-    res.setHeader('X-RateLimit-Remaining', 10);
-    res.setHeader('X-RateLimit-Status', 'fallback');
-    next();
+    // SECURITY: Fail secure - deny request on DB errors to prevent bypass
+    // This ensures rate limiting cannot be bypassed by causing DB failures
+    return res.status(503).json({
+      error: 'Service temporarily unavailable',
+      message: 'Rate limiting service unavailable. Please try again later.',
+      retryAfter: 5
+    });
   }
 }
 
