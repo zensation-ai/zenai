@@ -24,12 +24,21 @@ Dieser Plan dokumentiert alle identifizierten Probleme und deren priorisierte Ab
 
 ## ✅ BEREITS BEHOBEN
 
+### Commit 1: `1cbd6b0` - Critical Fixes
 - [x] Rate-Limiter SQL Column Mismatch (`identifier` → `key`)
 - [x] Anonymous Rate-Limiting Security Vulnerability
 - [x] Memory-Leak durch nicht bereinigtes setInterval
 - [x] O(n²) Knowledge-Graph Layout-Algorithmus
 - [x] Trust Proxy für Production-Umgebungen
 - [x] Kanonische parseJsonb Implementation
+
+### Commit 2: `e2bcd5c` - Security Hardening
+- [x] Dev-Mode Auth-Bypass mit Feature-Flag geschützt
+- [x] API-Key Prefix nicht mehr in Responses exponiert
+- [x] UUID-basierte Auth mit Deprecation-Warnung versehen
+- [x] CORS: Hardcoded Production-Origin entfernt
+- [x] CORS: Warnung für fehlende ALLOWED_ORIGINS Konfiguration
+- [x] CORS: Logging für unbekannte Origins in Dev-Mode
 
 ---
 
@@ -565,15 +574,15 @@ redis.set(key, value).catch(err => {
 ### Fortschritts-Tracking
 
 ```
-Phase 1: [████████░░] 80%  (4/5 Tasks)
-Phase 2: [░░░░░░░░░░]  0%  (0/4 Tasks)
-Phase 3: [░░░░░░░░░░]  0%  (0/3 Tasks)
-Phase 4: [░░░░░░░░░░]  0%  (0/3 Tasks)
-Phase 5: [░░░░░░░░░░]  0%  (0/3 Tasks)
-Phase 6: [░░░░░░░░░░]  0%  (0/3 Tasks)
-Phase 7: [░░░░░░░░░░]  0%  (0/3 Tasks)
+Phase 1: [██████████] 100% ✅ ABGESCHLOSSEN
+Phase 2: [░░░░░░░░░░]   0%  (0/4 Tasks)
+Phase 3: [░░░░░░░░░░]   0%  (0/3 Tasks)
+Phase 4: [░░░░░░░░░░]   0%  (0/3 Tasks)
+Phase 5: [░░░░░░░░░░]   0%  (0/3 Tasks)
+Phase 6: [░░░░░░░░░░]   0%  (0/3 Tasks)
+Phase 7: [░░░░░░░░░░]   0%  (0/3 Tasks)
 
-Gesamt:  [█░░░░░░░░░] 11%  (4/24 Tasks)
+Gesamt:  [██░░░░░░░░] 17%  (4/24 Tasks)
 ```
 
 ### Qualitäts-Metriken (Ziele)
