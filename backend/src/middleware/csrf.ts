@@ -178,7 +178,7 @@ export function getCsrfTokenHandler(req: Request, res: Response): void {
  * 2. _csrf field in request body
  * 3. Cookie (Double Submit Cookie pattern)
  */
-export function csrfProtection(req: Request, res: Response, next: NextFunction): void {
+export function csrfProtection(req: Request, res: Response, next: NextFunction): void | Response {
   // Skip CSRF for safe methods
   if (SAFE_METHODS.includes(req.method)) {
     return next();

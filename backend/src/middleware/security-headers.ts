@@ -13,7 +13,10 @@
 
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import helmet from 'helmet';
+import helmet, { contentSecurityPolicy } from 'helmet';
+
+// Type for CSP directives
+type CspDirectives = Parameters<typeof contentSecurityPolicy>[0]['directives'];
 
 /**
  * Generate a cryptographic nonce for inline scripts
@@ -62,7 +65,7 @@ export function getSecurityHeadersConfig(options: {
   const { isDevelopment = false, enableSwagger = true } = options;
 
   // Base CSP directives - strict by default
-  const cspDirectives: helmet.ContentSecurityPolicyOptions['directives'] = {
+  const cspDirectives: CspDirectives = {
     // Default: only allow same origin
     defaultSrc: ["'self'"],
 
