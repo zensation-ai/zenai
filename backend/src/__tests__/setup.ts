@@ -25,7 +25,25 @@ afterAll(async () => {
 });
 
 // Export test utilities
-export const mockRequest = (overrides = {}) => ({
+import { Request, Response, NextFunction } from 'express';
+
+interface MockRequest {
+  params: Record<string, string>;
+  query: Record<string, string>;
+  body: Record<string, unknown>;
+  headers: Record<string, string>;
+  [key: string]: unknown;
+}
+
+interface MockResponse {
+  status: jest.Mock;
+  json: jest.Mock;
+  send: jest.Mock;
+  setHeader: jest.Mock;
+  locals: Record<string, unknown>;
+}
+
+export const mockRequest = (overrides: Partial<MockRequest> = {}): MockRequest => ({
   params: {},
   query: {},
   body: {},
@@ -33,12 +51,18 @@ export const mockRequest = (overrides = {}) => ({
   ...overrides,
 });
 
-export const mockResponse = () => {
-  const res: any = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  res.send = jest.fn().mockReturnValue(res);
+export const mockResponse = (): MockResponse => {
+  const res: MockResponse = {
+    status: jest.fn(),
+    json: jest.fn(),
+    send: jest.fn(),
+    setHeader: jest.fn(),
+    locals: {},
+  };
+  res.status.mockReturnValue(res);
+  res.json.mockReturnValue(res);
+  res.send.mockReturnValue(res);
   return res;
 };
 
-export const mockNext = jest.fn();
+export const mockNext: jest.MockedFunction<NextFunction> = jest.fn();
