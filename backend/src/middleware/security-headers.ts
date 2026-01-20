@@ -15,9 +15,11 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import helmet from 'helmet';
 
-// Type for CSP directives - use Record type for flexibility
-type CspDirectiveValue = string | string[] | ((req: Request, res: Response) => string[]);
-type CspDirectives = Record<string, CspDirectiveValue | null>;
+// Type for CSP directives - use Record type for Helmet v8 compatibility
+// In Helmet v8, directive values are arrays containing strings and/or functions-that-return-strings
+type CspDirectiveElement = string | ((req: Request, res: Response) => string);
+type CspDirectiveValue = CspDirectiveElement[];
+type CspDirectives = Record<string, CspDirectiveValue | null | false>;
 
 /**
  * Generate a cryptographic nonce for inline scripts
@@ -71,12 +73,10 @@ export function getSecurityHeadersConfig(options: {
     defaultSrc: ["'self'"],
 
     // Scripts: self + nonce for inline (Swagger needs unsafe-inline in dev)
+    // In Helmet v8, directive values must be arrays containing strings and/or functions-that-return-strings
     scriptSrc: isDevelopment && enableSwagger
       ? ["'self'", "'unsafe-inline'"] // Allow unsafe-inline for Swagger in dev
-      : (req: Request, res: Response) => [
-          "'self'",
-          `'nonce-${res.locals.cspNonce || ''}'`,
-        ],
+      : ["'self'", ((_req: Request, res: Response) => `'nonce-${res.locals.cspNonce || ''}'`)],
 
     // Styles: self + unsafe-inline (many UI frameworks need this)
     // In strict mode, would use nonces for styles too
