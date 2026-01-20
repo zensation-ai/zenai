@@ -34,14 +34,14 @@ describe('CSRF Protection', () => {
       cookies: {},
       ip: '127.0.0.1',
       socket: { remoteAddress: '127.0.0.1' } as any,
-    };
+    } as any;
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
       cookie: jest.fn().mockReturnThis(),
       setHeader: jest.fn().mockReturnThis(),
-      locals: {},
-    };
+      locals: { requestId: 'test-request-id' },
+    } as any;
     mockNext = jest.fn();
   });
 

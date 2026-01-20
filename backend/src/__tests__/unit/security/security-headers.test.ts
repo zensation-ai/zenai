@@ -19,11 +19,11 @@ describe('Security Headers', () => {
     mockRequest = {
       path: '/api/test',
       method: 'GET',
-    };
+    } as any;
     mockResponse = {
       setHeader: jest.fn().mockReturnThis(),
-      locals: {},
-    };
+      locals: { requestId: 'test-request-id' },
+    } as any;
     mockNext = jest.fn();
   });
 
