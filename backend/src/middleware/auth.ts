@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
+import { checkKeyExpiry, KeyExpiryInfo } from '../services/api-key-security';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -24,6 +25,7 @@ declare global {
         name: string;
         scopes: string[];
         rateLimit: number;
+        expiryInfo?: KeyExpiryInfo;
       };
       user?: {
         id: string;
@@ -139,7 +141,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
       });
       // Lookup by key ID directly
       result = await pool.query(
-        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
+        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash, created_at
          FROM api_keys
          WHERE id = $1`,
         [apiKey]
@@ -150,7 +152,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
       // Find key candidates by prefix
       result = await pool.query(
-        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash
+        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash, created_at
          FROM api_keys
          WHERE key_prefix = $1`,
         [prefix]
@@ -224,11 +226,44 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
       [keyData.id]
     );
 
+    // Phase Security Sprint 3: Check key expiry status and add warnings
+    const expiryInfo = checkKeyExpiry(keyData.expires_at, keyData.created_at);
+
+    // Set warning headers if key is expiring soon
+    if (expiryInfo.warningMessage) {
+      res.setHeader('X-API-Key-Warning', expiryInfo.warningMessage);
+    }
+    if (expiryInfo.isExpiringSoon || expiryInfo.isCritical) {
+      res.setHeader('X-API-Key-Expires-In-Days', expiryInfo.daysUntilExpiry?.toString() || '0');
+    }
+    if (expiryInfo.rotationRecommended) {
+      res.setHeader('X-API-Key-Rotation-Recommended', 'true');
+    }
+
+    // Log expiry warnings
+    if (expiryInfo.isCritical) {
+      logger.warn('API key expiring soon - CRITICAL', {
+        operation: 'apiKeyAuth',
+        keyId: keyData.id,
+        keyName: keyData.name,
+        daysUntilExpiry: expiryInfo.daysUntilExpiry,
+        expiresAt: expiryInfo.expiresAt,
+      });
+    } else if (expiryInfo.isExpiringSoon) {
+      logger.info('API key expiring soon', {
+        operation: 'apiKeyAuth',
+        keyId: keyData.id,
+        keyName: keyData.name,
+        daysUntilExpiry: expiryInfo.daysUntilExpiry,
+      });
+    }
+
     req.apiKey = {
       id: keyData.id,
       name: keyData.name,
       scopes: keyData.scopes || ['read'],
-      rateLimit: keyData.rate_limit || 1000
+      rateLimit: keyData.rate_limit || 1000,
+      expiryInfo,
     };
 
     next();
