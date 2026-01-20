@@ -13,10 +13,11 @@
 
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import helmet, { contentSecurityPolicy } from 'helmet';
+import helmet from 'helmet';
 
-// Type for CSP directives
-type CspDirectives = Parameters<typeof contentSecurityPolicy>[0]['directives'];
+// Type for CSP directives - use Record type for flexibility
+type CspDirectiveValue = string | string[] | ((req: Request, res: Response) => string[]);
+type CspDirectives = Record<string, CspDirectiveValue | null>;
 
 /**
  * Generate a cryptographic nonce for inline scripts
