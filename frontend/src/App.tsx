@@ -726,6 +726,7 @@ function App() {
         <div className="blob-2" />
         <div className="blob-3" />
         <div className="blob-4" />
+        <div className="blob-5" />
         {/* Floating Particles */}
         <div className="particle particle-1" />
         <div className="particle particle-2" />

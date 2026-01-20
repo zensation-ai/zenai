@@ -6,77 +6,103 @@
 
 :root {
   /* Zensation Design: Midnight Petrol + Sunset Orange */
+  /* Enhanced with more depth and less white */
 
   /* Primary Accent - Sunset Orange (warm, inviting) */
   --primary: #ff6b35;
   --primary-dark: #e85a2a;
   --primary-light: #ff8c5a;
   --primary-lighter: #ffb08a;
-  --primary-glow: rgba(255, 107, 53, 0.25);
+  --primary-glow: rgba(255, 107, 53, 0.35);
 
   /* Secondary Warm Accents */
   --warm-coral: #ff7f6b;
   --warm-peach: #ffab91;
   --warm-cream: #fff5eb;
 
+  /* Petrol Accents - More pronounced */
+  --petrol: #1a3a4a;
+  --petrol-light: #2d5a6e;
+  --petrol-lighter: #4a7a8e;
+  --petrol-glow: rgba(26, 58, 74, 0.15);
+
   /* Semantic Colors */
   --success: #10b981;
-  --success-glow: rgba(16, 185, 129, 0.2);
+  --success-glow: rgba(16, 185, 129, 0.25);
   --warning: #f59e0b;
   --danger: #ef4444;
 
-  /* Petrol-tinted Light Background - Warm undertone */
-  --background: #f2f5f7;
+  /* Richer Background - Less white, more warmth and petrol tones */
+  --background: #dce5eb;
   --background-gradient: linear-gradient(
-    135deg,
-    #edf2f7 0%,
-    #f5f3f0 25%,
-    #f2f5f7 50%,
-    #f0f2f5 75%,
-    #eef3f6 100%
+    145deg,
+    #d5e0e8 0%,
+    #e0e6e2 15%,
+    #e8e5de 30%,
+    #efe8e0 45%,
+    #e6e8ec 60%,
+    #dde6ed 75%,
+    #d8e2ea 100%
   );
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-solid: #ffffff;
-  --surface-light: rgba(255, 255, 255, 0.5);
-  --surface-hover: rgba(255, 255, 255, 0.88);
-  --surface-warm: rgba(255, 250, 245, 0.7);
 
-  /* Glassmorphism - Warm frosted glass */
-  --glass-bg: rgba(255, 252, 250, 0.68);
-  --glass-border: rgba(255, 255, 255, 0.45);
-  --glass-highlight: rgba(255, 255, 255, 0.95);
-  --glass-shadow: rgba(20, 50, 70, 0.08);
-  --glass-warm: rgba(255, 245, 235, 0.4);
+  /* Surfaces with warm/petrol tinting - noticeably less white */
+  --surface: rgba(240, 245, 248, 0.8);
+  --surface-solid: #edf2f5;
+  --surface-light: rgba(235, 242, 248, 0.65);
+  --surface-hover: rgba(242, 248, 252, 0.88);
+  --surface-warm: rgba(255, 245, 238, 0.8);
+  --surface-petrol: rgba(220, 235, 245, 0.75);
+
+  /* Glassmorphism - Tinted frosted glass with warmth and depth */
+  --glass-bg: rgba(238, 244, 250, 0.78);
+  --glass-bg-warm: rgba(252, 245, 238, 0.75);
+  --glass-bg-petrol: rgba(225, 240, 248, 0.75);
+  --glass-border: rgba(180, 205, 225, 0.55);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --glass-shadow: rgba(20, 50, 70, 0.15);
+  --glass-warm: rgba(255, 235, 220, 0.55);
 
   /* Text Colors - Petrol-tinted dark (WCAG AA compliant) */
   --text: #1a2e3d;
   --text-muted: #2d4555;
   --text-secondary: #4a6577;
 
-  /* Borders & Accents */
-  --border: rgba(20, 50, 70, 0.12);
-  --border-light: rgba(20, 50, 70, 0.06);
-  --border-glow: rgba(255, 107, 53, 0.4);
+  /* Borders & Accents - More visible */
+  --border: rgba(20, 50, 70, 0.15);
+  --border-light: rgba(20, 50, 70, 0.08);
+  --border-warm: rgba(255, 107, 53, 0.2);
+  --border-glow: rgba(255, 107, 53, 0.5);
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #ff6b35 0%, #ff8c5a 100%);
-  --gradient-surface: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.6) 100%);
-  --gradient-card: linear-gradient(145deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.55) 100%);
+  /* Enhanced Gradients with more depth */
+  --gradient-primary: linear-gradient(135deg, #ff6b35 0%, #ff8c5a 50%, #ffab91 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(238, 244, 250, 0.88) 0%, rgba(230, 240, 248, 0.75) 100%);
+  --gradient-card: linear-gradient(145deg, rgba(242, 248, 252, 0.85) 0%, rgba(232, 242, 250, 0.7) 100%);
   --gradient-glow: radial-gradient(circle at center, var(--primary-glow) 0%, transparent 70%);
-  --gradient-petrol: linear-gradient(135deg, rgba(20, 60, 80, 0.03) 0%, rgba(30, 80, 100, 0.05) 100%);
+  --gradient-petrol: linear-gradient(135deg, rgba(20, 60, 80, 0.08) 0%, rgba(30, 80, 100, 0.12) 100%);
+  --gradient-warm: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 90, 0.06) 100%);
+  --gradient-ambient: linear-gradient(
+    160deg,
+    rgba(255, 107, 53, 0.08) 0%,
+    rgba(225, 240, 250, 0.45) 25%,
+    rgba(255, 245, 235, 0.35) 50%,
+    rgba(210, 230, 245, 0.5) 75%,
+    rgba(200, 225, 240, 0.4) 100%
+  );
 
-  /* Shadows - Layered glass shadows */
-  --shadow-sm: 0 1px 3px rgba(20, 50, 70, 0.06), 0 1px 2px rgba(20, 50, 70, 0.04);
-  --shadow-md: 0 4px 16px rgba(20, 50, 70, 0.08), 0 2px 6px rgba(20, 50, 70, 0.04);
-  --shadow-lg: 0 12px 40px rgba(20, 50, 70, 0.12), 0 4px 12px rgba(20, 50, 70, 0.06);
-  --shadow-glow: 0 4px 20px rgba(255, 107, 53, 0.3);
-  --shadow-card: 0 2px 12px rgba(20, 50, 70, 0.06), 0 1px 3px rgba(20, 50, 70, 0.04), inset 0 1px 0 rgba(255,255,255,0.6);
-  --shadow-glass: 0 8px 32px rgba(20, 50, 70, 0.1), inset 0 1px 0 rgba(255,255,255,0.5);
+  /* Enhanced Shadows - More depth */
+  --shadow-sm: 0 1px 3px rgba(20, 50, 70, 0.08), 0 1px 2px rgba(20, 50, 70, 0.06);
+  --shadow-md: 0 4px 16px rgba(20, 50, 70, 0.1), 0 2px 6px rgba(20, 50, 70, 0.06);
+  --shadow-lg: 0 12px 40px rgba(20, 50, 70, 0.15), 0 4px 12px rgba(20, 50, 70, 0.08);
+  --shadow-glow: 0 4px 24px rgba(255, 107, 53, 0.35);
+  --shadow-glow-petrol: 0 4px 24px rgba(26, 58, 74, 0.2);
+  --shadow-card: 0 2px 12px rgba(20, 50, 70, 0.08), 0 1px 3px rgba(20, 50, 70, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  --shadow-glass: 0 8px 32px rgba(20, 50, 70, 0.12), inset 0 1px 0 rgba(255,255,255,0.4);
 
-  /* Filter Bar / Card specific */
+  /* Filter Bar / Card specific - warmer tones */
   --card-bg: var(--glass-bg);
-  --hover-bg: rgba(255, 255, 255, 0.8);
-  --bg-secondary: rgba(20, 60, 80, 0.04);
+  --hover-bg: rgba(238, 245, 252, 0.88);
+  --bg-secondary: rgba(20, 60, 80, 0.08);
+  --bg-tertiary: rgba(255, 107, 53, 0.07);
   --text-primary: #1a2e3d;
   --border-color: var(--border);
 
@@ -131,88 +157,114 @@ body {
   overflow: hidden;
 }
 
-/* Primary Warm Blob - Top Right */
+/* Primary Warm Blob - Top Right - MORE INTENSE */
 .blob-1 {
   position: absolute;
-  top: -15%;
-  right: -10%;
-  width: 60vw;
-  height: 60vw;
-  max-width: 800px;
-  max-height: 800px;
+  top: -10%;
+  right: -5%;
+  width: 65vw;
+  height: 65vw;
+  max-width: 900px;
+  max-height: 900px;
   background: radial-gradient(
     ellipse at 30% 30%,
-    rgba(255, 107, 53, 0.12) 0%,
-    rgba(255, 140, 90, 0.08) 30%,
-    rgba(255, 180, 120, 0.04) 50%,
-    transparent 70%
+    rgba(255, 107, 53, 0.22) 0%,
+    rgba(255, 140, 90, 0.15) 25%,
+    rgba(255, 180, 120, 0.08) 45%,
+    rgba(255, 200, 150, 0.03) 65%,
+    transparent 80%
   );
   border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%;
-  filter: blur(40px);
+  filter: blur(35px);
   animation: blobFloat1 25s ease-in-out infinite;
   will-change: transform;
 }
 
-/* Secondary Cool Blob - Bottom Left */
+/* Secondary Cool Blob - Bottom Left - MORE PETROL */
 .blob-2 {
   position: absolute;
-  bottom: -20%;
-  left: -15%;
-  width: 50vw;
-  height: 50vw;
-  max-width: 700px;
-  max-height: 700px;
+  bottom: -15%;
+  left: -10%;
+  width: 55vw;
+  height: 55vw;
+  max-width: 750px;
+  max-height: 750px;
   background: radial-gradient(
     ellipse at 60% 60%,
-    rgba(20, 80, 120, 0.1) 0%,
-    rgba(30, 100, 140, 0.06) 40%,
-    transparent 70%
+    rgba(26, 58, 74, 0.2) 0%,
+    rgba(40, 90, 120, 0.12) 30%,
+    rgba(60, 120, 150, 0.06) 50%,
+    transparent 75%
   );
   border-radius: 40% 60% 30% 70% / 60% 40% 70% 30%;
-  filter: blur(50px);
+  filter: blur(45px);
   animation: blobFloat2 30s ease-in-out infinite;
   will-change: transform;
 }
 
-/* Tertiary Accent Blob - Center */
+/* Tertiary Accent Blob - Center - WARM GLOW */
 .blob-3 {
   position: absolute;
-  top: 40%;
-  left: 30%;
+  top: 35%;
+  left: 25%;
+  width: 40vw;
+  height: 40vw;
+  max-width: 550px;
+  max-height: 550px;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 107, 53, 0.12) 0%,
+    rgba(255, 140, 90, 0.07) 35%,
+    rgba(255, 180, 130, 0.03) 55%,
+    transparent 70%
+  );
+  border-radius: 50% 50% 50% 50% / 60% 40% 60% 40%;
+  filter: blur(50px);
+  animation: blobFloat3 35s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Pronounced Petrol Accent - Right Side - MORE INTENSITY */
+.blob-4 {
+  position: absolute;
+  top: 20%;
+  right: 20%;
+  width: 30vw;
+  height: 30vw;
+  max-width: 420px;
+  max-height: 420px;
+  background: radial-gradient(
+    circle at center,
+    rgba(26, 58, 74, 0.18) 0%,
+    rgba(45, 90, 110, 0.1) 35%,
+    rgba(60, 110, 140, 0.05) 55%,
+    transparent 75%
+  );
+  border-radius: 70% 30% 50% 50% / 30% 70% 50% 50%;
+  filter: blur(40px);
+  animation: blobFloat4 28s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Fifth Blob - Bottom Right Warm Accent - NEW */
+.blob-5 {
+  position: absolute;
+  bottom: 10%;
+  right: 5%;
   width: 35vw;
   height: 35vw;
   max-width: 500px;
   max-height: 500px;
   background: radial-gradient(
-    circle at center,
-    rgba(255, 107, 53, 0.06) 0%,
-    rgba(255, 140, 90, 0.03) 40%,
-    transparent 60%
+    ellipse at 40% 60%,
+    rgba(255, 140, 90, 0.15) 0%,
+    rgba(255, 180, 130, 0.08) 40%,
+    rgba(255, 200, 160, 0.03) 60%,
+    transparent 80%
   );
-  border-radius: 50% 50% 50% 50% / 60% 40% 60% 40%;
-  filter: blur(60px);
-  animation: blobFloat3 35s ease-in-out infinite;
-  will-change: transform;
-}
-
-/* Subtle Petrol Accent - Right Side */
-.blob-4 {
-  position: absolute;
-  top: 20%;
-  right: 20%;
-  width: 25vw;
-  height: 25vw;
-  max-width: 350px;
-  max-height: 350px;
-  background: radial-gradient(
-    circle at center,
-    rgba(26, 46, 61, 0.08) 0%,
-    rgba(40, 70, 90, 0.04) 50%,
-    transparent 70%
-  );
-  border-radius: 70% 30% 50% 50% / 30% 70% 50% 50%;
-  filter: blur(45px);
-  animation: blobFloat4 28s ease-in-out infinite;
+  border-radius: 50% 50% 30% 70% / 60% 40% 60% 40%;
+  filter: blur(50px);
+  animation: blobFloat5 32s ease-in-out infinite;
   will-change: transform;
 }
 
@@ -264,6 +316,21 @@ body {
   }
 }
 
+@keyframes blobFloat5 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  33% {
+    transform: translate(-8%, -5%) scale(1.1) rotate(15deg);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translate(5%, 8%) scale(0.95) rotate(-10deg);
+    opacity: 0.9;
+  }
+}
+
 /* Noise Texture - Adds warmth and organic feel */
 body::before {
   content: '';
@@ -276,16 +343,18 @@ body::before {
   mix-blend-mode: overlay;
 }
 
-/* Subtle Vignette for depth */
+/* Enhanced Vignette for depth and warmth */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
   background: radial-gradient(
-    ellipse at center,
+    ellipse 120% 100% at 50% 50%,
     transparent 0%,
-    transparent 50%,
-    rgba(20, 50, 70, 0.03) 100%
+    transparent 40%,
+    rgba(20, 50, 70, 0.04) 65%,
+    rgba(26, 58, 74, 0.07) 85%,
+    rgba(20, 45, 60, 0.1) 100%
   );
   pointer-events: none;
   z-index: 1;
@@ -308,54 +377,54 @@ body::after {
 }
 
 .particle-1 {
-  width: 4px;
-  height: 4px;
-  background: rgba(255, 107, 53, 0.4);
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 107, 53, 0.55);
   left: 10%;
   animation-duration: 20s;
   animation-delay: 0s;
 }
 
 .particle-2 {
-  width: 6px;
-  height: 6px;
-  background: rgba(20, 80, 120, 0.3);
+  width: 7px;
+  height: 7px;
+  background: rgba(26, 80, 120, 0.4);
   left: 25%;
   animation-duration: 25s;
   animation-delay: 5s;
 }
 
 .particle-3 {
-  width: 3px;
-  height: 3px;
-  background: rgba(255, 140, 90, 0.5);
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 140, 90, 0.6);
   left: 45%;
   animation-duration: 18s;
   animation-delay: 2s;
 }
 
 .particle-4 {
-  width: 5px;
-  height: 5px;
-  background: rgba(40, 90, 120, 0.25);
+  width: 6px;
+  height: 6px;
+  background: rgba(45, 90, 120, 0.35);
   left: 65%;
   animation-duration: 22s;
   animation-delay: 8s;
 }
 
 .particle-5 {
-  width: 4px;
-  height: 4px;
-  background: rgba(255, 107, 53, 0.35);
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 107, 53, 0.5);
   left: 80%;
   animation-duration: 24s;
   animation-delay: 3s;
 }
 
 .particle-6 {
-  width: 7px;
-  height: 7px;
-  background: rgba(255, 180, 120, 0.2);
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 160, 100, 0.35);
   left: 90%;
   animation-duration: 28s;
   animation-delay: 10s;
