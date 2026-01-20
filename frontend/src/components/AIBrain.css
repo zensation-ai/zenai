@@ -420,6 +420,79 @@
 .ai-brain-container.small .ring-2 { width: 50px; height: 50px; }
 .ai-brain-container.small .ring-3 { width: 60px; height: 60px; }
 
+/* AI Brain Tip */
+.ai-brain-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  background: rgba(255, 107, 53, 0.08);
+  border: 1px solid rgba(255, 107, 53, 0.15);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--text-muted, #4a6577);
+  animation: tipFadeIn 0.5s ease-out;
+  max-width: 280px;
+  text-align: center;
+}
+
+.ai-brain-tip .tip-icon {
+  flex-shrink: 0;
+}
+
+.ai-brain-tip .tip-text {
+  line-height: 1.4;
+}
+
+@keyframes tipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Easter Egg */
+.ai-brain-easter-egg {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  background: var(--primary, #ff6b35);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 12px;
+  animation: easterEggPop 2s ease forwards;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+}
+
+@keyframes easterEggPop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.1);
+  }
+  30% {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .ai-brain-wrapper {
@@ -433,5 +506,10 @@
 
   .ai-brain-label {
     font-size: 0.6rem;
+  }
+
+  .ai-brain-tip {
+    max-width: 220px;
+    font-size: 0.7rem;
   }
 }

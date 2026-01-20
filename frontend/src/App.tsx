@@ -21,6 +21,12 @@ import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
+import {
+  AI_PERSONALITY,
+  AI_AVATAR,
+  getTimeBasedGreeting,
+  EMPTY_STATE_MESSAGES,
+} from './utils/aiPersonality';
 import './App.css';
 
 // Lazy-loaded page components for code-splitting
@@ -108,37 +114,38 @@ function App() {
   const isAIActive = processing || isSearching || isRecording || loading;
   const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
 
-  // Dynamic, human greeting based on time and context
-  const getHumanGreeting = () => {
-    const hour = new Date().getHours();
+  // Dynamic, human greeting using centralized AI personality system
+  const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
+
+  const humanGreeting = useMemo(() => {
     const hasIdeas = ideas.length > 0;
 
     if (!hasIdeas) {
-      // First-time / empty state - welcoming
-      if (hour >= 5 && hour < 12) {
-        return { greeting: 'Guten Morgen! ☀️', subtext: 'Ein neuer Tag voller Möglichkeiten. Was geht dir durch den Kopf?' };
-      } else if (hour >= 12 && hour < 17) {
-        return { greeting: 'Hey, schön dich zu sehen!', subtext: 'Lass uns gemeinsam deine Gedanken sortieren und weiterentwickeln.' };
-      } else if (hour >= 17 && hour < 21) {
-        return { greeting: 'Guten Abend! 🌅', subtext: 'Zeit zum Reflektieren. Welche Ideen beschäftigen dich heute?' };
-      } else {
-        return { greeting: 'Noch wach? 🌙', subtext: 'Die besten Ideen kommen oft nachts. Ich bin hier, um zuzuhören.' };
-      }
+      // First-time / empty state - welcoming with AI personality
+      return {
+        greeting: `${timeGreeting.emoji} ${timeGreeting.greeting}`,
+        subtext: `Ich bin ${AI_PERSONALITY.name}. ${timeGreeting.subtext}`,
+      };
     } else {
-      // Returning user with ideas
-      if (hour >= 5 && hour < 12) {
-        return { greeting: `Guten Morgen! ${ideas.length} Gedanken warten`, subtext: '' };
-      } else if (hour >= 12 && hour < 17) {
-        return { greeting: 'Willkommen zurück! 👋', subtext: '' };
-      } else if (hour >= 17 && hour < 21) {
-        return { greeting: 'Schön, dass du da bist!', subtext: '' };
+      // Returning user with ideas - personalized
+      if (ideas.length < 10) {
+        return {
+          greeting: `${timeGreeting.greeting} ${ideas.length} Gedanken warten`,
+          subtext: '',
+        };
+      } else if (ideas.length < 50) {
+        return {
+          greeting: `${timeGreeting.greeting}`,
+          subtext: `Wir haben schon ${ideas.length} Gedanken zusammen!`,
+        };
       } else {
-        return { greeting: 'Ich bin bereit, wenn du es bist', subtext: '' };
+        return {
+          greeting: `${timeGreeting.greeting}`,
+          subtext: `${ideas.length} Gedanken – ${AI_PERSONALITY.name} kennt dich gut!`,
+        };
       }
     }
-  };
-
-  const humanGreeting = getHumanGreeting();
+  }, [ideas.length, timeGreeting]);
 
   // Check API health on mount and reload ideas when context changes
   useEffect(() => {
@@ -1054,40 +1061,42 @@ function App() {
             </div>
           ) : filteredIdeas.length === 0 ? (
             <div className="empty-state" role="status">
-              <span className="empty-icon" aria-hidden="true">
-                {filters.type || filters.category || filters.priority ? '🔍' : '✨'}
-              </span>
-              <h3>
-                {filters.type || filters.category || filters.priority
-                  ? 'Keine passenden Gedanken'
-                  : 'Bereit für deinen ersten Gedanken'}
-              </h3>
-              <p>
-                {filters.type || filters.category || filters.priority
-                  ? 'Keine Gedanken entsprechen deinen aktuellen Filterkriterien.'
-                  : 'Schreib einfach drauf los oder nutze das Mikrofon – dein AI Brain kümmert sich um den Rest.'}
-              </p>
               {filters.type || filters.category || filters.priority ? (
-                <div className="empty-state-actions">
-                  <button
-                    type="button"
-                    className="empty-state-cta"
-                    onClick={() => setFilters({ type: null, category: null, priority: null })}
-                  >
-                    Filter zurücksetzen
-                  </button>
-                </div>
+                <>
+                  <span className="empty-icon" aria-hidden="true">🔍</span>
+                  <h3>{EMPTY_STATE_MESSAGES.search.title}</h3>
+                  <p>{EMPTY_STATE_MESSAGES.search.description}</p>
+                  <span className="empty-encouragement">{EMPTY_STATE_MESSAGES.search.encouragement}</span>
+                  <div className="empty-state-actions">
+                    <button
+                      type="button"
+                      className="empty-state-cta"
+                      onClick={() => setFilters({ type: null, category: null, priority: null })}
+                    >
+                      Filter zurücksetzen
+                    </button>
+                  </div>
+                </>
               ) : (
-                <div className="empty-state-actions">
-                  <div className="empty-state-hint">
-                    <span className="hint-icon">⌨️</span>
-                    <span>Tippen &amp; <span className="hint-key">⌘</span><span className="hint-key">↵</span> zum Absenden</span>
+                <>
+                  <div className="empty-avatar">{AI_AVATAR.emoji}</div>
+                  <h3>{EMPTY_STATE_MESSAGES.ideas.title}</h3>
+                  <p>{EMPTY_STATE_MESSAGES.ideas.description}</p>
+                  <span className="empty-encouragement">{EMPTY_STATE_MESSAGES.ideas.encouragement}</span>
+                  <div className="empty-ai-name">
+                    <span>Ich bin {AI_PERSONALITY.name}, dein KI-Begleiter</span>
                   </div>
-                  <div className="empty-state-hint">
-                    <span className="hint-icon">🎙️</span>
-                    <span>Oder einfach sprechen</span>
+                  <div className="empty-state-actions">
+                    <div className="empty-state-hint">
+                      <span className="hint-icon">⌨️</span>
+                      <span>Tippen &amp; <span className="hint-key">⌘</span><span className="hint-key">↵</span> zum Absenden</span>
+                    </div>
+                    <div className="empty-state-hint">
+                      <span className="hint-icon">🎙️</span>
+                      <span>Oder einfach sprechen</span>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           ) : (
