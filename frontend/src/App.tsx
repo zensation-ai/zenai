@@ -1,15 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import axios from 'axios';
+
+// Core components - always loaded
 import { IdeaCard } from './components/IdeaCard';
 import { RecordButton } from './components/RecordButton';
 import { SearchBar } from './components/SearchBar';
 import { Stats } from './components/Stats';
 import { FilterBar, Filters } from './components/FilterBar';
 import { IdeaDetail } from './components/IdeaDetail';
-import { MeetingsPage } from './components/MeetingsPage';
-import { ProfileDashboard } from './components/ProfileDashboard';
-import { IntegrationsPage } from './components/IntegrationsPage';
-import { IncubatorPage } from './components/IncubatorPage';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -18,27 +16,41 @@ import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
 import { ExportMenu } from './components/ExportMenu';
 import { NavDropdown } from './components/NavDropdown';
 import './components/NavDropdown.css';
-import KnowledgeGraphPage from './components/KnowledgeGraph/KnowledgeGraphPage';
-import { LearningDashboard } from './components/LearningDashboard';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
-import { AutomationDashboard } from './components/AutomationDashboard';
-import { EvolutionDashboard } from './components/EvolutionDashboard';
-import { NotificationsPage } from './components/NotificationsPage';
-import { DigestDashboard } from './components/DigestDashboard';
-import { PersonalizationChat } from './components/PersonalizationChat';
-import { LearningTasksDashboard } from './components/LearningTasksDashboard';
-import { MediaGallery } from './components/MediaGallery';
-import { StoriesPage } from './components/StoriesPage';
-import { ExportDashboard } from './components/ExportDashboard';
-import { SyncDashboard } from './components/SyncDashboard';
-import { ProactiveDashboard } from './components/ProactiveDashboard';
-import { Onboarding } from './components/Onboarding';
 import { GeneralChat } from './components/GeneralChat';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import './App.css';
+
+// Lazy-loaded page components for code-splitting
+const MeetingsPage = lazy(() => import('./components/MeetingsPage').then(m => ({ default: m.MeetingsPage })));
+const ProfileDashboard = lazy(() => import('./components/ProfileDashboard').then(m => ({ default: m.ProfileDashboard })));
+const IntegrationsPage = lazy(() => import('./components/IntegrationsPage').then(m => ({ default: m.IntegrationsPage })));
+const IncubatorPage = lazy(() => import('./components/IncubatorPage').then(m => ({ default: m.IncubatorPage })));
+const KnowledgeGraphPage = lazy(() => import('./components/KnowledgeGraph/KnowledgeGraphPage'));
+const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
+const AutomationDashboard = lazy(() => import('./components/AutomationDashboard').then(m => ({ default: m.AutomationDashboard })));
+const EvolutionDashboard = lazy(() => import('./components/EvolutionDashboard').then(m => ({ default: m.EvolutionDashboard })));
+const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
+const DigestDashboard = lazy(() => import('./components/DigestDashboard').then(m => ({ default: m.DigestDashboard })));
+const PersonalizationChat = lazy(() => import('./components/PersonalizationChat').then(m => ({ default: m.PersonalizationChat })));
+const LearningTasksDashboard = lazy(() => import('./components/LearningTasksDashboard').then(m => ({ default: m.LearningTasksDashboard })));
+const MediaGallery = lazy(() => import('./components/MediaGallery').then(m => ({ default: m.MediaGallery })));
+const StoriesPage = lazy(() => import('./components/StoriesPage').then(m => ({ default: m.StoriesPage })));
+const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m => ({ default: m.ExportDashboard })));
+const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
+const ProactiveDashboard = lazy(() => import('./components/ProactiveDashboard').then(m => ({ default: m.ProactiveDashboard })));
+const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
+
+// Loading fallback component for lazy-loaded pages
+const PageLoader = () => (
+  <div className="page-loader" role="status" aria-live="polite">
+    <SkeletonLoader type="card" count={1} />
+    <p className="loading-text">Wird geladen...</p>
+  </div>
+);
 
 type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution' | 'notifications' | 'digest' | 'personalization' | 'learning-tasks' | 'media' | 'stories' | 'export' | 'sync' | 'proactive';
 
@@ -255,12 +267,12 @@ function App() {
     }
   };
 
-  const handleArchive = (id: string) => {
+  const handleArchive = useCallback((id: string) => {
     setIdeas(prev => prev.filter(i => i.id !== id));
     setArchivedCount(prev => prev + 1);
-  };
+  }, []);
 
-  const handleRestore = (id: string) => {
+  const handleRestore = useCallback((id: string) => {
     setArchivedIdeas(prev => {
       const restored = prev.find(i => i.id === id);
       if (restored) {
@@ -270,9 +282,9 @@ function App() {
       }
       return prev;
     });
-  };
+  }, []);
 
-  const submitText = async () => {
+  const submitText = useCallback(async () => {
     if (!textInput.trim()) return;
 
     setProcessing(true);
@@ -302,9 +314,9 @@ function App() {
     } finally {
       setProcessing(false);
     }
-  };
+  }, [textInput, context, selectedPersona]);
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setSearchResults(null);
       return;
@@ -326,11 +338,11 @@ function App() {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [context]);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchResults(null);
-  };
+  }, []);
 
   // Calculate filter counts
   const filterCounts = useMemo(() => {
@@ -364,22 +376,24 @@ function App() {
     return result;
   }, [ideas, searchResults, filters]);
 
-  const handleIdeaClick = (idea: StructuredIdea) => {
+  const handleIdeaClick = useCallback((idea: StructuredIdea) => {
     setSelectedIdea(idea);
-  };
+  }, []);
 
-  const navigateToIdea = (ideaId: string) => {
+  const navigateToIdea = useCallback((ideaId: string) => {
     const idea = ideas.find((i) => i.id === ideaId);
     if (idea) {
       setSelectedIdea(idea);
     }
-  };
+  }, [ideas]);
 
-  // Render sub-pages (all wrapped in ErrorBoundary for crash protection)
+  // Render sub-pages (all wrapped in ErrorBoundary and Suspense for crash protection and lazy loading)
   if (currentPage === 'meetings') {
     return (
       <ErrorBoundary>
-        <MeetingsPage onBack={() => setCurrentPage('ideas')} />
+        <Suspense fallback={<PageLoader />}>
+          <MeetingsPage onBack={() => setCurrentPage('ideas')} />
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -387,7 +401,9 @@ function App() {
   if (currentPage === 'profile') {
     return (
       <ErrorBoundary>
-        <ProfileDashboard onBack={() => setCurrentPage('ideas')} context={context} />
+        <Suspense fallback={<PageLoader />}>
+          <ProfileDashboard onBack={() => setCurrentPage('ideas')} context={context} />
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -395,7 +411,9 @@ function App() {
   if (currentPage === 'integrations') {
     return (
       <ErrorBoundary>
-        <IntegrationsPage onBack={() => setCurrentPage('ideas')} />
+        <Suspense fallback={<PageLoader />}>
+          <IntegrationsPage onBack={() => setCurrentPage('ideas')} />
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -403,13 +421,15 @@ function App() {
   if (currentPage === 'incubator') {
     return (
       <ErrorBoundary>
-        <IncubatorPage
-          onBack={() => setCurrentPage('ideas')}
-          onIdeaCreated={() => {
-            loadIdeas();
-            setCurrentPage('ideas');
-          }}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <IncubatorPage
+            onBack={() => setCurrentPage('ideas')}
+            onIdeaCreated={() => {
+              loadIdeas();
+              setCurrentPage('ideas');
+            }}
+          />
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -417,16 +437,18 @@ function App() {
   if (currentPage === 'knowledge-graph') {
     return (
       <ErrorBoundary>
-        <KnowledgeGraphPage
-          onBack={() => setCurrentPage('ideas')}
-          onSelectIdea={(ideaId) => {
-            const idea = ideas.find(i => i.id === ideaId);
-            if (idea) {
-              setSelectedIdea(idea);
-              setCurrentPage('ideas');
-            }
-          }}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <KnowledgeGraphPage
+            onBack={() => setCurrentPage('ideas')}
+            onSelectIdea={(ideaId) => {
+              const idea = ideas.find(i => i.id === ideaId);
+              if (idea) {
+                setSelectedIdea(idea);
+                setCurrentPage('ideas');
+              }
+            }}
+          />
+        </Suspense>
       </ErrorBoundary>
     );
   }
@@ -434,10 +456,12 @@ function App() {
   if (currentPage === 'learning') {
     return (
       <ErrorBoundary>
-        <LearningDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <LearningDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -446,10 +470,12 @@ function App() {
   if (currentPage === 'analytics') {
     return (
       <ErrorBoundary>
-        <AnalyticsDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <AnalyticsDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -458,10 +484,12 @@ function App() {
   if (currentPage === 'automations') {
     return (
       <ErrorBoundary>
-        <AutomationDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <AutomationDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -470,10 +498,12 @@ function App() {
   if (currentPage === 'evolution') {
     return (
       <ErrorBoundary>
-        <EvolutionDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <EvolutionDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -482,10 +512,12 @@ function App() {
   if (currentPage === 'notifications') {
     return (
       <ErrorBoundary>
-        <NotificationsPage
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <NotificationsPage
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -494,10 +526,12 @@ function App() {
   if (currentPage === 'digest') {
     return (
       <ErrorBoundary>
-        <DigestDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <DigestDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -506,10 +540,12 @@ function App() {
   if (currentPage === 'personalization') {
     return (
       <ErrorBoundary>
-        <PersonalizationChat
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <PersonalizationChat
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -518,10 +554,12 @@ function App() {
   if (currentPage === 'learning-tasks') {
     return (
       <ErrorBoundary>
-        <LearningTasksDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <LearningTasksDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -530,10 +568,12 @@ function App() {
   if (currentPage === 'media') {
     return (
       <ErrorBoundary>
-        <MediaGallery
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <MediaGallery
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -542,10 +582,12 @@ function App() {
   if (currentPage === 'stories') {
     return (
       <ErrorBoundary>
-        <StoriesPage
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <StoriesPage
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -554,10 +596,12 @@ function App() {
   if (currentPage === 'export') {
     return (
       <ErrorBoundary>
-        <ExportDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <ExportDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -566,10 +610,12 @@ function App() {
   if (currentPage === 'sync') {
     return (
       <ErrorBoundary>
-        <SyncDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <SyncDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -578,10 +624,12 @@ function App() {
   if (currentPage === 'proactive') {
     return (
       <ErrorBoundary>
-        <ProactiveDashboard
-          context={context}
-          onBack={() => setCurrentPage('ideas')}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <ProactiveDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
         <ToastContainer />
       </ErrorBoundary>
     );
@@ -660,7 +708,9 @@ function App() {
   return (
     <ErrorBoundary>
     {showOnboarding && (
-      <Onboarding context={context} onComplete={handleOnboardingComplete} />
+      <Suspense fallback={<PageLoader />}>
+        <Onboarding context={context} onComplete={handleOnboardingComplete} />
+      </Suspense>
     )}
     <div className="app" data-context={context}>
       {/* Animated Organic Background */}

@@ -78,9 +78,13 @@ digestRouter.post('/:context/digest/generate/daily', apiKeyAuth, requireScope('w
 
   // Check if digest already exists for this date
   const existingDigest = await queryContext(ctx, `
-    SELECT * FROM digests
-    WHERE type = 'daily' AND period_start = $1
-  `, [targetDate]);
+    SELECT id, type, period_start, period_end, title, summary,
+           highlights, statistics, ai_insights, recommendations,
+           ideas_count, top_categories, top_types, productivity_score,
+           context, created_at, updated_at
+    FROM digests
+    WHERE type = 'daily' AND period_start = $1 AND context = $2
+  `, [targetDate, ctx]);
 
   if (existingDigest.rows.length > 0) {
     return res.json({

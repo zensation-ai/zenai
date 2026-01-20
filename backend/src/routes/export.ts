@@ -32,7 +32,7 @@ function formatDate(date: Date | string): string {
 /**
  * Escape CSV field (handle commas, quotes, newlines)
  */
-function escapeCSV(field: any): string {
+function escapeCSV(field: unknown): string {
   if (field === null || field === undefined) return '';
   const str = String(field);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -42,14 +42,15 @@ function escapeCSV(field: any): string {
 }
 
 /**
- * Parse JSON fields safely
+ * Parse JSON fields safely - returns string array for export formatting
  */
-function parseJSON(field: any): any[] {
+function parseJSON(field: unknown): string[] {
   if (!field) return [];
-  if (Array.isArray(field)) return field;
+  if (Array.isArray(field)) return field.map(item => String(item));
   if (typeof field === 'string') {
     try {
-      return JSON.parse(field);
+      const parsed = JSON.parse(field);
+      return Array.isArray(parsed) ? parsed.map(item => String(item)) : [];
     } catch {
       return [];
     }
@@ -758,6 +759,7 @@ exportRouter.get('/meetings/csv', apiKeyAuth, asyncHandler(async (req: Request, 
 /**
  * GET /api/export/backup
  * Export complete backup (all data)
+ * SECURITY: Filters by context, includes all columns for complete backup
  */
 exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
@@ -765,11 +767,39 @@ exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
   // Safety limit to prevent memory exhaustion (adjust as needed)
   const MAX_BACKUP_ROWS = 10000;
 
+  // SECURITY FIX: Explicitly select columns and exclude sensitive data like embeddings
+  // Embeddings are large binary data that don't belong in JSON exports
   const [ideasResult, meetingsResult, clustersResult, thoughtsResult] = await Promise.all([
-    queryContext(ctx, `SELECT * FROM ideas ORDER BY created_at DESC LIMIT ${MAX_BACKUP_ROWS}`),
-    queryContext(ctx, `SELECT * FROM meetings ORDER BY meeting_date DESC LIMIT ${MAX_BACKUP_ROWS}`),
-    queryContext(ctx, `SELECT * FROM thought_clusters ORDER BY created_at DESC LIMIT ${MAX_BACKUP_ROWS}`),
-    queryContext(ctx, `SELECT * FROM loose_thoughts ORDER BY created_at DESC LIMIT ${MAX_BACKUP_ROWS}`),
+    queryContext(ctx, `
+      SELECT id, title, type, category, priority, summary, next_steps, context_needed,
+             keywords, raw_transcript, context, created_at, updated_at, is_archived,
+             viewed_count, company_id, primary_topic_id
+      FROM ideas
+      WHERE context = $1
+      ORDER BY created_at DESC
+      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
+    queryContext(ctx, `
+      SELECT id, company_id, title, date, duration_minutes, participants, location,
+             meeting_type, status, context, created_at, updated_at
+      FROM meetings
+      WHERE context = $1
+      ORDER BY date DESC
+      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
+    queryContext(ctx, `
+      SELECT id, user_id, title, summary, suggested_type, suggested_category,
+             thought_count, confidence_score, maturity_score, status,
+             consolidated_idea_id, context, created_at, updated_at
+      FROM thought_clusters
+      WHERE context = $1
+      ORDER BY created_at DESC
+      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
+    queryContext(ctx, `
+      SELECT id, user_id, raw_input, source, user_tags, cluster_id,
+             similarity_to_cluster, is_processed, context, created_at, updated_at
+      FROM loose_thoughts
+      WHERE context = $1
+      ORDER BY created_at DESC
+      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
   ]);
 
   const backup = {

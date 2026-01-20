@@ -20,7 +20,11 @@ interface Company {
  * List all companies
  */
 companiesRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
-  const result = await query('SELECT * FROM companies ORDER BY name');
+  const result = await query(`
+    SELECT id, name, description, settings, created_at, updated_at
+    FROM companies
+    ORDER BY name
+  `);
   const companies = result.rows.map(formatCompany);
   res.json({ companies });
 }));
@@ -67,7 +71,11 @@ companiesRouter.post('/', apiKeyAuth, requireScope('write'), asyncHandler(async 
  */
 companiesRouter.get('/:id', apiKeyAuth, asyncHandler(async (req, res) => {
   const [companyResult, statsResult] = await Promise.all([
-    query('SELECT * FROM companies WHERE id = $1', [req.params.id]),
+    query(`
+      SELECT id, name, description, settings, created_at, updated_at
+      FROM companies
+      WHERE id = $1
+    `, [req.params.id]),
     query(
       `SELECT
         (SELECT COUNT(*) FROM ideas WHERE company_id = $1 AND is_archived = false) as ideas_count,

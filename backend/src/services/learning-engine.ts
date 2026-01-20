@@ -14,6 +14,34 @@ import { pool, query } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
+import { parseJsonbWithDefault } from '../types';
+
+// Type definitions for profile data
+interface PriorityKeywords {
+  high: string[];
+  medium: string[];
+  low: string[];
+  [key: string]: string[];
+}
+
+interface ThinkingPatterns {
+  action_oriented: number;
+  question_frequency: number;
+  abstract_vs_concrete: number;
+  topic_chains: string[][];
+  morning_categories: string[];
+  evening_categories: string[];
+  [key: string]: unknown;
+}
+
+interface LanguageStyle {
+  avg_thought_length: number;
+  preferred_language: string;
+  uses_technical_terms: boolean;
+  vocabulary_complexity: number;
+  common_phrases: string[];
+  [key: string]: unknown;
+}
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
@@ -123,24 +151,24 @@ export async function suggestFromLearning(
     }
 
     // 2. PREFERENCE-BASED: Wende gelernte Präferenzen an
-    const preferredCategories = parseJsonb(profile.preferred_categories);
-    const preferredTypes = parseJsonb(profile.preferred_types);
+    const preferredCategories = parseJsonbWithDefault<Record<string, number>>(profile.preferred_categories, {});
+    const preferredTypes = parseJsonbWithDefault<Record<string, number>>(profile.preferred_types, {});
 
     // Normalisiere Präferenzen (relative Gewichtung)
-    const totalCatPrefs = Object.values(preferredCategories).reduce((a: number, b: any) => a + (b as number), 0) || 1;
-    const totalTypePrefs = Object.values(preferredTypes).reduce((a: number, b: any) => a + (b as number), 0) || 1;
+    const totalCatPrefs = Object.values(preferredCategories).reduce((a, b) => a + b, 0) || 1;
+    const totalTypePrefs = Object.values(preferredTypes).reduce((a, b) => a + b, 0) || 1;
 
     for (const [cat, count] of Object.entries(preferredCategories)) {
-      const normalizedWeight = ((count as number) / totalCatPrefs) * CONFIG.PREFERENCE_WEIGHT;
+      const normalizedWeight = (count / totalCatPrefs) * CONFIG.PREFERENCE_WEIGHT;
       categoryCounts[cat] = (categoryCounts[cat] || 0) + normalizedWeight;
     }
     for (const [type, count] of Object.entries(preferredTypes)) {
-      const normalizedWeight = ((count as number) / totalTypePrefs) * CONFIG.PREFERENCE_WEIGHT;
+      const normalizedWeight = (count / totalTypePrefs) * CONFIG.PREFERENCE_WEIGHT;
       typeCounts[type] = (typeCounts[type] || 0) + normalizedWeight;
     }
 
     // 3. KEYWORD-BASED: Prüfe Priority-Keywords
-    const priorityKeywords = parseJsonb(profile.priority_keywords) || { high: [], medium: [], low: [] };
+    const priorityKeywords = parseJsonbWithDefault<PriorityKeywords>(profile.priority_keywords, { high: [], medium: [], low: [] });
     const textLower = text.toLowerCase();
 
     // High-Priority Keywords
@@ -164,7 +192,10 @@ export async function suggestFromLearning(
 
     // 4. CONTEXT-BASED: Tageszeit-Kategorien
     const hour = new Date().getHours();
-    const patterns = parseJsonb(profile.thinking_patterns) || {};
+    const patterns = parseJsonbWithDefault<ThinkingPatterns>(profile.thinking_patterns, {
+      action_oriented: 0, question_frequency: 0, abstract_vs_concrete: 0,
+      topic_chains: [], morning_categories: [], evening_categories: []
+    });
 
     if (hour >= 5 && hour < 12) {
       // Morgens
@@ -331,7 +362,7 @@ export async function learnFromThought(
     await incrementPreference(client, userId, 'active_hours', hour, 1);
 
     // 4. Update Topic-Interessen aus Keywords (nur bei User-Korrektur stark)
-    const keywords = parseJsonb(idea.keywords) || [];
+    const keywords = parseJsonbWithDefault<string[]>(idea.keywords, []);
     for (const keyword of keywords) {
       await incrementTopicInterest(client, userId, keyword, isUserCorrected ? 3 : 1);
     }
@@ -419,7 +450,7 @@ export async function learnFromCorrection(
         [ideaId]
       );
       if (ideaResult.rows.length > 0) {
-        const keywords = parseJsonb(ideaResult.rows[0].keywords) || [];
+        const keywords = parseJsonbWithDefault<string[]>(ideaResult.rows[0].keywords, []);
         // Lerne die richtige Priorität für diese Keywords
         await learnPriorityKeywords(client, userId, keywords, corrections.newPriority);
         logger.debug('Priority keywords updated', { keywords });
@@ -472,7 +503,7 @@ async function applyPreferenceDecay(client: any, userId: string): Promise<void> 
       [userId]
     );
     if (catResult.rows.length > 0) {
-      const cats = parseJsonb(catResult.rows[0].preferred_categories);
+      const cats = parseJsonbWithDefault<Record<string, number>>(catResult.rows[0].preferred_categories, {});
       const decayedCats: Record<string, number> = {};
       for (const [key, value] of Object.entries(cats)) {
         const decayed = Math.floor((value as number) * DECAY_RATE);
@@ -492,7 +523,7 @@ async function applyPreferenceDecay(client: any, userId: string): Promise<void> 
       [userId]
     );
     if (typeResult.rows.length > 0) {
-      const types = parseJsonb(typeResult.rows[0].preferred_types);
+      const types = parseJsonbWithDefault<Record<string, number>>(typeResult.rows[0].preferred_types, {});
       const decayedTypes: Record<string, number> = {};
       for (const [key, value] of Object.entries(types)) {
         const decayed = Math.floor((value as number) * DECAY_RATE);
@@ -611,11 +642,11 @@ async function learnPriorityKeywords(
       [userId]
     );
 
-    const priorityKeywords = parseJsonb(profileResult.rows[0]?.priority_keywords) || {
+    const priorityKeywords = parseJsonbWithDefault<PriorityKeywords>(profileResult.rows[0]?.priority_keywords, {
       high: [],
       medium: [],
       low: [],
-    };
+    });
 
     // Stelle sicher, dass Arrays existieren
     priorityKeywords.high = priorityKeywords.high || [];
@@ -665,7 +696,7 @@ async function updateThinkingPatterns(
       [userId]
     );
 
-    let patterns = parseJsonb(result.rows[0]?.thinking_patterns) || {
+    let patterns = parseJsonbWithDefault<ThinkingPatterns>(result.rows[0]?.thinking_patterns, {
       abstract_vs_concrete: 0,
       big_picture_vs_detail: 0,
       action_oriented: 0,
@@ -673,10 +704,10 @@ async function updateThinkingPatterns(
       topic_chains: [],
       morning_categories: [],
       evening_categories: [],
-    };
+    });
 
     const text = (idea.raw_transcript || idea.summary || '').toLowerCase();
-    const keywords = parseJsonb(idea.keywords) || [];
+    const keywords = parseJsonbWithDefault<string[]>(idea.keywords, []);
 
     // Action-oriented detection
     const actionWords = ['machen', 'erstellen', 'implementieren', 'bauen', 'starten', 'tun', 'erledigen',
@@ -748,13 +779,13 @@ async function updateLanguageStyle(
       [userId]
     );
 
-    let style = parseJsonb(result.rows[0]?.language_style) || {
+    let style = parseJsonbWithDefault<LanguageStyle>(result.rows[0]?.language_style, {
       avg_thought_length: 0,
       common_phrases: [],
       vocabulary_complexity: 0.5,
       uses_technical_terms: false,
       preferred_language: 'de',
-    };
+    });
 
     // Update average length
     const wordCount = text.split(/\s+/).length;
@@ -819,7 +850,7 @@ async function updateTopicChains(
       [userId]
     );
 
-    const patterns = parseJsonb(result.rows[0]?.thinking_patterns) || { topic_chains: [] };
+    const patterns = parseJsonbWithDefault<{ topic_chains: string[][] }>(result.rows[0]?.thinking_patterns, { topic_chains: [] });
     patterns.topic_chains = patterns.topic_chains || [];
 
     const chain = [lastCategory, currentCategory];
@@ -927,10 +958,8 @@ export async function runDailyLearning(userId: string = 'default'): Promise<{
       const hour = new Date(idea.created_at).getHours();
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
 
-      const keywords = parseJsonb(idea.keywords);
-      if (Array.isArray(keywords)) {
-        allKeywords.push(...keywords);
-      }
+      const keywords = parseJsonbWithDefault<string[]>(idea.keywords, []);
+      allKeywords.push(...keywords);
     }
 
     // Generate insights
@@ -1027,8 +1056,8 @@ async function updateInterestEmbedding(
   try {
     const textContent = ideas
       .map(i => {
-        const keywords = parseJsonb(i.keywords);
-        const keywordStr = Array.isArray(keywords) ? keywords.join(' ') : '';
+        const keywords = parseJsonbWithDefault<string[]>(i.keywords, []);
+        const keywordStr = keywords.join(' ');
         return `${i.raw_transcript || ''} ${keywordStr}`.trim();
       })
       .filter(t => t.length > 0)
@@ -1068,11 +1097,17 @@ export async function getPersonalizedPromptContext(
     if (result.rows.length === 0) return '';
 
     const profile = result.rows[0];
-    const patterns = parseJsonb(profile.thinking_patterns);
-    const style = parseJsonb(profile.language_style);
-    const topCategories = getTopN(parseJsonb(profile.preferred_categories), 2);
-    const topTypes = getTopN(parseJsonb(profile.preferred_types), 2);
-    const topTopics = getTopN(parseJsonb(profile.topic_interests), 5);
+    const patterns = parseJsonbWithDefault<ThinkingPatterns>(profile.thinking_patterns, {
+      action_oriented: 0, question_frequency: 0, abstract_vs_concrete: 0,
+      topic_chains: [], morning_categories: [], evening_categories: []
+    });
+    const style = parseJsonbWithDefault<LanguageStyle>(profile.language_style, {
+      avg_thought_length: 0, preferred_language: 'de', uses_technical_terms: false,
+      vocabulary_complexity: 0, common_phrases: []
+    });
+    const topCategories = getTopN(parseJsonbWithDefault<Record<string, number>>(profile.preferred_categories, {}), 2);
+    const topTypes = getTopN(parseJsonbWithDefault<Record<string, number>>(profile.preferred_types, {}), 2);
+    const topTopics = getTopN(parseJsonbWithDefault<Record<string, number>>(profile.topic_interests, {}), 5);
 
     const contextParts: string[] = ['BENUTZER-KONTEXT:'];
 
@@ -1129,18 +1164,7 @@ function getTopN(counts: Record<string, number>, n: number): string[] {
     .map(([key]) => key);
 }
 
-function parseJsonb(value: any): any {
-  if (value === null || value === undefined) return {};
-  if (typeof value === 'object') return value;
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return {};
-    }
-  }
-  return {};
-}
+// parseJsonb imported from ../types - centralized implementation
 
 // ===========================================
 // ENHANCED FEATURE EXTRACTION
@@ -1476,8 +1500,8 @@ export async function getLearningQualityMetrics(
       `SELECT productivity_patterns FROM user_profile WHERE id = $1`,
       [userId]
     );
-    const patterns = parseJsonb(profileResult.rows[0]?.productivity_patterns);
-    const learningProgress = patterns?.learning_confidence || 0;
+    const patterns = parseJsonbWithDefault<{ learning_confidence?: number }>(profileResult.rows[0]?.productivity_patterns, {});
+    const learningProgress = patterns.learning_confidence || 0;
 
     // Estimate correction rate (how often user corrects AI suggestions)
     // This would need actual tracking, so we estimate based on profile age

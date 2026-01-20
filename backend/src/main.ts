@@ -67,6 +67,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// SECURITY: Trust proxy for correct client IP behind reverse proxies (Railway, Vercel, etc.)
+// This ensures rate limiting works correctly with real client IPs
+if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL) {
+  app.set('trust proxy', 1);
+}
+
 // Security Middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -81,17 +87,26 @@ app.use(helmet({
 }));
 
 // CORS with whitelist (configurable via environment)
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+// SECURITY: Use ALLOWED_ORIGINS env var in production - don't rely on hardcoded fallbacks
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
-  'https://frontend-mu-six-93.vercel.app',
   'capacitor://localhost',
   'ionic://localhost'
 ];
+
+// Warn if using default origins (should be configured via env in production)
+if (!process.env.ALLOWED_ORIGINS && process.env.NODE_ENV === 'production') {
+  logger.warn('CORS: Using default allowed origins - configure ALLOWED_ORIGINS env var', {
+    operation: 'cors',
+    securityNote: 'Production should have explicit ALLOWED_ORIGINS configured'
+  });
+}
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -100,7 +115,12 @@ app.use(cors({
         logger.warn('CORS blocked unauthorized origin', { origin, operation: 'cors' });
         callback(new Error('Not allowed by CORS'));
       } else {
-        // Allow in development for testing
+        // SECURITY IMPROVEMENT: Log even in development for visibility
+        logger.debug('CORS: Allowing unknown origin in dev mode', {
+          origin,
+          operation: 'cors',
+          note: 'This would be blocked in production'
+        });
         callback(null, true);
       }
     }
@@ -200,9 +220,18 @@ app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessi
 // Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
 
 // Cleanup rate limits every hour
-setInterval(() => {
+// Store interval reference for proper cleanup on shutdown
+const rateLimitCleanupInterval = setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
 }, 60 * 60 * 1000);
+
+// Ensure interval is cleared on process shutdown to prevent memory leaks
+process.on('SIGTERM', () => {
+  clearInterval(rateLimitCleanupInterval);
+});
+process.on('SIGINT', () => {
+  clearInterval(rateLimitCleanupInterval);
+});
 
 // 404 Handler for undefined routes
 app.use((req, res) => {

@@ -122,10 +122,11 @@ apiKeysRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (r
  * GET /api/keys
  * List all API keys (without revealing the actual keys)
  * SECURITY: Admin-only endpoint
+ * NOTE: keyPrefix intentionally not exposed to prevent brute-force attack narrowing
  */
 apiKeysRouter.get('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const result = await pool.query(
-    `SELECT id, name, key_prefix, scopes, rate_limit, expires_at,
+    `SELECT id, name, scopes, rate_limit, expires_at,
             last_used_at, created_at, is_active
      FROM api_keys
      ORDER BY created_at DESC`
@@ -137,7 +138,7 @@ apiKeysRouter.get('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (re
     apiKeys: result.rows.map(row => ({
       id: row.id,
       name: row.name,
-      keyPrefix: row.key_prefix,
+      // SECURITY: keyPrefix removed - exposes info useful for brute-force attacks
       scopes: row.scopes,
       rateLimit: row.rate_limit,
       expiresAt: row.expires_at,
@@ -152,13 +153,14 @@ apiKeysRouter.get('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (re
  * GET /api/keys/:id
  * Get a specific API key details
  * SECURITY: Admin-only endpoint
+ * NOTE: keyPrefix intentionally not exposed to prevent brute-force attack narrowing
  */
 apiKeysRouter.get('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateApiKeyId(id);
 
   const result = await pool.query(
-    `SELECT id, name, key_prefix, scopes, rate_limit, expires_at,
+    `SELECT id, name, scopes, rate_limit, expires_at,
             last_used_at, created_at, is_active
      FROM api_keys
      WHERE id = $1`,
@@ -175,7 +177,7 @@ apiKeysRouter.get('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async 
     apiKey: {
       id: row.id,
       name: row.name,
-      keyPrefix: row.key_prefix,
+      // SECURITY: keyPrefix removed - exposes info useful for brute-force attacks
       scopes: row.scopes,
       rateLimit: row.rate_limit,
       expiresAt: row.expires_at,

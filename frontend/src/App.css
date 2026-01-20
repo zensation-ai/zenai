@@ -1729,3 +1729,32 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================
+   PAGE LOADER - For lazy-loaded components
+   ============================================ */
+
+.page-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.page-loader .loading-text {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.9rem;
+  animation: pulseText 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseText {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}

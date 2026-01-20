@@ -73,6 +73,8 @@ const CONFIG = {
   MAX_SESSIONS: 100,
   /** Minimum relevance score for pre-retrieval */
   MIN_RELEVANCE_SCORE: 0.3,
+  /** Maximum length for compressed summary (prevent unbounded growth) */
+  MAX_SUMMARY_LENGTH: 10000,
 };
 
 // ===========================================
@@ -226,9 +228,22 @@ export class ShortTermMemoryService {
       // Generate summary
       const summary = await this.generateSummary(conversationText);
 
-      // Update memory
+      // Update memory with bounded summary length
       if (memory.compressedSummary) {
-        memory.compressedSummary = `${memory.compressedSummary}\n\n[Weitere Zusammenfassung]\n${summary}`;
+        const newSummary = `${memory.compressedSummary}\n\n[Weitere Zusammenfassung]\n${summary}`;
+        // PERFORMANCE FIX: Prevent unbounded growth of compressed summary
+        if (newSummary.length > CONFIG.MAX_SUMMARY_LENGTH) {
+          // Keep only the most recent half when limit exceeded
+          const halfLength = Math.floor(CONFIG.MAX_SUMMARY_LENGTH / 2);
+          memory.compressedSummary = `[Ältere Zusammenfassungen gekürzt...]\n\n${newSummary.slice(-halfLength)}`;
+          logger.info('Compressed summary truncated to prevent memory growth', {
+            sessionId: memory.sessionId,
+            originalLength: newSummary.length,
+            newLength: memory.compressedSummary.length,
+          });
+        } else {
+          memory.compressedSummary = newSummary;
+        }
       } else {
         memory.compressedSummary = summary;
       }
