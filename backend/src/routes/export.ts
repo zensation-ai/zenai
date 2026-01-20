@@ -4,6 +4,8 @@ import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/d
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+// Phase Security Sprint 3: Audit Logging
+import { auditLogger } from '../services/audit-logger';
 
 export const exportRouter = Router();
 
@@ -834,6 +836,22 @@ exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
       },
     },
   };
+
+  // Phase Security Sprint 3: Audit log full backup export
+  await auditLogger.logExport({
+    exportType: 'backup',
+    req,
+    resourceType: 'full_backup',
+    resourceCount: ideasResult.rows.length + meetingsResult.rows.length + clustersResult.rows.length + thoughtsResult.rows.length,
+    outcome: 'success',
+    details: {
+      context: ctx,
+      ideasCount: ideasResult.rows.length,
+      meetingsCount: meetingsResult.rows.length,
+      clustersCount: clustersResult.rows.length,
+      thoughtsCount: thoughtsResult.rows.length,
+    },
+  });
 
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="full-backup-${ctx}-${Date.now()}.json"`);

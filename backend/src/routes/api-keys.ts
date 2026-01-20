@@ -19,6 +19,8 @@ import {
   extendKeyExpiry,
   checkKeyExpiry,
 } from '../services/api-key-security';
+// Phase Security Sprint 3: Audit Logging
+import { auditLogger } from '../services/audit-logger';
 
 // Input validation constants
 const MAX_NAME_LENGTH = 100;
@@ -110,6 +112,20 @@ apiKeysRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (r
      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [id, validatedName, hash, prefix, JSON.stringify(validatedScopes), validatedRateLimit, expiresAt]
   );
+
+  // Phase Security Sprint 3: Audit log key creation
+  await auditLogger.logApiKeyAction({
+    action: 'create',
+    req,
+    keyId: id,
+    keyName: validatedName,
+    outcome: 'success',
+    details: {
+      scopes: validatedScopes,
+      rateLimit: validatedRateLimit,
+      expiresAt,
+    },
+  });
 
   res.status(201).json({
     success: true,
@@ -286,6 +302,15 @@ apiKeysRouter.delete('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(asy
     throw new NotFoundError('API key');
   }
 
+  // Phase Security Sprint 3: Audit log key deletion
+  await auditLogger.logApiKeyAction({
+    action: 'delete',
+    req,
+    keyId: result.rows[0].id,
+    keyName: result.rows[0].name,
+    outcome: 'success',
+  });
+
   res.json({
     success: true,
     message: 'API key deleted',
@@ -320,6 +345,19 @@ apiKeysRouter.post('/:id/regenerate', apiKeyAuth, requireScope('admin'), asyncHa
   }
 
   const row = result.rows[0];
+
+  // Phase Security Sprint 3: Audit log key regeneration
+  await auditLogger.logApiKeyAction({
+    action: 'regenerate',
+    req,
+    keyId: row.id,
+    keyName: row.name,
+    outcome: 'success',
+    details: {
+      note: 'Previous key invalidated, new key generated',
+    },
+  });
+
   res.json({
     success: true,
     message: 'API key regenerated. Save this key - it will not be shown again!',

@@ -11,6 +11,8 @@ import { userProfileRouter, userProfileContextRouter } from './routes/user-profi
 import { companiesRouter } from './routes/companies';
 // Phase 4: Enterprise Integration Routes
 import { apiKeysRouter } from './routes/api-keys';
+// Phase Security Sprint 3: Audit Logs
+import { auditLogsRouter } from './routes/audit-logs';
 import { webhooksRouter } from './routes/webhooks';
 import { integrationsRouter } from './routes/integrations';
 import { rateLimiter, cleanupRateLimits } from './middleware/auth';
@@ -168,6 +170,9 @@ app.use('/api/companies', companiesRouter);
 app.use('/api/keys', apiKeysRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/integrations', integrationsRouter);
+
+// Phase Security Sprint 3: Audit Logs
+app.use('/api/audit-logs', auditLogsRouter);
 
 // Phase 5: Thought Incubator
 app.use('/api/incubator', incubatorRouter);
