@@ -119,7 +119,8 @@ export function getSecurityHeadersConfig(options: {
   return helmet({
     // Content Security Policy
     contentSecurityPolicy: {
-      directives: cspDirectives as Record<string, unknown>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      directives: cspDirectives as any,
       reportOnly: false, // Enforce CSP (set true for testing)
     },
 
