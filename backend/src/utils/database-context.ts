@@ -45,19 +45,15 @@ function parseConnectionString(url: string): {
   const host = parsed.hostname;
 
   // Railway internal connections (.railway.internal) don't need SSL
-  // External connections should use SSL
+  // External connections should use SSL with certificate validation
   const isInternalRailway = host.endsWith('.railway.internal');
-  // SECURITY NOTE: rejectUnauthorized: false disables SSL certificate validation.
-  // This is acceptable for:
-  // - Internal Railway connections (no SSL needed)
-  // - Development environments
-  // - Managed database services (e.g., Supabase, Railway) where the connection is trusted
-  // For production with self-managed databases, consider setting rejectUnauthorized: true
-  // and providing proper CA certificates via NODE_EXTRA_CA_CERTS or ssl.ca option.
+  // SSL configuration with certificate validation enabled for security.
+  // For environments requiring custom CA certificates, set NODE_EXTRA_CA_CERTS
+  // environment variable or use the ssl.ca option.
   const sslConfig = isInternalRailway
     ? false // No SSL for internal Railway network
     : process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
+      ? { rejectUnauthorized: true }
       : undefined;
 
   logger.info('Database connection config', {
