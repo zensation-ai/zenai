@@ -6,6 +6,7 @@
  * - Structured JSON output for production
  * - Request ID tracking
  * - Performance timing
+ * - SECURITY: Sensitive data filtering (Sprint 2)
  */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -37,6 +38,160 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   warn: 2,
   error: 3,
 };
+
+// ===========================================
+// SECURITY: Sensitive Data Filtering (Sprint 2)
+// ===========================================
+
+/**
+ * List of sensitive field names that should be redacted from logs
+ * SECURITY: Add any new sensitive fields here
+ */
+const SENSITIVE_FIELDS = new Set([
+  // Authentication & Authorization
+  'password',
+  'passwd',
+  'secret',
+  'token',
+  'accessToken',
+  'access_token',
+  'refreshToken',
+  'refresh_token',
+  'apiKey',
+  'api_key',
+  'apikey',
+  'key_hash',
+  'keyHash',
+  'authorization',
+  'auth',
+  'bearer',
+  'jwt',
+  'sessionId',
+  'session_id',
+
+  // Personal Information
+  'ssn',
+  'socialSecurityNumber',
+  'creditCard',
+  'credit_card',
+  'cardNumber',
+  'card_number',
+  'cvv',
+  'pin',
+
+  // Database
+  'connectionString',
+  'connection_string',
+  'databaseUrl',
+  'database_url',
+  'dbPassword',
+  'db_password',
+
+  // Encryption
+  'privateKey',
+  'private_key',
+  'encryptionKey',
+  'encryption_key',
+  'salt',
+
+  // Third-party services
+  'openaiKey',
+  'openai_key',
+  'anthropicKey',
+  'anthropic_key',
+  'stripeKey',
+  'stripe_key',
+  'awsSecret',
+  'aws_secret',
+]);
+
+/**
+ * Patterns that indicate sensitive data in string values
+ */
+const SENSITIVE_PATTERNS = [
+  /^ab_live_[a-f0-9]+$/i,          // API key format
+  /^Bearer\s+.+$/i,                 // Bearer token
+  /^sk-[a-zA-Z0-9]+$/,              // OpenAI/Stripe secret keys
+  /^[a-f0-9]{64}$/i,                // Hashed values (SHA256)
+  /^\$2[aby]?\$\d+\$.+$/,           // bcrypt hashes
+];
+
+/**
+ * Replacement string for redacted values
+ */
+const REDACTED = '[REDACTED]';
+
+/**
+ * Check if a value looks like sensitive data
+ */
+function isSensitiveValue(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  return SENSITIVE_PATTERNS.some(pattern => pattern.test(value));
+}
+
+/**
+ * Recursively filter sensitive data from an object
+ * SECURITY: This prevents accidental exposure of credentials in logs
+ */
+function filterSensitiveData<T>(obj: T, depth: number = 0): T {
+  // Prevent infinite recursion
+  if (depth > 10) return obj;
+
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (typeof obj === 'string') {
+    // Check if the string itself looks like sensitive data
+    if (isSensitiveValue(obj)) {
+      return REDACTED as unknown as T;
+    }
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => filterSensitiveData(item, depth + 1)) as unknown as T;
+  }
+
+  if (typeof obj === 'object') {
+    const filtered: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      const lowerKey = key.toLowerCase();
+
+      // Check if the key is in our sensitive list
+      if (SENSITIVE_FIELDS.has(key) || SENSITIVE_FIELDS.has(lowerKey)) {
+        filtered[key] = REDACTED;
+      } else if (typeof value === 'string' && isSensitiveValue(value)) {
+        // Check if the value looks sensitive
+        filtered[key] = REDACTED;
+      } else if (typeof value === 'object' && value !== null) {
+        // Recursively filter nested objects
+        filtered[key] = filterSensitiveData(value, depth + 1);
+      } else {
+        filtered[key] = value;
+      }
+    }
+
+    return filtered as T;
+  }
+
+  return obj;
+}
+
+/**
+ * Filter sensitive data from error messages
+ */
+function filterErrorMessage(message: string): string {
+  // Replace potential API keys in error messages
+  let filtered = message.replace(/ab_live_[a-f0-9]+/gi, 'ab_live_[REDACTED]');
+  // Replace Bearer tokens
+  filtered = filtered.replace(/Bearer\s+\S+/gi, 'Bearer [REDACTED]');
+  // Replace connection strings
+  filtered = filtered.replace(/postgres(ql)?:\/\/[^@]+@/gi, 'postgresql://[REDACTED]@');
+  filtered = filtered.replace(/mysql:\/\/[^@]+@/gi, 'mysql://[REDACTED]@');
+  return filtered;
+}
 
 // Get current log level from environment
 const CURRENT_LOG_LEVEL = (process.env.LOG_LEVEL as LogLevel) || 'info';
@@ -92,25 +247,33 @@ function formatLogEntry(entry: LogEntry): string {
 
 /**
  * Create a log entry and output it
+ * SECURITY: All data is filtered for sensitive information before logging
  */
 function log(level: LogLevel, message: string, context?: LogContext, error?: Error): void {
   if (!shouldLog(level)) {return;}
 
+  // SECURITY: Filter sensitive data from message
+  const filteredMessage = filterErrorMessage(message);
+
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,
-    message,
+    message: filteredMessage,
   };
 
+  // SECURITY: Filter sensitive data from context
   if (context && Object.keys(context).length > 0) {
-    entry.context = context;
+    entry.context = filterSensitiveData(context);
   }
 
+  // SECURITY: Filter sensitive data from error
   if (error) {
     entry.error = {
       name: error.name,
-      message: error.message,
-      stack: error.stack,
+      message: filterErrorMessage(error.message),
+      // SECURITY: Only include stack traces in non-production for debugging
+      // Stack traces can expose file paths and internal structure
+      stack: IS_PRODUCTION ? undefined : error.stack,
     };
   }
 
