@@ -119,7 +119,7 @@ export function getSecurityHeadersConfig(options: {
   return helmet({
     // Content Security Policy
     contentSecurityPolicy: {
-      directives: cspDirectives,
+      directives: cspDirectives as Record<string, unknown>,
       reportOnly: false, // Enforce CSP (set true for testing)
     },
 
