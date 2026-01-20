@@ -12,6 +12,8 @@ import { learnFromThought, suggestFromLearning } from '../services/learning-engi
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+// SECURITY Sprint 2: Zod validation for input
+import { VoiceMemoTextSchema, validateBody } from '../utils/schemas';
 
 export const voiceMemoRouter = Router();
 
@@ -231,17 +233,16 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
 /**
  * POST /api/voice-memo/text
  * Process plain text (no audio file)
+ * SECURITY Sprint 2: Added Zod validation for text input
  */
-voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(VoiceMemoTextSchema), asyncHandler(async (req, res) => {
   const startTime = Date.now();
 
+  // SECURITY: text is now validated by Zod middleware (1-100000 chars, trimmed)
   const { text } = req.body;
 
-  if (!text) {
-    throw new ValidationError('No text provided');
-  }
-
-  logger.info('Processing text', { textPreview: text.substring(0, 50) });
+  // SECURITY: Only log a preview, never the full content (may contain sensitive info)
+  logger.info('Processing text', { textLength: text.length, textPreview: text.substring(0, 50) });
 
   // Get personalized suggestions from learning engine BEFORE structuring
   const learnedSuggestion = await suggestFromLearning(text).catch((err) => {

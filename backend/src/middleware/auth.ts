@@ -274,9 +274,23 @@ export function requireScope(scope: string) {
  */
 /**
  * Endpoint-specific rate limits for critical operations
+ *
+ * SECURITY Sprint 2: Added stricter limits for:
+ * - Authentication endpoints (brute-force protection)
+ * - API key management (abuse prevention)
+ * - Voice memo uploads (resource protection)
  */
 const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  // ===========================================
+  // SECURITY: Authentication & API Key endpoints - STRICT limits (brute-force protection)
+  // ===========================================
+  'POST:/api/keys': { limit: 5, windowMs: 60 * 1000 }, // 5/min - API key creation
+  'DELETE:/api/keys': { limit: 10, windowMs: 60 * 1000 }, // 10/min - API key deletion
+  'GET:/api/keys': { limit: 30, windowMs: 60 * 1000 }, // 30/min - API key listing
+
+  // ===========================================
   // Heavy computation endpoints - stricter limits
+  // ===========================================
   'POST:/api/personal/topics/generate': { limit: 2, windowMs: 60 * 1000 }, // 2/min
   'POST:/api/work/topics/generate': { limit: 2, windowMs: 60 * 1000 }, // 2/min
   'POST:/api/personal/incubator/consolidate': { limit: 5, windowMs: 60 * 1000 }, // 5/min
@@ -284,15 +298,40 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   'POST:/api/personal/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 }, // 3/min
   'POST:/api/work/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 }, // 3/min
 
-  // Media uploads - moderate limits
-  'POST:/api/media': { limit: 20, windowMs: 60 * 1000 }, // 20/min
-  'POST:/api/voice-memos': { limit: 30, windowMs: 60 * 1000 }, // 30/min
+  // AI Chat endpoints - moderate limits to prevent abuse
+  'POST:/api/chat/sessions': { limit: 10, windowMs: 60 * 1000 }, // 10/min - session creation
+  'POST:/api/chat/quick': { limit: 20, windowMs: 60 * 1000 }, // 20/min - quick chat
 
+  // ===========================================
+  // Media uploads - moderate limits (SECURITY Sprint 2)
+  // ===========================================
+  'POST:/api/media': { limit: 20, windowMs: 60 * 1000 }, // 20/min
+  'POST:/api/voice-memo': { limit: 20, windowMs: 60 * 1000 }, // 20/min - voice memo upload
+  'POST:/api/voice-memo/text': { limit: 30, windowMs: 60 * 1000 }, // 30/min - text processing
+  'POST:/api/voice-memo/transcribe': { limit: 15, windowMs: 60 * 1000 }, // 15/min - transcription only
+  'POST:/api/personal/voice-memo': { limit: 20, windowMs: 60 * 1000 }, // 20/min - context-aware upload
+  'POST:/api/work/voice-memo': { limit: 20, windowMs: 60 * 1000 }, // 20/min - context-aware upload
+
+  // ===========================================
+  // Export endpoints - prevent data scraping
+  // ===========================================
+  'GET:/api/export/backup': { limit: 2, windowMs: 60 * 1000 }, // 2/min - full backup
+  'GET:/api/export/ideas/pdf': { limit: 10, windowMs: 60 * 1000 }, // 10/min
+  'GET:/api/export/ideas/csv': { limit: 10, windowMs: 60 * 1000 }, // 10/min
+  'GET:/api/export/ideas/json': { limit: 10, windowMs: 60 * 1000 }, // 10/min
+  'GET:/api/export/ideas/markdown': { limit: 10, windowMs: 60 * 1000 }, // 10/min
+
+  // ===========================================
   // Write operations - moderate limits
+  // ===========================================
   'POST:/api/personal/ideas': { limit: 60, windowMs: 60 * 1000 }, // 60/min
   'POST:/api/work/ideas': { limit: 60, windowMs: 60 * 1000 }, // 60/min
   'PUT:/api/personal/ideas': { limit: 100, windowMs: 60 * 1000 }, // 100/min
   'PUT:/api/work/ideas': { limit: 100, windowMs: 60 * 1000 }, // 100/min
+
+  // Webhook management - prevent abuse
+  'POST:/api/webhooks': { limit: 10, windowMs: 60 * 1000 }, // 10/min
+  'DELETE:/api/webhooks': { limit: 20, windowMs: 60 * 1000 }, // 20/min
 };
 
 // Track if rate_limits table has been initialized
