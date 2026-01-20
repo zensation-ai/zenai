@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import { voiceMemoRouter } from './routes/voice-memo';
@@ -18,6 +17,8 @@ import { rateLimiter, cleanupRateLimits } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/requestId';
 // Phase Security Sprint 3: CSRF Protection
 import { csrfProtection, getCsrfTokenHandler, ensureCookieParser } from './middleware/csrf';
+// Phase Security Sprint 3: Enhanced Security Headers
+import { securityHeaders } from './middleware/security-headers';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
@@ -75,18 +76,14 @@ if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT || 
   app.set('trust proxy', 1);
 }
 
-// Security Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],  // For Swagger UI
-      scriptSrc: ["'self'", "'unsafe-inline'"],  // For Swagger UI
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-  crossOriginEmbedderPolicy: false,  // For Swagger UI
-}));
+// Security Middleware - Phase Security Sprint 3: Enhanced Security Headers
+// Includes: Strict CSP, HSTS, X-Frame-Options: DENY, Referrer-Policy, Permissions-Policy
+const isDevelopment = process.env.NODE_ENV === 'development';
+const securityMiddleware = securityHeaders({
+  isDevelopment,
+  enableSwagger: true, // Allow Swagger UI in all environments
+});
+securityMiddleware.forEach(middleware => app.use(middleware));
 
 // CORS with whitelist (configurable via environment)
 // SECURITY: Use ALLOWED_ORIGINS env var in production - don't rely on hardcoded fallbacks
