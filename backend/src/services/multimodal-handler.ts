@@ -432,7 +432,7 @@ class MultimodalHandler {
     // Default: last 7 days
     let start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     let end = now;
-    let type: 'absolute' | 'relative' = 'relative';
+    const type: 'absolute' | 'relative' = 'relative';
 
     // Parse relative references
     if (/heute|today/i.test(textLower)) {

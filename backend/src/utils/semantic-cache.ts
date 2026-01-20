@@ -84,7 +84,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   }
 
   const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-  if (denominator === 0) return 0;
+  if (denominator === 0) {return 0;}
 
   return dotProduct / denominator;
 }
@@ -499,7 +499,7 @@ export class AdaptiveSemanticCache<T = unknown> extends SemanticCache<T> {
   private adjustThreshold(): void {
     const stats = this.getStats();
 
-    if (stats.totalRequests < 10) return; // Not enough data
+    if (stats.totalRequests < 10) {return;} // Not enough data
 
     const hitRate = stats.hitRate;
     const targetRate = this.adaptiveConfig.targetHitRate;

@@ -510,11 +510,11 @@ export async function sendNotification(
     // Check if notification type is enabled for this device
     const prefs = await getNotificationPreferences(context, device.deviceId);
     if (prefs) {
-      if (payload.type === 'draft_ready' && !prefs.draftReady) continue;
-      if (payload.type === 'feedback_reminder' && !prefs.draftFeedbackReminder) continue;
-      if (payload.type === 'idea_connection' && !prefs.ideaConnections) continue;
-      if (payload.type === 'learning_suggestion' && !prefs.learningSuggestions) continue;
-      if (payload.type === 'weekly_summary' && !prefs.weeklySummary) continue;
+      if (payload.type === 'draft_ready' && !prefs.draftReady) {continue;}
+      if (payload.type === 'feedback_reminder' && !prefs.draftFeedbackReminder) {continue;}
+      if (payload.type === 'idea_connection' && !prefs.ideaConnections) {continue;}
+      if (payload.type === 'learning_suggestion' && !prefs.learningSuggestions) {continue;}
+      if (payload.type === 'weekly_summary' && !prefs.weeklySummary) {continue;}
     }
 
     // Check rate limits and quiet hours
@@ -805,7 +805,7 @@ export async function recordNotificationOpened(
 // ===========================================
 
 function truncate(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str;
+  if (str.length <= maxLength) {return str;}
   return str.substring(0, maxLength - 3) + '...';
 }
 

@@ -251,7 +251,7 @@ export async function createDailySnapshot(context: AIContext): Promise<Evolution
       SELECT * FROM evolution_snapshots WHERE context = $1 AND snapshot_date = $2
     `, [context, today]);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     return mapRowToSnapshot(result.rows[0]);
   } catch (error) {
@@ -293,7 +293,7 @@ export async function getLatestSnapshot(context: AIContext): Promise<EvolutionSn
       LIMIT 1
     `, [context]);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
     return mapRowToSnapshot(result.rows[0]);
   } catch (error) {
     return null;
@@ -431,8 +431,8 @@ export async function recordAccuracyPeriod(
       const previousScore = parseFloat(previousResult.rows[0].accuracy_score);
       trendDelta = accuracyScore - previousScore;
 
-      if (trendDelta > 2) trend = 'improving';
-      else if (trendDelta < -2) trend = 'declining';
+      if (trendDelta > 2) {trend = 'improving';}
+      else if (trendDelta < -2) {trend = 'declining';}
     }
 
     await queryContext(context, `
@@ -771,14 +771,14 @@ async function getTotalActiveDays(context: AIContext): Promise<number> {
 }
 
 function calculateAccuracyChange(snapshots: EvolutionSnapshot[], days: number): number {
-  if (snapshots.length < 2) return 0;
+  if (snapshots.length < 2) {return 0;}
 
   const recent = snapshots[snapshots.length - 1];
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
 
   const older = snapshots.find(s => new Date(s.snapshot_date) <= cutoffDate);
-  if (!older) return 0;
+  if (!older) {return 0;}
 
   return Math.round((recent.ai_accuracy_score - older.ai_accuracy_score) * 10) / 10;
 }

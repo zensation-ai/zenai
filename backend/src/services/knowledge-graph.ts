@@ -190,11 +190,11 @@ Wenn keine Beziehungen: []`;
     return relations
       .filter((r): r is LLMRelationResponse => {
         // Validate required fields
-        if (!r || typeof r !== 'object') return false;
-        if (typeof r.targetIndex !== 'number' || r.targetIndex < 1 || r.targetIndex > candidates.length) return false;
-        if (typeof r.relationType !== 'string') return false;
-        if (typeof r.strength !== 'number' || r.strength < 0 || r.strength > 1) return false;
-        if (r.strength <= 0.5) return false;
+        if (!r || typeof r !== 'object') {return false;}
+        if (typeof r.targetIndex !== 'number' || r.targetIndex < 1 || r.targetIndex > candidates.length) {return false;}
+        if (typeof r.relationType !== 'string') {return false;}
+        if (typeof r.strength !== 'number' || r.strength < 0 || r.strength > 1) {return false;}
+        if (r.strength <= 0.5) {return false;}
         return true;
       })
       .map((r): IdeaRelation => {
@@ -276,10 +276,10 @@ export async function multiHopSearch(
 
   while (queue.length > 0) {
     const current = queue.shift();
-    if (!current) continue;
+    if (!current) {continue;}
 
-    if (current.depth >= maxHops) continue;
-    if (visited.has(current.ideaId)) continue;
+    if (current.depth >= maxHops) {continue;}
+    if (visited.has(current.ideaId)) {continue;}
     visited.add(current.ideaId);
 
     // Get connected ideas
@@ -529,11 +529,11 @@ export async function getSubgraph(
   while (queue.length > 0) {
     const { id, currentDepth } = queue.shift()!;
 
-    if (visitedIds.has(id)) continue;
+    if (visitedIds.has(id)) {continue;}
     visitedIds.add(id);
     nodeIds.push(id);
 
-    if (currentDepth >= depth) continue;
+    if (currentDepth >= depth) {continue;}
 
     // Get connected ideas
     const connectedResult = await queryContext(context, `
@@ -764,8 +764,8 @@ function calculateLayout(
   edges: GraphEdge[],
   centerId?: string
 ): { x: number; y: number }[] {
-  if (nodes.length === 0) return [];
-  if (nodes.length === 1) return [{ x: 0.5, y: 0.5 }];
+  if (nodes.length === 0) {return [];}
+  if (nodes.length === 1) {return [{ x: 0.5, y: 0.5 }];}
 
   // Initialize positions in a circle or grid
   const positions = nodes.map((node, i) => {
@@ -814,7 +814,7 @@ function calculateLayout(
         const sampleStart = (iter * 7 + i * 13) % n;
         for (let s = 0; s < sampleSize; s++) {
           const j = (sampleStart + s) % n;
-          if (i === j) continue;
+          if (i === j) {continue;}
 
           const dx = positions[j].x - positions[i].x;
           const dy = positions[j].y - positions[i].y;
@@ -859,7 +859,7 @@ function calculateLayout(
     const damping = 0.8 - (iter / iterations) * 0.6;
     for (let i = 0; i < n; i++) {
       // Don't move center node
-      if (centerId && nodes[i].id === centerId) continue;
+      if (centerId && nodes[i].id === centerId) {continue;}
 
       positions[i].x += forces[i].x * damping;
       positions[i].y += forces[i].y * damping;

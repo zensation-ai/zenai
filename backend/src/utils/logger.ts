@@ -71,10 +71,10 @@ function formatLogEntry(entry: LogEntry): string {
 
   if (context) {
     const contextParts: string[] = [];
-    if (context.requestId) contextParts.push(`reqId=${context.requestId}`);
-    if (context.operation) contextParts.push(`op=${context.operation}`);
-    if (context.duration !== undefined) contextParts.push(`${context.duration}ms`);
-    if (context.context) contextParts.push(`ctx=${context.context}`);
+    if (context.requestId) {contextParts.push(`reqId=${context.requestId}`);}
+    if (context.operation) {contextParts.push(`op=${context.operation}`);}
+    if (context.duration !== undefined) {contextParts.push(`${context.duration}ms`);}
+    if (context.context) {contextParts.push(`ctx=${context.context}`);}
     if (contextParts.length > 0) {
       output += ` (${contextParts.join(', ')})`;
     }
@@ -94,7 +94,7 @@ function formatLogEntry(entry: LogEntry): string {
  * Create a log entry and output it
  */
 function log(level: LogLevel, message: string, context?: LogContext, error?: Error): void {
-  if (!shouldLog(level)) return;
+  if (!shouldLog(level)) {return;}
 
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),

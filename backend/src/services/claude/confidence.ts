@@ -152,8 +152,8 @@ function countMatches(text: string, lowerText: string, config: KeywordConfig): n
  * Get confidence level label from overall score
  */
 export function getConfidenceLevel(confidence: number): 'high' | 'medium' | 'low' {
-  if (confidence >= 0.8) return 'high';
-  if (confidence >= 0.5) return 'medium';
+  if (confidence >= 0.8) {return 'high';}
+  if (confidence >= 0.5) {return 'medium';}
   return 'low';
 }
 

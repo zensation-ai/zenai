@@ -85,11 +85,11 @@ export const cache = {
    */
   async get<T>(key: string): Promise<T | null> {
     const client = getClient();
-    if (!client || !isConnected) return null;
+    if (!client || !isConnected) {return null;}
 
     try {
       const value = await client.get(key);
-      if (!value) return null;
+      if (!value) {return null;}
       return JSON.parse(value) as T;
     } catch (error) {
       logger.error('Cache get error', error instanceof Error ? error : undefined, { key });
@@ -102,7 +102,7 @@ export const cache = {
    */
   async set(key: string, value: unknown, ttl: number = DEFAULT_TTL): Promise<boolean> {
     const client = getClient();
-    if (!client || !isConnected) return false;
+    if (!client || !isConnected) {return false;}
 
     try {
       await client.setex(key, ttl, JSON.stringify(value));
@@ -118,7 +118,7 @@ export const cache = {
    */
   async del(key: string): Promise<boolean> {
     const client = getClient();
-    if (!client || !isConnected) return false;
+    if (!client || !isConnected) {return false;}
 
     try {
       await client.del(key);
@@ -134,11 +134,11 @@ export const cache = {
    */
   async delPattern(pattern: string): Promise<number> {
     const client = getClient();
-    if (!client || !isConnected) return 0;
+    if (!client || !isConnected) {return 0;}
 
     try {
       const keys = await client.keys(pattern);
-      if (keys.length === 0) return 0;
+      if (keys.length === 0) {return 0;}
       return await client.del(...keys);
     } catch (error) {
       logger.error('Cache delPattern error', error instanceof Error ? error : undefined, { pattern });

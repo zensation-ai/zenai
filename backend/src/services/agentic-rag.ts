@@ -226,17 +226,17 @@ class AgenticRAGService {
 
     // Temporal indicators
     if (/\b(letzte|kürzlich|vor \d|gestern|heute|diese woche|letzten|recent|last)\b/i.test(query)) {
-      if (!usedStrategies.includes('temporal')) return 'temporal';
+      if (!usedStrategies.includes('temporal')) {return 'temporal';}
     }
 
     // Relationship indicators
     if (/\b(verbind|bezieh|zusammen|ähnlich|related|connection|link)\b/i.test(query)) {
-      if (!usedStrategies.includes('graph')) return 'graph';
+      if (!usedStrategies.includes('graph')) {return 'graph';}
     }
 
     // Specific term indicators
     if (/["']|#\w+|\b[A-Z]{2,}\b/.test(query)) {
-      if (!usedStrategies.includes('keyword')) return 'keyword';
+      if (!usedStrategies.includes('keyword')) {return 'keyword';}
     }
 
     // If we have results but low confidence, try a different strategy
@@ -244,7 +244,7 @@ class AgenticRAGService {
       const unused = availableStrategies.filter(s => !usedStrategies.includes(s));
       if (unused.length > 0) {
         // Prefer hybrid for complex queries after initial attempts
-        if (unused.includes('hybrid')) return 'hybrid';
+        if (unused.includes('hybrid')) {return 'hybrid';}
         return unused[0];
       }
     }
@@ -317,7 +317,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
   ): Promise<RetrievalResult[]> {
     try {
       const queryEmbedding = await generateEmbedding(query);
-      if (queryEmbedding.length === 0) return [];
+      if (queryEmbedding.length === 0) {return [];}
 
       const result = await queryContext(
         context,
@@ -362,7 +362,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
         .filter(t => t.length > 2)
         .join(' & ');
 
-      if (!searchTerms) return [];
+      if (!searchTerms) {return [];}
 
       const result = await queryContext(
         context,
@@ -406,7 +406,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
     try {
       // First, find seed ideas using semantic search
       const seedResults = await this.semanticRetrieval(query, context, 3);
-      if (seedResults.length === 0) return [];
+      if (seedResults.length === 0) {return [];}
 
       const seedIds = seedResults.map(r => r.id);
 
@@ -462,13 +462,13 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
     try {
       // Parse temporal references
       let interval = '7 days';
-      if (/heute|today/i.test(query)) interval = '1 day';
-      else if (/gestern|yesterday/i.test(query)) interval = '2 days';
-      else if (/diese woche|this week/i.test(query)) interval = '7 days';
-      else if (/letzten? monat|last month/i.test(query)) interval = '30 days';
+      if (/heute|today/i.test(query)) {interval = '1 day';}
+      else if (/gestern|yesterday/i.test(query)) {interval = '2 days';}
+      else if (/diese woche|this week/i.test(query)) {interval = '7 days';}
+      else if (/letzten? monat|last month/i.test(query)) {interval = '30 days';}
       else if (/vor (\d+) tag/i.test(query)) {
         const match = query.match(/vor (\d+) tag/i);
-        if (match) interval = `${match[1]} days`;
+        if (match) {interval = `${match[1]} days`;}
       }
 
       const result = await queryContext(
@@ -595,7 +595,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
     query: string,
     results: RetrievalResult[]
   ): RetrievalResult[] {
-    if (results.length === 0) return results;
+    if (results.length === 0) {return results;}
 
     const queryTerms = new Set(
       query.toLowerCase().split(/\s+/).filter(t => t.length > 2)
@@ -655,7 +655,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
     results: RetrievalResult[],
     query: string
   ): number {
-    if (results.length === 0) return 0;
+    if (results.length === 0) {return 0;}
 
     // Factor 1: Score distribution - high variance suggests uncertain results
     const scores = results.map(r => r.score);

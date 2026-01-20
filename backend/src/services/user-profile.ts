@@ -197,7 +197,7 @@ async function learnPriorityKeywords(
     [profileId]
   );
 
-  if (profileResult.rows.length === 0) return;
+  if (profileResult.rows.length === 0) {return;}
 
   const priorityKeywords = parseJsonbWithDefault<{ high: string[]; medium: string[]; low: string[] }>(
     profileResult.rows[0].priority_keywords,
@@ -242,14 +242,14 @@ export async function suggestPriority(
   let lowMatches = 0;
 
   for (const keyword of normalizedKeywords) {
-    if (profile.priority_keywords.high.includes(keyword)) highMatches++;
-    if (profile.priority_keywords.medium.includes(keyword)) mediumMatches++;
-    if (profile.priority_keywords.low.includes(keyword)) lowMatches++;
+    if (profile.priority_keywords.high.includes(keyword)) {highMatches++;}
+    if (profile.priority_keywords.medium.includes(keyword)) {mediumMatches++;}
+    if (profile.priority_keywords.low.includes(keyword)) {lowMatches++;}
   }
 
-  if (highMatches > mediumMatches && highMatches > lowMatches) return 'high';
-  if (mediumMatches > highMatches && mediumMatches > lowMatches) return 'medium';
-  if (lowMatches > 0) return 'low';
+  if (highMatches > mediumMatches && highMatches > lowMatches) {return 'high';}
+  if (mediumMatches > highMatches && mediumMatches > lowMatches) {return 'medium';}
+  if (lowMatches > 0) {return 'low';}
 
   return null;
 }
@@ -319,7 +319,7 @@ export async function updateInterestEmbedding(profileId: string = 'default'): Pr
      LIMIT 50`
   );
 
-  if (recentIdeas.rows.length === 0) return;
+  if (recentIdeas.rows.length === 0) {return;}
 
   // Combine recent content into interest description
   const interestText = recentIdeas.rows

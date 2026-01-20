@@ -123,7 +123,7 @@ const RETRY_CONFIG = {
  * Check if an error is retryable (transient connection issue)
  */
 function isRetryableError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
+  if (!(error instanceof Error)) {return false;}
   const errorCode = (error as { code?: string }).code;
   const errorMessage = error.message || '';
   return RETRY_CONFIG.retryableErrors.some(

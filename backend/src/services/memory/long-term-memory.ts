@@ -457,7 +457,7 @@ Antworte als JSON:
     newPatterns: FrequentPattern[]
   ): Promise<number> {
     const memory = this.memories.get(context);
-    if (!memory) return 0;
+    if (!memory) {return 0;}
 
     let added = 0;
 
@@ -497,7 +497,7 @@ Antworte als JSON:
     newFacts: PersonalizationFact[]
   ): Promise<{ added: number; updated: number }> {
     const memory = this.memories.get(context);
-    if (!memory) return { added: 0, updated: 0 };
+    if (!memory) {return { added: 0, updated: 0 };}
 
     let added = 0;
     let updated = 0;
@@ -573,7 +573,7 @@ Antworte als JSON:
     sessions: Array<{ id: string; messages: any[]; metadata: any; summary?: string }>
   ): Promise<number> {
     const memory = this.memories.get(context);
-    if (!memory) return 0;
+    if (!memory) {return 0;}
 
     let stored = 0;
 
@@ -611,7 +611,7 @@ Antworte als JSON:
    */
   private async updateProfileEmbedding(context: AIContext): Promise<void> {
     const memory = this.memories.get(context);
-    if (!memory || memory.facts.length === 0) return;
+    if (!memory || memory.facts.length === 0) {return;}
 
     try {
       // Combine facts into a profile text
@@ -620,7 +620,7 @@ Antworte als JSON:
         .map(f => f.content)
         .join('. ');
 
-      if (profileText.length < 50) return;
+      if (profileText.length < 50) {return;}
 
       const embedding = await generateEmbedding(profileText);
       memory.profileEmbedding = embedding;
@@ -756,7 +756,7 @@ Antworte als JSON:
   async addFact(context: AIContext, fact: Omit<PersonalizationFact, 'id' | 'firstSeen' | 'lastConfirmed' | 'occurrences'>): Promise<void> {
     await this.initialize(context);
     const memory = this.memories.get(context);
-    if (!memory) return;
+    if (!memory) {return;}
 
     const fullFact: PersonalizationFact = {
       id: uuidv4(),

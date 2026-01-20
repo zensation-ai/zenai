@@ -198,7 +198,7 @@ function getErrorMessage(error: unknown): string {
  * @returns Valid category value
  */
 export function normalizeCategory(category: string | undefined): ValidCategory {
-  if (!category) return 'personal';
+  if (!category) {return 'personal';}
 
   // Handle pipe-separated categories (e.g., "EwS|Strategie|Business")
   // Take the first part or find the first matching category
@@ -228,7 +228,7 @@ export function normalizeCategory(category: string | undefined): ValidCategory {
  * @returns Valid type value
  */
 export function normalizeType(type: string | undefined): ValidType {
-  if (!type) return 'idea';
+  if (!type) {return 'idea';}
 
   const lower = type.toLowerCase().trim();
 
@@ -246,7 +246,7 @@ export function normalizeType(type: string | undefined): ValidType {
  * @returns Valid priority value
  */
 export function normalizePriority(priority: string | undefined): ValidPriority {
-  if (!priority) return 'medium';
+  if (!priority) {return 'medium';}
 
   const lower = priority.toLowerCase().trim();
 
@@ -277,7 +277,7 @@ function createFallbackIdea(transcript: string): StructuredIdea {
  * Safely parses a string array from parsed JSON
  */
 function parseStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) {return [];}
   return value.filter((item): item is string => typeof item === 'string');
 }
 

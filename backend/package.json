@@ -17,7 +17,9 @@
     "migrate:supabase": "ts-node src/scripts/migrate-to-supabase.ts",
     "create-ios-key": "ts-node scripts/create-ios-api-key.ts",
     "create-web-key": "ts-node scripts/create-web-api-key.ts",
-    "mcp:start": "ts-node src/mcp/server.ts"
+    "mcp:start": "ts-node src/mcp/server.ts",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
   },
   "keywords": [
     "ai",
@@ -50,7 +52,11 @@
     "uuid": "^9.0.1",
     "zod": "^4.3.5"
   },
+  "overrides": {
+    "diff": "^8.0.3"
+  },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
@@ -64,6 +70,10 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^9.0.7",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-security": "^3.0.1",
     "jest": "^30.2.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",

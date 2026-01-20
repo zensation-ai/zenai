@@ -131,7 +131,7 @@ export class ShortTermMemoryService {
    */
   getMemory(sessionId: string): ShortTermMemory | null {
     const memory = this.memories.get(sessionId);
-    if (!memory) return null;
+    if (!memory) {return null;}
 
     // Check if expired
     if (Date.now() - memory.lastUpdated.getTime() > CONFIG.SESSION_TIMEOUT_MS) {
@@ -190,7 +190,7 @@ export class ShortTermMemoryService {
    */
   getRecentInteractions(sessionId: string, limit?: number): Interaction[] {
     const memory = this.memories.get(sessionId);
-    if (!memory) return [];
+    if (!memory) {return [];}
 
     const interactions = memory.recentInteractions;
     return limit ? interactions.slice(-limit) : interactions;
@@ -394,7 +394,7 @@ Zusammenfassung:`;
       const preRetrieved: PreRetrievedDocument[] = [];
 
       for (const row of result.rows) {
-        if (!row.embedding) continue;
+        if (!row.embedding) {continue;}
 
         const embedding = typeof row.embedding === 'string'
           ? JSON.parse(row.embedding.replace(/^\[/, '').replace(/\]$/, '').split(',').map(Number))

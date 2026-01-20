@@ -30,9 +30,9 @@ function validateContext(context: string): void {
 }
 
 function parseLimit(limitStr: string | undefined): number {
-  if (!limitStr) return DEFAULT_LIMIT;
+  if (!limitStr) {return DEFAULT_LIMIT;}
   const limit = parseInt(limitStr, 10);
-  if (isNaN(limit) || limit < 1) return DEFAULT_LIMIT;
+  if (isNaN(limit) || limit < 1) {return DEFAULT_LIMIT;}
   return Math.min(limit, MAX_LIMIT);
 }
 

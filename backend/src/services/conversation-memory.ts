@@ -146,7 +146,7 @@ class ConversationMemoryService {
    */
   getSession(sessionId: string): ConversationSession | null {
     const session = this.sessions.get(sessionId);
-    if (!session) return null;
+    if (!session) {return null;}
 
     // Check if session has timed out
     if (Date.now() - session.lastActivity.getTime() > CONFIG.SESSION_TIMEOUT_MS) {
@@ -202,7 +202,7 @@ class ConversationMemoryService {
    */
   getHistory(sessionId: string): ConversationMessage[] {
     const session = this.sessions.get(sessionId);
-    if (!session) return [];
+    if (!session) {return [];}
 
     return [...session.messages];
   }
@@ -387,7 +387,7 @@ ${conversationText}`;
    * Parse messages from database JSONB
    */
   private parseMessages(messages: any): ConversationMessage[] {
-    if (!messages) return [];
+    if (!messages) {return [];}
     if (typeof messages === 'string') {
       try {
         messages = JSON.parse(messages);
@@ -395,7 +395,7 @@ ${conversationText}`;
         return [];
       }
     }
-    if (!Array.isArray(messages)) return [];
+    if (!Array.isArray(messages)) {return [];}
 
     return messages.map((msg: any) => ({
       role: msg.role || 'user',
@@ -501,7 +501,7 @@ ${conversationText}`;
    */
   getSessionStats(sessionId: string): ConversationStats | null {
     const session = this.sessions.get(sessionId);
-    if (!session) return null;
+    if (!session) {return null;}
 
     const userMessages = session.messages.filter(m => m.role === 'user').length;
     const assistantMessages = session.messages.filter(m => m.role === 'assistant').length;

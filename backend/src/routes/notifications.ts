@@ -414,9 +414,9 @@ export async function generateDailyDigest(context: AIContext): Promise<void> {
 
     // Build digest message
     const parts = [];
-    if (parseInt(new_ideas) > 0) parts.push(`${new_ideas} neue Ideen`);
-    if (parseInt(high_priority) > 0) parts.push(`${high_priority} hohe Priorität`);
-    if (parseInt(ready_clusters) > 0) parts.push(`${ready_clusters} Cluster bereit`);
+    if (parseInt(new_ideas) > 0) {parts.push(`${new_ideas} neue Ideen`);}
+    if (parseInt(high_priority) > 0) {parts.push(`${high_priority} hohe Priorität`);}
+    if (parseInt(ready_clusters) > 0) {parts.push(`${ready_clusters} Cluster bereit`);}
 
     await queryContext(
       context,

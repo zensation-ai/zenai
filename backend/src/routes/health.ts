@@ -238,16 +238,16 @@ function formatUptime(ms: number): string {
   const secs = seconds % 60;
 
   const parts = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
+  if (days > 0) {parts.push(`${days}d`);}
+  if (hours > 0) {parts.push(`${hours}h`);}
+  if (minutes > 0) {parts.push(`${minutes}m`);}
   parts.push(`${secs}s`);
 
   return parts.join(' ');
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) {return '0 B';}
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));

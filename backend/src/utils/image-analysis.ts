@@ -143,9 +143,9 @@ export async function analyzeDocument(imagePath: string): Promise<{
       const phoneMatch = text.match(/[\d\s+()-]{10,}/);
       const nameMatch = text.split('\n')[0]?.trim();
 
-      if (emailMatch) extractedFields.email = emailMatch[0];
-      if (phoneMatch) extractedFields.phone = phoneMatch[0].trim();
-      if (nameMatch && nameMatch.length < 50) extractedFields.name = nameMatch;
+      if (emailMatch) {extractedFields.email = emailMatch[0];}
+      if (phoneMatch) {extractedFields.phone = phoneMatch[0].trim();}
+      if (nameMatch && nameMatch.length < 50) {extractedFields.name = nameMatch;}
     }
     // Receipt/Invoice detection
     else if (text.match(/(€|EUR|Summe|Total|Betrag|Invoice)/i)) {
@@ -153,8 +153,8 @@ export async function analyzeDocument(imagePath: string): Promise<{
       const amountMatch = text.match(/(\d+[,.]?\d*)\s*€/);
       const dateMatch = text.match(/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/);
 
-      if (amountMatch) extractedFields.amount = amountMatch[1] + '€';
-      if (dateMatch) extractedFields.date = dateMatch[0];
+      if (amountMatch) {extractedFields.amount = amountMatch[1] + '€';}
+      if (dateMatch) {extractedFields.date = dateMatch[0];}
     }
     // Note/Handwriting
     else if (text.length > 20) {

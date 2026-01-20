@@ -116,7 +116,7 @@ export async function updateDomainFocus(
 ): Promise<DomainFocus | null> {
   // Hole existierenden Focus
   const existing = await getDomainFocus(id, context);
-  if (!existing) return null;
+  if (!existing) {return null;}
 
   // Generiere neues Embedding wenn Name/Description/Keywords geändert
   let embedding: number[] | null = null;
@@ -157,7 +157,7 @@ export async function updateDomainFocus(
     ]
   );
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
 
   return formatDomainFocus(result.rows[0]);
 }
@@ -175,7 +175,7 @@ export async function getDomainFocus(
     [id, context]
   );
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
 
   return formatDomainFocus(result.rows[0]);
 }
@@ -253,8 +253,8 @@ export async function getActiveFocusContext(
     .slice(0, 5) // Max 5 Focus-Bereiche
     .map((f) => {
       let desc = `- ${f.name}`;
-      if (f.description) desc += `: ${f.description}`;
-      if (f.keywords.length > 0) desc += ` (Keywords: ${f.keywords.join(', ')})`;
+      if (f.description) {desc += `: ${f.description}`;}
+      if (f.keywords.length > 0) {desc += ` (Keywords: ${f.keywords.join(', ')})`;}
       return desc;
     })
     .join('\n');
@@ -289,12 +289,12 @@ export async function findMatchingFocus(
       [`[${textEmbedding.join(',')}]`, context]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const match = result.rows[0];
 
     // 3. Nur zurückgeben wenn Ähnlichkeit > 0.5
-    if (match.similarity < 0.5) return null;
+    if (match.similarity < 0.5) {return null;}
 
     // 4. Update Aktivität
     await queryContext(
@@ -393,7 +393,7 @@ function formatDomainFocus(row: Record<string, unknown>): DomainFocus {
 }
 
 function parseJSON<T>(value: unknown, defaultValue: T): T {
-  if (Array.isArray(value)) return value as T;
+  if (Array.isArray(value)) {return value as T;}
   if (typeof value === 'string') {
     try {
       return JSON.parse(value);

@@ -180,7 +180,7 @@ function matchPatterns(
     const hasExclude = pattern.exclude_keywords.some((kw) =>
       lowerText.includes(kw.toLowerCase())
     );
-    if (hasExclude) continue;
+    if (hasExclude) {continue;}
 
     // Prüfe Phrase-Matches (höhere Priorität)
     for (const phrase of pattern.trigger_phrases) {
@@ -232,7 +232,7 @@ function extractTopicFromText(text: string, trigger: string): string {
   const lowerText = text.toLowerCase();
   const triggerIndex = lowerText.indexOf(trigger.toLowerCase());
 
-  if (triggerIndex === -1) return text.substring(0, 100);
+  if (triggerIndex === -1) {return text.substring(0, 100);}
 
   // Versuche den Kontext nach dem Trigger zu extrahieren
   const afterTrigger = text.substring(triggerIndex + trigger.length).trim();
@@ -593,8 +593,8 @@ function calculateConfidence(results: ResearchResult[], summary: string): number
   confidence += Math.min(results.length * 0.1, 0.3);
 
   // Längere Zusammenfassung = wahrscheinlich bessere Infos
-  if (summary && summary.length > 100) confidence += 0.1;
-  if (summary && summary.length > 200) confidence += 0.1;
+  if (summary && summary.length > 100) {confidence += 0.1;}
+  if (summary && summary.length > 200) {confidence += 0.1;}
 
   // Hohe Relevanz-Scores
   const avgRelevance =
@@ -750,7 +750,7 @@ export async function getResearchById(
       [researchId, context]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const row = result.rows[0];
     return {

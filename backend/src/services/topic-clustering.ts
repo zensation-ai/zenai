@@ -216,7 +216,7 @@ interface Cluster {
 }
 
 function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: number): Cluster[] {
-  if (ideas.length === 0 || k <= 0) return [];
+  if (ideas.length === 0 || k <= 0) {return [];}
 
   const dim = ideas[0].embedding.length;
 
@@ -251,7 +251,7 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
     let converged = true;
     for (let i = 0; i < k; i++) {
       const clusterIdeas = clusters.get(i)!;
-      if (clusterIdeas.length === 0) continue;
+      if (clusterIdeas.length === 0) {continue;}
 
       const newCentroid = new Array(dim).fill(0);
       for (const ideaId of clusterIdeas) {
@@ -280,7 +280,7 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
   const result: Cluster[] = [];
   for (let i = 0; i < k; i++) {
     const clusterIdeas = clusters.get(i)!;
-    if (clusterIdeas.length === 0) continue;
+    if (clusterIdeas.length === 0) {continue;}
 
     let coherence = 0;
     for (const ideaId of clusterIdeas) {
@@ -535,7 +535,7 @@ export async function mergeTopics(
   topicIds: string[],
   newName: string
 ): Promise<Topic | null> {
-  if (topicIds.length < 2) return null;
+  if (topicIds.length < 2) {return null;}
 
   const pool = getPool(context);
   const client = await pool.connect();
@@ -627,7 +627,7 @@ export async function mergeTopics(
 // ============================================
 
 function parseEmbedding(embedding: any): number[] {
-  if (Array.isArray(embedding)) return embedding;
+  if (Array.isArray(embedding)) {return embedding;}
   if (typeof embedding === 'string') {
     // Handle PostgreSQL vector format: [0.1,0.2,...]
     const cleaned = embedding.replace(/[\[\]]/g, '');
