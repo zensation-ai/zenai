@@ -217,6 +217,37 @@
   border-bottom-right-radius: 4px;
 }
 
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.message-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.message.assistant .message-name {
+  color: var(--primary);
+}
+
+.message.user .message-name {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.message.user .message-header {
+  flex-direction: row-reverse;
+}
+
+.message-status {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .message-content p {
   margin: 0;
   font-size: 0.95rem;
@@ -225,11 +256,8 @@
 }
 
 .message-time {
-  display: block;
   font-size: 0.7rem;
   color: var(--text-muted);
-  margin-top: 6px;
-  text-align: right;
 }
 
 .message.user .message-time {
@@ -511,7 +539,7 @@
   border-radius: 10px;
 }
 
-/* Empty State */
+/* Empty State - Humanized */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -519,6 +547,31 @@
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
+}
+
+.empty-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-light, #ff8c5a), var(--primary, #ff6b35));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.25);
+  animation: emptyAvatarPulse 3s ease-in-out infinite;
+}
+
+@keyframes emptyAvatarPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.25);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px rgba(255, 107, 53, 0.35);
+  }
 }
 
 .empty-icon {
@@ -534,9 +587,18 @@
 }
 
 .empty-state p {
-  margin: 0 0 20px 0;
+  margin: 0 0 12px 0;
   font-size: 0.95rem;
   color: var(--text-muted);
+  max-width: 320px;
+}
+
+.empty-encouragement {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-secondary, #4a6577);
+  margin-bottom: 20px;
+  max-width: 280px;
 }
 
 .action-btn {

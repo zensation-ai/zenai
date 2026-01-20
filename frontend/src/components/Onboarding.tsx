@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { AI_PERSONALITY, AI_AVATAR, getTimeBasedGreeting } from '../utils/aiPersonality';
 import './Onboarding.css';
 
 interface OnboardingProps {
@@ -40,6 +41,28 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
     goals: [],
   });
   const [saving, setSaving] = useState(false);
+  const [typingText, setTypingText] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
+  const timeGreeting = getTimeBasedGreeting();
+
+  // Typing animation for AI introduction
+  const introText = `${timeGreeting.greeting} Ich bin ${AI_PERSONALITY.name}, dein persönlicher KI-Begleiter. Ich bin hier, um dir zu helfen, deine Gedanken zu ordnen und aus deinen Ideen zu lernen.`;
+
+  useEffect(() => {
+    if (currentStep === 0 && isTyping) {
+      let index = 0;
+      const timer = setInterval(() => {
+        if (index < introText.length) {
+          setTypingText(introText.slice(0, index + 1));
+          index++;
+        } else {
+          setIsTyping(false);
+          clearInterval(timer);
+        }
+      }, 30);
+      return () => clearInterval(timer);
+    }
+  }, [currentStep, isTyping, introText]);
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
@@ -117,22 +140,39 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
         <div className="onboarding-content">
           {currentStep === 0 && (
             <div className="step-content welcome-step">
-              <div className="welcome-icon">🧠</div>
-              <h1>Willkommen bei deinem KI-Gehirn</h1>
-              <p>
-                Diese App hilft dir, deine Gedanken zu strukturieren und aus deinen Ideen zu lernen.
-                Die KI passt sich deinem Kontext an und wird mit der Zeit immer besser.
-              </p>
+              <div className="ai-introduction">
+                <div className="ai-avatar-large">
+                  {AI_AVATAR.emoji}
+                  <div className="ai-avatar-glow" />
+                </div>
+                <div className="ai-name-badge">{AI_PERSONALITY.name}</div>
+              </div>
+              <h1>Willkommen!</h1>
+              <div className="typing-container">
+                <p className={`typing-text ${!isTyping ? 'complete' : ''}`}>
+                  {typingText}
+                  {isTyping && <span className="cursor">|</span>}
+                </p>
+              </div>
+              <div className="ai-traits">
+                {AI_PERSONALITY.traits.slice(0, 4).map((trait, i) => (
+                  <span key={i} className="trait-badge">{trait}</span>
+                ))}
+              </div>
               <p className="subtle">
-                Lass uns kurz einrichten, wie du die App nutzen möchtest.
+                Lass uns kurz kennenlernen – dann kann ich dir noch besser helfen!
               </p>
             </div>
           )}
 
           {currentStep === 1 && (
             <div className="step-content context-step">
-              <h2>Erzähl mir von dir</h2>
-              <p>Diese Infos helfen der KI, dich besser zu verstehen.</p>
+              <div className="step-ai-hint">
+                <span className="hint-avatar">{AI_AVATAR.curiousEmoji}</span>
+                <span>{AI_PERSONALITY.name} fragt:</span>
+              </div>
+              <h2>Erzähl mir von dir!</h2>
+              <p>Diese Infos helfen mir, dich besser zu verstehen und relevantere Vorschläge zu machen.</p>
 
               <div className="form-group">
                 <label htmlFor="onboarding-context">Kontext / Unternehmen</label>
@@ -171,8 +211,12 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
 
           {currentStep === 2 && (
             <div className="step-content goals-step">
+              <div className="step-ai-hint">
+                <span className="hint-avatar">{AI_AVATAR.happyEmoji}</span>
+                <span>Super! Noch eine Frage:</span>
+              </div>
               <h2>Was möchtest du erreichen?</h2>
-              <p>Wähle aus, was dir wichtig ist (mehrere möglich).</p>
+              <p>Das hilft {AI_PERSONALITY.name}, dich besser zu unterstützen. Wähle eins oder mehrere.</p>
 
               <div className="goals-grid">
                 {GOAL_OPTIONS.map((goal) => (
@@ -192,19 +236,32 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
 
           {currentStep === 3 && (
             <div className="step-content complete-step">
-              <div className="complete-icon">✨</div>
-              <h2>Alles bereit!</h2>
+              <div className="ai-celebration">
+                <div className="celebration-avatar">{AI_AVATAR.celebratingEmoji}</div>
+                <div className="celebration-sparkles">
+                  <span className="sparkle">✨</span>
+                  <span className="sparkle">✨</span>
+                  <span className="sparkle">✨</span>
+                </div>
+              </div>
+              <h2>Wir sind startklar!</h2>
               <p>
-                Du kannst jetzt loslegen. Sprich oder tippe deine Gedanken ein,
-                und die KI hilft dir, sie zu strukturieren.
+                Freut mich, dich kennenzulernen! Ich bin bereit, dir zu helfen.
+                Je mehr wir zusammenarbeiten, desto besser verstehe ich dich.
               </p>
               <div className="tips">
-                <h3>Schnellstart-Tipps:</h3>
+                <h3>{AI_PERSONALITY.name}s Tipps zum Start:</h3>
                 <ul>
-                  <li>Nutze das Mikrofon für schnelle Sprachnotizen</li>
-                  <li>Im Lernzentrum siehst du, was die KI gelernt hat</li>
-                  <li>Gib Feedback mit 👍/👎 um die KI zu verbessern</li>
+                  <li><strong>Sprich frei</strong> – ich strukturiere deine Gedanken automatisch</li>
+                  <li><strong>Gib Feedback</strong> – mit 👍/👎 lerne ich dazu</li>
+                  <li><strong>Erkunde</strong> – im Lernzentrum siehst du, was ich über dich gelernt habe</li>
                 </ul>
+              </div>
+              <div className="ai-promise">
+                <span className="promise-icon">{AI_AVATAR.emoji}</span>
+                <span className="promise-text">
+                  "Ich freue mich auf unsere Zusammenarbeit!" – {AI_PERSONALITY.name}
+                </span>
               </div>
             </div>
           )}

@@ -1018,6 +1018,50 @@
   animation: gentleFloat 4s ease-in-out infinite;
 }
 
+/* Humanized AI Avatar for Empty State */
+.empty-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-light, #ff8c5a), var(--primary, #ff6b35));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 1rem;
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.25);
+  animation: emptyAvatarPulse 4s ease-in-out infinite, gentleFloat 5s ease-in-out infinite;
+}
+
+@keyframes emptyAvatarPulse {
+  0%, 100% {
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.25);
+  }
+  50% {
+    box-shadow: 0 12px 32px rgba(255, 107, 53, 0.35);
+  }
+}
+
+.empty-ai-name {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+}
+
+.empty-encouragement {
+  display: block;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-secondary, #4a6577);
+  margin-bottom: 1rem;
+}
+
 @keyframes gentleFloat {
   0%, 100% {
     transform: translateY(0);
@@ -1036,7 +1080,7 @@
 }
 
 .empty-state p {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
   color: var(--text-muted);
   line-height: 1.6;

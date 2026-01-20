@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import {
+  AI_PERSONALITY,
+  AI_AVATAR,
+  EMPTY_STATE_MESSAGES,
+  getRandomMessage,
+} from '../utils/aiPersonality';
 import './PersonalizationChat.css';
 
 interface ChatMessage {
@@ -207,7 +213,7 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
         <button className="back-button" onClick={onBack}>
           ← Zurück
         </button>
-        <h1>🧠 Lerne mich kennen</h1>
+        <h1>{AI_AVATAR.emoji} {AI_PERSONALITY.name} lernt dich kennen</h1>
         <span className={`context-indicator ${context}`}>
           {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
         </span>
@@ -266,19 +272,28 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
                 key={message.id}
                 className={`message ${message.role}`}
               >
-                <div className="message-avatar">
-                  {message.role === 'assistant' ? '🧠' : '👤'}
+                <div className="message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}>
+                  {message.role === 'assistant' ? AI_AVATAR.emoji : '👤'}
                 </div>
                 <div className="message-content">
+                  <div className="message-header">
+                    <span className="message-name">
+                      {message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}
+                    </span>
+                    <span className="message-time">{formatTime(message.timestamp)}</span>
+                  </div>
                   <p>{message.content}</p>
-                  <span className="message-time">{formatTime(message.timestamp)}</span>
                 </div>
               </div>
             ))}
             {sending && (
               <div className="message assistant">
-                <div className="message-avatar">🧠</div>
+                <div className="message-avatar" title={AI_PERSONALITY.name}>{AI_AVATAR.thinkingEmoji}</div>
                 <div className="message-content">
+                  <div className="message-header">
+                    <span className="message-name">{AI_PERSONALITY.name}</span>
+                    <span className="message-status">{getRandomMessage('learning')}</span>
+                  </div>
                   <div className="typing-indicator">
                     <span></span>
                     <span></span>
@@ -318,9 +333,10 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
         <div className="facts-container">
           {facts.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-icon">📚</span>
-              <h3>Noch keine Fakten</h3>
-              <p>Chatte mit mir, damit ich dich besser kennenlernen kann.</p>
+              <div className="empty-avatar">{AI_AVATAR.curiousEmoji}</div>
+              <h3>{EMPTY_STATE_MESSAGES.personalization.title}</h3>
+              <p>Chatte mit {AI_PERSONALITY.name}, damit ich dich besser kennenlernen kann.</p>
+              <span className="empty-encouragement">{EMPTY_STATE_MESSAGES.personalization.encouragement}</span>
               <button
                 className="action-btn"
                 onClick={() => setActiveTab('chat')}
@@ -425,9 +441,10 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
             </div>
           ) : (
             <div className="empty-state">
-              <span className="empty-icon">📋</span>
+              <div className="empty-avatar">{AI_AVATAR.curiousEmoji}</div>
               <h3>Noch keine Zusammenfassung</h3>
-              <p>Erzähl mir mehr über dich, damit ich eine Zusammenfassung erstellen kann.</p>
+              <p>Erzähl {AI_PERSONALITY.name} mehr über dich, damit ich eine Zusammenfassung erstellen kann.</p>
+              <span className="empty-encouragement">Je mehr wir plaudern, desto besser verstehe ich dich!</span>
               <button
                 className="action-btn"
                 onClick={() => setActiveTab('chat')}

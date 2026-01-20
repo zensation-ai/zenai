@@ -3,11 +3,18 @@
  *
  * A ChatGPT-like chat interface for general questions and conversations.
  * Integrated into the main hero section alongside the voice memo input.
+ * Features humanized AI personality with consistent branding.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import {
+  AI_PERSONALITY,
+  AI_AVATAR,
+  EMPTY_STATE_MESSAGES,
+  getRandomMessage,
+} from '../utils/aiPersonality';
 import './GeneralChat.css';
 
 interface ChatMessage {
@@ -251,9 +258,13 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="chat-empty">
-            <span className="chat-empty-icon">💬</span>
-            <p>Stell mir eine Frage...</p>
-            <span className="chat-empty-hint">Ich kann dir bei Recherche, Erklärungen, Brainstorming und vielem mehr helfen.</span>
+            <div className="chat-empty-avatar">{AI_AVATAR.emoji}</div>
+            <h3 className="chat-empty-title">{EMPTY_STATE_MESSAGES.chat.title}</h3>
+            <p className="chat-empty-description">{EMPTY_STATE_MESSAGES.chat.description}</p>
+            <span className="chat-empty-hint">{EMPTY_STATE_MESSAGES.chat.encouragement}</span>
+            <div className="chat-empty-name">
+              <span>Ich bin {AI_PERSONALITY.name}</span>
+            </div>
           </div>
         ) : (
           <>
@@ -262,21 +273,30 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
                 key={message.id}
                 className={`chat-message ${message.role}`}
               >
-                <div className="chat-message-avatar">
-                  {message.role === 'assistant' ? '🤖' : '👤'}
+                <div className="chat-message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}>
+                  {message.role === 'assistant' ? AI_AVATAR.emoji : '👤'}
                 </div>
                 <div className="chat-message-content">
+                  <div className="chat-message-header">
+                    <span className="chat-message-name">
+                      {message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}
+                    </span>
+                    <span className="chat-message-time">{formatTime(message.createdAt)}</span>
+                  </div>
                   <div className="chat-message-text">
                     {renderContent(message.content)}
                   </div>
-                  <span className="chat-message-time">{formatTime(message.createdAt)}</span>
                 </div>
               </div>
             ))}
             {sending && (
               <div className="chat-message assistant">
-                <div className="chat-message-avatar">🤖</div>
+                <div className="chat-message-avatar" title={AI_PERSONALITY.name}>{AI_AVATAR.thinkingEmoji}</div>
                 <div className="chat-message-content">
+                  <div className="chat-message-header">
+                    <span className="chat-message-name">{AI_PERSONALITY.name}</span>
+                    <span className="chat-message-status">{getRandomMessage('thinking')}</span>
+                  </div>
                   <div className="typing-indicator">
                     <span></span>
                     <span></span>

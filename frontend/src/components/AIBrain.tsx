@@ -1,62 +1,54 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  AI_PERSONALITY,
+  AI_ACTIVITY_MESSAGES,
+  getTimeBasedGreeting,
+  getIdleMessage,
+  getRandomTip,
+} from '../utils/aiPersonality';
 import './AIBrain.css';
 
 interface AIBrainProps {
   isActive: boolean;
-  activityType?: 'thinking' | 'transcribing' | 'searching' | 'processing';
+  activityType?: 'thinking' | 'transcribing' | 'searching' | 'processing' | 'learning' | 'success';
   ideasCount?: number;
   size?: 'small' | 'large';
+  showTip?: boolean;
+  onInteraction?: () => void;
 }
 
-export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0, size = 'small' }: AIBrainProps) {
+export function AIBrain({
+  isActive,
+  activityType = 'thinking',
+  ideasCount = 0,
+  size = 'small',
+  showTip = false,
+  onInteraction,
+}: AIBrainProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [clickFeedback, setClickFeedback] = useState(false);
-  const [greeting, setGreeting] = useState('');
+  const [currentTip, setCurrentTip] = useState<string | null>(null);
+  const [interactionCount, setInteractionCount] = useState(0);
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Activity messages - human, empathetic, personal
-  const statusMessages: Record<string, string[]> = {
-    thinking: [
-      'Hmm, lass mich nachdenken...',
-      'Interessant! Ich verarbeite das...',
-      'Moment, ich sortiere das für dich...',
-      'Okay, ich verstehe was du meinst...',
-    ],
-    transcribing: [
-      'Ich höre dir zu...',
-      'Erzähl weiter, ich bin ganz Ohr...',
-      'Ich fange jedes Wort auf...',
-    ],
-    searching: [
-      'Ich schaue mal in deinen Gedanken...',
-      'Moment, ich suche Verbindungen...',
-      'Ah, da war doch was Ähnliches...',
-    ],
-    processing: [
-      'Das ist spannend! Ich strukturiere...',
-      'Okay, ich bringe das in Form...',
-      'Lass mich das für dich aufbereiten...',
-      'Ich erkenne Muster hier...',
-    ],
-  };
+  // Get time-based greeting
+  const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
 
-  // Dynamic greeting based on time
+  // Show random tip periodically
   useEffect(() => {
-    const hour = new Date().getHours();
-    let timeGreeting = '';
+    if (showTip && !isActive && size === 'large') {
+      tipTimeoutRef.current = setTimeout(() => {
+        setCurrentTip(getRandomTip('general'));
+      }, 10000);
 
-    if (hour >= 5 && hour < 12) {
-      timeGreeting = 'Guten Morgen';
-    } else if (hour >= 12 && hour < 17) {
-      timeGreeting = 'Guten Tag';
-    } else if (hour >= 17 && hour < 21) {
-      timeGreeting = 'Guten Abend';
-    } else {
-      timeGreeting = 'Gute Nacht';
+      return () => {
+        if (tipTimeoutRef.current) {
+          clearTimeout(tipTimeoutRef.current);
+        }
+      };
     }
-
-    setGreeting(timeGreeting);
-  }, []);
+  }, [showTip, isActive, size]);
 
   // Cleanup click timeout on unmount
   useEffect(() => {
@@ -67,26 +59,17 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0, s
     };
   }, []);
 
-  // Get random message for variety
+  // Get random message for variety - now using centralized system
   const currentMessage = useMemo(() => {
-    const messages = statusMessages[activityType] || statusMessages.thinking;
+    const messages = AI_ACTIVITY_MESSAGES[activityType] || AI_ACTIVITY_MESSAGES.thinking;
     return messages[Math.floor(Math.random() * messages.length)];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activityType, isActive]);
 
-  // Idle tooltip with personality and context
+  // Idle tooltip with personality and context - now using centralized function
   const idleMessage = useMemo(() => {
-    if (ideasCount === 0) {
-      return `${greeting}! Ich bin gespannt auf deinen ersten Gedanken 💭`;
-    } else if (ideasCount < 5) {
-      return `${greeting}! Schon ${ideasCount} Gedanken zusammen – ein guter Start! 🌱`;
-    } else if (ideasCount < 20) {
-      return `${greeting}! ${ideasCount} Gedanken in deinem Brain. Ich lerne dich kennen! 🧠`;
-    } else if (ideasCount < 50) {
-      return `${greeting}! Wow, ${ideasCount} Gedanken! Wir sind ein tolles Team 🤝`;
-    } else {
-      return `${greeting}! ${ideasCount} Gedanken – ich kenne dich richtig gut! ✨`;
-    }
-  }, [greeting, ideasCount]);
+    return getIdleMessage(ideasCount, timeGreeting.greeting);
+  }, [timeGreeting.greeting, ideasCount]);
 
   const handleClick = () => {
     // Clear any existing timeout
@@ -94,7 +77,29 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0, s
       clearTimeout(clickTimeoutRef.current);
     }
     setClickFeedback(true);
+    setInteractionCount((prev) => prev + 1);
     clickTimeoutRef.current = setTimeout(() => setClickFeedback(false), 300);
+
+    // Callback for parent component
+    onInteraction?.();
+  };
+
+  // Get activity label with more personality
+  const getActivityLabel = () => {
+    switch (activityType) {
+      case 'transcribing':
+        return `${AI_PERSONALITY.name} hört zu...`;
+      case 'searching':
+        return `${AI_PERSONALITY.name} sucht...`;
+      case 'processing':
+        return `${AI_PERSONALITY.name} denkt nach...`;
+      case 'learning':
+        return `${AI_PERSONALITY.name} lernt...`;
+      case 'success':
+        return `${AI_PERSONALITY.name} ist fertig!`;
+      default:
+        return `${AI_PERSONALITY.name} arbeitet...`;
+    }
   };
 
   return (
@@ -253,10 +258,29 @@ export function AIBrain({ isActive, activityType = 'thinking', ideasCount = 0, s
       {/* Activity label - human, conversational */}
       {isActive && (
         <span className="ai-brain-label">
-          {activityType === 'transcribing' ? '🎧 Ich höre...' :
-           activityType === 'searching' ? '🔍 Schaue nach...' :
-           activityType === 'processing' ? '💭 Denke nach...' : '⚡ Arbeite...'}
+          {activityType === 'transcribing' && '🎧 '}
+          {activityType === 'searching' && '🔍 '}
+          {activityType === 'processing' && '💭 '}
+          {activityType === 'learning' && '📚 '}
+          {activityType === 'success' && '✨ '}
+          {activityType === 'thinking' && '⚡ '}
+          {getActivityLabel()}
         </span>
+      )}
+
+      {/* Random tip display for large size */}
+      {currentTip && size === 'large' && !isActive && (
+        <div className="ai-brain-tip">
+          <span className="tip-icon">💡</span>
+          <span className="tip-text">{currentTip}</span>
+        </div>
+      )}
+
+      {/* Interaction easter egg - shows after multiple clicks */}
+      {interactionCount > 5 && interactionCount % 5 === 0 && (
+        <div className="ai-brain-easter-egg">
+          Danke fürs Spielen! 😄
+        </div>
       )}
     </div>
   );
