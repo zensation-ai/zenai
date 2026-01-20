@@ -213,7 +213,8 @@ describe('Security: Sensitive Data Filtering (Sprint 2)', () => {
     });
 
     it('should never log API keys', () => {
-      const apiKey = 'ab_live_abc123def456xyz789';
+      // API keys use hex characters only (a-f, 0-9)
+      const apiKey = 'ab_live_abc123def456abc789';
       const pattern = /^ab_live_[a-f0-9]+$/i;
 
       expect(pattern.test(apiKey)).toBe(true);

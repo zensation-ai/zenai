@@ -242,11 +242,13 @@ describe('Security: Rate Limiting (Sprint 2)', () => {
     it('should handle trust proxy for correct client IP', () => {
       // When behind a reverse proxy (Railway, Vercel), we need
       // to trust the X-Forwarded-For header
-      const trustProxyEnabled = process.env.NODE_ENV === 'production' ||
-        process.env.RAILWAY_ENVIRONMENT ||
-        process.env.VERCEL;
+      const isProduction = process.env.NODE_ENV === 'production';
+      const isRailway = !!process.env.RAILWAY_ENVIRONMENT;
+      const isVercel = !!process.env.VERCEL;
+      const trustProxyEnabled = isProduction || isRailway || isVercel;
 
       // In production environments, trust proxy should be enabled
+      // In test environment, all these are false, so trustProxyEnabled is false
       expect(typeof trustProxyEnabled).toBe('boolean');
     });
   });
