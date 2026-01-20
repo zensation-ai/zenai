@@ -16,6 +16,8 @@ import { webhooksRouter } from './routes/webhooks';
 import { integrationsRouter } from './routes/integrations';
 import { rateLimiter, cleanupRateLimits } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/requestId';
+// Phase Security Sprint 3: CSRF Protection
+import { csrfProtection, getCsrfTokenHandler, ensureCookieParser } from './middleware/csrf';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
@@ -127,7 +129,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id', 'x-csrf-token'],
+  exposedHeaders: ['X-CSRF-Token', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
 }));
 
 // Request tracking & compression
@@ -140,6 +143,16 @@ app.use(rateLimiter);
 // Body parsers with reasonable limits (10MB default, routes can override)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Phase Security Sprint 3: Cookie parser for CSRF protection
+app.use(ensureCookieParser);
+
+// Phase Security Sprint 3: CSRF Token endpoint for SPA clients
+app.get('/api/csrf-token', getCsrfTokenHandler);
+
+// Phase Security Sprint 3: CSRF Protection for state-changing requests
+// Applied after body parsing so we can read _csrf from body
+app.use(csrfProtection);
 
 // Phase 12: API Documentation
 setupSwagger(app);
