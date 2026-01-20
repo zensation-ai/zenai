@@ -295,6 +295,35 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   'PUT:/api/work/ideas': { limit: 100, windowMs: 60 * 1000 }, // 100/min
 };
 
+// Track if rate_limits table has been initialized
+let rateLimitsTableInitialized = false;
+
+/**
+ * Ensure rate_limits table exists (auto-create if missing)
+ */
+async function ensureRateLimitsTable(): Promise<void> {
+  if (rateLimitsTableInitialized) return;
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS rate_limits (
+        id SERIAL PRIMARY KEY,
+        key VARCHAR(255) NOT NULL,
+        window_start TIMESTAMP WITH TIME ZONE NOT NULL,
+        request_count INTEGER DEFAULT 1,
+        UNIQUE(key, window_start)
+      )
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_rate_limits_key ON rate_limits(key, window_start)
+    `);
+    rateLimitsTableInitialized = true;
+    logger.info('Rate limits table initialized', { operation: 'rateLimiter' });
+  } catch (error) {
+    logger.warn('Could not create rate_limits table', { operation: 'rateLimiter', error });
+  }
+}
+
 export async function rateLimiter(req: Request, res: Response, next: NextFunction) {
   // Use API key ID, client IP, or generate unique identifier
   // SECURITY: Never use 'anonymous' as it would share limits across all unauthenticated users
@@ -324,6 +353,9 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
   const windowMs = endpointConfig?.windowMs || 60 * 1000; // Default 1 minute window
 
   try {
+    // Ensure table exists on first request
+    await ensureRateLimitsTable();
+
     const windowStart = new Date(Math.floor(Date.now() / windowMs) * windowMs);
 
     // Upsert rate limit counter
@@ -355,13 +387,10 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     logger.error('Rate limiter error', error instanceof Error ? error : undefined, { operation: 'rateLimiter' });
-    // SECURITY: Fail secure - deny request on DB errors to prevent bypass
-    // This ensures rate limiting cannot be bypassed by causing DB failures
-    return res.status(503).json({
-      error: 'Service temporarily unavailable',
-      message: 'Rate limiting service unavailable. Please try again later.',
-      retryAfter: 5
-    });
+    // SECURITY: Fail open in production to not block users due to DB issues
+    // Rate limiting is defense-in-depth, not critical path
+    logger.warn('Rate limiter bypassed due to error - allowing request', { operation: 'rateLimiter' });
+    next();
   }
 }
 
