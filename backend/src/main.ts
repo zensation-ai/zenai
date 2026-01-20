@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import { voiceMemoRouter } from './routes/voice-memo';
@@ -12,10 +11,16 @@ import { userProfileRouter, userProfileContextRouter } from './routes/user-profi
 import { companiesRouter } from './routes/companies';
 // Phase 4: Enterprise Integration Routes
 import { apiKeysRouter } from './routes/api-keys';
+// Phase Security Sprint 3: Audit Logs
+import { auditLogsRouter } from './routes/audit-logs';
 import { webhooksRouter } from './routes/webhooks';
 import { integrationsRouter } from './routes/integrations';
 import { rateLimiter, cleanupRateLimits } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/requestId';
+// Phase Security Sprint 3: CSRF Protection
+import { csrfProtection, getCsrfTokenHandler, ensureCookieParser } from './middleware/csrf';
+// Phase Security Sprint 3: Enhanced Security Headers
+import { securityHeaders } from './middleware/security-headers';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
@@ -73,18 +78,14 @@ if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT || 
   app.set('trust proxy', 1);
 }
 
-// Security Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],  // For Swagger UI
-      scriptSrc: ["'self'", "'unsafe-inline'"],  // For Swagger UI
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-  crossOriginEmbedderPolicy: false,  // For Swagger UI
-}));
+// Security Middleware - Phase Security Sprint 3: Enhanced Security Headers
+// Includes: Strict CSP, HSTS, X-Frame-Options: DENY, Referrer-Policy, Permissions-Policy
+const isDevelopment = process.env.NODE_ENV === 'development';
+const securityMiddleware = securityHeaders({
+  isDevelopment,
+  enableSwagger: true, // Allow Swagger UI in all environments
+});
+securityMiddleware.forEach(middleware => app.use(middleware));
 
 // CORS with whitelist (configurable via environment)
 // SECURITY: Use ALLOWED_ORIGINS env var in production - don't rely on hardcoded fallbacks
@@ -127,7 +128,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id', 'x-csrf-token'],
+  exposedHeaders: ['X-CSRF-Token', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
 }));
 
 // Request tracking & compression
@@ -140,6 +142,16 @@ app.use(rateLimiter);
 // Body parsers with reasonable limits (10MB default, routes can override)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Phase Security Sprint 3: Cookie parser for CSRF protection
+app.use(ensureCookieParser);
+
+// Phase Security Sprint 3: CSRF Token endpoint for SPA clients
+app.get('/api/csrf-token', getCsrfTokenHandler);
+
+// Phase Security Sprint 3: CSRF Protection for state-changing requests
+// Applied after body parsing so we can read _csrf from body
+app.use(csrfProtection);
 
 // Phase 12: API Documentation
 setupSwagger(app);
@@ -158,6 +170,9 @@ app.use('/api/companies', companiesRouter);
 app.use('/api/keys', apiKeysRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/integrations', integrationsRouter);
+
+// Phase Security Sprint 3: Audit Logs
+app.use('/api/audit-logs', auditLogsRouter);
 
 // Phase 5: Thought Incubator
 app.use('/api/incubator', incubatorRouter);

@@ -10,6 +10,17 @@ import { isValidUUID } from '../utils/database-context';
 import { generateApiKey, apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+// Phase Security Sprint 3: API Key Security Service
+import {
+  getExpiringKeys,
+  getExpiredKeys,
+  getUnusedKeys,
+  getKeySecuritySummary,
+  extendKeyExpiry,
+  checkKeyExpiry,
+} from '../services/api-key-security';
+// Phase Security Sprint 3: Audit Logging
+import { auditLogger } from '../services/audit-logger';
 
 // Input validation constants
 const MAX_NAME_LENGTH = 100;
@@ -101,6 +112,20 @@ apiKeysRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (r
      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [id, validatedName, hash, prefix, JSON.stringify(validatedScopes), validatedRateLimit, expiresAt]
   );
+
+  // Phase Security Sprint 3: Audit log key creation
+  await auditLogger.logApiKeyAction({
+    action: 'create',
+    req,
+    keyId: id,
+    keyName: validatedName,
+    outcome: 'success',
+    details: {
+      scopes: validatedScopes,
+      rateLimit: validatedRateLimit,
+      expiresAt,
+    },
+  });
 
   res.status(201).json({
     success: true,
@@ -277,6 +302,15 @@ apiKeysRouter.delete('/:id', apiKeyAuth, requireScope('admin'), asyncHandler(asy
     throw new NotFoundError('API key');
   }
 
+  // Phase Security Sprint 3: Audit log key deletion
+  await auditLogger.logApiKeyAction({
+    action: 'delete',
+    req,
+    keyId: result.rows[0].id,
+    keyName: result.rows[0].name,
+    outcome: 'success',
+  });
+
   res.json({
     success: true,
     message: 'API key deleted',
@@ -311,6 +345,19 @@ apiKeysRouter.post('/:id/regenerate', apiKeyAuth, requireScope('admin'), asyncHa
   }
 
   const row = result.rows[0];
+
+  // Phase Security Sprint 3: Audit log key regeneration
+  await auditLogger.logApiKeyAction({
+    action: 'regenerate',
+    req,
+    keyId: row.id,
+    keyName: row.name,
+    outcome: 'success',
+    details: {
+      note: 'Previous key invalidated, new key generated',
+    },
+  });
+
   res.json({
     success: true,
     message: 'API key regenerated. Save this key - it will not be shown again!',
@@ -329,6 +376,7 @@ apiKeysRouter.post('/:id/regenerate', apiKeyAuth, requireScope('admin'), asyncHa
 /**
  * POST /api/keys/verify
  * Verify an API key is valid (used by external services)
+ * Phase Security Sprint 3: Now includes expiry info
  */
 apiKeysRouter.post('/verify', apiKeyAuth, (req: Request, res: Response) => {
   res.json({
@@ -338,7 +386,122 @@ apiKeysRouter.post('/verify', apiKeyAuth, (req: Request, res: Response) => {
       id: req.apiKey!.id,
       name: req.apiKey!.name,
       scopes: req.apiKey!.scopes,
-      rateLimit: req.apiKey!.rateLimit
+      rateLimit: req.apiKey!.rateLimit,
+      expiryInfo: req.apiKey!.expiryInfo,
     }
   });
 });
+
+/**
+ * GET /api/keys/security/summary
+ * Get security summary of all API keys
+ * SECURITY: Admin-only endpoint
+ * Phase Security Sprint 3
+ */
+apiKeysRouter.get('/security/summary', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const summary = await getKeySecuritySummary();
+
+  res.json({
+    success: true,
+    summary,
+  });
+}));
+
+/**
+ * GET /api/keys/security/expiring
+ * Get list of keys expiring soon
+ * SECURITY: Admin-only endpoint
+ * Phase Security Sprint 3
+ */
+apiKeysRouter.get('/security/expiring', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const daysAhead = parseInt(req.query.days as string) || 7;
+
+  if (daysAhead < 1 || daysAhead > 90) {
+    throw new ValidationError('Days must be between 1 and 90.');
+  }
+
+  const expiringKeys = await getExpiringKeys(daysAhead);
+
+  res.json({
+    success: true,
+    count: expiringKeys.length,
+    daysAhead,
+    keys: expiringKeys,
+  });
+}));
+
+/**
+ * GET /api/keys/security/expired
+ * Get list of expired keys
+ * SECURITY: Admin-only endpoint
+ * Phase Security Sprint 3
+ */
+apiKeysRouter.get('/security/expired', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const expiredKeys = await getExpiredKeys();
+
+  res.json({
+    success: true,
+    count: expiredKeys.length,
+    keys: expiredKeys,
+  });
+}));
+
+/**
+ * GET /api/keys/security/unused
+ * Get list of unused keys (candidates for revocation)
+ * SECURITY: Admin-only endpoint
+ * Phase Security Sprint 3
+ */
+apiKeysRouter.get('/security/unused', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const daysUnused = parseInt(req.query.days as string) || 30;
+
+  if (daysUnused < 1 || daysUnused > 365) {
+    throw new ValidationError('Days must be between 1 and 365.');
+  }
+
+  const unusedKeys = await getUnusedKeys(daysUnused);
+
+  res.json({
+    success: true,
+    count: unusedKeys.length,
+    daysUnused,
+    keys: unusedKeys,
+  });
+}));
+
+/**
+ * POST /api/keys/:id/extend
+ * Extend API key expiry
+ * SECURITY: Admin-only endpoint
+ * Phase Security Sprint 3
+ */
+apiKeysRouter.post('/:id/extend', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  validateApiKeyId(id);
+
+  const additionalDays = parseInt(req.body.additionalDays);
+
+  if (isNaN(additionalDays) || additionalDays < 1 || additionalDays > 365) {
+    throw new ValidationError('additionalDays must be between 1 and 365.');
+  }
+
+  const result = await extendKeyExpiry(id, additionalDays);
+
+  if (!result.success) {
+    throw new ValidationError(result.error || 'Failed to extend key expiry.');
+  }
+
+  logger.info('API key expiry extended', {
+    operation: 'extendKeyExpiry',
+    keyId: id,
+    additionalDays,
+    newExpiresAt: result.newExpiresAt,
+    extendedBy: req.apiKey!.id,
+  });
+
+  res.json({
+    success: true,
+    message: `API key expiry extended by ${additionalDays} days.`,
+    newExpiresAt: result.newExpiresAt,
+  });
+}));
