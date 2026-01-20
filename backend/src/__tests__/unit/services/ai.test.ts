@@ -97,7 +97,8 @@ describe('AI Service', () => {
   describe('Transcript Validation', () => {
     it('should reject empty transcript', () => {
       expect(() => {
-        if (!'' || !''.trim()) {
+        const transcript: string = '';
+        if (!transcript || !transcript.trim()) {
           throw new Error('Transcript cannot be empty');
         }
       }).toThrow('Transcript cannot be empty');

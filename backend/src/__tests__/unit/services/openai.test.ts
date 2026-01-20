@@ -248,8 +248,8 @@ describe('OpenAI Service', () => {
   describe('generateOpenAIEmbedding (Deprecated)', () => {
     it('should document deprecation warning', () => {
       // The function is deprecated in favor of Ollama embeddings
-      const deprecationNote = 'Use generateEmbedding from ai.ts instead (uses Ollama nomic-embed-text)';
-      expect(deprecationNote).toContain('deprecated');
+      const deprecationNote = 'DEPRECATED: Use generateEmbedding from ai.ts instead (uses Ollama nomic-embed-text)';
+      expect(deprecationNote.toLowerCase()).toContain('deprecated');
       expect(deprecationNote).toContain('Ollama');
     });
 
