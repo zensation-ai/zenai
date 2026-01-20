@@ -70,7 +70,7 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
     // Method 4: Fix common JSON errors (trailing commas, unquoted keys)
     () => {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) return null;
+      if (!jsonMatch) {return null;}
 
       let jsonStr = jsonMatch[0];
 

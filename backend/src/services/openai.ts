@@ -80,8 +80,8 @@ export async function structureWithOpenAI(transcript: string): Promise<Structure
       context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
     };
-  } catch (error: any) {
-    logger.error('OpenAI structuring error', error);
+  } catch (error: unknown) {
+    logger.error('OpenAI structuring error', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -104,8 +104,8 @@ export async function generateOpenAIEmbedding(text: string): Promise<number[]> {
     });
 
     return response.data[0].embedding;
-  } catch (error: any) {
-    logger.error('OpenAI embedding generation error', error);
+  } catch (error: unknown) {
+    logger.error('OpenAI embedding generation error', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -139,8 +139,8 @@ export async function queryOpenAIJSON<T = unknown>(
     }
 
     return JSON.parse(responseText) as T;
-  } catch (error: any) {
-    logger.error('OpenAI JSON query error', error);
+  } catch (error: unknown) {
+    logger.error('OpenAI JSON query error', error instanceof Error ? error : undefined);
     throw error;
   }
 }
@@ -173,8 +173,8 @@ export async function generateOpenAIResponse(
     }
 
     return responseText.trim();
-  } catch (error: any) {
-    logger.error('OpenAI text generation error', error);
+  } catch (error: unknown) {
+    logger.error('OpenAI text generation error', error instanceof Error ? error : undefined);
     throw error;
   }
 }

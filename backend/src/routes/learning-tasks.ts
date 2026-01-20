@@ -23,7 +23,7 @@ function validateTaskId(id: string): void {
 }
 
 function sanitizeString(input: string | undefined, maxLength: number): string | undefined {
-  if (!input) return undefined;
+  if (!input) {return undefined;}
   return input.trim().slice(0, maxLength);
 }
 import {
@@ -204,16 +204,16 @@ router.put('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), as
   }
 
   const updates: Record<string, unknown> = {};
-  if (topic !== undefined) updates.topic = sanitizeString(topic, MAX_TOPIC_LENGTH);
-  if (description !== undefined) updates.description = sanitizeString(description, MAX_DESCRIPTION_LENGTH);
-  if (category !== undefined) updates.category = category;
-  if (priority !== undefined) updates.priority = priority;
-  if (status !== undefined) updates.status = status;
+  if (topic !== undefined) {updates.topic = sanitizeString(topic, MAX_TOPIC_LENGTH);}
+  if (description !== undefined) {updates.description = sanitizeString(description, MAX_DESCRIPTION_LENGTH);}
+  if (category !== undefined) {updates.category = category;}
+  if (priority !== undefined) {updates.priority = priority;}
+  if (status !== undefined) {updates.status = status;}
   if (target_completion_date !== undefined) {
     updates.target_completion_date = target_completion_date ? new Date(target_completion_date) : null;
   }
-  if (learning_outline !== undefined) updates.learning_outline = learning_outline;
-  if (summary !== undefined) updates.summary = summary;
+  if (learning_outline !== undefined) {updates.learning_outline = learning_outline;}
+  if (summary !== undefined) {updates.summary = summary;}
 
   const task = await updateLearningTask(id, updates, context as AIContext);
 

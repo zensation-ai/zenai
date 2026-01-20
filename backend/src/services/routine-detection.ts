@@ -214,7 +214,7 @@ class RoutineDetectionService {
             confidence,
             occurrences: row.occurrence_count,
           });
-          if (pattern) patterns.push(pattern);
+          if (pattern) {patterns.push(pattern);}
         }
       }
     } catch (error) {
@@ -279,7 +279,7 @@ class RoutineDetectionService {
           confidence,
           occurrences: row.sequence_count,
         });
-        if (pattern) patterns.push(pattern);
+        if (pattern) {patterns.push(pattern);}
       }
     } catch (error) {
       logger.error('Sequence pattern analysis failed', error instanceof Error ? error : undefined);
@@ -337,7 +337,7 @@ class RoutineDetectionService {
           confidence,
           occurrences: row.occurrence_count,
         });
-        if (pattern) patterns.push(pattern);
+        if (pattern) {patterns.push(pattern);}
       }
     } catch (error) {
       logger.error('Context pattern analysis failed', error instanceof Error ? error : undefined);

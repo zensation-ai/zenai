@@ -68,7 +68,7 @@ function validateEvents(events: unknown): WebhookEventType[] {
 }
 
 function validateRetryCount(retryCount: unknown): number {
-  if (retryCount === undefined || retryCount === null) return 3;
+  if (retryCount === undefined || retryCount === null) {return 3;}
   const count = typeof retryCount === 'string' ? parseInt(retryCount, 10) : retryCount;
   if (typeof count !== 'number' || isNaN(count)) {
     throw new ValidationError('Retry count must be a number.');
@@ -80,9 +80,9 @@ function validateRetryCount(retryCount: unknown): number {
 }
 
 function parseDeliveriesLimit(limitStr: string | undefined): number {
-  if (!limitStr) return DEFAULT_DELIVERIES_LIMIT;
+  if (!limitStr) {return DEFAULT_DELIVERIES_LIMIT;}
   const limit = parseInt(limitStr, 10);
-  if (isNaN(limit) || limit < 1) return DEFAULT_DELIVERIES_LIMIT;
+  if (isNaN(limit) || limit < 1) {return DEFAULT_DELIVERIES_LIMIT;}
   return Math.min(limit, MAX_DELIVERIES_LIMIT);
 }
 

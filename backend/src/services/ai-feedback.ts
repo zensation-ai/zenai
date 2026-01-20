@@ -124,12 +124,12 @@ export async function applyFeedbackToLearning(
     [feedbackId, context]
   );
 
-  if (feedbackResult.rows.length === 0) return false;
+  if (feedbackResult.rows.length === 0) {return false;}
 
   const feedback = feedbackResult.rows[0];
 
   // Bereits angewendet?
-  if (feedback.applied_to_learning) return true;
+  if (feedback.applied_to_learning) {return true;}
 
   // Speichere Korrektur-Pattern für zukünftige Verbesserungen
   // (Einfaches Logging - research_patterns hat andere Struktur)

@@ -288,13 +288,13 @@ export async function suggestFromLearning(
  */
 function calculateSelectionConfidence(counts: Record<string, number>): number {
   const values = Object.values(counts);
-  if (values.length === 0) return 0;
-  if (values.length === 1) return 0.8;
+  if (values.length === 0) {return 0;}
+  if (values.length === 1) {return 0.8;}
 
   const sorted = values.sort((a, b) => b - a);
   const total = sorted.reduce((a, b) => a + b, 0);
 
-  if (total === 0) return 0;
+  if (total === 0) {return 0;}
 
   // Wie viel Prozent hat der Gewinner?
   const winnerShare = sorted[0] / total;
@@ -605,7 +605,7 @@ async function incrementTopicInterest(
   weight: number = 1
 ): Promise<void> {
   const normalizedTopic = topic.toLowerCase().trim();
-  if (normalizedTopic.length < 2) return; // Ignoriere zu kurze Keywords
+  if (normalizedTopic.length < 2) {return;} // Ignoriere zu kurze Keywords
 
   try {
     await client.query(
@@ -633,8 +633,8 @@ async function learnPriorityKeywords(
   keywords: string[],
   priority: string
 ): Promise<void> {
-  if (!keywords || keywords.length === 0) return;
-  if (!['high', 'medium', 'low'].includes(priority)) return;
+  if (!keywords || keywords.length === 0) {return;}
+  if (!['high', 'medium', 'low'].includes(priority)) {return;}
 
   try {
     const profileResult = await client.query(
@@ -656,7 +656,7 @@ async function learnPriorityKeywords(
     // Add keywords to the appropriate priority list
     for (const keyword of keywords) {
       const normalized = keyword.toLowerCase().trim();
-      if (normalized.length < 2) continue;
+      if (normalized.length < 2) {continue;}
 
       // Entferne aus anderen Prioritäten (ein Keyword gehört nur zu einer Priorität)
       priorityKeywords.high = priorityKeywords.high.filter((k: string) => k !== normalized);
@@ -696,7 +696,7 @@ async function updateThinkingPatterns(
       [userId]
     );
 
-    let patterns = parseJsonbWithDefault<ThinkingPatterns>(result.rows[0]?.thinking_patterns, {
+    const patterns = parseJsonbWithDefault<ThinkingPatterns>(result.rows[0]?.thinking_patterns, {
       abstract_vs_concrete: 0,
       big_picture_vs_detail: 0,
       action_oriented: 0,
@@ -771,7 +771,7 @@ async function updateLanguageStyle(
   userId: string,
   text: string
 ): Promise<void> {
-  if (!text || text.length < 10) return;
+  if (!text || text.length < 10) {return;}
 
   try {
     const result = await client.query(
@@ -779,7 +779,7 @@ async function updateLanguageStyle(
       [userId]
     );
 
-    let style = parseJsonbWithDefault<LanguageStyle>(result.rows[0]?.language_style, {
+    const style = parseJsonbWithDefault<LanguageStyle>(result.rows[0]?.language_style, {
       avg_thought_length: 0,
       common_phrases: [],
       vocabulary_complexity: 0.5,
@@ -840,10 +840,10 @@ async function updateTopicChains(
        OFFSET 1 LIMIT 1`
     );
 
-    if (lastIdea.rows.length === 0) return;
+    if (lastIdea.rows.length === 0) {return;}
 
     const lastCategory = lastIdea.rows[0].category;
-    if (lastCategory === currentCategory) return; // Gleiche Kategorie, kein Übergang
+    if (lastCategory === currentCategory) {return;} // Gleiche Kategorie, kein Übergang
 
     const result = await client.query(
       `SELECT thinking_patterns FROM user_profile WHERE id = $1`,
@@ -1051,7 +1051,7 @@ async function updateInterestEmbedding(
   userId: string,
   ideas: any[]
 ): Promise<void> {
-  if (ideas.length === 0) return;
+  if (ideas.length === 0) {return;}
 
   try {
     const textContent = ideas
@@ -1063,7 +1063,7 @@ async function updateInterestEmbedding(
       .filter(t => t.length > 0)
       .join(' ');
 
-    if (textContent.length < 50) return; // Zu wenig Content
+    if (textContent.length < 50) {return;} // Zu wenig Content
 
     const embedding = await generateEmbedding(textContent.substring(0, 5000));
 
@@ -1094,7 +1094,7 @@ export async function getPersonalizedPromptContext(
       [userId]
     );
 
-    if (result.rows.length === 0) return '';
+    if (result.rows.length === 0) {return '';}
 
     const profile = result.rows[0];
     const patterns = parseJsonbWithDefault<ThinkingPatterns>(profile.thinking_patterns, {
@@ -1145,19 +1145,19 @@ export async function getPersonalizedPromptContext(
 
 // Helper functions
 function smoothUpdate(current: number, target: number, rate: number): number {
-  if (typeof current !== 'number' || isNaN(current)) current = 0;
-  if (typeof target !== 'number' || isNaN(target)) return current;
+  if (typeof current !== 'number' || isNaN(current)) {current = 0;}
+  if (typeof target !== 'number' || isNaN(target)) {return current;}
   return current + (target - current) * rate;
 }
 
 function getTopKey(counts: Record<string, number>): string | null {
   const entries = Object.entries(counts);
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {return null;}
   return entries.sort((a, b) => b[1] - a[1])[0][0];
 }
 
 function getTopN(counts: Record<string, number>, n: number): string[] {
-  if (!counts || typeof counts !== 'object') return [];
+  if (!counts || typeof counts !== 'object') {return [];}
   return Object.entries(counts)
     .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, n)
@@ -1220,7 +1220,7 @@ export function extractFeatures(text: string): ExtractedFeatures {
   // Names (capitalized words not at sentence start)
   const namePattern = /(?<=[a-z][\.\?\!]\s+|\n)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g;
   const nameMatches = text.match(namePattern);
-  if (nameMatches) entities.push(...nameMatches.slice(0, 5));
+  if (nameMatches) {entities.push(...nameMatches.slice(0, 5));}
 
   // Dominant topics detection
   const topicIndicators: Record<string, string[]> = {
@@ -1236,16 +1236,16 @@ export function extractFeatures(text: string): ExtractedFeatures {
   const textLower = text.toLowerCase();
   for (const [topic, keywords] of Object.entries(topicIndicators)) {
     const matchCount = keywords.filter(kw => textLower.includes(kw)).length;
-    if (matchCount >= 2) dominantTopics.push(topic);
+    if (matchCount >= 2) {dominantTopics.push(topic);}
   }
 
   // Intent signals detection
   const intentSignals: string[] = [];
-  if (/\b(muss|müssen|sollte|should|must|need to|have to)\b/i.test(text)) intentSignals.push('obligation');
-  if (/\b(will|wollen|möchte|want|would like|plan to)\b/i.test(text)) intentSignals.push('intention');
-  if (/\b(frage|warum|wie|was|why|how|what|when)\b/i.test(text) || text.includes('?')) intentSignals.push('inquiry');
-  if (/\b(idee|vorschlag|könnten|idea|suggest|propose|maybe)\b/i.test(text)) intentSignals.push('suggestion');
-  if (/\b(problem|fehler|bug|issue|error|broken)\b/i.test(text)) intentSignals.push('problem-report');
+  if (/\b(muss|müssen|sollte|should|must|need to|have to)\b/i.test(text)) {intentSignals.push('obligation');}
+  if (/\b(will|wollen|möchte|want|would like|plan to)\b/i.test(text)) {intentSignals.push('intention');}
+  if (/\b(frage|warum|wie|was|why|how|what|when)\b/i.test(text) || text.includes('?')) {intentSignals.push('inquiry');}
+  if (/\b(idee|vorschlag|könnten|idea|suggest|propose|maybe)\b/i.test(text)) {intentSignals.push('suggestion');}
+  if (/\b(problem|fehler|bug|issue|error|broken)\b/i.test(text)) {intentSignals.push('problem-report');}
 
   // Temporal features
   const timeReferences: string[] = [];
@@ -1259,7 +1259,7 @@ export function extractFeatures(text: string): ExtractedFeatures {
   ];
   for (const pattern of timePatterns) {
     const matches = text.match(pattern);
-    if (matches) timeReferences.push(...matches);
+    if (matches) {timeReferences.push(...matches);}
   }
 
   // Urgency level
@@ -1280,8 +1280,8 @@ export function extractFeatures(text: string): ExtractedFeatures {
   const hasCode = /```|`[^`]+`|function\s*\(|const\s+\w+|let\s+\w+|var\s+\w+|\=\>|import\s+\{/.test(text);
 
   let contentLength: 'short' | 'medium' | 'long' = 'short';
-  if (words.length > 100) contentLength = 'long';
-  else if (words.length > 30) contentLength = 'medium';
+  if (words.length > 100) {contentLength = 'long';}
+  else if (words.length > 30) {contentLength = 'medium';}
 
   return {
     linguistic: {
@@ -1542,11 +1542,11 @@ export async function getLearningQualityMetrics(
  * Calculate diversity score using normalized entropy
  */
 function calculateDiversityScore(distribution: number[]): number {
-  if (distribution.length === 0) return 0;
-  if (distribution.length === 1) return 0; // Only one category = no diversity
+  if (distribution.length === 0) {return 0;}
+  if (distribution.length === 1) {return 0;} // Only one category = no diversity
 
   const total = distribution.reduce((a, b) => a + b, 0);
-  if (total === 0) return 0;
+  if (total === 0) {return 0;}
 
   // Calculate Shannon entropy
   let entropy = 0;

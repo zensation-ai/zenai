@@ -254,7 +254,7 @@ export async function getMeetingNotes(meetingId: string): Promise<MeetingNotes |
     [meetingId]
   );
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
 
   const row = result.rows[0];
   return {

@@ -235,7 +235,7 @@ async function analyzeAndAssignCluster(thoughtId: string, context: AIContext = '
       [thoughtId]
     );
 
-    if (thoughtResult.rows.length === 0) return;
+    if (thoughtResult.rows.length === 0) {return;}
     const thought = thoughtResult.rows[0];
 
     // Find similar clusters
@@ -315,7 +315,7 @@ async function updateClusterCentroid(
     [clusterId]
   );
 
-  if (clusterResult.rows.length === 0) return;
+  if (clusterResult.rows.length === 0) {return;}
 
   const cluster = clusterResult.rows[0];
   const count = cluster.thought_count;

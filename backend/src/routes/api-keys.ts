@@ -36,7 +36,7 @@ function validateName(name: unknown): string {
 }
 
 function validateScopes(scopes: unknown): string[] {
-  if (!scopes) return ['read'];
+  if (!scopes) {return ['read'];}
   if (!Array.isArray(scopes)) {
     throw new ValidationError('Scopes must be an array.');
   }
@@ -49,7 +49,7 @@ function validateScopes(scopes: unknown): string[] {
 }
 
 function validateRateLimit(rateLimit: unknown): number {
-  if (rateLimit === undefined || rateLimit === null) return 1000;
+  if (rateLimit === undefined || rateLimit === null) {return 1000;}
   const limit = typeof rateLimit === 'string' ? parseInt(rateLimit, 10) : rateLimit;
   if (typeof limit !== 'number' || isNaN(limit)) {
     throw new ValidationError('Rate limit must be a number.');
@@ -61,7 +61,7 @@ function validateRateLimit(rateLimit: unknown): number {
 }
 
 function validateExpiresIn(expiresIn: unknown): number | null {
-  if (expiresIn === undefined || expiresIn === null) return null;
+  if (expiresIn === undefined || expiresIn === null) {return null;}
   const seconds = typeof expiresIn === 'string' ? parseInt(expiresIn, 10) : expiresIn;
   if (typeof seconds !== 'number' || isNaN(seconds)) {
     throw new ValidationError('ExpiresIn must be a number (seconds).');

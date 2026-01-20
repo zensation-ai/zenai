@@ -296,8 +296,8 @@ class AIEvolutionAnalytics {
    * Calculate trend based on strength
    */
   private calculateTrend(strength: number): 'improving' | 'stable' | 'declining' {
-    if (strength >= 0.85) return 'improving';
-    if (strength >= 0.6) return 'stable';
+    if (strength >= 0.85) {return 'improving';}
+    if (strength >= 0.6) {return 'stable';}
     return 'declining';
   }
 

@@ -332,7 +332,7 @@ class MemoryCoordinator {
    * Older context becomes less relevant over time
    */
   private calculateDecay(timestamp: number | undefined, decayRate: number = 0.05): number {
-    if (!timestamp) return 1.0;
+    if (!timestamp) {return 1.0;}
 
     const ageMs = Date.now() - timestamp;
     const ageHours = ageMs / (1000 * 60 * 60);
@@ -367,7 +367,7 @@ class MemoryCoordinator {
     query: string,
     minRelevance: number
   ): Promise<ContextPart[]> {
-    if (parts.length === 0) return [];
+    if (parts.length === 0) {return [];}
 
     try {
       // Generate query embedding
@@ -491,7 +491,7 @@ class MemoryCoordinator {
     parts: ContextPart[],
     shortTerm: EnrichedContext
   ): string {
-    if (parts.length === 0) return '';
+    if (parts.length === 0) {return '';}
 
     const sections: string[] = [];
 
@@ -527,7 +527,7 @@ class MemoryCoordinator {
       sections.push(`[KONTEXT-HINWEISE]\n${hints.map(h => `- ${h.content}`).join('\n')}`);
     }
 
-    if (sections.length === 0) return '';
+    if (sections.length === 0) {return '';}
 
     return `\n\n=== PERSÖNLICHER KONTEXT ===\n${sections.join('\n\n')}\n\nBerücksichtige diesen Kontext bei deiner Antwort, aber erwähne ihn nicht explizit.`;
   }

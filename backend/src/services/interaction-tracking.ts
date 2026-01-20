@@ -290,7 +290,7 @@ export async function markCorrectionsAsProcessed(
   context: AIContext,
   correctionIds: string[]
 ): Promise<void> {
-  if (correctionIds.length === 0) return;
+  if (correctionIds.length === 0) {return;}
 
   try {
     await queryContext(
@@ -343,7 +343,7 @@ async function extractPatternsFromCorrection(
   try {
     // Only extract patterns for certain fields
     const patternableFields = ['type', 'category', 'priority'];
-    if (!patternableFields.includes(fieldName)) return;
+    if (!patternableFields.includes(fieldName)) {return;}
 
     // Get the idea to extract keywords for pattern matching
     // This is intentionally simple - more complex ML would be overkill here

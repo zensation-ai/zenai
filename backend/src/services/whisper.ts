@@ -51,9 +51,9 @@ export async function transcribeAudio(
   } finally {
     // Cleanup temp files
     try {
-      if (fs.existsSync(tempInputPath)) fs.unlinkSync(tempInputPath);
-      if (fs.existsSync(`${tempOutputPath}.txt`)) fs.unlinkSync(`${tempOutputPath}.txt`);
-      if (fs.existsSync(`${tempOutputPath}.json`)) fs.unlinkSync(`${tempOutputPath}.json`);
+      if (fs.existsSync(tempInputPath)) {fs.unlinkSync(tempInputPath);}
+      if (fs.existsSync(`${tempOutputPath}.txt`)) {fs.unlinkSync(`${tempOutputPath}.txt`);}
+      if (fs.existsSync(`${tempOutputPath}.json`)) {fs.unlinkSync(`${tempOutputPath}.json`);}
     } catch (e) {
       // Ignore cleanup errors
     }

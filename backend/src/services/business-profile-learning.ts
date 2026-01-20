@@ -148,7 +148,7 @@ export async function updateProfile(
   for (const [key, dbField] of Object.entries(fieldMap)) {
     if (key in updates) {
       const value = updates[key as keyof typeof updates];
-      if (value === undefined) continue;
+      if (value === undefined) {continue;}
 
       fieldsToUpdate.push(`${dbField} = $${paramIndex++}`);
       // JSON-Felder müssen stringifiziert werden

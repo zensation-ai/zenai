@@ -330,21 +330,21 @@ function calculateContextDepth(
 
   // Profile completeness (max 50 points)
   if (profile) {
-    if (profile.company_name) score += 10;
-    if (profile.industry) score += 10;
-    if (profile.role) score += 10;
-    if (profile.tech_stack && profile.tech_stack.length > 0) score += 10;
-    if (profile.goals && profile.goals.length > 0) score += 10;
+    if (profile.company_name) {score += 10;}
+    if (profile.industry) {score += 10;}
+    if (profile.role) {score += 10;}
+    if (profile.tech_stack && profile.tech_stack.length > 0) {score += 10;}
+    if (profile.goals && profile.goals.length > 0) {score += 10;}
   }
 
   // Learning insights (max 30 points)
-  if (insights.preferredCategories.length > 0) score += 10;
-  if (insights.topKeywords.length >= 5) score += 10;
-  if (insights.peakProductiveHours.length > 0) score += 10;
+  if (insights.preferredCategories.length > 0) {score += 10;}
+  if (insights.topKeywords.length >= 5) {score += 10;}
+  if (insights.peakProductiveHours.length > 0) {score += 10;}
 
   // Activity (max 20 points)
-  if (recentTopics.length >= 3) score += 10;
-  if (recentTopics.length >= 7) score += 10;
+  if (recentTopics.length >= 3) {score += 10;}
+  if (recentTopics.length >= 7) {score += 10;}
 
   return Math.min(100, score);
 }

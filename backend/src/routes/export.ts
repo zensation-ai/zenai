@@ -33,7 +33,7 @@ function formatDate(date: Date | string): string {
  * Escape CSV field (handle commas, quotes, newlines)
  */
 function escapeCSV(field: unknown): string {
-  if (field === null || field === undefined) return '';
+  if (field === null || field === undefined) {return '';}
   const str = String(field);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
@@ -45,8 +45,8 @@ function escapeCSV(field: unknown): string {
  * Parse JSON fields safely - returns string array for export formatting
  */
 function parseJSON(field: unknown): string[] {
-  if (!field) return [];
-  if (Array.isArray(field)) return field.map(item => String(item));
+  if (!field) {return [];}
+  if (Array.isArray(field)) {return field.map(item => String(item));}
   if (typeof field === 'string') {
     try {
       const parsed = JSON.parse(field);
@@ -76,7 +76,7 @@ const VALID_PRIORITIES = ['low', 'medium', 'high'];
  * Validate filter parameter against allowlist
  */
 function validateFilterParam(value: string | undefined, allowlist: string[], paramName: string): string | undefined {
-  if (!value) return undefined;
+  if (!value) {return undefined;}
   if (!allowlist.includes(value)) {
     throw new ValidationError(`Invalid ${paramName}: ${value}. Allowed values: ${allowlist.join(', ')}`);
   }
@@ -351,7 +351,7 @@ exportRouter.get('/ideas/markdown', apiKeyAuth, asyncHandler(async (req: Request
 
   for (const prio of priorities) {
     const ideas = result.rows.filter((r) => r.priority === prio);
-    if (ideas.length === 0) continue;
+    if (ideas.length === 0) {continue;}
 
     const emoji = prio === 'high' ? '🔴' : prio === 'medium' ? '🟡' : '🟢';
     markdown += `## ${emoji} ${prio.charAt(0).toUpperCase() + prio.slice(1)} Priority (${ideas.length})\n\n`;

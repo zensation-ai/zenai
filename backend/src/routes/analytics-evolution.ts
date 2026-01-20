@@ -243,7 +243,7 @@ evolutionRouter.get(
     // Group by field for easier charting
     const byField: Record<string, typeof trends> = {};
     trends.forEach(t => {
-      if (!byField[t.field_name]) byField[t.field_name] = [];
+      if (!byField[t.field_name]) {byField[t.field_name] = [];}
       byField[t.field_name].push(t);
     });
 

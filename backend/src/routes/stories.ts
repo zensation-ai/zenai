@@ -200,7 +200,7 @@ async function getAllStories(context: AIContext): Promise<any[]> {
 
   // Second pass: build clusters
   for (const item of clusterResult.rows) {
-    if (processed.has(item.id)) continue;
+    if (processed.has(item.id)) {continue;}
 
     const similarItemIds: string[] = [];
 
@@ -215,7 +215,7 @@ async function getAllStories(context: AIContext): Promise<any[]> {
 
     // Also check reverse relationships (where this item is the target)
     for (const [otherId, otherItem] of itemMap) {
-      if (otherId === item.id || processed.has(otherId)) continue;
+      if (otherId === item.id || processed.has(otherId)) {continue;}
       if (Array.isArray(otherItem.similar_items)) {
         for (const sim of otherItem.similar_items) {
           if (sim.target_id === item.id && !similarItemIds.includes(otherId)) {
@@ -272,7 +272,7 @@ function formatStoryItem(row: any): any {
  * Generate a title from story items
  */
 function generateTitleFromItems(items: any[]): string {
-  if (items.length === 0) return 'Unbekannte Story';
+  if (items.length === 0) {return 'Unbekannte Story';}
 
   // Extract keywords from content
   const allContent = items.map((i: any) => i.content).join(' ');

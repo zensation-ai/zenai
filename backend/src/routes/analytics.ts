@@ -140,11 +140,11 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
         period: '24 hours',
       },
       distribution: {
-        byCategory: categoryStats.rows.reduce((acc, r) => ({ ...acc, [r.category]: parseInt(r.count) }), {}),
-        byType: typeStats.rows.reduce((acc, r) => ({ ...acc, [r.type]: parseInt(r.count) }), {}),
-        byPriority: priorityStats.rows.reduce((acc, r) => ({ ...acc, [r.priority]: parseInt(r.count) }), {}),
+        byCategory: categoryStats.rows.reduce((acc: Record<string, number>, r: { category: string; count: string }) => ({ ...acc, [r.category]: parseInt(r.count) }), {}),
+        byType: typeStats.rows.reduce((acc: Record<string, number>, r: { type: string; count: string }) => ({ ...acc, [r.type]: parseInt(r.count) }), {}),
+        byPriority: priorityStats.rows.reduce((acc: Record<string, number>, r: { priority: string; count: string }) => ({ ...acc, [r.priority]: parseInt(r.count) }), {}),
       },
-      dailyTrend: dailyTrend.rows.map(r => ({
+      dailyTrend: dailyTrend.rows.map((r: { date: string; count: string }) => ({
         date: r.date,
         count: parseInt(r.count),
       })),
@@ -211,11 +211,11 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
     data: {
       period,
       interval: intervalLabel,
-      byHour: hourlyResult.rows.map(r => ({
+      byHour: hourlyResult.rows.map((r: { hour: string; count: string }) => ({
         hour: parseInt(r.hour),
         count: parseInt(r.count),
       })),
-      byDayOfWeek: dowResult.rows.map(r => ({
+      byDayOfWeek: dowResult.rows.map((r: { dow: string; count: string }) => ({
         day: dayNames[parseInt(r.dow)],
         dayIndex: parseInt(r.dow),
         count: parseInt(r.count),

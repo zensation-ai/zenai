@@ -251,7 +251,7 @@ const CIRCUIT_BREAKER_CONFIG = {
  */
 export function isCircuitOpen(service: string): boolean {
   const state = circuitBreakers.get(service);
-  if (!state) return false;
+  if (!state) {return false;}
 
   if (state.isOpen) {
     // Check if reset timeout has passed

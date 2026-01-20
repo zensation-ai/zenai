@@ -12,7 +12,7 @@
  * Reduces storage by 4x while maintaining ~95% accuracy
  */
 export function quantizeToInt8(embedding: number[]): number[] {
-  if (embedding.length === 0) return [];
+  if (embedding.length === 0) {return [];}
 
   // Find min and max for normalization
   const min = Math.min(...embedding);
@@ -31,7 +31,7 @@ export function quantizeToInt8(embedding: number[]): number[] {
  * Reduces storage by 32x, enables ultra-fast bitwise operations
  */
 export function quantizeToBinary(embedding: number[]): string {
-  if (embedding.length === 0) return '';
+  if (embedding.length === 0) {return '';}
 
   // Convert to binary: 1 if > median, 0 otherwise
   const sorted = [...embedding].sort((a, b) => a - b);
@@ -44,7 +44,7 @@ export function quantizeToBinary(embedding: number[]): string {
  * Calculate cosine similarity between two embeddings
  */
 export function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length || a.length === 0) return 0;
+  if (a.length !== b.length || a.length === 0) {return 0;}
 
   let dotProduct = 0;
   let normA = 0;
@@ -65,11 +65,11 @@ export function cosineSimilarity(a: number[], b: number[]): number {
  * Lower = more similar
  */
 export function hammingDistance(a: string, b: string): number {
-  if (a.length !== b.length) return Infinity;
+  if (a.length !== b.length) {return Infinity;}
 
   let distance = 0;
   for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) distance++;
+    if (a[i] !== b[i]) {distance++;}
   }
   return distance;
 }

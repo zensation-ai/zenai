@@ -663,7 +663,7 @@ export class ProactiveSuggestionEngine {
       // Priority first
       const priorityOrder = { high: 3, medium: 2, low: 1 };
       const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-      if (priorityDiff !== 0) return priorityDiff;
+      if (priorityDiff !== 0) {return priorityDiff;}
 
       // Then by combined score
       const scoreA = a.relevanceScore * 0.6 + a.confidence * 0.4;

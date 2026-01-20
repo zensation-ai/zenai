@@ -87,9 +87,9 @@ async function migrateTable(
           columns.map((col) => {
             const val = row[col];
             // Handle special types
-            if (val === null) return 'NULL';
-            if (typeof val === 'object') return `'${JSON.stringify(val)}'`;
-            if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+            if (val === null) {return 'NULL';}
+            if (typeof val === 'object') {return `'${JSON.stringify(val)}'`;}
+            if (typeof val === 'string') {return `'${val.replace(/'/g, "''")}'`;}
             return val;
           })
         );
@@ -119,11 +119,11 @@ async function migrateTable(
             const singleValues = columns
               .map((col) => {
                 const val = row[col];
-                if (val === null) return 'NULL';
+                if (val === null) {return 'NULL';}
                 if (typeof val === 'object')
-                  return `'${JSON.stringify(val)}'`;
+                  {return `'${JSON.stringify(val)}'`;}
                 if (typeof val === 'string')
-                  return `'${val.replace(/'/g, "''")}'`;
+                  {return `'${val.replace(/'/g, "''")}'`;}
                 return val;
               })
               .join(',');

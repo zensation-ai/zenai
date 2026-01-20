@@ -1039,21 +1039,21 @@ function analyzeFeedbackSentiment(feedback: DetailedFeedback): 'positive' | 'neu
   let negativeSignals = 0;
 
   // Rating signals
-  if (feedback.rating >= 4) positiveSignals += 2;
-  else if (feedback.rating <= 2) negativeSignals += 2;
+  if (feedback.rating >= 4) {positiveSignals += 2;}
+  else if (feedback.rating <= 2) {negativeSignals += 2;}
 
   // Helpful signal
-  if (feedback.wasHelpful === true) positiveSignals++;
-  else if (feedback.wasHelpful === false) negativeSignals++;
+  if (feedback.wasHelpful === true) {positiveSignals++;}
+  else if (feedback.wasHelpful === false) {negativeSignals++;}
 
   // Would use again signal
-  if (feedback.wouldUseAgain === true) positiveSignals++;
-  else if (feedback.wouldUseAgain === false) negativeSignals++;
+  if (feedback.wouldUseAgain === true) {positiveSignals++;}
+  else if (feedback.wouldUseAgain === false) {negativeSignals++;}
 
   // Content reuse signal
   if (feedback.contentReusedPercent !== undefined) {
-    if (feedback.contentReusedPercent >= 70) positiveSignals++;
-    else if (feedback.contentReusedPercent <= 30) negativeSignals++;
+    if (feedback.contentReusedPercent >= 70) {positiveSignals++;}
+    else if (feedback.contentReusedPercent <= 30) {negativeSignals++;}
   }
 
   // Quality aspects average
@@ -1061,15 +1061,15 @@ function analyzeFeedbackSentiment(feedback: DetailedFeedback): 'positive' | 'neu
     const aspects = Object.values(feedback.qualityAspects).filter(v => v !== undefined) as number[];
     if (aspects.length > 0) {
       const avg = aspects.reduce((a, b) => a + b, 0) / aspects.length;
-      if (avg >= 4) positiveSignals++;
-      else if (avg <= 2) negativeSignals++;
+      if (avg >= 4) {positiveSignals++;}
+      else if (avg <= 2) {negativeSignals++;}
     }
   }
 
   // Determine overall sentiment
-  if (positiveSignals > negativeSignals + 1) return 'positive';
-  if (negativeSignals > positiveSignals + 1) return 'negative';
-  if (positiveSignals > 0 && negativeSignals > 0) return 'mixed';
+  if (positiveSignals > negativeSignals + 1) {return 'positive';}
+  if (negativeSignals > positiveSignals + 1) {return 'negative';}
+  if (positiveSignals > 0 && negativeSignals > 0) {return 'mixed';}
   return 'neutral';
 }
 
@@ -1105,7 +1105,7 @@ function identifyImprovementAreas(feedback: DetailedFeedback): string[] {
 
   // From content reuse
   if (feedback.contentReusedPercent !== undefined && feedback.contentReusedPercent < 30) {
-    if (!areas.includes('content')) areas.push('content');
+    if (!areas.includes('content')) {areas.push('content');}
   }
 
   return [...new Set(areas)]; // Remove duplicates
@@ -1123,11 +1123,11 @@ function calculateQualityScore(feedback: DetailedFeedback): number {
   }
 
   // Helpful bonus
-  if (feedback.wasHelpful === true) score += 0.5;
-  else if (feedback.wasHelpful === false) score -= 0.5;
+  if (feedback.wasHelpful === true) {score += 0.5;}
+  else if (feedback.wasHelpful === false) {score -= 0.5;}
 
   // Would use again bonus
-  if (feedback.wouldUseAgain === true) score += 0.5;
+  if (feedback.wouldUseAgain === true) {score += 0.5;}
 
   // Quality aspects average bonus
   if (feedback.qualityAspects) {
@@ -1150,7 +1150,7 @@ async function updatePatternFromFeedback(
   triggerPattern: string,
   feedback: DetailedFeedback
 ): Promise<void> {
-  if (!triggerPattern) return;
+  if (!triggerPattern) {return;}
 
   try {
     // The DB trigger handles most updates, but we add extra logic for consecutive low ratings

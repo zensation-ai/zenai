@@ -234,7 +234,7 @@ export async function handleSlackEvent(event: any): Promise<void> {
   switch (event.type) {
     case 'message':
       // Ignore bot messages and message edits
-      if (event.subtype || event.bot_id) return;
+      if (event.subtype || event.bot_id) {return;}
 
       await processSlackMessage(event);
       break;
@@ -352,7 +352,7 @@ async function convertMessageToIdea(
 async function convertReactionToIdea(event: any): Promise<void> {
   const { item, user } = event;
 
-  if (item.type !== 'message') return;
+  if (item.type !== 'message') {return;}
 
   // Get message content
   const data = await slackApi('GET', 'conversations.history', {
@@ -362,7 +362,7 @@ async function convertReactionToIdea(event: any): Promise<void> {
     limit: 1
   });
 
-  if (!data.messages || data.messages.length === 0) return;
+  if (!data.messages || data.messages.length === 0) {return;}
 
   const message = data.messages[0];
 
@@ -372,7 +372,7 @@ async function convertReactionToIdea(event: any): Promise<void> {
     [item.ts]
   );
 
-  if (existing.rows.length > 0) return;
+  if (existing.rows.length > 0) {return;}
 
   // Store and process
   const id = uuidv4();

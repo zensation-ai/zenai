@@ -483,7 +483,7 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncH
   const calcChange = (curr: string, prev: string) => {
     const c = parseInt(curr || '0');
     const p = parseInt(prev || '0');
-    if (p === 0) return c > 0 ? 100 : 0;
+    if (p === 0) {return c > 0 ? 100 : 0;}
     return Math.round(((c - p) / p) * 100);
   };
 
