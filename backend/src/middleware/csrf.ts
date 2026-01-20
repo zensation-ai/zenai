@@ -29,8 +29,8 @@ const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 // Format: { token: { createdAt: timestamp, expiresAt: timestamp } }
 const tokenStore = new Map<string, { createdAt: number; expiresAt: number }>();
 
-// Cleanup interval for expired tokens
-setInterval(() => {
+// Cleanup function for expired tokens
+function cleanupExpiredTokens(): void {
   const now = Date.now();
   let cleaned = 0;
   for (const [token, data] of tokenStore.entries()) {
@@ -46,7 +46,21 @@ setInterval(() => {
       remaining: tokenStore.size
     });
   }
-}, 60 * 60 * 1000); // Cleanup every hour
+}
+
+// Start cleanup interval only if not in test environment
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
+if (process.env.NODE_ENV !== 'test') {
+  cleanupInterval = setInterval(cleanupExpiredTokens, 60 * 60 * 1000); // Cleanup every hour
+}
+
+// Export for testing/cleanup
+export function stopCleanupInterval(): void {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+}
 
 /**
  * Generate a cryptographically secure CSRF token
