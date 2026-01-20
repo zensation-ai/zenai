@@ -316,7 +316,7 @@ export class ProactiveSuggestionEngine {
          FROM meetings m
          WHERE m.context = $1
            AND m.status = 'completed'
-           AND m.date >= NOW() - INTERVAL '${CONFIG.FOLLOW_UP_LOOKBACK_HOURS} hours'
+           AND m.date >= NOW() - make_interval(hours => $2)
            AND NOT EXISTS (
              SELECT 1 FROM ideas i
              WHERE i.raw_transcript ILIKE '%' || m.title || '%'
@@ -325,7 +325,7 @@ export class ProactiveSuggestionEngine {
            )
          ORDER BY m.date DESC
          LIMIT 3`,
-        [context]
+        [context, CONFIG.FOLLOW_UP_LOOKBACK_HOURS]
       );
 
       for (const meeting of meetingsResult.rows) {
@@ -366,7 +366,7 @@ export class ProactiveSuggestionEngine {
          WHERE i.context = $1
            AND i.type = 'task'
            AND i.is_archived = false
-           AND i.created_at >= NOW() - INTERVAL '${CONFIG.FOLLOW_UP_LOOKBACK_HOURS} hours'
+           AND i.created_at >= NOW() - make_interval(hours => $2)
            AND NOT EXISTS (
              SELECT 1 FROM idea_drafts d WHERE d.idea_id = i.id
            )
@@ -377,7 +377,7 @@ export class ProactiveSuggestionEngine {
              OR i.summary ILIKE '%schreib%'
            )
          LIMIT 3`,
-        [context]
+        [context, CONFIG.FOLLOW_UP_LOOKBACK_HOURS]
       );
 
       for (const task of tasksResult.rows) {

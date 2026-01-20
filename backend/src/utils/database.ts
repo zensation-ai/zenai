@@ -17,13 +17,12 @@ function getPoolConfig() {
 
     // Railway internal connections (.railway.internal) don't need SSL
     const isInternalRailway = host.endsWith('.railway.internal');
-    // SECURITY NOTE: rejectUnauthorized: false disables SSL certificate validation.
-    // This is acceptable for managed database services (Supabase, Railway).
-    // For self-managed production databases, use proper CA certificates.
+    // SSL configuration with certificate validation enabled for security.
+    // For environments requiring custom CA certificates, set NODE_EXTRA_CA_CERTS.
     const sslConfig = isInternalRailway
       ? false
       : process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
+        ? { rejectUnauthorized: true }
         : undefined;
 
     return {
