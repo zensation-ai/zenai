@@ -107,7 +107,7 @@ describe('Security Headers', () => {
 
   describe('additionalSecurityHeaders middleware', () => {
     it('should set Cache-Control for API routes', () => {
-      mockRequest.path = '/api/data';
+      (mockRequest as any).path = '/api/data';
 
       additionalSecurityHeaders(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -121,7 +121,7 @@ describe('Security Headers', () => {
     });
 
     it('should not set Cache-Control for non-API routes', () => {
-      mockRequest.path = '/static/image.png';
+      (mockRequest as any).path = '/static/image.png';
 
       additionalSecurityHeaders(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -133,8 +133,8 @@ describe('Security Headers', () => {
     });
 
     it('should set Clear-Site-Data for logout endpoint', () => {
-      mockRequest.path = '/api/auth/logout';
-      mockRequest.method = 'POST';
+      (mockRequest as any).path = '/api/auth/logout';
+      (mockRequest as any).method = 'POST';
 
       additionalSecurityHeaders(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -145,8 +145,8 @@ describe('Security Headers', () => {
     });
 
     it('should not set Clear-Site-Data for non-logout endpoints', () => {
-      mockRequest.path = '/api/auth/login';
-      mockRequest.method = 'POST';
+      (mockRequest as any).path = '/api/auth/login';
+      (mockRequest as any).method = 'POST';
 
       additionalSecurityHeaders(mockRequest as Request, mockResponse as Response, mockNext);
 

@@ -101,8 +101,8 @@ describe('CSRF Protection', () => {
     });
 
     it('should skip CSRF for webhook endpoints', () => {
-      mockRequest.method = 'POST';
-      mockRequest.path = '/api/webhooks/github';
+      (mockRequest as any).method = 'POST';
+      (mockRequest as any).path = '/api/webhooks/github';
 
       csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -110,8 +110,8 @@ describe('CSRF Protection', () => {
     });
 
     it('should reject POST requests without CSRF token', () => {
-      mockRequest.method = 'POST';
-      mockRequest.path = '/api/test';
+      (mockRequest as any).method = 'POST';
+      (mockRequest as any).path = '/api/test';
 
       csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
