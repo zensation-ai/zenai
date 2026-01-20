@@ -3,6 +3,8 @@
  *
  * Security Sprint 2: Centralized input validation using Zod
  * Provides type-safe validation for all API inputs
+ *
+ * Compatible with Zod 4.x
  */
 
 import { z } from 'zod';
@@ -20,17 +22,22 @@ export const UUIDSchema = z.string().uuid('Invalid UUID format');
  * Context schema (personal/work)
  */
 export const ContextSchema = z.enum(['personal', 'work'], {
-  errorMap: () => ({ message: 'Context must be "personal" or "work"' })
+  message: 'Context must be "personal" or "work"'
 });
 
 /**
- * Pagination schema
+ * Base pagination schema (without transform for merging)
  */
-export const PaginationSchema = z.object({
+const PaginationBaseSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
   page: z.coerce.number().int().min(1).optional(),
-}).transform((data) => {
+});
+
+/**
+ * Pagination schema with page-to-offset transform
+ */
+export const PaginationSchema = PaginationBaseSchema.transform((data) => {
   // If page is provided, calculate offset from it
   if (data.page !== undefined) {
     return {
@@ -49,21 +56,21 @@ export const PaginationSchema = z.object({
  * Idea type enum
  */
 export const IdeaTypeSchema = z.enum(['idea', 'task', 'insight', 'problem', 'question'], {
-  errorMap: () => ({ message: 'Invalid idea type. Must be: idea, task, insight, problem, or question' })
+  message: 'Invalid idea type. Must be: idea, task, insight, problem, or question'
 });
 
 /**
  * Category enum
  */
 export const CategorySchema = z.enum(['business', 'technical', 'personal', 'learning'], {
-  errorMap: () => ({ message: 'Invalid category. Must be: business, technical, personal, or learning' })
+  message: 'Invalid category. Must be: business, technical, personal, or learning'
 });
 
 /**
  * Priority enum
  */
 export const PrioritySchema = z.enum(['low', 'medium', 'high'], {
-  errorMap: () => ({ message: 'Invalid priority. Must be: low, medium, or high' })
+  message: 'Invalid priority. Must be: low, medium, or high'
 });
 
 /**
@@ -74,7 +81,24 @@ export const IdeaFilterSchema = z.object({
   category: CategorySchema.optional(),
   priority: PrioritySchema.optional(),
   context: ContextSchema.optional(),
-}).merge(PaginationSchema);
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+  page: z.coerce.number().int().min(1).optional(),
+}).transform((data) => {
+  const result = {
+    type: data.type,
+    category: data.category,
+    priority: data.priority,
+    context: data.context,
+    limit: data.limit,
+    offset: data.offset,
+  };
+  // If page is provided, calculate offset from it
+  if (data.page !== undefined) {
+    result.offset = (data.page - 1) * data.limit;
+  }
+  return result;
+});
 
 /**
  * Create/Update idea schema
@@ -153,7 +177,7 @@ export const PriorityUpdateSchema = z.object({
  */
 export const SwipeActionSchema = z.object({
   action: z.enum(['priority', 'later', 'archive'], {
-    errorMap: () => ({ message: 'Invalid action. Must be: priority, later, or archive' })
+    message: 'Invalid action. Must be: priority, later, or archive'
   }),
 });
 
@@ -206,7 +230,7 @@ export const VoiceMemoFileSchema = z.object({
  * Export format enum
  */
 export const ExportFormatSchema = z.enum(['pdf', 'markdown', 'csv', 'json'], {
-  errorMap: () => ({ message: 'Invalid format. Must be: pdf, markdown, csv, or json' })
+  message: 'Invalid format. Must be: pdf, markdown, csv, or json'
 });
 
 /**
@@ -224,6 +248,13 @@ export const ExportFilterSchema = z.object({
 // ===========================================
 
 /**
+ * Scope enum for API keys
+ */
+const ScopeSchema = z.enum(['read', 'write', 'admin'], {
+  message: 'Invalid scope. Must be: read, write, or admin'
+});
+
+/**
  * Create API key schema
  */
 export const CreateApiKeySchema = z.object({
@@ -232,11 +263,7 @@ export const CreateApiKeySchema = z.object({
     .max(100, 'Name must be at most 100 characters')
     .regex(/^[a-zA-Z0-9_\-\s]+$/, 'Name can only contain letters, numbers, underscores, hyphens, and spaces')
     .transform(s => s.trim()),
-  scopes: z.array(
-    z.enum(['read', 'write', 'admin'], {
-      errorMap: () => ({ message: 'Invalid scope. Must be: read, write, or admin' })
-    })
-  ).min(1, 'At least one scope is required').max(3),
+  scopes: z.array(ScopeSchema).min(1, 'At least one scope is required').max(3),
   expiresAt: z.string().datetime().optional(),
   rateLimit: z.number().int().min(1).max(10000).default(1000),
 });
@@ -246,15 +273,16 @@ export const CreateApiKeySchema = z.object({
 // ===========================================
 
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodSchema } from 'zod';
 
 /**
  * Format Zod errors for API response
+ * Compatible with Zod 4.x (uses 'issues' instead of 'errors')
  */
-function formatZodError(error: ZodError): { field: string; message: string }[] {
-  return error.errors.map(err => ({
-    field: err.path.join('.') || 'body',
-    message: err.message,
+function formatZodError(error: z.ZodError): { field: string; message: string }[] {
+  return error.issues.map(issue => ({
+    field: issue.path.join('.') || 'body',
+    message: issue.message,
   }));
 }
 
