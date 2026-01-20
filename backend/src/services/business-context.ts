@@ -290,10 +290,10 @@ async function getRecentTopics(context: AIContext, days: number = 7): Promise<st
     const result = await queryContext(
       context,
       `SELECT keywords FROM ideas
-       WHERE created_at >= NOW() - INTERVAL '${days} days'
+       WHERE created_at >= NOW() - make_interval(days => $1)
        ORDER BY created_at DESC
        LIMIT 50`,
-      []
+      [days]
     );
 
     // Flatten and count keywords

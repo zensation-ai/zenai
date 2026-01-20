@@ -246,10 +246,10 @@ class RoutineDetectionService {
           FROM user_action_log a1
           JOIN user_action_log a2 ON
             a2.timestamp > a1.timestamp
-            AND a2.timestamp <= a1.timestamp + INTERVAL '${CONFIG.SEQUENCE_TIME_WINDOW_MINUTES} minutes'
+            AND a2.timestamp <= a1.timestamp + make_interval(mins => $4)
             AND a1.context = a2.context
           WHERE a1.context = $1
-            AND a1.timestamp >= NOW() - ($2 || ' days')::INTERVAL
+            AND a1.timestamp >= NOW() - make_interval(days => $2)
         )
         SELECT
           first_action,
@@ -260,7 +260,7 @@ class RoutineDetectionService {
         HAVING COUNT(*) >= $3
         ORDER BY sequence_count DESC
         LIMIT 15`,
-        [context, days, CONFIG.MIN_OCCURRENCES_FOR_PATTERN]
+        [context, days, CONFIG.MIN_OCCURRENCES_FOR_PATTERN, CONFIG.SEQUENCE_TIME_WINDOW_MINUTES]
       );
 
       for (const row of result.rows) {
@@ -589,10 +589,10 @@ class RoutineDetectionService {
             `SELECT id FROM user_action_log
              WHERE context = $1
                AND action_type = $2
-               AND timestamp >= $3 - INTERVAL '${CONFIG.SEQUENCE_TIME_WINDOW_MINUTES} minutes'
+               AND timestamp >= $3 - make_interval(mins => $4)
                AND timestamp < $3
              LIMIT 1`,
-            [context, trigger.afterAction, timestamp]
+            [context, trigger.afterAction, timestamp, CONFIG.SEQUENCE_TIME_WINDOW_MINUTES]
           );
 
           if (recentAction.rows.length > 0) {

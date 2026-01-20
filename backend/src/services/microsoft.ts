@@ -390,11 +390,11 @@ export async function getUpcomingEvents(
     `SELECT id, external_id, provider, title, description, start_time, end_time,
             location, attendees, is_online, online_meeting_url, organizer, status
      FROM calendar_events
-     WHERE start_time BETWEEN NOW() AND NOW() + INTERVAL '${hours} hours'
+     WHERE start_time BETWEEN NOW() AND NOW() + make_interval(hours => $1)
      AND status != 'cancelled'
      ORDER BY start_time ASC
-     LIMIT $1`,
-    [limit]
+     LIMIT $2`,
+    [hours, limit]
   );
 
   return result.rows.map(row => ({
