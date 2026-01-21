@@ -512,10 +512,13 @@ describe('Ollama Utilities', () => {
       // Both should have their own circuit state
       // This tests that the implementation distinguishes between them
 
+      // Clear any previous mock state
+      mockedAxios.post.mockReset();
+
       mockedAxios.post.mockResolvedValueOnce({
         data: {
           response: JSON.stringify({
-            title: 'Test',
+            title: 'Separate Circuit Test',
             type: 'idea',
             category: 'business',
             priority: 'medium',
@@ -532,10 +535,10 @@ describe('Ollama Utilities', () => {
       });
 
       // Both calls should work independently
-      const structured = await structureWithOllama('Test');
-      const embedding = await generateEmbedding('Test');
+      const structured = await structureWithOllama('Separate circuit test input');
+      const embedding = await generateEmbedding('Separate circuit test embedding');
 
-      expect(structured.title).toBe('Test');
+      expect(structured.title).toBe('Separate Circuit Test');
       // Embedding might be empty due to cache behavior
       expect(Array.isArray(embedding)).toBe(true);
     });
