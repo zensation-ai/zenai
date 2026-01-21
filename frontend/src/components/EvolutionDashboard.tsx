@@ -6,7 +6,7 @@
  * Shows learning timeline, accuracy trends, context depth, and milestones.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import './EvolutionDashboard.css';
 
@@ -77,18 +77,24 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'accuracy' | 'milestones'>('overview');
 
-  const loadData = useCallback(async () => {
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [dashboardRes, depthRes] = await Promise.all([
-        axios.get(`/api/${context}/evolution`),
-        axios.get(`/api/${context}/evolution/context-depth`),
+        axios.get(`/api/${context}/evolution`, { signal }),
+        axios.get(`/api/${context}/evolution/context-depth`, { signal }),
       ]);
 
       setData(dashboardRes.data.dashboard);
       setContextDepth(depthRes.data.context_depth.breakdown || []);
       setError(null);
     } catch (err: unknown) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
+
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
         : 'Laden fehlgeschlagen';
@@ -99,7 +105,24 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
   }, [context]);
 
   useEffect(() => {
-    loadData();
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadData]);
+
+  // Manual reload handler (for retry button)
+  const handleReload = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
   }, [loadData]);
 
   const formatDate = (dateStr: string) => {
@@ -145,7 +168,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
         </header>
         <div className="error-banner">
           <span>{error || 'Keine Daten verfügbar'}</span>
-          <button type="button" onClick={loadData}>Erneut versuchen</button>
+          <button type="button" onClick={handleReload}>Erneut versuchen</button>
         </div>
       </div>
     );

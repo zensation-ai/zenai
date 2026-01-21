@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './ProfileDashboard.css';
@@ -69,17 +69,16 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
     goals: '',
   });
 
-  useEffect(() => {
-    loadProfile();
-  }, [context]);
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [statsRes, recsRes, businessRes] = await Promise.all([
-        axios.get(`/api/${context}/profile/stats`),
-        axios.get(`/api/${context}/profile/recommendations`),
-        axios.get(`/api/${context}/profile`).catch(() => ({ data: { profile: null } })),
+        axios.get(`/api/${context}/profile/stats`, { signal }),
+        axios.get(`/api/${context}/profile/recommendations`, { signal }),
+        axios.get(`/api/${context}/profile`, { signal }).catch(() => ({ data: { profile: null } })),
       ]);
       setProfile(statsRes.data);
       setRecommendations(recsRes.data.recommendations);
@@ -97,6 +96,9 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       }
       setError(null);
     } catch (err: unknown) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
+
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
         : 'Laden fehlgeschlagen';
@@ -104,7 +106,28 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [context]);
+
+  useEffect(() => {
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    loadProfile(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadProfile]);
+
+  // Manual reload handler (for retry button and after actions)
+  const handleReload = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    loadProfile(abortControllerRef.current.signal);
+  }, [loadProfile]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -120,7 +143,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       await axios.put(`/api/${context}/profile`, updates);
       showToast('Profil gespeichert!', 'success');
       setIsEditing(false);
-      await loadProfile();
+      handleReload();
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Speichern fehlgeschlagen'
@@ -135,7 +158,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
     try {
       setRecalculating(true);
       await axios.post(`/api/${context}/profile/recalculate`);
-      await loadProfile();
+      handleReload();
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Neuberechnung fehlgeschlagen'
@@ -181,7 +204,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       <div className="profile-dashboard">
         <div className="error-state">
           <p>{error || 'Profil konnte nicht geladen werden'}</p>
-          <button onClick={loadProfile}>Erneut versuchen</button>
+          <button onClick={handleReload}>Erneut versuchen</button>
         </div>
       </div>
     );

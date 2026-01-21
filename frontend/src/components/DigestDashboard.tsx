@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './DigestDashboard.css';
@@ -61,17 +61,16 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
     reminder_time: '',
   });
 
-  useEffect(() => {
-    loadData();
-  }, [context]);
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [latestRes, historyRes, goalsRes] = await Promise.all([
-        axios.get(`/api/${context}/digest/latest`).catch(() => ({ data: { digest: null } })),
-        axios.get(`/api/${context}/digest/history?limit=10`).catch(() => ({ data: { digests: [] } })),
-        axios.get(`/api/${context}/digest/goals`).catch(() => ({ data: { goals: null } })),
+        axios.get(`/api/${context}/digest/latest`, { signal }).catch(() => ({ data: { digest: null } })),
+        axios.get(`/api/${context}/digest/history?limit=10`, { signal }).catch(() => ({ data: { digests: [] } })),
+        axios.get(`/api/${context}/digest/goals`, { signal }).catch(() => ({ data: { goals: null } })),
       ]);
 
       setLatestDigest(latestRes.data.digest);
@@ -92,6 +91,9 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
 
       setError(null);
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
+
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
         : 'Laden fehlgeschlagen';
@@ -99,7 +101,21 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [context]);
+
+  useEffect(() => {
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadData]);
 
   const handleGenerateDigest = async (type: 'daily' | 'weekly') => {
     try {

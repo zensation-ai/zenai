@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useParallelAsyncData } from '../hooks/useAsyncData';
 import './AnalyticsDashboard.css';
 
 interface AnalyticsDashboardProps {
@@ -54,43 +54,55 @@ interface HourlyActivity {
   count: number;
 }
 
+interface DashboardData {
+  summary: Summary;
+  goals: Goals;
+  streaks: Streaks;
+  activity: { byHour: HourlyActivity[] };
+}
+
 export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps) {
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [goals, setGoals] = useState<Goals | null>(null);
-  const [streaks, setStreaks] = useState<Streaks | null>(null);
-  const [productivityScore, setProductivityScore] = useState<ProductivityScore | null>(null);
-  const [patterns, setPatterns] = useState<Patterns | null>(null);
-  const [comparison, setComparison] = useState<Comparison | null>(null);
-  const [hourlyActivity, setHourlyActivity] = useState<HourlyActivity[]>([]);
+  // Use the new parallel async data hook with automatic AbortController
+  const { data, loading, errors } = useParallelAsyncData<[
+    { data: DashboardData },
+    { data: ProductivityScore },
+    { data: Patterns },
+    { data: Comparison }
+  ]>(
+    [
+      async (signal) => {
+        const res = await axios.get(`/api/${context}/analytics/dashboard`, { signal });
+        return res.data;
+      },
+      async (signal) => {
+        const res = await axios.get(`/api/${context}/analytics/productivity-score`, { signal });
+        return res.data;
+      },
+      async (signal) => {
+        const res = await axios.get(`/api/${context}/analytics/patterns`, { signal });
+        return res.data;
+      },
+      async (signal) => {
+        const res = await axios.get(`/api/${context}/analytics/comparison`, { signal });
+        return res.data;
+      },
+    ],
+    [context]
+  );
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [context]);
+  // Extract data from parallel fetch results
+  const summary = data[0]?.data?.summary ?? null;
+  const goals = data[0]?.data?.goals ?? null;
+  const streaks = data[0]?.data?.streaks ?? null;
+  const hourlyActivity = data[0]?.data?.activity?.byHour ?? [];
+  const productivityScore = data[1]?.data ?? null;
+  const patterns = data[2]?.data ?? null;
+  const comparison = data[3]?.data ?? null;
 
-  const loadAnalytics = async () => {
-    setLoading(true);
-    try {
-      const [dashboardRes, scoreRes, patternsRes, comparisonRes] = await Promise.all([
-        axios.get(`/api/${context}/analytics/dashboard`),
-        axios.get(`/api/${context}/analytics/productivity-score`),
-        axios.get(`/api/${context}/analytics/patterns`),
-        axios.get(`/api/${context}/analytics/comparison`),
-      ]);
-
-      setSummary(dashboardRes.data.data.summary);
-      setGoals(dashboardRes.data.data.goals);
-      setStreaks(dashboardRes.data.data.streaks);
-      setHourlyActivity(dashboardRes.data.data.activity.byHour);
-      setProductivityScore(scoreRes.data.data);
-      setPatterns(patternsRes.data.data);
-      setComparison(comparisonRes.data.data);
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Log any errors (optional - for debugging)
+  if (errors.some(e => e !== null)) {
+    console.error('Failed to load some analytics:', errors.filter(e => e !== null));
+  }
 
   const getScoreColor = (score: number) => {
     if (score >= 70) return '#22c55e';
