@@ -191,15 +191,13 @@ export async function invalidateCacheForContext(context: AIContext, resource?: s
     const deletedCount = await cache.delPattern(pattern);
 
     if (deletedCount > 0) {
-      const contextStr = String(context);
-      logger.info('Cache invalidated', { context: contextStr, resource, deletedCount });
+      logger.info('Cache invalidated', { contextName: context, resource, deletedCount });
     }
 
     return deletedCount;
   } catch (error) {
-    const contextStr = String(context);
     logger.error('Cache invalidation error', error instanceof Error ? error : undefined, {
-      context: contextStr,
+      contextName: context,
       resource,
     });
     return 0;
@@ -222,10 +220,9 @@ export function invalidateCacheAfter(resource?: string) {
     res.json = function(data: any) {
       // Only invalidate on successful mutations (fire and forget)
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        const contextStr = String(context);
         invalidateCacheForContext(context, resource).catch(err => {
           logger.warn('Failed to invalidate cache after mutation', {
-            context: contextStr,
+            contextName: context,
             resource,
             error: err instanceof Error ? err.message : 'Unknown error'
           });
