@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
@@ -123,12 +123,17 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
   const [savingProfile, setSavingProfile] = useState(false);
   const confirm = useConfirm();
 
-  const loadDashboard = useCallback(async () => {
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const loadDashboard = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/${context}/learning/dashboard`);
+      const response = await axios.get(`/api/${context}/learning/dashboard`, { signal });
       setData(response.data.dashboard);
     } catch (error) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(error)) return;
       console.error('Failed to load learning dashboard:', error);
       showToast('Dashboard konnte nicht geladen werden', 'error');
     } finally {
@@ -137,14 +142,31 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
   }, [context]);
 
   useEffect(() => {
-    loadDashboard();
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    loadDashboard(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadDashboard]);
+
+  // Manual reload handler (for after actions)
+  const handleReload = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    loadDashboard(abortControllerRef.current.signal);
   }, [loadDashboard]);
 
   const handleToggleFocus = async (id: string, isActive: boolean) => {
     try {
       await axios.put(`/api/${context}/focus/${id}/toggle`, { is_active: !isActive });
       showToast(isActive ? 'Fokus deaktiviert' : 'Fokus aktiviert', 'success');
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Fehler beim Umschalten', 'error');
     }
@@ -163,7 +185,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     try {
       await axios.delete(`/api/${context}/focus/${id}`);
       showToast('Fokus gelöscht', 'success');
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Löschen fehlgeschlagen', 'error');
     }
@@ -184,7 +206,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
       showToast('Fokus-Thema erstellt', 'success');
       setNewFocus({ name: '', description: '', keywords: '' });
       setShowAddFocus(false);
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Erstellen fehlgeschlagen', 'error');
     }
@@ -194,7 +216,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     try {
       await axios.put(`/api/${context}/suggestions/${id}/respond`, { response });
       showToast(response === 'accepted' ? 'Vorschlag angenommen' : 'Vorschlag abgelehnt', 'success');
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Fehler beim Antworten', 'error');
     }
@@ -203,7 +225,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
   const handleViewResearch = async (id: string) => {
     try {
       await axios.put(`/api/${context}/research/${id}/viewed`);
-      loadDashboard();
+      handleReload();
     } catch (error) {
       console.error('Failed to mark as viewed:', error);
     }
@@ -214,7 +236,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
       showToast('Lernprozess gestartet...', 'info');
       await axios.post(`/api/${context}/learning/run`);
       showToast('Lernprozess abgeschlossen', 'success');
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Lernprozess fehlgeschlagen', 'error');
     }
@@ -224,7 +246,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     try {
       await axios.post(`/api/${context}/focus/presets`);
       showToast('Preset-Fokus-Themen erstellt', 'success');
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Erstellen fehlgeschlagen', 'error');
     }
@@ -235,7 +257,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
       showToast('Profil-Analyse gestartet...', 'info');
       await axios.post(`/api/${context}/profile/analyze`, { days_back: 30 });
       showToast('Profil-Analyse abgeschlossen', 'success');
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Analyse fehlgeschlagen', 'error');
     }
@@ -265,7 +287,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
       await axios.put(`/api/${context}/profile`, profileData);
       showToast('Profil gespeichert', 'success');
       setShowEditProfile(false);
-      loadDashboard();
+      handleReload();
     } catch (error) {
       showToast('Speichern fehlgeschlagen', 'error');
     } finally {

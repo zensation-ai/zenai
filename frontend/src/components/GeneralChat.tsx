@@ -48,9 +48,21 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Load last session on mount
   useEffect(() => {
-    loadLastSession();
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+
+    loadLastSession(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [context]);
 
   // Scroll to bottom when messages change
@@ -62,34 +74,38 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const loadLastSession = async () => {
+  const loadLastSession = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       // Get list of sessions for current context
-      const res = await axios.get(`/api/chat/sessions?context=${context}&limit=1`);
+      const res = await axios.get(`/api/chat/sessions?context=${context}&limit=1`, { signal });
       const sessions = res.data.data?.sessions || [];
 
       if (sessions.length > 0) {
         // Load the most recent session
         const lastSession = sessions[0];
-        await loadSession(lastSession.id);
+        await loadSession(lastSession.id, signal);
       }
-    } catch {
+    } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
       // No existing session, that's fine - user will start fresh
     } finally {
       setLoading(false);
     }
   };
 
-  const loadSession = async (id: string) => {
+  const loadSession = async (id: string, signal?: AbortSignal) => {
     try {
-      const res = await axios.get(`/api/chat/sessions/${id}`);
+      const res = await axios.get(`/api/chat/sessions/${id}`, { signal });
       const session = res.data.data?.session;
       if (session) {
         setSessionId(session.id);
         setMessages(session.messages || []);
       }
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
       console.error('Failed to load session:', err);
     }
   };
