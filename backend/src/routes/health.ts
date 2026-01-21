@@ -67,10 +67,38 @@ async function checkClaudeHealth(): Promise<{
 
 /**
  * @route GET /api/health
- * @description Comprehensive health check endpoint
- * SECURITY: In production, only return minimal info unless authenticated
+ * @description FAST health check endpoint (< 100ms target)
+ * Returns basic status without external service calls
+ * For comprehensive checks, use /api/health/detailed
  */
-healthRouter.get('/', asyncHandler(async (req, res) => {
+healthRouter.get('/', (req, res) => {
+  const startTime = Date.now();
+
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    responseTime: Date.now() - startTime,
+    version,
+    uptime: {
+      seconds: Math.floor((Date.now() - serverStartTime) / 1000),
+      human: formatUptime(Date.now() - serverStartTime),
+    },
+    memory: {
+      heapUsed: formatBytes(process.memoryUsage().heapUsed),
+      heapTotal: formatBytes(process.memoryUsage().heapTotal),
+      rss: formatBytes(process.memoryUsage().rss),
+    },
+    message: 'For detailed health check, use /api/health/detailed',
+  });
+});
+
+/**
+ * @route GET /api/health/detailed
+ * @description Comprehensive health check endpoint with all service checks
+ * SECURITY: In production, only return minimal info unless authenticated
+ * WARNING: This endpoint is slower (1-3s) due to external service checks
+ */
+healthRouter.get('/detailed', asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const isProduction = process.env.NODE_ENV === 'production';
 

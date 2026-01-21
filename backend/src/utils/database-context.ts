@@ -179,6 +179,10 @@ type QueryParam = string | number | boolean | Date | null | undefined | Buffer |
  * Execute a query in the appropriate context database
  * Phase 11: Enhanced with query monitoring
  * Phase 23: Added automatic retry for transient errors (ECONNRESET, ETIMEDOUT)
+ * Phase 24: CRITICAL FIX - Schema Separation with search_path
+ *
+ * IMPORTANT: This function now uses dedicated client connections with search_path
+ * to ensure proper schema isolation between personal and work contexts.
  */
 export async function queryContext(
   context: AIContext,
@@ -193,8 +197,16 @@ export async function queryContext(
 
   // Retry loop for transient errors
   for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+    // CRITICAL: Get a dedicated client for schema isolation
+    const client = await pool.connect();
+
     try {
-      const result = await pool.query(text, params);
+      // CRITICAL: Set search_path to ensure queries use correct schema
+      // This is essential for dual-schema architecture (personal vs work)
+      await client.query(`SET search_path TO ${context}, public`);
+
+      // Execute query in correct schema
+      const result = await client.query(text, params);
       const duration = Date.now() - start;
 
       // Log slow queries (using configurable threshold)
@@ -218,8 +230,14 @@ export async function queryContext(
         });
       }
 
+      // Release client back to pool
+      client.release();
+
       return result;
     } catch (error) {
+      // Release client on error
+      client.release();
+
       lastError = error instanceof Error ? error : new Error(String(error));
 
       // Check if we should retry
