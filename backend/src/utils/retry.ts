@@ -335,7 +335,7 @@ export function getCircuitBreakerStatus(): Record<string, {
   }> = {};
 
   // Always include known services even if no state exists
-  const knownServices = ['claude', 'claude-extended'];
+  const knownServices = ['claude', 'claude-extended', 'ollama', 'ollama-embedding'];
 
   for (const service of knownServices) {
     const state = circuitBreakers.get(service);

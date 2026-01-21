@@ -166,6 +166,10 @@ healthRouter.get('/', asyncHandler(async (req, res) => {
         ollama: {
           status: ollamaHealth.available ? 'connected' : 'disconnected',
           models: ollamaHealth.models,
+          circuitBreaker: {
+            generation: circuitBreakerStatus['ollama'],
+            embedding: circuitBreakerStatus['ollama-embedding'],
+          },
         },
       },
       cache: {

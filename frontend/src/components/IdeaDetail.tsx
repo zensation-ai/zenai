@@ -95,7 +95,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [loadingRelations, setLoadingRelations] = useState(false);
-  const isMountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Phase 25: Draft Support
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -107,62 +107,87 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
 
+  // ESC key handler for closing modal
   useEffect(() => {
-    isMountedRef.current = true;
-    loadRelations();
-    loadSuggestions();
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [onClose]);
+
+  // Data loading effect with AbortController
+  useEffect(() => {
+    // Create new AbortController for this effect
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    loadRelations(signal);
+    loadSuggestions(signal);
     // Load draft for tasks
     if (idea.type === 'task') {
-      loadDraft();
+      loadDraft(signal);
     }
+
     return () => {
-      isMountedRef.current = false;
+      // Abort all pending requests on cleanup
+      abortControllerRef.current?.abort();
     };
   }, [idea.id]);
 
-  const loadRelations = async () => {
+  const loadRelations = async (signal: AbortSignal) => {
     setLoadingRelations(true);
     try {
-      const response = await axios.get(`/api/knowledge-graph/relations/${idea.id}`);
-      if (isMountedRef.current) {
+      const response = await axios.get(`/api/knowledge-graph/relations/${idea.id}`, { signal });
+      if (!signal.aborted) {
         setRelations(response.data.relationships || []);
       }
     } catch (error) {
-      console.error('Failed to load relations:', error);
+      if (!axios.isCancel(error)) {
+        console.error('Failed to load relations:', error);
+      }
       // Silent fail for relations - they're optional
     } finally {
-      if (isMountedRef.current) {
+      if (!signal.aborted) {
         setLoadingRelations(false);
       }
     }
   };
 
-  const loadSuggestions = async () => {
+  const loadSuggestions = async (signal: AbortSignal) => {
     try {
-      const response = await axios.get(`/api/knowledge-graph/suggestions/${idea.id}`);
-      if (isMountedRef.current) {
+      const response = await axios.get(`/api/knowledge-graph/suggestions/${idea.id}`, { signal });
+      if (!signal.aborted) {
         setSuggestions(response.data.suggestions || []);
       }
     } catch (error) {
-      console.error('Failed to load suggestions:', error);
+      if (!axios.isCancel(error)) {
+        console.error('Failed to load suggestions:', error);
+      }
       // Silent fail for suggestions - they're optional
     }
   };
 
   // Phase 25: Load draft for task
-  const loadDraft = async () => {
+  const loadDraft = async (signal: AbortSignal) => {
     setLoadingDraft(true);
     try {
       const context = localStorage.getItem('ai-context') || 'personal';
-      const response = await axios.get(`/api/${context}/ideas/${idea.id}/draft`);
-      if (isMountedRef.current && response.data.draft) {
+      const response = await axios.get(`/api/${context}/ideas/${idea.id}/draft`, { signal });
+      if (!signal.aborted && response.data.draft) {
         setDraft(response.data.draft);
       }
     } catch (error) {
-      console.error('Failed to load draft:', error);
+      if (!axios.isCancel(error)) {
+        console.error('Failed to load draft:', error);
+      }
       // Silent fail - draft is optional
     } finally {
-      if (isMountedRef.current) {
+      if (!signal.aborted) {
         setLoadingDraft(false);
       }
     }
@@ -182,7 +207,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
         // Show feedback prompt after 3 seconds if not already given feedback
         if (!feedbackGiven) {
           setTimeout(() => {
-            if (isMountedRef.current && !feedbackGiven) {
+            if (!abortControllerRef.current?.signal.aborted && !feedbackGiven) {
               setShowFeedbackPrompt(true);
             }
           }, 3000);
@@ -197,19 +222,21 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
 
   const analyzeRelations = async () => {
     setAnalyzing(true);
+    const signal = abortControllerRef.current?.signal;
     try {
-      await axios.post(`/api/knowledge-graph/analyze/${idea.id}`);
-      await loadRelations();
-      if (isMountedRef.current) {
+      await axios.post(`/api/knowledge-graph/analyze/${idea.id}`, {}, { signal });
+      if (signal && !signal.aborted) {
+        // Reload relations with current signal
+        await loadRelations(signal);
         showToast('Beziehungen wurden analysiert', 'success');
       }
     } catch (error) {
-      console.error('Failed to analyze relations:', error);
-      if (isMountedRef.current) {
+      if (!axios.isCancel(error)) {
+        console.error('Failed to analyze relations:', error);
         showToast('Analyse fehlgeschlagen', 'error');
       }
     } finally {
-      if (isMountedRef.current) {
+      if (!signal?.aborted) {
         setAnalyzing(false);
       }
     }
