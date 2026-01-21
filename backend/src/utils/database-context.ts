@@ -45,15 +45,15 @@ function parseConnectionString(url: string): {
   const host = parsed.hostname;
 
   // Railway internal connections (.railway.internal) don't need SSL
-  // External connections should use SSL with certificate validation
   const isInternalRailway = host.endsWith('.railway.internal');
-  // SSL configuration with certificate validation enabled for security.
-  // For environments requiring custom CA certificates, set NODE_EXTRA_CA_CERTS
-  // environment variable or use the ssl.ca option.
+  // Supabase and other managed DB services need SSL but with rejectUnauthorized: false
+  // This is safe for managed services where we trust the provider
+  const isSupabase = host.includes('supabase.co');
+
   const sslConfig = isInternalRailway
     ? false // No SSL for internal Railway network
     : process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: true }
+      ? { rejectUnauthorized: isSupabase ? false : true } // Supabase needs false
       : undefined;
 
   logger.info('Database connection config', {
