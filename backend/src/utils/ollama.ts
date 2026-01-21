@@ -13,6 +13,7 @@ import axios, { AxiosError } from 'axios';
 import { getCachedEmbedding } from './cache';
 import { logger } from './logger';
 import { OLLAMA, TIMEOUTS } from '../config/constants';
+import { withCircuitBreaker, withRetry, isCircuitOpen } from './retry';
 
 // ===========================================
 // Configuration
@@ -35,6 +36,43 @@ const EXTENDED_GENERATION_OPTIONS = {
   temperature: 0.3,
   top_p: 0.9,
 } as const;
+
+/**
+ * Retry configuration for Ollama API calls
+ */
+const OLLAMA_RETRY_CONFIG = {
+  maxRetries: 2,
+  initialDelay: 500,
+  maxDelay: 5000,
+  timeout: TIMEOUTS.LLM_GENERATION_MS,
+  isRetryable: (error: unknown): boolean => {
+    if (error instanceof AxiosError) {
+      // Network errors are retryable
+      if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' ||
+          error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+        return true;
+      }
+      // Server errors (5xx) are retryable
+      if (error.response?.status && error.response.status >= 500) {
+        return true;
+      }
+    }
+    return false;
+  },
+  context: 'ollama-api',
+};
+
+/**
+ * Execute Ollama call with circuit breaker and retry protection
+ */
+async function executeOllamaWithProtection<T>(
+  fn: () => Promise<T>,
+  circuitKey: 'ollama' | 'ollama-embedding' = 'ollama'
+): Promise<T> {
+  return withCircuitBreaker(circuitKey, async () => {
+    return withRetry(fn, OLLAMA_RETRY_CONFIG);
+  });
+}
 
 // ===========================================
 // Types
@@ -287,11 +325,20 @@ function parseStringArray(value: unknown): string[] {
 
 /**
  * Structure a transcript using Ollama LLM
+ * Now with circuit breaker and retry protection
  *
  * @param transcript - Raw transcript text
  * @returns Structured idea object
  */
 export async function structureWithOllama(transcript: string): Promise<StructuredIdea> {
+  // Check circuit breaker before attempting
+  if (isCircuitOpen('ollama')) {
+    logger.warn('Ollama circuit breaker is open, using fallback', {
+      operation: 'structureWithOllama'
+    });
+    return createFallbackIdea(transcript);
+  }
+
   const prompt = `${SYSTEM_PROMPT}
 
 USER MEMO:
@@ -300,16 +347,18 @@ ${transcript}
 STRUCTURED OUTPUT:`;
 
   try {
-    const response = await axios.post<OllamaGenerateResponse>(
-      `${OLLAMA_URL}/api/generate`,
-      {
-        model: MODEL,
-        prompt,
-        stream: false,
-        options: GENERATION_OPTIONS,
-      },
-      { timeout: TIMEOUTS.LLM_GENERATION_MS }
-    );
+    const response = await executeOllamaWithProtection(async () => {
+      return axios.post<OllamaGenerateResponse>(
+        `${OLLAMA_URL}/api/generate`,
+        {
+          model: MODEL,
+          prompt,
+          stream: false,
+          options: GENERATION_OPTIONS,
+        },
+        { timeout: TIMEOUTS.LLM_GENERATION_MS }
+      );
+    }, 'ollama');
 
     const responseText = response.data.response.trim();
 
@@ -360,17 +409,28 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 /**
  * Generate embedding without caching (internal use)
+ * Now with circuit breaker and retry protection
  */
 async function generateEmbeddingUncached(text: string): Promise<number[]> {
+  // Check circuit breaker before attempting
+  if (isCircuitOpen('ollama-embedding')) {
+    logger.warn('Ollama embedding circuit breaker is open', {
+      operation: 'generateEmbedding'
+    });
+    return [];
+  }
+
   try {
-    const response = await axios.post<OllamaEmbeddingsResponse>(
-      `${OLLAMA_URL}/api/embeddings`,
-      {
-        model: EMBEDDING_MODEL,
-        prompt: text,
-      },
-      { timeout: TIMEOUTS.STANDARD_MS }
-    );
+    const response = await executeOllamaWithProtection(async () => {
+      return axios.post<OllamaEmbeddingsResponse>(
+        `${OLLAMA_URL}/api/embeddings`,
+        {
+          model: EMBEDDING_MODEL,
+          prompt: text,
+        },
+        { timeout: TIMEOUTS.STANDARD_MS }
+      );
+    }, 'ollama-embedding');
 
     const embedding = response.data.embedding;
 
@@ -416,22 +476,31 @@ export async function checkOllamaHealth(): Promise<{ available: boolean; models:
 /**
  * Generic LLM call that returns parsed JSON
  * Use this for custom prompts that don't follow the StructuredIdea format
+ * Now with circuit breaker and retry protection
  *
  * @param prompt - The prompt to send to the LLM
  * @returns Parsed JSON response or null on error
  */
 export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | null> {
+  // Check circuit breaker before attempting
+  if (isCircuitOpen('ollama')) {
+    logger.warn('Ollama circuit breaker is open', { operation: 'queryOllamaJSON' });
+    return null;
+  }
+
   try {
-    const response = await axios.post<OllamaGenerateResponse>(
-      `${OLLAMA_URL}/api/generate`,
-      {
-        model: MODEL,
-        prompt,
-        stream: false,
-        options: EXTENDED_GENERATION_OPTIONS,
-      },
-      { timeout: TIMEOUTS.LLM_GENERATION_MS }
-    );
+    const response = await executeOllamaWithProtection(async () => {
+      return axios.post<OllamaGenerateResponse>(
+        `${OLLAMA_URL}/api/generate`,
+        {
+          model: MODEL,
+          prompt,
+          stream: false,
+          options: EXTENDED_GENERATION_OPTIONS,
+        },
+        { timeout: TIMEOUTS.LLM_GENERATION_MS }
+      );
+    }, 'ollama');
 
     const responseText = response.data.response.trim();
 

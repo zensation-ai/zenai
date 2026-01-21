@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import {
@@ -68,26 +68,17 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [context]);
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const loadData = async () => {
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [startRes, factsRes, progressRes, summaryRes] = await Promise.all([
-        axios.get('/api/personalization/start').catch(() => ({ data: { question: null } })),
-        axios.get('/api/personalization/facts').catch(() => ({ data: { facts: [] } })),
-        axios.get('/api/personalization/progress').catch(() => ({ data: { progress: [] } })),
-        axios.get('/api/personalization/summary').catch(() => ({ data: { summary: null } })),
+        axios.get('/api/personalization/start', { signal }).catch(() => ({ data: { question: null } })),
+        axios.get('/api/personalization/facts', { signal }).catch(() => ({ data: { facts: [] } })),
+        axios.get('/api/personalization/progress', { signal }).catch(() => ({ data: { progress: [] } })),
+        axios.get('/api/personalization/summary', { signal }).catch(() => ({ data: { summary: null } })),
       ]);
 
       // Add initial AI message if no messages yet
@@ -104,10 +95,32 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
       setProgress(progressRes.data.progress || []);
       setSummary(summaryRes.data.summary);
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
       console.error('Failed to load personalization data:', err);
     } finally {
       setLoading(false);
     }
+  }, [messages.length]);
+
+  useEffect(() => {
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [context, loadData]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSendMessage = async () => {

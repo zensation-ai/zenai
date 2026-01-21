@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './AutomationDashboard.css';
@@ -94,13 +94,16 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
   const [selectedAutomation, setSelectedAutomation] = useState<Automation | null>(null);
   const [generating, setGenerating] = useState(false);
 
-  const loadData = useCallback(async () => {
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [autoRes, suggestRes, statsRes] = await Promise.all([
-        axios.get(`/api/${context}/automations`),
-        axios.get(`/api/${context}/automations/suggestions`),
-        axios.get(`/api/${context}/automations/stats`),
+        axios.get(`/api/${context}/automations`, { signal }),
+        axios.get(`/api/${context}/automations/suggestions`, { signal }),
+        axios.get(`/api/${context}/automations/stats`, { signal }),
       ]);
 
       setAutomations(autoRes.data.automations || []);
@@ -108,6 +111,9 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
       setStats(statsRes.data.stats || null);
       setError(null);
     } catch (err: unknown) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
+
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
         : 'Laden fehlgeschlagen';
@@ -118,14 +124,31 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
   }, [context]);
 
   useEffect(() => {
-    loadData();
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadData]);
+
+  // Manual reload handler (for retry button and after actions)
+  const handleReload = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
   }, [loadData]);
 
   const handleToggleAutomation = async (id: string) => {
     try {
       await axios.post(`/api/${context}/automations/${id}/toggle`);
       showToast('Automation aktualisiert', 'success');
-      await loadData();
+      handleReload();
     } catch (err) {
       showToast('Fehler beim Aktualisieren', 'error');
     }
@@ -138,7 +161,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
       await axios.delete(`/api/${context}/automations/${id}`);
       showToast('Automation gelöscht', 'success');
       setSelectedAutomation(null);
-      await loadData();
+      handleReload();
     } catch (err) {
       showToast('Fehler beim Löschen', 'error');
     }
@@ -150,7 +173,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
         trigger_data: { manual: true, timestamp: new Date().toISOString() },
       });
       showToast('Automation ausgeführt', 'success');
-      await loadData();
+      handleReload();
     } catch (err) {
       showToast('Ausführung fehlgeschlagen', 'error');
     }
@@ -160,7 +183,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
     try {
       await axios.post(`/api/${context}/automations/suggestions/${id}/accept`);
       showToast('Vorschlag akzeptiert, Automation erstellt', 'success');
-      await loadData();
+      handleReload();
     } catch (err) {
       showToast('Fehler beim Akzeptieren', 'error');
     }
@@ -170,7 +193,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
     try {
       await axios.post(`/api/${context}/automations/suggestions/${id}/dismiss`);
       showToast('Vorschlag abgelehnt', 'info');
-      await loadData();
+      handleReload();
     } catch (err) {
       showToast('Fehler beim Ablehnen', 'error');
     }
@@ -181,7 +204,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
       setGenerating(true);
       const res = await axios.post(`/api/${context}/automations/suggestions/generate`);
       showToast(`${res.data.count} neue Vorschläge generiert`, 'success');
-      await loadData();
+      handleReload();
     } catch (err) {
       showToast('Fehler beim Generieren', 'error');
     } finally {
@@ -212,7 +235,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button type="button" onClick={loadData}>Erneut versuchen</button>
+          <button type="button" onClick={handleReload}>Erneut versuchen</button>
         </div>
       )}
 

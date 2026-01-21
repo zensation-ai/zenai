@@ -32,9 +32,13 @@ function getPoolConfig() {
       password: parsed.password,
       database: parsed.pathname.slice(1),
       ssl: sslConfig,
-      max: 5,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      // Pool configuration consistent with database-context.ts
+      max: parseInt(process.env.DB_POOL_SIZE || '5'),
+      min: parseInt(process.env.DB_POOL_MIN || '1'),
+      idleTimeoutMillis: 60000, // 60s to reduce reconnections
+      connectionTimeoutMillis: 10000, // 10s for production latency
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 5000,
     };
   }
 
@@ -45,9 +49,14 @@ function getPoolConfig() {
     database: process.env.DB_NAME || 'ai_brain',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'localpass',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    // Pool size consistent with database-context.ts (was 20, now 5)
+    max: parseInt(process.env.DB_POOL_SIZE || '5'),
+    min: parseInt(process.env.DB_POOL_MIN || '1'),
+    idleTimeoutMillis: 60000, // Increased to 60s to reduce reconnections
+    connectionTimeoutMillis: 10000, // Increased to 10s for better reliability
+    // Keep connections alive
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 5000,
   };
 }
 

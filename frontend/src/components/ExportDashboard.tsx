@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './ExportDashboard.css';
@@ -24,20 +24,33 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
   const [selectedContent, setSelectedContent] = useState<string[]>(['ideas']);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
-  useEffect(() => {
-    if (activeTab === 'history') {
-      loadExportHistory();
-    }
-  }, [activeTab]);
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadExportHistory = async () => {
+  const loadExportHistory = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await axios.get('/api/export/history');
+      const res = await axios.get('/api/export/history', { signal });
       setExportHistory(res.data.exports || []);
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
       console.error('Failed to load export history:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      // Abort any previous request
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = new AbortController();
+      loadExportHistory(abortControllerRef.current.signal);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [activeTab, loadExportHistory]);
 
   const handleExport = async () => {
     if (selectedContent.length === 0) {

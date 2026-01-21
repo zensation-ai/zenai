@@ -130,16 +130,41 @@ export const cache = {
   },
 
   /**
-   * Delete multiple keys matching a pattern
+   * Delete multiple keys matching a pattern using SCAN (non-blocking)
+   * SCAN is preferred over KEYS for production use as it doesn't block Redis
    */
   async delPattern(pattern: string): Promise<number> {
     const client = getClient();
     if (!client || !isConnected) {return 0;}
 
     try {
-      const keys = await client.keys(pattern);
-      if (keys.length === 0) {return 0;}
-      return await client.del(...keys);
+      let cursor = '0';
+      let deletedCount = 0;
+      const batchSize = 100; // Process in batches
+
+      // Use SCAN to iterate through keys without blocking
+      do {
+        const [nextCursor, keys] = await client.scan(
+          cursor,
+          'MATCH', pattern,
+          'COUNT', batchSize
+        );
+        cursor = nextCursor;
+
+        if (keys.length > 0) {
+          const deleted = await client.del(...keys);
+          deletedCount += deleted;
+        }
+      } while (cursor !== '0');
+
+      if (deletedCount > 0) {
+        logger.debug('Cache pattern deletion completed', {
+          pattern,
+          deletedCount,
+        });
+      }
+
+      return deletedCount;
     } catch (error) {
       logger.error('Cache delPattern error', error instanceof Error ? error : undefined, { pattern });
       return 0;

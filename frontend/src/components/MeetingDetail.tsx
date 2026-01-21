@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Meeting } from './MeetingCard';
 import './MeetingDetail.css';
@@ -57,6 +57,19 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
   const [error, setError] = useState<string | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+
+  // ESC key handler for closing modal
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isRecording && !processing) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [onClose, isRecording, processing]);
 
   const startRecording = async () => {
     try {
