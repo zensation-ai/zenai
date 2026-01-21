@@ -17,6 +17,7 @@
     "migrate:supabase": "ts-node src/scripts/migrate-to-supabase.ts",
     "create-ios-key": "ts-node scripts/create-ios-api-key.ts",
     "create-web-key": "ts-node scripts/create-web-api-key.ts",
+    "generate-api-key": "ts-node generate-api-key.ts",
     "mcp:start": "ts-node src/mcp/server.ts",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"
