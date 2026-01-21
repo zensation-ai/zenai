@@ -13,6 +13,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:redis": "ts-node src/scripts/test-redis-v2.ts",
+    "diagnose:redis": "ts-node diagnose-redis.ts",
     "test:supabase": "ts-node src/scripts/test-supabase.ts",
     "migrate:supabase": "ts-node src/scripts/migrate-to-supabase.ts",
     "create-ios-key": "ts-node scripts/create-ios-api-key.ts",

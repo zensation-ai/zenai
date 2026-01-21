@@ -1,13 +1,14 @@
 import { Router, Request, Response } from 'express';
-import { getPool, AIContext } from '../utils/database-context';
+import { queryContext, getPool, AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { responseCacheMiddleware, invalidateCacheAfter } from '../middleware/response-cache';
 
 const router = Router();
 
-// Get available contexts
-router.get('/contexts', apiKeyAuth, (req, res) => {
+// Get available contexts (cached for 1 hour)
+router.get('/contexts', apiKeyAuth, responseCacheMiddleware, (req, res) => {
   res.json({
     contexts: [
       {
@@ -30,8 +31,9 @@ router.get('/contexts', apiKeyAuth, (req, res) => {
 /**
  * GET /api/:context/ideas
  * Fetch ideas for a specific context
+ * Cached for 2 minutes for better performance
  */
-router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/ideas', apiKeyAuth, responseCacheMiddleware, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { limit = '50', offset = '0', type, priority, category } = req.query;
 

@@ -91,16 +91,17 @@ const baseConfig = useConnectionString && databaseUrl
 
 const POOL_CONFIG = {
   ...baseConfig,
-  // Connection pool settings - optimized for Supabase
-  max: parseInt(process.env.DB_POOL_SIZE || '5'),
-  min: parseInt(process.env.DB_POOL_MIN || '1'),
-  idleTimeoutMillis: 60000, // Increased to 60s to reduce reconnections
-  connectionTimeoutMillis: 10000, // Increased to 10s for Supabase latency
+  // Connection pool settings - Phase 24 Optimized for Production
+  // Increased pool size for better concurrency and performance
+  max: parseInt(process.env.DB_POOL_SIZE || '20'), // Increased from 5 to 20
+  min: parseInt(process.env.DB_POOL_MIN || '5'),   // Increased from 1 to 5
+  idleTimeoutMillis: 60000, // 60s to reduce reconnections
+  connectionTimeoutMillis: 10000, // 10s for Supabase latency
   // Statement timeout to prevent long-running queries
   statement_timeout: 30000,
-  // Keep connections alive - critical for Supabase
+  // Aggressive keep-alive for stable connections
   keepAlive: true,
-  keepAliveInitialDelayMillis: 5000, // Start keep-alive earlier
+  keepAliveInitialDelayMillis: 1000, // Reduced from 5000ms to 1000ms for faster detection
 };
 
 // Slow query threshold - 300ms is reasonable for Supabase (200-300ms latency)
