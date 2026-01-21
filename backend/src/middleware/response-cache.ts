@@ -9,6 +9,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { cache } from '../utils/cache';
 import { logger } from '../utils/logger';
+import { AIContext } from '../utils/database-context';
 
 /**
  * Cache configuration for different endpoint patterns
@@ -171,7 +172,7 @@ export function responseCacheMiddleware(req: Request, res: Response, next: NextF
  * Usage:
  *   await invalidateCacheForContext('personal', 'ideas');
  */
-export async function invalidateCacheForContext(context: string, resource?: string): Promise<number> {
+export async function invalidateCacheForContext(context: AIContext, resource?: string): Promise<number> {
   if (!cache.isAvailable()) {
     return 0;
   }
@@ -190,13 +191,13 @@ export async function invalidateCacheForContext(context: string, resource?: stri
     const deletedCount = await cache.delPattern(pattern);
 
     if (deletedCount > 0) {
-      logger.info('Cache invalidated', { context, resource, deletedCount });
+      logger.info('Cache invalidated', { context: context as string, resource, deletedCount });
     }
 
     return deletedCount;
   } catch (error) {
     logger.error('Cache invalidation error', error instanceof Error ? error : undefined, {
-      context,
+      context: context as string,
       resource,
     });
     return 0;
@@ -210,16 +211,22 @@ export async function invalidateCacheForContext(context: string, resource?: stri
  *   router.post('/api/:context/ideas', invalidateCacheAfter('ideas'), handler);
  */
 export function invalidateCacheAfter(resource?: string) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const context = req.params.context;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const context = req.params.context as AIContext;
 
     // Intercept response to invalidate after successful mutation
     const originalJson = res.json.bind(res);
 
-    res.json = async function(data: any) {
-      // Only invalidate on successful mutations
+    res.json = function(data: any) {
+      // Only invalidate on successful mutations (fire and forget)
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        await invalidateCacheForContext(context, resource);
+        invalidateCacheForContext(context, resource).catch(err => {
+          logger.warn('Failed to invalidate cache after mutation', {
+            context: context as string,
+            resource,
+            error: err instanceof Error ? err.message : 'Unknown error'
+          });
+        });
       }
 
       return originalJson(data);
