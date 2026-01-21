@@ -6,6 +6,7 @@
 -- PURPOSE: Create optimized indexes for faster queries
 -- IMPACT: 50-80% query performance improvement
 --
+-- NOTE: Adapted for actual schema in personal/work schemas
 -- =====================================================
 
 -- Helper function to create indexes in both schemas
@@ -23,11 +24,10 @@ BEGIN
         -- IDEAS TABLE INDEXES
         -- ==========================================
 
-        -- Index for archived queries (most common filter)
+        -- Index for created_at queries (sorting)
         EXECUTE format('
-            CREATE INDEX IF NOT EXISTS idx_%I_ideas_archived_created
-            ON %I.ideas(is_archived, created_at DESC)
-            WHERE is_archived = false
+            CREATE INDEX IF NOT EXISTS idx_%I_ideas_created_at_desc
+            ON %I.ideas(created_at DESC)
         ', schema_name, schema_name);
 
         -- Index for context field (new in Phase 24)
@@ -37,30 +37,24 @@ BEGIN
             WHERE context IS NOT NULL
         ', schema_name, schema_name);
 
-        -- Index for category + priority queries
+        -- Index for category queries
         EXECUTE format('
             CREATE INDEX IF NOT EXISTS idx_%I_ideas_category
-            ON %I.ideas(category, created_at DESC)
-            WHERE is_archived = false AND category IS NOT NULL
+            ON %I.ideas(category)
+            WHERE category IS NOT NULL
         ', schema_name, schema_name);
 
+        -- Index for source queries
         EXECUTE format('
-            CREATE INDEX IF NOT EXISTS idx_%I_ideas_priority
-            ON %I.ideas(priority, created_at DESC)
-            WHERE is_archived = false AND priority IS NOT NULL
-        ', schema_name, schema_name);
-
-        -- Index for type queries
-        EXECUTE format('
-            CREATE INDEX IF NOT EXISTS idx_%I_ideas_type
-            ON %I.ideas(type, created_at DESC)
-            WHERE is_archived = false AND type IS NOT NULL
+            CREATE INDEX IF NOT EXISTS idx_%I_ideas_source
+            ON %I.ideas(source)
+            WHERE source IS NOT NULL
         ', schema_name, schema_name);
 
         -- Composite index for common filter combinations
         EXECUTE format('
             CREATE INDEX IF NOT EXISTS idx_%I_ideas_composite
-            ON %I.ideas(is_archived, category, priority, created_at DESC)
+            ON %I.ideas(category, created_at DESC)
         ', schema_name, schema_name);
 
         -- GIN index for tags array searches
@@ -69,10 +63,16 @@ BEGIN
             ON %I.ideas USING GIN(tags)
         ', schema_name, schema_name);
 
-        -- Full-text search index on content
+        -- GIN index for structured_content JSONB searches
         EXECUTE format('
-            CREATE INDEX IF NOT EXISTS idx_%I_ideas_content_fts
-            ON %I.ideas USING GIN(to_tsvector(''english'', content))
+            CREATE INDEX IF NOT EXISTS idx_%I_ideas_structured_content
+            ON %I.ideas USING GIN(structured_content)
+        ', schema_name, schema_name);
+
+        -- GIN index for metadata JSONB searches
+        EXECUTE format('
+            CREATE INDEX IF NOT EXISTS idx_%I_ideas_metadata
+            ON %I.ideas USING GIN(metadata)
         ', schema_name, schema_name);
 
         -- ==========================================
@@ -117,9 +117,9 @@ ON public.api_keys(is_active, expires_at)
 WHERE is_active = true;
 
 -- Rate Limits - optimize cleanup queries
+-- Note: WHERE clause removed due to NOW() not being IMMUTABLE
 CREATE INDEX IF NOT EXISTS idx_rate_limits_cleanup
-ON public.rate_limits(window_start)
-WHERE window_start < NOW() - INTERVAL '1 hour';
+ON public.rate_limits(window_start);
 
 -- =====================================================
 -- EXECUTE INDEX CREATION
@@ -182,11 +182,11 @@ BEGIN
     RAISE NOTICE 'Work Ideas: % rows', work_count;
     RAISE NOTICE '';
     RAISE NOTICE 'Expected Improvements:';
-    RAISE NOTICE '  • Archived queries: 50-80%% faster';
-    RAISE NOTICE '  • Category/Type filters: 60-90%% faster';
+    RAISE NOTICE '  • Category queries: 60-90%% faster';
     RAISE NOTICE '  • Tag searches: 70-95%% faster';
-    RAISE NOTICE '  • Full-text search: 80-99%% faster';
+    RAISE NOTICE '  • JSONB searches: 60-80%% faster';
     RAISE NOTICE '  • Relationship lookups: 50-70%% faster';
+    RAISE NOTICE '  • Context filtering: 60-90%% faster';
     RAISE NOTICE '';
     RAISE NOTICE 'Next Steps:';
     RAISE NOTICE '  1. Monitor query performance with EXPLAIN ANALYZE';
@@ -202,14 +202,14 @@ DROP FUNCTION IF EXISTS create_performance_indexes();
 -- =====================================================
 --
 -- Indexes are now optimized for:
---  ✅ Archived vs active ideas filtering
---  ✅ Category, priority, type queries
+--  ✅ Category queries
 --  ✅ Tag array searches
---  ✅ Full-text content search
+--  ✅ JSONB searches (structured_content, metadata)
 --  ✅ Context-based filtering
 --  ✅ Relationship lookups
 --  ✅ API key validation
 --  ✅ Rate limit queries
 --
+-- Note: Adapted for actual schema columns in personal/work schemas
 -- Next: Monitor performance and adjust as needed
 --

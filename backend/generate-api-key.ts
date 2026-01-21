@@ -10,12 +10,22 @@
  *   npx tsx generate-api-key.ts
  */
 
-import { pool } from './src/utils/database';
+import { Pool } from 'pg';
+import { randomUUID } from 'crypto';
 import { generateApiKey } from './src/middleware/auth';
 import { logger } from './src/utils/logger';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// Create a dedicated pool for public schema (API keys)
+const publicPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('supabase.co')
+    ? { rejectUnauthorized: false }
+    : undefined,
+  max: 1, // Only need one connection for this script
+});
 
 async function main() {
   try {
@@ -32,25 +42,28 @@ async function main() {
     console.log('━'.repeat(60));
     console.log();
 
-    // Store in database
-    const keyName = process.env.KEY_NAME || 'Generated Key';
+    // Store in database (public schema)
+    const keyId = randomUUID();
+    const keyName = process.env.KEY_NAME || 'Test API Key';
     const scopes = ['read', 'write']; // Default scopes
     const rateLimit = 10000; // High rate limit
 
-    await pool.query(
-      `INSERT INTO public.api_keys (key_prefix, key_hash, name, scopes, rate_limit, is_active)
-       VALUES ($1, $2, $3, $4, $5, true)
+    const result = await publicPool.query(
+      `INSERT INTO public.api_keys (id, key_prefix, key_hash, name, scopes, rate_limit, is_active)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, true)
        RETURNING id, name, scopes, rate_limit, created_at`,
-      [prefix, hash, keyName, scopes, rateLimit]
+      [keyId, prefix, hash, keyName, JSON.stringify(scopes), rateLimit]
     );
 
     console.log('✅ API key stored in database');
     console.log();
     console.log('Key Details:');
+    console.log(`  ID: ${result.rows[0].id}`);
     console.log(`  Name: ${keyName}`);
     console.log(`  Prefix: ${prefix}`);
     console.log(`  Scopes: ${scopes.join(', ')}`);
     console.log(`  Rate Limit: ${rateLimit} requests/minute`);
+    console.log(`  Created: ${result.rows[0].created_at}`);
     console.log();
     console.log('━'.repeat(60));
     console.log('⚠️  IMPORTANT: Save the API key above!');
@@ -60,16 +73,18 @@ async function main() {
     console.log('Next steps:');
     console.log('1. Update frontend/.env with:');
     console.log(`   VITE_API_KEY=${key}`);
-    console.log('2. Update Railway/Vercel environment variables');
-    console.log('3. Redeploy frontend if needed');
+    console.log('2. Use this key for API testing');
     console.log();
 
   } catch (error) {
-    console.error('❌ Error generating API key:', error);
+    console.error('❌ Error generating API key:');
+    if (error instanceof Error) {
+      console.error(`   ${error.message}`);
+    }
     logger.error('API key generation failed', error instanceof Error ? error : undefined);
     process.exit(1);
   } finally {
-    await pool.end();
+    await publicPool.end();
   }
 }
 
