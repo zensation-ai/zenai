@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './LearningTasksDashboard.css';
@@ -94,28 +94,50 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
     topics_covered: '',
   });
 
-  useEffect(() => {
-    loadData();
-  }, [context]);
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [tasksRes, statsRes, insightsRes] = await Promise.all([
-        axios.get(`/api/${context}/learning-tasks`).catch(() => ({ data: { tasks: [] } })),
-        axios.get(`/api/${context}/learning-stats`).catch(() => ({ data: null })),
-        axios.get(`/api/${context}/learning-insights`).catch(() => ({ data: { insights: [] } })),
+        axios.get(`/api/${context}/learning-tasks`, { signal }).catch(() => ({ data: { tasks: [] } })),
+        axios.get(`/api/${context}/learning-stats`, { signal }).catch(() => ({ data: null })),
+        axios.get(`/api/${context}/learning-insights`, { signal }).catch(() => ({ data: { insights: [] } })),
       ]);
 
       setTasks(tasksRes.data.tasks || []);
       setStats(statsRes.data);
       setInsights(insightsRes.data.insights || []);
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
       console.error('Failed to load learning data:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [context]);
+
+  useEffect(() => {
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadData]);
+
+  // Manual reload handler (for after actions)
+  const handleReload = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
+  }, [loadData]);
 
   const handleCreateTask = async () => {
     if (!taskForm.title.trim()) {
@@ -168,7 +190,7 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
         topics_covered: '',
       });
       showToast('Session geloggt!', 'success');
-      loadData(); // Refresh stats
+      handleReload(); // Refresh stats
     } catch (err) {
       showToast('Loggen fehlgeschlagen', 'error');
     }

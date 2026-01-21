@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './ProactiveDashboard.css';
@@ -47,22 +47,24 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
     auto_detect_routines: true
   });
 
-  useEffect(() => {
-    loadData();
-  }, [context]);
+  // AbortController ref to prevent memory leaks on unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [suggestionsRes, routinesRes, statsRes] = await Promise.all([
-        axios.get('/api/proactive/suggestions'),
-        axios.get('/api/proactive/routines'),
-        axios.get('/api/proactive/stats')
+        axios.get('/api/proactive/suggestions', { signal }),
+        axios.get('/api/proactive/routines', { signal }),
+        axios.get('/api/proactive/stats', { signal })
       ]);
       setSuggestions(suggestionsRes.data.suggestions || []);
       setRoutines(routinesRes.data.routines || []);
       setStats(statsRes.data);
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
+
       console.error('Failed to load proactive data:', err);
       // Set defaults
       setSuggestions([]);
@@ -76,7 +78,21 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Abort any previous request
+    abortControllerRef.current?.abort();
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+    loadData(abortControllerRef.current.signal);
+
+    // Cleanup: abort on unmount or context change
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadData, context]);
 
   const handleAcceptSuggestion = async (id: string) => {
     try {

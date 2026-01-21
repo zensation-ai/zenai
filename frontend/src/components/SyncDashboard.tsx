@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './SyncDashboard.css';
@@ -38,22 +38,18 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
 
-  useEffect(() => {
-    loadSyncStatus();
-  }, [context]);
+  // AbortController refs to prevent memory leaks on unmount
+  const statusAbortRef = useRef<AbortController | null>(null);
+  const changesAbortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (activeTab === 'changes') {
-      loadPendingChanges();
-    }
-  }, [activeTab]);
-
-  const loadSyncStatus = async () => {
+  const loadSyncStatus = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const res = await axios.get(`/api/${context}/sync/status`);
+      const res = await axios.get(`/api/${context}/sync/status`, { signal });
       setSyncStatus(res.data);
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
       console.error('Failed to load sync status:', err);
       // Set default status if API not available
       setSyncStatus({
@@ -65,25 +61,66 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [context]);
 
-  const loadPendingChanges = async () => {
+  const loadPendingChanges = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await axios.get(`/api/${context}/sync/pending`);
+      const res = await axios.get(`/api/${context}/sync/pending`, { signal });
       setPendingChanges(res.data.changes || []);
     } catch (err) {
+      // Don't update state if request was aborted
+      if (axios.isCancel(err)) return;
       console.error('Failed to load pending changes:', err);
       setPendingChanges([]);
     }
-  };
+  }, [context]);
+
+  useEffect(() => {
+    // Abort any previous request
+    statusAbortRef.current?.abort();
+    statusAbortRef.current = new AbortController();
+    loadSyncStatus(statusAbortRef.current.signal);
+
+    // Cleanup on unmount
+    return () => {
+      statusAbortRef.current?.abort();
+    };
+  }, [loadSyncStatus]);
+
+  useEffect(() => {
+    if (activeTab === 'changes') {
+      // Abort any previous request
+      changesAbortRef.current?.abort();
+      changesAbortRef.current = new AbortController();
+      loadPendingChanges(changesAbortRef.current.signal);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      changesAbortRef.current?.abort();
+    };
+  }, [activeTab, loadPendingChanges]);
+
+  // Manual reload handlers
+  const handleReloadStatus = useCallback(() => {
+    statusAbortRef.current?.abort();
+    statusAbortRef.current = new AbortController();
+    loadSyncStatus(statusAbortRef.current.signal);
+  }, [loadSyncStatus]);
+
+  const handleReloadChanges = useCallback(() => {
+    changesAbortRef.current?.abort();
+    changesAbortRef.current = new AbortController();
+    loadPendingChanges(changesAbortRef.current.signal);
+  }, [loadPendingChanges]);
 
   const handleManualSync = async () => {
     setSyncing(true);
     try {
       await axios.post(`/api/${context}/sync/trigger`);
       showToast('Sync erfolgreich!', 'success');
-      loadSyncStatus();
-      loadPendingChanges();
+      handleReloadStatus();
+      handleReloadChanges();
     } catch (err) {
       console.error('Sync failed:', err);
       showToast('Sync fehlgeschlagen', 'error');
@@ -96,7 +133,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
     try {
       await axios.delete(`/api/sync/devices/${deviceId}`);
       showToast('Gerät entfernt', 'success');
-      loadSyncStatus();
+      handleReloadStatus();
     } catch (err) {
       console.error('Failed to remove device:', err);
       showToast('Fehler beim Entfernen', 'error');
