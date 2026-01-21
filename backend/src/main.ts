@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import dotenv from 'dotenv';
+// Phase Security Sprint 4: Secrets Manager - must be imported early
+import { secretsManager } from './services/secrets-manager';
 import { voiceMemoRouter } from './routes/voice-memo';
 import { ideasRouter } from './routes/ideas';
 import { healthRouter } from './routes/health';
@@ -267,15 +269,34 @@ setupGracefulShutdown();
 
 // Start server
 app.listen(PORT, async () => {
+  // Phase Security Sprint 4: Initialize Secrets Manager first
+  try {
+    await secretsManager.initialize();
+    logger.info('SecretsManager initialized successfully');
+  } catch (error) {
+    logger.error('FATAL: SecretsManager initialization failed', error instanceof Error ? error : undefined);
+    process.exit(1);
+  }
+
+  // Get secrets health status for startup display
+  const secretsHealth = secretsManager.getHealthSummary();
+  const secretsDbStatus = secretsManager.getDatabaseStatus();
+  const aiStatus = secretsManager.getAIProviderStatus();
+  const cacheStatus = secretsManager.getCacheStatus();
+
   console.log(`
 Personal AI System - Backend (Phase 29)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
-Ollama:      ${process.env.OLLAMA_URL ? 'configured' : 'not configured'}
-Database:    ${process.env.DATABASE_URL ? 'DATABASE_URL (Railway)' : (process.env.DB_HOST ? 'DB_HOST configured' : 'localhost (default)')}
+Environment: ${secretsManager.isProduction() ? 'PRODUCTION' : secretsManager.isDevelopment() ? 'development' : 'unknown'}
+--------------------------------------------------------
+Secrets:     ${secretsHealth.healthy ? 'OK' : 'WARNINGS'} (${secretsHealth.secretsConfigured} configured)
+Database:    ${secretsDbStatus.configured ? secretsDbStatus.type.toUpperCase() : 'NOT CONFIGURED'}
+AI:          ${aiStatus.configured ? aiStatus.providers.join(', ').toUpperCase() : 'NOT CONFIGURED'}
+Cache:       ${cacheStatus.type.toUpperCase()}
 ========================================================
-Phase 29 APIs (NEW!):
+Phase 29 APIs:
   - Create Session:    POST /api/chat/sessions
   - List Sessions:     GET /api/chat/sessions
   - Get Session:       GET /api/chat/sessions/:id
