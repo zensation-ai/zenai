@@ -31,12 +31,57 @@ import {
   updateLearningSuggestion,
   quickFeedback,
   DetailedFeedback,
+  detectDraftNeed,
 } from '../services/draft-generation';
+import { isClaudeAvailable } from '../services/claude';
 
 export const draftsRouter = Router();
 
 // All routes require authentication
 draftsRouter.use(apiKeyAuth);
+
+// ===========================================
+// POST /api/:context/drafts/debug-detect
+// Debug endpoint to test draft detection without generating
+// ===========================================
+draftsRouter.post(
+  '/:context/drafts/debug-detect',
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context } = req.params;
+    const { text, type = 'task' } = req.body;
+
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+    }
+
+    if (!text) {
+      throw new ValidationError('text is required');
+    }
+
+    const claudeAvailable = isClaudeAvailable();
+    const detection = await detectDraftNeed(text, type, context as AIContext);
+
+    res.json({
+      success: true,
+      debug: {
+        claudeAvailable,
+        anthropicKeySet: !!process.env.ANTHROPIC_API_KEY,
+        inputText: text,
+        inputType: type,
+        context,
+      },
+      detection: {
+        detected: detection.detected,
+        draftType: detection.draftType,
+        confidence: detection.confidence,
+        matchedPattern: detection.matchedPattern,
+        extractedTopic: detection.extractedTopic,
+        extractedRecipient: detection.extractedRecipient,
+      },
+    });
+  })
+);
 
 // ===========================================
 // GET /api/:context/ideas/:ideaId/draft
