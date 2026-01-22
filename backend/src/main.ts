@@ -374,13 +374,13 @@ Phase 4 APIs:
 
   if (!dbStatus.personal && !dbStatus.work) {
     // Critical: Both databases failed - cannot operate
-    logger.error('CRITICAL: Both databases failed to connect - shutting down', { dbStatus });
+    logger.error('CRITICAL: Both databases failed to connect - shutting down', undefined, { dbStatus, operation: 'startup' });
     process.exit(1);
   } else if (!dbStatus.personal || !dbStatus.work) {
     // One database failed - warn but continue (partial functionality)
-    logger.warn('One database is not connected properly', { dbStatus });
+    logger.warn('One database is not connected properly', { dbStatus, operation: 'startup' });
   } else {
-    logger.info('All databases connected successfully', { dbStatus });
+    logger.info('All databases connected successfully', { dbStatus, operation: 'startup' });
   }
 
   // Start periodic connection health checks (every 5 minutes)

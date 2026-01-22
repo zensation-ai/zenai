@@ -458,7 +458,7 @@ export function startConnectionHealthCheck(intervalMs: number = 5 * 60 * 1000): 
 
       // Circuit breaker: escalate after MAX_CONSECUTIVE_FAILURES
       if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-        logger.error('CRITICAL: Database unreachable for extended period - initiating shutdown', {
+        logger.error('CRITICAL: Database unreachable for extended period - initiating shutdown', undefined, {
           consecutiveFailures,
           operation: 'circuitBreakerTriggered',
         });
