@@ -40,17 +40,15 @@ const CACHE_CONFIG: Record<string, number> = {
 
 /**
  * Generate cache key from request
+ * IMPORTANT: Uses the ACTUAL path (not normalized) to ensure different contexts
+ * are cached separately. E.g., /api/work/ideas and /api/personal/ideas get different keys.
  */
 function generateCacheKey(req: Request): string {
-  const { method, path, query, params } = req;
+  const { method, path, query } = req;
 
-  // Normalize path with params
-  let normalizedPath = path;
-  if (params && Object.keys(params).length > 0) {
-    Object.entries(params).forEach(([key, value]) => {
-      normalizedPath = normalizedPath.replace(`/${value}`, `/:${key}`);
-    });
-  }
+  // Use the actual path as-is to ensure different contexts are cached separately
+  // Previously we normalized the path (replaced "work" with ":context") which caused
+  // /api/work/ideas and /api/personal/ideas to share the same cache key - a bug!
 
   // Sort query params for consistent keys
   const sortedQuery = Object.keys(query)
@@ -58,7 +56,7 @@ function generateCacheKey(req: Request): string {
     .map(key => `${key}=${query[key]}`)
     .join('&');
 
-  return `response:${method}:${normalizedPath}${sortedQuery ? `?${sortedQuery}` : ''}`;
+  return `response:${method}:${path}${sortedQuery ? `?${sortedQuery}` : ''}`;
 }
 
 /**
