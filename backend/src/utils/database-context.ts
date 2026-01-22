@@ -401,6 +401,20 @@ export function getPoolStats(): Record<AIContext, {
 // Periodic connection health check interval reference
 let healthCheckInterval: NodeJS.Timeout | null = null;
 
+// Circuit breaker for consecutive health check failures
+let consecutiveFailures = 0;
+const MAX_CONSECUTIVE_FAILURES = 3; // After 3 failures (15 min), escalate
+
+/**
+ * Get current health check failure count (for monitoring)
+ */
+export function getHealthCheckStatus(): { consecutiveFailures: number; isHealthy: boolean } {
+  return {
+    consecutiveFailures,
+    isHealthy: consecutiveFailures < MAX_CONSECUTIVE_FAILURES,
+  };
+}
+
 /**
  * Start periodic connection health checks
  * Runs a simple query every 5 minutes to keep connections alive
@@ -420,15 +434,37 @@ export function startConnectionHealthCheck(intervalMs: number = 5 * 60 * 1000): 
         pools.work.query('SELECT 1'),
       ]);
       const duration = Date.now() - start;
+
+      // Reset failure counter on success
+      if (consecutiveFailures > 0) {
+        logger.info('Connection health check recovered', {
+          previousFailures: consecutiveFailures,
+          operation: 'healthCheckRecovered',
+        });
+      }
+      consecutiveFailures = 0;
+
       logger.debug('Connection health check passed', {
         duration,
         operation: 'healthCheck',
       });
     } catch (error) {
+      consecutiveFailures++;
       logger.error('Connection health check failed', error instanceof Error ? error : undefined, {
+        consecutiveFailures,
+        maxFailures: MAX_CONSECUTIVE_FAILURES,
         operation: 'healthCheckFailed',
       });
-      // The retry logic in queryContext will handle reconnection on next query
+
+      // Circuit breaker: escalate after MAX_CONSECUTIVE_FAILURES
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        logger.error('CRITICAL: Database unreachable for extended period - initiating shutdown', {
+          consecutiveFailures,
+          operation: 'circuitBreakerTriggered',
+        });
+        await closeAllPools().catch(() => {});
+        process.exit(1);
+      }
     }
   }, intervalMs);
 

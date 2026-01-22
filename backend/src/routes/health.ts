@@ -10,7 +10,7 @@
  */
 
 import { Router } from 'express';
-import { testConnections, getPoolStats } from '../utils/database-context';
+import { testConnections, getPoolStats, getHealthCheckStatus } from '../utils/database-context';
 import { checkOllamaHealth } from '../utils/ollama';
 import { getCacheStats } from '../utils/cache';
 import { getAvailableServices } from '../services/ai';
@@ -132,6 +132,9 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
   const isHealthy = allDbHealthy && anyAiAvailable && !anyCircuitBreakerOpen;
   const isDegraded = anyDbHealthy || anyCircuitBreakerOpen;
 
+  // Get DB health check circuit breaker status
+  const dbHealthCheckStatus = getHealthCheckStatus();
+
   // SECURITY: Minimal response in production without API key
   // Include basic service status for frontend health indicators
   if (isProduction && !hasApiKey) {
@@ -143,11 +146,16 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
         databases: {
           personal: { status: dbHealth.personal ? 'connected' : 'disconnected' },
           work: { status: dbHealth.work ? 'connected' : 'disconnected' },
+          healthCheck: dbHealthCheckStatus,
         },
         ai: {
           primary: aiServices.primary,
           claude: { status: claudeHealth.available ? 'healthy' : 'unavailable' },
           ollama: { status: ollamaHealth.available ? 'connected' : 'disconnected', models: ollamaHealth.models || [] },
+        },
+        cache: {
+          status: cacheStats.connected ? 'connected' : 'disconnected',
+          type: 'redis',
         },
       },
     };
@@ -176,6 +184,7 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
           status: dbHealth.work ? 'connected' : 'disconnected',
           pool: poolStats.work,
         },
+        healthCheck: dbHealthCheckStatus,
       },
       ai: {
         primary: aiServices.primary,
