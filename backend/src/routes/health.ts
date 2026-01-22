@@ -70,9 +70,13 @@ async function checkClaudeHealth(): Promise<{
  * @description FAST health check endpoint (< 100ms target)
  * Returns basic status without external service calls
  * For comprehensive checks, use /api/health/detailed
+ *
+ * NOTE: Includes minimal services info for frontend status indicators
+ * These are based on configuration, not active health checks
  */
 healthRouter.get('/', (req, res) => {
   const startTime = Date.now();
+  const aiServices = getAvailableServices();
 
   res.json({
     status: 'healthy',
@@ -87,6 +91,19 @@ healthRouter.get('/', (req, res) => {
       heapUsed: formatBytes(process.memoryUsage().heapUsed),
       heapTotal: formatBytes(process.memoryUsage().heapTotal),
       rss: formatBytes(process.memoryUsage().rss),
+    },
+    // Minimal services info for frontend status indicators
+    // Based on configuration, not active health checks
+    services: {
+      databases: {
+        personal: { status: 'connected' }, // If server is running, DB init succeeded
+        work: { status: 'connected' },
+      },
+      ai: {
+        primary: aiServices.primary,
+        claude: { status: isClaudeAvailable() ? 'healthy' : 'not_configured' },
+        ollama: { status: 'disconnected', models: [] }, // Ollama only for local dev
+      },
     },
     message: 'For detailed health check, use /api/health/detailed',
   });
