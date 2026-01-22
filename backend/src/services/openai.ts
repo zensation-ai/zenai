@@ -146,6 +146,56 @@ export async function queryOpenAIJSON<T = unknown>(
 }
 
 /**
+ * Transcribe audio using OpenAI Whisper API
+ * This is used in production (Railway) where local Whisper CLI is not available
+ */
+export async function transcribeWithOpenAI(
+  audioBuffer: Buffer,
+  filename: string = 'audio.webm'
+): Promise<{ text: string; language: string; duration: number }> {
+  if (!openaiClient) {
+    throw new Error('OpenAI client not initialized - OPENAI_API_KEY required for transcription');
+  }
+
+  const startTime = Date.now();
+
+  try {
+    // Create a File object from the buffer
+    const file = new File([audioBuffer], filename, {
+      type: filename.endsWith('.webm') ? 'audio/webm' :
+            filename.endsWith('.mp3') ? 'audio/mpeg' :
+            filename.endsWith('.m4a') ? 'audio/mp4' :
+            filename.endsWith('.wav') ? 'audio/wav' : 'audio/webm'
+    });
+
+    const response = await openaiClient.audio.transcriptions.create({
+      file: file,
+      model: 'whisper-1',
+      language: 'de', // Force German
+      response_format: 'json',
+    });
+
+    const duration = Date.now() - startTime;
+    logger.info('OpenAI Whisper transcription completed', {
+      duration,
+      textLength: response.text.length,
+      operation: 'transcribeWithOpenAI',
+    });
+
+    return {
+      text: response.text,
+      language: 'de',
+      duration,
+    };
+  } catch (error: unknown) {
+    logger.error('OpenAI Whisper transcription error', error instanceof Error ? error : undefined, {
+      operation: 'transcribeWithOpenAI',
+    });
+    throw error;
+  }
+}
+
+/**
  * Generate text response using OpenAI
  */
 export async function generateOpenAIResponse(

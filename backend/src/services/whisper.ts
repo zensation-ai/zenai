@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { logger } from '../utils/logger';
+import { transcribeWithOpenAI, isOpenAIAvailable } from './openai';
 
 const WHISPER_MODEL = process.env.WHISPER_MODEL || 'base';
 
@@ -13,12 +14,43 @@ interface TranscriptionResult {
 }
 
 /**
- * Transcribe audio file using OpenAI Whisper CLI
+ * Transcribe audio file using OpenAI Whisper
  * Supports: wav, mp3, m4a, webm, ogg, flac
+ *
+ * Strategy:
+ * 1. Try local Whisper CLI (for local development)
+ * 2. Fall back to OpenAI Whisper API (for Railway/production)
  */
 export async function transcribeAudio(
   audioBuffer: Buffer,
   originalFilename: string = 'audio.wav'
+): Promise<TranscriptionResult> {
+  // Check if local Whisper CLI is available
+  const localWhisperAvailable = await checkWhisperAvailable();
+
+  if (localWhisperAvailable) {
+    logger.info('Using local Whisper CLI for transcription', { operation: 'transcribeAudio' });
+    return transcribeWithLocalWhisper(audioBuffer, originalFilename);
+  }
+
+  // Fall back to OpenAI Whisper API
+  if (isOpenAIAvailable()) {
+    logger.info('Using OpenAI Whisper API for transcription (local Whisper not available)', {
+      operation: 'transcribeAudio',
+    });
+    return transcribeWithOpenAI(audioBuffer, originalFilename);
+  }
+
+  // Neither local Whisper nor OpenAI available
+  throw new Error('No transcription service available. Install local Whisper CLI or configure OPENAI_API_KEY.');
+}
+
+/**
+ * Transcribe using local Whisper CLI
+ */
+async function transcribeWithLocalWhisper(
+  audioBuffer: Buffer,
+  originalFilename: string
 ): Promise<TranscriptionResult> {
   const startTime = Date.now();
 
@@ -41,7 +73,7 @@ export async function transcribeAudio(
     const transcription = await runWhisperCLI(tempInputPath, tempOutputPath);
 
     const duration = Date.now() - startTime;
-    logger.info('Transcription completed', { duration });
+    logger.info('Local Whisper transcription completed', { duration, operation: 'transcribeWithLocalWhisper' });
 
     return {
       text: transcription.text,
