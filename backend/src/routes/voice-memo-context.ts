@@ -27,6 +27,8 @@ import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 // Phase 23: Proactive Research Integration
 import { processIdeaForResearch } from '../services/proactive-intelligence';
+// Phase 24: Cache Invalidation
+import { invalidateCacheForContext } from '../middleware/response-cache';
 import { getActiveFocusContext, findMatchingFocus } from '../services/domain-focus';
 // Phase 24: Business Profile Learning
 import { learnFromIdea } from '../services/business-profile-learning';
@@ -192,6 +194,16 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         context, // Add context to ensure idea and draft match
       ]
     );
+
+    // Phase 24: Invalidate ideas cache so new idea appears immediately
+    // This is critical - without this, GET /api/:context/ideas returns stale cached data
+    try {
+      await invalidateCacheForContext(context as AIContext, 'ideas');
+      logger.debug('Ideas cache invalidated after new idea', { context, ideaId });
+    } catch (cacheError) {
+      // Don't fail if cache invalidation fails
+      logger.warn('Failed to invalidate ideas cache', { context, ideaId });
+    }
 
     // Phase 23: Check for proactive research needs (non-blocking)
     let proactiveResearch = null;
