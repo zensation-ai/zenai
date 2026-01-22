@@ -200,11 +200,14 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
 
   // Skip CSRF for API key authenticated requests
   // API keys provide their own authentication mechanism
-  if (req.apiKey) {
+  // Check both req.apiKey (if auth middleware ran) and x-api-key header directly
+  const hasApiKeyHeader = req.headers['x-api-key'] || req.headers.authorization?.startsWith('Bearer ab_');
+  if (req.apiKey || hasApiKeyHeader) {
     logger.debug('CSRF skipped for API key auth', {
       operation: 'csrfProtection',
-      apiKeyId: req.apiKey.id,
+      apiKeyId: req.apiKey?.id,
       path: req.path,
+      hasHeader: !!hasApiKeyHeader,
     });
     return next();
   }
