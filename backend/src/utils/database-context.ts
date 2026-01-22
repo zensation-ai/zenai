@@ -329,11 +329,14 @@ export function setupGracefulShutdown(): void {
     process.exit(1);
   });
 
-  process.on('unhandledRejection', (reason) => {
-    logger.error('Unhandled Rejection', reason instanceof Error ? reason : undefined, {
+  process.on('unhandledRejection', async (reason) => {
+    logger.error('Unhandled Rejection - initiating shutdown', reason instanceof Error ? reason : undefined, {
       reason: String(reason),
       operation: 'unhandledRejection',
     });
+    // Critical: Don't leave server in broken state
+    await closeAllPools().catch(() => {});
+    process.exit(1);
   });
 }
 

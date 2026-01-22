@@ -238,17 +238,14 @@ app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessi
 
 // Cleanup rate limits every hour
 // Store interval reference for proper cleanup on shutdown
+// Note: Cleanup happens in setupGracefulShutdown() via closeAllPools()
 const rateLimitCleanupInterval = setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
 }, 60 * 60 * 1000);
 
-// Ensure interval is cleared on process shutdown to prevent memory leaks
-process.on('SIGTERM', () => {
-  clearInterval(rateLimitCleanupInterval);
-});
-process.on('SIGINT', () => {
-  clearInterval(rateLimitCleanupInterval);
-});
+// Clear interval on shutdown (setupGracefulShutdown handles DB cleanup)
+process.once('SIGTERM', () => clearInterval(rateLimitCleanupInterval));
+process.once('SIGINT', () => clearInterval(rateLimitCleanupInterval));
 
 // 404 Handler for undefined routes
 app.use((req, res) => {
@@ -375,8 +372,13 @@ Phase 4 APIs:
   logger.info('Testing database connections...');
   const dbStatus = await testConnections();
 
-  if (!dbStatus.personal || !dbStatus.work) {
-    logger.warn('One or more databases are not connected properly', { dbStatus });
+  if (!dbStatus.personal && !dbStatus.work) {
+    // Critical: Both databases failed - cannot operate
+    logger.error('CRITICAL: Both databases failed to connect - shutting down', { dbStatus });
+    process.exit(1);
+  } else if (!dbStatus.personal || !dbStatus.work) {
+    // One database failed - warn but continue (partial functionality)
+    logger.warn('One database is not connected properly', { dbStatus });
   } else {
     logger.info('All databases connected successfully', { dbStatus });
   }
