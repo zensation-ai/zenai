@@ -182,19 +182,24 @@ type QueryParam = string | number | boolean | Date | null | undefined | Buffer |
  * Phase 23: Added automatic retry for transient errors (ECONNRESET, ETIMEDOUT)
  * Phase 24: CRITICAL FIX - Schema Separation with search_path
  *
- * IMPORTANT: This function now uses dedicated client connections with search_path
- * to ensure proper schema isolation between personal and work contexts.
+ * SIMPLIFICATION: All queries now use 'personal' schema only.
+ * The context parameter is kept for API compatibility but ignored.
+ * This eliminates schema-routing complexity while keeping the API structure
+ * intact for future re-implementation of context separation.
  */
 export async function queryContext(
   context: AIContext,
   text: string,
   params?: QueryParam[]
 ): Promise<QueryResult> {
-  const pool = getPool(context);
+  // SIMPLIFICATION: Always use 'personal' schema - ignore context parameter
+  const effectiveContext: AIContext = 'personal';
+
+  const pool = getPool(effectiveContext);
   const start = Date.now();
   let lastError: Error | null = null;
 
-  poolStats[context].queries++;
+  poolStats[effectiveContext].queries++;
 
   // Retry loop for transient errors
   for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
@@ -202,9 +207,8 @@ export async function queryContext(
     const client = await pool.connect();
 
     try {
-      // CRITICAL: Set search_path to ensure queries use correct schema
-      // This is essential for dual-schema architecture (personal vs work)
-      await client.query(`SET search_path TO ${context}, public`);
+      // All queries go to 'personal' schema
+      await client.query(`SET search_path TO ${effectiveContext}, public`);
 
       // Execute query in correct schema
       const result = await client.query(text, params);
@@ -212,9 +216,9 @@ export async function queryContext(
 
       // Log slow queries (using configurable threshold)
       if (duration > SLOW_QUERY_THRESHOLD_MS) {
-        poolStats[context].slowQueries++;
-        logger.warn(`Slow query [${context}] (${duration}ms)`, {
-          context,
+        poolStats[effectiveContext].slowQueries++;
+        logger.warn(`Slow query [${effectiveContext}] (${duration}ms)`, {
+          context: effectiveContext,
           duration,
           query: text.substring(0, 100),
           operation: 'slowQuery',
@@ -223,8 +227,8 @@ export async function queryContext(
 
       // Log successful retry
       if (attempt > 0) {
-        logger.info(`Query succeeded after ${attempt} retries [${context}]`, {
-          context,
+        logger.info(`Query succeeded after ${attempt} retries [${effectiveContext}]`, {
+          context: effectiveContext,
           attempts: attempt + 1,
           totalDuration: Date.now() - start,
           operation: 'queryRetrySuccess',
@@ -247,8 +251,8 @@ export async function queryContext(
           RETRY_CONFIG.initialDelayMs * Math.pow(2, attempt),
           RETRY_CONFIG.maxDelayMs
         );
-        logger.warn(`Retryable error [${context}], attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries}`, {
-          context,
+        logger.warn(`Retryable error [${effectiveContext}], attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries}`, {
+          context: effectiveContext,
           attempt: attempt + 1,
           delay,
           errorCode: (error as { code?: string }).code,
@@ -259,9 +263,9 @@ export async function queryContext(
       }
 
       // Non-retryable error or max retries reached
-      poolStats[context].errors++;
-      logger.error(`Query error [${context}]${attempt > 0 ? ` after ${attempt + 1} attempts` : ''}`, lastError, {
-        context,
+      poolStats[effectiveContext].errors++;
+      logger.error(`Query error [${effectiveContext}]${attempt > 0 ? ` after ${attempt + 1} attempts` : ''}`, lastError, {
+        context: effectiveContext,
         query: text.substring(0, 100),
         attempts: attempt + 1,
         operation: 'queryError',
