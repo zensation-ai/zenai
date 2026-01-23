@@ -14,6 +14,8 @@ import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 // SECURITY Sprint 2: Zod validation for input
 import { VoiceMemoTextSchema, validateBody } from '../utils/schemas';
+// Phase 24: Cache Invalidation - CRITICAL for ideas to appear after refresh
+import { invalidateCacheForContext } from '../middleware/response-cache';
 
 export const voiceMemoRouter = Router();
 
@@ -191,6 +193,15 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
   await storeIdea(ideaId, structured, transcript, embedding);
   const totalTime = Date.now() - startTime;
 
+  // CRITICAL: Invalidate cache so new idea appears on refresh
+  // Without this, GET /api/personal/ideas returns stale cached data!
+  try {
+    await invalidateCacheForContext('personal', 'ideas');
+    logger.debug('Ideas cache invalidated after voice-memo', { ideaId });
+  } catch (cacheError) {
+    logger.warn('Failed to invalidate ideas cache', { ideaId });
+  }
+
   // Background tasks: Knowledge Graph analysis, user profile tracking, webhooks, learning
   // Fire-and-forget: These run async to not block the response (void indicates intentional no-await)
   void Promise.allSettled([
@@ -279,6 +290,14 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
   const suggestedPrio = await suggestPriority(keywords);
 
   await storeIdea(ideaId, structured, text, embedding);
+
+  // CRITICAL: Invalidate cache so new idea appears on refresh
+  try {
+    await invalidateCacheForContext('personal', 'ideas');
+    logger.debug('Ideas cache invalidated after text input', { ideaId });
+  } catch (cacheError) {
+    logger.warn('Failed to invalidate ideas cache', { ideaId });
+  }
 
   // Background tasks including learning
   // Fire-and-forget: void indicates intentional no-await
