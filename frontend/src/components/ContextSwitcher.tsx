@@ -99,18 +99,17 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
 }
 
 // Utility hook for context state management
+// SIMPLIFIED: Always returns 'personal' - context switching disabled
 export function useContextState() {
-  const [context, setContext] = useState<AIContext>(() => {
-    const saved = safeLocalStorage('get', 'aiContext');
-    return (saved as AIContext) || 'personal';
-  });
+  const context: AIContext = 'personal';
 
   useEffect(() => {
-    safeLocalStorage('set', 'aiContext', context);
+    // Always set to personal
+    document.documentElement.setAttribute('data-context', 'personal');
+  }, []);
 
-    // Update document class for theming
-    document.documentElement.setAttribute('data-context', context);
-  }, [context]);
+  // setContext is a no-op since we always use 'personal'
+  const setContext = () => {};
 
   return [context, setContext] as const;
 }

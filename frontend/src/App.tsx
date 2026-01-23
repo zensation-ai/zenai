@@ -11,7 +11,7 @@ import { IdeaDetail } from './components/IdeaDetail';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ContextSwitcher, useContextState } from './components/ContextSwitcher';
+import { useContextState } from './components/ContextSwitcher';
 import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
 import { ExportMenu } from './components/ExportMenu';
 import { NavDropdown } from './components/NavDropdown';
@@ -655,9 +655,6 @@ function App() {
                 <h1>📥 Archiv</h1>
                 <span className="archive-count">{archivedCount} archiviert</span>
               </div>
-              <div className="header-right">
-                <ContextSwitcher context={context} onContextChange={setContext} />
-              </div>
             </div>
           </header>
           <main className="main">
@@ -741,7 +738,6 @@ function App() {
           <div className="header-left">
             <AIBrain isActive={isAIActive} activityType={aiActivityType} ideasCount={ideas.length} />
             <h1>Personal AI Brain</h1>
-            <ContextSwitcher context={context} onContextChange={setContext} />
           </div>
           <div className="header-center">
             <nav className="header-nav">

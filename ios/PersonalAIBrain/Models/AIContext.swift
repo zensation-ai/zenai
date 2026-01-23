@@ -134,21 +134,15 @@ enum AIContext: String, Codable, CaseIterable {
     }
 }
 
-/// Manages the current AI context and provides intelligent context switching suggestions
+/// Manages the current AI context
+/// SIMPLIFIED: Always uses 'personal' - context switching disabled
 class ContextManager: ObservableObject {
     static let shared = ContextManager()
 
-    @Published var currentContext: AIContext {
-        didSet {
-            // Save to UserDefaults
-            UserDefaults.standard.set(currentContext.rawValue, forKey: "selectedContext")
+    // Always personal - context switching disabled
+    @Published var currentContext: AIContext = .personal
 
-            // Log context switch analytics
-            logContextSwitch(from: oldValue, to: currentContext)
-        }
-    }
-
-    // Persona selection per context
+    // Persona selection (kept for future use)
     @Published var personalPersona: PersonalPersona {
         didSet {
             UserDefaults.standard.set(personalPersona.rawValue, forKey: "personalPersona")
@@ -163,31 +157,15 @@ class ContextManager: ObservableObject {
 
     /// Get the current persona ID for API requests
     var currentPersonaId: String {
-        switch currentContext {
-        case .personal: return personalPersona.rawValue
-        case .work: return workPersona.rawValue
-        }
+        return personalPersona.rawValue
     }
 
     /// Get the display info for the current persona
     var currentPersonaDisplay: (icon: String, name: String, description: String) {
-        switch currentContext {
-        case .personal:
-            return (personalPersona.icon, personalPersona.displayName, personalPersona.description)
-        case .work:
-            return (workPersona.icon, workPersona.displayName, workPersona.description)
-        }
+        return (personalPersona.icon, personalPersona.displayName, personalPersona.description)
     }
 
     init() {
-        // Restore context from UserDefaults or default to personal
-        if let savedContext = UserDefaults.standard.string(forKey: "selectedContext"),
-           let context = AIContext(rawValue: savedContext) {
-            self.currentContext = context
-        } else {
-            self.currentContext = .personal
-        }
-
         // Restore personal persona
         if let savedPersona = UserDefaults.standard.string(forKey: "personalPersona"),
            let persona = PersonalPersona(rawValue: savedPersona) {
@@ -196,7 +174,7 @@ class ContextManager: ObservableObject {
             self.personalPersona = .companion
         }
 
-        // Restore work persona
+        // Restore work persona (kept for future use)
         if let savedWorkPersona = UserDefaults.standard.string(forKey: "workPersona"),
            let workPersona = WorkPersona(rawValue: savedWorkPersona) {
             self.workPersona = workPersona
@@ -205,49 +183,18 @@ class ContextManager: ObservableObject {
         }
     }
 
-    /// Suggests when to switch context based on time and day
+    /// Context switching disabled - always returns nil
     func suggestContextSwitch() -> AIContext? {
-        let calendar = Calendar.current
-        let now = Date()
-        let hour = calendar.component(.hour, from: now)
-        let weekday = calendar.component(.weekday, from: now)
-
-        // Monday-Friday
-        let isWeekday = weekday >= 2 && weekday <= 6
-
-        // Work hours: 8:00 - 18:00
-        let isWorkHours = hour >= 8 && hour < 18
-
-        // Suggest work mode during work hours on weekdays
-        if isWeekday && isWorkHours && currentContext == .personal {
-            return .work
-        }
-
-        // Suggest personal mode outside work hours
-        if (!isWeekday || !isWorkHours) && currentContext == .work {
-            return .personal
-        }
-
         return nil
     }
 
-    /// Check for context switch suggestion on app launch
+    /// Context switching disabled - always returns false
     func checkForSuggestionOnLaunch() -> Bool {
-        return suggestContextSwitch() != nil
+        return false
     }
 
-    /// Log context switch for analytics
-    private func logContextSwitch(from: AIContext, to: AIContext) {
-        print("Context switched: \(from.rawValue) → \(to.rawValue)")
-
-        // TODO: Send to backend analytics endpoint
-        // POST /api/context/switch { from, to, trigger: "manual" }
-    }
-
-    /// Switch to suggested context
+    /// Context switching disabled - no-op
     func applySuggestedContext() {
-        if let suggested = suggestContextSwitch() {
-            currentContext = suggested
-        }
+        // No-op: context switching disabled
     }
 }

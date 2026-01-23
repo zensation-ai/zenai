@@ -5,9 +5,6 @@ struct ContentView: View {
     @EnvironmentObject var apiService: APIService
     @EnvironmentObject var deepLinkManager: DeepLinkManager
     @StateObject private var contextManager = ContextManager()
-
-    @State private var showContextSuggestion = false
-    @State private var suggestedContext: AIContext?
     @State private var showAPIKeySetup = false
 
     var body: some View {
@@ -65,31 +62,8 @@ struct ContentView: View {
         .toolbarBackground(.visible, for: .tabBar)
         .toolbarBackground(Color.zensationSurface, for: .tabBar)
         .toolbarColorScheme(.dark, for: .tabBar)
-        .safeAreaInset(edge: .top) {
-            VStack(spacing: 0) {
-                // Context Switcher
-                ContextSwitcherView(contextManager: contextManager)
-                    .background(Color(.systemBackground))
-
-                // Context Suggestion Banner
-                if showContextSuggestion, let suggested = suggestedContext {
-                    ContextSuggestionBanner(
-                        suggestedContext: suggested,
-                        onAccept: {
-                            contextManager.currentContext = suggested
-                            showContextSuggestion = false
-                        },
-                        onDismiss: {
-                            showContextSuggestion = false
-                        }
-                    )
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
-            }
-        }
         .onAppear {
             checkAPIKey()
-            checkForContextSuggestion()
         }
         .sheet(isPresented: $showAPIKeySetup) {
             APIKeySetupView()
@@ -102,21 +76,6 @@ struct ContentView: View {
         if !APIKeyManager.shared.hasAPIKey() {
             // Show API key setup sheet
             showAPIKeySetup = true
-        }
-    }
-
-    private func checkForContextSuggestion() {
-        // Check on app launch if we should suggest a different context
-        if let suggested = contextManager.suggestContextSwitch() {
-            suggestedContext = suggested
-            // Show suggestion after a brief delay using Task (auto-cancels with view lifecycle)
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 1_500_000_000)
-                guard !Task.isCancelled else { return }
-                withAnimation {
-                    showContextSuggestion = true
-                }
-            }
         }
     }
 }
