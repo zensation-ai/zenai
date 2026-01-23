@@ -68,12 +68,12 @@ async function storeIdea(
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
         raw_transcript, embedding, embedding_int8, embedding_binary,
-        created_at, updated_at
+        context, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6,
         $7, $8, $9,
         $10, $11, $12, $13,
-        NOW(), NOW()
+        $14, NOW(), NOW()
       )`,
       [
         ideaId,
@@ -89,6 +89,7 @@ async function storeIdea(
         formatForPgVector(embedding),
         JSON.stringify(embeddingInt8),
         embeddingBinary,
+        context,
       ]
     );
   } else {
@@ -97,11 +98,11 @@ async function storeIdea(
       `INSERT INTO ideas (
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
-        raw_transcript, created_at, updated_at
+        raw_transcript, context, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6,
         $7, $8, $9,
-        $10, NOW(), NOW()
+        $10, $11, NOW(), NOW()
       )`,
       [
         ideaId,
@@ -114,6 +115,7 @@ async function storeIdea(
         JSON.stringify(structured.context_needed),
         JSON.stringify(structured.keywords),
         transcript,
+        context,
       ]
     );
   }

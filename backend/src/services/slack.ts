@@ -8,6 +8,7 @@ import axios from 'axios';
 import { pool } from '../utils/database';
 import { triggerWebhook } from './webhooks';
 import { generateEmbedding, structureWithOllama } from '../utils/ollama';
+import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
 
 // Slack API endpoints
@@ -310,8 +311,8 @@ async function convertMessageToIdea(
   // Create idea
   const ideaId = uuidv4();
   await pool.query(
-    `INSERT INTO ideas (id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, embedding)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+    `INSERT INTO ideas (id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, embedding, context)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
     [
       ideaId,
       structured.title,
@@ -323,7 +324,8 @@ async function convertMessageToIdea(
       JSON.stringify(structured.context_needed || []),
       JSON.stringify([...(structured.keywords || []), 'slack', userName].filter(Boolean)),
       cleanText,
-      JSON.stringify(embedding)
+      embedding.length > 0 ? formatForPgVector(embedding) : null,
+      'personal'
     ]
   );
 

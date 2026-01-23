@@ -8,6 +8,7 @@
 
 import { getPool, AIContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
+import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
 import { learnFromThought } from './learning-engine';
 import { logger } from '../utils/logger';
@@ -629,8 +630,8 @@ export async function consolidateCluster(
     await client.query(
       `INSERT INTO ideas
        (id, title, type, category, priority, summary, raw_transcript, embedding,
-        next_steps, context_needed, keywords, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '[]', '[]', '[]', NOW())`,
+        next_steps, context_needed, keywords, context, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '[]', '[]', '[]', $9, NOW())`,
       [
         ideaId,
         overrides?.title || cluster.title,
@@ -639,7 +640,8 @@ export async function consolidateCluster(
         overrides?.priority || 'medium',
         cluster.summary,
         rawTranscript,
-        embedding.length > 0 ? JSON.stringify(embedding) : null,
+        embedding.length > 0 ? formatForPgVector(embedding) : null,
+        context,
       ]
     );
 
