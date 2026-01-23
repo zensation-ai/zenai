@@ -104,8 +104,8 @@ function App() {
   // Input mode state (voice memo or chat)
   const [inputMode, setInputMode] = useState<'voice' | 'chat'>('voice');
 
-  // Context state (personal/work)
-  const [context, setContext] = useContextState();
+  // Context state (personal/work) - setContext unused since context switching was removed
+  const [context] = useContextState();
 
   // Persona state (per context)
   const [selectedPersona, setSelectedPersona] = usePersonaState(context);

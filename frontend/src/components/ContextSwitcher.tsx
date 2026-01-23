@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { safeLocalStorage } from '../utils/storage';
 
 export type AIContext = 'personal' | 'work';
 
