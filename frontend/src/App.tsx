@@ -174,6 +174,7 @@ function App() {
   }, [currentPage, context]);
 
   // Cross-device sync polling (every 30 seconds on ideas page)
+  // FIX: Smart merge to prevent race condition where optimistically-added ideas disappear
   useEffect(() => {
     if (currentPage !== 'ideas') return;
 
@@ -181,17 +182,37 @@ function App() {
       try {
         // Silently check for updates
         const res = await axios.get(`/api/${context}/ideas`);
-        const serverIdeas = res.data.ideas || [];
+        const serverIdeas: StructuredIdea[] = res.data.ideas || [];
+        const serverIdeaIds = new Set(serverIdeas.map(i => i.id));
 
-        // Update state - React will only re-render if data actually changed
-        setIdeas(serverIdeas);
+        // FIX: Smart merge instead of blind replacement
+        // Keep locally-added ideas that aren't on the server yet (created in last 2 minutes)
+        // This prevents the race condition where cache returns stale data before invalidation
+        setIdeas(currentIdeas => {
+          const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+
+          // Find local ideas that are recent and NOT on server (likely just created)
+          const recentLocalIdeas = currentIdeas.filter(localIdea =>
+            !serverIdeaIds.has(localIdea.id) &&
+            localIdea.created_at > twoMinutesAgo
+          );
+
+          // Merge: Server ideas first, then recent local ideas that aren't duplicates
+          if (recentLocalIdeas.length > 0) {
+            // Keep recent local ideas at the top (they were just created)
+            return [...recentLocalIdeas, ...serverIdeas];
+          }
+
+          // No recent local ideas to preserve, use server data
+          return serverIdeas;
+        });
       } catch {
         // Silently fail on sync errors
       }
     }, 30000); // 30 seconds
 
     return () => clearInterval(syncInterval);
-  }, [currentPage, context]); // Removed ideas.length to prevent interval recreation on every change
+  }, [currentPage, context]);
 
   const checkHealth = async (signal?: AbortSignal) => {
     try {

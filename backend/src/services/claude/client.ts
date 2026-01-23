@@ -113,6 +113,19 @@ WICHTIG:
 - Keine zusätzlichen Erklärungen
 - Keine Markdown-Formatierung
 
+TYPE-KLASSIFIZIERUNG (KRITISCH!):
+- "task" = ALLES was eine AKTION erfordert: E-Mail schreiben, Brief verfassen, Artikel erstellen, Dokument anlegen, Angebot machen, Nachricht senden, Text formulieren, Entwurf erstellen, etc.
+- "idea" = Neue Konzepte, Geschäftsideen, kreative Einfälle OHNE direkte Aktion
+- "insight" = Erkenntnisse, Beobachtungen, Learnings
+- "problem" = Herausforderungen, Hindernisse, Bugs
+- "question" = Offene Fragen, Recherchebedarf
+
+BEISPIELE für "task":
+- "E-Mail an Max schreiben" → type: "task"
+- "Ich muss einen Artikel über X verfassen" → type: "task"
+- "Entwurf für Präsentation erstellen" → type: "task"
+- "Antwort auf die Anfrage formulieren" → type: "task"
+
 OUTPUT FORMAT (JSON):
 {
   "title": "Prägnante Überschrift (max 10 Wörter)",
