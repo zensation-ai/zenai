@@ -11,6 +11,7 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { pool } from '../utils/database';
+import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { checkKeyExpiry, KeyExpiryInfo } from '../services/api-key-security';
 
@@ -374,12 +375,13 @@ let rateLimitsTableInitialized = false;
 
 /**
  * Ensure rate_limits table exists (auto-create if missing)
+ * Uses queryContext to ensure it's created in the correct schema
  */
 async function ensureRateLimitsTable(): Promise<void> {
   if (rateLimitsTableInitialized) return;
 
   try {
-    await pool.query(`
+    await queryContext('personal', `
       CREATE TABLE IF NOT EXISTS rate_limits (
         id SERIAL PRIMARY KEY,
         key VARCHAR(255) NOT NULL,
@@ -388,7 +390,7 @@ async function ensureRateLimitsTable(): Promise<void> {
         UNIQUE(key, window_start)
       )
     `);
-    await pool.query(`
+    await queryContext('personal', `
       CREATE INDEX IF NOT EXISTS idx_rate_limits_key ON rate_limits(key, window_start)
     `);
     rateLimitsTableInitialized = true;
@@ -434,7 +436,9 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
 
     // Upsert rate limit counter
     // FIXED: Column name is 'key' not 'identifier' (matches schema in init-db.ts)
-    const result = await pool.query(
+    // Uses queryContext to ensure correct schema
+    const result = await queryContext(
+      'personal',
       `INSERT INTO rate_limits (key, window_start, request_count)
        VALUES ($1, $2, 1)
        ON CONFLICT (key, window_start)
@@ -525,7 +529,8 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
  */
 export async function cleanupRateLimits() {
   try {
-    const result = await pool.query(
+    const result = await queryContext(
+      'personal',
       `DELETE FROM rate_limits
        WHERE window_start < NOW() - INTERVAL '1 hour'`
     );
