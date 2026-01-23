@@ -246,7 +246,25 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.get(`/api/${context}/ideas?limit=100`, { signal });
-      setIdeas(response.data.ideas);
+      const serverIdeas: StructuredIdea[] = response.data.ideas || [];
+
+      // FIX: Smart merge to preserve recently-created local ideas
+      // This handles the case where server cache hasn't been invalidated yet
+      setIdeas(currentIdeas => {
+        const serverIdeaIds = new Set(serverIdeas.map(i => i.id));
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+
+        // Keep local ideas that are recent and not on server yet
+        const recentLocalIdeas = currentIdeas.filter(localIdea =>
+          !serverIdeaIds.has(localIdea.id) &&
+          localIdea.created_at > twoMinutesAgo
+        );
+
+        if (recentLocalIdeas.length > 0) {
+          return [...recentLocalIdeas, ...serverIdeas];
+        }
+        return serverIdeas;
+      });
       setError(null);
     } catch (err: unknown) {
       if (signal?.aborted) return;
