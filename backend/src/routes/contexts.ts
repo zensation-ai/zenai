@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { queryContext, getPool, AIContext } from '../utils/database-context';
+import { queryContext, AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
-import { responseCacheMiddleware, invalidateCacheAfter } from '../middleware/response-cache';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';
 
 const router = Router();
 
@@ -41,7 +40,9 @@ router.get('/:context/ideas', apiKeyAuth, responseCacheMiddleware, asyncHandler(
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const pool = getPool(context as AIContext);
+  // CRITICAL FIX: Use queryContext() instead of pool.query() to ensure correct schema
+  // queryContext() sets search_path to the correct schema (personal or work)
+  // Without this, queries would read from the wrong schema and miss new ideas!
 
   // Build query with optional filters
   let query = `
@@ -77,10 +78,10 @@ router.get('/:context/ideas', apiKeyAuth, responseCacheMiddleware, asyncHandler(
   query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(parseInt(limit as string), parseInt(offset as string));
 
-  const result = await pool.query(query, params);
+  const result = await queryContext(context as AIContext, query, params);
 
   // Get total count
-  const countResult = await pool.query('SELECT COUNT(*) FROM ideas WHERE is_archived = false');
+  const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = false');
   const total = parseInt(countResult.rows[0].count);
 
   res.json({
@@ -107,9 +108,7 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const pool = getPool(context as AIContext);
-
-  const result = await pool.query(`
+  const result = await queryContext(context as AIContext, `
     SELECT
       id, title, type, category, priority, summary,
       next_steps, context_needed, keywords, raw_transcript,
@@ -120,7 +119,7 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
     LIMIT $1 OFFSET $2
   `, [parseInt(limit as string), parseInt(offset as string)]);
 
-  const countResult = await pool.query('SELECT COUNT(*) FROM ideas WHERE is_archived = true');
+  const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = true');
   const total = parseInt(countResult.rows[0].count);
 
   res.json({
@@ -146,8 +145,8 @@ router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), asy
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const pool = getPool(context as AIContext);
-  const result = await pool.query(
+  const result = await queryContext(
+    context as AIContext,
     'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id, title',
     [id]
   );
@@ -155,6 +154,9 @@ router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), asy
   if (result.rows.length === 0) {
     throw new NotFoundError('Idea');
   }
+
+  // Invalidate cache so archived idea disappears from list
+  await invalidateCacheForContext(context as AIContext, 'ideas');
 
   res.json({ success: true, archivedId: id, idea: result.rows[0] });
 }));
@@ -170,8 +172,8 @@ router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asy
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const pool = getPool(context as AIContext);
-  const result = await pool.query(
+  const result = await queryContext(
+    context as AIContext,
     'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
     [id]
   );
@@ -179,6 +181,9 @@ router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asy
   if (result.rows.length === 0) {
     throw new NotFoundError('Archived idea');
   }
+
+  // Invalidate cache so restored idea appears in list
+  await invalidateCacheForContext(context as AIContext, 'ideas');
 
   res.json({ success: true, restoredId: id, idea: result.rows[0] });
 }));
@@ -199,10 +204,8 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     throw new ValidationError('Search query is required');
   }
 
-  const pool = getPool(context as AIContext);
-
   // Full-text search using PostgreSQL
-  const result = await pool.query(`
+  const result = await queryContext(context as AIContext, `
     SELECT
       id, title, type, category, priority, summary,
       next_steps, context_needed, keywords, raw_transcript,
