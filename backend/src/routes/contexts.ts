@@ -30,9 +30,9 @@ router.get('/contexts', apiKeyAuth, responseCacheMiddleware, (req, res) => {
 /**
  * GET /api/:context/ideas
  * Fetch ideas for a specific context
- * Cached for 2 minutes for better performance
+ * TEMPORARILY DISABLED CACHE to debug persistence issue
  */
-router.get('/:context/ideas', apiKeyAuth, responseCacheMiddleware, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { limit = '50', offset = '0', type, priority, category } = req.query;
 
