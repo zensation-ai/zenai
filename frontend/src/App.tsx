@@ -398,9 +398,7 @@ function App() {
       // Search within current context
       const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 });
       setSearchResults(response.data.ideas);
-      if (response.data.ideas.length === 0) {
-        showToast('Keine passenden Gedanken gefunden', 'info');
-      }
+      // No toast for empty results - UI shows this clearly
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { error?: string } } };
       const errorMessage = axiosError.response?.data?.error || 'Suche fehlgeschlagen';
