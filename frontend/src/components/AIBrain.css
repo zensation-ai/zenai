@@ -72,6 +72,14 @@
   gap: 4px;
 }
 
+/* Large mode tooltip - für Homepage mit mehr Platz und besserer Lesbarkeit */
+.ai-brain-tooltip.large-mode {
+  white-space: normal;
+  max-width: 320px;
+  text-align: center;
+  padding: 12px 20px;
+}
+
 .ai-brain-tooltip-greeting {
   font-size: 0.85rem;
   font-weight: 700;

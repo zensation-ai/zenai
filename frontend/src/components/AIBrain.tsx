@@ -112,10 +112,10 @@ export function AIBrain({
       aria-live="polite"
       aria-label={isActive ? currentMessage : idleMessage}
     >
-      {/* Tooltip */}
+      {/* Tooltip - Bei size="large" kein Greeting anzeigen, da Hero-Greeting bereits sichtbar */}
       {showTooltip && (
-        <div className="ai-brain-tooltip">
-          {!isActive && (
+        <div className={`ai-brain-tooltip ${size === 'large' ? 'large-mode' : ''}`}>
+          {!isActive && size !== 'large' && (
             <span className="ai-brain-tooltip-greeting">{timeGreeting.greeting}</span>
           )}
           <span className="ai-brain-tooltip-message">
