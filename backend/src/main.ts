@@ -107,25 +107,46 @@ if (!process.env.ALLOWED_ORIGINS && process.env.NODE_ENV === 'production') {
   });
 }
 
+// Vercel preview URL patterns for dynamic deployments
+const vercelPreviewPatterns = [
+  /^https:\/\/frontend-[a-z0-9]+-alexander-berings-projects\.vercel\.app$/,
+  /^https:\/\/ki-ab-[a-z0-9]+\.vercel\.app$/,
+  /^https:\/\/ki-ab\.vercel\.app$/,
+];
+
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, Postman, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) {
       callback(null, true);
+      return;
+    }
+
+    // Check explicit whitelist
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    // Check Vercel preview URL patterns
+    const isVercelPreview = vercelPreviewPatterns.some(pattern => pattern.test(origin));
+    if (isVercelPreview) {
+      callback(null, true);
+      return;
+    }
+
+    // SECURITY: Block unauthorized origins in production
+    if (process.env.NODE_ENV === 'production') {
+      logger.warn('CORS blocked unauthorized origin', { origin, operation: 'cors' });
+      callback(new Error('Not allowed by CORS'));
     } else {
-      // SECURITY: Block unauthorized origins in production
-      if (process.env.NODE_ENV === 'production') {
-        logger.warn('CORS blocked unauthorized origin', { origin, operation: 'cors' });
-        callback(new Error('Not allowed by CORS'));
-      } else {
-        // SECURITY IMPROVEMENT: Log even in development for visibility
-        logger.debug('CORS: Allowing unknown origin in dev mode', {
-          origin,
-          operation: 'cors',
-          note: 'This would be blocked in production'
-        });
-        callback(null, true);
-      }
+      // SECURITY IMPROVEMENT: Log even in development for visibility
+      logger.debug('CORS: Allowing unknown origin in dev mode', {
+        origin,
+        operation: 'cors',
+        note: 'This would be blocked in production'
+      });
+      callback(null, true);
     }
   },
   credentials: true,
