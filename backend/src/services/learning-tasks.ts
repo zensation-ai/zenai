@@ -523,16 +523,16 @@ export async function getLearningStats(
 
 /**
  * Generate a learning outline for a topic using AI
+ * Uses OpenAI in production, Ollama in local development
  */
 export async function generateLearningOutline(
   topic: string,
   description?: string
 ): Promise<string> {
   try {
-    const axios = (await import('axios')).default;
-    const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+    const { generateText } = await import('../utils/ollama');
 
-    const prompt = `Du bist ein Lern-Experte. Erstelle einen strukturierten Lernplan für folgendes Thema:
+    const prompt = `Erstelle einen strukturierten Lernplan für folgendes Thema:
 
 Thema: ${topic}
 ${description ? `Beschreibung: ${description}` : ''}
@@ -546,14 +546,16 @@ Erstelle einen detaillierten Lernplan mit:
 
 Formatiere den Plan übersichtlich mit Markdown.`;
 
-    const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
-      model: 'mistral',
-      prompt,
-      stream: false,
-      options: { temperature: 0.7 },
-    }, { timeout: 90000 });
+    const result = await generateText(prompt, {
+      systemPrompt: 'Du bist ein Lern-Experte. Erstelle hilfreiche, strukturierte Lernpläne.',
+      temperature: 0.7,
+      maxTokens: 1000,
+    });
 
-    return response.data.response.slice(0, CONFIG.MAX_OUTLINE_LENGTH);
+    if (result) {
+      return result.slice(0, CONFIG.MAX_OUTLINE_LENGTH);
+    }
+    return `Lernplan für: ${topic}\n\n(Automatische Generierung nicht verfügbar)`;
   } catch (error) {
     logger.error('Failed to generate learning outline', error instanceof Error ? error : undefined);
     return `Lernplan für: ${topic}\n\n(Automatische Generierung nicht verfügbar)`;

@@ -14,7 +14,7 @@ import { getCachedEmbedding } from './cache';
 import { logger } from './logger';
 import { OLLAMA, TIMEOUTS } from '../config/constants';
 import { withCircuitBreaker, withRetry, isCircuitOpen } from './retry';
-import { generateOpenAIEmbedding, isOpenAIAvailable } from '../services/openai';
+import { generateOpenAIEmbedding, isOpenAIAvailable, queryOpenAIJSON } from '../services/openai';
 
 // ===========================================
 // Configuration
@@ -547,9 +547,26 @@ export async function checkOllamaHealth(): Promise<{ available: boolean; models:
  * @returns Parsed JSON response or null on error
  */
 export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | null> {
+  // Priority 1: Try OpenAI if available (works in production)
+  if (isOpenAIAvailable()) {
+    try {
+      const systemPrompt = 'Du bist ein hilfreicher Assistent. Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen.';
+      const result = await queryOpenAIJSON<T>(systemPrompt, prompt);
+      logger.debug('JSON query completed via OpenAI', { operation: 'queryOllamaJSON', provider: 'openai' });
+      return result;
+    } catch (error: unknown) {
+      logger.warn('OpenAI JSON query failed, falling back to Ollama', {
+        operation: 'queryOllamaJSON',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      // Fall through to Ollama
+    }
+  }
+
+  // Priority 2: Try Ollama (local development)
   // Check circuit breaker before attempting
   if (isCircuitOpen('ollama')) {
-    logger.warn('Ollama circuit breaker is open', { operation: 'queryOllamaJSON' });
+    logger.debug('Ollama circuit breaker is open', { operation: 'queryOllamaJSON' });
     return null;
   }
 
@@ -581,12 +598,107 @@ export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | 
       jsonStr = objectMatch[0];
     }
 
+    logger.debug('JSON query completed via Ollama', { operation: 'queryOllamaJSON', provider: 'ollama' });
     return JSON.parse(jsonStr) as T;
   } catch (error: unknown) {
-    logger.error('Ollama JSON query error', error instanceof Error ? error : undefined, {
-      operation: 'queryOllamaJSON',
-      errorMessage: getErrorMessage(error)
-    });
+    // Only log as debug if Ollama is not the primary provider
+    if (isOpenAIAvailable()) {
+      logger.debug('Ollama JSON query also failed (expected in production)', {
+        operation: 'queryOllamaJSON',
+      });
+    } else {
+      logger.error('Ollama JSON query error', error instanceof Error ? error : undefined, {
+        operation: 'queryOllamaJSON',
+        errorMessage: getErrorMessage(error)
+      });
+    }
+    return null;
+  }
+}
+
+// ===========================================
+// Universal Text Generation
+// ===========================================
+
+export interface TextGenerationOptions {
+  temperature?: number;
+  maxTokens?: number;
+  systemPrompt?: string;
+}
+
+/**
+ * Universal text generation function
+ * Priority: OpenAI (production) > Ollama (local development)
+ *
+ * @param prompt - The user prompt
+ * @param options - Generation options
+ * @returns Generated text or null on error
+ */
+export async function generateText(
+  prompt: string,
+  options: TextGenerationOptions = {}
+): Promise<string | null> {
+  const {
+    temperature = 0.7,
+    maxTokens = 500,
+    systemPrompt = 'Du bist ein hilfreicher Assistent.'
+  } = options;
+
+  // Priority 1: Try OpenAI if available (works in production)
+  if (isOpenAIAvailable()) {
+    try {
+      const { generateOpenAIResponse } = await import('../services/openai');
+      const result = await generateOpenAIResponse(systemPrompt, prompt, {
+        temperature,
+        maxTokens,
+      });
+      logger.debug('Text generated via OpenAI', { operation: 'generateText', provider: 'openai' });
+      return result;
+    } catch (error: unknown) {
+      logger.warn('OpenAI text generation failed, falling back to Ollama', {
+        operation: 'generateText',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      // Fall through to Ollama
+    }
+  }
+
+  // Priority 2: Try Ollama (local development)
+  if (isCircuitOpen('ollama')) {
+    logger.debug('Ollama circuit breaker is open', { operation: 'generateText' });
+    return null;
+  }
+
+  try {
+    const response = await executeOllamaWithProtection(async () => {
+      return axios.post<OllamaGenerateResponse>(
+        `${OLLAMA_URL}/api/generate`,
+        {
+          model: MODEL,
+          prompt: `${systemPrompt}\n\n${prompt}`,
+          stream: false,
+          options: {
+            temperature,
+            num_predict: maxTokens,
+          },
+        },
+        { timeout: TIMEOUTS.LLM_GENERATION_MS }
+      );
+    }, 'ollama');
+
+    logger.debug('Text generated via Ollama', { operation: 'generateText', provider: 'ollama' });
+    return response.data.response.trim();
+  } catch (error: unknown) {
+    if (isOpenAIAvailable()) {
+      logger.debug('Ollama text generation also failed (expected in production)', {
+        operation: 'generateText',
+      });
+    } else {
+      logger.error('Text generation failed', error instanceof Error ? error : undefined, {
+        operation: 'generateText',
+        errorMessage: getErrorMessage(error)
+      });
+    }
     return null;
   }
 }

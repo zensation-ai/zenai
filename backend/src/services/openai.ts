@@ -196,15 +196,28 @@ export async function transcribeWithOpenAI(
 }
 
 /**
+ * Options for text generation
+ */
+export interface GenerationOptions {
+  temperature?: number;
+  maxTokens?: number;
+  jsonMode?: boolean;
+}
+
+/**
  * Generate text response using OpenAI
+ * This is the primary text generation method for production
  */
 export async function generateOpenAIResponse(
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  options: GenerationOptions = {}
 ): Promise<string> {
   if (!openaiClient) {
     throw new Error('OpenAI client not initialized');
   }
+
+  const { temperature = 0.7, maxTokens = 500, jsonMode = false } = options;
 
   try {
     const completion = await openaiClient.chat.completions.create({
@@ -213,8 +226,9 @@ export async function generateOpenAIResponse(
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.7,
-      max_tokens: 500,
+      temperature,
+      max_tokens: maxTokens,
+      ...(jsonMode ? { response_format: { type: 'json_object' as const } } : {}),
     });
 
     const responseText = completion.choices[0]?.message?.content;

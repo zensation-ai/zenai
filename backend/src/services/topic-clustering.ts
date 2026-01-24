@@ -6,10 +6,8 @@
  */
 
 import { queryContext, AIContext, getPool } from '../utils/database-context';
-import axios from 'axios';
+import { queryOllamaJSON } from '../utils/ollama';
 import { logger } from '../utils/logger';
-
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
 // Topic colors for visualization (matching Zensation theme)
 const TOPIC_COLORS = [
@@ -344,6 +342,7 @@ function initializeCentroids(ideas: IdeaEmbedding[], k: number): number[][] {
 
 /**
  * Use LLM to generate a name and description for a cluster
+ * Uses OpenAI in production, Ollama in local development
  */
 async function labelCluster(ideas: IdeaEmbedding[]): Promise<{ name: string; description: string }> {
   const ideaSummaries = ideas
@@ -360,27 +359,11 @@ Antworte NUR mit validem JSON in diesem Format:
 {"name": "Kurzer Themenname (2-4 Wörter)", "description": "Ein Satz Beschreibung des Themas"}`;
 
   try {
-    const response = await axios.post(
-      `${OLLAMA_URL}/api/generate`,
-      {
-        model: 'mistral',
-        prompt,
-        stream: false,
-        options: {
-          num_predict: 100,
-          temperature: 0.5,
-        },
-      },
-      { timeout: 30000 }
-    );
-
-    const responseText = response.data.response.trim();
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
+    const result = await queryOllamaJSON<{ name: string; description: string }>(prompt);
+    if (result && result.name) {
       return {
-        name: parsed.name || 'Unbenanntes Thema',
-        description: parsed.description || null,
+        name: result.name,
+        description: result.description || '',
       };
     }
   } catch (error) {

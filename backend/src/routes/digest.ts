@@ -11,13 +11,11 @@
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
-import axios from 'axios';
+import { queryOllamaJSON } from '../utils/ollama';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 
 export const digestRouter = Router();
-
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
 // ===========================================
 // Types
@@ -563,29 +561,17 @@ Antworte auf Deutsch im JSON Format:
 }`;
 
   try {
-    const response = await axios.post(
-      `${OLLAMA_URL}/api/generate`,
-      {
-        model: 'mistral:q8_0',
-        prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          num_predict: 500
-        }
-      },
-      { timeout: 60000 }
-    );
+    const result = await queryOllamaJSON<{
+      summary: string;
+      insights: string[];
+      recommendations: string[];
+    }>(prompt);
 
-    const text = response.data.response;
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
+    if (result) {
       return {
-        summary: parsed.summary || 'Keine Zusammenfassung verfügbar',
-        insights: parsed.insights || [],
-        recommendations: parsed.recommendations || []
+        summary: result.summary || 'Keine Zusammenfassung verfügbar',
+        insights: result.insights || [],
+        recommendations: result.recommendations || []
       };
     }
   } catch (error) {

@@ -523,9 +523,8 @@ export async function generateClusterSummary(clusterId: string, context: AIConte
 
     const thoughts = thoughtsResult.rows.map((t: { raw_input: string }) => t.raw_input).join('\n---\n');
 
-    // Use Mistral via axios (matching existing ollama.ts pattern)
-    const axios = (await import('axios')).default;
-    const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+    // Use AI to analyze and summarize (OpenAI in production, Ollama locally)
+    const { queryOllamaJSON } = await import('../utils/ollama');
 
     const prompt = `Analysiere diese zusammenhängenden Gedankenfragmente und fasse sie zusammen:
 
@@ -539,21 +538,16 @@ Antworte NUR mit einem JSON-Objekt (keine Erklärung):
   "suggested_category": "business|technical|personal|learning"
 }`;
 
-    const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
-      model: 'mistral',
-      prompt,
-      stream: false,
-      options: { temperature: 0.3 },
-    }, { timeout: 60000 });
+    const result = await queryOllamaJSON<{
+      title: string;
+      summary: string;
+      suggested_type: string;
+      suggested_category: string;
+    }>(prompt);
 
-    const content = response.data.response;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) {
-      throw new Error('Invalid LLM response');
+    if (!result) {
+      throw new Error('AI analysis failed');
     }
-
-    const result = JSON.parse(jsonMatch[0]);
 
     // Update cluster with summary
     await client.query(
