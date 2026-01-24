@@ -940,3 +940,625 @@
     );
   }
 }
+
+/* ============================================
+   12. HUMANIZED UI ANIMATIONS
+
+   Erweiterte Animationen für emotionale
+   Benutzeroberfläche und visuelle Rückmeldung
+   ============================================ */
+
+/* Sanftes Einblenden mit Skalierung */
+@keyframes humanFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.neuro-human-fade-in {
+  animation: humanFadeIn var(--neuro-timing-natural) ease-out;
+}
+
+/* Herzschlag-Animation für wichtige Elemente */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  10% { transform: scale(1.05); }
+  20% { transform: scale(1); }
+  30% { transform: scale(1.03); }
+  40% { transform: scale(1); }
+}
+
+.neuro-heartbeat {
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+/* Shake für Aufmerksamkeit */
+@keyframes attentionShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+.neuro-attention {
+  animation: attentionShake 0.5s ease-in-out;
+}
+
+/* Sanftes Pulsieren für interaktive Elemente */
+@keyframes softPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--neuro-reward-pulse);
+  }
+  50% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+.neuro-pulse-interactive {
+  animation: softPulse 2s ease-in-out infinite;
+}
+
+/* Erfolgs-Checkmark Animation */
+@keyframes checkmarkDraw {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.neuro-checkmark-animate {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: checkmarkDraw 0.4s ease-out 0.2s forwards;
+}
+
+/* Floating Label Animation */
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.neuro-float-up {
+  animation: floatUp var(--neuro-timing-natural) ease-out forwards;
+}
+
+/* Glow Effect für wichtige Buttons */
+@keyframes buttonGlow {
+  0%, 100% {
+    box-shadow:
+      0 4px 14px var(--neuro-reward-glow),
+      0 0 0 0 var(--neuro-reward-pulse);
+  }
+  50% {
+    box-shadow:
+      0 4px 20px var(--neuro-reward-glow),
+      0 0 0 4px var(--neuro-reward-pulse);
+  }
+}
+
+.neuro-button-glow {
+  animation: buttonGlow 2s ease-in-out infinite;
+}
+
+/* Einladende Bounce-Animation */
+@keyframes inviteBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+  60% { transform: translateY(-3px); }
+}
+
+.neuro-invite-bounce {
+  animation: inviteBounce 1.5s ease infinite;
+  animation-delay: 2s;
+}
+
+/* Text-Highlight Animation */
+@keyframes textHighlight {
+  0% {
+    background-size: 0% 100%;
+  }
+  100% {
+    background-size: 100% 100%;
+  }
+}
+
+.neuro-text-highlight {
+  background: linear-gradient(
+    90deg,
+    var(--neuro-reward-pulse) 0%,
+    var(--neuro-reward-pulse) 100%
+  );
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 100%;
+  animation: textHighlight 0.6s ease-out forwards;
+}
+
+/* Smooth Expand/Collapse */
+@keyframes expandIn {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: scaleY(0.95);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes collapseOut {
+  from {
+    opacity: 1;
+    max-height: 500px;
+    transform: scaleY(1);
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+    transform: scaleY(0.95);
+  }
+}
+
+.neuro-expand-in {
+  animation: expandIn var(--neuro-timing-deliberate) ease-out forwards;
+  transform-origin: top;
+}
+
+.neuro-collapse-out {
+  animation: collapseOut var(--neuro-timing-natural) ease-in forwards;
+  transform-origin: top;
+}
+
+/* ============================================
+   13. HUMANIZED MICRO-INTERACTIONS
+   ============================================ */
+
+/* Hover-Lift Effect */
+.neuro-hover-lift {
+  transition:
+    transform var(--neuro-timing-quick) ease,
+    box-shadow var(--neuro-timing-quick) ease;
+}
+
+.neuro-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Active Press Effect */
+.neuro-press-effect {
+  transition: transform var(--neuro-timing-instant) ease;
+}
+
+.neuro-press-effect:active {
+  transform: scale(0.97);
+}
+
+/* Focus Ring für Accessibility */
+.neuro-focus-ring:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--glass-2026-bg),
+    0 0 0 5px var(--neuro-reward);
+  border-radius: inherit;
+}
+
+/* Smooth Color Transition */
+.neuro-color-transition {
+  transition:
+    color var(--neuro-timing-quick) ease,
+    background-color var(--neuro-timing-quick) ease,
+    border-color var(--neuro-timing-quick) ease;
+}
+
+/* ============================================
+   14. STATUS INDICATOR STYLES
+   ============================================ */
+
+/* Online/Offline Status Dot */
+.neuro-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.neuro-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+.neuro-status-dot.online {
+  background: var(--neuro-success);
+}
+
+.neuro-status-dot.online::after {
+  background: var(--neuro-success);
+}
+
+.neuro-status-dot.offline {
+  background: var(--text-secondary);
+}
+
+.neuro-status-dot.offline::after {
+  animation: none;
+}
+
+.neuro-status-dot.busy {
+  background: var(--neuro-reward);
+}
+
+.neuro-status-dot.busy::after {
+  background: var(--neuro-reward);
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   15. TOOLTIP ENHANCEMENTS
+   ============================================ */
+
+/* Tooltip mit Shortcut */
+.neuro-tooltip-enhanced {
+  position: relative;
+}
+
+.neuro-tooltip-enhanced::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 8px 12px;
+  background: var(--neuro-focus);
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--neuro-timing-quick) ease,
+    transform var(--neuro-timing-quick) ease,
+    visibility var(--neuro-timing-quick) ease;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.neuro-tooltip-enhanced::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--neuro-focus);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--neuro-timing-quick) ease,
+    visibility var(--neuro-timing-quick) ease;
+  z-index: 1000;
+}
+
+.neuro-tooltip-enhanced:hover::before,
+.neuro-tooltip-enhanced:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.neuro-tooltip-enhanced:hover::after,
+.neuro-tooltip-enhanced:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip mit Shortcut-Badge */
+.neuro-tooltip-enhanced[data-shortcut]::before {
+  content: attr(data-tooltip) '\A' attr(data-shortcut);
+  white-space: pre-wrap;
+  text-align: center;
+}
+
+/* ============================================
+   16. EMPTY STATE ILLUSTRATIONS
+   ============================================ */
+
+.neuro-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.neuro-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: emptyStateFloat 3s ease-in-out infinite;
+}
+
+@keyframes emptyStateFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
+.neuro-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.neuro-empty-description {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.neuro-empty-encouragement {
+  font-size: 0.875rem;
+  color: var(--neuro-reward);
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+/* ============================================
+   17. LOADING ENHANCEMENTS
+   ============================================ */
+
+/* Contextual Loading mit Message */
+.neuro-loading-contextual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.neuro-loading-spinner {
+  width: 48px;
+  height: 48px;
+  position: relative;
+}
+
+.neuro-loading-spinner::before,
+.neuro-loading-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid transparent;
+  border-radius: 50%;
+}
+
+.neuro-loading-spinner::before {
+  border-top-color: var(--neuro-reward);
+  animation: spinnerRotate 1s linear infinite;
+}
+
+.neuro-loading-spinner::after {
+  border-top-color: var(--neuro-anticipation);
+  animation: spinnerRotate 1.5s linear infinite reverse;
+  inset: 6px;
+}
+
+@keyframes spinnerRotate {
+  to { transform: rotate(360deg); }
+}
+
+.neuro-loading-message {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.neuro-loading-submessage {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Skeleton mit Glow */
+.neuro-skeleton-glow {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.08) 30%,
+    var(--neuro-reward-pulse) 50%,
+    rgba(0, 0, 0, 0.08) 70%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonGlow 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeletonGlow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================
+   18. SUCCESS CELEBRATION ENHANCEMENTS
+   ============================================ */
+
+/* Sparkle Effect */
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+.neuro-sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--neuro-reward);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.neuro-sparkle:nth-child(1) { animation: sparkle 1s ease-in-out 0s; top: 10%; left: 20%; }
+.neuro-sparkle:nth-child(2) { animation: sparkle 1s ease-in-out 0.2s; top: 20%; right: 15%; }
+.neuro-sparkle:nth-child(3) { animation: sparkle 1s ease-in-out 0.4s; bottom: 25%; left: 10%; }
+.neuro-sparkle:nth-child(4) { animation: sparkle 1s ease-in-out 0.3s; bottom: 15%; right: 25%; }
+
+/* Checkmark Circle Animation */
+@keyframes checkCircle {
+  0% {
+    stroke-dashoffset: 166;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.neuro-check-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: checkCircle 0.6s ease-out forwards;
+}
+
+/* ============================================
+   19. CONNECTION STATUS VISUAL
+   ============================================ */
+
+.neuro-connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  transition: all var(--neuro-timing-quick) ease;
+}
+
+.neuro-connection-status.connected {
+  color: var(--neuro-success);
+}
+
+.neuro-connection-status.connecting {
+  color: var(--neuro-anticipation);
+}
+
+.neuro-connection-status.connecting .status-icon {
+  animation: spin 1s linear infinite;
+}
+
+.neuro-connection-status.offline {
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   20. MICRO-COPY STYLES
+   ============================================ */
+
+/* Friendly Error Message */
+.neuro-error-friendly {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04));
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.neuro-error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.neuro-error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.neuro-error-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.neuro-error-message {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.neuro-error-suggestion {
+  font-size: 0.8125rem;
+  color: var(--neuro-reward);
+  margin-top: 4px;
+}
+
+/* Placeholder Animation */
+@keyframes placeholderFade {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+.neuro-placeholder-animated::placeholder {
+  animation: placeholderFade 2s ease-in-out infinite;
+}
+
+/* Inspirational Quote Style */
+.neuro-inspirational {
+  font-style: italic;
+  color: var(--text-secondary);
+  position: relative;
+  padding-left: 1rem;
+}
+
+.neuro-inspirational::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--neuro-reward), var(--neuro-anticipation));
+  border-radius: 2px;
+}

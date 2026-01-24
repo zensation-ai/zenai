@@ -712,19 +712,21 @@ function App() {
   if (currentPage === 'triage') {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <InboxTriage
-            context={context}
-            apiBase="/api"
-            onBack={() => setCurrentPage('ideas')}
-            onComplete={() => {
-              loadIdeas();
-              setCurrentPage('ideas');
-            }}
-            showToast={showToast}
-          />
-        </Suspense>
-        <ToastContainer />
+        <NeuroFeedbackProvider>
+          <Suspense fallback={<PageLoader />}>
+            <InboxTriage
+              context={context}
+              apiBase="/api"
+              onBack={() => setCurrentPage('ideas')}
+              onComplete={() => {
+                loadIdeas();
+                setCurrentPage('ideas');
+              }}
+              showToast={showToast}
+            />
+          </Suspense>
+          <ToastContainer />
+        </NeuroFeedbackProvider>
       </ErrorBoundary>
     );
   }
@@ -760,6 +762,7 @@ function App() {
   if (currentPage === 'archive') {
     return (
       <ErrorBoundary>
+        <NeuroFeedbackProvider>
         <div className="app archive-page">
           <header className="header">
             <div className="header-content">
@@ -815,6 +818,7 @@ function App() {
           </main>
         </div>
         <ToastContainer />
+        </NeuroFeedbackProvider>
       </ErrorBoundary>
     );
   }
