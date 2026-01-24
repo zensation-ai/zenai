@@ -461,6 +461,8 @@
 
   .idea-card:hover {
     animation: none;
+    opacity: 1;
+    transform: translateY(-4px);
   }
 }
 
