@@ -14,6 +14,7 @@ import { getCachedEmbedding } from './cache';
 import { logger } from './logger';
 import { OLLAMA, TIMEOUTS } from '../config/constants';
 import { withCircuitBreaker, withRetry, isCircuitOpen } from './retry';
+import { generateOpenAIEmbedding, isOpenAIAvailable } from '../services/openai';
 
 // ===========================================
 // Configuration
@@ -432,12 +433,32 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 /**
  * Generate embedding without caching (internal use)
- * Now with circuit breaker and retry protection
+ * Priority: OpenAI (production) > Ollama (local development)
  */
 async function generateEmbeddingUncached(text: string): Promise<number[]> {
+  // Priority 1: Try OpenAI if available (works in production)
+  if (isOpenAIAvailable()) {
+    try {
+      const embedding = await generateOpenAIEmbedding(text);
+      logger.debug('Embedding generated via OpenAI', {
+        operation: 'generateEmbedding',
+        provider: 'openai',
+        dimensions: embedding.length,
+      });
+      return embedding;
+    } catch (error: unknown) {
+      logger.warn('OpenAI embedding failed, falling back to Ollama', {
+        operation: 'generateEmbedding',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      // Fall through to Ollama
+    }
+  }
+
+  // Priority 2: Try Ollama (local development)
   // Check circuit breaker before attempting
   if (isCircuitOpen('ollama-embedding')) {
-    logger.warn('Ollama embedding circuit breaker is open', {
+    logger.debug('Ollama embedding circuit breaker is open', {
       operation: 'generateEmbedding'
     });
     return [];
@@ -463,6 +484,11 @@ async function generateEmbeddingUncached(text: string): Promise<number[]> {
       return [];
     }
 
+    logger.debug('Embedding generated via Ollama', {
+      operation: 'generateEmbedding',
+      provider: 'ollama',
+      dimensions: embedding.length,
+    });
     return embedding;
   } catch (error: unknown) {
     // Check if this is a connection error (Ollama not running)
@@ -470,21 +496,17 @@ async function generateEmbeddingUncached(text: string): Promise<number[]> {
       (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ECONNRESET');
 
     if (isConnectionError) {
-      // Log as warning only once, then as debug to reduce noise
+      // Log as debug only (not warning) to reduce noise - OpenAI is the primary provider
       if (!ollamaUnreachableLogged) {
-        logger.warn('Ollama service unreachable - embedding generation disabled', {
+        logger.debug('Ollama service not available (expected in production)', {
           operation: 'generateEmbedding',
           url: OLLAMA_URL,
         });
         ollamaUnreachableLogged = true;
-      } else {
-        logger.debug('Ollama embedding skipped (service unreachable)', {
-          operation: 'generateEmbedding',
-        });
       }
     } else {
-      // Unexpected error - log as error
-      logger.error('Embedding generation error', error instanceof Error ? error : undefined, {
+      // Unexpected error - log as warning
+      logger.warn('Ollama embedding error', {
         operation: 'generateEmbedding',
         errorMessage: getErrorMessage(error)
       });
