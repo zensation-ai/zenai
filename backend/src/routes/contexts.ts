@@ -237,7 +237,7 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
           title ILIKE $1
           OR summary ILIKE $1
           OR raw_transcript ILIKE $1
-          OR EXISTS (SELECT 1 FROM unnest(keywords) k WHERE k ILIKE $1)
+          OR array_to_string(keywords, ' ') ILIKE $1
         )
       ORDER BY created_at DESC
       LIMIT $2
