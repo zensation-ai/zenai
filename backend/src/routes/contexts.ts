@@ -232,6 +232,112 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
 }));
 
 /**
+ * GET /api/:context/ideas/triage
+ * Get ideas for triage, sorted by priority and creation date
+ */
+router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+  const { limit = '20', exclude } = req.query;
+
+  if (!['personal', 'work'].includes(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  // Parse excluded IDs
+  const excludeIds = exclude ? (exclude as string).split(',').filter(Boolean) : [];
+
+  // Build exclusion clause
+  let excludeClause = '';
+  const params: any[] = [parseInt(limit as string)];
+
+  if (excludeIds.length > 0) {
+    excludeClause = ` AND id NOT IN (${excludeIds.map((_, idx) => `$${idx + 2}`).join(',')})`;
+    params.push(...excludeIds);
+  }
+
+  // Get ideas for triage: not archived, sorted by priority then date
+  const result = await queryContext(
+    context as AIContext,
+    `SELECT id, title, type, category, priority, summary,
+            next_steps, context_needed, keywords, raw_transcript,
+            created_at, updated_at
+     FROM ideas
+     WHERE is_archived = false
+       ${excludeClause}
+     ORDER BY
+       CASE priority
+         WHEN 'high' THEN 1
+         WHEN 'medium' THEN 2
+         WHEN 'low' THEN 3
+         ELSE 4
+       END,
+       created_at DESC
+     LIMIT $1`,
+    params
+  );
+
+  // Get total count
+  const countResult = await queryContext(
+    context as AIContext,
+    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'
+  );
+
+  res.json({
+    success: true,
+    ideas: result.rows,
+    total: parseInt(countResult.rows[0].total),
+    hasMore: result.rows.length === parseInt(limit as string),
+  });
+}));
+
+/**
+ * POST /api/:context/ideas/:id/triage
+ * Record a triage action for an idea
+ */
+router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { context, id } = req.params;
+  const { action } = req.body;
+
+  if (!['personal', 'work'].includes(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  const validActions = ['priority', 'keep', 'later', 'archive'];
+  if (!action || !validActions.includes(action)) {
+    throw new ValidationError(`Invalid triage action. Must be one of: ${validActions.join(', ')}`);
+  }
+
+  // Check if idea exists
+  const ideaCheck = await queryContext(context as AIContext, 'SELECT id, title, priority FROM ideas WHERE id = $1', [id]);
+  if (ideaCheck.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  const ideaTitle = ideaCheck.rows[0].title;
+
+  // Apply action
+  switch (action) {
+    case 'priority':
+      await queryContext(context as AIContext, 'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1', [id, 'high']);
+      break;
+    case 'archive':
+      await queryContext(context as AIContext, 'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1', [id]);
+      break;
+    case 'later':
+      await queryContext(context as AIContext, 'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1', [id, 'low']);
+      break;
+    // 'keep' = no changes needed
+  }
+
+  res.json({
+    success: true,
+    ideaId: id,
+    action,
+    message: `Idee "${ideaTitle.substring(0, 30)}..." ${action === 'priority' ? 'priorisiert' : action === 'archive' ? 'archiviert' : action === 'later' ? 'auf später' : 'behalten'}`,
+  });
+}));
+
+/**
  * GET /api/:context/ai-activity
  * Get recent AI activity feed for dashboard
  */
