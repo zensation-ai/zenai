@@ -63,6 +63,9 @@ async function storeIdea(
   const embeddingInt8 = quantizeToInt8(embedding);
   const embeddingBinary = quantizeToBinary(embedding);
 
+  // CRITICAL: is_archived must be explicitly set to false because the personal/work
+  // schema tables were created with CREATE TABLE AS SELECT which doesn't copy DEFAULT values.
+  // Without this, is_archived would be NULL and the idea wouldn't appear in queries.
   if (embedding.length > 0) {
     await queryContext(
       context,
@@ -70,12 +73,12 @@ async function storeIdea(
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
         raw_transcript, embedding, embedding_int8, embedding_binary,
-        context, created_at, updated_at
+        context, is_archived, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6,
         $7, $8, $9,
         $10, $11, $12, $13,
-        $14, NOW(), NOW()
+        $14, $15, NOW(), NOW()
       )`,
       [
         ideaId,
@@ -92,6 +95,7 @@ async function storeIdea(
         JSON.stringify(embeddingInt8),
         embeddingBinary,
         context,
+        false, // is_archived - explicitly set to avoid NULL
       ]
     );
   } else {
@@ -100,11 +104,11 @@ async function storeIdea(
       `INSERT INTO ideas (
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
-        raw_transcript, context, created_at, updated_at
+        raw_transcript, context, is_archived, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6,
         $7, $8, $9,
-        $10, $11, NOW(), NOW()
+        $10, $11, $12, NOW(), NOW()
       )`,
       [
         ideaId,
@@ -118,6 +122,7 @@ async function storeIdea(
         JSON.stringify(structured.keywords),
         transcript,
         context,
+        false, // is_archived - explicitly set to avoid NULL
       ]
     );
   }
