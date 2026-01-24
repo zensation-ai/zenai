@@ -199,8 +199,8 @@ async function processVoiceMemosBatch(
       // Simple storage without AI processing (for offline sync)
       const result = await queryContext(
         context,
-        `INSERT INTO ideas (id, title, summary, raw_transcript, type, category, priority, context, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $2, 'idea', 'personal', 'medium', $3, $4)
+        `INSERT INTO ideas (id, title, summary, raw_transcript, type, category, priority, context, is_archived, created_at)
+         VALUES (gen_random_uuid(), $1, $2, $2, 'idea', 'personal', 'medium', $3, false, $4)
          RETURNING id`,
         [
           memo.text.substring(0, 100), // Title from first 100 chars

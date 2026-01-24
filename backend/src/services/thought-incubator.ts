@@ -630,8 +630,8 @@ export async function consolidateCluster(
     await client.query(
       `INSERT INTO ideas
        (id, title, type, category, priority, summary, raw_transcript, embedding,
-        next_steps, context_needed, keywords, context, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '[]', '[]', '[]', $9, NOW())`,
+        next_steps, context_needed, keywords, context, is_archived, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '[]', '[]', '[]', $9, false, NOW())`,
       [
         ideaId,
         overrides?.title || cluster.title,

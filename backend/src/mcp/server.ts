@@ -320,8 +320,8 @@ export class KIABMCPServer {
     // Save to database
     const result = await queryContext(
       context as AIContext,
-      `INSERT INTO ideas (context, type, category, title, summary, transcript, priority, status, keywords)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'new', $8)
+      `INSERT INTO ideas (context, type, category, title, summary, raw_transcript, priority, is_archived, keywords)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8)
        RETURNING id, type, category, title, summary, priority, created_at`,
       [
         context,

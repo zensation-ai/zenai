@@ -510,8 +510,8 @@ async function executeAction(
     case 'create_task':
       await queryContext(
         context,
-        `INSERT INTO ideas (id, title, type, category, priority, summary, context, created_at)
-         VALUES ($1, $2, 'task', $3, $4, $5, $6, NOW())`,
+        `INSERT INTO ideas (id, title, type, category, priority, summary, context, is_archived, created_at)
+         VALUES ($1, $2, 'task', $3, $4, $5, $6, false, NOW())`,
         [
           uuidv4(),
           interpolateTemplate(action.config.title as string || 'Automatische Aufgabe', triggerData),

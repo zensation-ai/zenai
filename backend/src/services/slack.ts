@@ -311,8 +311,8 @@ async function convertMessageToIdea(
   // Create idea
   const ideaId = uuidv4();
   await pool.query(
-    `INSERT INTO ideas (id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, embedding, context)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+    `INSERT INTO ideas (id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, embedding, context, is_archived)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false)`,
     [
       ideaId,
       structured.title,
