@@ -428,7 +428,7 @@ async function gatherContext(trigger: DraftTrigger): Promise<DraftContext> {
         CASE
           WHEN ti.embedding IS NOT NULL
           THEN i.embedding <=> ti.embedding
-          ELSE i.created_at
+          ELSE 999999.0
         END ASC
       LIMIT 5`,
       [trigger.context, trigger.ideaId]
