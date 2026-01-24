@@ -205,51 +205,27 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     throw new ValidationError('Search query is required');
   }
 
-  // Try full-text search first, fall back to ILIKE if it fails or returns nothing
-  let result: { rows: any[] } = { rows: [] };
+  // Simple ILIKE search - more reliable than full-text search
+  // Full-text search was causing issues with text search configurations
+  const searchPattern = `%${searchQuery}%`;
+  const limitNum = typeof limit === 'number' ? limit : parseInt(String(limit)) || 20;
 
-  try {
-    result = await queryContext(context as AIContext, `
-      SELECT
-        id, title, type, category, priority, summary,
-        next_steps, context_needed, keywords, raw_transcript,
-        created_at, updated_at,
-        ts_rank(
-          to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(raw_transcript, '')),
-          plainto_tsquery('simple', $1)
-        ) as rank
-      FROM ideas
-      WHERE is_archived = false
-        AND to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(raw_transcript, ''))
-        @@ plainto_tsquery('simple', $1)
-      ORDER BY rank DESC
-      LIMIT $2
-    `, [searchQuery, limit]);
-  } catch {
-    // Full-text search failed, use ILIKE fallback
-    result = { rows: [] };
-  }
-
-  // Fallback to ILIKE search if full-text returns nothing
-  if (result.rows.length === 0) {
-    const searchPattern = `%${searchQuery}%`;
-    result = await queryContext(context as AIContext, `
-      SELECT
-        id, title, type, category, priority, summary,
-        next_steps, context_needed, keywords, raw_transcript,
-        created_at, updated_at
-      FROM ideas
-      WHERE is_archived = false
-        AND (
-          title ILIKE $1
-          OR summary ILIKE $1
-          OR raw_transcript ILIKE $1
-          OR array_to_string(keywords, ' ') ILIKE $1
-        )
-      ORDER BY created_at DESC
-      LIMIT $2
-    `, [searchPattern, limit]);
-  }
+  const result = await queryContext(context as AIContext, `
+    SELECT
+      id, title, type, category, priority, summary,
+      next_steps, context_needed, keywords, raw_transcript,
+      created_at, updated_at
+    FROM ideas
+    WHERE is_archived = false
+      AND (
+        title ILIKE $1
+        OR summary ILIKE $1
+        OR raw_transcript ILIKE $1
+        OR COALESCE(array_to_string(keywords, ' '), '') ILIKE $1
+      )
+    ORDER BY created_at DESC
+    LIMIT $2
+  `, [searchPattern, limitNum]);
 
   res.json({
     ideas: result.rows,
