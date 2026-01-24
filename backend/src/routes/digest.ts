@@ -75,14 +75,15 @@ digestRouter.post('/:context/digest/generate/daily', apiKeyAuth, requireScope('w
   const targetDate = date || new Date().toISOString().split('T')[0];
 
   // Check if digest already exists for this date
+  // Note: queryContext() handles schema routing (personal_ai/work_ai), so no context column needed
   const existingDigest = await queryContext(ctx, `
     SELECT id, type, period_start, period_end, title, summary,
            highlights, statistics, ai_insights, recommendations,
            ideas_count, top_categories, top_types, productivity_score,
-           context, created_at, updated_at
+           created_at
     FROM digests
-    WHERE type = 'daily' AND period_start = $1 AND context = $2
-  `, [targetDate, ctx]);
+    WHERE type = 'daily' AND period_start = $1
+  `, [targetDate]);
 
   if (existingDigest.rows.length > 0) {
     return res.json({

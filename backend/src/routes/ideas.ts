@@ -22,11 +22,22 @@ import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } fro
 
 export const ideasRouter = Router();
 
+// Context-aware router for routes like /api/:context/ideas/*
+export const ideasContextRouter = Router();
+
 /**
  * Get context from request header or query param, default to 'personal'
  */
 function getContext(req: Request): AIContext {
   const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
+  return isValidContext(context) ? context : 'personal';
+}
+
+/**
+ * Get context from URL parameter (for context-aware routes)
+ */
+function getContextFromParams(req: Request): AIContext {
+  const context = req.params.context;
   return isValidContext(context) ? context : 'personal';
 }
 
@@ -904,5 +915,30 @@ ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, 
     success: true,
     message: result.message,
     idea: updated.rows[0],
+  });
+}));
+
+// ===========================================
+// Context-Aware Routes (for /api/:context/ideas/*)
+// ===========================================
+
+/**
+ * GET /api/:context/ideas/stats/summary
+ * Get statistics about ideas (excluding archived) - context-aware version
+ */
+ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
+    queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
+    queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
+    queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
+    queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
+  ]);
+
+  res.json({
+    total: parseInt(totalResult.rows[0].total),
+    byType: typeResult.rows.reduce((acc: Record<string, number>, row: any) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
+    byCategory: categoryResult.rows.reduce((acc: Record<string, number>, row: any) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
+    byPriority: priorityResult.rows.reduce((acc: Record<string, number>, row: any) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
   });
 }));

@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 // Phase Security Sprint 4: Secrets Manager - must be imported early
 import { secretsManager } from './services/secrets-manager';
 import { voiceMemoRouter } from './routes/voice-memo';
-import { ideasRouter } from './routes/ideas';
+import { ideasRouter, ideasContextRouter } from './routes/ideas';
 import { healthRouter } from './routes/health';
 import { knowledgeGraphRouter } from './routes/knowledge-graph';
 import { meetingsRouter } from './routes/meetings';
@@ -183,6 +183,7 @@ setupSwagger(app);
 app.use('/api/health', healthRouter);
 app.use('/api/voice-memo', voiceMemoRouter);
 app.use('/api/ideas', ideasRouter);
+app.use('/api', ideasContextRouter);  // Context-aware ideas routes: /api/:context/ideas/*
 app.use('/api/knowledge-graph', knowledgeGraphRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/profile', userProfileRouter);

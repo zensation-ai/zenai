@@ -312,23 +312,43 @@ CREATE INDEX IF NOT EXISTS idx_notification_history_sent ON notification_history
 
 CREATE TABLE IF NOT EXISTS digests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id VARCHAR(255) NOT NULL DEFAULT 'default',
-    context VARCHAR(20) NOT NULL DEFAULT 'personal',
-    digest_type VARCHAR(20) NOT NULL DEFAULT 'daily',
-    period_start TIMESTAMP WITH TIME ZONE NOT NULL,
-    period_end TIMESTAMP WITH TIME ZONE NOT NULL,
-    content JSONB NOT NULL DEFAULT '{}',
-    ideas_count INTEGER DEFAULT 0,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('daily', 'weekly')),
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    title TEXT NOT NULL,
+    summary TEXT NOT NULL,
     highlights JSONB DEFAULT '[]',
-    patterns JSONB DEFAULT '[]',
-    suggestions JSONB DEFAULT '[]',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    statistics JSONB DEFAULT '{}',
+    ai_insights TEXT[],
+    recommendations TEXT[],
+    ideas_count INTEGER DEFAULT 0,
+    top_categories TEXT[],
+    top_types TEXT[],
+    productivity_score DECIMAL(5,2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    notified_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(type, period_start, period_end)
 );
 
-CREATE INDEX IF NOT EXISTS idx_digests_user ON digests(user_id);
-CREATE INDEX IF NOT EXISTS idx_digests_context ON digests(context);
-CREATE INDEX IF NOT EXISTS idx_digests_type ON digests(digest_type);
+CREATE INDEX IF NOT EXISTS idx_digests_type ON digests(type);
 CREATE INDEX IF NOT EXISTS idx_digests_period ON digests(period_start, period_end);
+CREATE INDEX IF NOT EXISTS idx_digests_created ON digests(created_at DESC);
+
+-- User Productivity Goals Table (single-row configuration)
+CREATE TABLE IF NOT EXISTS productivity_goals (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    daily_ideas_target INTEGER DEFAULT 3,
+    weekly_ideas_target INTEGER DEFAULT 15,
+    focus_categories TEXT[],
+    enabled_insights BOOLEAN DEFAULT true,
+    digest_time TIME DEFAULT '09:00',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT single_row CHECK (id = 1)
+);
+
+-- Initialize default productivity goals
+INSERT INTO productivity_goals (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS user_goals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
