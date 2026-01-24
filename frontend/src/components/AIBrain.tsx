@@ -115,7 +115,12 @@ export function AIBrain({
       {/* Tooltip */}
       {showTooltip && (
         <div className="ai-brain-tooltip">
-          {isActive ? currentMessage : idleMessage}
+          {!isActive && (
+            <span className="ai-brain-tooltip-greeting">{timeGreeting.greeting}</span>
+          )}
+          <span className="ai-brain-tooltip-message">
+            {isActive ? currentMessage : idleMessage}
+          </span>
         </div>
       )}
       <div className="ai-brain-wrapper">

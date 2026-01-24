@@ -118,19 +118,20 @@ export const AI_ACTIVITY_MESSAGES = {
 };
 
 // Idle-Nachrichten basierend auf Gedankenanzahl
-export function getIdleMessage(ideasCount: number, greeting: string): string {
+// Hinweis: Greeting wird SEPARAT im Tooltip-Header angezeigt, nicht mehr in der Nachricht
+export function getIdleMessage(ideasCount: number, _greeting?: string): string {
   if (ideasCount === 0) {
-    return `${greeting} Ich bin ${AI_PERSONALITY.name}, dein persönlicher KI-Begleiter. Erzähl mir deinen ersten Gedanken!`;
+    return `Ich bin ${AI_PERSONALITY.name}, dein persönlicher KI-Begleiter. Erzähl mir deinen ersten Gedanken!`;
   } else if (ideasCount < 5) {
-    return `${greeting} Wir haben schon ${ideasCount} Gedanken zusammen – ein guter Anfang!`;
+    return `Wir haben schon ${ideasCount} Gedanken zusammen – ein guter Anfang!`;
   } else if (ideasCount < 20) {
-    return `${greeting} ${ideasCount} Gedanken in deinem Brain. Ich lerne dich immer besser kennen!`;
+    return `${ideasCount} Gedanken in deinem Brain. Ich lerne dich immer besser kennen!`;
   } else if (ideasCount < 50) {
-    return `${greeting} Wow, ${ideasCount} Gedanken! Wir sind wirklich ein tolles Team.`;
+    return `Wow, ${ideasCount} Gedanken! Wir sind wirklich ein tolles Team.`;
   } else if (ideasCount < 100) {
-    return `${greeting} ${ideasCount} Gedanken – ich kenne dich mittlerweile richtig gut!`;
+    return `${ideasCount} Gedanken – ich kenne dich mittlerweile richtig gut!`;
   } else {
-    return `${greeting} Beeindruckend! ${ideasCount} Gedanken. Dein digitales Gehirn wächst!`;
+    return `Beeindruckend! ${ideasCount} Gedanken. Dein digitales Gehirn wächst!`;
   }
 }
 
