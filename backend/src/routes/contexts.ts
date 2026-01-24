@@ -205,8 +205,8 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     throw new ValidationError('Search query is required');
   }
 
-  // Full-text search using PostgreSQL
-  const result = await queryContext(context as AIContext, `
+  // Try full-text search first, fall back to ILIKE if no results
+  let result = await queryContext(context as AIContext, `
     SELECT
       id, title, type, category, priority, summary,
       next_steps, context_needed, keywords, raw_transcript,
@@ -222,6 +222,27 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     ORDER BY rank DESC
     LIMIT $2
   `, [searchQuery, limit]);
+
+  // Fallback to ILIKE search if full-text returns nothing
+  if (result.rows.length === 0) {
+    const searchPattern = `%${searchQuery}%`;
+    result = await queryContext(context as AIContext, `
+      SELECT
+        id, title, type, category, priority, summary,
+        next_steps, context_needed, keywords, raw_transcript,
+        created_at, updated_at
+      FROM ideas
+      WHERE is_archived = false
+        AND (
+          title ILIKE $1
+          OR summary ILIKE $1
+          OR raw_transcript ILIKE $1
+          OR EXISTS (SELECT 1 FROM unnest(keywords) k WHERE k ILIKE $1)
+        )
+      ORDER BY created_at DESC
+      LIMIT $2
+    `, [searchPattern, limit]);
+  }
 
   res.json({
     ideas: result.rows,
