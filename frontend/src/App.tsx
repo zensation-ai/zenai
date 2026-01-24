@@ -29,6 +29,11 @@ import {
   getTimeBasedGreeting,
   EMPTY_STATE_MESSAGES,
 } from './utils/aiPersonality';
+
+// Neurodesign System - Dopamin-optimiertes Feedback
+import { NeuroFeedbackProvider } from './components/NeuroFeedback';
+import { ScrollProgress } from './components/AnticipatoryUI';
+
 import './App.css';
 
 // Lazy-loaded page components for code-splitting
@@ -821,11 +826,14 @@ function App() {
 
   return (
     <ErrorBoundary>
+    <NeuroFeedbackProvider>
     {showOnboarding && (
       <Suspense fallback={<PageLoader />}>
         <Onboarding context={context} onComplete={handleOnboardingComplete} />
       </Suspense>
     )}
+    {/* Scroll Progress Indicator (Neurodesign) */}
+    <ScrollProgress />
     <div className="app" data-context={context}>
       {/* Animated Organic Background */}
       <div className="ambient-background" aria-hidden="true">
@@ -915,14 +923,17 @@ function App() {
                 label="Mehr"
                 icon="⚙️"
                 items={[
-                  { label: 'Meetings', icon: '📅', page: 'meetings' },
-                  { label: 'Medien', icon: '🖼️', page: 'media' },
-                  { label: 'Stories', icon: '📖', page: 'stories' },
-                  { label: 'Automationen', icon: '⚡', page: 'automations' },
-                  { label: 'Integrationen', icon: '🔗', page: 'integrations' },
-                  { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications' },
-                  { label: 'Export', icon: '📤', page: 'export' },
-                  { label: 'Sync', icon: '🔄', page: 'sync' },
+                  // Inhalte Gruppe (3 Items)
+                  { label: 'Meetings', icon: '📅', page: 'meetings', group: 'Inhalte' },
+                  { label: 'Medien', icon: '🖼️', page: 'media', group: 'Inhalte' },
+                  { label: 'Stories', icon: '📖', page: 'stories', group: 'Inhalte' },
+                  // Workflows Gruppe (2 Items)
+                  { label: 'Automationen', icon: '⚡', page: 'automations', group: 'Workflows' },
+                  { label: 'Integrationen', icon: '🔗', page: 'integrations', group: 'Workflows' },
+                  // System Gruppe (3 Items)
+                  { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications', group: 'System' },
+                  { label: 'Export', icon: '📤', page: 'export', group: 'System' },
+                  { label: 'Sync', icon: '🔄', page: 'sync', group: 'System' },
                 ]}
                 currentPage={currentPage}
                 onNavigate={(page) => setCurrentPage(page as Page)}
@@ -978,14 +989,26 @@ function App() {
                   ]
                 },
                 {
-                  label: 'Mehr',
-                  icon: '⚙️',
+                  label: 'Inhalte',
+                  icon: '📁',
                   items: [
                     { label: 'Meetings', icon: '📅', page: 'meetings' },
                     { label: 'Medien', icon: '🖼️', page: 'media' },
                     { label: 'Stories', icon: '📖', page: 'stories' },
+                  ]
+                },
+                {
+                  label: 'Workflows',
+                  icon: '⚡',
+                  items: [
                     { label: 'Automationen', icon: '⚡', page: 'automations' },
                     { label: 'Integrationen', icon: '🔗', page: 'integrations' },
+                  ]
+                },
+                {
+                  label: 'System',
+                  icon: '⚙️',
+                  items: [
                     { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications' },
                     { label: 'Export', icon: '📤', page: 'export' },
                     { label: 'Sync', icon: '🔄', page: 'sync' },
@@ -1109,7 +1132,7 @@ function App() {
                 onClick={() => setViewMode('grid')}
                 title="Rasteransicht"
                 aria-label="Rasteransicht"
-                aria-pressed={viewMode === 'grid' ? 'true' : 'false'}
+                aria-pressed={viewMode === 'grid'}
               >
                 ⊞
               </button>
@@ -1119,7 +1142,7 @@ function App() {
                 onClick={() => setViewMode('list')}
                 title="Listenansicht"
                 aria-label="Listenansicht"
-                aria-pressed={viewMode === 'list' ? 'true' : 'false'}
+                aria-pressed={viewMode === 'list'}
               >
                 ☰
               </button>
@@ -1171,7 +1194,7 @@ function App() {
               )}
             </div>
           ) : (
-            <div className={`ideas-${viewMode}`} role="list" aria-label="Gedankenliste">
+            <div className={`ideas-${viewMode}`} aria-label="Gedankenliste">
               {filteredIdeas.map((idea) => (
                 <div
                   key={idea.id}
@@ -1225,6 +1248,7 @@ function App() {
       {/* Global Toast Notifications */}
       <ToastContainer />
     </div>
+    </NeuroFeedbackProvider>
     </ErrorBoundary>
   );
 }

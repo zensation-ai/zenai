@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
 import { AIFeedback } from './AIFeedback';
 import { InlineLoader } from './SkeletonLoader';
+import { useNeuroFeedback } from './NeuroFeedback';
 import { getTypeIcon, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
 import { formatDate } from '../utils/dateUtils';
 import './IdeaCard.css';
@@ -35,6 +36,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const confirm = useConfirm();
+  const { triggerSuccess } = useNeuroFeedback();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -68,7 +70,8 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
     try {
       await axios.put(`/api/${context}/ideas/${idea.id}/archive`);
       onArchive?.(idea.id);
-      showToast('Gedanke archiviert', 'success');
+      // Neuro-optimiertes Feedback
+      triggerSuccess('Archiviert!');
     } catch (error: unknown) {
       const message = axios.isAxiosError(error)
         ? (error.response?.data as { error?: string })?.error || 'Archivierung fehlgeschlagen'

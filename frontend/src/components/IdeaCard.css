@@ -1,80 +1,155 @@
+/* ============================================
+   IDEA CARD - Neurodesign Optimiert 2025/2026
+
+   Neurowissenschaftliche Optimierungen:
+   - Liquid Glass 2026 Design (Apple-inspiriert)
+   - Dopamin-aktivierende Micro-Interactions
+   - Flow-State fördernde Übergänge
+   - Antizipatorisches Hover-Feedback
+   ============================================ */
+
 .idea-card {
+  /* Liquid Glass 2026 Background */
   background: linear-gradient(
     165deg,
-    rgba(255, 255, 255, 0.75) 0%,
-    rgba(255, 252, 250, 0.68) 50%,
-    rgba(255, 255, 255, 0.72) 100%
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 252, 250, 0.72) 40%,
+    rgba(255, 255, 255, 0.75) 100%
   );
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 20px;
+  padding: 1.35rem;
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 0.9rem;
+
+  /* Flow-State Transition (sanft, nicht abrupt) */
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.25s ease,
+    background 0.3s ease;
+
+  /* Liquid Glass Shadow mit Tiefe */
   box-shadow:
-    0 2px 8px rgba(20, 50, 70, 0.05),
-    0 1px 3px rgba(20, 50, 70, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    0 4px 16px rgba(20, 50, 70, 0.06),
+    0 1px 4px rgba(20, 50, 70, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
   position: relative;
   overflow: hidden;
+
+  /* Staggered Entrance Animation */
+  opacity: 0;
+  transform: translateY(12px);
+  animation: cardEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Top highlight line for glass effect */
+/* Staggered Card Entrance für Flow */
+@keyframes cardEnter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger-Delays für Grid-Items */
+.ideas-grid .idea-wrapper:nth-child(1) .idea-card { animation-delay: 0ms; }
+.ideas-grid .idea-wrapper:nth-child(2) .idea-card { animation-delay: 50ms; }
+.ideas-grid .idea-wrapper:nth-child(3) .idea-card { animation-delay: 100ms; }
+.ideas-grid .idea-wrapper:nth-child(4) .idea-card { animation-delay: 150ms; }
+.ideas-grid .idea-wrapper:nth-child(5) .idea-card { animation-delay: 200ms; }
+.ideas-grid .idea-wrapper:nth-child(6) .idea-card { animation-delay: 250ms; }
+.ideas-grid .idea-wrapper:nth-child(n+7) .idea-card { animation-delay: 300ms; }
+
+/* Liquid Glass Reflection Layer */
 .idea-card::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 15%;
-  right: 15%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
-  opacity: 0.8;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    transparent 100%
+  );
+  border-radius: 20px 20px 0 0;
+  pointer-events: none;
+  z-index: 1;
 }
 
+/* Hover State: Dopamin-aktivierendes Feedback */
 .idea-card:hover {
-  border-color: rgba(255, 255, 255, 0.7);
+  /* Antizipatorische Elevation */
+  transform: translateY(-4px);
+
+  /* Verstärkte Tiefe für "Greifen"-Gefühl */
   box-shadow:
-    0 12px 32px rgba(20, 50, 70, 0.1),
-    0 4px 12px rgba(20, 50, 70, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transform: translateY(-3px);
+    0 16px 48px rgba(20, 50, 70, 0.12),
+    0 6px 16px rgba(20, 50, 70, 0.08),
+    0 0 0 1px rgba(255, 107, 53, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  /* Subtiler Warm-Glow (Belohnungs-Anticipation) */
+  border-color: rgba(255, 107, 53, 0.15);
+
   background: linear-gradient(
     165deg,
-    rgba(255, 255, 255, 0.88) 0%,
-    rgba(255, 252, 250, 0.82) 50%,
-    rgba(255, 255, 255, 0.85) 100%
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 253, 250, 0.85) 40%,
+    rgba(255, 255, 255, 0.88) 100%
   );
 }
 
-/* Shine effect on hover */
+/* Shine/Shimmer Effect (Dopamin-Trigger) */
 .idea-card::after {
   content: '';
   position: absolute;
   top: 0;
   left: -100%;
-  width: 50%;
+  width: 60%;
   height: 100%;
   background: linear-gradient(
     90deg,
-    transparent,
-    rgba(255, 255, 255, 0.15),
-    transparent
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 40%,
+    rgba(255, 107, 53, 0.05) 50%,
+    rgba(255, 255, 255, 0.2) 60%,
+    transparent 100%
   );
-  transition: left 0.5s ease;
+  transition: left 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
+  z-index: 2;
 }
 
 .idea-card:hover::after {
-  left: 100%;
+  left: 120%;
 }
 
+/* Active/Click State: Sofortiges haptisches Feedback */
 .idea-card:active {
-  transform: translateY(-2px) scale(1);
-  transition-duration: 0.1s;
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px) scale(0.995);
+  transition-duration: 80ms;
+  box-shadow:
+    0 8px 24px rgba(20, 50, 70, 0.1),
+    0 3px 8px rgba(20, 50, 70, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Focus State für Keyboard Navigation */
+.idea-card:focus-within {
+  outline: none;
+  box-shadow:
+    0 12px 36px rgba(20, 50, 70, 0.1),
+    0 4px 12px rgba(20, 50, 70, 0.06),
+    0 0 0 3px rgba(255, 107, 53, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 107, 53, 0.3);
 }
 
 .idea-header {
@@ -355,4 +430,134 @@
 
 .idea-card:hover .idea-footer .ai-feedback.compact {
   opacity: 1;
+}
+
+/* ===========================================
+   NEURO-OPTIMIERUNGEN 2025/2026
+   =========================================== */
+
+/* Sanftes Breathing für Idle-State (subkonsciente Ruhe) */
+@media (prefers-reduced-motion: no-preference) {
+  .idea-card {
+    animation:
+      cardEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+      cardBreathing 6s ease-in-out 1s infinite;
+  }
+
+  @keyframes cardBreathing {
+    0%, 100% {
+      box-shadow:
+        0 4px 16px rgba(20, 50, 70, 0.06),
+        0 1px 4px rgba(20, 50, 70, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+    50% {
+      box-shadow:
+        0 5px 18px rgba(20, 50, 70, 0.07),
+        0 2px 5px rgba(20, 50, 70, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+  }
+
+  .idea-card:hover {
+    animation: none;
+  }
+}
+
+/* Success State Animation (nach Archivieren etc.) */
+.idea-card.success-flash {
+  animation: successFlash 0.6s ease-out;
+}
+
+@keyframes successFlash {
+  0% {
+    box-shadow:
+      0 4px 16px rgba(20, 50, 70, 0.06),
+      0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 4px 16px rgba(20, 50, 70, 0.06),
+      0 0 0 8px rgba(16, 185, 129, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 4px 16px rgba(20, 50, 70, 0.06),
+      0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Priority Glow für High-Priority Items */
+.idea-card:has(.priority-high) {
+  border-left: 3px solid rgba(255, 59, 48, 0.4);
+}
+
+.idea-card:has(.priority-high):hover {
+  border-left-color: rgba(255, 59, 48, 0.6);
+}
+
+/* Cognitive Load Indicator bei vielen Keywords */
+.idea-keywords:has(> .keyword:nth-child(6)) {
+  position: relative;
+}
+
+.idea-keywords:has(> .keyword:nth-child(6))::after {
+  content: '...';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+/* Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  .idea-card,
+  .idea-card::after,
+  .idea-type,
+  .keyword {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .idea-card {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Dark Mode Support (für zukünftige Implementierung) */
+@media (prefers-color-scheme: dark) {
+  .idea-card {
+    background: linear-gradient(
+      165deg,
+      rgba(30, 35, 42, 0.85) 0%,
+      rgba(35, 40, 48, 0.8) 40%,
+      rgba(30, 35, 42, 0.82) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.2),
+      0 1px 4px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .idea-card:hover {
+    border-color: rgba(255, 107, 53, 0.25);
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.3),
+      0 6px 16px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .idea-title {
+    color: #f1f5f9;
+  }
+
+  .idea-summary {
+    color: #94a3b8;
+  }
 }

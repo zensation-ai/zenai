@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { AI_PERSONALITY } from '../utils/aiPersonality';
+import { useNeuroFeedback } from './NeuroFeedback';
 import './InboxTriage.css';
 
 export type TriageAction = 'priority' | 'keep' | 'later' | 'archive';
@@ -68,6 +69,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   const [animationClass, setAnimationClass] = useState('');
 
   const cardRef = useRef<HTMLDivElement>(null);
+  const { triggerMilestone, triggerStreak } = useNeuroFeedback();
 
   const currentIdea = ideas[currentIndex];
   const remainingCount = ideas.length - currentIndex;
@@ -177,6 +179,12 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
         // Track processed
         setProcessedIds((prev) => [...prev, currentIdea.id]);
 
+        // Neuro-Feedback: Streak für kontinuierliche Aktionen
+        const newTotal = totalProcessed + 1;
+        if (newTotal >= 3) {
+          triggerStreak(newTotal);
+        }
+
         // Wait for animation
         await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -189,8 +197,11 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
             // Might be more, fetch again
             await fetchTriageIdeas();
           } else {
-            // All done!
-            showToast(`${totalProcessed + 1} Gedanken sortiert!`, 'success');
+            // All done! Milestone Celebration
+            triggerMilestone(
+              `${newTotal} Gedanken sortiert!`,
+              'Großartige Arbeit beim Aufräumen'
+            );
             onComplete();
           }
         }
@@ -201,7 +212,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
         setAnimationClass('');
       }
     },
-    [currentIdea, currentIndex, ideas.length, isAnimating, apiBase, context, fetchTriageIdeas, showToast, onComplete, totalProcessed]
+    [currentIdea, currentIndex, ideas.length, isAnimating, apiBase, context, fetchTriageIdeas, showToast, onComplete, totalProcessed, triggerStreak, triggerMilestone]
   );
 
   // Swipe handlers

@@ -1,32 +1,71 @@
-/* Nav Dropdown Component */
+/* ============================================
+   NAV DROPDOWN - Neuro-optimiert
+
+   Liquid Glass 2026 Design mit:
+   - Anticipatory Feedback
+   - Progressive Disclosure Animations
+   - Dopamin-aktivierende Micro-Interactions
+   - Cognitive Load Management
+   ============================================ */
+
+/* ===========================================
+   CSS Variables
+   =========================================== */
+
+:root {
+  --dropdown-timing-fast: 150ms;
+  --dropdown-timing-natural: 280ms;
+  --dropdown-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --dropdown-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ===========================================
+   Dropdown Container
+   =========================================== */
 
 .nav-dropdown {
   position: relative;
 }
 
+.nav-dropdown.hover-intent {
+  /* Subtiler Hinweis dass Dropdown bereit ist */
+}
+
+/* ===========================================
+   Trigger Button - Liquid Glass Style
+   =========================================== */
+
 .nav-dropdown-trigger {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--header-text-muted, #c8d4de);
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
-  transition: var(--transition-fast);
+  transition: all var(--dropdown-timing-fast) ease;
+  overflow: hidden;
 }
 
 .nav-dropdown-trigger:hover {
-  background: var(--header-hover, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.1);
   color: var(--header-text, #f8fafc);
+  transform: translateY(-1px);
+}
+
+.nav-dropdown-trigger:active {
+  transform: translateY(0);
 }
 
 .nav-dropdown-trigger.open {
-  background: var(--header-hover, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.12);
   color: var(--header-text, #f8fafc);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .nav-dropdown-trigger.has-active {
@@ -41,37 +80,83 @@
   border-color: rgba(59, 130, 246, 0.3);
 }
 
+/* Trigger Icon */
 .nav-dropdown-icon {
   font-size: 0.95rem;
+  transition: transform var(--dropdown-timing-fast) ease;
 }
 
+.nav-dropdown-trigger:hover .nav-dropdown-icon {
+  transform: scale(1.1);
+}
+
+/* Trigger Label */
 .nav-dropdown-label {
   font-weight: 500;
 }
 
+/* Chevron with Rotation Animation */
 .nav-dropdown-chevron {
-  font-size: 0.5rem;
-  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
   margin-left: 2px;
+  transition: all var(--dropdown-timing-natural) var(--dropdown-easing);
 }
 
-/* Dropdown Menu */
-.nav-dropdown-menu {
+.nav-dropdown-chevron.rotated {
+  transform: rotate(180deg);
+  opacity: 0.9;
+}
+
+.nav-dropdown-chevron svg {
+  width: 10px;
+  height: 6px;
+}
+
+/* Ripple Effect on Click */
+.trigger-ripple {
   position: absolute;
-  top: calc(100% + 6px);
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.nav-dropdown-trigger:active .trigger-ripple {
+  opacity: 1;
+  transform: scale(2);
+}
+
+/* ===========================================
+   Anticipatory Preview Tooltip
+   =========================================== */
+
+.nav-dropdown-preview {
+  position: absolute;
+  top: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
-  min-width: 180px;
-  background: var(--surface-solid);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  z-index: 1000;
-  padding: 6px;
-  animation: dropdownFadeIn 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: rgba(26, 46, 61, 0.95);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  pointer-events: none;
+  animation: previewFadeIn 0.15s ease;
 }
 
-@keyframes dropdownFadeIn {
+@keyframes previewFadeIn {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(-4px);
@@ -82,30 +167,208 @@
   }
 }
 
+.preview-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.preview-hint {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ===========================================
+   Dropdown Menu - Liquid Glass 2026
+   =========================================== */
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  max-width: 280px;
+
+  /* Liquid Glass Effect */
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.88) 50%,
+    rgba(248, 250, 252, 0.92) 100%
+  );
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  z-index: 1000;
+  padding: 8px;
+  overflow: hidden;
+
+  animation: menuReveal var(--dropdown-timing-natural) var(--dropdown-easing);
+}
+
+@keyframes menuReveal {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Cognitive Load Border Glow */
+.nav-dropdown-menu.cognitive-low {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.nav-dropdown-menu.cognitive-medium {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.nav-dropdown-menu.cognitive-high {
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* ===========================================
+   Cognitive Load Indicator
+   =========================================== */
+
+.menu-cognitive-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+}
+
+.cognitive-bars {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+}
+
+.cognitive-bar {
+  width: 3px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 1px;
+  transition: all 0.2s ease;
+}
+
+.cognitive-bar:nth-child(2) { height: 8px; }
+.cognitive-bar:nth-child(3) { height: 10px; }
+.cognitive-bar:nth-child(4) { height: 12px; }
+.cognitive-bar:nth-child(5) { height: 14px; }
+
+.cognitive-bar.active {
+  background: #f59e0b;
+}
+
+.cognitive-low .cognitive-bar.active {
+  background: #10b981;
+}
+
+.cognitive-high .cognitive-bar.active {
+  background: #ef4444;
+}
+
+.cognitive-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* ===========================================
+   Menu Groups
+   =========================================== */
+
+.menu-group {
+  /* Separierung zwischen Gruppen */
+}
+
+.menu-group + .menu-group {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.menu-group-title {
+  padding: 6px 10px 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+/* ===========================================
+   Dropdown Items - Staggered Reveal
+   =========================================== */
+
 .nav-dropdown-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
   padding: 10px 12px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-muted);
+  color: #4a6577;
   cursor: pointer;
   font-size: 0.85rem;
   text-align: left;
-  transition: var(--transition-fast);
+  overflow: hidden;
+
+  /* Staggered Animation */
+  opacity: 0;
+  transform: translateY(-6px);
+  animation: itemReveal var(--dropdown-timing-natural) var(--dropdown-easing) forwards;
+  animation-delay: var(--stagger-delay, 0ms);
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+@keyframes itemReveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .nav-dropdown-item:hover {
-  background: var(--surface-light);
-  color: var(--text);
+  background: rgba(255, 107, 53, 0.08);
+  color: #1a2e3d;
+  transform: translateX(2px);
+}
+
+[data-context="work"] .nav-dropdown-item:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.nav-dropdown-item.hovered {
+  background: rgba(255, 107, 53, 0.1);
 }
 
 .nav-dropdown-item.active {
   background: rgba(255, 107, 53, 0.12);
-  color: var(--primary);
+  color: var(--primary, #ff6b35);
+  font-weight: 600;
 }
 
 [data-context="work"] .nav-dropdown-item.active {
@@ -113,17 +376,110 @@
   color: #3b82f6;
 }
 
+/* Item Icon */
 .nav-dropdown-item .item-icon {
-  font-size: 1rem;
-  width: 20px;
+  font-size: 1.1rem;
+  width: 24px;
   text-align: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 
-.nav-dropdown-item .item-label {
+.nav-dropdown-item:hover .item-icon {
+  transform: scale(1.15);
+}
+
+/* Item Content */
+.item-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.item-label {
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Responsive - hide labels on smaller screens */
+.item-description {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  animation: descriptionFadeIn 0.2s ease;
+}
+
+@keyframes descriptionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Active Indicator Checkmark */
+.item-active-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary, #ff6b35);
+  animation: checkmarkPop 0.3s var(--dropdown-easing-bounce);
+}
+
+[data-context="work"] .item-active-indicator {
+  color: #3b82f6;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Hover Glow Effect */
+.item-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 107, 53, 0.15) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+[data-context="work"] .item-glow {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(59, 130, 246, 0.15) 0%,
+    transparent 70%
+  );
+}
+
+.nav-dropdown-item:hover .item-glow {
+  opacity: 1;
+}
+
+/* ===========================================
+   Responsive - Hide Labels on Smaller Screens
+   =========================================== */
+
 @media (max-width: 1200px) {
   .nav-dropdown-label {
     display: none;
@@ -131,5 +487,83 @@
 
   .nav-dropdown-trigger {
     padding: 8px 10px;
+  }
+
+  .nav-dropdown-menu {
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 900px) {
+  .nav-dropdown {
+    display: none;
+  }
+}
+
+/* ===========================================
+   Reduced Motion
+   =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-dropdown-menu,
+  .nav-dropdown-item,
+  .nav-dropdown-preview,
+  .nav-dropdown-chevron,
+  .trigger-ripple,
+  .item-active-indicator {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .nav-dropdown-item {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ===========================================
+   Dark Mode Support
+   =========================================== */
+
+@media (prefers-color-scheme: dark) {
+  .nav-dropdown-menu {
+    background: linear-gradient(
+      165deg,
+      rgba(30, 41, 59, 0.95) 0%,
+      rgba(26, 46, 61, 0.92) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-dropdown-item {
+    color: #c8d4de;
+  }
+
+  .nav-dropdown-item:hover {
+    color: #f8fafc;
+  }
+
+  .menu-cognitive-indicator {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .cognitive-bar {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .cognitive-label {
+    color: #94a3b8;
+  }
+
+  .menu-group + .menu-group {
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .menu-group-title {
+    color: #64748b;
   }
 }

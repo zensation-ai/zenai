@@ -1,3 +1,18 @@
+/* ============================================
+   MAIN STYLES - Personal AI Brain
+   Neurowissenschaftlich optimiertes UI/UX 2025/2026
+
+   Design System basiert auf:
+   - Neurodesign Principles
+   - Cognitive Load Theory
+   - Dopamin-Belohnungssystem
+   - Apple Human Interface Guidelines
+   - Liquid Glass Design Language
+   ============================================ */
+
+/* Import Neurodesign System */
+@import './neurodesign.css';
+
 * {
   margin: 0;
   padding: 0;

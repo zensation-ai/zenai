@@ -1,0 +1,942 @@
+/* ============================================
+   NEURODESIGN SYSTEM 2025/2026
+   Neurowissenschaftlich optimiertes UI/UX
+
+   Basiert auf:
+   - Cognitive Load Theory (Miller's Law 7±2)
+   - Dopamin-Belohnungssystem Aktivierung
+   - Flow-State Optimierung
+   - Antizipatorisches Design
+   - Emotional Design Principles
+   - Liquid Glass Design (Apple 2025)
+   ============================================ */
+
+/* ============================================
+   1. NEURO-OPTIMIERTES FARBSYSTEM
+
+   Farben die spezifische Hirnareale ansprechen:
+   - Warme Töne: Nucleus Accumbens (Belohnung)
+   - Kühle Töne: Präfrontaler Cortex (Fokus)
+   - Kontraste: Visuelle Salienz für Aufmerksamkeit
+   ============================================ */
+
+:root {
+  /* Dopamin-aktivierende Akzentfarben (Belohnungssystem) */
+  --neuro-reward: #ff6b35;           /* Primäre Belohnungsfarbe */
+  --neuro-reward-light: #ff8f5a;
+  --neuro-reward-glow: rgba(255, 107, 53, 0.4);
+  --neuro-reward-pulse: rgba(255, 107, 53, 0.15);
+
+  /* Erfolgs-Dopamin (Completion Reward) */
+  --neuro-success: #10b981;
+  --neuro-success-glow: rgba(16, 185, 129, 0.35);
+  --neuro-success-burst: rgba(16, 185, 129, 0.5);
+
+  /* Fokus-fördernde Farben (Präfrontaler Cortex) */
+  --neuro-focus: #1a3a4a;
+  --neuro-focus-light: #2d5a6e;
+  --neuro-calm: #e8f4f8;
+
+  /* Antizipations-Farben (Erwartung/Spannung) */
+  --neuro-anticipation: #8b5cf6;
+  --neuro-anticipation-glow: rgba(139, 92, 246, 0.3);
+
+  /* Cognitive Load Reduktion - Sanfte Übergänge */
+  --neuro-transition-cognitive: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --neuro-transition-reward: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --neuro-transition-flow: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Flow-State Timing (keine abrupten Unterbrechungen) */
+  --neuro-timing-instant: 80ms;
+  --neuro-timing-quick: 150ms;
+  --neuro-timing-natural: 280ms;
+  --neuro-timing-deliberate: 450ms;
+
+  /* Liquid Glass 2026 - Apple-inspiriert */
+  --glass-2026-bg: rgba(255, 255, 255, 0.72);
+  --glass-2026-blur: 24px;
+  --glass-2026-saturation: 180%;
+  --glass-2026-border: rgba(255, 255, 255, 0.5);
+  --glass-2026-reflection: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  --glass-2026-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================
+   2. DOPAMIN MICRO-INTERACTIONS
+
+   Variable Belohnungen aktivieren das Belohnungssystem
+   stärker als vorhersehbare Belohnungen (Slot Machine Effect)
+   ============================================ */
+
+/* Basis für alle Dopamin-auslösenden Elemente */
+.neuro-reward-trigger {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Erfolgs-Burst Animation (Dopamin-Ausschüttung visuell) */
+@keyframes dopamineBurst {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Ripple-Effekt für Buttons (haptisches Feedback visuell) */
+@keyframes neuroRipple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Success Confetti - Variable Belohnung */
+@keyframes successConfetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Dopamin-Button: Sichtbare Belohnung bei Klick */
+.neuro-button {
+  position: relative;
+  padding: 0.875rem 1.5rem;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(
+    180deg,
+    var(--neuro-reward-light) 0%,
+    var(--neuro-reward) 100%
+  );
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform var(--neuro-timing-quick) ease,
+    box-shadow var(--neuro-timing-natural) ease;
+  box-shadow:
+    0 4px 14px var(--neuro-reward-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+/* Antizipations-State (Hover = Erwartung aufbauen) */
+.neuro-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 8px 24px var(--neuro-reward-glow),
+    0 0 0 4px var(--neuro-reward-pulse),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Belohnungs-State (Click = Dopamin Release) */
+.neuro-button:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--neuro-timing-instant);
+}
+
+/* Ripple-Container */
+.neuro-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.neuro-button:active::after {
+  animation: neuroRipple 0.6s ease-out;
+}
+
+/* Success-State Button (nach erfolgreicher Aktion) */
+.neuro-button.success {
+  background: linear-gradient(
+    180deg,
+    #34d399 0%,
+    var(--neuro-success) 100%
+  );
+  animation: dopamineBurst 0.5s ease-out;
+}
+
+.neuro-button.success::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--neuro-success-burst);
+  border-radius: inherit;
+  animation: dopamineBurst 0.6s ease-out;
+}
+
+/* ============================================
+   3. PROGRESSIVE DISCLOSURE
+
+   Reduziert Cognitive Load durch schrittweise
+   Informationsenthüllung (Miller's Law: 7±2 Items)
+   ============================================ */
+
+/* Container für progressive Inhalte */
+.neuro-disclosure {
+  --disclosure-delay: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: disclosureReveal var(--neuro-timing-natural) ease-out forwards;
+  animation-delay: calc(var(--disclosure-delay) * 80ms);
+}
+
+@keyframes disclosureReveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered List Items (max 7 sichtbar halten) */
+.neuro-stagger-item {
+  opacity: 0;
+  transform: translateX(-8px);
+  animation: staggerIn var(--neuro-timing-natural) ease-out forwards;
+}
+
+.neuro-stagger-item:nth-child(1) { animation-delay: 0ms; }
+.neuro-stagger-item:nth-child(2) { animation-delay: 50ms; }
+.neuro-stagger-item:nth-child(3) { animation-delay: 100ms; }
+.neuro-stagger-item:nth-child(4) { animation-delay: 150ms; }
+.neuro-stagger-item:nth-child(5) { animation-delay: 200ms; }
+.neuro-stagger-item:nth-child(6) { animation-delay: 250ms; }
+.neuro-stagger-item:nth-child(7) { animation-delay: 300ms; }
+/* Items 8+ erscheinen später (außerhalb primärem Fokus) */
+.neuro-stagger-item:nth-child(n+8) { animation-delay: 400ms; }
+
+@keyframes staggerIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Expandable Section (Click to reveal) */
+.neuro-expandable {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height var(--neuro-timing-deliberate) ease,
+    opacity var(--neuro-timing-natural) ease;
+}
+
+.neuro-expandable.expanded {
+  max-height: 1000px;
+  opacity: 1;
+}
+
+/* Cognitive Chunking - Gruppierte Info-Blöcke */
+.neuro-chunk {
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  background: var(--glass-2026-bg);
+  backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
+  border-radius: 16px;
+  border: 1px solid var(--glass-2026-border);
+  box-shadow: var(--glass-2026-shadow);
+  transition: all var(--neuro-timing-natural) ease;
+}
+
+.neuro-chunk:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
+   4. FLOW-STATE ANIMATIONEN
+
+   Sanfte, unterbrechungsfreie Übergänge
+   die den Flow-Zustand aufrechterhalten
+   ============================================ */
+
+/* Page Transition - Smooth Cross-fade */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pageExit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.99);
+  }
+}
+
+.neuro-page-enter {
+  animation: pageEnter var(--neuro-timing-deliberate) ease-out;
+}
+
+.neuro-page-exit {
+  animation: pageExit var(--neuro-timing-natural) ease-in;
+}
+
+/* Smooth Scroll Indicator (Progress) */
+.neuro-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--neuro-reward) 0%,
+    var(--neuro-reward-light) 50%,
+    var(--neuro-anticipation) 100%
+  );
+  transform-origin: left;
+  z-index: 9999;
+  transition: transform 0.1s linear;
+  box-shadow: 0 0 10px var(--neuro-reward-glow);
+}
+
+/* Content Loading - Anticipatory Skeleton */
+@keyframes anticipatoryShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.neuro-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.08) 20%,
+    rgba(255, 107, 53, 0.08) 40%,
+    rgba(0, 0, 0, 0.08) 60%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: anticipatoryShimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Breathing Animation (Subkonsciente Ruhe) */
+@keyframes neuroBreathing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.95;
+  }
+}
+
+.neuro-breathing {
+  animation: neuroBreathing 4s ease-in-out infinite;
+}
+
+/* ============================================
+   5. ANTIZIPATORISCHES FEEDBACK
+
+   UI-Elemente die zeigen "was als nächstes passiert"
+   bevor die Aktion ausgeführt wird
+   ============================================ */
+
+/* Hover-Preview für Links/Buttons */
+.neuro-anticipate {
+  position: relative;
+}
+
+.neuro-anticipate::before {
+  content: attr(data-anticipate);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  padding: 6px 12px;
+  background: var(--neuro-focus);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--neuro-timing-quick) ease,
+    transform var(--neuro-timing-quick) ease;
+  z-index: 100;
+}
+
+.neuro-anticipate::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--neuro-focus);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--neuro-timing-quick) ease;
+}
+
+.neuro-anticipate:hover::before,
+.neuro-anticipate:hover::after {
+  opacity: 1;
+}
+
+.neuro-anticipate:hover::before {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Loading State mit Fortschrittsanzeige */
+.neuro-progress-indicator {
+  position: relative;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.neuro-progress-bar {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--neuro-reward) 0%,
+    var(--neuro-reward-light) 100%
+  );
+  border-radius: 2px;
+  transition: width var(--neuro-timing-natural) ease;
+  position: relative;
+}
+
+.neuro-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: progressGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes progressGlow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Step Indicator (Multi-Step Process) */
+.neuro-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1rem;
+}
+
+.neuro-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.neuro-step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all var(--neuro-timing-natural) ease;
+  position: relative;
+}
+
+.neuro-step-dot.pending {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-secondary);
+}
+
+.neuro-step-dot.active {
+  background: var(--neuro-anticipation);
+  color: white;
+  box-shadow: 0 0 0 4px var(--neuro-anticipation-glow);
+  animation: stepPulse 1.5s ease-in-out infinite;
+}
+
+.neuro-step-dot.complete {
+  background: var(--neuro-success);
+  color: white;
+  box-shadow: 0 2px 8px var(--neuro-success-glow);
+}
+
+.neuro-step-dot.complete::after {
+  content: '✓';
+  font-size: 1rem;
+}
+
+@keyframes stepPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px var(--neuro-anticipation-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.15);
+  }
+}
+
+.neuro-step-line {
+  width: 40px;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.neuro-step-line.complete {
+  background: var(--neuro-success);
+}
+
+.neuro-step-line.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 50%;
+  background: var(--neuro-anticipation);
+  animation: stepLineProgress 1s ease-in-out infinite;
+}
+
+@keyframes stepLineProgress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+/* ============================================
+   6. LIQUID GLASS 2026 (Apple-inspiriert)
+
+   Tiefe, Transluzenz und dynamische Reflexionen
+   für ein modernes, haptisches Gefühl
+   ============================================ */
+
+/* Base Liquid Glass Card */
+.liquid-glass {
+  background: var(--glass-2026-bg);
+  backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
+  border-radius: 20px;
+  border: 1px solid var(--glass-2026-border);
+  box-shadow: var(--glass-2026-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--neuro-timing-natural) ease;
+}
+
+/* Reflection Layer */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--glass-2026-reflection);
+  pointer-events: none;
+  border-radius: 20px 20px 0 0;
+}
+
+/* Hover State - Increased depth */
+.liquid-glass:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Liquid Glass Input */
+.liquid-glass-input {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  transition: all var(--neuro-timing-quick) ease;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.liquid-glass-input:focus {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--neuro-reward);
+  box-shadow:
+    0 0 0 4px var(--neuro-reward-pulse),
+    inset 0 1px 2px rgba(0, 0, 0, 0.02),
+    0 2px 8px rgba(255, 107, 53, 0.15);
+  outline: none;
+}
+
+/* Liquid Glass Navigation */
+.liquid-glass-nav {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.75) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Frosted Dark Variant (für Header) */
+.liquid-glass-dark {
+  background: rgba(20, 34, 48, 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   7. EMOTIONAL MICRO-COPY ANIMATIONS
+
+   Text der "atmet" und lebt
+   ============================================ */
+
+/* Typing Indicator Animation */
+@keyframes typingDot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.neuro-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.neuro-typing-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--neuro-reward);
+  border-radius: 50%;
+  animation: typingDot 1.4s ease-in-out infinite;
+}
+
+.neuro-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.neuro-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Character-by-Character Reveal */
+@keyframes charReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.neuro-char-reveal span {
+  display: inline-block;
+  opacity: 0;
+  animation: charReveal 0.3s ease-out forwards;
+}
+
+/* Motivational Pulse (für positive Nachrichten) */
+@keyframes motivationalPulse {
+  0%, 100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 20px var(--neuro-reward-glow);
+  }
+}
+
+.neuro-motivational {
+  animation: motivationalPulse 3s ease-in-out infinite;
+}
+
+/* ============================================
+   8. COGNITIVE LOAD INDICATORS
+
+   Visuelle Hinweise für mentale Kapazität
+   ============================================ */
+
+/* Complexity Meter */
+.neuro-complexity {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.neuro-complexity-bar {
+  width: 4px;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  transition: all var(--neuro-timing-quick) ease;
+}
+
+.neuro-complexity-bar.active {
+  background: var(--neuro-reward);
+}
+
+.neuro-complexity[data-level="high"] .neuro-complexity-bar.active {
+  background: var(--danger);
+}
+
+.neuro-complexity[data-level="medium"] .neuro-complexity-bar.active {
+  background: var(--warning);
+}
+
+/* Reading Time Indicator */
+.neuro-reading-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+}
+
+.neuro-reading-time::before {
+  content: '⏱';
+  font-size: 0.85rem;
+}
+
+/* ============================================
+   9. FOCUS MODE OVERLAY
+
+   Reduziert Ablenkungen für Deep Work
+   ============================================ */
+
+.neuro-focus-mode {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--neuro-timing-natural) ease;
+}
+
+.neuro-focus-mode.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.neuro-focus-content {
+  background: white;
+  border-radius: 24px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+  transform: scale(0.95);
+  transition: transform var(--neuro-timing-deliberate) ease;
+}
+
+.neuro-focus-mode.active .neuro-focus-content {
+  transform: scale(1);
+}
+
+/* ============================================
+   10. SUCCESS CELEBRATION
+
+   Dopamin-Maximierung bei Erfolg
+   ============================================ */
+
+@keyframes celebrationBurst {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(3) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes confettifall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.neuro-celebration {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.neuro-celebration-burst {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle,
+    var(--neuro-success-burst) 0%,
+    transparent 70%
+  );
+  animation: celebrationBurst 0.8s ease-out forwards;
+}
+
+.neuro-confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confettifall 2s ease-out forwards;
+}
+
+.neuro-confetti:nth-child(1) { background: #ff6b35; left: 20%; animation-delay: 0s; }
+.neuro-confetti:nth-child(2) { background: #10b981; left: 40%; animation-delay: 0.1s; }
+.neuro-confetti:nth-child(3) { background: #8b5cf6; left: 60%; animation-delay: 0.2s; }
+.neuro-confetti:nth-child(4) { background: #f59e0b; left: 80%; animation-delay: 0.3s; }
+.neuro-confetti:nth-child(5) { background: #3b82f6; left: 30%; animation-delay: 0.15s; }
+.neuro-confetti:nth-child(6) { background: #ec4899; left: 70%; animation-delay: 0.25s; }
+
+/* ============================================
+   11. RESPONSIVE NEURO-OPTIMIERUNGEN
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    /* Erhöhte Touch-Targets für Mobile (44px minimum) */
+    --neuro-touch-target: 44px;
+    /* Schnellere Animationen für Mobile (weniger Latenz-Wahrnehmung) */
+    --neuro-timing-quick: 120ms;
+    --neuro-timing-natural: 200ms;
+  }
+
+  .neuro-button {
+    min-height: var(--neuro-touch-target);
+    padding: 0.75rem 1.25rem;
+  }
+
+  .liquid-glass {
+    border-radius: 16px;
+  }
+
+  /* Reduzierte Animationen für Performance */
+  .neuro-breathing {
+    animation: none;
+  }
+}
+
+/* Respektiere Nutzer-Präferenzen für reduzierte Bewegung */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--neuro-timing-instant) !important;
+  }
+
+  .neuro-breathing,
+  .neuro-celebration,
+  .neuro-confetti {
+    animation: none !important;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-2026-bg: rgba(30, 30, 35, 0.8);
+    --glass-2026-border: rgba(255, 255, 255, 0.1);
+    --glass-2026-reflection: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.02) 40%,
+      rgba(255, 255, 255, 0) 60%
+    );
+  }
+}

@@ -1,0 +1,566 @@
+/* ============================================
+   NEURO FEEDBACK SYSTEM - CSS
+
+   Dopamin-optimierte Feedback-Animationen
+   Basierend auf neurowissenschaftlichen Erkenntnissen
+   ============================================ */
+
+/* ===========================================
+   CSS Variables
+   =========================================== */
+
+:root {
+  --nf-primary: #ff6b35;
+  --nf-success: #10b981;
+  --nf-milestone: #8b5cf6;
+  --nf-streak: #f59e0b;
+  --nf-insight: #3b82f6;
+
+  --nf-timing-quick: 200ms;
+  --nf-timing-natural: 350ms;
+  --nf-timing-dramatic: 600ms;
+
+  --nf-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --nf-easing-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===========================================
+   Celebration Component
+   =========================================== */
+
+.neuro-feedback-celebration {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--nf-timing-natural) ease;
+}
+
+.neuro-feedback-celebration.visible {
+  opacity: 1;
+}
+
+/* Celebration Content */
+.celebration-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 3rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: scale(0.8);
+  animation: celebrationPop var(--nf-timing-dramatic) var(--nf-easing-bounce) forwards;
+}
+
+@keyframes celebrationPop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Icon Container */
+.celebration-icon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  animation: iconBounce 0.6s var(--nf-easing-bounce) 0.2s;
+}
+
+@keyframes iconBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* Icon Ring - Dopamin Burst Visualization */
+.icon-ring {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 3px solid var(--nf-success);
+  opacity: 0;
+  animation: ringExpand 0.8s ease-out 0.1s forwards;
+}
+
+@keyframes ringExpand {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Type-specific ring colors */
+.neuro-feedback-celebration.success .icon-ring {
+  border-color: var(--nf-success);
+}
+
+.neuro-feedback-celebration.milestone .icon-ring {
+  border-color: var(--nf-milestone);
+}
+
+.neuro-feedback-celebration.streak .icon-ring {
+  border-color: var(--nf-streak);
+}
+
+/* Celebration Message */
+.celebration-message {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a2e3d;
+  text-align: center;
+  letter-spacing: -0.02em;
+  animation: textFadeUp 0.5s var(--nf-easing-smooth) 0.3s both;
+}
+
+@keyframes textFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.celebration-submessage {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #4a6577;
+  text-align: center;
+  animation: textFadeUp 0.5s var(--nf-easing-smooth) 0.4s both;
+}
+
+/* ===========================================
+   Dopamin Burst Effect
+   =========================================== */
+
+.celebration-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.celebration-burst::before,
+.celebration-burst::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: burstExpand 0.8s ease-out forwards;
+}
+
+.celebration-burst::before {
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.3) 0%,
+    transparent 70%
+  );
+}
+
+.celebration-burst::after {
+  background: radial-gradient(
+    circle,
+    rgba(255, 107, 53, 0.2) 0%,
+    transparent 60%
+  );
+  animation-delay: 0.1s;
+}
+
+@keyframes burstExpand {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Type-specific burst colors */
+.neuro-feedback-celebration.milestone .celebration-burst::before {
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.3) 0%,
+    transparent 70%
+  );
+}
+
+.neuro-feedback-celebration.streak .celebration-burst::before {
+  background: radial-gradient(
+    circle,
+    rgba(245, 158, 11, 0.3) 0%,
+    transparent 70%
+  );
+}
+
+/* ===========================================
+   Confetti Animation
+   =========================================== */
+
+.celebration-confetti {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  animation: confettiFall 2s ease-out forwards;
+  animation-delay: var(--delay);
+}
+
+.confetti-piece:nth-child(1) { background: #ff6b35; }
+.confetti-piece:nth-child(2) { background: #10b981; }
+.confetti-piece:nth-child(3) { background: #8b5cf6; }
+.confetti-piece:nth-child(4) { background: #f59e0b; }
+.confetti-piece:nth-child(5) { background: #3b82f6; }
+.confetti-piece:nth-child(6) { background: #ec4899; }
+.confetti-piece:nth-child(7) { background: #14b8a6; }
+.confetti-piece:nth-child(8) { background: #f97316; }
+
+@keyframes confettiFall {
+  0% {
+    transform:
+      translate(0, 0)
+      rotate(0deg)
+      scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform:
+      translate(var(--x-drift), 150px)
+      rotate(var(--rotation))
+      scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* ===========================================
+   Progress Indicator
+   =========================================== */
+
+.neuro-progress-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: toastSlideUp 0.35s var(--nf-easing-bounce);
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.progress-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 200px;
+}
+
+.progress-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a2e3d;
+}
+
+.progress-bar-container {
+  position: relative;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--nf-primary) 0%,
+    #ff8f5a 100%
+  );
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-glow {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  background: var(--nf-primary);
+  border-radius: 50%;
+  filter: blur(8px);
+  opacity: 0.6;
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease;
+}
+
+/* ===========================================
+   Streak Counter
+   =========================================== */
+
+.neuro-streak-toast {
+  position: fixed;
+  top: 100px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.15) 0%,
+    rgba(251, 191, 36, 0.1) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 14px;
+  box-shadow:
+    0 8px 24px rgba(245, 158, 11, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: streakSlideIn 0.4s var(--nf-easing-bounce);
+}
+
+@keyframes streakSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.streak-icon {
+  font-size: 1.5rem;
+  animation: streakPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes streakPulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.15);
+  }
+}
+
+.streak-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.streak-count {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f59e0b;
+  letter-spacing: -0.02em;
+}
+
+.streak-message {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #92400e;
+}
+
+/* ===========================================
+   Insight Toast
+   =========================================== */
+
+.neuro-insight-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 360px;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.12) 0%,
+    rgba(96, 165, 250, 0.08) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 14px;
+  box-shadow:
+    0 8px 24px rgba(59, 130, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: insightSlideIn 0.4s var(--nf-easing-bounce);
+}
+
+@keyframes insightSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.insight-prefix {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3b82f6;
+  white-space: nowrap;
+}
+
+.insight-message {
+  font-size: 0.875rem;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.insight-dismiss {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.insight-dismiss:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #334155;
+}
+
+/* ===========================================
+   Responsive Adjustments
+   =========================================== */
+
+@media (max-width: 768px) {
+  .neuro-feedback-celebration .celebration-content {
+    padding: 1.5rem 2rem;
+  }
+
+  .celebration-message {
+    font-size: 1.25rem;
+  }
+
+  .celebration-icon {
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+  }
+
+  .neuro-progress-toast {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    bottom: 80px;
+  }
+
+  .neuro-streak-toast,
+  .neuro-insight-toast {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+  }
+
+  .neuro-streak-toast {
+    top: 80px;
+  }
+}
+
+/* ===========================================
+   Reduced Motion
+   =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .neuro-feedback-celebration,
+  .celebration-content,
+  .celebration-icon,
+  .icon-ring,
+  .celebration-burst,
+  .confetti-piece,
+  .neuro-progress-toast,
+  .neuro-streak-toast,
+  .streak-icon,
+  .neuro-insight-toast {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .neuro-feedback-celebration.visible .celebration-content {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
