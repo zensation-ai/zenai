@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, memo } from 'react';
+import React, { useState, useRef, useCallback, memo, ReactNode } from 'react';
 import { TEXT_PROCESSING_STEPS } from '../utils/aiSteps';
 import { AI_PERSONALITY } from '../utils/aiPersonality';
 import './CommandCenter.css';
@@ -16,11 +16,13 @@ interface CommandCenterProps {
   onTextChange: (text: string) => void;
   onSubmit: () => void;
   onModeChange: (mode: InputMode) => void;
-  onRecordClick: () => void;
   inputMode: InputMode;
-  isRecording: boolean;
   isProcessing: boolean;
   disabled?: boolean;
+  /** Optional custom record button component */
+  renderRecordButton?: () => ReactNode;
+  /** Optional chat component to render in chat mode */
+  renderChat?: () => ReactNode;
 }
 
 const MAX_CHARS = 10000;
@@ -44,11 +46,11 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
   onTextChange,
   onSubmit,
   onModeChange,
-  onRecordClick,
   inputMode,
-  isRecording,
   isProcessing,
   disabled = false,
+  renderRecordButton,
+  renderChat,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -94,69 +96,84 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
       }`}
       data-context={context}
     >
-      <div className="command-input-wrapper">
-        <textarea
-          ref={textareaRef}
-          className="command-textarea"
-          placeholder="Was beschäftigt dich? Teile deine Gedanken, Ideen oder Aufgaben..."
-          value={textValue}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          disabled={disabled || isProcessing}
-          rows={4}
-          aria-label="Gedanken eingeben"
-        />
+      {/* Textarea only shown in voice mode */}
+      {inputMode === 'voice' && (
+        <div className="command-input-wrapper">
+          <textarea
+            ref={textareaRef}
+            className="command-textarea"
+            placeholder="Was beschäftigt dich? Teile deine Gedanken, Ideen oder Aufgaben..."
+            value={textValue}
+            onChange={handleTextChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            disabled={disabled || isProcessing}
+            rows={4}
+            aria-label="Gedanken eingeben"
+          />
 
-        <div className="command-input-footer">
-          <span
-            className={`command-char-count ${showCharWarning ? 'warning' : ''}`}
-          >
-            {charsRemaining.toLocaleString()} Zeichen
-          </span>
-          <span className="command-hint">⌘/Ctrl + Enter zum Senden</span>
+          <div className="command-input-footer">
+            <span
+              className={`command-char-count ${showCharWarning ? 'warning' : ''}`}
+            >
+              {charsRemaining.toLocaleString()} Zeichen
+            </span>
+            <span className="command-hint">⌘/Ctrl + Enter zum Senden</span>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="command-actions">
-        <button
-          type="button"
-          className={`command-action-btn record ${isRecording ? 'recording' : ''}`}
-          onClick={onRecordClick}
-          disabled={disabled || isProcessing}
-          title={isRecording ? 'Aufnahme stoppen' : 'Sprachmemo aufnehmen'}
-        >
-          <span className="action-icon">{isRecording ? '⏹️' : '🎤'}</span>
-          <span className="action-label">
-            {isRecording ? 'Stoppen' : 'Aufnehmen'}
-          </span>
-        </button>
+      {/* Voice mode: show actions */}
+      {inputMode === 'voice' && (
+        <div className="command-actions">
+          {renderRecordButton ? (
+            <div className="command-record-slot">
+              {renderRecordButton()}
+            </div>
+          ) : null}
 
-        <button
-          type="button"
-          className={`command-action-btn chat ${inputMode === 'chat' ? 'active' : ''}`}
-          onClick={() => onModeChange(inputMode === 'chat' ? 'voice' : 'chat')}
-          disabled={disabled || isProcessing}
-          title="Chat-Modus öffnen"
-        >
-          <span className="action-icon">💬</span>
-          <span className="action-label">Chat</span>
-        </button>
+          <button
+            type="button"
+            className="command-action-btn chat"
+            onClick={() => onModeChange('chat')}
+            disabled={disabled || isProcessing}
+            title="Chat-Modus öffnen"
+          >
+            <span className="action-icon">💬</span>
+            <span className="action-label">Chat</span>
+          </button>
 
-        <button
-          type="button"
-          className="command-action-btn primary submit"
-          onClick={handleSubmit}
-          disabled={disabled || isProcessing || !textValue.trim()}
-          title="Gedanken strukturieren"
-        >
-          <span className="action-icon">{isProcessing ? '⏳' : '✨'}</span>
-          <span className="action-label">
-            {isProcessing ? 'Verarbeite...' : 'Strukturieren'}
-          </span>
-        </button>
-      </div>
+          <button
+            type="button"
+            className="command-action-btn primary submit"
+            onClick={handleSubmit}
+            disabled={disabled || isProcessing || !textValue.trim()}
+            title="Gedanken strukturieren"
+          >
+            <span className="action-icon">{isProcessing ? '⏳' : '✨'}</span>
+            <span className="action-label">
+              {isProcessing ? 'Verarbeite...' : 'Strukturieren'}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Chat mode: render chat component */}
+      {inputMode === 'chat' && (
+        <div className="command-chat-container">
+          <button
+            type="button"
+            className="command-action-btn back"
+            onClick={() => onModeChange('voice')}
+            title="Zurück zu Sprachmemo"
+          >
+            <span className="action-icon">←</span>
+            <span className="action-label">Zurück</span>
+          </button>
+          {renderChat?.()}
+        </div>
+      )}
 
       {/* AI Status Timeline - shown during processing */}
       {showAIStatus && (

@@ -137,11 +137,29 @@ export function MobileNav({
               <div className="mobile-nav-section">
                 <button
                   type="button"
+                  className={`mobile-nav-item ${currentPage === 'dashboard' ? 'active' : ''}`}
+                  onClick={() => handleNavigate('dashboard')}
+                >
+                  <span className="nav-item-icon">📊</span>
+                  <span className="nav-item-label">Dashboard</span>
+                </button>
+
+                <button
+                  type="button"
                   className={`mobile-nav-item ${currentPage === 'ideas' ? 'active' : ''}`}
                   onClick={() => handleNavigate('ideas')}
                 >
                   <span className="nav-item-icon">💭</span>
                   <span className="nav-item-label">Gedanken</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`mobile-nav-item ${currentPage === 'triage' ? 'active' : ''}`}
+                  onClick={() => handleNavigate('triage')}
+                >
+                  <span className="nav-item-icon">📋</span>
+                  <span className="nav-item-label">Triage</span>
                 </button>
 
                 <button

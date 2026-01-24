@@ -3,6 +3,7 @@ import { queryContext, AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';
+import { getRecentAIActivities, markActivitiesAsRead, getUnreadActivityCount } from '../services/ai-activity-logger';
 
 const router = Router();
 
@@ -227,6 +228,49 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     query: searchQuery,
     context,
     total: result.rows.length
+  });
+}));
+
+/**
+ * GET /api/:context/ai-activity
+ * Get recent AI activity feed for dashboard
+ */
+router.get('/:context/ai-activity', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+  const { limit = '10' } = req.query;
+
+  if (!['personal', 'work'].includes(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  const activities = await getRecentAIActivities(context as AIContext, parseInt(limit as string));
+  const unreadCount = await getUnreadActivityCount(context as AIContext);
+
+  res.json({
+    activities,
+    unreadCount,
+    context
+  });
+}));
+
+/**
+ * POST /api/:context/ai-activity/mark-read
+ * Mark activities as read
+ */
+router.post('/:context/ai-activity/mark-read', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+  const { activityIds } = req.body;
+
+  if (!['personal', 'work'].includes(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  const markedCount = await markActivitiesAsRead(context as AIContext, activityIds);
+
+  res.json({
+    success: true,
+    markedCount,
+    context
   });
 }));
 
