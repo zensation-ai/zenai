@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, memo, ReactNode } from 'react';
 import { TEXT_PROCESSING_STEPS } from '../utils/aiSteps';
-import { AI_PERSONALITY } from '../utils/aiPersonality';
+import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './CommandCenter.css';
 
 export type InputMode = 'voice' | 'chat';
@@ -91,7 +92,7 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
 
   return (
     <div
-      className={`command-center ${isFocused ? 'focused' : ''} ${
+      className={`command-center liquid-glass-nav ${isFocused ? 'focused' : ''} ${
         isProcessing ? 'processing' : ''
       }`}
       data-context={context}
@@ -177,14 +178,14 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
 
       {/* AI Status Timeline - shown during processing */}
       {showAIStatus && (
-        <div className="ai-status-timeline" role="status" aria-live="polite">
+        <div className="ai-status-timeline neuro-tooltip-enhanced" role="status" aria-live="polite">
           <div className="ai-status-header">
-            <span className="ai-status-avatar">🧠</span>
+            <span className="ai-status-avatar neuro-breathing">{AI_AVATAR.emoji}</span>
             <div className="ai-status-steps">
               {steps.map((step, index) => (
                 <React.Fragment key={step.id}>
                   <span
-                    className={`ai-step-dot ${
+                    className={`ai-step-dot neuro-status-dot ${
                       index < (currentStepIndex ?? 0)
                         ? 'completed'
                         : index === currentStepIndex

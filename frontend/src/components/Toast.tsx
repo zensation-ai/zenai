@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import '../neurodesign.css';
 import './Toast.css';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -126,7 +127,7 @@ function ToastItem({ toast }: { toast: Toast }) {
 
   return (
     <div
-      className={`toast toast-${toast.type}`}
+      className={`toast toast-${toast.type} neuro-hover-lift`}
       onClick={() => dismissToast(toast.id)}
     >
       <span className="toast-icon">
@@ -139,7 +140,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       {toast.onUndo && (
         <button
           type="button"
-          className="toast-undo"
+          className="toast-undo neuro-press-effect neuro-focus-ring"
           onClick={handleUndo}
         >
           {toast.undoLabel}
@@ -147,7 +148,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       )}
       <button
         type="button"
-        className="toast-close"
+        className="toast-close neuro-press-effect neuro-focus-ring"
         onClick={(e) => {
           e.stopPropagation();
           dismissToast(toast.id);

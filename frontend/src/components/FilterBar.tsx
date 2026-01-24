@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import '../neurodesign.css';
 import './FilterBar.css';
 
 export interface Filters {
@@ -55,11 +56,11 @@ export function FilterBar({ filters, onFilterChange, counts }: FilterBarProps) {
   };
 
   return (
-    <div className="filter-bar" role="region" aria-label="Filteroptionen">
+    <div className="filter-bar liquid-glass" role="region" aria-label="Filteroptionen">
       <div className="filter-header">
         <button
           type="button"
-          className={`filter-toggle ${expanded ? 'expanded' : ''}`}
+          className={`filter-toggle neuro-press-effect neuro-focus-ring ${expanded ? 'expanded' : ''}`}
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
           aria-controls="filter-content"
@@ -70,14 +71,14 @@ export function FilterBar({ filters, onFilterChange, counts }: FilterBarProps) {
         </button>
 
         {activeCount > 0 && (
-          <button type="button" className="clear-filters" onClick={clearFilters} aria-label="Alle Filter zurücksetzen">
+          <button type="button" className="clear-filters neuro-press-effect neuro-focus-ring" onClick={clearFilters} aria-label="Alle Filter zurücksetzen">
             Filter zurücksetzen
           </button>
         )}
       </div>
 
       {expanded && (
-        <div id="filter-content" className="filter-content">
+        <div id="filter-content" className="filter-content neuro-expand-in">
           {/* Type Filter */}
           <div className="filter-group" role="group" aria-labelledby="filter-type-label">
             <label id="filter-type-label">Typ</label>
@@ -86,7 +87,7 @@ export function FilterBar({ filters, onFilterChange, counts }: FilterBarProps) {
                 <button
                   type="button"
                   key={opt.value}
-                  className={`filter-pill ${filters.type === opt.value ? 'active' : ''}`}
+                  className={`filter-pill neuro-press-effect neuro-focus-ring ${filters.type === opt.value ? 'active' : ''}`}
                   onClick={() => toggleFilter('type', opt.value)}
                   aria-pressed={filters.type === opt.value}
                   aria-label={`${opt.label} (${counts.types[opt.value] || 0})`}
@@ -107,7 +108,7 @@ export function FilterBar({ filters, onFilterChange, counts }: FilterBarProps) {
                 <button
                   type="button"
                   key={opt.value}
-                  className={`filter-pill ${filters.category === opt.value ? 'active' : ''}`}
+                  className={`filter-pill neuro-press-effect neuro-focus-ring ${filters.category === opt.value ? 'active' : ''}`}
                   style={{
                     '--pill-color': opt.color,
                   } as React.CSSProperties}
@@ -130,7 +131,7 @@ export function FilterBar({ filters, onFilterChange, counts }: FilterBarProps) {
                 <button
                   type="button"
                   key={opt.value}
-                  className={`filter-pill ${filters.priority === opt.value ? 'active' : ''}`}
+                  className={`filter-pill neuro-press-effect neuro-focus-ring ${filters.priority === opt.value ? 'active' : ''}`}
                   style={{
                     '--pill-color': opt.color,
                   } as React.CSSProperties}

@@ -8,6 +8,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './EvolutionDashboard.css';
 
 interface EvolutionDashboardProps {
@@ -71,6 +73,7 @@ interface ContextDepthBreakdown {
 }
 
 export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [data, setData] = useState<EvolutionData | null>(null);
   const [contextDepth, setContextDepth] = useState<ContextDepthBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,12 +152,16 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
 
   if (loading) {
     return (
-      <div className="evolution-dashboard">
-        <header className="evolution-header">
-          <button type="button" className="back-btn" onClick={onBack}>← Zurück</button>
+      <div className="evolution-dashboard neuro-page-enter">
+        <header className="evolution-header liquid-glass-nav">
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
           <h1>KI-Evolution</h1>
         </header>
-        <div className="loading-state">Lade Evolution-Daten...</div>
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Evolution-Daten...</p>
+          <p className="neuro-loading-submessage">KI-Lernfortschritt wird berechnet</p>
+        </div>
       </div>
     );
   }
@@ -175,17 +182,20 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
   }
 
   return (
-    <div className="evolution-dashboard">
-      <header className="evolution-header">
-        <button type="button" className="back-btn" onClick={onBack}>← Zurück</button>
-        <h1>KI-Evolution</h1>
+    <div className="evolution-dashboard neuro-page-enter">
+      <header className="evolution-header liquid-glass-nav">
+        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} KI-Evolution</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
       </header>
 
       {/* Hero Stats */}
-      <div className="hero-stats">
-        <div className="hero-stat context-depth">
-          <div className="stat-ring">
+      <div className="hero-stats liquid-glass neuro-stagger-item">
+        <div className="hero-stat context-depth neuro-hover-lift">
+          <div className="stat-ring neuro-breathing">
             <svg viewBox="0 0 36 36">
               <path
                 className="ring-bg"
@@ -203,8 +213,8 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
           <span className="stat-sublabel">Wie gut kennt mich die KI</span>
         </div>
 
-        <div className="hero-stat accuracy">
-          <div className="stat-ring">
+        <div className="hero-stat accuracy neuro-hover-lift">
+          <div className="stat-ring neuro-breathing">
             <svg viewBox="0 0 36 36">
               <path
                 className="ring-bg"
@@ -224,7 +234,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
           </span>
         </div>
 
-        <div className="hero-stat streak">
+        <div className="hero-stat streak neuro-hover-lift">
           <span className="streak-value">{data.active_days_streak}</span>
           <span className="stat-label">Tage Streak</span>
           <span className="stat-sublabel">{data.total_days_active} Tage aktiv</span>
@@ -268,11 +278,11 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
         {activeTab === 'overview' && (
           <div className="overview-section">
             {/* Context Depth Breakdown */}
-            <div className="card context-depth-card">
-              <h3>Kontext-Tiefe Aufschlüsselung</h3>
-              <div className="depth-bars">
-                {contextDepth.map((item) => (
-                  <div key={item.name} className="depth-bar-item">
+            <div className="card context-depth-card liquid-glass neuro-stagger-item">
+              <h3>Kontext-Tiefe Aufschlusselung</h3>
+              <div className="depth-bars neuro-flow-list">
+                {contextDepth.slice(0, 7).map((item, index) => (
+                  <div key={item.name} className="depth-bar-item neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                     <div className="bar-header">
                       <span className="bar-label">{item.name}</span>
                       <span className="bar-value">{Math.round(item.score)} / {item.max}</span>
@@ -290,25 +300,25 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
             </div>
 
             {/* Impact Metrics */}
-            <div className="card impact-card">
+            <div className="card impact-card liquid-glass neuro-stagger-item">
               <h3>Impact</h3>
-              <div className="impact-grid">
-                <div className="impact-item">
+              <div className="impact-grid neuro-flow-list">
+                <div className="impact-item neuro-hover-lift">
                   <span className="impact-icon">⏱️</span>
                   <span className="impact-value">{formatMinutes(data.total_time_saved_minutes)}</span>
                   <span className="impact-label">Zeit gespart</span>
                 </div>
-                <div className="impact-item">
+                <div className="impact-item neuro-hover-lift">
                   <span className="impact-icon">⚡</span>
                   <span className="impact-value">{data.total_automations_executed}</span>
                   <span className="impact-label">Automationen</span>
                 </div>
-                <div className="impact-item">
+                <div className="impact-item neuro-hover-lift">
                   <span className="impact-icon">🧠</span>
                   <span className="impact-value">{data.total_patterns_learned}</span>
                   <span className="impact-label">Muster gelernt</span>
                 </div>
-                <div className="impact-item">
+                <div className="impact-item neuro-hover-lift">
                   <span className="impact-icon">🏆</span>
                   <span className="impact-value">{data.total_milestones_achieved}</span>
                   <span className="impact-label">Meilensteine</span>
@@ -351,14 +361,16 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
             </p>
 
             {data.learning_timeline.length === 0 ? (
-              <div className="empty-state">
-                <p>Noch keine Lern-Events aufgezeichnet.</p>
-                <p className="hint">Nutze die App aktiv und gib Feedback - dann lernst die KI!</p>
+              <div className="empty-state neuro-empty-state">
+                <span className="neuro-empty-icon">📚</span>
+                <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.learning.title}</h3>
+                <p className="neuro-empty-description">Nutze die App aktiv und gib Feedback - dann lernt die KI!</p>
+                <p className="neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.learning.encouragement}</p>
               </div>
             ) : (
-              <div className="timeline">
-                {data.learning_timeline.map((event, index) => (
-                  <div key={event.id} className={`timeline-item ${event.color}`}>
+              <div className="timeline neuro-flow-list">
+                {data.learning_timeline.slice(0, 7).map((event, index) => (
+                  <div key={event.id} className={`timeline-item neuro-stagger-item ${event.color}`} style={{ animationDelay: `${index * 80}ms` }}>
                     <div className="timeline-marker">
                       <span className="event-icon">{event.icon}</span>
                     </div>
@@ -463,11 +475,11 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
           <div className="milestones-section">
             {/* Achieved Milestones */}
             {data.achieved_milestones.length > 0 && (
-              <div className="card achieved-card">
+              <div className="card achieved-card liquid-glass neuro-stagger-item">
                 <h3>Erreichte Meilensteine ({data.achieved_milestones.length})</h3>
-                <div className="milestones-grid">
-                  {data.achieved_milestones.map((milestone) => (
-                    <div key={milestone.id} className="milestone-badge achieved">
+                <div className="milestones-grid neuro-flow-list">
+                  {data.achieved_milestones.slice(0, 7).map((milestone, index) => (
+                    <div key={milestone.id} className="milestone-badge achieved neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                       <span className="badge-icon">{milestone.icon}</span>
                       <span className="badge-title">{milestone.title}</span>
                       {milestone.achieved_at && (

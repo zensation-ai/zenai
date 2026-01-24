@@ -13,7 +13,9 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import axios from 'axios';
 import { showToast } from '../Toast';
+import { getRandomReward } from '../../utils/aiPersonality';
 import './KnowledgeGraphPage.css';
+import '../../neurodesign.css';
 
 interface GraphNode {
   id: string;
@@ -190,7 +192,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
       const response = await axios.post('/api/knowledge-graph/topics/generate', {
         context: 'personal',
       });
-      showToast(`${response.data.topicsCreated} Themen erstellt, ${response.data.ideasAssigned} Ideen zugeordnet`, 'success');
+      showGenerationReward();
       loadGraph();
     } catch (error) {
       console.error('Failed to generate topics:', error);
@@ -207,7 +209,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
       const response = await axios.post('/api/knowledge-graph/discover', {
         context: 'personal',
       });
-      showToast(`${response.data.newRelationships} neue Beziehungen entdeckt`, 'success');
+      showGenerationReward();
       loadGraph();
     } catch (error) {
       console.error('Failed to discover relationships:', error);
@@ -225,19 +227,26 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
     }
   }, [graphData]);
 
+  // Show reward on successful generation
+  const showGenerationReward = () => {
+    const reward = getRandomReward('ideaCreated');
+    showToast(`${reward.emoji} ${reward.message}`, 'success');
+  };
+
   if (loading) {
     return (
-      <div className="knowledge-graph-page">
-        <div className="graph-loading">
-          <div className="loading-spinner"></div>
-          <p>Lade Knowledge Graph...</p>
+      <div className="knowledge-graph-page neuro-page-enter">
+        <div className="neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Knowledge Graph...</p>
+          <p className="neuro-loading-submessage">Verbindungen werden analysiert</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="knowledge-graph-page">
+    <div className="knowledge-graph-page neuro-page-enter">
       <header className="graph-header">
         <button className="back-button" onClick={onBack}>
           ← Zurueck
@@ -299,9 +308,11 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
             ))}
 
             {(!graphData?.topics || graphData.topics.length === 0) && (
-              <div className="no-topics">
-                <p>Keine Themen vorhanden</p>
-                <button className="generate-button" onClick={handleGenerateTopics} disabled={generating}>
+              <div className="neuro-empty-state graph-empty-state">
+                <span className="neuro-empty-icon">🏷️</span>
+                <h3 className="neuro-empty-title">Keine Themen vorhanden</h3>
+                <p className="neuro-empty-description">Generiere Themen aus deinen Ideen.</p>
+                <button className="generate-button neuro-button" onClick={handleGenerateTopics} disabled={generating}>
                   {generating ? 'Generiere...' : 'Themen generieren'}
                 </button>
               </div>

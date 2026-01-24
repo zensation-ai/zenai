@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { MEETING_TYPES, MEETING_STATUS } from '../constants/ideaTypes';
 import { formatDateWithWeekday, formatDuration } from '../utils/dateUtils';
 import './MeetingCard.css';
+import '../neurodesign.css';
 
 export interface Meeting {
   id: string;
@@ -46,7 +47,7 @@ function MeetingCardComponent({ meeting, onClick, hasNotes }: MeetingCardProps) 
 
   return (
     <div
-      className="meeting-card"
+      className="meeting-card liquid-glass neuro-hover-lift"
       {...interactiveProps}
       aria-label={`Meeting: ${meeting.title}, ${statusLabel}, ${formatDateWithWeekday(meeting.date)}`}
     >
@@ -54,7 +55,7 @@ function MeetingCardComponent({ meeting, onClick, hasNotes }: MeetingCardProps) 
         <span className="meeting-type-icon">{typeIcon}</span>
         <div className="meeting-title-row">
           <h3 className="meeting-title">{meeting.title}</h3>
-          {hasNotes && <span className="has-notes-badge" title="Hat Notizen">📝</span>}
+          {hasNotes && <span className="has-notes-badge neuro-reward-badge" title="Hat Notizen">📝</span>}
         </div>
         <span
           className="meeting-status"

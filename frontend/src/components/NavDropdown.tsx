@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
+import '../neurodesign.css';
 import './NavDropdown.css';
 
 export interface NavDropdownItem {
@@ -177,7 +178,7 @@ export function NavDropdown({
 
       {/* Anticipatory Tooltip bei Hover Intent */}
       {hoverIntent && !isOpen && (
-        <div className="nav-dropdown-preview" role="tooltip">
+        <div className="nav-dropdown-preview neuro-tooltip-enhanced" role="tooltip">
           <span className="preview-count">{items.length} Optionen</span>
           {getCognitiveLoad() === 'high' && (
             <span className="preview-hint">In Gruppen organisiert</span>
@@ -187,7 +188,7 @@ export function NavDropdown({
 
       {isOpen && (
         <div
-          className={`nav-dropdown-menu cognitive-${getCognitiveLoad()}`}
+          className={`nav-dropdown-menu liquid-glass-nav cognitive-${getCognitiveLoad()}`}
           role="menu"
         >
           {/* Cognitive Load Indicator für komplexe Menüs */}

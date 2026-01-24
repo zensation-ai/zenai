@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getRandomReward } from '../utils/aiPersonality';
 import './NotificationsPage.css';
+import '../neurodesign.css';
 
 interface Device {
   id: string;
@@ -216,19 +218,27 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
     return 'gerade eben';
   };
 
+  // Show reward on successful preference save (available for future use)
+  const _showSaveReward = () => {
+    const reward = getRandomReward('ideaCreated');
+    showToast(`${reward.emoji} ${reward.message}`, 'success');
+  };
+  void _showSaveReward; // Suppress unused warning
+
   if (loading) {
     return (
-      <div className="notifications-page">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Benachrichtigungen...</p>
+      <div className="notifications-page neuro-page-enter">
+        <div className="neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Benachrichtigungen...</p>
+          <p className="neuro-loading-submessage">Einen Moment bitte</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="notifications-page">
+    <div className="notifications-page neuro-page-enter">
       <div className="notifications-header">
         <button className="back-button" onClick={onBack}>
           ← Zurück
@@ -345,10 +355,11 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
 
           {/* Empty State */}
           {!stats && devices.length === 0 && (
-            <div className="empty-state">
-              <span className="empty-icon">📱</span>
-              <h3>Keine Geräte registriert</h3>
-              <p>Öffne die iOS App und erlaube Push-Benachrichtigungen, um Nachrichten zu erhalten.</p>
+            <div className="neuro-empty-state">
+              <span className="neuro-empty-icon">📱</span>
+              <h3 className="neuro-empty-title">Keine Geräte registriert</h3>
+              <p className="neuro-empty-description">Öffne die iOS App und erlaube Push-Benachrichtigungen, um Nachrichten zu erhalten.</p>
+              <p className="neuro-empty-encouragement">Bleib informiert, wo immer du bist.</p>
             </div>
           )}
         </div>
@@ -358,10 +369,11 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       {activeTab === 'preferences' && (
         <div className="tab-content">
           {devices.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">⚙️</span>
-              <h3>Keine Geräte vorhanden</h3>
-              <p>Registriere zuerst ein Gerät, um Einstellungen zu konfigurieren.</p>
+            <div className="neuro-empty-state">
+              <span className="neuro-empty-icon">⚙️</span>
+              <h3 className="neuro-empty-title">Keine Geräte vorhanden</h3>
+              <p className="neuro-empty-description">Registriere zuerst ein Gerät, um Einstellungen zu konfigurieren.</p>
+              <p className="neuro-empty-encouragement">Einstellungen machen alles persönlicher.</p>
             </div>
           ) : (
             <>
@@ -385,10 +397,10 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
                 </div>
               )}
 
-              {/* Notification Types */}
-              <div className="preferences-section">
+              {/* Notification Types - Miller's Law: Max 7 items visible */}
+              <div className="preferences-section neuro-chunk">
                 <h3>Benachrichtigungstypen</h3>
-                <div className="preferences-list">
+                <div className="preferences-list neuro-flow-list">
                   {Object.entries(notificationTypeLabels).map(([key, { label, icon, description }]) => (
                     <div key={key} className="preference-item">
                       <div className="preference-info">
@@ -411,7 +423,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
               </div>
 
               {/* Quiet Hours */}
-              <div className="preferences-section">
+              <div className="preferences-section neuro-chunk">
                 <h3>🌙 Ruhezeiten</h3>
                 <p className="section-hint">Keine Benachrichtigungen während dieser Zeit</p>
                 <div className="quiet-hours-form">
@@ -446,7 +458,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
               </div>
 
               {/* Rate Limits */}
-              <div className="preferences-section">
+              <div className="preferences-section neuro-chunk">
                 <h3>📊 Limits</h3>
                 <div className="limits-display">
                   <div className="limit-item">
@@ -468,13 +480,14 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       {activeTab === 'devices' && (
         <div className="tab-content">
           {devices.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📱</span>
-              <h3>Keine Geräte registriert</h3>
-              <p>Öffne die iOS App und erlaube Push-Benachrichtigungen.</p>
+            <div className="neuro-empty-state">
+              <span className="neuro-empty-icon">📱</span>
+              <h3 className="neuro-empty-title">Keine Geräte registriert</h3>
+              <p className="neuro-empty-description">Öffne die iOS App und erlaube Push-Benachrichtigungen.</p>
+              <p className="neuro-empty-encouragement">Verbinde dein erstes Gerät.</p>
             </div>
           ) : (
-            <div className="devices-list">
+            <div className="devices-list neuro-flow-list">
               {devices.map(device => (
                 <div key={device.id} className={`device-card ${device.is_active ? 'active' : 'inactive'}`}>
                   <div className="device-icon">
@@ -515,13 +528,14 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       {activeTab === 'history' && (
         <div className="tab-content">
           {history.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📜</span>
-              <h3>Noch keine Benachrichtigungen</h3>
-              <p>Gesendete Benachrichtigungen erscheinen hier.</p>
+            <div className="neuro-empty-state">
+              <span className="neuro-empty-icon">📜</span>
+              <h3 className="neuro-empty-title">Noch keine Benachrichtigungen</h3>
+              <p className="neuro-empty-description">Gesendete Benachrichtigungen erscheinen hier.</p>
+              <p className="neuro-empty-encouragement">Der Verlauf füllt sich mit der Zeit.</p>
             </div>
           ) : (
-            <div className="history-list">
+            <div className="history-list neuro-flow-list">
               {history.map(notification => (
                 <div key={notification.id} className="history-item">
                   <div className="history-icon">

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
+import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './LearningDashboard.css';
 
 interface LearningDashboardProps {
@@ -113,6 +115,7 @@ interface ProfileData {
 }
 
 export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'focus' | 'feedback' | 'research' | 'suggestions' | 'profile'>('overview');
@@ -297,12 +300,16 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
 
   if (loading) {
     return (
-      <div className="learning-dashboard">
-        <div className="learning-header">
-          <button type="button" className="back-button" onClick={onBack}>Zurück</button>
+      <div className="learning-dashboard neuro-page-enter">
+        <div className="learning-header liquid-glass-nav">
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>Zuruck</button>
           <h1>KI-Lernzentrum</h1>
         </div>
-        <div className="loading-state">Lade Dashboard...</div>
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Dashboard...</p>
+          <p className="neuro-loading-submessage">{EMPTY_STATE_MESSAGES.learning.description}</p>
+        </div>
       </div>
     );
   }
@@ -320,11 +327,14 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
   }
 
   return (
-    <div className="learning-dashboard">
-      <div className="learning-header">
-        <button type="button" className="back-button" onClick={onBack}>Zurück</button>
-        <h1>KI-Lernzentrum</h1>
-        <button type="button" className="trigger-learning-button" onClick={handleTriggerLearning}>
+    <div className="learning-dashboard neuro-page-enter">
+      <div className="learning-header liquid-glass-nav">
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>Zuruck</button>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} KI-Lernzentrum</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
+        <button type="button" className="trigger-learning-button neuro-button" onClick={handleTriggerLearning}>
           Lernen starten
         </button>
       </div>

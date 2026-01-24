@@ -3,7 +3,9 @@ import axios from 'axios';
 import { MeetingCard, Meeting } from './MeetingCard';
 import { MeetingDetail } from './MeetingDetail';
 import { showToast } from './Toast';
+import { getRandomReward } from '../utils/aiPersonality';
 import './MeetingsPage.css';
+import '../neurodesign.css';
 
 // Type-safe error extraction
 interface ApiError {
@@ -162,6 +164,7 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
         location: '',
         duration_minutes: 60,
       });
+      showCreationReward();
     } catch (err: unknown) {
       if (isMountedRef.current) {
         setError(getErrorMessage(err, 'Meeting erstellen fehlgeschlagen'));
@@ -177,8 +180,14 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
     return true;
   });
 
+  // Show reward on successful meeting creation
+  const showCreationReward = () => {
+    const reward = getRandomReward('ideaCreated');
+    showToast(`${reward.emoji} ${reward.message}`, 'success');
+  };
+
   return (
-    <div className="meetings-page">
+    <div className="meetings-page neuro-page-enter">
       <div className="meetings-header">
         <button className="back-button" onClick={onBack}>
           ← Zurück
@@ -223,13 +232,14 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
           <p>Lade Meetings...</p>
         </div>
       ) : filteredMeetings.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">📅</span>
-          <h3>Keine Meetings gefunden</h3>
-          <p>Erstelle dein erstes Meeting mit dem Button oben.</p>
+        <div className="neuro-empty-state">
+          <span className="neuro-empty-icon">📅</span>
+          <h3 className="neuro-empty-title">Keine Meetings gefunden</h3>
+          <p className="neuro-empty-description">Erstelle dein erstes Meeting mit dem Button oben.</p>
+          <p className="neuro-empty-encouragement">Gute Planung ist der erste Schritt zum Erfolg.</p>
         </div>
       ) : (
-        <div className="meetings-grid">
+        <div className="meetings-grid neuro-flow-list">
           {filteredMeetings.map((meeting) => (
             <MeetingCard
               key={meeting.id}

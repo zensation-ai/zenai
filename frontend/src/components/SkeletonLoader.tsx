@@ -1,3 +1,4 @@
+import '../neurodesign.css';
 import './SkeletonLoader.css';
 
 interface SkeletonLoaderProps {
@@ -99,7 +100,7 @@ export function ProgressIndicator({
 }: ProgressIndicatorProps) {
   return (
     <div className="progress-indicator" role="status" aria-live="polite">
-      <div className="progress-spinner">
+      <div className="progress-spinner neuro-loading-spinner">
         <svg className="spinner-svg" viewBox="0 0 50 50">
           <circle
             className="spinner-track"
@@ -137,7 +138,7 @@ export function ProgressIndicator({
               key={i}
               className={`progress-step ${i < currentStep ? 'completed' : ''} ${i === currentStep ? 'active' : ''}`}
             >
-              <span className="step-indicator">
+              <span className="step-indicator neuro-status-dot">
                 {i < currentStep ? '✓' : i === currentStep ? '●' : '○'}
               </span>
               <span className="step-label">{step}</span>

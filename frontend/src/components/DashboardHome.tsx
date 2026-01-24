@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { AI_PERSONALITY } from '../utils/aiPersonality';
+import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './DashboardHome.css';
 
 interface DashboardStats {
@@ -31,9 +32,6 @@ interface DashboardHomeProps {
   context: 'personal' | 'work';
   apiBase: string;
   onNavigate: (page: string) => void;
-  onSearch: (query: string) => void;
-  onNewIdea: () => void;
-  onStartRecording: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
@@ -66,9 +64,6 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
   context,
   apiBase,
   onNavigate,
-  onSearch,
-  onNewIdea,
-  onStartRecording,
   showToast: _showToast,
 }) => {
   const [stats, setStats] = useState<DashboardStats>({
@@ -79,7 +74,6 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
   });
   const [aiActivity, setAiActivity] = useState<AIActivityItem[]>([]);
   const [recentIdeas, setRecentIdeas] = useState<RecentIdea[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch dashboard data
@@ -156,14 +150,6 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Handle search submit
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      onSearch(searchQuery.trim());
-    }
-  };
-
   // Format relative time
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -193,11 +179,12 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
   };
 
   return (
-    <div className="dashboard-home" data-context={context}>
+    <div className="dashboard-home liquid-glass-nav" data-context={context}>
       {/* Greeting */}
       <div className="dashboard-greeting">
         <h1>{getGreeting()}!</h1>
         <p>
+          <span className="dashboard-ai-avatar neuro-breathing">{AI_AVATAR.emoji}</span>
           {AI_PERSONALITY.name} ist bereit, deine Gedanken zu strukturieren.
         </p>
       </div>
@@ -206,7 +193,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
       <div className="dashboard-stats">
         <button
           type="button"
-          className="stat-card"
+          className="stat-card liquid-glass-nav"
           onClick={() => onNavigate('ideas')}
         >
           <span className="stat-card-icon">📝</span>
@@ -218,7 +205,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
 
         <button
           type="button"
-          className="stat-card highlight"
+          className="stat-card liquid-glass-nav highlight"
           onClick={() => onNavigate('ideas')}
         >
           <span className="stat-card-icon">🔥</span>
@@ -230,7 +217,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
 
         <button
           type="button"
-          className="stat-card"
+          className="stat-card liquid-glass-nav"
           onClick={() => onNavigate('triage')}
         >
           <span className="stat-card-icon">📥</span>
@@ -242,65 +229,12 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
 
         <button
           type="button"
-          className="stat-card"
+          className="stat-card liquid-glass-nav"
           onClick={() => onNavigate('archive')}
         >
           <span className="stat-card-icon">📦</span>
           <span className="stat-card-value">-</span>
           <span className="stat-card-label">Archiv</span>
-        </button>
-      </div>
-
-      {/* Search */}
-      <form className="dashboard-search" onSubmit={handleSearchSubmit}>
-        <div className="search-input-wrapper">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            className="dashboard-search-input"
-            placeholder="Semantisch suchen..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Suche"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="search-clear-btn"
-              onClick={() => setSearchQuery('')}
-              aria-label="Suche leeren"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </form>
-
-      {/* Quick Actions */}
-      <div className="dashboard-quick-actions">
-        <button
-          type="button"
-          className="quick-action-btn primary"
-          onClick={onNewIdea}
-        >
-          <span className="action-icon">✨</span>
-          <span className="action-label">Neue Idee</span>
-        </button>
-        <button
-          type="button"
-          className="quick-action-btn"
-          onClick={onStartRecording}
-        >
-          <span className="action-icon">🎤</span>
-          <span className="action-label">Aufnehmen</span>
-        </button>
-        <button
-          type="button"
-          className="quick-action-btn"
-          onClick={() => onNavigate('triage')}
-        >
-          <span className="action-icon">📋</span>
-          <span className="action-label">Triage</span>
         </button>
       </div>
 
@@ -312,10 +246,10 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
               🧠 {AI_PERSONALITY.name}-Aktivität
             </h2>
           </div>
-          <div className="ai-activity-feed">
+          <div className="ai-activity-feed liquid-glass-nav">
             {aiActivity.map((activity) => (
               <div key={activity.id} className="ai-activity-item">
-                <div className="ai-activity-icon">
+                <div className="ai-activity-icon neuro-breathing">
                   {ACTIVITY_ICONS[activity.type] || '🧠'}
                 </div>
                 <div className="ai-activity-content">
@@ -345,7 +279,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
 
         {isLoading ? (
           <div className="dashboard-loading">
-            <div className="loading-spinner" />
+            <div className="loading-spinner neuro-loading-spinner" />
           </div>
         ) : recentIdeas.length > 0 ? (
           <div className="recent-ideas-grid">
@@ -353,7 +287,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
               <button
                 type="button"
                 key={idea.id}
-                className="idea-card-mini"
+                className="idea-card-mini liquid-glass-nav"
                 onClick={() => {
                   // Could navigate to idea detail
                   onNavigate('ideas');
@@ -389,9 +323,9 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
             <button
               type="button"
               className="dashboard-empty-btn"
-              onClick={onNewIdea}
+              onClick={() => onNavigate('ideas')}
             >
-              Ersten Gedanken erfassen
+              Zu Gedanken
             </button>
           </div>
         )}

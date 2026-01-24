@@ -1,5 +1,5 @@
 /* Knowledge Graph Page Styles */
-/* Using Zensation Dark Theme */
+/* Using Zensation Dark Theme + Neuro-UX 2026 */
 
 .knowledge-graph-page {
   height: 100vh;
@@ -7,6 +7,39 @@
   flex-direction: column;
   background: var(--background, #0c151c);
   color: var(--text, #f0f4f8);
+}
+
+/* Neuro Page Enter Animation */
+.knowledge-graph-page.neuro-page-enter {
+  animation: pageEnter var(--neuro-timing-deliberate, 450ms) ease-out;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Compact empty state for sidebar */
+.graph-empty-state {
+  padding: 1.5rem;
+}
+
+.graph-empty-state .neuro-empty-icon {
+  font-size: 2.5rem;
+}
+
+.graph-empty-state .neuro-empty-title {
+  font-size: 1rem;
+}
+
+.graph-empty-state .neuro-empty-description {
+  font-size: 0.85rem;
 }
 
 /* Header */

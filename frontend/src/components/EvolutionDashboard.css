@@ -636,6 +636,20 @@
   color: var(--text-muted);
 }
 
+/* Header Greeting */
+.evolution-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.evolution-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .evolution-dashboard {
@@ -645,6 +659,10 @@
 
   .evolution-header {
     padding-left: 0;
+  }
+
+  .evolution-header .greeting-subtext {
+    display: none;
   }
 
   .hero-stats {
@@ -677,5 +695,23 @@
 
   .error-banner {
     margin: 0 0 20px 0;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .evolution-dashboard .neuro-stagger-item,
+  .evolution-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .evolution-dashboard .neuro-hover-lift:hover {
+    transform: none;
+  }
+
+  .evolution-dashboard .neuro-breathing {
+    animation: none;
   }
 }

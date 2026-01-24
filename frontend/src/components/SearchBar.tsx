@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import '../neurodesign.css';
 import './SearchBar.css';
 
 interface SearchBarProps {
@@ -79,11 +80,11 @@ export function SearchBar({ onSearch, onClear, isSearching: externalSearching }:
   }, [query, onSearch]);
 
   return (
-    <form className="search-bar" onSubmit={handleSubmit}>
+    <form className="search-bar liquid-glass-input" onSubmit={handleSubmit}>
       <span className="search-icon" aria-hidden="true">🔍</span>
       <input
         type="search"
-        className="search-input"
+        className="search-input neuro-placeholder-animated"
         placeholder="Semantische Suche... (z.B. 'Ideen für Automatisierung')"
         value={query}
         onChange={handleChange}
@@ -93,7 +94,7 @@ export function SearchBar({ onSearch, onClear, isSearching: externalSearching }:
       {query && !isSearching && (
         <button
           type="button"
-          className="search-clear"
+          className="search-clear neuro-press-effect neuro-focus-ring"
           onClick={handleClear}
           aria-label="Suche löschen"
         >

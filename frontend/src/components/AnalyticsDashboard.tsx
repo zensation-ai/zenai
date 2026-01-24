@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { useParallelAsyncData } from '../hooks/useAsyncData';
+import { getTimeBasedGreeting } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './AnalyticsDashboard.css';
 
 interface AnalyticsDashboardProps {
@@ -62,6 +64,8 @@ interface DashboardData {
 }
 
 export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps) {
+  const greeting = getTimeBasedGreeting();
+
   // Use the new parallel async data hook with automatic AbortController
   const { data, loading, errors } = useParallelAsyncData<[
     { data: DashboardData },
@@ -124,55 +128,59 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
 
   if (loading) {
     return (
-      <div className="analytics-dashboard">
-        <header className="header">
-          <button type="button" className="back-button" onClick={onBack}>
-            ← Zurück
+      <div className="analytics-dashboard neuro-page-enter">
+        <header className="header liquid-glass-nav">
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+            ← Zuruck
           </button>
           <h1>Analytics Dashboard</h1>
         </header>
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Analytics...</p>
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Analysiere deine Produktivitat...</p>
+          <p className="neuro-loading-submessage">Muster werden erkannt</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="analytics-dashboard">
-      <header className="header">
+    <div className="analytics-dashboard neuro-page-enter">
+      <header className="header liquid-glass-nav">
         <div className="header-content">
-          <button type="button" className="back-button" onClick={onBack}>
-            ← Zurück
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+            ← Zuruck
           </button>
-          <h1>Analytics Dashboard</h1>
-          <span className="context-badge">{context === 'personal' ? 'Persönlich' : 'Arbeit'}</span>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} Analytics Dashboard</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+          </div>
+          <span className="context-badge">{context === 'personal' ? 'Personlich' : 'Arbeit'}</span>
         </div>
       </header>
 
       <main className="dashboard-content">
         {/* Productivity Score */}
         {productivityScore && (
-          <section className="score-section">
-            <div className="score-circle" style={{ borderColor: getScoreColor(productivityScore.overall) }}>
+          <section className="score-section liquid-glass neuro-stagger-item">
+            <div className="score-circle neuro-breathing" style={{ borderColor: getScoreColor(productivityScore.overall) }}>
               <span className="score-value" style={{ color: getScoreColor(productivityScore.overall) }}>
                 {productivityScore.overall}
               </span>
               <span className="score-label">Score</span>
             </div>
             <div className="score-breakdown">
-              <h3>Produktivitäts-Score</h3>
+              <h3>Produktivitats-Score</h3>
               <div className="breakdown-items">
-                {Object.entries(productivityScore.breakdown).map(([key, data]) => (
-                  <div key={key} className="breakdown-item">
+                {Object.entries(productivityScore.breakdown).map(([key, data], index) => (
+                  <div key={key} className="breakdown-item neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                     <div className="breakdown-header">
                       <span className="breakdown-label">{data.label}</span>
                       <span className="breakdown-score" style={{ color: getScoreColor(data.score) }}>
                         {data.score}%
                       </span>
                     </div>
-                    <div className="breakdown-bar">
+                    <div className="breakdown-bar neuro-progress-indicator">
                       <div
                         className="breakdown-fill"
                         style={{
@@ -191,33 +199,33 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
 
         {/* Summary Cards */}
         {summary && (
-          <section className="summary-section">
-            <h3>Übersicht</h3>
-            <div className="summary-cards">
-              <div className="summary-card">
+          <section className="summary-section liquid-glass neuro-stagger-item">
+            <h3>Ubersicht</h3>
+            <div className="summary-cards neuro-flow-list">
+              <div className="summary-card neuro-hover-lift">
                 <span className="card-icon">☀️</span>
                 <span className="card-value">{summary.today}</span>
                 <span className="card-label">Heute</span>
               </div>
-              <div className="summary-card">
+              <div className="summary-card neuro-hover-lift">
                 <span className="card-icon">📅</span>
                 <span className="card-value">{summary.thisWeek}</span>
                 <span className="card-label">Diese Woche</span>
               </div>
-              <div className="summary-card">
+              <div className="summary-card neuro-hover-lift">
                 <span className="card-icon">📊</span>
                 <span className="card-value">{summary.thisMonth}</span>
                 <span className="card-label">Dieser Monat</span>
               </div>
-              <div className="summary-card">
+              <div className="summary-card neuro-hover-lift">
                 <span className="card-icon">🎯</span>
                 <span className="card-value">{summary.total}</span>
                 <span className="card-label">Gesamt</span>
               </div>
-              <div className="summary-card highlight">
+              <div className="summary-card highlight neuro-hover-lift">
                 <span className="card-icon">🔴</span>
                 <span className="card-value">{summary.highPriority}</span>
-                <span className="card-label">Hohe Priorität</span>
+                <span className="card-label">Hohe Prioritat</span>
               </div>
             </div>
           </section>
@@ -225,17 +233,17 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
 
         {/* Goals Progress */}
         {goals && (
-          <section className="goals-section">
+          <section className="goals-section liquid-glass neuro-stagger-item">
             <h3>Ziele</h3>
             <div className="goals-grid">
-              <div className="goal-card">
+              <div className="goal-card neuro-hover-lift">
                 <div className="goal-header">
-                  <span>Tägliches Ziel</span>
+                  <span>Tagliches Ziel</span>
                   <span className="goal-progress">{goals.daily.current}/{goals.daily.target}</span>
                 </div>
-                <div className="goal-bar">
+                <div className="goal-bar neuro-progress-indicator">
                   <div
-                    className="goal-fill"
+                    className={`goal-fill ${goals.daily.progress >= 100 ? 'neuro-success-burst' : ''}`}
                     style={{
                       width: `${Math.min(goals.daily.progress, 100)}%`,
                       backgroundColor: goals.daily.progress >= 100 ? '#22c55e' : '#6366f1',
@@ -244,14 +252,14 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
                 </div>
                 <span className="goal-percent">{goals.daily.progress}%</span>
               </div>
-              <div className="goal-card">
+              <div className="goal-card neuro-hover-lift">
                 <div className="goal-header">
-                  <span>Wöchentliches Ziel</span>
+                  <span>Wochentliches Ziel</span>
                   <span className="goal-progress">{goals.weekly.current}/{goals.weekly.target}</span>
                 </div>
-                <div className="goal-bar">
+                <div className="goal-bar neuro-progress-indicator">
                   <div
-                    className="goal-fill"
+                    className={`goal-fill ${goals.weekly.progress >= 100 ? 'neuro-success-burst' : ''}`}
                     style={{
                       width: `${Math.min(goals.weekly.progress, 100)}%`,
                       backgroundColor: goals.weekly.progress >= 100 ? '#22c55e' : '#6366f1',
@@ -266,34 +274,34 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
 
         {/* Streaks */}
         {streaks && (
-          <section className="streaks-section">
-            <div className="streak-card">
-              <span className="streak-icon">🔥</span>
+          <section className="streaks-section neuro-stagger-item">
+            <div className="streak-card liquid-glass neuro-hover-lift">
+              <span className="streak-icon">{streaks.current > 0 ? '🔥' : '💤'}</span>
               <span className="streak-value">{streaks.current}</span>
               <span className="streak-label">Aktuelle Serie (Tage)</span>
             </div>
-            <div className="streak-card">
+            <div className="streak-card liquid-glass neuro-hover-lift">
               <span className="streak-icon">🏆</span>
               <span className="streak-value">{streaks.longest}</span>
-              <span className="streak-label">Längste Serie (Tage)</span>
+              <span className="streak-label">Langste Serie (Tage)</span>
             </div>
           </section>
         )}
 
         {/* Activity Chart */}
         {hourlyActivity.length > 0 && (
-          <section className="activity-section">
-            <h3>Aktivität nach Uhrzeit</h3>
+          <section className="activity-section liquid-glass neuro-stagger-item">
+            <h3>Aktivitat nach Uhrzeit</h3>
             <div className="activity-chart">
-              {hourlyActivity.map((item) => {
+              {hourlyActivity.map((item, index) => {
                 const maxCount = Math.max(...hourlyActivity.map((h) => h.count), 1);
                 const height = (item.count / maxCount) * 100;
                 return (
-                  <div key={item.hour} className="activity-bar-container">
+                  <div key={item.hour} className="activity-bar-container neuro-stagger-item" style={{ animationDelay: `${index * 20}ms` }}>
                     <div
-                      className="activity-bar"
+                      className="activity-bar neuro-hover-lift"
                       style={{ height: `${height}%` }}
-                      title={`${item.hour}:00 - ${item.count} Einträge`}
+                      title={`${item.hour}:00 - ${item.count} Eintrage`}
                     />
                     {item.hour % 6 === 0 && (
                       <span className="activity-label">{item.hour}</span>
@@ -307,12 +315,12 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
 
         {/* Patterns & Insights */}
         {patterns && (
-          <section className="patterns-section">
+          <section className="patterns-section liquid-glass neuro-stagger-item">
             <h3>Muster & Insights</h3>
             <div className="patterns-content">
               <div className="peak-times">
                 {patterns.peakTimes.hours[0] && (
-                  <div className="peak-item">
+                  <div className="peak-item neuro-hover-lift neuro-stagger-item">
                     <span className="peak-icon">⏰</span>
                     <div className="peak-info">
                       <span className="peak-label">Produktivste Zeit</span>
@@ -321,7 +329,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
                   </div>
                 )}
                 {patterns.peakTimes.days[0] && (
-                  <div className="peak-item">
+                  <div className="peak-item neuro-hover-lift neuro-stagger-item">
                     <span className="peak-icon">📅</span>
                     <div className="peak-info">
                       <span className="peak-label">Aktivster Tag</span>
@@ -330,9 +338,9 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
                   </div>
                 )}
               </div>
-              <div className="insights-list">
-                {patterns.insights.map((insight, index) => (
-                  <div key={index} className="insight-item">
+              <div className="insights-list neuro-flow-list">
+                {patterns.insights.slice(0, 7).map((insight, index) => (
+                  <div key={index} className="insight-item neuro-stagger-item">
                     <span className="insight-icon">✨</span>
                     <span>{insight}</span>
                   </div>
@@ -344,24 +352,24 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
 
         {/* Comparison */}
         {comparison && (
-          <section className="comparison-section">
+          <section className="comparison-section liquid-glass neuro-stagger-item">
             <h3>Vergleich zur Vorwoche</h3>
-            <div className="comparison-cards">
-              <div className="comparison-card">
+            <div className="comparison-cards neuro-flow-list">
+              <div className="comparison-card neuro-hover-lift">
                 <span className="comp-label">Gedanken</span>
                 <span className="comp-value">{comparison.current.total}</span>
                 <span className={`comp-change ${getChangeClass(comparison.changes.total)}`}>
                   {getChangeIcon(comparison.changes.total)} {Math.abs(comparison.changes.total)}%
                 </span>
               </div>
-              <div className="comparison-card">
-                <span className="comp-label">Hohe Priorität</span>
+              <div className="comparison-card neuro-hover-lift">
+                <span className="comp-label">Hohe Prioritat</span>
                 <span className="comp-value">{comparison.current.highPriority}</span>
                 <span className={`comp-change ${getChangeClass(comparison.changes.highPriority)}`}>
                   {getChangeIcon(comparison.changes.highPriority)} {Math.abs(comparison.changes.highPriority)}%
                 </span>
               </div>
-              <div className="comparison-card">
+              <div className="comparison-card neuro-hover-lift">
                 <span className="comp-label">Aktive Tage</span>
                 <span className="comp-value">{comparison.current.activeDays}</span>
                 <span className={`comp-change ${getChangeClass(comparison.changes.activeDays)}`}>

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import '../neurodesign.css';
 import './RecordButton.css';
 
 interface RecordButtonProps {
@@ -180,7 +181,7 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
   return (
     <div className="record-container">
       <button
-        className={`record-button ${recording ? 'recording' : ''} ${processing ? 'processing' : ''}`}
+        className={`record-button neuro-button neuro-focus-ring ${recording ? 'recording' : ''} ${processing ? 'processing' : ''}`}
         onClick={recording ? stopRecording : startRecording}
         disabled={disabled || processing}
       >

@@ -1,4 +1,5 @@
 import './Stats.css';
+import '../neurodesign.css';
 
 interface Idea {
   type: string;
@@ -40,25 +41,25 @@ export function Stats({ ideas }: StatsProps) {
   };
 
   return (
-    <div className="stats">
-      <div className="stats-section">
+    <div className="stats liquid-glass neuro-human-fade-in">
+      <div className="stats-section neuro-stagger-item">
         <h4>Nach Typ</h4>
         <div className="stats-items">
           {Object.entries(typeStats).map(([type, count]) => (
-            <span key={type} className="stat-item">
+            <span key={type} className="stat-item neuro-press-effect">
               {typeLabels[type] || type}: <strong>{count}</strong>
             </span>
           ))}
         </div>
       </div>
 
-      <div className="stats-section">
+      <div className="stats-section neuro-stagger-item">
         <h4>Nach Priorität</h4>
         <div className="stats-items">
           {['high', 'medium', 'low'].map(
             (priority) =>
               priorityStats[priority] && (
-                <span key={priority} className="stat-item">
+                <span key={priority} className="stat-item neuro-press-effect">
                   {priorityLabels[priority]}: <strong>{priorityStats[priority]}</strong>
                 </span>
               )
@@ -66,11 +67,11 @@ export function Stats({ ideas }: StatsProps) {
         </div>
       </div>
 
-      <div className="stats-section">
+      <div className="stats-section neuro-stagger-item">
         <h4>Nach Kategorie</h4>
         <div className="stats-items">
           {Object.entries(categoryStats).map(([category, count]) => (
-            <span key={category} className="stat-item stat-category" data-category={category}>
+            <span key={category} className="stat-item stat-category neuro-reward-badge" data-category={category}>
               {category}: <strong>{count}</strong>
             </span>
           ))}

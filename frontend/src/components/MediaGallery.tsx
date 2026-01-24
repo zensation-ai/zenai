@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './MediaGallery.css';
+import '../neurodesign.css';
 
 interface MediaItem {
   id: string;
@@ -114,7 +115,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
   return (
     <div className="media-gallery">
       <div className="media-header">
-        <button className="back-button" onClick={onBack}>
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
           ← Zurück
         </button>
         <h1>🖼️ Medien</h1>
@@ -127,10 +128,13 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
             ref={fileInputRef}
             onChange={handleUpload}
             accept="image/*,video/*"
-            style={{ display: 'none' }}
+            className="visually-hidden"
+            title="Datei hochladen"
+            aria-label="Datei hochladen"
           />
           <button
-            className="upload-btn"
+            type="button"
+            className="upload-btn neuro-button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
@@ -142,19 +146,22 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       {/* Filters */}
       <div className="media-filters">
         <button
-          className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+          type="button"
+          className={`filter-btn neuro-press-effect ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
         >
           Alle ({media.length})
         </button>
         <button
-          className={`filter-btn ${filter === 'image' ? 'active' : ''}`}
+          type="button"
+          className={`filter-btn neuro-press-effect ${filter === 'image' ? 'active' : ''}`}
           onClick={() => setFilter('image')}
         >
           🖼️ Bilder ({media.filter(m => m.type === 'image').length})
         </button>
         <button
-          className={`filter-btn ${filter === 'video' ? 'active' : ''}`}
+          type="button"
+          className={`filter-btn neuro-press-effect ${filter === 'video' ? 'active' : ''}`}
           onClick={() => setFilter('video')}
         >
           🎬 Videos ({media.filter(m => m.type === 'video').length})
@@ -163,23 +170,24 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
 
       {/* Gallery Grid */}
       {filteredMedia.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">🖼️</span>
-          <h3>Keine Medien</h3>
-          <p>Lade Fotos oder Videos hoch, um sie hier zu sehen.</p>
+        <div className="empty-state neuro-empty-state">
+          <span className="empty-icon neuro-breathing">🖼️</span>
+          <h3 className="neuro-empty-title">Keine Medien</h3>
+          <p className="neuro-empty-description">Lade Fotos oder Videos hoch, um sie hier zu sehen.</p>
           <button
-            className="action-btn"
+            type="button"
+            className="action-btn neuro-button"
             onClick={() => fileInputRef.current?.click()}
           >
             📤 Erste Datei hochladen
           </button>
         </div>
       ) : (
-        <div className="media-grid">
+        <div className="media-grid neuro-flow-list">
           {filteredMedia.map(item => (
             <div
               key={item.id}
-              className="media-card"
+              className="media-card neuro-hover-lift neuro-stagger-item"
               onClick={() => setSelectedMedia(item)}
             >
               <div className="media-preview">
@@ -198,7 +206,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
               </div>
               <div className="media-info">
                 <span className="media-date">{formatDate(item.created_at)}</span>
-                {item.analysis && <span className="analyzed-badge">✓ Analysiert</span>}
+                {item.analysis && <span className="analyzed-badge neuro-reward-badge">✓ Analysiert</span>}
               </div>
             </div>
           ))}
@@ -207,9 +215,9 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
 
       {/* Detail Modal */}
       {selectedMedia && (
-        <div className="modal-overlay" onClick={() => setSelectedMedia(null)}>
-          <div className="media-modal" onClick={e => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setSelectedMedia(null)}>✕</button>
+        <div className="modal-overlay neuro-focus-mode active" onClick={() => setSelectedMedia(null)}>
+          <div className="media-modal liquid-glass neuro-human-fade-in" onClick={e => e.stopPropagation()}>
+            <button type="button" className="close-btn neuro-press-effect" onClick={() => setSelectedMedia(null)}>✕</button>
 
             <div className="modal-media">
               {selectedMedia.type === 'image' ? (
@@ -228,19 +236,20 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
               {selectedMedia.tags && selectedMedia.tags.length > 0 && (
                 <div className="media-tags">
                   {selectedMedia.tags.map((tag, i) => (
-                    <span key={i} className="tag">{tag}</span>
+                    <span key={i} className="tag neuro-reward-badge">{tag}</span>
                   ))}
                 </div>
               )}
 
               {selectedMedia.analysis ? (
-                <div className="analysis-section">
+                <div className="analysis-section neuro-human-fade-in">
                   <h4>🤖 KI-Analyse</h4>
-                  <p>{selectedMedia.analysis}</p>
+                  <p className="neuro-motivational">{selectedMedia.analysis}</p>
                 </div>
               ) : (
                 <button
-                  className="analyze-btn"
+                  type="button"
+                  className="analyze-btn neuro-button"
                   onClick={() => handleAnalyze(selectedMedia.id)}
                   disabled={analyzing === selectedMedia.id}
                 >

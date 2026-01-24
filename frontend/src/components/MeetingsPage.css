@@ -1,3 +1,4 @@
+/* Neuro-UX optimierte Meetings Page */
 .meetings-page {
   min-height: 100vh;
   background: var(--bg-primary);
@@ -5,6 +6,11 @@
   padding-top: 0;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Neuro Page Enter Animation */
+.meetings-page.neuro-page-enter {
+  animation: pageEnter var(--neuro-timing-deliberate, 450ms) ease-out;
 }
 
 .meetings-header {
@@ -101,10 +107,36 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Neuro Flow List Animation for meetings grid */
 .meetings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 16px;
+}
+
+.meetings-grid.neuro-flow-list > * {
+  opacity: 0;
+  animation: flowListItem 0.35s ease-out forwards;
+}
+
+.meetings-grid.neuro-flow-list > *:nth-child(1) { animation-delay: 0ms; }
+.meetings-grid.neuro-flow-list > *:nth-child(2) { animation-delay: 60ms; }
+.meetings-grid.neuro-flow-list > *:nth-child(3) { animation-delay: 120ms; }
+.meetings-grid.neuro-flow-list > *:nth-child(4) { animation-delay: 180ms; }
+.meetings-grid.neuro-flow-list > *:nth-child(5) { animation-delay: 240ms; }
+.meetings-grid.neuro-flow-list > *:nth-child(6) { animation-delay: 300ms; }
+.meetings-grid.neuro-flow-list > *:nth-child(7) { animation-delay: 360ms; }
+.meetings-grid.neuro-flow-list > *:nth-child(n+8) { animation-delay: 400ms; }
+
+@keyframes flowListItem {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .loading-state,

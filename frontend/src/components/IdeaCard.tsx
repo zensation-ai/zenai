@@ -7,6 +7,7 @@ import { InlineLoader } from './SkeletonLoader';
 import { useNeuroFeedback } from './NeuroFeedback';
 import { getTypeIcon, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
 import { formatDate } from '../utils/dateUtils';
+import '../neurodesign.css';
 import './IdeaCard.css';
 
 interface Idea {
@@ -100,7 +101,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
   };
 
   return (
-    <div className={`idea-card ${isDeleting ? 'deleting' : ''}`}>
+    <div className={`idea-card neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''}`}>
       <div className="idea-header">
         <span className="idea-type">{getTypeIcon(idea.type)}</span>
         <h3 className="idea-title">{idea.title}</h3>
@@ -108,7 +109,8 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
           {isArchived ? (
             <button
               type="button"
-              className="restore-button"
+              className="restore-button neuro-press-effect neuro-focus-ring neuro-anticipate"
+              data-anticipate="Wiederherstellen"
               onClick={handleRestore}
               disabled={isArchiving}
               title="Wiederherstellen"
@@ -119,7 +121,8 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
           ) : (
             <button
               type="button"
-              className="archive-button"
+              className="archive-button neuro-press-effect neuro-focus-ring neuro-anticipate"
+              data-anticipate="Archivieren"
               onClick={handleArchive}
               disabled={isArchiving}
               title="Archivieren"
@@ -130,7 +133,8 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
           )}
           <button
             type="button"
-            className="delete-button"
+            className="delete-button neuro-press-effect neuro-focus-ring neuro-anticipate"
+            data-anticipate="Löschen"
             onClick={handleDelete}
             disabled={isDeleting}
             title="Löschen"

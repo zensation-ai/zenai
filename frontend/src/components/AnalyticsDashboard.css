@@ -450,6 +450,19 @@
   gap: 1rem;
 }
 
+/* Header Greeting */
+.analytics-dashboard .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.analytics-dashboard .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .score-section {
@@ -469,5 +482,31 @@
 
   .patterns-content {
     grid-template-columns: 1fr;
+  }
+
+  .analytics-dashboard .header-greeting {
+    flex: 1;
+  }
+
+  .analytics-dashboard .greeting-subtext {
+    display: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .analytics-dashboard .neuro-stagger-item,
+  .analytics-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .analytics-dashboard .neuro-hover-lift:hover {
+    transform: none;
+  }
+
+  .analytics-dashboard .neuro-breathing {
+    animation: none;
   }
 }

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { getStepsForType, getStepProgress } from '../utils/aiSteps';
-import { AI_PERSONALITY } from '../utils/aiPersonality';
+import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './AIProcessingOverlay.css';
 
 export type ProcessType = 'voice' | 'text' | 'search';
@@ -35,11 +36,11 @@ const AIProcessingOverlayComponent: React.FC<AIProcessingOverlayProps> = ({
   const strokeDasharray = `${progress} ${circumference}`;
 
   return (
-    <div className="ai-overlay" role="status" aria-live="polite">
+    <div className="ai-overlay liquid-glass-nav" role="status" aria-live="polite">
       <div className="ai-overlay-content">
         <div className="ai-overlay-header">
-          <div className="ai-overlay-avatar" aria-hidden="true">
-            🧠
+          <div className="ai-overlay-avatar neuro-breathing" aria-hidden="true">
+            {AI_AVATAR.emoji}
           </div>
           <div className="ai-overlay-progress-ring" aria-hidden="true">
             <svg viewBox="0 0 36 36">
@@ -87,7 +88,7 @@ const AIProcessingOverlayComponent: React.FC<AIProcessingOverlayProps> = ({
                   : ''
               }`}
             >
-              <span className="step-dot" aria-hidden="true" />
+              <span className="step-dot neuro-status-dot" aria-hidden="true" />
               <span className="step-label">{step.label}</span>
             </div>
           ))}

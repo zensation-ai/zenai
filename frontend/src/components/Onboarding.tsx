@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
-import { AI_PERSONALITY, AI_AVATAR, getTimeBasedGreeting } from '../utils/aiPersonality';
+import { AI_PERSONALITY, AI_AVATAR, getTimeBasedGreeting, getRandomReward } from '../utils/aiPersonality';
 import './Onboarding.css';
+import '../neurodesign.css';
 
 interface OnboardingProps {
   context: string;

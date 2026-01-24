@@ -1,6 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
-import { AI_PERSONALITY } from '../utils/aiPersonality';
+import {
+  AI_PERSONALITY,
+  getRandomReward,
+  FLOW_STATE_MESSAGES,
+  ANTICIPATORY_MESSAGES,
+} from '../utils/aiPersonality';
 import { useNeuroFeedback } from './NeuroFeedback';
 import './InboxTriage.css';
 
@@ -27,6 +32,7 @@ interface InboxTriageProps {
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
+// Neuro-UX: Klare visuelle Hierarchie für Priorisierung
 const PRIORITY_LABELS: Record<string, { label: string; className: string }> = {
   high: { label: 'HOCH', className: 'high' },
   medium: { label: 'MITTEL', className: 'medium' },
@@ -43,14 +49,29 @@ const TYPE_EMOJIS: Record<string, string> = {
   goal: '🎯',
 };
 
+// Neuro-UX: Binary Choice Mapping für Decision Fatigue Prevention
+const ACTION_FEEDBACK: Record<TriageAction, { emoji: string; label: string }> = {
+  priority: { emoji: '🔥', label: 'Priorisiert!' },
+  keep: { emoji: '✓', label: 'Behalten!' },
+  later: { emoji: '⏰', label: 'Später!' },
+  archive: { emoji: '📥', label: 'Archiviert!' },
+};
+
+// Neuro-UX: Miller's Law - Max 7±2 Items gleichzeitig
+const MAX_VISIBLE_ITEMS = 7;
+// Neuro-UX: Variable Rewards bei bestimmten Streaks für Dopamin-Optimierung
+const STREAK_MILESTONES = [3, 5, 7, 10];
+
 /**
- * InboxTriage - Swipe-based card interface for prioritizing thoughts
+ * InboxTriage - Neuro-UX optimierte Swipe-based Card Interface
  *
- * Swipe Actions:
- * - Right: Mark as priority (high)
- * - Left: Review later (low priority)
- * - Up: Archive
- * - Buttons: Keep (no change), or use button alternatives
+ * Neuro-UX Prinzipien implementiert:
+ * - Miller's Law: Max 7 Items gleichzeitig sichtbar
+ * - Dopamin-Optimierung: Variable Belohnungen bei Aktionen
+ * - Flow-State: Smooth Transitions, Focus Indicators
+ * - Decision Fatigue Prevention: Binary Choices, empfohlene Aktionen
+ * - Progressive Disclosure: Detail-Informationen schrittweise
+ * - Reduced Motion: Respektiert prefers-reduced-motion
  */
 const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   context,
@@ -67,13 +88,56 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   const [stats, setStats] = useState({ prioritized: 0, archived: 0, kept: 0, later: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationClass, setAnimationClass] = useState('');
+  // Neuro-UX: States für Dopamin-Belohnungen und Flow-State
+  const [showReward, setShowReward] = useState<{ message: string; emoji: string } | null>(null);
+  const [showUndoHint, setShowUndoHint] = useState(false);
+  const [lastAction, setLastAction] = useState<{ id: string; action: TriageAction } | null>(null);
+  const [expandedDetails, setExpandedDetails] = useState(false);
+  // Neuro-UX: Anticipatory Loading Message
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   const cardRef = useRef<HTMLDivElement>(null);
   const { triggerMilestone, triggerStreak } = useNeuroFeedback();
 
+  // Neuro-UX: Check for reduced motion preference
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
   const currentIdea = ideas[currentIndex];
   const remainingCount = ideas.length - currentIndex;
   const totalProcessed = processedIds.length;
+
+  // Neuro-UX: Berechne empfohlene Aktion basierend auf Priorität
+  // Decision Fatigue Prevention: Klare Empfehlung reduziert kognitive Last
+  const recommendedAction = useMemo((): TriageAction => {
+    if (!currentIdea) return 'keep';
+    switch (currentIdea.priority) {
+      case 'high':
+        return 'priority';
+      case 'low':
+        return 'archive';
+      default:
+        return 'keep';
+    }
+  }, [currentIdea]);
+
+  // Neuro-UX: Antizipatorische Loading-Nachricht rotieren
+  useEffect(() => {
+    if (isLoading) {
+      const messages = ANTICIPATORY_MESSAGES.processing;
+      let index = 0;
+      setLoadingMessage(messages[0]);
+
+      const interval = setInterval(() => {
+        index = (index + 1) % messages.length;
+        setLoadingMessage(messages[index]);
+      }, 2000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoading]);
 
   // Fetch ideas for triage
   const fetchTriageIdeas = useCallback(async () => {
@@ -81,9 +145,10 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
     setError(null);
 
     try {
-      const excludeParam = processedIds.length > 0 ? `&exclude=${processedIds.join(',')}` : '';
+      const excludeParam = processedIds.length > 0 ? '&exclude=' + processedIds.join(',') : '';
+      // Neuro-UX: Miller's Law - Limitiere auf MAX_VISIBLE_ITEMS
       const response = await fetch(
-        `${apiBase}/${context}/ideas/triage?limit=20${excludeParam}`,
+        apiBase + '/' + context + '/ideas/triage?limit=' + MAX_VISIBLE_ITEMS + excludeParam,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -99,7 +164,6 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
       const data = await response.json();
 
       if (data.success && data.ideas) {
-        // Transform API response to match our interface
         const transformedIdeas: TriageIdea[] = data.ideas.map((idea: any) => ({
           id: idea.id,
           title: idea.title,
@@ -128,18 +192,46 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   // Initial load
   useEffect(() => {
     fetchTriageIdeas();
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Neuro-UX: Dopamin-Belohnung anzeigen mit Variable Rewards
+  const showDopamineReward = useCallback((action: TriageAction) => {
+    const reward = getRandomReward('ideaCreated');
+    const actionFeedback = ACTION_FEEDBACK[action];
+    
+    setShowReward({
+      message: reward.message,
+      emoji: actionFeedback.emoji,
+    });
+
+    // Neuro-UX: Variable Timeout für Belohnungsanzeige (kürzer bei reduced motion)
+    const timeout = prefersReducedMotion ? 1000 : 2000;
+    setTimeout(() => setShowReward(null), timeout);
+  }, [prefersReducedMotion]);
+
+  // Neuro-UX: Streak-Belohnung prüfen für variable Dopamin-Ausschüttung
+  const checkStreakReward = useCallback((newTotal: number) => {
+    if (STREAK_MILESTONES.includes(newTotal)) {
+      const encouragement = FLOW_STATE_MESSAGES.encouragement[
+        Math.floor(Math.random() * FLOW_STATE_MESSAGES.encouragement.length)
+      ];
+      triggerStreak(newTotal);
+      showToast(encouragement + ' (' + newTotal + ' erledigt!)', 'success');
+    }
+  }, [triggerStreak, showToast]);
 
   // Handle triage action
   const handleTriageAction = useCallback(
     async (action: TriageAction) => {
       if (!currentIdea || isAnimating) return;
 
-      // Set animation
+      // Neuro-UX: Animation setzen mit success-burst für Dopamin-Feedback
       setIsAnimating(true);
+      setExpandedDetails(false); // Progressive Disclosure zurücksetzen
+
       switch (action) {
         case 'priority':
-          setAnimationClass('animate-swipe-right');
+          setAnimationClass('animate-swipe-right neuro-success-burst');
           break;
         case 'later':
           setAnimationClass('animate-swipe-left');
@@ -148,14 +240,16 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
           setAnimationClass('animate-swipe-up');
           break;
         case 'keep':
-          setAnimationClass('animate-keep');
+          setAnimationClass('animate-keep neuro-success-burst');
           break;
       }
 
-      // Send API request
+      // Neuro-UX: Dopamin-Belohnung triggern
+      showDopamineReward(action);
+
       try {
         const response = await fetch(
-          `${apiBase}/${context}/ideas/${currentIdea.id}/triage`,
+          apiBase + '/' + context + '/ideas/' + currentIdea.id + '/triage',
           {
             method: 'POST',
             headers: {
@@ -173,33 +267,36 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
         // Update stats
         setStats((prev) => ({
           ...prev,
-          [action === 'priority' ? 'prioritized' : action]: prev[action === 'priority' ? 'prioritized' : action as keyof typeof prev] + 1,
+          [action === 'priority' ? 'prioritized' : action]:
+            prev[action === 'priority' ? 'prioritized' : (action as keyof typeof prev)] + 1,
         }));
+
+        // Neuro-UX: Undo Pattern - Letzte Aktion speichern statt Bestätigung
+        setLastAction({ id: currentIdea.id, action });
+        setShowUndoHint(true);
+        setTimeout(() => setShowUndoHint(false), 3000);
 
         // Track processed
         setProcessedIds((prev) => [...prev, currentIdea.id]);
 
-        // Neuro-Feedback: Streak für kontinuierliche Aktionen
+        // Neuro-UX: Streak-Belohnung prüfen
         const newTotal = totalProcessed + 1;
-        if (newTotal >= 3) {
-          triggerStreak(newTotal);
-        }
+        checkStreakReward(newTotal);
 
-        // Wait for animation
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        // Neuro-UX: Reduzierte Animation bei prefers-reduced-motion
+        const animationDuration = prefersReducedMotion ? 100 : 300;
+        await new Promise((resolve) => setTimeout(resolve, animationDuration));
 
         // Move to next card
         if (currentIndex < ideas.length - 1) {
           setCurrentIndex((prev) => prev + 1);
         } else {
-          // Check if we need to load more
-          if (ideas.length === 20) {
-            // Might be more, fetch again
+          if (ideas.length === MAX_VISIBLE_ITEMS) {
             await fetchTriageIdeas();
           } else {
-            // All done! Milestone Celebration
+            // Neuro-UX: Milestone Celebration am Ende
             triggerMilestone(
-              `${newTotal} Gedanken sortiert!`,
+              newTotal + ' Gedanken sortiert!',
               'Großartige Arbeit beim Aufräumen'
             );
             onComplete();
@@ -212,7 +309,22 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
         setAnimationClass('');
       }
     },
-    [currentIdea, currentIndex, ideas.length, isAnimating, apiBase, context, fetchTriageIdeas, showToast, onComplete, totalProcessed, triggerStreak, triggerMilestone]
+    [
+      currentIdea,
+      currentIndex,
+      ideas.length,
+      isAnimating,
+      apiBase,
+      context,
+      fetchTriageIdeas,
+      showToast,
+      onComplete,
+      totalProcessed,
+      checkStreakReward,
+      showDopamineReward,
+      triggerMilestone,
+      prefersReducedMotion,
+    ]
   );
 
   // Swipe handlers
@@ -232,7 +344,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   // Calculate card transform based on swipe progress
   const cardStyle: React.CSSProperties = isDragging
     ? {
-        transform: `translate(${offsetX}px, ${offsetY}px) rotate(${offsetX * 0.05}deg)`,
+        transform: 'translate(' + offsetX + 'px, ' + offsetY + 'px) rotate(' + (offsetX * 0.05) + 'deg)',
         transition: 'none',
       }
     : {};
@@ -241,7 +353,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   const getSwipeClass = (): string => {
     if (animationClass) return animationClass;
     if (!isDragging || progress < 0.3) return '';
-    return `swipe-${direction}`;
+    return 'swipe-' + direction;
   };
 
   // Format date
@@ -254,20 +366,27 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
     });
   };
 
-  // Render loading state
+  // Neuro-UX: Progressive Disclosure Toggle
+  const toggleDetails = useCallback(() => {
+    setExpandedDetails((prev) => !prev);
+  }, []);
+
+  // Render loading state mit Neuro-UX Antizipation
   if (isLoading) {
     return (
-      <div className="triage-page">
-        <header className="triage-header">
-          <button className="triage-back-btn" onClick={onBack}>
+      <div className="triage-page neuro-page-enter">
+        <header className="triage-header liquid-glass-nav">
+          <button className="triage-back-btn neuro-hover-lift" onClick={onBack}>
             ← Zurück
           </button>
           <h1 className="triage-title">Triage</h1>
           <span className="triage-progress">Lädt...</span>
         </header>
-        <div className="triage-loading">
-          <div className="triage-loading-spinner" />
-          <p>{AI_PERSONALITY.name} sucht deine Gedanken...</p>
+        {/* Neuro-UX: Antizipatorisches Loading mit kontextueller Nachricht */}
+        <div className="triage-loading neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">{loadingMessage}</p>
+          <p className="neuro-loading-submessage">{AI_PERSONALITY.name} sucht deine Gedanken...</p>
         </div>
       </div>
     );
@@ -276,17 +395,22 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   // Render error state
   if (error) {
     return (
-      <div className="triage-page">
-        <header className="triage-header">
-          <button className="triage-back-btn" onClick={onBack}>
+      <div className="triage-page neuro-page-enter">
+        <header className="triage-header liquid-glass-nav">
+          <button className="triage-back-btn neuro-hover-lift" onClick={onBack}>
             ← Zurück
           </button>
           <h1 className="triage-title">Triage</h1>
         </header>
-        <div className="triage-error">
-          <span className="triage-error-icon">⚠️</span>
-          <p>{error}</p>
-          <button className="triage-retry-btn" onClick={fetchTriageIdeas}>
+        {/* Neuro-UX: Freundliche Fehlermeldung */}
+        <div className="triage-error neuro-error-friendly">
+          <span className="neuro-error-icon">⚠️</span>
+          <div className="neuro-error-content">
+            <span className="neuro-error-title">Ups, da ging etwas schief</span>
+            <p className="neuro-error-message">{error}</p>
+            <span className="neuro-error-suggestion">Keine Sorge, einfach nochmal versuchen!</span>
+          </div>
+          <button className="triage-retry-btn neuro-button neuro-hover-lift" onClick={fetchTriageIdeas}>
             Erneut versuchen
           </button>
         </div>
@@ -294,45 +418,55 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
     );
   }
 
-  // Render empty state
+  // Render empty/completion state mit Neuro-UX Celebration
   if (!currentIdea) {
     return (
-      <div className="triage-page">
-        <header className="triage-header">
-          <button className="triage-back-btn" onClick={onBack}>
+      <div className="triage-page neuro-page-enter">
+        <header className="triage-header liquid-glass-nav">
+          <button className="triage-back-btn neuro-hover-lift" onClick={onBack}>
             ← Zurück
           </button>
           <h1 className="triage-title">Triage</h1>
         </header>
-        <div className="triage-empty">
-          <span className="triage-empty-icon">✨</span>
-          <h2 className="triage-empty-title">Alles sortiert!</h2>
-          <p className="triage-empty-message">
+        {/* Neuro-UX: Erfolgs-Celebration mit Dopamin-Burst */}
+        <div className="triage-empty neuro-empty-state neuro-success-burst">
+          <span className="neuro-empty-icon">✨</span>
+          <h2 className="neuro-empty-title neuro-greeting-adaptive">Alles sortiert!</h2>
+          <p className="neuro-empty-description neuro-subtext-emotional">
             {totalProcessed > 0
-              ? `Du hast ${totalProcessed} Gedanken sortiert. Großartig!`
+              ? 'Du hast ' + totalProcessed + ' Gedanken sortiert. Großartig!'
               : 'Keine Gedanken zum Sortieren vorhanden.'}
           </p>
+          {/* Neuro-UX: Flow State Encouragement */}
           {totalProcessed > 0 && (
-            <div className="triage-stats">
-              <div className="triage-stat">
-                <span className="stat-value">{stats.prioritized}</span>
+            <p className="neuro-empty-encouragement neuro-motivational">
+              {FLOW_STATE_MESSAGES.encouragement[
+                Math.floor(Math.random() * FLOW_STATE_MESSAGES.encouragement.length)
+              ]}
+            </p>
+          )}
+          {/* Neuro-UX: Stats als Cognitive Chunks gruppiert */}
+          {totalProcessed > 0 && (
+            <div className="triage-stats neuro-flow-list">
+              <div className="triage-stat neuro-chunk neuro-stagger-item">
+                <span className="stat-value neuro-reward-badge">{stats.prioritized}</span>
                 <span className="stat-label">Priorisiert</span>
               </div>
-              <div className="triage-stat">
+              <div className="triage-stat neuro-chunk neuro-stagger-item">
                 <span className="stat-value">{stats.kept}</span>
                 <span className="stat-label">Behalten</span>
               </div>
-              <div className="triage-stat">
+              <div className="triage-stat neuro-chunk neuro-stagger-item">
                 <span className="stat-value">{stats.later}</span>
                 <span className="stat-label">Später</span>
               </div>
-              <div className="triage-stat">
+              <div className="triage-stat neuro-chunk neuro-stagger-item">
                 <span className="stat-value">{stats.archived}</span>
                 <span className="stat-label">Archiviert</span>
               </div>
             </div>
           )}
-          <button className="triage-done-btn" onClick={onBack}>
+          <button className="triage-done-btn neuro-button neuro-hover-lift" onClick={onBack}>
             Zurück zur Übersicht
           </button>
         </div>
@@ -344,51 +478,67 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   const typeEmoji = TYPE_EMOJIS[currentIdea.type] || '📝';
 
   return (
-    <div className="triage-page" data-context={context}>
-      <header className="triage-header">
-        <button className="triage-back-btn" onClick={onBack}>
+    <div className="triage-page neuro-page-enter" data-context={context}>
+      <header className="triage-header liquid-glass-nav">
+        <button className="triage-back-btn neuro-hover-lift" onClick={onBack}>
           ← Zurück
         </button>
         <h1 className="triage-title">Triage</h1>
+        {/* Neuro-UX: Progress als Reward Badge */}
         <span className="triage-progress">
           {currentIndex + 1} von {ideas.length}
-          {processedIds.length > 0 && ` (${processedIds.length} sortiert)`}
+          {processedIds.length > 0 && (
+            <span className="neuro-reward-badge" style={{ marginLeft: '0.5rem', padding: '2px 8px', fontSize: '0.75rem' }}>
+              {processedIds.length} erledigt
+            </span>
+          )}
         </span>
       </header>
+
+      {/* Neuro-UX: Dopamin-Belohnung Overlay */}
+      {showReward && (
+        <div className="neuro-variable-reward">
+          <span className="reward-emoji">{showReward.emoji}</span>
+          <span>{showReward.message}</span>
+        </div>
+      )}
+
+      {/* Neuro-UX: Undo Hint (Undo-Pattern statt Bestätigung) */}
+      {showUndoHint && lastAction && (
+        <div className="neuro-next-step" style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
+          <span className="step-icon">↩️</span>
+          <span>{ANTICIPATORY_MESSAGES.nextSteps.afterTriage}</span>
+        </div>
+      )}
 
       <div className="triage-card-container">
         {/* Swipe hints */}
         <div className="triage-hints">
-          <span className="triage-hint triage-hint-left">
-            ← Später
-          </span>
-          <span className="triage-hint triage-hint-right">
-            Priorität →
-          </span>
-          <span className="triage-hint triage-hint-bottom">
-            ↓ Archivieren
-          </span>
+          <span className="triage-hint triage-hint-left">← Später</span>
+          <span className="triage-hint triage-hint-right">Priorität →</span>
+          <span className="triage-hint triage-hint-bottom">↓ Archivieren</span>
         </div>
 
         {/* Swipe indicators */}
-        <div className={`swipe-indicator right ${direction === 'right' && progress > 0.5 ? 'visible' : ''}`}>
+        <div className={'swipe-indicator right ' + (direction === 'right' && progress > 0.5 ? 'visible' : '')}>
           🔥
         </div>
-        <div className={`swipe-indicator left ${direction === 'left' && progress > 0.5 ? 'visible' : ''}`}>
+        <div className={'swipe-indicator left ' + (direction === 'left' && progress > 0.5 ? 'visible' : '')}>
           ⏰
         </div>
-        <div className={`swipe-indicator up ${direction === 'up' && progress > 0.5 ? 'visible' : ''}`}>
+        <div className={'swipe-indicator up ' + (direction === 'up' && progress > 0.5 ? 'visible' : '')}>
           📥
         </div>
 
-        {/* Card */}
+        {/* Neuro-UX: Card mit Focus Indicator und Liquid Glass */}
         <div
           ref={cardRef}
-          className={`triage-card ${isDragging ? 'dragging' : ''} ${getSwipeClass()}`}
+          className={'triage-card liquid-glass neuro-focus-indicator active ' + (isDragging ? 'dragging ' : '') + getSwipeClass()}
           style={cardStyle}
         >
-          <div className="triage-card-header">
-            <span className={`triage-card-priority ${priorityInfo.className}`}>
+          {/* Neuro-UX: Cognitive Chunk - Header */}
+          <div className="triage-card-header neuro-chunk">
+            <span className={'triage-card-priority ' + priorityInfo.className}>
               {priorityInfo.label}
             </span>
             <span className="triage-card-type">
@@ -396,34 +546,55 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
             </span>
           </div>
 
-          <h2 className="triage-card-title">{currentIdea.title}</h2>
+          {/* Neuro-UX: Klare visuelle Hierarchie - Titel prominent */}
+          <h2 className="triage-card-title neuro-human-fade-in">{currentIdea.title}</h2>
 
           <p className="triage-card-summary">{currentIdea.summary}</p>
 
+          {/* Neuro-UX: Progressive Disclosure für Details */}
           {currentIdea.nextSteps && currentIdea.nextSteps.length > 0 && (
-            <div className="triage-card-steps">
-              <h4>Nächste Schritte:</h4>
-              <ul>
-                {currentIdea.nextSteps.slice(0, 3).map((step, index) => (
-                  <li key={index}>{step}</li>
-                ))}
-              </ul>
+            <div className={'triage-card-steps neuro-chunk ' + (expandedDetails ? 'neuro-expand-in' : '')}>
+              <h4
+                onClick={toggleDetails}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                className="neuro-hover-lift"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && toggleDetails()}
+              >
+                <span>{expandedDetails ? '▼' : '▶'}</span>
+                Nächste Schritte ({currentIdea.nextSteps.length}):
+              </h4>
+              {/* Progressive Disclosure: Zeige nur wenn expanded */}
+              {expandedDetails && (
+                <ul className="neuro-flow-list">
+                  {/* Miller's Law: Max 3 Steps anzeigen */}
+                  {currentIdea.nextSteps.slice(0, 3).map((step, index) => (
+                    <li key={index} className="neuro-stagger-item">
+                      {step}
+                    </li>
+                  ))}
+                  {currentIdea.nextSteps.length > 3 && (
+                    <li className="neuro-stagger-item" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      +{currentIdea.nextSteps.length - 3} weitere...
+                    </li>
+                  )}
+                </ul>
+              )}
             </div>
           )}
 
           <div className="triage-card-meta">
-            <span className="triage-card-tag">{currentIdea.category}</span>
-            <span className="triage-card-date">
-              📅 {formatDate(currentIdea.createdAt)}
-            </span>
+            <span className="triage-card-tag neuro-hover-lift">{currentIdea.category}</span>
+            <span className="triage-card-date">📅 {formatDate(currentIdea.createdAt)}</span>
           </div>
         </div>
       </div>
 
-      {/* Action buttons (desktop) */}
-      <div className="triage-quick-actions">
+      {/* Neuro-UX: Quick Actions mit empfohlener Aktion hervorgehoben */}
+      <div className="triage-quick-actions neuro-flow-list">
         <button
-          className="triage-action-btn later"
+          className={'triage-action-btn later neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'later' ? 'neuro-pulse-interactive' : '')}
           onClick={() => handleTriageAction('later')}
           disabled={isAnimating}
           title="Auf später verschieben"
@@ -432,7 +603,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
           <span className="action-label">Später</span>
         </button>
         <button
-          className="triage-action-btn archive"
+          className={'triage-action-btn archive neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'archive' ? 'neuro-pulse-interactive' : '')}
           onClick={() => handleTriageAction('archive')}
           disabled={isAnimating}
           title="Archivieren"
@@ -441,7 +612,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
           <span className="action-label">Archiv</span>
         </button>
         <button
-          className="triage-action-btn keep"
+          className={'triage-action-btn keep neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'keep' ? 'neuro-pulse-interactive' : '')}
           onClick={() => handleTriageAction('keep')}
           disabled={isAnimating}
           title="Behalten wie es ist"
@@ -449,27 +620,45 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
           <span className="action-icon">✓</span>
           <span className="action-label">Behalten</span>
         </button>
+        {/* Neuro-UX: Priorität-Button mit besonderer Hervorhebung wenn empfohlen */}
         <button
-          className="triage-action-btn priority"
+          className={'triage-action-btn priority neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'priority' ? 'neuro-button-glow' : '')}
           onClick={() => handleTriageAction('priority')}
           disabled={isAnimating}
           title="Als Priorität markieren"
+          style={{ position: 'relative' }}
         >
           <span className="action-icon">🔥</span>
           <span className="action-label">Priorität</span>
+          {/* Neuro-UX: Empfehlungs-Badge für Decision Fatigue Prevention */}
+          {recommendedAction === 'priority' && (
+            <span
+              className="neuro-suggested-action"
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                fontSize: '0.65rem',
+                padding: '2px 6px',
+              }}
+            >
+              Empfohlen
+            </span>
+          )}
         </button>
       </div>
 
-      {/* Remaining count indicator */}
+      {/* Neuro-UX: Remaining Stack Visualization (max 3 für Cognitive Load) */}
       {remainingCount > 1 && (
         <div className="triage-remaining">
           <div className="triage-remaining-stack">
+            {/* Miller's Law: Nur max 3 Stack-Karten anzeigen */}
             {[...Array(Math.min(remainingCount - 1, 3))].map((_, i) => (
               <div
                 key={i}
-                className="triage-remaining-card"
+                className="triage-remaining-card neuro-stagger-item"
                 style={{
-                  transform: `translateY(${(i + 1) * 4}px) scale(${1 - (i + 1) * 0.02})`,
+                  transform: 'translateY(' + ((i + 1) * 4) + 'px) scale(' + (1 - (i + 1) * 0.02) + ')',
                   opacity: 1 - (i + 1) * 0.2,
                 }}
               />

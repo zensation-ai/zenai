@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './ExportDashboard.css';
 
 interface ExportHistory {
@@ -17,6 +19,7 @@ interface ExportDashboardProps {
 }
 
 export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [activeTab, setActiveTab] = useState<'export' | 'history' | 'backup'>('export');
   const [loading, setLoading] = useState(false);
   const [exportHistory, setExportHistory] = useState<ExportHistory[]>([]);
@@ -143,12 +146,15 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
   };
 
   return (
-    <div className="export-dashboard">
-      <div className="export-header">
-        <button className="back-button" onClick={onBack}>
-          ← Zurück
+    <div className="export-dashboard neuro-page-enter">
+      <div className="export-header liquid-glass-nav">
+        <button className="back-button neuro-hover-lift" onClick={onBack}>
+          ← Zuruck
         </button>
-        <h1>📤 Export Center</h1>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} Export Center</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className={`context-indicator ${context}`}>
           {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
         </span>
@@ -177,18 +183,19 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
 
       {activeTab === 'export' && (
         <div className="export-content">
-          <div className="export-section">
-            <h3>Format auswählen</h3>
-            <div className="format-options">
+          <div className="export-section liquid-glass neuro-stagger-item">
+            <h3>Format auswahlen</h3>
+            <div className="format-options neuro-flow-list">
               {[
                 { id: 'json', label: 'JSON', icon: '📄', desc: 'Strukturierte Daten' },
                 { id: 'csv', label: 'CSV', icon: '📊', desc: 'Tabellenformat' },
                 { id: 'markdown', label: 'Markdown', icon: '📝', desc: 'Lesbar & formatiert' },
                 { id: 'pdf', label: 'PDF', icon: '📑', desc: 'Druckfertig' },
-              ].map(format => (
+              ].map((format, index) => (
                 <button
                   key={format.id}
-                  className={`format-option ${selectedFormat === format.id ? 'active' : ''}`}
+                  className={`format-option neuro-hover-lift neuro-stagger-item ${selectedFormat === format.id ? 'active' : ''}`}
+                  style={{ animationDelay: `${index * 50}ms` }}
                   onClick={() => setSelectedFormat(format.id)}
                 >
                   <span className="format-icon">{format.icon}</span>
@@ -199,9 +206,9 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
             </div>
           </div>
 
-          <div className="export-section">
-            <h3>Inhalte auswählen</h3>
-            <div className="content-options">
+          <div className="export-section liquid-glass neuro-stagger-item">
+            <h3>Inhalte auswahlen</h3>
+            <div className="content-options neuro-flow-list">
               {[
                 { id: 'ideas', label: 'Ideen', icon: '💡' },
                 { id: 'meetings', label: 'Meetings', icon: '📅' },
@@ -209,10 +216,11 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
                 { id: 'learning-tasks', label: 'Lernziele', icon: '📚' },
                 { id: 'media', label: 'Medien', icon: '🖼️' },
                 { id: 'automations', label: 'Automationen', icon: '⚡' },
-              ].map(content => (
+              ].map((content, index) => (
                 <button
                   key={content.id}
-                  className={`content-option ${selectedContent.includes(content.id) ? 'active' : ''}`}
+                  className={`content-option neuro-hover-lift neuro-stagger-item ${selectedContent.includes(content.id) ? 'active' : ''}`}
+                  style={{ animationDelay: `${index * 50}ms` }}
                   onClick={() => toggleContent(content.id)}
                 >
                   <span className="content-icon">{content.icon}</span>
@@ -225,7 +233,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
             </div>
           </div>
 
-          <div className="export-section">
+          <div className="export-section liquid-glass neuro-stagger-item">
             <h3>Zeitraum (optional)</h3>
             <div className="date-range">
               <div className="date-input">
@@ -248,7 +256,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
           </div>
 
           <button
-            className="export-btn primary"
+            className="export-btn primary neuro-button neuro-stagger-item"
             onClick={handleExport}
             disabled={loading || selectedContent.length === 0}
           >
@@ -267,15 +275,15 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
       {activeTab === 'history' && (
         <div className="history-content">
           {exportHistory.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📋</span>
-              <h3>Noch keine Exports</h3>
-              <p>Deine Export-Historie erscheint hier.</p>
+            <div className="empty-state neuro-empty-state">
+              <span className="neuro-empty-icon">📋</span>
+              <h3 className="neuro-empty-title">Noch keine Exports</h3>
+              <p className="neuro-empty-description">Deine Export-Historie erscheint hier.</p>
             </div>
           ) : (
-            <div className="history-list">
-              {exportHistory.map(item => (
-                <div key={item.id} className="history-item">
+            <div className="history-list neuro-flow-list">
+              {exportHistory.slice(0, 7).map((item, index) => (
+                <div key={item.id} className="history-item liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="history-icon">
                     {item.format === 'json' && '📄'}
                     {item.format === 'csv' && '📊'}

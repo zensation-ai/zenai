@@ -1,3 +1,4 @@
+/* Neuro-UX optimierte Notifications Page */
 .notifications-page {
   min-height: 100vh;
   background: var(--bg-primary);
@@ -5,6 +6,22 @@
   padding-top: 0;
   max-width: 1000px;
   margin: 0 auto;
+}
+
+/* Neuro Page Enter Animation */
+.notifications-page.neuro-page-enter {
+  animation: pageEnter var(--neuro-timing-deliberate, 450ms) ease-out;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .notifications-header {

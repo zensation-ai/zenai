@@ -6,6 +6,7 @@ import {
   getIdleMessage,
   getRandomTip,
 } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './AIBrain.css';
 
 interface AIBrainProps {
@@ -114,7 +115,7 @@ export function AIBrain({
     >
       {/* Tooltip - Bei size="large" kein Greeting anzeigen, da Hero-Greeting bereits sichtbar */}
       {showTooltip && (
-        <div className={`ai-brain-tooltip ${size === 'large' ? 'large-mode' : ''}`}>
+        <div className={`ai-brain-tooltip neuro-tooltip-enhanced ${size === 'large' ? 'large-mode' : ''}`}>
           {!isActive && size !== 'large' && (
             <span className="ai-brain-tooltip-greeting">{timeGreeting.greeting}</span>
           )}
@@ -123,7 +124,7 @@ export function AIBrain({
           </span>
         </div>
       )}
-      <div className="ai-brain-wrapper">
+      <div className="ai-brain-wrapper neuro-breathing">
         {/* Outer glow rings */}
         <div className="brain-glow-ring ring-1" />
         <div className="brain-glow-ring ring-2" />

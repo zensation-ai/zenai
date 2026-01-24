@@ -763,18 +763,6 @@ function App() {
             context={context}
             apiBase="/api"
             onNavigate={(page) => setCurrentPage(page as Page)}
-            onSearch={(query) => {
-              setCurrentPage('ideas');
-              handleSearch(query);
-            }}
-            onNewIdea={() => {
-              setCurrentPage('ideas');
-              // Focus on text input could be added here
-            }}
-            onStartRecording={() => {
-              setCurrentPage('ideas');
-              // Could trigger recording here
-            }}
             showToast={showToast}
           />
         </Suspense>
@@ -879,24 +867,16 @@ function App() {
         <div className="particle particle-6" />
       </div>
 
-      <header className="header">
+      <header className="header liquid-glass-nav">
         <div className="header-content">
           <div className="header-left">
             <div className="header-ai-status">
-              <span className={`ai-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />
+              <span className={`ai-status-dot neuro-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />
               <span className="header-logo-text">Personal AI Brain</span>
             </div>
           </div>
           <div className="header-center">
             <nav className="header-nav">
-              <button
-                type="button"
-                className="nav-button"
-                onClick={() => setCurrentPage('dashboard')}
-                title="Dashboard"
-              >
-                📊 Dashboard
-              </button>
               <button
                 type="button"
                 className={`nav-button ${currentPage === 'ideas' ? 'active' : ''}`}
@@ -939,6 +919,7 @@ function App() {
                 label="Analyse"
                 icon="📊"
                 items={[
+                  { label: 'Übersicht', icon: '🏠', page: 'dashboard' },
                   { label: 'Analytics', icon: '📈', page: 'analytics' },
                   { label: 'Digest', icon: '📊', page: 'digest' },
                   { label: 'Graph', icon: '🕸️', page: 'knowledge-graph' },
@@ -975,13 +956,13 @@ function App() {
               selectedPersona={selectedPersona}
               onPersonaChange={setSelectedPersona}
             />
-            <div className="status-indicators compact">
+            <div className="status-indicators neuro-connection-status compact">
               <span
-                className={`status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}
+                className={`status-dot neuro-status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}
                 title={apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}
               />
               <span
-                className={`status-dot ${apiStatus?.ollama ? 'connected' : 'disconnected'}`}
+                className={`status-dot neuro-status-dot ${apiStatus?.ollama ? 'connected' : 'disconnected'}`}
                 title={apiStatus?.ollama ? 'LLM verbunden' : 'LLM getrennt'}
               />
             </div>
@@ -1010,6 +991,7 @@ function App() {
                   label: 'Analyse',
                   icon: '📊',
                   items: [
+                    { label: 'Übersicht', icon: '🏠', page: 'dashboard' },
                     { label: 'Analytics', icon: '📈', page: 'analytics' },
                     { label: 'Digest', icon: '📊', page: 'digest' },
                     { label: 'Graph', icon: '🕸️', page: 'knowledge-graph' },

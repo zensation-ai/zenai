@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import '../neurodesign.css';
 import './PageHeader.css';
 
 interface PageHeaderProps {
@@ -25,12 +26,13 @@ export function PageHeader({
   variant = 'default'
 }: PageHeaderProps) {
   return (
-    <header className={`page-header page-header-${variant}`}>
+    <header className={`page-header liquid-glass-dark page-header-${variant}`}>
       <div className="page-header-content">
         <div className="page-header-left">
           <button
             type="button"
-            className="page-back-button"
+            className="page-back-button neuro-press-effect neuro-focus-ring neuro-anticipate"
+            data-anticipate={backLabel}
             onClick={onBack}
             aria-label={backLabel}
           >

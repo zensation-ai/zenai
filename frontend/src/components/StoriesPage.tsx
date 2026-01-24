@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './StoriesPage.css';
+import '../neurodesign.css';
 
 interface StoryItem {
   id: string;
@@ -106,17 +107,18 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
 
   if (loading) {
     return (
-      <div className="stories-page">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Stories...</p>
+      <div className="stories-page neuro-page-enter">
+        <div className="neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Stories...</p>
+          <p className="neuro-loading-submessage">Deine Aktivitäten werden zusammengestellt</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="stories-page">
+    <div className="stories-page neuro-page-enter">
       <div className="stories-header">
         <button className="back-button" onClick={onBack}>
           ← Zurück
@@ -132,13 +134,14 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
       </p>
 
       {stories.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">📖</span>
-          <h3>Noch keine Stories</h3>
-          <p>Erstelle Ideen, lade Medien hoch oder plane Meetings, um Stories zu generieren.</p>
+        <div className="neuro-empty-state">
+          <span className="neuro-empty-icon">📖</span>
+          <h3 className="neuro-empty-title">Noch keine Stories</h3>
+          <p className="neuro-empty-description">Erstelle Ideen, lade Medien hoch oder plane Meetings, um Stories zu generieren.</p>
+          <p className="neuro-empty-encouragement">Jede Aktivität wird Teil deiner Geschichte.</p>
         </div>
       ) : (
-        <div className="stories-grid">
+        <div className="stories-grid neuro-flow-list">
           {stories.map(story => (
             <div
               key={story.id}

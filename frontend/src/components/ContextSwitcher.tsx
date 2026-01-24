@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import '../neurodesign.css';
 
 export type AIContext = 'personal' | 'work';
 
@@ -54,7 +55,7 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
   };
 
   return (
-    <div className="context-switcher" role="region" aria-label="Kontext-Auswahl">
+    <div className="context-switcher liquid-glass-nav" role="region" aria-label="Kontext-Auswahl">
       <div className="context-toggle" role="group" aria-label="Kontext wählen">
         <button
           type="button"
@@ -81,7 +82,7 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
       </div>
 
       {showSuggestion && suggestedContext && (
-        <div className="context-suggestion" role="alert" aria-live="polite">
+        <div className="context-suggestion neuro-tooltip-enhanced" role="alert" aria-live="polite">
           <span className="suggestion-text">
             Wechsel zu {suggestedContext === 'personal' ? '🏠 Privat' : '💼 Arbeit'}?
           </span>

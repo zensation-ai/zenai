@@ -1,14 +1,32 @@
 /**
- * Thought Incubator Page
+ * Thought Incubator Page - Neuro-UX Optimized 2026
  *
  * Displays loose thoughts that are incubating into structured ideas.
  * Shows clusters of related thoughts and allows consolidation.
+ *
+ * NEURO-UX PATTERNS APPLIED:
+ * - Miller's Law (7+/-2 items): Clusters limited per group, staggered animation
+ * - Dopamine Rewards: Variable celebration on consolidation
+ * - Progressive Disclosure: Expandable thought details
+ * - Flow-State: Smooth transitions, .neuro-flow-list animations
+ * - Anticipatory Design: Predictive tooltips, loading states
+ * - Cognitive Chunking: Visual grouping with .neuro-chunk
+ * - Emotional Design: Mood-based visuals, encouraging empty states
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import {
+  getTimeBasedGreeting,
+  getRandomReward,
+  getMotivationalMessage,
+  EMPTY_STATE_MESSAGES,
+  AI_PERSONALITY,
+  DOPAMINE_REWARDS,
+} from '../utils/aiPersonality';
 import './IncubatorPage.css';
+import '../neurodesign.css';
 
 interface LooseThought {
   id: string;
@@ -47,6 +65,39 @@ interface Props {
   onIdeaCreated?: (ideaId: string) => void;
 }
 
+/**
+ * NEURO-UX: Miller's Law - Limit visible items per chunk
+ * Human working memory handles 7+/-2 items optimally
+ */
+const MILLER_CHUNK_SIZE = 7;
+
+/**
+ * NEURO-UX: Calculate "freshness" mood based on cluster age
+ * Older clusters get a different visual treatment to encourage action
+ */
+function getClusterMood(updatedAt: string): 'fresh' | 'aging' | 'dormant' {
+  const daysSinceUpdate = Math.floor(
+    (Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  if (daysSinceUpdate <= 1) return 'fresh';
+  if (daysSinceUpdate <= 7) return 'aging';
+  return 'dormant';
+}
+
+/**
+ * NEURO-UX: Get mood-based styling class
+ */
+function getMoodClass(mood: 'fresh' | 'aging' | 'dormant'): string {
+  switch (mood) {
+    case 'fresh':
+      return 'cluster-mood-fresh';
+    case 'aging':
+      return 'cluster-mood-aging';
+    case 'dormant':
+      return 'cluster-mood-dormant';
+  }
+}
+
 export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
   const [clusters, setClusters] = useState<ThoughtCluster[]>([]);
   const [stats, setStats] = useState<IncubatorStats | null>(null);
@@ -55,10 +106,31 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [summarizing, setSummarizing] = useState<string | null>(null);
   const [consolidating, setConsolidating] = useState<string | null>(null);
+  // NEURO-UX: Progressive Disclosure - track expanded clusters
+  const [expandedClusters, setExpandedClusters] = useState<Set<string>>(new Set());
+  // NEURO-UX: Success celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationMessage, setCelebrationMessage] = useState<{ emoji: string; message: string } | null>(null);
+  // NEURO-UX: Track if user prefers reduced motion
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   // Refs for cleanup to prevent memory leaks
   const isMountedRef = useRef<boolean>(true);
   const timeoutRef = useRef<number | null>(null);
+  const celebrationTimeoutRef = useRef<number | null>(null);
+
+  // NEURO-UX: Check reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  // NEURO-UX: Context-aware greeting with time-based personalization
+  const greeting = useMemo(() => getTimeBasedGreeting(), []);
 
   const loadData = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -95,8 +167,34 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      if (celebrationTimeoutRef.current) {
+        clearTimeout(celebrationTimeoutRef.current);
+        celebrationTimeoutRef.current = null;
+      }
     };
   }, [loadData]);
+
+  /**
+   * NEURO-UX: Trigger dopamine celebration animation
+   * Variable rewards increase engagement (slot machine effect)
+   */
+  const triggerCelebration = useCallback((message: string, emoji: string) => {
+    if (prefersReducedMotion) {
+      // Reduced motion: just show toast
+      showToast(`${emoji} ${message}`, 'success');
+      return;
+    }
+
+    setCelebrationMessage({ emoji, message });
+    setShowCelebration(true);
+
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      if (isMountedRef.current) {
+        setShowCelebration(false);
+        setCelebrationMessage(null);
+      }
+    }, 2500);
+  }, [prefersReducedMotion]);
 
   const submitQuickThought = async () => {
     if (!quickThought.trim()) return;
@@ -109,6 +207,10 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
       });
       if (isMountedRef.current) {
         setQuickThought('');
+        // NEURO-UX: Variable reward on thought submission
+        const reward = getRandomReward('ideaCreated');
+        showToast(`${reward.emoji} ${reward.message}`, 'success');
+
         // Reload after short delay to allow processing - with cleanup
         timeoutRef.current = window.setTimeout(() => {
           if (isMountedRef.current) {
@@ -160,7 +262,11 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
       const response = await axios.post(`/api/incubator/clusters/${clusterId}/consolidate`);
       // Remove from list and refresh
       if (isMountedRef.current) {
-        showToast('Idee wurde erstellt!', 'success');
+        // NEURO-UX: Dopamine celebration on consolidation
+        const milestoneRewards = DOPAMINE_REWARDS.milestoneReached;
+        const randomMilestone = milestoneRewards[Math.floor(Math.random() * milestoneRewards.length)];
+        triggerCelebration('Idee erfolgreich erstellt!', randomMilestone.emoji);
+
         loadData();
         if (onIdeaCreated) {
           onIdeaCreated(response.data.ideaId);
@@ -193,6 +299,21 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
     }
   };
 
+  /**
+   * NEURO-UX: Progressive Disclosure - toggle cluster expansion
+   */
+  const toggleClusterExpansion = (clusterId: string) => {
+    setExpandedClusters(prev => {
+      const next = new Set(prev);
+      if (next.has(clusterId)) {
+        next.delete(clusterId);
+      } else {
+        next.add(clusterId);
+      }
+      return next;
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ready': return '#22c55e';
@@ -213,13 +334,22 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
 
   const getTypeIcon = (type?: string) => {
     switch (type) {
-      case 'idea': return '💡';
-      case 'task': return '✅';
-      case 'insight': return '🔍';
-      case 'problem': return '⚠️';
-      case 'question': return '❓';
-      default: return '💭';
+      case 'idea': return '\u{1F4A1}';
+      case 'task': return '\u2705';
+      case 'insight': return '\u{1F50D}';
+      case 'problem': return '\u26A0\uFE0F';
+      case 'question': return '\u2753';
+      default: return '\u{1F4AD}';
     }
+  };
+
+  /**
+   * NEURO-UX: Calculate days since last update for urgency indicator
+   */
+  const getDaysSinceUpdate = (dateString: string): number => {
+    return Math.floor(
+      (Date.now() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24)
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -234,29 +364,63 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
   const readyClusters = clusters.filter(c => c.status === 'ready');
   const growingClusters = clusters.filter(c => c.status === 'growing');
 
+  // NEURO-UX: Miller's Law - chunk clusters for cognitive ease
+  const chunkedReadyClusters = readyClusters.slice(0, MILLER_CHUNK_SIZE);
+  const hasMoreReadyClusters = readyClusters.length > MILLER_CHUNK_SIZE;
+  const chunkedGrowingClusters = growingClusters.slice(0, MILLER_CHUNK_SIZE);
+  const hasMoreGrowingClusters = growingClusters.length > MILLER_CHUNK_SIZE;
+
   return (
-    <div className="incubator-page">
-      <header className="incubator-header">
-        <button className="back-button" onClick={onBack}>
-          &larr; Zurück
+    <div className="incubator-page neuro-page-enter">
+      {/* NEURO-UX: Success Celebration Overlay */}
+      {showCelebration && celebrationMessage && (
+        <div className="neuro-variable-reward" role="alert" aria-live="polite">
+          <span className="reward-emoji">{celebrationMessage.emoji}</span>
+          <span>{celebrationMessage.message}</span>
+        </div>
+      )}
+
+      <header className="incubator-header liquid-glass-dark">
+        <button
+          className="back-button neuro-hover-lift neuro-anticipate"
+          onClick={onBack}
+          data-anticipate="Zurueck zur Uebersicht"
+          aria-label="Zurueck zur Hauptseite"
+        >
+          &larr; Zurueck
         </button>
         <div className="header-title">
-          <h1>Gedanken-Inkubator</h1>
-          <span className="subtitle">Lose Gedanken, die zu Ideen reifen</span>
+          {/* NEURO-UX: Personalized greeting based on time of day */}
+          <h1 className="neuro-greeting-adaptive">
+            <span className="greeting-emoji" aria-hidden="true">{greeting.emoji}</span>
+            {' '}Gedanken-Inkubator
+          </h1>
+          <span className="subtitle neuro-subtext-emotional">
+            {greeting.subtext}
+          </span>
         </div>
-        <button className="refresh-button" onClick={loadData}>
-          ↻ Aktualisieren
+        <button
+          className="refresh-button neuro-hover-lift neuro-anticipate"
+          onClick={loadData}
+          data-anticipate="Daten aktualisieren"
+          aria-label="Inkubator aktualisieren"
+        >
+          &#8635; Aktualisieren
         </button>
       </header>
 
-      {/* Quick Input */}
+      {/* NEURO-UX: Quick Input with anticipatory design */}
       <section className="quick-input-section">
-        <div className="quick-input-card">
+        <div className="quick-input-card liquid-glass neuro-chunk">
           <h2>Schneller Gedanke</h2>
-          <p className="hint">Keine Struktur nötig - einfach reinbrabbeln!</p>
+          {/* NEURO-UX: Encouraging hint with personality */}
+          <p className="hint neuro-inspirational">
+            Keine Struktur noetig - {AI_PERSONALITY.name} kuemmert sich darum!
+          </p>
           <div className="quick-input-container">
             <textarea
-              placeholder="Was geht dir durch den Kopf..."
+              className="liquid-glass-input neuro-placeholder-animated"
+              placeholder={greeting.suggestedAction || 'Was geht dir durch den Kopf...'}
               value={quickThought}
               onChange={(e) => setQuickThought(e.target.value)}
               onKeyDown={(e) => {
@@ -266,34 +430,44 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
               }}
               disabled={submitting}
               rows={2}
+              aria-label="Gedanke eingeben"
             />
             <button
-              className="submit-thought-button"
+              className={`submit-thought-button neuro-button ${submitting ? '' : 'neuro-pulse-interactive'}`}
               onClick={submitQuickThought}
               disabled={submitting || !quickThought.trim()}
+              aria-label={submitting ? 'Wird gespeichert...' : 'Gedanke inkubieren'}
             >
-              {submitting ? '...' : 'Inkubieren'}
+              {submitting ? (
+                <span className="neuro-typing">
+                  <span className="neuro-typing-dot" aria-hidden="true"></span>
+                  <span className="neuro-typing-dot" aria-hidden="true"></span>
+                  <span className="neuro-typing-dot" aria-hidden="true"></span>
+                </span>
+              ) : (
+                'Inkubieren'
+              )}
             </button>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
+      {/* NEURO-UX: Stats with cognitive chunking */}
       {stats && (
-        <section className="incubator-stats">
-          <div className="stat-card">
+        <section className="incubator-stats neuro-flow-list" aria-label="Inkubator-Statistiken">
+          <div className="stat-card neuro-chunk neuro-stagger-item">
             <span className="stat-value">{stats.total_thoughts}</span>
             <span className="stat-label">Gedanken</span>
           </div>
-          <div className="stat-card">
+          <div className="stat-card neuro-chunk neuro-stagger-item">
             <span className="stat-value">{stats.growing_clusters}</span>
             <span className="stat-label">Wachsend</span>
           </div>
-          <div className="stat-card highlight">
+          <div className="stat-card highlight neuro-chunk neuro-stagger-item neuro-heartbeat">
             <span className="stat-value">{stats.ready_clusters}</span>
             <span className="stat-label">Bereit</span>
           </div>
-          <div className="stat-card">
+          <div className="stat-card neuro-chunk neuro-stagger-item">
             <span className="stat-value">{stats.consolidated_clusters}</span>
             <span className="stat-label">Konsolidiert</span>
           </div>
@@ -301,147 +475,325 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
       )}
 
       {loading ? (
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Inkubator...</p>
+        /* NEURO-UX: Anticipatory loading with skeleton */
+        <div className="loading-state neuro-loading-contextual" aria-live="polite" aria-busy="true">
+          <div className="neuro-loading-spinner" aria-hidden="true" />
+          <p className="neuro-loading-message">Lade Inkubator...</p>
+          <p className="neuro-loading-submessage">Deine Gedanken werden organisiert</p>
+          {/* Skeleton preview */}
+          <div className="skeleton-preview" style={{ marginTop: '2rem', width: '100%', maxWidth: '400px' }}>
+            <div className="neuro-skeleton" style={{ height: '80px', marginBottom: '1rem' }} aria-hidden="true" />
+            <div className="neuro-skeleton" style={{ height: '80px', marginBottom: '1rem' }} aria-hidden="true" />
+            <div className="neuro-skeleton" style={{ height: '80px' }} aria-hidden="true" />
+          </div>
         </div>
       ) : (
         <>
-          {/* Ready Clusters */}
-          {readyClusters.length > 0 && (
-            <section className="clusters-section ready-section">
-              <h2>
-                <span className="section-icon">✨</span>
+          {/* NEURO-UX: Ready Clusters - Flow list with staggered animation */}
+          {chunkedReadyClusters.length > 0 && (
+            <section className="clusters-section ready-section neuro-chunk" aria-labelledby="ready-clusters-heading">
+              <h2 id="ready-clusters-heading">
+                <span className="section-icon" aria-hidden="true">&#10024;</span>
                 Bereit zur Konsolidierung
                 <span className="badge">{readyClusters.length}</span>
               </h2>
-              <div className="clusters-grid">
-                {readyClusters.map((cluster) => (
-                  <div key={cluster.id} className="cluster-card ready">
-                    <div className="cluster-header">
-                      <span className="cluster-status" style={{ background: getStatusColor(cluster.status) }}>
-                        {getStatusLabel(cluster.status)}
-                      </span>
-                      <span className="thought-count">{cluster.thought_count} Gedanken</span>
-                    </div>
+              <div className="clusters-grid neuro-flow-list">
+                {chunkedReadyClusters.map((cluster, index) => {
+                  const mood = getClusterMood(cluster.updated_at);
+                  const daysSince = getDaysSinceUpdate(cluster.updated_at);
+                  const isExpanded = expandedClusters.has(cluster.id);
 
-                    {cluster.title ? (
-                      <div className="cluster-content">
-                        <h3>
-                          <span className="type-icon">{getTypeIcon(cluster.suggested_type)}</span>
-                          {cluster.title}
-                        </h3>
-                        <p className="cluster-summary">{cluster.summary}</p>
-                        <div className="cluster-meta">
-                          <span className="category-badge">{cluster.suggested_category}</span>
-                          <span className="maturity">
-                            Reife: {Math.round(cluster.maturity_score * 100)}%
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="cluster-content pending">
-                        <p>Zusammenfassung wird noch generiert...</p>
-                        <button
-                          className="summarize-button"
-                          onClick={() => generateSummary(cluster.id)}
-                          disabled={summarizing === cluster.id}
+                  return (
+                    <article
+                      key={cluster.id}
+                      className={`cluster-card ready liquid-glass neuro-hover-lift neuro-focus-indicator ${getMoodClass(mood)}`}
+                      style={{ '--stagger-index': index } as React.CSSProperties}
+                      aria-labelledby={`cluster-title-${cluster.id}`}
+                    >
+                      <div className="cluster-header">
+                        <span
+                          className="cluster-status"
+                          style={{ background: getStatusColor(cluster.status) }}
+                          aria-label={`Status: ${getStatusLabel(cluster.status)}`}
                         >
-                          {summarizing === cluster.id ? 'Analysiere...' : 'Zusammenfassen'}
+                          {getStatusLabel(cluster.status)}
+                        </span>
+                        <span className="thought-count">{cluster.thought_count} Gedanken</span>
+                      </div>
+
+                      {/* NEURO-UX: Urgency indicator for dormant clusters */}
+                      {mood === 'dormant' && (
+                        <div className="dormant-reminder neuro-suggested-action" role="status">
+                          <span aria-hidden="true">&#128161;</span>
+                          Seit {daysSince} Tagen nicht angesehen
+                        </div>
+                      )}
+
+                      {cluster.title ? (
+                        <div className="cluster-content">
+                          <h3 id={`cluster-title-${cluster.id}`}>
+                            <span className="type-icon" aria-hidden="true">{getTypeIcon(cluster.suggested_type)}</span>
+                            {cluster.title}
+                          </h3>
+                          <p className="cluster-summary">{cluster.summary}</p>
+                          <div className="cluster-meta">
+                            <span className="category-badge">{cluster.suggested_category}</span>
+                            <span className="maturity">
+                              Reife: {Math.round(cluster.maturity_score * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="cluster-content pending">
+                          <p>Zusammenfassung wird noch generiert...</p>
+                          <button
+                            className="summarize-button neuro-button"
+                            onClick={() => generateSummary(cluster.id)}
+                            disabled={summarizing === cluster.id}
+                            aria-busy={summarizing === cluster.id}
+                          >
+                            {summarizing === cluster.id ? 'Analysiere...' : 'Zusammenfassen'}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* NEURO-UX: Progressive Disclosure for thoughts */}
+                      <div className="cluster-thoughts">
+                        <button
+                          className="thoughts-toggle neuro-color-transition"
+                          onClick={() => toggleClusterExpansion(cluster.id)}
+                          aria-expanded={isExpanded}
+                          aria-controls={`thoughts-list-${cluster.id}`}
+                        >
+                          <h4>
+                            Enthaltene Gedanken ({cluster.thoughts.length})
+                            <span className="toggle-icon" aria-hidden="true">
+                              {isExpanded ? ' \u25BC' : ' \u25B6'}
+                            </span>
+                          </h4>
+                        </button>
+                        <ul
+                          id={`thoughts-list-${cluster.id}`}
+                          className={`neuro-expandable ${isExpanded ? 'expanded' : ''}`}
+                        >
+                          {cluster.thoughts.slice(0, isExpanded ? undefined : 3).map((thought, thoughtIndex) => (
+                            <li
+                              key={thought.id}
+                              className={isExpanded ? 'neuro-stagger-item' : ''}
+                              style={{ '--stagger-index': thoughtIndex } as React.CSSProperties}
+                            >
+                              <span className="thought-text">{thought.raw_input}</span>
+                              <span className="thought-date">{formatDate(thought.created_at)}</span>
+                            </li>
+                          ))}
+                          {!isExpanded && cluster.thoughts.length > 3 && (
+                            <li className="more">+{cluster.thoughts.length - 3} weitere</li>
+                          )}
+                        </ul>
+                      </div>
+
+                      <div className="cluster-actions">
+                        <button
+                          className={`consolidate-button neuro-button ${consolidating === cluster.id ? '' : 'neuro-anticipate'}`}
+                          onClick={() => consolidateCluster(cluster.id)}
+                          disabled={consolidating === cluster.id || !cluster.title}
+                          data-anticipate="Erstellt eine strukturierte Idee"
+                          aria-busy={consolidating === cluster.id}
+                        >
+                          {consolidating === cluster.id ? (
+                            <span className="neuro-typing">
+                              <span className="neuro-typing-dot" aria-hidden="true"></span>
+                              <span className="neuro-typing-dot" aria-hidden="true"></span>
+                              <span className="neuro-typing-dot" aria-hidden="true"></span>
+                            </span>
+                          ) : (
+                            'Zur Idee machen'
+                          )}
+                        </button>
+                        <button
+                          className="dismiss-button neuro-hover-lift neuro-anticipate"
+                          onClick={() => dismissCluster(cluster.id)}
+                          data-anticipate="Cluster dauerhaft entfernen"
+                          aria-label="Cluster verwerfen"
+                        >
+                          Verwerfen
                         </button>
                       </div>
-                    )}
-
-                    <div className="cluster-thoughts">
-                      <h4>Enthaltene Gedanken:</h4>
-                      <ul>
-                        {cluster.thoughts.slice(0, 3).map((thought) => (
-                          <li key={thought.id}>
-                            <span className="thought-text">{thought.raw_input}</span>
-                            <span className="thought-date">{formatDate(thought.created_at)}</span>
-                          </li>
-                        ))}
-                        {cluster.thoughts.length > 3 && (
-                          <li className="more">+{cluster.thoughts.length - 3} weitere</li>
-                        )}
-                      </ul>
-                    </div>
-
-                    <div className="cluster-actions">
-                      <button
-                        className="consolidate-button"
-                        onClick={() => consolidateCluster(cluster.id)}
-                        disabled={consolidating === cluster.id || !cluster.title}
-                      >
-                        {consolidating === cluster.id ? 'Konsolidiere...' : 'Zur Idee machen'}
-                      </button>
-                      <button
-                        className="dismiss-button"
-                        onClick={() => dismissCluster(cluster.id)}
-                      >
-                        Verwerfen
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
+              {/* NEURO-UX: Miller's Law - Show "more" indicator */}
+              {hasMoreReadyClusters && (
+                <div className="more-clusters-hint neuro-inspirational">
+                  <span aria-hidden="true">&#8595;</span> {readyClusters.length - MILLER_CHUNK_SIZE} weitere Cluster verfuegbar
+                </div>
+              )}
             </section>
           )}
 
-          {/* Growing Clusters */}
-          {growingClusters.length > 0 && (
-            <section className="clusters-section growing-section">
-              <h2>
-                <span className="section-icon">🌱</span>
+          {/* NEURO-UX: Growing Clusters - Compact view with flow animations */}
+          {chunkedGrowingClusters.length > 0 && (
+            <section className="clusters-section growing-section neuro-chunk" aria-labelledby="growing-clusters-heading">
+              <h2 id="growing-clusters-heading">
+                <span className="section-icon" aria-hidden="true">&#127793;</span>
                 Wachsende Themen
                 <span className="badge muted">{growingClusters.length}</span>
               </h2>
-              <div className="clusters-grid compact">
-                {growingClusters.map((cluster) => (
-                  <div key={cluster.id} className="cluster-card growing">
-                    <div className="cluster-header">
-                      <span className="cluster-status" style={{ background: getStatusColor(cluster.status) }}>
-                        {getStatusLabel(cluster.status)}
-                      </span>
-                      <span className="thought-count">{cluster.thought_count} Gedanken</span>
-                    </div>
+              <div className="clusters-grid compact neuro-flow-list">
+                {chunkedGrowingClusters.map((cluster, index) => {
+                  const mood = getClusterMood(cluster.updated_at);
 
-                    <div className="cluster-preview">
-                      {cluster.thoughts.slice(0, 2).map((thought) => (
-                        <p key={thought.id} className="preview-thought">
-                          "{thought.raw_input.substring(0, 60)}..."
-                        </p>
-                      ))}
-                    </div>
+                  return (
+                    <article
+                      key={cluster.id}
+                      className={`cluster-card growing liquid-glass neuro-hover-lift neuro-focus-indicator ${getMoodClass(mood)}`}
+                      style={{ '--stagger-index': index } as React.CSSProperties}
+                    >
+                      <div className="cluster-header">
+                        <span
+                          className="cluster-status"
+                          style={{ background: getStatusColor(cluster.status) }}
+                          aria-label={`Status: ${getStatusLabel(cluster.status)}`}
+                        >
+                          {getStatusLabel(cluster.status)}
+                        </span>
+                        <span className="thought-count">{cluster.thought_count} Gedanken</span>
+                      </div>
 
-                    <div className="cluster-progress">
-                      <div
-                        className="progress-bar"
-                        style={{ width: `${cluster.maturity_score * 100}%` }}
-                      />
-                      <span className="progress-label">
-                        {Math.round(cluster.maturity_score * 100)}% Reife
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                      <div className="cluster-preview">
+                        {cluster.thoughts.slice(0, 2).map((thought) => (
+                          <p key={thought.id} className="preview-thought">
+                            "{thought.raw_input.length > 60
+                              ? thought.raw_input.substring(0, 60) + '...'
+                              : thought.raw_input}"
+                          </p>
+                        ))}
+                      </div>
+
+                      {/* NEURO-UX: Progress indicator with neuro styling */}
+                      <div className="cluster-progress neuro-progress-indicator" role="progressbar" aria-valuenow={Math.round(cluster.maturity_score * 100)} aria-valuemin={0} aria-valuemax={100}>
+                        <div
+                          className="progress-bar neuro-progress-bar"
+                          style={{ width: `${cluster.maturity_score * 100}%` }}
+                        />
+                        <span className="progress-label">
+                          {Math.round(cluster.maturity_score * 100)}% Reife
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
+              {/* NEURO-UX: Miller's Law - Show "more" indicator */}
+              {hasMoreGrowingClusters && (
+                <div className="more-clusters-hint neuro-inspirational">
+                  <span aria-hidden="true">&#8595;</span> {growingClusters.length - MILLER_CHUNK_SIZE} weitere Cluster wachsen
+                </div>
+              )}
             </section>
           )}
 
-          {/* Empty State */}
+          {/* NEURO-UX: Emotional Empty State with personality */}
           {clusters.length === 0 && (
-            <div className="empty-state">
-              <span className="empty-icon">🧠</span>
-              <h3>Der Inkubator ist leer</h3>
-              <p>
-                Gib oben einen schnellen Gedanken ein. Das System findet automatisch
-                Muster und gruppiert ähnliche Gedanken zu Themen.
+            <div className="empty-state neuro-empty-state neuro-human-fade-in" role="status">
+              <span className="empty-icon neuro-empty-icon neuro-breathing" aria-hidden="true">&#129504;</span>
+              <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.ideas.title}</h3>
+              <p className="neuro-empty-description">
+                Gib oben einen schnellen Gedanken ein. {AI_PERSONALITY.name} findet automatisch
+                Muster und gruppiert aehnliche Gedanken zu Themen.
+              </p>
+              {/* NEURO-UX: Motivational message for encouragement */}
+              <p className="neuro-empty-encouragement neuro-inspirational">
+                {getMotivationalMessage('firstTime')}
               </p>
             </div>
           )}
         </>
       )}
+
+      {/* NEURO-UX: Inline styles for mood-based cluster styling */}
+      <style>{`
+        /* Mood-based cluster styling - Neuro-UX Emotional Design */
+        .cluster-mood-fresh {
+          border-left: 3px solid var(--neuro-success, #10b981);
+        }
+        .cluster-mood-aging {
+          border-left: 3px solid var(--neuro-anticipation, #8b5cf6);
+        }
+        .cluster-mood-dormant {
+          border-left: 3px solid var(--neuro-reward, #ff6b35);
+        }
+
+        .dormant-reminder {
+          margin: 0.5rem 0 1rem;
+          font-size: 0.8rem;
+        }
+
+        .thoughts-toggle {
+          background: none;
+          border: none;
+          width: 100%;
+          text-align: left;
+          cursor: pointer;
+          padding: 0;
+          color: inherit;
+        }
+
+        .thoughts-toggle h4 {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin: 0 0 0.5rem;
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          font-weight: 500;
+        }
+
+        .toggle-icon {
+          font-size: 0.7rem;
+          opacity: 0.7;
+          transition: transform var(--neuro-timing-quick, 150ms) ease;
+        }
+
+        .thoughts-toggle[aria-expanded="true"] .toggle-icon {
+          transform: rotate(0deg);
+        }
+
+        .more-clusters-hint {
+          text-align: center;
+          margin-top: 1.5rem;
+          padding: 0.75rem;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+        }
+
+        .greeting-emoji {
+          font-size: 1.2em;
+        }
+
+        /* Ensure stagger animation respects index */
+        [style*="--stagger-index"] {
+          animation-delay: calc(var(--stagger-index, 0) * 60ms);
+        }
+
+        /* Reduced motion: instant transitions */
+        @media (prefers-reduced-motion: reduce) {
+          .cluster-card,
+          .stat-card,
+          .neuro-stagger-item {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+
+          .neuro-breathing,
+          .neuro-heartbeat,
+          .neuro-pulse-interactive {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

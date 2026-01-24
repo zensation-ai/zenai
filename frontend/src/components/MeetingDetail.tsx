@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Meeting } from './MeetingCard';
 import './MeetingDetail.css';
+import '../neurodesign.css';
 
 interface MeetingNotes {
   id: string;
@@ -150,9 +151,9 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
   };
 
   return (
-    <div className="meeting-detail-overlay" onClick={onClose}>
-      <div className="meeting-detail-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>×</button>
+    <div className="meeting-detail-overlay neuro-focus-mode active" onClick={onClose}>
+      <div className="meeting-detail-modal liquid-glass neuro-human-fade-in" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="close-button neuro-press-effect" onClick={onClose}>×</button>
 
         <div className="detail-header">
           <h2>{meeting.title}</h2>
@@ -180,7 +181,7 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
 
         {/* Notes Section */}
         {notes ? (
-          <div className="notes-content">
+          <div className="notes-content neuro-flow-list">
             <div className="notes-header">
               <h3>Meeting Notizen</h3>
               <span className="sentiment">
@@ -188,29 +189,29 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
               </span>
             </div>
 
-            <div className="notes-section">
+            <div className="notes-section neuro-stagger-item">
               <h4>Zusammenfassung</h4>
-              <p>{notes.structured_summary}</p>
+              <p className="neuro-motivational">{notes.structured_summary}</p>
             </div>
 
             {notes.topics_discussed.length > 0 && (
-              <div className="notes-section">
+              <div className="notes-section neuro-stagger-item">
                 <h4>Besprochene Themen</h4>
                 <ul className="topics-list">
                   {notes.topics_discussed.map((topic, i) => (
-                    <li key={i}>{topic}</li>
+                    <li key={i} className="neuro-stagger-item">{topic}</li>
                   ))}
                 </ul>
               </div>
             )}
 
             {notes.key_decisions.length > 0 && (
-              <div className="notes-section">
+              <div className="notes-section neuro-stagger-item">
                 <h4>Entscheidungen</h4>
                 <ul className="decisions-list">
                   {notes.key_decisions.map((decision, i) => (
-                    <li key={i}>
-                      <span className="decision-icon">✓</span>
+                    <li key={i} className="neuro-stagger-item">
+                      <span className="decision-icon neuro-reward-badge">✓</span>
                       {decision}
                     </li>
                   ))}
@@ -279,7 +280,8 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
 
               <div className="notes-actions">
                 <button
-                  className={`record-button ${isRecording ? 'recording' : ''}`}
+                  type="button"
+                  className={`record-button neuro-press-effect ${isRecording ? 'recording neuro-heartbeat' : ''}`}
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={processing}
                 >
@@ -291,7 +293,8 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
                 )}
 
                 <button
-                  className="process-button"
+                  type="button"
+                  className="process-button neuro-button"
                   onClick={processNotes}
                   disabled={processing || (!transcript.trim() && audioChunks.length === 0)}
                 >

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './AutomationDashboard.css';
 
 interface AutomationDashboardProps {
@@ -85,6 +87,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export function AutomationDashboard({ context, onBack }: AutomationDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [suggestions, setSuggestions] = useState<AutomationSuggestion[]>([]);
   const [stats, setStats] = useState<AutomationStats | null>(null);
@@ -214,21 +217,28 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
 
   if (loading) {
     return (
-      <div className="automation-dashboard">
-        <header className="automation-header">
-          <button type="button" className="back-btn" onClick={onBack}>← Zurück</button>
+      <div className="automation-dashboard neuro-page-enter">
+        <header className="automation-header liquid-glass-nav">
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
           <h1>Automationen</h1>
         </header>
-        <div className="loading-state">Lade Automationen...</div>
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Automationen...</p>
+          <p className="neuro-loading-submessage">Workflows werden analysiert</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="automation-dashboard">
-      <header className="automation-header">
-        <button type="button" className="back-btn" onClick={onBack}>← Zurück</button>
-        <h1>Automationen</h1>
+    <div className="automation-dashboard neuro-page-enter">
+      <header className="automation-header liquid-glass-nav">
+        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} Automationen</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
       </header>
 
@@ -241,22 +251,22 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
 
       {/* Quick Stats */}
       {stats && (
-        <div className="quick-stats">
-          <div className="stat-item">
+        <div className="quick-stats neuro-flow-list">
+          <div className="stat-item liquid-glass neuro-hover-lift">
             <span className="stat-value">{stats.active_automations}</span>
             <span className="stat-label">Aktiv</span>
           </div>
-          <div className="stat-item">
+          <div className="stat-item liquid-glass neuro-hover-lift">
             <span className="stat-value">{stats.total_executions}</span>
-            <span className="stat-label">Ausführungen</span>
+            <span className="stat-label">Ausfuhrungen</span>
           </div>
-          <div className="stat-item">
+          <div className="stat-item liquid-glass neuro-hover-lift">
             <span className="stat-value">{Math.round(stats.success_rate * 100)}%</span>
             <span className="stat-label">Erfolgsrate</span>
           </div>
-          <div className="stat-item highlight">
+          <div className="stat-item highlight liquid-glass neuro-hover-lift neuro-pulse-interactive">
             <span className="stat-value">{stats.pending_suggestions}</span>
-            <span className="stat-label">Vorschläge</span>
+            <span className="stat-label">Vorschlage</span>
           </div>
         </div>
       )}
@@ -289,17 +299,20 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
       {/* Content */}
       <div className="tab-content">
         {activeTab === 'automations' && (
-          <div className="automations-list">
+          <div className="automations-list neuro-flow-list">
             {automations.length === 0 ? (
-              <div className="empty-state">
-                <p>Noch keine Automationen erstellt.</p>
-                <p className="hint">Schau dir die Vorschläge an - das System erkennt Muster in deiner Nutzung.</p>
+              <div className="empty-state neuro-empty-state">
+                <span className="neuro-empty-icon">🤖</span>
+                <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.personalization.title}</h3>
+                <p className="neuro-empty-description">Schau dir die Vorschlage an - das System erkennt Muster in deiner Nutzung.</p>
+                <p className="neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.personalization.encouragement}</p>
               </div>
             ) : (
-              automations.map((automation) => (
+              automations.slice(0, 7).map((automation, index) => (
                 <div
                   key={automation.id}
-                  className={`automation-card ${!automation.is_active ? 'inactive' : ''} ${selectedAutomation?.id === automation.id ? 'selected' : ''}`}
+                  className={`automation-card liquid-glass neuro-hover-lift neuro-stagger-item ${!automation.is_active ? 'inactive' : ''} ${selectedAutomation?.id === automation.id ? 'selected' : ''}`}
+                  style={{ animationDelay: `${index * 50}ms` }}
                   onClick={() => setSelectedAutomation(selectedAutomation?.id === automation.id ? null : automation)}
                 >
                   <div className="automation-header-row">
@@ -382,29 +395,30 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
 
         {activeTab === 'suggestions' && (
           <div className="suggestions-section">
-            <div className="suggestions-header">
+            <div className="suggestions-header liquid-glass">
               <p className="suggestions-intro">
-                Basierend auf deinen Nutzungsmustern schlägt die KI folgende Automationen vor:
+                Basierend auf deinen Nutzungsmustern schlagt die KI folgende Automationen vor:
               </p>
               <button
                 type="button"
-                className="generate-btn"
+                className="generate-btn neuro-button"
                 onClick={handleGenerateSuggestions}
                 disabled={generating}
               >
-                {generating ? 'Analysiere...' : '🔄 Neue Vorschläge generieren'}
+                {generating ? 'Analysiere...' : '🔄 Neue Vorschlage generieren'}
               </button>
             </div>
 
             {suggestions.length === 0 ? (
-              <div className="empty-state">
-                <p>Keine offenen Vorschläge.</p>
-                <p className="hint">Das System analysiert kontinuierlich deine Nutzung und schlägt passende Automationen vor.</p>
+              <div className="empty-state neuro-empty-state">
+                <span className="neuro-empty-icon">✨</span>
+                <h3 className="neuro-empty-title">Keine offenen Vorschlage</h3>
+                <p className="neuro-empty-description">Das System analysiert kontinuierlich deine Nutzung und schlagt passende Automationen vor.</p>
               </div>
             ) : (
-              <div className="suggestions-list">
-                {suggestions.map((suggestion) => (
-                  <div key={suggestion.id} className="suggestion-card">
+              <div className="suggestions-list neuro-flow-list">
+                {suggestions.slice(0, 7).map((suggestion, index) => (
+                  <div key={suggestion.id} className="suggestion-card liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                     <div className="suggestion-header">
                       <h3>{suggestion.name}</h3>
                       <span className="confidence-badge">
@@ -425,14 +439,14 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                     <div className="suggestion-actions">
                       <button
                         type="button"
-                        className="accept-btn"
+                        className="accept-btn neuro-button"
                         onClick={() => handleAcceptSuggestion(suggestion.id)}
                       >
                         ✓ Akzeptieren
                       </button>
                       <button
                         type="button"
-                        className="dismiss-btn"
+                        className="dismiss-btn neuro-hover-lift"
                         onClick={() => handleDismissSuggestion(suggestion.id)}
                       >
                         ✕ Ablehnen
@@ -447,9 +461,9 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
 
         {activeTab === 'stats' && stats && (
           <div className="stats-section">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <h4>Übersicht</h4>
+            <div className="stats-grid neuro-flow-list">
+              <div className="stat-card liquid-glass neuro-stagger-item">
+                <h4>Ubersicht</h4>
                 <div className="stat-rows">
                   <div className="stat-row">
                     <span>Gesamt Automationen</span>
@@ -460,7 +474,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                     <span>{stats.active_automations}</span>
                   </div>
                   <div className="stat-row">
-                    <span>Gesamt Ausführungen</span>
+                    <span>Gesamt Ausfuhrungen</span>
                     <span>{stats.total_executions}</span>
                   </div>
                   <div className="stat-row">
@@ -474,13 +488,14 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                 </div>
               </div>
 
-              <div className="stat-card">
+              <div className="stat-card liquid-glass neuro-stagger-item">
                 <h4>Nach Trigger-Typ</h4>
                 <div className="stat-rows">
                   {Object.entries(stats.automations_by_trigger)
                     .filter(([, count]) => count > 0)
+                    .slice(0, 7)
                     .map(([type, count]) => (
-                      <div key={type} className="stat-row">
+                      <div key={type} className="stat-row neuro-stagger-item">
                         <span>{TRIGGER_LABELS[type]?.icon} {TRIGGER_LABELS[type]?.label || type}</span>
                         <span>{count}</span>
                       </div>
@@ -489,14 +504,14 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
               </div>
 
               {stats.top_automations.length > 0 && (
-                <div className="stat-card wide">
+                <div className="stat-card wide liquid-glass neuro-stagger-item">
                   <h4>Top Automationen</h4>
-                  <div className="top-list">
-                    {stats.top_automations.map((auto, i) => (
-                      <div key={auto.id} className="top-item">
+                  <div className="top-list neuro-flow-list">
+                    {stats.top_automations.slice(0, 5).map((auto, i) => (
+                      <div key={auto.id} className="top-item neuro-hover-lift neuro-stagger-item">
                         <span className="rank">#{i + 1}</span>
                         <span className="name">{auto.name}</span>
-                        <span className="runs">{auto.run_count} Ausführungen</span>
+                        <span className="runs">{auto.run_count} Ausfuhrungen</span>
                         <span className="rate">{Math.round(auto.success_rate * 100)}%</span>
                       </div>
                     ))}

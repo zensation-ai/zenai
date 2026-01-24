@@ -6,8 +6,10 @@ import {
   AI_AVATAR,
   EMPTY_STATE_MESSAGES,
   getRandomMessage,
+  FEEDBACK_REACTIONS,
 } from '../utils/aiPersonality';
 import './PersonalizationChat.css';
+import '../neurodesign.css';
 
 interface ChatMessage {
   id: string;
@@ -155,7 +157,8 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
       // Refresh facts if new ones were learned
       if (res.data.new_facts && res.data.new_facts.length > 0) {
         setFacts(prev => [...res.data.new_facts, ...prev]);
-        showToast(`${res.data.new_facts.length} neue(s) Fakt(en) gelernt!`, 'success');
+        const reaction = FEEDBACK_REACTIONS.positive[Math.floor(Math.random() * FEEDBACK_REACTIONS.positive.length)];
+        showToast(`${res.data.new_facts.length} neue(s) Fakt(en) gelernt! ${reaction}`, 'success');
       }
     } catch (err) {
       const message = axios.isAxiosError(err)
@@ -223,7 +226,7 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
   return (
     <div className="personalization-chat">
       <div className="chat-header">
-        <button className="back-button" onClick={onBack}>
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
           ← Zurück
         </button>
         <h1>{AI_AVATAR.emoji} {AI_PERSONALITY.name} lernt dich kennen</h1>
@@ -235,20 +238,23 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
       {/* Tabs */}
       <div className="chat-tabs">
         <button
-          className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'chat' ? 'active' : ''}`}
           onClick={() => setActiveTab('chat')}
         >
           💬 Chat
         </button>
         <button
-          className={`tab-btn ${activeTab === 'facts' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'facts' ? 'active' : ''}`}
           onClick={() => setActiveTab('facts')}
         >
           📚 Fakten
-          {facts.length > 0 && <span className="badge">{facts.length}</span>}
+          {facts.length > 0 && <span className="badge neuro-reward-badge">{facts.length}</span>}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'summary' ? 'active' : ''}`}
           onClick={() => setActiveTab('summary')}
         >
           📋 Zusammenfassung
@@ -279,11 +285,11 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
           )}
 
           {/* Messages */}
-          <div className="messages-container">
+          <div className="messages-container neuro-flow-list">
             {messages.map(message => (
               <div
                 key={message.id}
-                className={`message ${message.role}`}
+                className={`message ${message.role} neuro-human-fade-in`}
               >
                 <div className="message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}>
                   {message.role === 'assistant' ? AI_AVATAR.emoji : '👤'}
@@ -300,17 +306,17 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
               </div>
             ))}
             {sending && (
-              <div className="message assistant">
+              <div className="message assistant neuro-human-fade-in">
                 <div className="message-avatar" title={AI_PERSONALITY.name}>{AI_AVATAR.thinkingEmoji}</div>
                 <div className="message-content">
                   <div className="message-header">
                     <span className="message-name">{AI_PERSONALITY.name}</span>
-                    <span className="message-status">{getRandomMessage('learning')}</span>
+                    <span className="message-status neuro-motivational">{getRandomMessage('learning')}</span>
                   </div>
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                  <div className="neuro-typing">
+                    <span className="neuro-typing-dot"></span>
+                    <span className="neuro-typing-dot"></span>
+                    <span className="neuro-typing-dot"></span>
                   </div>
                 </div>
               </div>
@@ -330,7 +336,8 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
               disabled={sending}
             />
             <button
-              className="send-button"
+              type="button"
+              className="send-button neuro-button"
               onClick={handleSendMessage}
               disabled={sending || !inputValue.trim()}
             >
@@ -345,13 +352,14 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
       {activeTab === 'facts' && (
         <div className="facts-container">
           {facts.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-avatar">{AI_AVATAR.curiousEmoji}</div>
-              <h3>{EMPTY_STATE_MESSAGES.personalization.title}</h3>
-              <p>Chatte mit {AI_PERSONALITY.name}, damit ich dich besser kennenlernen kann.</p>
-              <span className="empty-encouragement">{EMPTY_STATE_MESSAGES.personalization.encouragement}</span>
+            <div className="empty-state neuro-empty-state">
+              <div className="empty-avatar neuro-breathing">{AI_AVATAR.curiousEmoji}</div>
+              <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.personalization.title}</h3>
+              <p className="neuro-empty-description">Chatte mit {AI_PERSONALITY.name}, damit ich dich besser kennenlernen kann.</p>
+              <span className="empty-encouragement neuro-motivational">{EMPTY_STATE_MESSAGES.personalization.encouragement}</span>
               <button
-                className="action-btn"
+                type="button"
+                className="action-btn neuro-button"
                 onClick={() => setActiveTab('chat')}
               >
                 💬 Zum Chat
@@ -390,7 +398,8 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
                           </div>
                         </div>
                         <button
-                          className="delete-fact-btn"
+                          type="button"
+                          className="delete-fact-btn neuro-press-effect"
                           onClick={() => handleDeleteFact(fact.id)}
                           disabled={deletingFact === fact.id}
                           title="Fakt löschen"
@@ -411,7 +420,7 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
       {activeTab === 'summary' && (
         <div className="summary-container">
           {summary ? (
-            <div className="summary-card">
+            <div className="summary-card liquid-glass neuro-human-fade-in">
               <div className="summary-header">
                 <h3>📋 Dein Profil-Summary</h3>
                 <span className="summary-date">
@@ -424,42 +433,43 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
               </div>
 
               {summary.key_traits.length > 0 && (
-                <div className="summary-section">
+                <div className="summary-section neuro-stagger-item">
                   <h4>🎭 Wesentliche Eigenschaften</h4>
                   <div className="trait-tags">
                     {summary.key_traits.map((trait, i) => (
-                      <span key={i} className="trait-tag">{trait}</span>
+                      <span key={i} className="trait-tag neuro-reward-badge">{trait}</span>
                     ))}
                   </div>
                 </div>
               )}
 
               {summary.interests.length > 0 && (
-                <div className="summary-section">
+                <div className="summary-section neuro-stagger-item">
                   <h4>❤️ Interessen</h4>
                   <div className="interest-tags">
                     {summary.interests.map((interest, i) => (
-                      <span key={i} className="interest-tag">{interest}</span>
+                      <span key={i} className="interest-tag neuro-reward-badge">{interest}</span>
                     ))}
                   </div>
                 </div>
               )}
 
               {summary.communication_style && (
-                <div className="summary-section">
+                <div className="summary-section neuro-stagger-item">
                   <h4>💬 Kommunikationsstil</h4>
                   <p className="communication-style">{summary.communication_style}</p>
                 </div>
               )}
             </div>
           ) : (
-            <div className="empty-state">
-              <div className="empty-avatar">{AI_AVATAR.curiousEmoji}</div>
-              <h3>Noch keine Zusammenfassung</h3>
-              <p>Erzähl {AI_PERSONALITY.name} mehr über dich, damit ich eine Zusammenfassung erstellen kann.</p>
-              <span className="empty-encouragement">Je mehr wir plaudern, desto besser verstehe ich dich!</span>
+            <div className="empty-state neuro-empty-state">
+              <div className="empty-avatar neuro-breathing">{AI_AVATAR.curiousEmoji}</div>
+              <h3 className="neuro-empty-title">Noch keine Zusammenfassung</h3>
+              <p className="neuro-empty-description">Erzähl {AI_PERSONALITY.name} mehr über dich, damit ich eine Zusammenfassung erstellen kann.</p>
+              <span className="empty-encouragement neuro-motivational">Je mehr wir plaudern, desto besser verstehe ich dich!</span>
               <button
-                className="action-btn"
+                type="button"
+                className="action-btn neuro-button"
                 onClick={() => setActiveTab('chat')}
               >
                 💬 Zum Chat

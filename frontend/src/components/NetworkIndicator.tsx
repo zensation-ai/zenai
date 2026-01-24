@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import '../neurodesign.css';
 import './NetworkIndicator.css';
 
 interface NetworkIndicatorProps {
@@ -53,7 +54,7 @@ export function NetworkIndicator({ showWhenOnline = false }: NetworkIndicatorPro
 
   return (
     <div
-      className={`network-indicator ${isOnline ? 'online' : 'offline'} ${showIndicator || !isOnline ? 'visible' : ''}`}
+      className={`network-indicator neuro-connection-status ${isOnline ? 'online' : 'offline'} ${showIndicator || !isOnline ? 'visible' : ''}`}
       role="status"
       aria-live="polite"
     >
@@ -95,7 +96,7 @@ export function NetworkStatusDot() {
 
   return (
     <span
-      className={`network-status-dot ${isOnline ? 'online' : 'offline'}`}
+      className={`network-status-dot neuro-status-dot ${isOnline ? 'online' : 'offline'}`}
       title={isOnline ? 'Online' : 'Offline'}
       aria-label={isOnline ? 'Online' : 'Offline'}
     />

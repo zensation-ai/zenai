@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { QuickFeedback, DraftFeedbackForm, FeedbackPrompt } from './DraftFeedback';
+import '../neurodesign.css';
 import './IdeaDetail.css';
 
 interface Idea {
@@ -257,8 +258,8 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
 
   return (
     <div className="idea-detail-overlay" onClick={onClose}>
-      <div className="idea-detail-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>
+      <div className="idea-detail-modal liquid-glass neuro-human-fade-in" onClick={(e) => e.stopPropagation()}>
+        <button className="close-button neuro-press-effect neuro-focus-ring" onClick={onClose}>
           ×
         </button>
 
@@ -316,7 +317,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
                   )}
                   <button
                     type="button"
-                    className={`copy-button ${draftCopied ? 'copied' : ''}`}
+                    className={`copy-button neuro-button neuro-focus-ring ${draftCopied ? 'copied success' : ''}`}
                     onClick={copyDraft}
                   >
                     {draftCopied ? '✓ Kopiert' : '📋 Kopieren'}
@@ -411,7 +412,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
           <div className="section-header">
             <h3>🔗 Verknüpfungen</h3>
             <button
-              className="analyze-button"
+              className="analyze-button neuro-button neuro-focus-ring"
               onClick={analyzeRelations}
               disabled={analyzing}
             >
@@ -426,7 +427,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
               {relations.map((rel, i) => (
                 <div
                   key={i}
-                  className="relation-item"
+                  className="relation-item neuro-hover-lift neuro-press-effect"
                   onClick={() => onNavigate?.(rel.targetId)}
                 >
                   <span className="relation-type">{relationLabels[rel.relationType]}</span>
@@ -452,7 +453,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
               {suggestions.slice(0, 3).map((sug) => (
                 <div
                   key={sug.id}
-                  className="suggestion-item"
+                  className="suggestion-item neuro-hover-lift neuro-press-effect"
                   onClick={() => onNavigate?.(sug.id)}
                 >
                   <span className="suggestion-title">{sug.title}</span>

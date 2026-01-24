@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, createContext, useContext, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import '../neurodesign.css';
 import './ConfirmDialog.css';
 
 // ===========================================
@@ -127,7 +128,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           >
             <div
               ref={dialogRef}
-              className={`confirm-dialog confirm-dialog-${variantClass}`}
+              className={`confirm-dialog liquid-glass neuro-human-fade-in confirm-dialog-${variantClass}`}
               role="alertdialog"
               aria-modal="true"
               aria-labelledby="confirm-dialog-title"
@@ -144,7 +145,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 <button
                   ref={cancelButtonRef}
                   type="button"
-                  className="confirm-dialog-button cancel"
+                  className="confirm-dialog-button cancel neuro-press-effect neuro-focus-ring"
                   onClick={handleCancel}
                 >
                   {state.cancelText || 'Abbrechen'}
@@ -152,7 +153,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 <button
                   ref={confirmButtonRef}
                   type="button"
-                  className={`confirm-dialog-button confirm confirm-${variantClass}`}
+                  className={`confirm-dialog-button confirm neuro-button neuro-focus-ring confirm-${variantClass}`}
                   onClick={handleConfirm}
                 >
                   {state.confirmText || 'Bestätigen'}

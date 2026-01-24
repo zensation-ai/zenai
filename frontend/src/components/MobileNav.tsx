@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import '../neurodesign.css';
 import './MobileNav.css';
 
 interface NavItem {
@@ -153,7 +154,7 @@ export function MobileNav({
           <nav
             ref={drawerRef}
             id="mobile-nav-drawer"
-            className={`mobile-nav-drawer ${isOpen ? 'open' : ''} cognitive-${cognitiveLevel}`}
+            className={`mobile-nav-drawer liquid-glass-nav ${isOpen ? 'open' : ''} cognitive-${cognitiveLevel}`}
             role="navigation"
             aria-label="Hauptnavigation"
           >

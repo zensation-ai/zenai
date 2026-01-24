@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
+import { getRandomReward } from '../utils/aiPersonality';
+import '../neurodesign.css';
 
 // Type-safe error extraction
 interface ApiError {
@@ -149,7 +151,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       });
       setCreatedKey(response.data.apiKey.key);
       setNewKeyName('');
-      showToast('API Key erstellt', 'success');
+      showActionReward();
       loadData();
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'API Key konnte nicht erstellt werden'));
@@ -183,7 +185,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       });
       setNewWebhookName('');
       setNewWebhookUrl('');
-      showToast('Webhook erstellt', 'success');
+      showActionReward();
       loadData();
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Webhook konnte nicht erstellt werden'));
@@ -222,23 +224,30 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
     'calendar.synced', 'slack.message_processed'
   ];
 
+  // Show reward on successful action
+  const showActionReward = () => {
+    const reward = getRandomReward('ideaCreated');
+    showToast(`${reward.emoji} ${reward.message}`, 'success');
+  };
+
   if (loading) {
     return (
-      <div className="page integrations-page">
+      <div className="page integrations-page neuro-page-enter">
         <header className="page-header">
           <button className="back-button" onClick={onBack}>← Zurück</button>
           <h1>⚙️ Integrationen</h1>
         </header>
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Integrationen...</p>
+        <div className="neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Integrationen...</p>
+          <p className="neuro-loading-submessage">Verbindungen werden geprüft</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page integrations-page">
+    <div className="page integrations-page neuro-page-enter">
       <header className="page-header">
         <button className="back-button" onClick={onBack}>← Zurück</button>
         <h1>⚙️ Integrationen</h1>
@@ -286,7 +295,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
 
       <main className="integrations-content">
         {activeTab === 'integrations' && (
-          <div className="integrations-grid">
+          <div className="integrations-grid neuro-flow-list">
             {integrations.map(integration => (
               <div key={integration.id} className={`integration-card ${integration.isConnected ? 'connected' : ''}`}>
                 <div className="integration-header">
@@ -415,7 +424,12 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
             <div className="apikeys-list">
               <h3>Vorhandene API Keys</h3>
               {apiKeys.length === 0 ? (
-                <p className="empty-message">Noch keine API Keys erstellt.</p>
+                <div className="neuro-empty-state">
+                  <span className="neuro-empty-icon">🔑</span>
+                  <h3 className="neuro-empty-title">Noch keine API Keys</h3>
+                  <p className="neuro-empty-description">Erstelle deinen ersten API Key für externe Integrationen.</p>
+                  <p className="neuro-empty-encouragement">API Keys ermöglichen automatisierte Workflows.</p>
+                </div>
               ) : (
                 <table>
                   <thead>
@@ -504,9 +518,14 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
             <div className="webhooks-list">
               <h3>Aktive Webhooks</h3>
               {webhooks.length === 0 ? (
-                <p className="empty-message">Noch keine Webhooks konfiguriert.</p>
+                <div className="neuro-empty-state">
+                  <span className="neuro-empty-icon">🪝</span>
+                  <h3 className="neuro-empty-title">Noch keine Webhooks</h3>
+                  <p className="neuro-empty-description">Konfiguriere Webhooks um externe Dienste zu benachrichtigen.</p>
+                  <p className="neuro-empty-encouragement">Webhooks verbinden deine Tools nahtlos.</p>
+                </div>
               ) : (
-                <div className="webhooks-grid">
+                <div className="webhooks-grid neuro-flow-list">
                   {webhooks.map(webhook => (
                     <div key={webhook.id} className={`webhook-card ${webhook.isActive ? 'active' : 'inactive'}`}>
                       <div className="webhook-header">
@@ -545,9 +564,26 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       </main>
 
       <style>{`
+        /* Neuro-UX optimierte Integrations Page */
         .integrations-page {
           min-height: 100vh;
           background: var(--bg-primary);
+        }
+
+        /* Neuro Page Enter Animation */
+        .integrations-page.neuro-page-enter {
+          animation: pageEnter 450ms ease-out;
+        }
+
+        @keyframes pageEnter {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
         }
 
         .page-header {

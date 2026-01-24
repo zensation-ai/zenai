@@ -1,4 +1,4 @@
-/* Stats Section - Glass pills */
+/* Stats Section - Neuro-UX Enhanced Glass pills */
 .stats {
   display: flex;
   gap: 1rem;
@@ -8,8 +8,13 @@
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
   backdrop-filter: blur(12px) saturate(180%);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg, 16px);
   border: 1px solid var(--glass-border);
+  transition: all var(--neuro-timing-natural, 0.28s) ease;
+}
+
+.stats:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
 .stats-section {

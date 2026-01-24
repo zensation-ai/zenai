@@ -687,6 +687,19 @@
   font-size: 1.2rem;
 }
 
+/* Header Greeting */
+.digest-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.digest-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .digest-dashboard {
@@ -700,6 +713,10 @@
     margin-right: -1rem;
     padding-right: 1rem;
     flex-wrap: wrap;
+  }
+
+  .digest-header .greeting-subtext {
+    display: none;
   }
 
   .generate-buttons {
@@ -740,5 +757,23 @@
 
   .score-value {
     font-size: 2rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .digest-dashboard .neuro-stagger-item,
+  .digest-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .digest-dashboard .neuro-hover-lift:hover {
+    transform: none;
+  }
+
+  .digest-dashboard .neuro-breathing {
+    animation: none;
   }
 }

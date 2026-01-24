@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './DigestDashboard.css';
 
 interface DigestEntry {
@@ -43,6 +45,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [latestDigest, setLatestDigest] = useState<DigestEntry | null>(null);
   const [digestHistory, setDigestHistory] = useState<DigestEntry[]>([]);
   const [goals, setGoals] = useState<ProductivityGoals | null>(null);
@@ -184,35 +187,39 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
 
   if (loading) {
     return (
-      <div className="digest-dashboard">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Zusammenfassungen...</p>
+      <div className="digest-dashboard neuro-page-enter">
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Zusammenfassungen...</p>
+          <p className="neuro-loading-submessage">Deine Produktivitat wird analysiert</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="digest-dashboard">
-      <div className="digest-header">
-        <button className="back-button" onClick={onBack}>
-          ← Zurück
+    <div className="digest-dashboard neuro-page-enter">
+      <div className="digest-header liquid-glass-nav">
+        <button className="back-button neuro-hover-lift" onClick={onBack}>
+          ← Zuruck
         </button>
-        <h1>📊 Zusammenfassungen</h1>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} Zusammenfassungen</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className={`context-indicator ${context}`}>
           {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
         </span>
         <div className="generate-buttons">
           <button
-            className="generate-btn daily"
+            className="generate-btn daily neuro-button"
             onClick={() => handleGenerateDigest('daily')}
             disabled={generating !== null}
           >
             {generating === 'daily' ? '...' : '📅 Tagesdigest'}
           </button>
           <button
-            className="generate-btn weekly"
+            className="generate-btn weekly neuro-button"
             onClick={() => handleGenerateDigest('weekly')}
             disabled={generating !== null}
           >
@@ -255,7 +262,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       {activeTab === 'latest' && (
         <div className="tab-content">
           {latestDigest ? (
-            <div className="digest-card featured">
+            <div className="digest-card featured liquid-glass neuro-stagger-item">
               <div className="digest-card-header">
                 <span className={`digest-type ${latestDigest.type}`}>
                   {latestDigest.type === 'daily' ? '📅 Tagesdigest' : '📆 Wochendigest'}
@@ -269,11 +276,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
 
               {/* Productivity Score */}
               <div className="productivity-score-section">
-                <div className="score-circle" style={{ borderColor: getProductivityColor(latestDigest.stats.productivity_score) }}>
+                <div className="score-circle neuro-breathing" style={{ borderColor: getProductivityColor(latestDigest.stats.productivity_score) }}>
                   <span className="score-value" style={{ color: getProductivityColor(latestDigest.stats.productivity_score) }}>
                     {latestDigest.stats.productivity_score}
                   </span>
-                  <span className="score-label">Produktivität</span>
+                  <span className="score-label">Produktivitat</span>
                 </div>
               </div>
 
@@ -283,18 +290,18 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
               </div>
 
               {/* Stats */}
-              <div className="digest-stats">
-                <div className="digest-stat">
+              <div className="digest-stats neuro-flow-list">
+                <div className="digest-stat neuro-hover-lift">
                   <span className="digest-stat-icon">💡</span>
                   <span className="digest-stat-value">{latestDigest.stats.ideas_created}</span>
                   <span className="digest-stat-label">Ideen</span>
                 </div>
-                <div className="digest-stat">
+                <div className="digest-stat neuro-hover-lift">
                   <span className="digest-stat-icon">✅</span>
                   <span className="digest-stat-value">{latestDigest.stats.tasks_completed}</span>
                   <span className="digest-stat-label">Aufgaben</span>
                 </div>
-                <div className="digest-stat">
+                <div className="digest-stat neuro-hover-lift">
                   <span className="digest-stat-icon">📅</span>
                   <span className="digest-stat-value">{latestDigest.stats.meetings_held}</span>
                   <span className="digest-stat-label">Meetings</span>
@@ -303,11 +310,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
 
               {/* Highlights */}
               {latestDigest.highlights.length > 0 && (
-                <div className="digest-section">
+                <div className="digest-section neuro-stagger-item">
                   <h3>✨ Highlights</h3>
-                  <ul className="highlights-list">
-                    {latestDigest.highlights.map((highlight, i) => (
-                      <li key={i}>{highlight}</li>
+                  <ul className="highlights-list neuro-flow-list">
+                    {latestDigest.highlights.slice(0, 7).map((highlight, i) => (
+                      <li key={i} className="neuro-stagger-item">{highlight}</li>
                     ))}
                   </ul>
                 </div>
@@ -351,13 +358,14 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
               )}
             </div>
           ) : (
-            <div className="empty-state">
-              <span className="empty-icon">📊</span>
-              <h3>Noch keine Zusammenfassung</h3>
-              <p>Erstelle deine erste Tages- oder Wochenzusammenfassung.</p>
+            <div className="empty-state neuro-empty-state">
+              <span className="neuro-empty-icon">📊</span>
+              <h3 className="neuro-empty-title">Noch keine Zusammenfassung</h3>
+              <p className="neuro-empty-description">Erstelle deine erste Tages- oder Wochenzusammenfassung.</p>
+              <p className="neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.ideas.encouragement}</p>
               <div className="empty-actions">
                 <button
-                  className="generate-btn daily"
+                  className="generate-btn daily neuro-button"
                   onClick={() => handleGenerateDigest('daily')}
                   disabled={generating !== null}
                 >
@@ -373,15 +381,15 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       {activeTab === 'history' && (
         <div className="tab-content">
           {digestHistory.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📜</span>
-              <h3>Noch keine Zusammenfassungen</h3>
-              <p>Deine Zusammenfassungen erscheinen hier.</p>
+            <div className="empty-state neuro-empty-state">
+              <span className="neuro-empty-icon">📜</span>
+              <h3 className="neuro-empty-title">Noch keine Zusammenfassungen</h3>
+              <p className="neuro-empty-description">Deine Zusammenfassungen erscheinen hier.</p>
             </div>
           ) : (
-            <div className="digest-history-list">
-              {digestHistory.map(digest => (
-                <div key={digest.id} className="digest-card compact">
+            <div className="digest-history-list neuro-flow-list">
+              {digestHistory.slice(0, 7).map((digest, index) => (
+                <div key={digest.id} className="digest-card compact liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="digest-card-header">
                     <span className={`digest-type ${digest.type}`}>
                       {digest.type === 'daily' ? '📅' : '📆'}
@@ -414,11 +422,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       {/* Goals Tab */}
       {activeTab === 'goals' && (
         <div className="tab-content">
-          <div className="goals-section">
+          <div className="goals-section liquid-glass neuro-stagger-item">
             <div className="section-header-row">
-              <h2>🎯 Produktivitätsziele</h2>
+              <h2>🎯 Produktivitatsziele</h2>
               <button
-                className={`edit-btn ${editingGoals ? 'active' : ''}`}
+                className={`edit-btn neuro-hover-lift ${editingGoals ? 'active' : ''}`}
                 onClick={() => setEditingGoals(!editingGoals)}
               >
                 {editingGoals ? '✕ Abbrechen' : '✏️ Bearbeiten'}
