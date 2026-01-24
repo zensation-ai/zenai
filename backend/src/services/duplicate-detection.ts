@@ -5,7 +5,7 @@
  * Helps prevent users from creating redundant entries.
  */
 
-import { queryContext, AIContext } from '../utils/database-context';
+import { queryContext, AIContext, isPgTrgmAvailable } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
@@ -146,26 +146,39 @@ export async function isLikelyDuplicate(
   content?: string
 ): Promise<boolean> {
   try {
-    // First, check for exact/fuzzy title match (fast)
-    const titleCheck = await queryContext(
+    // Step 1: Check for exact title match (always works)
+    const exactCheck = await queryContext(
       context,
       `SELECT id FROM ideas
        WHERE is_archived = false
-         AND (
-           LOWER(title) = LOWER($1)
-           OR similarity(LOWER(title), LOWER($1)) > 0.8
-         )
+         AND LOWER(title) = LOWER($1)
        LIMIT 1`,
       [title]
     );
 
-    if (titleCheck.rows.length > 0) {
+    if (exactCheck.rows.length > 0) {
       return true;
     }
 
-    // If content provided, do semantic check
+    // Step 2: Fuzzy title match (only if pg_trgm is available)
+    if (isPgTrgmAvailable()) {
+      const fuzzyCheck = await queryContext(
+        context,
+        `SELECT id FROM ideas
+         WHERE is_archived = false
+           AND similarity(LOWER(title), LOWER($1)) > 0.8
+         LIMIT 1`,
+        [title]
+      );
+
+      if (fuzzyCheck.rows.length > 0) {
+        return true;
+      }
+    }
+
+    // Step 3: Semantic check via embeddings (if content provided)
     if (content && content.length > 50) {
-      const result = await findDuplicates(context, content, 0.9); // Higher threshold for quick check
+      const result = await findDuplicates(context, content, 0.9);
       return result.hasDuplicates;
     }
 

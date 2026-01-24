@@ -26,6 +26,7 @@ const EMBEDDING_TTL = 86400 * 7; // 7 days (embeddings are expensive)
 
 let redis: Redis | null = null;
 let isConnected = false;
+let redisErrorLogged = false; // Track if we've already logged Redis errors
 
 function getClient(): Redis | null {
   if (!redis) {
@@ -34,7 +35,10 @@ function getClient(): Redis | null {
         maxRetriesPerRequest: 3,
         retryStrategy: (times) => {
           if (times > 3) {
-            logger.warn('Redis connection failed, caching disabled');
+            if (!redisErrorLogged) {
+              logger.warn('Redis connection failed, caching disabled');
+              redisErrorLogged = true;
+            }
             return null; // Stop retrying
           }
           return Math.min(times * 100, 3000);
@@ -44,11 +48,18 @@ function getClient(): Redis | null {
 
       redis.on('connect', () => {
         isConnected = true;
+        redisErrorLogged = false; // Reset on successful connection
         logger.info('Redis connected');
       });
 
       redis.on('error', (err) => {
-        logger.error('Redis error', err instanceof Error ? err : undefined);
+        // Only log error once to reduce noise (common when Redis not configured)
+        if (!redisErrorLogged) {
+          logger.warn('Redis error - caching disabled', {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          redisErrorLogged = true;
+        }
         isConnected = false;
       });
 
@@ -58,10 +69,16 @@ function getClient(): Redis | null {
 
       // Attempt connection
       redis.connect().catch((err) => {
-        logger.warn('Redis initial connection failed', { error: err instanceof Error ? err.message : String(err) });
+        if (!redisErrorLogged) {
+          logger.warn('Redis initial connection failed', { error: err instanceof Error ? err.message : String(err) });
+          redisErrorLogged = true;
+        }
       });
     } catch (error) {
-      logger.warn('Redis initialization failed, caching disabled');
+      if (!redisErrorLogged) {
+        logger.warn('Redis initialization failed, caching disabled');
+        redisErrorLogged = true;
+      }
       redis = null;
     }
   }

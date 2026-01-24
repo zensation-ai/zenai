@@ -26,7 +26,7 @@ import { securityHeaders } from './middleware/security-headers';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
-import { testConnections, setupGracefulShutdown, startConnectionHealthCheck } from './utils/database-context';
+import { testConnections, setupGracefulShutdown, startConnectionHealthCheck, validateRequiredExtensions } from './utils/database-context';
 import { voiceMemoContextRouter } from './routes/voice-memo-context';
 import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
@@ -381,6 +381,36 @@ Phase 4 APIs:
     logger.warn('One database is not connected properly', { dbStatus, operation: 'startup' });
   } else {
     logger.info('All databases connected successfully', { dbStatus, operation: 'startup' });
+  }
+
+  // Validate PostgreSQL extensions
+  const extensionStatus = await validateRequiredExtensions();
+  if (!extensionStatus.valid) {
+    logger.error('CRITICAL: Required PostgreSQL extensions missing', undefined, {
+      missing: extensionStatus.missing,
+      operation: 'startup',
+    });
+    console.log(`
+⚠️  Missing PostgreSQL Extensions: ${extensionStatus.missing.join(', ')}
+    Run the following SQL on your database:
+    CREATE EXTENSION IF NOT EXISTS vector;
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+`);
+  } else if (extensionStatus.optional.length > 0) {
+    logger.warn('Optional PostgreSQL extensions missing', {
+      optional: extensionStatus.optional,
+      operation: 'startup',
+    });
+    console.log(`
+ℹ️  Optional extensions not installed: ${extensionStatus.optional.join(', ')}
+    Some features (like fuzzy duplicate detection) may be limited.
+`);
+  } else {
+    logger.info('All PostgreSQL extensions validated', {
+      installed: extensionStatus.installed,
+      operation: 'startup',
+    });
   }
 
   // Start periodic connection health checks (every 5 minutes)

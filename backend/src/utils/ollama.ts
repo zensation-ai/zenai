@@ -23,6 +23,9 @@ const OLLAMA_URL = process.env.OLLAMA_URL || OLLAMA.DEFAULT_URL;
 const MODEL = process.env.OLLAMA_MODEL || OLLAMA.TEXT_MODEL;
 const EMBEDDING_MODEL = process.env.OLLAMA_EMBEDDING_MODEL || OLLAMA.EMBEDDING_MODEL;
 
+// Track if Ollama has been determined unreachable (reduces log noise on Railway)
+let ollamaUnreachableLogged = false;
+
 /** Ollama generation options */
 const GENERATION_OPTIONS = {
   num_predict: 500,
@@ -39,6 +42,7 @@ const EXTENDED_GENERATION_OPTIONS = {
 
 /**
  * Retry configuration for Ollama API calls
+ * Uses quietMode to reduce log noise when Ollama is not running (common on Railway)
  */
 const OLLAMA_RETRY_CONFIG = {
   maxRetries: 2,
@@ -60,6 +64,7 @@ const OLLAMA_RETRY_CONFIG = {
     return false;
   },
   context: 'ollama-api',
+  quietMode: true, // Reduce log noise - Ollama often not running on Railway
 };
 
 /**
@@ -383,10 +388,28 @@ STRUCTURED OUTPUT:`;
       keywords: parseStringArray(parsed.keywords),
     };
   } catch (error: unknown) {
-    logger.error('Ollama structuring error', error instanceof Error ? error : undefined, {
-      operation: 'structureWithOllama',
-      errorMessage: getErrorMessage(error)
-    });
+    // Check if this is a connection error (Ollama not running)
+    const isConnectionError = error instanceof AxiosError &&
+      (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ECONNRESET');
+
+    if (isConnectionError) {
+      if (!ollamaUnreachableLogged) {
+        logger.warn('Ollama service unreachable - using fallback structuring', {
+          operation: 'structureWithOllama',
+          url: OLLAMA_URL,
+        });
+        ollamaUnreachableLogged = true;
+      } else {
+        logger.debug('Ollama structuring skipped (service unreachable)', {
+          operation: 'structureWithOllama',
+        });
+      }
+    } else {
+      logger.error('Ollama structuring error', error instanceof Error ? error : undefined, {
+        operation: 'structureWithOllama',
+        errorMessage: getErrorMessage(error)
+      });
+    }
 
     return createFallbackIdea(transcript);
   }
@@ -442,10 +465,30 @@ async function generateEmbeddingUncached(text: string): Promise<number[]> {
 
     return embedding;
   } catch (error: unknown) {
-    logger.error('Embedding generation error', error instanceof Error ? error : undefined, {
-      operation: 'generateEmbedding',
-      errorMessage: getErrorMessage(error)
-    });
+    // Check if this is a connection error (Ollama not running)
+    const isConnectionError = error instanceof AxiosError &&
+      (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ECONNRESET');
+
+    if (isConnectionError) {
+      // Log as warning only once, then as debug to reduce noise
+      if (!ollamaUnreachableLogged) {
+        logger.warn('Ollama service unreachable - embedding generation disabled', {
+          operation: 'generateEmbedding',
+          url: OLLAMA_URL,
+        });
+        ollamaUnreachableLogged = true;
+      } else {
+        logger.debug('Ollama embedding skipped (service unreachable)', {
+          operation: 'generateEmbedding',
+        });
+      }
+    } else {
+      // Unexpected error - log as error
+      logger.error('Embedding generation error', error instanceof Error ? error : undefined, {
+        operation: 'generateEmbedding',
+        errorMessage: getErrorMessage(error)
+      });
+    }
     return [];
   }
 }

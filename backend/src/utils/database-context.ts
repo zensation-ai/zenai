@@ -264,11 +264,19 @@ export async function queryContext(
 
       // Non-retryable error or max retries reached
       poolStats[effectiveContext].errors++;
+
+      // Extract PostgreSQL-specific error details for better debugging
+      const pgError = error as { code?: string; detail?: string; hint?: string; message?: string };
       logger.error(`Query error [${effectiveContext}]${attempt > 0 ? ` after ${attempt + 1} attempts` : ''}`, lastError, {
         context: effectiveContext,
         query: text.substring(0, 100),
         attempts: attempt + 1,
         operation: 'queryError',
+        // PostgreSQL-specific error details
+        pgCode: pgError.code,
+        pgDetail: pgError.detail,
+        pgHint: pgError.hint,
+        pgMessage: pgError.message?.substring(0, 200),
       });
       throw error;
     }
@@ -487,6 +495,95 @@ export function stopConnectionHealthCheck(): void {
     healthCheckInterval = null;
     logger.info('Connection health check stopped', { operation: 'healthCheckStop' });
   }
+}
+
+// ===========================================
+// Extension Validation
+// ===========================================
+
+/**
+ * Required PostgreSQL extensions for full functionality
+ */
+const REQUIRED_EXTENSIONS = ['vector', 'pg_trgm', 'uuid-ossp'];
+const OPTIONAL_EXTENSIONS = ['pg_trgm']; // System works without these
+
+// Cache for extension availability (checked once at startup)
+let extensionCache: { [key: string]: boolean } | null = null;
+
+/**
+ * Validate that required PostgreSQL extensions are installed
+ * Returns status of all required extensions
+ */
+export async function validateRequiredExtensions(): Promise<{
+  valid: boolean;
+  missing: string[];
+  installed: string[];
+  optional: string[];
+}> {
+  try {
+    const result = await queryContext(
+      'personal',
+      `SELECT extname FROM pg_extension WHERE extname = ANY($1)`,
+      [REQUIRED_EXTENSIONS]
+    );
+
+    const installed = result.rows.map((row: { extname: string }) => row.extname);
+    const missing = REQUIRED_EXTENSIONS.filter(ext => !installed.includes(ext));
+    const missingRequired = missing.filter(ext => !OPTIONAL_EXTENSIONS.includes(ext));
+    const missingOptional = missing.filter(ext => OPTIONAL_EXTENSIONS.includes(ext));
+
+    // Cache the results
+    extensionCache = {};
+    for (const ext of REQUIRED_EXTENSIONS) {
+      extensionCache[ext] = installed.includes(ext);
+    }
+
+    logger.info('PostgreSQL extensions validated', {
+      installed,
+      missing,
+      operation: 'validateExtensions',
+    });
+
+    return {
+      valid: missingRequired.length === 0,
+      missing,
+      installed,
+      optional: missingOptional,
+    };
+  } catch (error) {
+    logger.error('Failed to validate extensions', error instanceof Error ? error : undefined, {
+      operation: 'validateExtensions',
+    });
+    return {
+      valid: false,
+      missing: REQUIRED_EXTENSIONS,
+      installed: [],
+      optional: [],
+    };
+  }
+}
+
+/**
+ * Check if pg_trgm extension is available (for fuzzy string matching)
+ * Uses cached result from startup validation
+ */
+export function isPgTrgmAvailable(): boolean {
+  if (extensionCache === null) {
+    // Not yet validated - assume not available to be safe
+    return false;
+  }
+  return extensionCache['pg_trgm'] === true;
+}
+
+/**
+ * Check if pgvector extension is available (for embeddings)
+ * Uses cached result from startup validation
+ */
+export function isPgVectorAvailable(): boolean {
+  if (extensionCache === null) {
+    return false;
+  }
+  return extensionCache['vector'] === true;
 }
 
 // Backward compatibility: Keep the old single pool export

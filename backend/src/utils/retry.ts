@@ -24,6 +24,8 @@ export interface RetryOptions {
   isRetryable?: (error: any) => boolean;
   /** Context for logging */
   context?: string;
+  /** Use debug level for retry logs (reduces noise for expected failures) */
+  quietMode?: boolean;
 }
 
 const DEFAULT_OPTIONS: Required<RetryOptions> = {
@@ -35,6 +37,7 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
   timeout: 30000,
   isRetryable: () => true,
   context: 'retry',
+  quietMode: false,
 };
 
 /**
@@ -120,7 +123,9 @@ export async function withRetry<T>(
       const hasRetriesLeft = attempt < opts.maxRetries;
 
       if (!isRetryable || !hasRetriesLeft) {
-        logger.error(`${opts.context}: Failed after ${attempt + 1} attempts`, error, {
+        // Use debug level in quiet mode (for expected failures like Ollama not running)
+        const logFn = opts.quietMode ? logger.debug.bind(logger) : logger.error.bind(logger);
+        logFn(`${opts.context}: Failed after ${attempt + 1} attempts`, error, {
           isRetryable,
           hasRetriesLeft,
           errorMessage: error.message,
@@ -137,7 +142,9 @@ export async function withRetry<T>(
         opts.jitter
       );
 
-      logger.warn(`${opts.context}: Attempt ${attempt + 1} failed, retrying in ${delay}ms`, {
+      // Use debug level in quiet mode
+      const retryLogFn = opts.quietMode ? logger.debug.bind(logger) : logger.warn.bind(logger);
+      retryLogFn(`${opts.context}: Attempt ${attempt + 1} failed, retrying in ${delay}ms`, {
         error: error.message,
         nextAttempt: attempt + 2,
         delay,
