@@ -221,7 +221,7 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
         title ILIKE $1
         OR summary ILIKE $1
         OR raw_transcript ILIKE $1
-        OR COALESCE(array_to_string(keywords, ' '), '') ILIKE $1
+        OR COALESCE(keywords::text, '') ILIKE $1
       )
     ORDER BY created_at DESC
     LIMIT $2
