@@ -479,23 +479,161 @@ export const PLACEHOLDER_TEXTS = {
     'Erzähl mir von deiner Idee...',
     'Hier ist Platz für deine Gedanken...',
     'Was liegt dir auf dem Herzen?',
+    'Dein nächster Geistesblitz...',
+    'Gedanken fließen lassen...',
+    'Was fällt dir gerade ein?',
   ],
   searchInput: [
     'Nach Gedanken suchen...',
     'Was möchtest du finden?',
     'Durchsuche dein Brain...',
+    'Wonach suchst du?',
+    'Finde deine Ideen...',
   ],
   chatInput: [
     `Frag ${AI_PERSONALITY.name} etwas...`,
     'Womit kann ich helfen?',
     'Schreib mir...',
+    'Was möchtest du wissen?',
+    'Lass uns darüber sprechen...',
   ],
   noteInput: [
     'Notizen hinzufügen...',
     'Ergänzende Gedanken...',
     'Details festhalten...',
+    'Kontext hinzufügen...',
   ],
 };
+
+// ============================================
+// TIME-OF-DAY SPECIFIC MESSAGES
+// ============================================
+
+export function getTimeAwareMessage(baseMessage: string): string {
+  const hour = new Date().getHours();
+  const timePrefix = (() => {
+    if (hour >= 5 && hour < 9) return 'So früh schon aktiv! ';
+    if (hour >= 22 || hour < 5) return 'Nachtarbeit! ';
+    if (hour >= 12 && hour < 14) return 'Mittagspause-Kreativität! ';
+    return '';
+  })();
+  return timePrefix + baseMessage;
+}
+
+// ============================================
+// CONTEXTUAL MICRO-COPY
+// ============================================
+
+export interface MicroCopy {
+  label: string;
+  description?: string;
+  confirmation?: string;
+}
+
+export const MICRO_COPY: Record<string, MicroCopy> = {
+  // Aktionen
+  confirmDelete: {
+    label: 'Wirklich löschen?',
+    description: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+    confirmation: 'Ja, löschen',
+  },
+  confirmArchive: {
+    label: 'Archivieren?',
+    description: 'Du findest es jederzeit im Archiv wieder.',
+    confirmation: 'Archivieren',
+  },
+  unsavedChanges: {
+    label: 'Ungespeicherte Änderungen',
+    description: 'Möchtest du die Änderungen speichern bevor du gehst?',
+    confirmation: 'Speichern',
+  },
+
+  // Zustände
+  noResults: {
+    label: 'Keine Ergebnisse',
+    description: 'Versuch es mit anderen Suchbegriffen.',
+  },
+  connectionLost: {
+    label: 'Verbindung unterbrochen',
+    description: 'Deine Änderungen werden gespeichert, sobald du wieder online bist.',
+  },
+  syncComplete: {
+    label: 'Alles synchronisiert',
+    description: 'Deine Daten sind auf dem neuesten Stand.',
+  },
+
+  // Feedback
+  copied: {
+    label: 'Kopiert!',
+    description: 'In der Zwischenablage.',
+  },
+  saved: {
+    label: 'Gespeichert',
+    description: 'Änderungen wurden übernommen.',
+  },
+  sent: {
+    label: 'Gesendet',
+    description: 'Deine Nachricht ist unterwegs.',
+  },
+};
+
+// ============================================
+// CELEBRATORY MESSAGES (für Meilensteine)
+// ============================================
+
+export const CELEBRATION_MESSAGES: Record<string, string[]> = {
+  firstIdea: [
+    'Dein erstes Kapitel beginnt!',
+    'Der erste Funke ist gezündet!',
+    'Eine Reise von tausend Ideen beginnt mit einer.',
+  ],
+  tenIdeas: [
+    'Zehn Gedanken – zehn Möglichkeiten!',
+    'Ein solides Fundament entsteht.',
+    'Deine Gedankenwelt nimmt Form an.',
+  ],
+  hundredIdeas: [
+    'Drei Ziffern! Du bist im Ideen-Club!',
+    '100 Gedanken – eine beeindruckende Sammlung!',
+    'Dein digitales Gehirn wächst prächtig.',
+  ],
+  weekStreak: [
+    'Eine Woche konsequent dabei!',
+    'Sieben Tage, sieben Chancen genutzt.',
+    'Routine entwickelt sich.',
+  ],
+  monthStreak: [
+    'Ein ganzer Monat! Unglaublich!',
+    '30 Tage Durchhaltevermögen.',
+    'Du hast echte Ausdauer bewiesen.',
+  ],
+};
+
+export function getCelebrationMessage(milestone: keyof typeof CELEBRATION_MESSAGES): string {
+  const messages = CELEBRATION_MESSAGES[milestone];
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
+// ============================================
+// PERSONALITY TRAITS FOR RESPONSES
+// ============================================
+
+export type ResponseTone = 'encouraging' | 'playful' | 'professional' | 'empathetic';
+
+export function getPersonalizedResponse(
+  baseMessage: string,
+  tone: ResponseTone = 'encouraging'
+): string {
+  const prefixes: Record<ResponseTone, string[]> = {
+    encouraging: ['Super! ', 'Toll! ', 'Weiter so! ', 'Klasse! ', ''],
+    playful: ['Yay! ', 'Woohoo! ', 'Nice! ', '', ''],
+    professional: ['Erledigt. ', 'Abgeschlossen. ', '', '', ''],
+    empathetic: ['Verstehe. ', 'Klar. ', 'Alles klar. ', '', ''],
+  };
+
+  const prefix = prefixes[tone][Math.floor(Math.random() * prefixes[tone].length)];
+  return prefix + baseMessage;
+}
 
 export function getRandomPlaceholder(type: keyof typeof PLACEHOLDER_TEXTS): string {
   const options = PLACEHOLDER_TEXTS[type];

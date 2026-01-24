@@ -2,10 +2,30 @@
  * Humanized UI Components - Export Index
  *
  * Zentrale Export-Datei für alle humanisierten UI-Komponenten.
- * Import: import { EnhancedTooltip, AIStatusIndicator, ... } from './HumanizedUI.index';
+ *
+ * Quick Start:
+ * ```tsx
+ * import {
+ *   // Components
+ *   EnhancedTooltip,
+ *   TooltipButton,
+ *   SaveButton,
+ *   SuccessAnimation,
+ *   AIStatusIndicator,
+ *
+ *   // Hooks
+ *   useHumanizedFeedback,
+ *
+ *   // Utilities
+ *   getActionFeedback,
+ * } from './components/HumanizedUI.index';
+ * ```
  */
 
-// Components
+// ============================================
+// CORE COMPONENTS
+// ============================================
+
 export {
   EnhancedTooltip,
   ContextualLoader,
@@ -18,7 +38,25 @@ export {
   ConnectionStatus,
 } from './HumanizedUI';
 
-// Types
+// ============================================
+// BUTTON COMPONENTS
+// ============================================
+
+export {
+  TooltipButton,
+  IconButton,
+  ArchiveButton,
+  SaveButton,
+  DeleteButton,
+  ShareButton,
+  FavoriteButton,
+  VoiceButton,
+} from './TooltipButton';
+
+// ============================================
+// TYPES - Components
+// ============================================
+
 export type {
   EnhancedTooltipProps,
   ContextualLoaderProps,
@@ -31,7 +69,31 @@ export type {
   ConnectionStatusProps,
 } from './HumanizedUI';
 
-// Utilities from humanizedMessages
+export type {
+  TooltipButtonProps,
+  IconButtonProps,
+  ActionButtonProps,
+} from './TooltipButton';
+
+// ============================================
+// HOOKS
+// ============================================
+
+export {
+  useHumanizedFeedback,
+  useKeyboardShortcut,
+  formatShortcut,
+} from '../hooks/useHumanizedFeedback';
+
+export type {
+  SessionStats,
+  HumanizedFeedbackConfig,
+} from '../hooks/useHumanizedFeedback';
+
+// ============================================
+// UTILITIES - Messages & Content
+// ============================================
+
 export {
   // Progress & Achievements
   getProgressPraise,
@@ -52,11 +114,23 @@ export {
   getRandomPlaceholder,
   PLACEHOLDER_TEXTS,
 
+  // Micro-copy
+  MICRO_COPY,
+  CELEBRATION_MESSAGES,
+  getCelebrationMessage,
+
+  // Personalization
+  getTimeAwareMessage,
+  getPersonalizedResponse,
+
   // Default export
   HumanizedMessages,
 } from '../utils/humanizedMessages';
 
-// Types from humanizedMessages
+// ============================================
+// TYPES - Messages
+// ============================================
+
 export type {
   UserProgress,
   Achievement,
@@ -66,4 +140,25 @@ export type {
   ErrorContent,
   TooltipContent,
   AIStatusMessage,
+  MicroCopy,
+  ResponseTone,
 } from '../utils/humanizedMessages';
+
+// ============================================
+// RE-EXPORTS from existing system
+// ============================================
+
+// AI Personality (für Kompatibilität)
+export {
+  AI_PERSONALITY,
+  AI_AVATAR,
+  getTimeBasedGreeting,
+  getIdleMessage,
+  getRandomMessage,
+  getRandomTip,
+  getMoodBasedResponse,
+  AI_ACTIVITY_MESSAGES,
+  EMPTY_STATE_MESSAGES,
+  CONTEXTUAL_TIPS,
+  FEEDBACK_REACTIONS,
+} from '../utils/aiPersonality';

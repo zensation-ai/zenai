@@ -1,0 +1,331 @@
+/* ============================================
+   TOOLTIP BUTTON STYLES
+   Kombiniert Button mit Enhanced Tooltip
+   ============================================ */
+
+/* ============================================
+   BASE BUTTON
+   ============================================ */
+
+.tooltip-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform var(--neuro-timing-quick, 150ms) ease,
+    box-shadow var(--neuro-timing-quick, 150ms) ease,
+    background-color var(--neuro-timing-quick, 150ms) ease,
+    opacity var(--neuro-timing-quick, 150ms) ease;
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tooltip-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.8),
+    0 0 0 5px var(--neuro-reward, #ff6b35);
+}
+
+/* ============================================
+   SIZES
+   ============================================ */
+
+.tooltip-button.small {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  border-radius: 8px;
+  gap: 0.375rem;
+}
+
+.tooltip-button.medium {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  border-radius: 12px;
+}
+
+.tooltip-button.large {
+  padding: 1rem 1.75rem;
+  font-size: 1rem;
+  border-radius: 14px;
+  gap: 0.625rem;
+}
+
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Primary */
+.tooltip-button.primary {
+  background: linear-gradient(
+    180deg,
+    var(--neuro-reward-light, #ff8f5a) 0%,
+    var(--neuro-reward, #ff6b35) 100%
+  );
+  color: white;
+  box-shadow:
+    0 4px 14px var(--neuro-reward-glow, rgba(255, 107, 53, 0.4)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.tooltip-button.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px var(--neuro-reward-glow, rgba(255, 107, 53, 0.5)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.tooltip-button.primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Secondary */
+.tooltip-button.secondary {
+  background: var(--glass-2026-bg, rgba(255, 255, 255, 0.8));
+  color: var(--text-primary, #1a1a1a);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tooltip-button.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--neuro-reward, #ff6b35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.tooltip-button.secondary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Ghost */
+.tooltip-button.ghost {
+  background: transparent;
+  color: var(--text-primary, #1a1a1a);
+  padding: 0.625rem 1rem;
+}
+
+.tooltip-button.ghost:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.tooltip-button.ghost:active:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Danger */
+.tooltip-button.danger {
+  background: linear-gradient(
+    180deg,
+    #f87171 0%,
+    #ef4444 100%
+  );
+  color: white;
+  box-shadow:
+    0 4px 14px rgba(239, 68, 68, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tooltip-button.danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(239, 68, 68, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Success */
+.tooltip-button.success {
+  background: linear-gradient(
+    180deg,
+    #34d399 0%,
+    var(--neuro-success, #10b981) 100%
+  );
+  color: white;
+  box-shadow:
+    0 4px 14px var(--neuro-success-glow, rgba(16, 185, 129, 0.35)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tooltip-button.success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px var(--neuro-success-glow, rgba(16, 185, 129, 0.45)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================
+   STATES
+   ============================================ */
+
+/* Disabled */
+.tooltip-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Loading */
+.tooltip-button.loading {
+  pointer-events: none;
+}
+
+.tooltip-button.loading .button-content {
+  opacity: 0;
+}
+
+.tooltip-button.loading .button-icon {
+  opacity: 0;
+}
+
+/* ============================================
+   ICONS
+   ============================================ */
+
+.button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125em;
+  line-height: 1;
+}
+
+.button-icon.icon-left {
+  margin-right: -0.125rem;
+}
+
+.button-icon.icon-right {
+  margin-left: -0.125rem;
+}
+
+/* ============================================
+   CONTENT
+   ============================================ */
+
+.button-content {
+  display: flex;
+  align-items: center;
+  transition: opacity var(--neuro-timing-quick, 150ms) ease;
+}
+
+/* ============================================
+   SPINNER
+   ============================================ */
+
+.button-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+}
+
+.button-spinner svg {
+  width: 100%;
+  height: 100%;
+  animation: buttonSpinnerRotate 1s linear infinite;
+}
+
+@keyframes buttonSpinnerRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   RIPPLE EFFECT
+   ============================================ */
+
+.button-ripple {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.tooltip-button:active:not(:disabled) .button-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  animation: rippleEffect 0.6s ease-out;
+}
+
+@keyframes rippleEffect {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.6;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   ICON-ONLY BUTTON
+   ============================================ */
+
+.tooltip-button.icon-only {
+  padding: 0.625rem;
+  aspect-ratio: 1;
+}
+
+.tooltip-button.icon-only.small {
+  padding: 0.5rem;
+}
+
+.tooltip-button.icon-only.large {
+  padding: 0.875rem;
+}
+
+.tooltip-button.icon-only .button-content {
+  font-size: 1.25em;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .tooltip-button {
+    min-height: 44px; /* Touch target */
+  }
+
+  .tooltip-button.small {
+    min-height: 36px;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip-button {
+    transition-duration: 0.01ms !important;
+  }
+
+  .button-spinner svg {
+    animation-duration: 0.01ms !important;
+  }
+
+  .tooltip-button:active:not(:disabled) .button-ripple::after {
+    animation: none;
+  }
+}
