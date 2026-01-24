@@ -278,6 +278,12 @@ export async function findMatchingFocus(
     // 1. Generiere Embedding für den Text
     const textEmbedding = await generateEmbedding(text);
 
+    // Guard: Skip vector query if embedding is empty (Ollama unavailable)
+    if (!textEmbedding || textEmbedding.length === 0) {
+      logger.debug('Skipping focus matching - no embedding available', { context });
+      return null;
+    }
+
     // 2. Suche ähnlichsten Focus
     const result = await queryContext(
       context,

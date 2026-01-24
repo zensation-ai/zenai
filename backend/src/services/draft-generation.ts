@@ -449,15 +449,17 @@ async function gatherContext(trigger: DraftTrigger): Promise<DraftContext> {
     });
 
     // 3. Aktuelle Themen (optimierte Batch-Query)
+    // Note: keywords is JSONB, so we use jsonb_array_elements_text instead of unnest
     const topicsResult = await queryContext(
       trigger.context,
       `WITH recent_keywords AS (
-        SELECT unnest(keywords) as topic, COUNT(*) as freq
+        SELECT jsonb_array_elements_text(keywords) as topic, COUNT(*) as freq
         FROM ideas
         WHERE context = $1
           AND created_at > NOW() - INTERVAL '7 days'
           AND keywords IS NOT NULL
-        GROUP BY unnest(keywords)
+          AND jsonb_typeof(keywords) = 'array'
+        GROUP BY jsonb_array_elements_text(keywords)
       )
       SELECT topic, freq
       FROM recent_keywords
