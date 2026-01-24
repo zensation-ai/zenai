@@ -1562,3 +1562,549 @@
   background: linear-gradient(180deg, var(--neuro-reward), var(--neuro-anticipation));
   border-radius: 2px;
 }
+
+/* ============================================
+   21. NEURO-OPTIMIERTE HOMEPAGE 2026
+
+   Erweiterte Features für maximale UX:
+   - Antizipatorisches Design
+   - Variable Dopamin-Belohnungen
+   - Flow-State Optimierung
+   - Emotionale Intelligenz
+   ============================================ */
+
+/* Welcome Hero - Erste Eindrücke entscheiden */
+.neuro-welcome-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  animation: neuroWelcomeFade 0.8s ease-out;
+}
+
+@keyframes neuroWelcomeFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Adaptive Greeting - Reagiert auf Tageszeit und Stimmung */
+.neuro-greeting-adaptive {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  background: linear-gradient(
+    135deg,
+    var(--text) 0%,
+    var(--neuro-focus) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: greetingReveal 0.6s ease-out;
+}
+
+@keyframes greetingReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Subtext mit Emotion */
+.neuro-subtext-emotional {
+  font-size: 1rem;
+  color: var(--text-muted);
+  max-width: 400px;
+  line-height: 1.6;
+  animation: subtextFade 0.6s ease-out 0.15s both;
+}
+
+@keyframes subtextFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Suggested Action Badge - Antizipatorisches Design */
+.neuro-suggested-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 140, 90, 0.05));
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 24px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--neuro-reward);
+  animation: suggestedPulse 3s ease-in-out infinite, subtextFade 0.6s ease-out 0.3s both;
+  cursor: default;
+}
+
+@keyframes suggestedPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 53, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 107, 53, 0.1);
+  }
+}
+
+/* ============================================
+   22. DOPAMIN-OPTIMIERTE ERFOLGS-ANIMATIONEN
+   ============================================ */
+
+/* Success Burst - Maximale Dopamin-Ausschüttung */
+.neuro-success-burst {
+  position: relative;
+}
+
+.neuro-success-burst::after {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.4) 0%,
+    rgba(16, 185, 129, 0.1) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  opacity: 0;
+  animation: successBurstAnim 0.8s ease-out;
+  pointer-events: none;
+}
+
+@keyframes successBurstAnim {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Reward Badge Animation */
+.neuro-reward-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, var(--neuro-success), #34d399);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px var(--neuro-success-glow);
+  animation: rewardBadgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes rewardBadgePop {
+  0% {
+    transform: scale(0) rotate(-10deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15) rotate(2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+/* Variable Reward Message */
+.neuro-variable-reward {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  padding: 12px 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  z-index: 1000;
+  animation: rewardSlideIn 0.5s ease-out, rewardSlideOut 0.4s ease-in 2.5s forwards;
+}
+
+@keyframes rewardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-40px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes rewardSlideOut {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px) scale(0.95);
+  }
+}
+
+.neuro-variable-reward .reward-emoji {
+  font-size: 1.5rem;
+  animation: emojiCelebrate 0.6s ease-out;
+}
+
+@keyframes emojiCelebrate {
+  0%, 100% {
+    transform: scale(1) rotate(0);
+  }
+  25% {
+    transform: scale(1.3) rotate(-10deg);
+  }
+  75% {
+    transform: scale(1.2) rotate(10deg);
+  }
+}
+
+/* ============================================
+   23. FLOW-STATE FÖRDERNDE ELEMENTE
+   ============================================ */
+
+/* Seamless Content Transition */
+.neuro-content-flow {
+  animation: contentFlowIn 0.4s ease-out;
+}
+
+@keyframes contentFlowIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered List with Flow */
+.neuro-flow-list > * {
+  opacity: 0;
+  animation: flowListItem 0.35s ease-out forwards;
+}
+
+.neuro-flow-list > *:nth-child(1) { animation-delay: 0ms; }
+.neuro-flow-list > *:nth-child(2) { animation-delay: 60ms; }
+.neuro-flow-list > *:nth-child(3) { animation-delay: 120ms; }
+.neuro-flow-list > *:nth-child(4) { animation-delay: 180ms; }
+.neuro-flow-list > *:nth-child(5) { animation-delay: 240ms; }
+.neuro-flow-list > *:nth-child(6) { animation-delay: 300ms; }
+.neuro-flow-list > *:nth-child(7) { animation-delay: 360ms; }
+.neuro-flow-list > *:nth-child(n+8) { animation-delay: 400ms; }
+
+@keyframes flowListItem {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Focus Indicator - Zeigt aktiven Bereich */
+.neuro-focus-indicator {
+  position: relative;
+}
+
+.neuro-focus-indicator::after {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: linear-gradient(180deg, var(--neuro-reward), var(--neuro-anticipation));
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.neuro-focus-indicator:focus-within::after,
+.neuro-focus-indicator.active::after {
+  opacity: 1;
+}
+
+/* ============================================
+   24. ANTIZIPATORISCHE UI-ELEMENTE
+   ============================================ */
+
+/* Predictive Hint */
+.neuro-predictive-hint {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  background: var(--neuro-focus);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.neuro-predictive-hint::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--neuro-focus);
+}
+
+*:hover > .neuro-predictive-hint,
+*:focus-within > .neuro-predictive-hint {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* Next Step Indicator */
+.neuro-next-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(139, 92, 246, 0.04));
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--neuro-anticipation);
+  animation: nextStepPulse 2s ease-in-out infinite;
+}
+
+@keyframes nextStepPulse {
+  0%, 100% {
+    border-color: rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    border-color: rgba(139, 92, 246, 0.4);
+  }
+}
+
+.neuro-next-step .step-icon {
+  font-size: 1.1rem;
+}
+
+/* ============================================
+   25. EMOTIONALE UI-ANPASSUNGEN
+   ============================================ */
+
+/* Mood-based Color Shifts */
+[data-mood="energetisch"] {
+  --neuro-ambient: rgba(255, 107, 53, 0.05);
+}
+
+[data-mood="ruhig"] {
+  --neuro-ambient: rgba(20, 60, 90, 0.03);
+}
+
+[data-mood="kreativ"] {
+  --neuro-ambient: rgba(139, 92, 246, 0.04);
+}
+
+[data-mood="fokussiert"] {
+  --neuro-ambient: rgba(16, 185, 129, 0.04);
+}
+
+/* Energy Level Adjustments */
+[data-energy="high"] .neuro-breathing {
+  animation-duration: 3s;
+}
+
+[data-energy="medium"] .neuro-breathing {
+  animation-duration: 5s;
+}
+
+[data-energy="low"] .neuro-breathing {
+  animation-duration: 8s;
+}
+
+/* ============================================
+   26. MICRO-CELEBRATION EFFEKTE
+   ============================================ */
+
+/* Confetti Burst */
+.neuro-confetti-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.neuro-confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confettiFall 2s ease-out forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(200px) rotate(720deg) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Star Burst */
+.neuro-star-burst {
+  position: relative;
+}
+
+.neuro-star-burst::before,
+.neuro-star-burst::after {
+  content: '✨';
+  position: absolute;
+  font-size: 1rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.neuro-star-burst::before {
+  top: -10px;
+  left: -5px;
+  animation: starBurst1 0.8s ease-out;
+}
+
+.neuro-star-burst::after {
+  top: -5px;
+  right: -10px;
+  animation: starBurst2 0.8s ease-out 0.1s;
+}
+
+@keyframes starBurst1 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-10px, -15px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-15px, -25px) scale(0.5);
+  }
+}
+
+@keyframes starBurst2 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(10px, -12px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(20px, -20px) scale(0.5);
+  }
+}
+
+/* ============================================
+   27. RESPONSIVE NEURO-OPTIMIERUNGEN 2026
+   ============================================ */
+
+@media (max-width: 768px) {
+  .neuro-greeting-adaptive {
+    font-size: 1.5rem;
+  }
+
+  .neuro-subtext-emotional {
+    font-size: 0.9rem;
+  }
+
+  .neuro-variable-reward {
+    width: calc(100% - 2rem);
+    left: 1rem;
+    right: 1rem;
+    transform: translateY(-20px);
+  }
+
+  @keyframes rewardSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-40px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes rewardSlideOut {
+    to {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .neuro-reward-badge {
+    border: 2px solid white;
+  }
+
+  .neuro-suggested-action {
+    border-width: 2px;
+  }
+}
+
+/* Print optimization */
+@media print {
+  .neuro-breathing,
+  .neuro-sparkle,
+  .neuro-confetti-container,
+  .neuro-variable-reward {
+    display: none !important;
+    animation: none !important;
+  }
+}

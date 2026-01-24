@@ -5,7 +5,13 @@
 }
 
 /* ============================================
-   HERO SECTION - Prominent AI Brain
+   HERO SECTION - Neuro-optimiert 2026
+
+   Basiert auf neurowissenschaftlichen Prinzipien:
+   - Dopamin-Aktivierung durch subtile Animationen
+   - Kognitive Last-Reduktion durch klare Hierarchie
+   - Flow-State Förderung durch sanfte Übergänge
+   - Antizipatorisches Design für Nutzererwartungen
    ============================================ */
 
 .hero-section {
@@ -16,18 +22,56 @@
   padding: 3rem 2rem 4rem;
   text-align: center;
   position: relative;
-  min-height: 360px;
+  min-height: 380px;
+  /* Neuro: Warme Farben aktivieren Belohnungszentrum */
   background: linear-gradient(
     180deg,
-    rgba(20, 34, 48, 0.03) 0%,
+    rgba(20, 34, 48, 0.02) 0%,
+    rgba(255, 245, 235, 0.2) 20%,
+    rgba(255, 240, 230, 0.28) 45%,
+    rgba(255, 245, 235, 0.2) 70%,
+    transparent 100%
+  );
+  overflow: hidden;
+  /* Neuro: Sanfte Übergänge für Flow-State */
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Mood-basierte Farbvariationen */
+.hero-section[data-mood="energetisch"],
+.hero-section[data-mood="motiviert"] {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 107, 53, 0.03) 0%,
     rgba(255, 245, 235, 0.25) 30%,
-    rgba(255, 240, 230, 0.3) 50%,
-    rgba(255, 245, 235, 0.25) 70%,
+    rgba(255, 240, 230, 0.32) 50%,
+    rgba(255, 245, 235, 0.2) 70%,
     transparent 100%
   );
 }
 
-/* Warm ambient glow behind hero */
+.hero-section[data-mood="ruhig"],
+.hero-section[data-mood="reflektiv"] {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 60, 90, 0.03) 0%,
+    rgba(240, 248, 255, 0.2) 30%,
+    rgba(245, 250, 255, 0.25) 50%,
+    rgba(240, 248, 255, 0.15) 70%,
+    transparent 100%
+  );
+}
+
+/* Energy Level Anpassungen */
+.hero-section[data-energy="high"]::before {
+  animation-duration: 4s;
+}
+
+.hero-section[data-energy="low"]::before {
+  animation-duration: 8s;
+}
+
+/* Warm ambient glow behind hero - Neuro: Fokussierung durch Tiefenwirkung */
 .hero-section::before {
   content: '';
   position: absolute;
@@ -35,16 +79,72 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   height: 100%;
   background: radial-gradient(
-    ellipse 60% 50% at 50% 40%,
-    rgba(255, 107, 53, 0.08) 0%,
-    rgba(255, 140, 90, 0.04) 40%,
-    transparent 70%
+    ellipse 65% 55% at 50% 40%,
+    rgba(255, 107, 53, 0.1) 0%,
+    rgba(255, 140, 90, 0.05) 35%,
+    rgba(255, 180, 120, 0.02) 55%,
+    transparent 75%
   );
   pointer-events: none;
   z-index: 0;
+  animation: ambientPulse 6s ease-in-out infinite;
+}
+
+@keyframes ambientPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+/* Hero Ambient Container */
+.hero-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Energy Ring - Visualisiert AI-Aktivität */
+.hero-energy-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.5s ease, border-color 0.5s ease;
+}
+
+.hero-energy-ring.active {
+  opacity: 1;
+  border-color: rgba(255, 107, 53, 0.3);
+  animation: energyRingPulse 2s ease-in-out infinite;
+}
+
+@keyframes energyRingPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+    border-color: rgba(255, 107, 53, 0.3);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0.2;
+    border-color: rgba(255, 107, 53, 0.1);
+  }
 }
 
 /* Hero Brain - Large and prominent */
@@ -52,22 +152,33 @@
   position: relative;
   margin-bottom: 2rem;
   z-index: 1;
+  /* Neuro: Sanftes Atmen für lebendiges Gefühl */
+  animation: heroBrainBreathing 5s ease-in-out infinite;
 }
 
-/* Hero ambient glow behind brain */
+@keyframes heroBrainBreathing {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/* Hero ambient glow behind brain - Neuro: Tiefenwirkung fokussiert Aufmerksamkeit */
 .hero-brain::before {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 350px;
-  height: 350px;
+  width: 380px;
+  height: 380px;
   background: radial-gradient(
     circle at center,
-    rgba(255, 107, 53, 0.2) 0%,
-    rgba(255, 140, 90, 0.12) 25%,
-    rgba(255, 180, 120, 0.06) 45%,
+    rgba(255, 107, 53, 0.18) 0%,
+    rgba(255, 140, 90, 0.1) 25%,
+    rgba(255, 180, 120, 0.05) 45%,
     transparent 70%
   );
   border-radius: 50%;
@@ -76,18 +187,19 @@
   z-index: -1;
 }
 
-/* Secondary warm glow - soft, no border */
+/* Secondary warm glow - soft, multi-layered depth */
 .hero-brain::after {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   background: radial-gradient(
     circle at center,
-    rgba(255, 140, 90, 0.08) 0%,
+    rgba(255, 140, 90, 0.12) 0%,
+    rgba(255, 180, 120, 0.04) 50%,
     transparent 70%
   );
   border-radius: 50%;
@@ -102,50 +214,84 @@
     opacity: 1;
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.12);
-    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.8;
   }
 }
 
 @keyframes heroRing {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
-    opacity: 0.3;
+    opacity: 0.4;
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.08);
-    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.06);
+    opacity: 0.7;
   }
 }
 
-/* Hero greeting */
+/* Hero Greeting Container - Neuro: Gestalt-Prinzip der Nähe */
+.hero-greeting-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 1;
+  max-width: 500px;
+}
+
+/* Hero greeting - Neuro: Große Typografie für schnelle Erfassung */
 .hero-greeting {
-  font-size: 1.75rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: var(--text);
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.02em;
+  margin: 0;
+  letter-spacing: -0.025em;
   animation: heroFadeIn 0.6s ease-out;
   position: relative;
-  z-index: 1;
-  line-height: 1.3;
+  line-height: 1.25;
+  /* Neuro: Text-Rendering für bessere Lesbarkeit */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 .hero-subtext {
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: var(--text-muted);
-  margin: 0 0 2rem 0;
-  max-width: 420px;
+  margin: 0 0 1.5rem 0;
+  max-width: 440px;
   line-height: 1.6;
   animation: heroFadeIn 0.6s ease-out 0.1s both;
   position: relative;
-  z-index: 1;
+}
+
+/* Suggested Action - Antizipatorisches Design */
+.hero-suggested-action {
+  font-size: 0.9rem;
+  color: var(--primary);
+  margin: 0 0 1.5rem 0;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 107, 53, 0.08);
+  border-radius: var(--radius-md);
+  animation: heroFadeIn 0.6s ease-out 0.2s both, gentlePulse 3s ease-in-out infinite 1s;
+  font-weight: 500;
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.01);
+  }
 }
 
 @keyframes heroFadeIn {
   from {
     opacity: 0;
-    transform: translateY(15px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -153,27 +299,41 @@
   }
 }
 
-/* Hero input card - integrated look */
+/* Hero input card - Liquid Glass 2026 */
 .hero-section .input-card {
-  max-width: 600px;
+  max-width: 620px;
   width: 100%;
-  animation: heroFadeIn 0.6s ease-out 0.2s both;
+  animation: heroFadeIn 0.6s ease-out 0.25s both;
   position: relative;
   z-index: 1;
+  /* Neuro: Liquid Glass für moderne, vertrauenswürdige Ästhetik */
   background: linear-gradient(
     160deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(255, 252, 248, 0.88) 50%,
-    rgba(255, 255, 255, 0.92) 100%
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 252, 248, 0.85) 50%,
+    rgba(255, 255, 255, 0.9) 100%
   );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow:
-    0 8px 32px rgba(20, 50, 70, 0.08),
-    0 2px 8px rgba(20, 50, 70, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+    0 10px 40px rgba(20, 50, 70, 0.08),
+    0 4px 12px rgba(20, 50, 70, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-xl);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Hero sparkles / ambient particles */
+.hero-section .input-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 50px rgba(20, 50, 70, 0.1),
+    0 6px 16px rgba(20, 50, 70, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Hero sparkles / ambient particles - Neuro: Subtile Bewegung für Lebendigkeit */
 .hero-sparkle {
   position: absolute;
   width: 8px;
@@ -181,63 +341,90 @@
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
   border-radius: 50%;
   opacity: 0;
-  animation: sparkle 4s ease-in-out infinite;
+  animation: sparkleFloat 5s ease-in-out infinite;
   pointer-events: none;
   box-shadow: 0 0 12px var(--primary-glow);
   z-index: 0;
 }
 
-.hero-sparkle:nth-child(1) { top: 15%; left: 12%; animation-delay: 0s; width: 6px; height: 6px; }
-.hero-sparkle:nth-child(2) { top: 25%; right: 18%; animation-delay: 1s; width: 10px; height: 10px; }
-.hero-sparkle:nth-child(3) { top: 55%; left: 8%; animation-delay: 2s; width: 7px; height: 7px; }
-.hero-sparkle:nth-child(4) { top: 45%; right: 12%; animation-delay: 3s; width: 5px; height: 5px; }
-.hero-sparkle:nth-child(5) { top: 75%; left: 20%; animation-delay: 0.5s; width: 8px; height: 8px; }
-.hero-sparkle:nth-child(6) { top: 20%; right: 28%; animation-delay: 1.5s; width: 6px; height: 6px; }
+/* Staggered sparkle positions and delays */
+.hero-sparkle:nth-child(1) { top: 12%; left: 10%; animation-delay: 0s; width: 6px; height: 6px; }
+.hero-sparkle:nth-child(2) { top: 22%; right: 15%; animation-delay: 0.8s; width: 10px; height: 10px; }
+.hero-sparkle:nth-child(3) { top: 50%; left: 6%; animation-delay: 1.6s; width: 7px; height: 7px; }
+.hero-sparkle:nth-child(4) { top: 42%; right: 10%; animation-delay: 2.4s; width: 5px; height: 5px; }
+.hero-sparkle:nth-child(5) { top: 72%; left: 18%; animation-delay: 0.4s; width: 8px; height: 8px; }
+.hero-sparkle:nth-child(6) { top: 18%; right: 25%; animation-delay: 1.2s; width: 6px; height: 6px; }
 
-@keyframes sparkle {
+@keyframes sparkleFloat {
   0%, 100% {
     opacity: 0;
-    transform: scale(0.3) rotate(0deg);
+    transform: scale(0.3) rotate(0deg) translateY(0);
+  }
+  25% {
+    opacity: 0.6;
+    transform: scale(1) rotate(90deg) translateY(-5px);
   }
   50% {
-    opacity: 0.7;
-    transform: scale(1.1) rotate(180deg);
+    opacity: 0.8;
+    transform: scale(1.1) rotate(180deg) translateY(-8px);
+  }
+  75% {
+    opacity: 0.5;
+    transform: scale(0.9) rotate(270deg) translateY(-3px);
   }
 }
 
-/* When ideas exist, make hero more compact */
+/* When ideas exist, make hero more compact - Neuro: Progressive Disclosure */
 .hero-section.compact {
   min-height: auto;
   padding: 1.5rem 2rem 2rem;
   background: linear-gradient(
     180deg,
-    rgba(20, 34, 48, 0.02) 0%,
-    rgba(255, 245, 235, 0.15) 50%,
+    rgba(20, 34, 48, 0.015) 0%,
+    rgba(255, 245, 235, 0.12) 50%,
     transparent 100%
   );
 }
 
+.hero-section.compact .hero-ambient {
+  opacity: 0.5;
+}
+
+.hero-section.compact .hero-energy-ring {
+  width: 140px;
+  height: 140px;
+}
+
 .hero-section.compact .hero-brain {
   margin-bottom: 1rem;
+  animation: none; /* Reduzierte Animation im Compact-Modus */
 }
 
 .hero-section.compact .hero-brain::before {
-  width: 160px;
-  height: 160px;
+  width: 180px;
+  height: 180px;
 }
 
 .hero-section.compact .hero-brain::after {
-  width: 120px;
-  height: 120px;
+  width: 130px;
+  height: 130px;
+}
+
+.hero-section.compact .hero-greeting-container {
+  gap: 0.25rem;
 }
 
 .hero-section.compact .hero-greeting {
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
   font-weight: 600;
 }
 
 .hero-section.compact .hero-subtext {
+  display: none;
+}
+
+.hero-section.compact .hero-suggested-action {
   display: none;
 }
 
@@ -246,7 +433,7 @@
 }
 
 .hero-section.compact .input-card {
-  max-width: 680px;
+  max-width: 700px;
 }
 
 /* Header - Dark Petrol Theme */
@@ -1010,113 +1197,201 @@
   }
 }
 
-/* Empty State - Warm and welcoming */
+/* Empty State - Neuro-optimiert: Einladend, nicht überwältigend */
 .empty-state {
   text-align: center;
   padding: 3.5rem 2.5rem;
   color: var(--text-muted);
-  max-width: 420px;
+  max-width: 440px;
   margin: 2rem auto;
+  /* Neuro: Liquid Glass 2026 für Vertrauen und Modernität */
   background: linear-gradient(
     160deg,
-    rgba(255, 255, 255, 0.8) 0%,
-    rgba(255, 252, 248, 0.75) 50%,
-    rgba(255, 250, 245, 0.7) 100%
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 252, 248, 0.8) 50%,
+    rgba(255, 250, 245, 0.75) 100%
   );
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow:
-    0 8px 32px rgba(20, 50, 70, 0.06),
-    0 2px 8px rgba(20, 50, 70, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  animation: gentleBreathe 5s ease-in-out infinite;
+    0 12px 40px rgba(20, 50, 70, 0.07),
+    0 4px 12px rgba(20, 50, 70, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  /* Neuro: Sanftes Atmen für lebendiges Gefühl */
+  animation: emptyStateBreathe 6s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes gentleBreathe {
+/* Subtiler Schimmer-Effekt - GPU-optimiert mit transform */
+.empty-state::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: emptyStateShimmer 8s ease-in-out infinite;
+  pointer-events: none;
+  will-change: transform;
+}
+
+@keyframes emptyStateShimmer {
   0%, 100% {
-    transform: scale(1);
+    transform: translateX(-100%);
   }
   50% {
-    transform: scale(1.003);
+    transform: translateX(50%);
+  }
+}
+
+@keyframes emptyStateBreathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 12px 40px rgba(20, 50, 70, 0.07),
+      0 4px 12px rgba(20, 50, 70, 0.03),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  50% {
+    transform: scale(1.005);
+    box-shadow:
+      0 16px 50px rgba(20, 50, 70, 0.08),
+      0 6px 16px rgba(20, 50, 70, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
   }
 }
 
 .empty-icon {
-  font-size: 3rem;
+  font-size: 3.5rem;
   display: block;
-  margin-bottom: 1rem;
-  opacity: 0.85;
-  animation: gentleFloat 4s ease-in-out infinite;
+  margin-bottom: 1.25rem;
+  opacity: 0.9;
+  animation: emptyIconFloat 4s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
 }
 
-/* Humanized AI Avatar for Empty State */
+/* Humanized AI Avatar for Empty State - Neuro: Personifizierung schafft Vertrauen */
 .empty-avatar {
-  width: 80px;
-  height: 80px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-light, #ff8c5a), var(--primary, #ff6b35));
+  background: linear-gradient(145deg, var(--primary-light, #ff8c5a), var(--primary, #ff6b35));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  margin: 0 auto 1rem;
-  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.25);
-  animation: emptyAvatarPulse 4s ease-in-out infinite, gentleFloat 5s ease-in-out infinite;
+  font-size: 2.75rem;
+  margin: 0 auto 1.25rem;
+  box-shadow:
+    0 10px 30px rgba(255, 107, 53, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  animation: emptyAvatarPulse 4s ease-in-out infinite, emptyIconFloat 5s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+
+/* Glow-Ring um Avatar */
+.empty-avatar::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(255, 140, 90, 0.4), rgba(255, 107, 53, 0.2));
+  z-index: -1;
+  animation: avatarGlowPulse 3s ease-in-out infinite;
+}
+
+@keyframes avatarGlowPulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 
 @keyframes emptyAvatarPulse {
   0%, 100% {
-    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.25);
+    box-shadow:
+      0 10px 30px rgba(255, 107, 53, 0.3),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3);
   }
   50% {
-    box-shadow: 0 12px 32px rgba(255, 107, 53, 0.35);
+    box-shadow:
+      0 14px 40px rgba(255, 107, 53, 0.4),
+      inset 0 2px 4px rgba(255, 255, 255, 0.4);
   }
 }
 
 .empty-ai-name {
   display: inline-block;
-  padding: 6px 16px;
-  background: rgba(255, 107, 53, 0.1);
-  border: 1px solid rgba(255, 107, 53, 0.2);
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 140, 90, 0.08));
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  border-radius: 24px;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--primary);
   margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
+/* Neuro: Motivierende Nachrichten mit visueller Hervorhebung */
 .empty-encouragement {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-style: italic;
   color: var(--text-secondary, #4a6577);
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 107, 53, 0.05);
+  border-radius: var(--radius-md);
+  border-left: 3px solid rgba(255, 107, 53, 0.4);
+  position: relative;
+  z-index: 1;
 }
 
-@keyframes gentleFloat {
+@keyframes emptyIconFloat {
   0%, 100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-8px);
   }
 }
 
 .empty-state h3 {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--text);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.625rem 0;
   font-weight: 700;
   letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
 }
 
 .empty-state p {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.9rem;
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: 1.65;
+  position: relative;
+  z-index: 1;
 }
 
 .empty-state-actions {

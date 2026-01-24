@@ -28,6 +28,7 @@ import {
   AI_AVATAR,
   getTimeBasedGreeting,
   EMPTY_STATE_MESSAGES,
+  getContextAwareGreeting,
 } from './utils/aiPersonality';
 
 // Neurodesign System - Dopamin-optimiertes Feedback
@@ -131,33 +132,56 @@ function App() {
   const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
 
   // Dynamic, human greeting using centralized AI personality system
+  // Neuro-optimiert: Variable Begrüßungen für Dopamin-Aktivierung
   const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
 
+  // Kontextbewusste Begrüßung mit emotionaler Intelligenz
   const humanGreeting = useMemo(() => {
     const hasIdeas = ideas.length > 0;
 
     if (!hasIdeas) {
       // First-time / empty state - welcoming with AI personality
+      // Neuro-Prinzip: Einladende, nicht-überwältigende erste Erfahrung
       return {
         greeting: `${timeGreeting.emoji} ${timeGreeting.greeting}`,
         subtext: `Ich bin ${AI_PERSONALITY.name}. ${timeGreeting.subtext}`,
+        mood: timeGreeting.mood,
+        energyLevel: timeGreeting.energyLevel,
+        suggestedAction: timeGreeting.suggestedAction,
       };
     } else {
-      // Returning user with ideas - personalized
+      // Returning user with ideas - personalized & contextual
+      // Neuro-Prinzip: Progressive Disclosure basierend auf Engagement-Level
+      const contextGreeting = getContextAwareGreeting({
+        ideasCount: ideas.length,
+        lastActivityDays: 0, // Could be calculated from last idea timestamp
+        streakDays: 0, // Could be tracked
+        recentCategories: ideas.slice(0, 5).map(i => i.category),
+      });
+
       if (ideas.length < 10) {
         return {
-          greeting: `${timeGreeting.greeting} ${ideas.length} Gedanken warten`,
-          subtext: '',
+          greeting: `${timeGreeting.emoji} ${timeGreeting.greeting}`,
+          subtext: `${ideas.length} Gedanken warten auf dich`,
+          mood: timeGreeting.mood,
+          energyLevel: timeGreeting.energyLevel,
+          suggestedAction: contextGreeting.callToAction,
         };
       } else if (ideas.length < 50) {
         return {
-          greeting: `${timeGreeting.greeting}`,
+          greeting: `${timeGreeting.emoji} ${timeGreeting.greeting}`,
           subtext: `Wir haben schon ${ideas.length} Gedanken zusammen!`,
+          mood: timeGreeting.mood,
+          energyLevel: timeGreeting.energyLevel,
+          suggestedAction: 'Bereit für den nächsten?',
         };
       } else {
         return {
-          greeting: `${timeGreeting.greeting}`,
+          greeting: `${timeGreeting.emoji} ${timeGreeting.greeting}`,
           subtext: `${ideas.length} Gedanken – ${AI_PERSONALITY.name} kennt dich gut!`,
+          mood: timeGreeting.mood,
+          energyLevel: timeGreeting.energyLevel,
+          suggestedAction: 'Dein digitales Gehirn wächst',
         };
       }
     }
@@ -1024,17 +1048,26 @@ function App() {
         </div>
       </header>
 
-      {/* Hero Section with Prominent AI Brain */}
-      <section className={`hero-section ${ideas.length > 0 ? 'compact' : ''}`}>
-        {/* Hero Sparkles */}
-        <div className="hero-sparkle" aria-hidden="true" />
-        <div className="hero-sparkle" aria-hidden="true" />
-        <div className="hero-sparkle" aria-hidden="true" />
-        <div className="hero-sparkle" aria-hidden="true" />
-        <div className="hero-sparkle" aria-hidden="true" />
-        <div className="hero-sparkle" aria-hidden="true" />
+      {/* Hero Section with Prominent AI Brain - Neuro-optimiert 2026 */}
+      <section
+        className={`hero-section ${ideas.length > 0 ? 'compact' : ''}`}
+        data-mood={humanGreeting.mood}
+        data-energy={humanGreeting.energyLevel}
+      >
+        {/* Ambient Particles - Neuro: Subtile Bewegung fördert Fokus ohne Ablenkung */}
+        <div className="hero-ambient" aria-hidden="true">
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+        </div>
 
-        {/* Large AI Brain */}
+        {/* Energy Ring - Visualisiert AI-Aktivität */}
+        <div className={`hero-energy-ring ${isAIActive ? 'active' : ''}`} aria-hidden="true" />
+
+        {/* Large AI Brain - Zentrales Fokus-Element */}
         <div className="hero-brain">
           <AIBrain
             isActive={isAIActive}
@@ -1044,15 +1077,23 @@ function App() {
           />
         </div>
 
-        {/* Greeting - Human & Personal */}
-        <h2 className="hero-greeting">
-          {humanGreeting.greeting}
-        </h2>
-        {humanGreeting.subtext && (
-          <p className="hero-subtext">
-            {humanGreeting.subtext}
-          </p>
-        )}
+        {/* Greeting - Human & Personal mit Dopamin-optimierter Variabilität */}
+        <div className="hero-greeting-container">
+          <h2 className="hero-greeting">
+            {humanGreeting.greeting}
+          </h2>
+          {humanGreeting.subtext && (
+            <p className="hero-subtext">
+              {humanGreeting.subtext}
+            </p>
+          )}
+          {/* Suggested Action - Antizipatorisches Design */}
+          {humanGreeting.suggestedAction && ideas.length === 0 && (
+            <p className="hero-suggested-action">
+              {humanGreeting.suggestedAction}
+            </p>
+          )}
+        </div>
 
         {/* CommandCenter - Central input with AI transparency */}
         <CommandCenter
