@@ -128,6 +128,33 @@
   --header-glass: rgba(20, 34, 48, 0.85);
   --header-hover: rgba(255, 255, 255, 0.12);
   --header-active: rgba(255, 107, 53, 0.2);
+
+  /* ===== Command Center ===== */
+  --command-bg: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 252, 248, 0.88) 100%
+  );
+  --command-border: rgba(255, 107, 53, 0.2);
+  --command-shadow: 0 12px 48px rgba(20, 50, 70, 0.12);
+
+  /* ===== Triage Colors ===== */
+  --triage-priority: #22c55e;
+  --triage-priority-bg: rgba(34, 197, 94, 0.1);
+  --triage-later: #f59e0b;
+  --triage-later-bg: rgba(245, 158, 11, 0.1);
+  --triage-archive: #6b7280;
+  --triage-archive-bg: rgba(107, 114, 128, 0.1);
+
+  /* ===== AI Status Colors ===== */
+  --ai-thinking: var(--primary);
+  --ai-listening: #8b5cf6;
+  --ai-processing: #06b6d4;
+  --ai-complete: var(--success);
+
+  /* ===== Dashboard ===== */
+  --dashboard-card-bg: rgba(255, 255, 255, 0.75);
+  --dashboard-stat-highlight: var(--primary);
 }
 
 body {

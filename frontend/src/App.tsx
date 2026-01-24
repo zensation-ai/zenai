@@ -19,6 +19,7 @@ import './components/NavDropdown.css';
 import { GeneralChat } from './components/GeneralChat';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
+import { AIProcessingOverlay, type ProcessType } from './components/AIProcessingOverlay';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import {
@@ -49,6 +50,8 @@ const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m
 const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
 const ProactiveDashboard = lazy(() => import('./components/ProactiveDashboard').then(m => ({ default: m.ProactiveDashboard })));
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
+const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ default: m.InboxTriage })));
+const DashboardHome = lazy(() => import('./components/DashboardHome').then(m => ({ default: m.DashboardHome })));
 
 // Loading fallback component for lazy-loaded pages
 const PageLoader = () => (
@@ -58,7 +61,7 @@ const PageLoader = () => (
   </div>
 );
 
-type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution' | 'notifications' | 'digest' | 'personalization' | 'learning-tasks' | 'media' | 'stories' | 'export' | 'sync' | 'proactive';
+type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution' | 'notifications' | 'digest' | 'personalization' | 'learning-tasks' | 'media' | 'stories' | 'export' | 'sync' | 'proactive' | 'triage' | 'dashboard';
 
 interface StructuredIdea {
   id: string;
@@ -103,6 +106,13 @@ function App() {
 
   // Input mode state (voice memo or chat)
   const [inputMode, setInputMode] = useState<'voice' | 'chat'>('voice');
+
+  // AI Processing Overlay state for transparent status display
+  const [aiOverlay, setAIOverlay] = useState<{
+    visible: boolean;
+    type: ProcessType;
+    step: number;
+  } | null>(null);
 
   // Context state (personal/work) - setContext unused since context switching was removed
   const [context] = useContextState();
@@ -336,12 +346,25 @@ function App() {
     setProcessing(true);
     setError(null);
 
+    // Show AI processing overlay with step-by-step progress
+    setAIOverlay({ visible: true, type: 'text', step: 0 });
+
     try {
+      // Step 1: Analyzing (shown immediately)
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setAIOverlay({ visible: true, type: 'text', step: 1 });
+
       // Submit text to context-specific endpoint
       const response = await axios.post(`/api/${context}/voice-memo`, {
         text: textInput,
         persona: selectedPersona,
       });
+
+      // Step 2: Classifying -> Step 3: Extracting
+      setAIOverlay({ visible: true, type: 'text', step: 2 });
+      await new Promise(resolve => setTimeout(resolve, 200));
+      setAIOverlay({ visible: true, type: 'text', step: 3 });
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       const newIdea: StructuredIdea = {
         id: response.data.ideaId,
@@ -359,6 +382,7 @@ function App() {
       showToast(errorMessage, 'error');
     } finally {
       setProcessing(false);
+      setAIOverlay(null);
     }
   }, [textInput, context, selectedPersona]);
 
@@ -681,6 +705,54 @@ function App() {
     );
   }
 
+  if (currentPage === 'triage') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <InboxTriage
+            context={context}
+            apiBase="/api"
+            onBack={() => setCurrentPage('ideas')}
+            onComplete={() => {
+              loadIdeas();
+              setCurrentPage('ideas');
+            }}
+            showToast={showToast}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  if (currentPage === 'dashboard') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <DashboardHome
+            context={context}
+            apiBase="/api"
+            onNavigate={(page) => setCurrentPage(page as Page)}
+            onSearch={(query) => {
+              setCurrentPage('ideas');
+              handleSearch(query);
+            }}
+            onNewIdea={() => {
+              setCurrentPage('ideas');
+              // Focus on text input could be added here
+            }}
+            onStartRecording={() => {
+              setCurrentPage('ideas');
+              // Could trigger recording here
+            }}
+            showToast={showToast}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   if (currentPage === 'archive') {
     return (
       <ErrorBoundary>
@@ -775,11 +847,21 @@ function App() {
       <header className="header">
         <div className="header-content">
           <div className="header-left">
-            <AIBrain isActive={isAIActive} activityType={aiActivityType} ideasCount={ideas.length} />
-            <h1>Personal AI Brain</h1>
+            <div className="header-ai-status">
+              <span className={`ai-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />
+              <span className="header-logo-text">Personal AI Brain</span>
+            </div>
           </div>
           <div className="header-center">
             <nav className="header-nav">
+              <button
+                type="button"
+                className="nav-button"
+                onClick={() => setCurrentPage('dashboard')}
+                title="Dashboard"
+              >
+                📊 Dashboard
+              </button>
               <button
                 type="button"
                 className={`nav-button ${currentPage === 'ideas' ? 'active' : ''}`}
@@ -787,6 +869,14 @@ function App() {
                 title="Gedanken"
               >
                 💭 Gedanken
+              </button>
+              <button
+                type="button"
+                className="nav-button"
+                onClick={() => setCurrentPage('triage')}
+                title="Gedanken sortieren"
+              >
+                📋 Triage
               </button>
               <button
                 type="button"
@@ -1175,6 +1265,15 @@ function App() {
           idea={selectedIdea}
           onClose={() => setSelectedIdea(null)}
           onNavigate={navigateToIdea}
+        />
+      )}
+
+      {/* AI Processing Overlay - Shows transparent AI status */}
+      {aiOverlay?.visible && (
+        <AIProcessingOverlay
+          isVisible={aiOverlay.visible}
+          processType={aiOverlay.type}
+          currentStepIndex={aiOverlay.step}
         />
       )}
 

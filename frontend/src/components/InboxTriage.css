@@ -1,0 +1,605 @@
+/* ============================================
+   Inbox Triage
+   Swipe-based card interface for prioritizing thoughts
+   ============================================ */
+
+.triage-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-gradient, linear-gradient(165deg, #fef9f6 0%, #fff5f0 50%, #f0f7fa 100%));
+}
+
+.triage-page[data-context="work"] {
+  background: linear-gradient(165deg, #f8fafc 0%, #f1f5f9 50%, #e0f2fe 100%);
+}
+
+/* Header */
+.triage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border, rgba(255, 107, 53, 0.1));
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.triage-back-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--primary, #ff6b35);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.triage-back-btn:hover {
+  opacity: 0.7;
+}
+
+.triage-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text, #1a1a2e);
+  margin: 0;
+}
+
+.triage-progress {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #64748b);
+}
+
+/* Card Container */
+.triage-card-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Swipe Hints */
+.triage-hints {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.triage-hint {
+  position: absolute;
+  font-size: 0.85rem;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.triage-hint-left {
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.triage-hint-right {
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.triage-hint-bottom {
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Swipe Indicators */
+.swipe-indicator {
+  position: absolute;
+  font-size: 3rem;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.swipe-indicator.right {
+  right: 3rem;
+  top: 50%;
+  transform: translateY(-50%) scale(0.8);
+}
+
+.swipe-indicator.left {
+  left: 3rem;
+  top: 50%;
+  transform: translateY(-50%) scale(0.8);
+}
+
+.swipe-indicator.up {
+  top: 3rem;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+}
+
+.swipe-indicator.visible {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.swipe-indicator.up.visible {
+  transform: translateX(-50%) scale(1);
+}
+
+/* Card */
+.triage-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.92));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: var(--radius-xl, 20px);
+  border: 2px solid var(--glass-border, rgba(255, 107, 53, 0.15));
+  padding: 1.75rem;
+  touch-action: none;
+  cursor: grab;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.3s ease;
+  user-select: none;
+  position: relative;
+  z-index: 5;
+}
+
+.triage-card.dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.triage-card.swipe-right {
+  border-color: var(--triage-priority, #22c55e);
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+}
+
+.triage-card.swipe-left {
+  border-color: var(--triage-later, #f59e0b);
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
+}
+
+.triage-card.swipe-up {
+  border-color: var(--triage-archive, #6b7280);
+  box-shadow: 0 0 30px rgba(107, 114, 128, 0.3);
+}
+
+/* Card Animations */
+.triage-card.animate-swipe-right {
+  animation: cardSwipeRight 0.3s ease-out forwards;
+}
+
+.triage-card.animate-swipe-left {
+  animation: cardSwipeLeft 0.3s ease-out forwards;
+}
+
+.triage-card.animate-swipe-up {
+  animation: cardSwipeUp 0.3s ease-out forwards;
+}
+
+.triage-card.animate-keep {
+  animation: cardKeep 0.3s ease-out;
+}
+
+@keyframes cardSwipeRight {
+  to {
+    transform: translateX(150%) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes cardSwipeLeft {
+  to {
+    transform: translateX(-150%) rotate(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes cardSwipeUp {
+  to {
+    transform: translateY(-150%);
+    opacity: 0;
+  }
+}
+
+@keyframes cardKeep {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); box-shadow: 0 0 20px var(--primary-glow, rgba(255, 107, 53, 0.3)); }
+  100% { transform: scale(1); }
+}
+
+/* Card Header */
+.triage-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.triage-card-priority {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.triage-card-priority.high {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.triage-card-priority.medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+.triage-card-priority.low {
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
+}
+
+.triage-card-type {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #64748b);
+  text-transform: capitalize;
+}
+
+/* Card Content */
+.triage-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text, #1a1a2e);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.3;
+}
+
+.triage-card-summary {
+  color: var(--text-secondary, #64748b);
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+}
+
+.triage-card-steps {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary, rgba(241, 245, 249, 0.5));
+  border-radius: var(--radius-md, 10px);
+}
+
+.triage-card-steps h4 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  margin: 0 0 0.5rem 0;
+}
+
+.triage-card-steps ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text, #1a1a2e);
+}
+
+.triage-card-steps li {
+  margin-bottom: 0.25rem;
+}
+
+/* Card Meta */
+.triage-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.triage-card-tag {
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-secondary, rgba(241, 245, 249, 0.7));
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+  text-transform: capitalize;
+}
+
+.triage-card-date {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  margin-left: auto;
+}
+
+/* Quick Actions (Desktop) */
+.triage-quick-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--surface, #ffffff);
+  border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.05));
+}
+
+.triage-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-md, 10px);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  min-width: 110px;
+  justify-content: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.triage-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.triage-action-btn .action-icon {
+  font-size: 1.1rem;
+}
+
+.triage-action-btn.priority {
+  background: var(--triage-priority-bg, rgba(34, 197, 94, 0.1));
+  color: #059669;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.triage-action-btn.priority:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.triage-action-btn.later {
+  background: var(--triage-later-bg, rgba(245, 158, 11, 0.1));
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.triage-action-btn.later:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.triage-action-btn.archive {
+  background: var(--triage-archive-bg, rgba(107, 114, 128, 0.1));
+  color: #6b7280;
+  border-color: rgba(107, 114, 128, 0.3);
+}
+
+.triage-action-btn.archive:hover:not(:disabled) {
+  background: rgba(107, 114, 128, 0.2);
+}
+
+.triage-action-btn.keep {
+  background: var(--primary-glow, rgba(255, 107, 53, 0.1));
+  color: var(--primary-dark, #e55a2b);
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+.triage-action-btn.keep:hover:not(:disabled) {
+  background: rgba(255, 107, 53, 0.2);
+}
+
+/* Remaining Stack */
+.triage-remaining {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.triage-remaining-stack {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.triage-remaining-card {
+  position: absolute;
+  width: 100%;
+  height: 200px;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.7));
+  border-radius: var(--radius-xl, 20px);
+  border: 1px solid var(--glass-border, rgba(255, 107, 53, 0.1));
+}
+
+/* Loading State */
+.triage-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.triage-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border, #e2e8f0);
+  border-top-color: var(--primary, #ff6b35);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.triage-loading p {
+  color: var(--text-secondary, #64748b);
+  font-style: italic;
+}
+
+/* Error State */
+.triage-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.triage-error-icon {
+  font-size: 3rem;
+}
+
+.triage-error p {
+  color: var(--text-secondary, #64748b);
+}
+
+.triage-retry-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary, #ff6b35);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md, 10px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.triage-retry-btn:hover {
+  opacity: 0.9;
+}
+
+/* Empty State */
+.triage-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.triage-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.triage-empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text, #1a1a2e);
+  margin: 0 0 0.5rem 0;
+}
+
+.triage-empty-message {
+  color: var(--text-secondary, #64748b);
+  margin-bottom: 1.5rem;
+}
+
+.triage-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.triage-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.triage-stat .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text, #1a1a2e);
+}
+
+.triage-stat .stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.triage-done-btn {
+  padding: 0.875rem 2rem;
+  background: var(--gradient-primary, linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%));
+  color: white;
+  border: none;
+  border-radius: var(--radius-md, 10px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.triage-done-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .triage-header {
+    padding: 0.875rem 1rem;
+  }
+
+  .triage-card-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .triage-card {
+    padding: 1.25rem;
+  }
+
+  .triage-card-title {
+    font-size: 1.1rem;
+  }
+
+  /* Hide desktop buttons on mobile - use swipe */
+  .triage-quick-actions {
+    display: none;
+  }
+
+  .triage-hints {
+    display: block;
+  }
+}
+
+@media (min-width: 769px) {
+  /* Hide swipe hints on desktop */
+  .triage-hints {
+    display: none;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .triage-card {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .triage-card.animate-swipe-right,
+  .triage-card.animate-swipe-left,
+  .triage-card.animate-swipe-up,
+  .triage-card.animate-keep {
+    animation: none;
+    opacity: 0;
+  }
+
+  .triage-loading-spinner {
+    animation: none;
+  }
+}

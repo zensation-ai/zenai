@@ -293,6 +293,39 @@
   flex-shrink: 0;
 }
 
+.header-ai-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--header-text-secondary);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.ai-status-dot.active {
+  background: var(--primary);
+  box-shadow: 0 0 12px var(--primary-glow);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.8; }
+}
+
+.header-logo-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--header-text);
+  white-space: nowrap;
+}
+
 .header-center {
   display: flex;
   align-items: center;

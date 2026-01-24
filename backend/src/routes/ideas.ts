@@ -4,6 +4,7 @@ import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { trackInteraction } from '../services/user-profile';
 import { triggerWebhook } from '../services/webhooks';
+import { logAIActivity } from '../services/ai-activity-logger';
 import { learnFromCorrection, learnFromThought } from '../services/learning-engine';
 import { findDuplicates, mergeIdeas } from '../services/duplicate-detection';
 import { logger } from '../utils/logger';
@@ -59,6 +60,180 @@ ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
     byType: typeResult.rows.reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
     byCategory: categoryResult.rows.reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
     byPriority: priorityResult.rows.reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
+  });
+}));
+
+/**
+ * GET /api/ideas/triage
+ * Get ideas for triage, sorted by priority and creation date
+ * Returns ideas that haven't been triaged recently (within 24 hours)
+ * NOTE: Must be defined BEFORE /:id route to avoid being caught by it
+ */
+ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+
+  // Validate pagination
+  const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 20, min: 1, max: 50, fieldName: 'limit' });
+  if (!limitResult.success) {
+    throw new ValidationError('Invalid limit');
+  }
+  const limit = limitResult.data!;
+
+  // Get excluded IDs (already processed in this session)
+  const excludeIds = req.query.exclude ? (req.query.exclude as string).split(',').filter(id => isValidUUID(id)) : [];
+
+  // Build exclusion clause
+  let excludeClause = '';
+  const params: any[] = [ctx, limit];
+  if (excludeIds.length > 0) {
+    excludeClause = ` AND i.id NOT IN (${excludeIds.map((_, idx) => `$${idx + 3}`).join(',')})`;
+    params.push(...excludeIds);
+  }
+
+  // Get ideas for triage: not archived, not recently triaged, sorted by priority then date
+  const result = await queryContext(
+    ctx,
+    `SELECT i.id, i.title, i.type, i.category, i.priority, i.summary,
+            i.next_steps, i.context_needed, i.keywords, i.context,
+            i.created_at, i.updated_at, i.raw_transcript
+     FROM ideas i
+     LEFT JOIN triage_history th ON th.idea_id = i.id
+       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+     WHERE i.context = $1
+       AND i.is_archived = false
+       AND th.id IS NULL
+       ${excludeClause}
+     ORDER BY
+       CASE i.priority
+         WHEN 'high' THEN 1
+         WHEN 'medium' THEN 2
+         WHEN 'low' THEN 3
+         ELSE 4
+       END,
+       i.created_at DESC
+     LIMIT $2`,
+    params
+  );
+
+  // Get total count of pending triage items
+  const countResult = await queryContext(
+    ctx,
+    `SELECT COUNT(*) as total
+     FROM ideas i
+     LEFT JOIN triage_history th ON th.idea_id = i.id
+       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+     WHERE i.context = $1
+       AND i.is_archived = false
+       AND th.id IS NULL`,
+    [ctx]
+  );
+
+  res.json({
+    success: true,
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
+    total: parseInt(countResult.rows[0].total),
+    hasMore: result.rows.length === limit,
+  });
+}));
+
+/**
+ * POST /api/ideas/:id/triage
+ * Record a triage action for an idea
+ * Actions: 'priority' (mark high), 'keep' (no change), 'later' (lower priority), 'archive'
+ */
+ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
+  const ctx = getContext(req);
+  const ideaId = req.params.id;
+  const { action } = req.body;
+
+  // Validate action
+  const validActions = ['priority', 'keep', 'later', 'archive'];
+  if (!action || !validActions.includes(action)) {
+    throw new ValidationError(`Invalid triage action. Must be one of: ${validActions.join(', ')}`);
+  }
+
+  // Check if idea exists
+  const ideaCheck = await queryContext(ctx, 'SELECT id, title, priority FROM ideas WHERE id = $1', [ideaId]);
+  if (ideaCheck.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  const oldPriority = ideaCheck.rows[0].priority;
+  const ideaTitle = ideaCheck.rows[0].title;
+
+  // Apply action based on type
+  let updateData: Record<string, any> = {};
+  let actionDescription = '';
+
+  switch (action) {
+    case 'priority':
+      updateData = { priority: 'high' };
+      actionDescription = 'als Priorität markiert';
+      break;
+    case 'archive':
+      updateData = { is_archived: true };
+      actionDescription = 'archiviert';
+      break;
+    case 'later':
+      updateData = { priority: 'low' };
+      actionDescription = 'auf später verschoben';
+      break;
+    case 'keep':
+      actionDescription = 'beibehalten';
+      break;
+  }
+
+  // Update idea if needed
+  if (Object.keys(updateData).length > 0) {
+    await queryContext(
+      ctx,
+      `UPDATE ideas SET ${Object.keys(updateData).map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
+      [ideaId, ...Object.values(updateData)]
+    );
+
+    // Learn from priority changes
+    if (updateData.priority && oldPriority !== updateData.priority) {
+      learnFromCorrection(ideaId, {
+        oldPriority,
+        newPriority: updateData.priority,
+      }).catch(err => logger.debug('Background triage correction learning skipped', { error: err.message }));
+    }
+  }
+
+  // Record triage action in history
+  await queryContext(
+    ctx,
+    `INSERT INTO triage_history (idea_id, context, action) VALUES ($1, $2, $3)`,
+    [ideaId, ctx, action]
+  );
+
+  // Track interaction for learning
+  trackInteraction({
+    idea_id: ideaId,
+    interaction_type: action === 'priority' ? 'prioritize' : action === 'archive' ? 'archive' : 'view',
+    metadata: { action, source: 'triage', old_priority: oldPriority },
+  }).catch((err) => logger.debug('Background triage tracking skipped', { error: err.message }));
+
+  // Log AI activity
+  logAIActivity({
+    context: ctx,
+    type: 'idea_triaged',
+    message: `Gedanke "${ideaTitle.substring(0, 50)}..." ${actionDescription}`,
+    ideaId,
+    metadata: { action, oldPriority, newPriority: updateData.priority },
+  }).catch((err) => logger.debug('Background AI activity logging skipped', { error: err.message }));
+
+  // Trigger webhook for archive action
+  if (action === 'archive') {
+    triggerWebhook('idea.archived', { id: ideaId })
+      .catch((err) => logger.debug('Background triage archive webhook skipped', { error: err.message }));
+  }
+
+  res.json({
+    success: true,
+    ideaId,
+    action,
+    message: `Idee ${actionDescription}`,
   });
 }));
 
