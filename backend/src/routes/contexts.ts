@@ -205,23 +205,30 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     throw new ValidationError('Search query is required');
   }
 
-  // Try full-text search first, fall back to ILIKE if no results
-  let result = await queryContext(context as AIContext, `
-    SELECT
-      id, title, type, category, priority, summary,
-      next_steps, context_needed, keywords, raw_transcript,
-      created_at, updated_at,
-      ts_rank(
-        to_tsvector('german', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(raw_transcript, '')),
-        plainto_tsquery('german', $1)
-      ) as rank
-    FROM ideas
-    WHERE is_archived = false
-      AND to_tsvector('german', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(raw_transcript, ''))
-      @@ plainto_tsquery('german', $1)
-    ORDER BY rank DESC
-    LIMIT $2
-  `, [searchQuery, limit]);
+  // Try full-text search first, fall back to ILIKE if it fails or returns nothing
+  let result: { rows: any[] } = { rows: [] };
+
+  try {
+    result = await queryContext(context as AIContext, `
+      SELECT
+        id, title, type, category, priority, summary,
+        next_steps, context_needed, keywords, raw_transcript,
+        created_at, updated_at,
+        ts_rank(
+          to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(raw_transcript, '')),
+          plainto_tsquery('simple', $1)
+        ) as rank
+      FROM ideas
+      WHERE is_archived = false
+        AND to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(raw_transcript, ''))
+        @@ plainto_tsquery('simple', $1)
+      ORDER BY rank DESC
+      LIMIT $2
+    `, [searchQuery, limit]);
+  } catch {
+    // Full-text search failed, use ILIKE fallback
+    result = { rows: [] };
+  }
 
   // Fallback to ILIKE search if full-text returns nothing
   if (result.rows.length === 0) {
