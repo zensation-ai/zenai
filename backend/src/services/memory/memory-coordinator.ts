@@ -1,13 +1,20 @@
 /**
- * Memory Coordinator (HiMeS Architecture)
+ * Memory Coordinator (HiMeS Architecture - Enhanced 4-Layer)
  *
- * The central coordinator that bridges short-term and long-term memory,
+ * The central coordinator that bridges all four memory layers,
  * inspired by hippocampus-neocortex interaction in biological memory systems.
+ *
+ * Memory Layers:
+ * 1. Working Memory - Active task focus (Prefrontal Cortex)
+ * 2. Episodic Memory - Concrete experiences (Hippocampus)
+ * 3. Short-Term Memory - Session context (Hippocampus)
+ * 4. Long-Term Memory - Persistent knowledge (Neocortex)
  *
  * Features:
  * - Prepares optimal context for Claude calls
- * - Combines short-term (session) and long-term (persistent) memory
+ * - Combines all four memory layers intelligently
  * - Implements context editing (pruning irrelevant information)
+ * - Token budget management
  * - Manages memory lifecycle
  */
 
@@ -27,16 +34,27 @@ import {
   FrequentPattern,
   LongTermRetrievalResult,
 } from './long-term-memory';
+import {
+  episodicMemory,
+  Episode,
+  EpisodicRetrievalOptions,
+} from './episodic-memory';
+import {
+  workingMemory,
+  WorkingMemorySlot,
+  WorkingMemoryState,
+} from './working-memory';
 
 // ===========================================
 // Types & Interfaces
 // ===========================================
 
 export interface ContextPart {
-  type: 'summary' | 'fact' | 'pattern' | 'document' | 'interaction' | 'hint';
+  type: 'summary' | 'fact' | 'pattern' | 'document' | 'interaction' | 'hint' | 'episode' | 'working';
   content: string;
   relevance: number;
-  source: 'short_term' | 'long_term' | 'pre_retrieved';
+  source: 'short_term' | 'long_term' | 'pre_retrieved' | 'episodic' | 'working';
+  timestamp?: number;
 }
 
 export interface PreparedContext {
@@ -58,7 +76,30 @@ export interface PreparedContext {
     longTermFacts: number;
     preRetrievedDocs: number;
     contextPartsUsed: number;
+    episodesRetrieved: number;
+    workingMemorySlots: number;
   };
+}
+
+/** Enhanced prepared context with all 4 memory layers */
+export interface EnhancedPreparedContext extends PreparedContext {
+  /** Working Memory state */
+  workingMemory: {
+    goal: string;
+    subGoals: string[];
+    activeSlots: WorkingMemorySlot[];
+  };
+  /** Episodic Memory state */
+  episodicMemory: {
+    relevantEpisodes: Episode[];
+    emotionalTone: {
+      avgValence: number;
+      avgArousal: number;
+      dominantMood: string;
+    };
+  };
+  /** Estimated token count */
+  estimatedTokens: number;
 }
 
 export interface MemorySessionOptions {
@@ -66,10 +107,18 @@ export interface MemorySessionOptions {
   includeLongTerm?: boolean;
   /** Include pre-retrieved documents */
   includePreRetrieved?: boolean;
+  /** Include episodic memory */
+  includeEpisodic?: boolean;
+  /** Include working memory */
+  includeWorking?: boolean;
   /** Maximum context parts to include */
   maxContextParts?: number;
   /** Minimum relevance score for context parts */
   minRelevance?: number;
+  /** Maximum context tokens (for budget management) */
+  maxContextTokens?: number;
+  /** Emotional priming (filter episodes by emotional context) */
+  emotionalPriming?: boolean;
 }
 
 // ===========================================
@@ -85,6 +134,18 @@ const CONFIG = {
   RELEVANCE_PERCENTILE: 0.7,
   /** Cache TTL for prepared contexts */
   CONTEXT_CACHE_TTL_MS: 5 * 60 * 1000, // 5 minutes
+  /** Default max context tokens */
+  DEFAULT_MAX_CONTEXT_TOKENS: 8000,
+  /** Approximate chars per token (for estimation) */
+  CHARS_PER_TOKEN: 4,
+  /** Priority weights for different memory types */
+  PRIORITY_WEIGHTS: {
+    working: 1.0,      // Highest priority (current task)
+    episodic: 0.7,     // Recent experiences
+    short_term: 0.8,   // Session context
+    long_term: 0.6,    // Persistent knowledge
+    pre_retrieved: 0.5, // Related documents
+  },
 };
 
 // ===========================================
@@ -208,6 +269,8 @@ class MemoryCoordinator {
           longTermFacts: longTerm?.facts.length || 0,
           preRetrievedDocs: shortTerm.preloadedIdeas.length,
           contextPartsUsed: finalParts.length,
+          episodesRetrieved: 0,
+          workingMemorySlots: 0,
         },
       };
 
@@ -239,9 +302,481 @@ class MemoryCoordinator {
           longTermFacts: 0,
           preRetrievedDocs: 0,
           contextPartsUsed: 0,
+          episodesRetrieved: 0,
+          workingMemorySlots: 0,
         },
       };
     }
+  }
+
+  // ===========================================
+  // Enhanced Context Preparation (4-Layer)
+  // ===========================================
+
+  /**
+   * Prepare enhanced context with all 4 memory layers.
+   * This is the recommended method for complex interactions.
+   */
+  async prepareEnhancedContext(
+    sessionId: string,
+    userQuery: string,
+    context: AIContext,
+    options: MemorySessionOptions = {}
+  ): Promise<EnhancedPreparedContext> {
+    const {
+      includeLongTerm = true,
+      includePreRetrieved = true,
+      includeEpisodic = true,
+      includeWorking = true,
+      maxContextParts = CONFIG.DEFAULT_MAX_CONTEXT_PARTS,
+      minRelevance = CONFIG.DEFAULT_MIN_RELEVANCE,
+      maxContextTokens = CONFIG.DEFAULT_MAX_CONTEXT_TOKENS,
+      emotionalPriming = false,
+    } = options;
+
+    try {
+      // 1. Initialize/get working memory
+      let workingState: WorkingMemoryState | null = null;
+      if (includeWorking) {
+        workingState = workingMemory.getState(sessionId);
+        if (!workingState) {
+          // Initialize with user query as initial goal
+          workingState = workingMemory.initialize(sessionId, userQuery, context);
+        }
+
+        // Extract constraints/facts from query and add to working memory
+        const extracted = await this.extractFromQuery(userQuery);
+        for (const item of extracted) {
+          await workingMemory.add(sessionId, item.type, item.content, item.priority);
+        }
+      }
+
+      // 2. Parallel retrieval from all memory sources
+      const [episodes, shortTerm, longTerm] = await Promise.all([
+        includeEpisodic
+          ? episodicMemory.retrieve(userQuery, context, {
+              limit: 5,
+              emotionalFilter: emotionalPriming
+                ? await this.inferEmotionalContext(userQuery)
+                : undefined,
+            })
+          : Promise.resolve([]),
+
+        shortTermMemory.getEnrichedContext(sessionId),
+
+        includeLongTerm
+          ? longTermMemory.retrieve(context, userQuery)
+          : Promise.resolve(null),
+      ]);
+
+      // 3. Combine all sources into context parts
+      const allParts = this.combineAllContextParts({
+        workingState,
+        episodes,
+        shortTerm,
+        longTerm,
+        includePreRetrieved,
+      });
+
+      // 4. Prune and prioritize
+      const prunedParts = await this.pruneContext(allParts, userQuery, minRelevance);
+
+      // 5. Fit to token budget
+      const { parts: finalParts, estimatedTokens } = this.fitToTokenBudget(
+        prunedParts,
+        maxContextTokens
+      );
+
+      // 6. Build enhanced system prompt
+      const systemEnhancement = this.buildEnhancedSystemPrompt({
+        workingState,
+        episodes,
+        shortTerm,
+        longTerm,
+        finalParts,
+      });
+
+      // 7. Calculate emotional tone from episodes
+      const emotionalTone = episodicMemory.calculateEmotionalTone(episodes);
+
+      // 8. Build result
+      const result: EnhancedPreparedContext = {
+        sessionId,
+        systemEnhancement,
+        parts: finalParts,
+        conversationSummary: shortTerm.conversationSummary,
+        preloadedDocuments: includePreRetrieved ? shortTerm.preloadedIdeas : [],
+        suggestedFollowUps: shortTerm.suggestedFollowUps,
+        stats: {
+          shortTermInteractions: shortTerm.recentMessages.length,
+          longTermFacts: longTerm?.facts.length || 0,
+          preRetrievedDocs: shortTerm.preloadedIdeas.length,
+          contextPartsUsed: finalParts.length,
+          episodesRetrieved: episodes.length,
+          workingMemorySlots: workingState?.slots.length || 0,
+        },
+        workingMemory: {
+          goal: workingState?.currentGoal || userQuery,
+          subGoals: workingState?.subGoals || [],
+          activeSlots: workingState?.slots || [],
+        },
+        episodicMemory: {
+          relevantEpisodes: episodes,
+          emotionalTone,
+        },
+        estimatedTokens,
+      };
+
+      logger.debug('Enhanced context prepared', {
+        sessionId,
+        partsCount: finalParts.length,
+        episodesCount: episodes.length,
+        workingSlots: workingState?.slots.length || 0,
+        estimatedTokens,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to prepare enhanced context', error instanceof Error ? error : undefined, {
+        sessionId,
+      });
+
+      // Return minimal context on error
+      return {
+        sessionId,
+        systemEnhancement: '',
+        parts: [],
+        conversationSummary: '',
+        preloadedDocuments: [],
+        suggestedFollowUps: [],
+        stats: {
+          shortTermInteractions: 0,
+          longTermFacts: 0,
+          preRetrievedDocs: 0,
+          contextPartsUsed: 0,
+          episodesRetrieved: 0,
+          workingMemorySlots: 0,
+        },
+        workingMemory: {
+          goal: userQuery,
+          subGoals: [],
+          activeSlots: [],
+        },
+        episodicMemory: {
+          relevantEpisodes: [],
+          emotionalTone: { avgValence: 0, avgArousal: 0.5, dominantMood: 'neutral' },
+        },
+        estimatedTokens: 0,
+      };
+    }
+  }
+
+  /**
+   * Extract implicit constraints/facts from user query
+   */
+  private async extractFromQuery(query: string): Promise<Array<{
+    type: 'constraint' | 'fact' | 'hypothesis';
+    content: string;
+    priority: number;
+  }>> {
+    const extracted: Array<{
+      type: 'constraint' | 'fact' | 'hypothesis';
+      content: string;
+      priority: number;
+    }> = [];
+
+    const queryLower = query.toLowerCase();
+
+    // Detect constraints
+    const constraintPatterns = [
+      { pattern: /muss\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
+      { pattern: /sollte?\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
+      { pattern: /darf\s+nicht\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
+      { pattern: /wichtig(?:\s+ist)?[:\s]+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
+    ];
+
+    for (const { pattern, type } of constraintPatterns) {
+      let match;
+      while ((match = pattern.exec(query)) !== null) {
+        extracted.push({
+          type,
+          content: match[1].trim(),
+          priority: 0.8,
+        });
+      }
+    }
+
+    // Detect facts/assumptions
+    const factPatterns = [
+      { pattern: /ich\s+(?:bin|habe|arbeite)\s+(.+?)(?:\.|,|$)/gi, type: 'fact' as const },
+      { pattern: /wir\s+(?:haben|nutzen|verwenden)\s+(.+?)(?:\.|,|$)/gi, type: 'fact' as const },
+    ];
+
+    for (const { pattern, type } of factPatterns) {
+      let match;
+      while ((match = pattern.exec(query)) !== null) {
+        extracted.push({
+          type,
+          content: match[1].trim(),
+          priority: 0.6,
+        });
+      }
+    }
+
+    return extracted;
+  }
+
+  /**
+   * Infer emotional context from query for episodic filtering
+   */
+  private async inferEmotionalContext(query: string): Promise<{
+    minValence?: number;
+    maxValence?: number;
+  } | undefined> {
+    const queryLower = query.toLowerCase();
+
+    // Positive context keywords
+    const positiveKeywords = ['erfolg', 'gut', 'super', 'freude', 'positiv', 'success', 'good', 'great'];
+    // Negative context keywords
+    const negativeKeywords = ['problem', 'fehler', 'schwierig', 'frustrier', 'error', 'issue', 'difficult'];
+
+    const hasPositive = positiveKeywords.some(k => queryLower.includes(k));
+    const hasNegative = negativeKeywords.some(k => queryLower.includes(k));
+
+    if (hasPositive && !hasNegative) {
+      return { minValence: 0.2 }; // Prefer positive episodes
+    }
+    if (hasNegative && !hasPositive) {
+      return { maxValence: 0.2 }; // Include negative episodes (problem solving)
+    }
+
+    return undefined; // No emotional filter
+  }
+
+  /**
+   * Combine all context sources into parts with priorities
+   */
+  private combineAllContextParts(sources: {
+    workingState: WorkingMemoryState | null;
+    episodes: Episode[];
+    shortTerm: EnrichedContext;
+    longTerm: LongTermRetrievalResult | null;
+    includePreRetrieved: boolean;
+  }): ContextPart[] {
+    const parts: ContextPart[] = [];
+    const now = Date.now();
+
+    // 1. Working Memory (highest priority)
+    if (sources.workingState) {
+      // Add goal
+      parts.push({
+        type: 'working',
+        content: `[ZIEL] ${sources.workingState.currentGoal}`,
+        relevance: 1.0 * CONFIG.PRIORITY_WEIGHTS.working,
+        source: 'working',
+        timestamp: now,
+      });
+
+      // Add sub-goals
+      if (sources.workingState.subGoals.length > 0) {
+        parts.push({
+          type: 'working',
+          content: `[TEILZIELE] ${sources.workingState.subGoals.join('; ')}`,
+          relevance: 0.9 * CONFIG.PRIORITY_WEIGHTS.working,
+          source: 'working',
+          timestamp: now,
+        });
+      }
+
+      // Add active slots
+      for (const slot of sources.workingState.slots) {
+        if (slot.type !== 'goal') {
+          parts.push({
+            type: 'working',
+            content: `[${slot.type.toUpperCase()}] ${slot.content}`,
+            relevance: slot.activation * slot.priority * CONFIG.PRIORITY_WEIGHTS.working,
+            source: 'working',
+            timestamp: slot.lastAccessed.getTime(),
+          });
+        }
+      }
+    }
+
+    // 2. Episodic Memory
+    for (const episode of sources.episodes) {
+      parts.push({
+        type: 'episode',
+        content: `[Früher: ${episode.temporalContext.timeOfDay}] "${episode.trigger.substring(0, 80)}..." → "${episode.response.substring(0, 100)}..."`,
+        relevance: episode.retrievalStrength * CONFIG.PRIORITY_WEIGHTS.episodic,
+        source: 'episodic',
+        timestamp: episode.timestamp.getTime(),
+      });
+    }
+
+    // 3. Short-Term Memory
+    if (sources.shortTerm.conversationSummary) {
+      parts.push({
+        type: 'summary',
+        content: sources.shortTerm.conversationSummary,
+        relevance: 0.9 * CONFIG.PRIORITY_WEIGHTS.short_term,
+        source: 'short_term',
+        timestamp: now,
+      });
+    }
+
+    for (const hint of sources.shortTerm.contextualHints) {
+      parts.push({
+        type: 'hint',
+        content: hint,
+        relevance: 0.7 * CONFIG.PRIORITY_WEIGHTS.short_term,
+        source: 'short_term',
+        timestamp: now,
+      });
+    }
+
+    // 4. Pre-retrieved documents
+    if (sources.includePreRetrieved) {
+      for (const doc of sources.shortTerm.preloadedIdeas) {
+        parts.push({
+          type: 'document',
+          content: `[${doc.title}]: ${doc.summary}`,
+          relevance: doc.relevanceScore * CONFIG.PRIORITY_WEIGHTS.pre_retrieved,
+          source: 'pre_retrieved',
+          timestamp: doc.preloadedAt.getTime(),
+        });
+      }
+    }
+
+    // 5. Long-Term Memory
+    if (sources.longTerm) {
+      for (const fact of sources.longTerm.facts) {
+        parts.push({
+          type: 'fact',
+          content: fact.content,
+          relevance: fact.confidence * CONFIG.PRIORITY_WEIGHTS.long_term,
+          source: 'long_term',
+          timestamp: fact.lastConfirmed.getTime(),
+        });
+      }
+
+      for (const pattern of sources.longTerm.patterns) {
+        parts.push({
+          type: 'pattern',
+          content: pattern.pattern,
+          relevance: pattern.confidence * CONFIG.PRIORITY_WEIGHTS.long_term,
+          source: 'long_term',
+          timestamp: pattern.lastUsed.getTime(),
+        });
+      }
+
+      for (const interaction of sources.longTerm.relevantInteractions) {
+        parts.push({
+          type: 'interaction',
+          content: interaction.summary,
+          relevance: interaction.significance * CONFIG.PRIORITY_WEIGHTS.long_term,
+          source: 'long_term',
+          timestamp: interaction.timestamp.getTime(),
+        });
+      }
+    }
+
+    return parts;
+  }
+
+  /**
+   * Fit context parts to token budget
+   */
+  private fitToTokenBudget(
+    parts: ContextPart[],
+    maxTokens: number
+  ): { parts: ContextPart[]; estimatedTokens: number } {
+    // Sort by relevance
+    const sorted = [...parts].sort((a, b) => b.relevance - a.relevance);
+
+    const result: ContextPart[] = [];
+    let totalTokens = 0;
+
+    for (const part of sorted) {
+      const partTokens = Math.ceil(part.content.length / CONFIG.CHARS_PER_TOKEN);
+
+      if (totalTokens + partTokens <= maxTokens) {
+        result.push(part);
+        totalTokens += partTokens;
+      } else if (totalTokens < maxTokens * 0.9) {
+        // Try to fit a truncated version
+        const availableTokens = maxTokens - totalTokens - 10; // Reserve for "..."
+        const availableChars = availableTokens * CONFIG.CHARS_PER_TOKEN;
+
+        if (availableChars > 50) {
+          result.push({
+            ...part,
+            content: part.content.substring(0, availableChars) + '...',
+          });
+          totalTokens = maxTokens;
+        }
+        break;
+      } else {
+        break;
+      }
+    }
+
+    return { parts: result, estimatedTokens: totalTokens };
+  }
+
+  /**
+   * Build enhanced system prompt from all memory sources
+   */
+  private buildEnhancedSystemPrompt(sources: {
+    workingState: WorkingMemoryState | null;
+    episodes: Episode[];
+    shortTerm: EnrichedContext;
+    longTerm: LongTermRetrievalResult | null;
+    finalParts: ContextPart[];
+  }): string {
+    const sections: string[] = [];
+
+    // 1. Working Memory (current task focus)
+    if (sources.workingState) {
+      const wmContext = workingMemory.generateContextString(sources.workingState.sessionId);
+      if (wmContext) {
+        sections.push(wmContext);
+      }
+    }
+
+    // 2. Episodic Memory (similar past experiences)
+    if (sources.episodes.length > 0) {
+      const episodeText = sources.episodes
+        .slice(0, 3)
+        .map(e => `- [${e.temporalContext.timeOfDay}] "${e.trigger.substring(0, 60)}..." → Antwort war hilfreich`)
+        .join('\n');
+      sections.push(`[ÄHNLICHE FRÜHERE GESPRÄCHE]\n${episodeText}`);
+    }
+
+    // 3. Group remaining parts by type
+    const facts = sources.finalParts.filter(p => p.type === 'fact');
+    const patterns = sources.finalParts.filter(p => p.type === 'pattern');
+    const documents = sources.finalParts.filter(p => p.type === 'document');
+    const summaries = sources.finalParts.filter(p => p.type === 'summary');
+
+    if (summaries.length > 0) {
+      sections.push(`[KONVERSATIONS-HISTORIE]\n${summaries.map(s => s.content).join('\n')}`);
+    }
+
+    if (facts.length > 0) {
+      sections.push(`[BEKANNTES ÜBER DEN NUTZER]\n${facts.map(f => `- ${f.content}`).join('\n')}`);
+    }
+
+    if (patterns.length > 0) {
+      sections.push(`[ERKANNTE MUSTER]\n${patterns.map(p => `- ${p.content}`).join('\n')}`);
+    }
+
+    if (documents.length > 0) {
+      sections.push(`[RELEVANTE IDEEN]\n${documents.map(d => d.content).join('\n')}`);
+    }
+
+    if (sections.length === 0) return '';
+
+    return `\n\n=== PERSÖNLICHER KONTEXT (4-Layer Memory) ===\n${sections.join('\n\n')}\n\nBerücksichtige diesen Kontext bei deiner Antwort.`;
   }
 
   // ===========================================
@@ -348,7 +883,9 @@ class MemoryCoordinator {
    */
   private getTypeBoost(type: ContextPart['type']): number {
     const boosts: Record<ContextPart['type'], number> = {
+      'working': 1.3,      // Working memory (current task) - highest priority
       'summary': 1.2,      // Conversation summaries are very important
+      'episode': 1.15,     // Episodic memories (concrete experiences)
       'fact': 1.1,         // Known facts about user
       'pattern': 1.0,      // Behavioral patterns
       'document': 0.95,    // Pre-retrieved documents
