@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './LearningTasksDashboard.css';
 
 interface LearningTask {
@@ -68,6 +70,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [tasks, setTasks] = useState<LearningTask[]>([]);
   const [stats, setStats] = useState<LearningStats | null>(null);
   const [insights, setInsights] = useState<LearningInsight[]>([]);
@@ -249,26 +252,30 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
 
   if (loading) {
     return (
-      <div className="learning-tasks-dashboard">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Lernziele...</p>
+      <div className="learning-tasks-dashboard neuro-page-enter">
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Lernziele...</p>
+          <p className="neuro-loading-submessage">{EMPTY_STATE_MESSAGES.learning.description}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="learning-tasks-dashboard">
-      <div className="learning-header">
-        <button className="back-button" onClick={onBack}>
-          ← Zurück
+    <div className="learning-tasks-dashboard neuro-page-enter">
+      <div className="learning-header liquid-glass-nav">
+        <button className="back-button neuro-hover-lift" onClick={onBack}>
+          ← Zuruck
         </button>
-        <h1>📚 Lernziele</h1>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} Lernziele</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className={`context-indicator ${context}`}>
           {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
         </span>
-        <button className="create-btn" onClick={() => setShowCreateModal(true)}>
+        <button className="create-btn neuro-button" onClick={() => setShowCreateModal(true)}>
           + Neues Lernziel
         </button>
       </div>
@@ -301,18 +308,19 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
       {activeTab === 'tasks' && (
         <div className="tab-content">
           {tasks.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📚</span>
-              <h3>Keine Lernziele</h3>
-              <p>Erstelle dein erstes Lernziel, um loszulegen.</p>
-              <button className="action-btn" onClick={() => setShowCreateModal(true)}>
+            <div className="empty-state neuro-empty-state">
+              <span className="neuro-empty-icon">📚</span>
+              <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.learning.title}</h3>
+              <p className="neuro-empty-description">Erstelle dein erstes Lernziel, um loszulegen.</p>
+              <p className="neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.learning.encouragement}</p>
+              <button className="action-btn neuro-button" onClick={() => setShowCreateModal(true)}>
                 + Lernziel erstellen
               </button>
             </div>
           ) : (
-            <div className="tasks-list">
-              {tasks.map(task => (
-                <div key={task.id} className={`task-card ${task.status}`}>
+            <div className="tasks-list neuro-flow-list">
+              {tasks.slice(0, 7).map((task, index) => (
+                <div key={task.id} className={`task-card liquid-glass neuro-hover-lift neuro-stagger-item ${task.status}`} style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="task-header">
                     <span className="task-category">
                       {getCategoryInfo(task.category).icon} {getCategoryInfo(task.category).label}
@@ -398,28 +406,28 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
       {/* Stats Tab */}
       {activeTab === 'stats' && stats && (
         <div className="tab-content">
-          <div className="stats-grid">
-            <div className="stat-card">
+          <div className="stats-grid neuro-flow-list">
+            <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
               <span className="stat-icon">📚</span>
               <span className="stat-value">{stats.total_tasks}</span>
               <span className="stat-label">Lernziele</span>
             </div>
-            <div className="stat-card">
+            <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
               <span className="stat-icon">✅</span>
               <span className="stat-value">{stats.completed_tasks}</span>
               <span className="stat-label">Abgeschlossen</span>
             </div>
-            <div className="stat-card">
+            <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
               <span className="stat-icon">⏱️</span>
               <span className="stat-value">{stats.total_hours.toFixed(0)}h</span>
               <span className="stat-label">Gesamt gelernt</span>
             </div>
-            <div className="stat-card">
+            <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
               <span className="stat-icon">📈</span>
               <span className="stat-value">{stats.this_week_hours.toFixed(1)}h</span>
               <span className="stat-label">Diese Woche</span>
             </div>
-            <div className="stat-card highlight">
+            <div className="stat-card highlight neuro-hover-lift neuro-stagger-item">
               <span className="stat-icon">🔥</span>
               <span className="stat-value">{stats.streak_days}</span>
               <span className="stat-label">Tage Streak</span>
@@ -455,15 +463,15 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
       {activeTab === 'insights' && (
         <div className="tab-content">
           {insights.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">💡</span>
-              <h3>Keine neuen Insights</h3>
-              <p>Lerne weiter, um personalisierte Tipps zu erhalten.</p>
+            <div className="empty-state neuro-empty-state">
+              <span className="neuro-empty-icon">💡</span>
+              <h3 className="neuro-empty-title">Keine neuen Insights</h3>
+              <p className="neuro-empty-description">Lerne weiter, um personalisierte Tipps zu erhalten.</p>
             </div>
           ) : (
-            <div className="insights-list">
-              {insights.map(insight => (
-                <div key={insight.id} className="insight-card">
+            <div className="insights-list neuro-flow-list">
+              {insights.slice(0, 7).map((insight, index) => (
+                <div key={insight.id} className="insight-card liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="insight-content">
                     <p className="insight-message">{insight.message}</p>
                     {insight.suggestion && (

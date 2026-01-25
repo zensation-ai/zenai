@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
-import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './ExportDashboard.css';
 
@@ -308,22 +308,22 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
 
       {activeTab === 'backup' && (
         <div className="backup-content">
-          <div className="backup-card">
-            <div className="backup-icon">💾</div>
-            <h3>Vollständiges Backup</h3>
+          <div className="backup-card liquid-glass neuro-stagger-item">
+            <div className="backup-icon neuro-breathing">💾</div>
+            <h3>Vollstandiges Backup</h3>
             <p>
               Erstelle ein komplettes Backup aller deiner Daten inkl. Medien,
               Einstellungen und AI-Lernfortschritt.
             </p>
-            <ul className="backup-includes">
-              <li>✓ Alle Ideen und Meetings</li>
-              <li>✓ Inkubator & Lernziele</li>
-              <li>✓ Hochgeladene Medien</li>
-              <li>✓ Automationen & Einstellungen</li>
-              <li>✓ AI Personalisierung</li>
+            <ul className="backup-includes neuro-flow-list">
+              <li className="neuro-stagger-item">✓ Alle Ideen und Meetings</li>
+              <li className="neuro-stagger-item">✓ Inkubator & Lernziele</li>
+              <li className="neuro-stagger-item">✓ Hochgeladene Medien</li>
+              <li className="neuro-stagger-item">✓ Automationen & Einstellungen</li>
+              <li className="neuro-stagger-item">✓ AI Personalisierung</li>
             </ul>
             <button
-              className="backup-btn"
+              className="backup-btn neuro-button"
               onClick={handleFullBackup}
               disabled={loading}
             >
@@ -338,11 +338,11 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
             </button>
           </div>
 
-          <div className="backup-info">
+          <div className="backup-info liquid-glass neuro-stagger-item">
             <h4>📌 Hinweis</h4>
             <p>
-              Backups werden als ZIP-Datei heruntergeladen und können jederzeit
-              wiederhergestellt werden. Wir empfehlen regelmäßige Backups.
+              Backups werden als ZIP-Datei heruntergeladen und konnen jederzeit
+              wiederhergestellt werden. Wir empfehlen regelmaige Backups.
             </p>
           </div>
         </div>

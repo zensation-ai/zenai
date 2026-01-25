@@ -433,6 +433,20 @@
   color: var(--primary);
 }
 
+/* Header Greeting */
+.sync-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.sync-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sync-dashboard {
@@ -460,5 +474,23 @@
   .sync-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .sync-header .greeting-subtext {
+    display: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sync-dashboard .neuro-stagger-item,
+  .sync-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .sync-dashboard .neuro-hover-lift:hover {
+    transform: none;
   }
 }

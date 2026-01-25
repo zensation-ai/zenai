@@ -422,6 +422,20 @@
   to { transform: rotate(360deg); }
 }
 
+/* Header Greeting */
+.export-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.export-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .export-dashboard {
@@ -437,6 +451,10 @@
     flex-wrap: wrap;
   }
 
+  .export-header .greeting-subtext {
+    display: none;
+  }
+
   .format-options {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -447,5 +465,23 @@
 
   .date-range {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .export-dashboard .neuro-stagger-item,
+  .export-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .export-dashboard .neuro-hover-lift:hover {
+    transform: none;
+  }
+
+  .export-dashboard .neuro-breathing {
+    animation: none;
   }
 }

@@ -189,7 +189,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
   const handleGenerateTopics = async () => {
     setGenerating(true);
     try {
-      const response = await axios.post('/api/knowledge-graph/topics/generate', {
+      await axios.post('/api/knowledge-graph/topics/generate', {
         context: 'personal',
       });
       showGenerationReward();
@@ -206,7 +206,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
   const handleDiscoverRelationships = async () => {
     setDiscovering(true);
     try {
-      const response = await axios.post('/api/knowledge-graph/discover', {
+      await axios.post('/api/knowledge-graph/discover', {
         context: 'personal',
       });
       showGenerationReward();

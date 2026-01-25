@@ -540,6 +540,19 @@
   color: var(--text-muted);
 }
 
+/* Header Greeting */
+.learning-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.learning-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .learning-tasks-dashboard { padding: 1rem; padding-top: 0; }
@@ -550,6 +563,9 @@
     padding-right: 1rem;
     flex-wrap: wrap;
   }
+  .learning-header .greeting-subtext {
+    display: none;
+  }
   .create-btn { width: 100%; margin-top: 12px; }
   .learning-tabs { flex-wrap: wrap; }
   .tab-btn { min-width: calc(50% - 4px); font-size: 0.85rem; }
@@ -557,4 +573,18 @@
   .form-row { grid-template-columns: 1fr; }
   .task-actions { flex-direction: column; }
   .task-actions button { width: 100%; }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .learning-tasks-dashboard .neuro-stagger-item,
+  .learning-tasks-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .learning-tasks-dashboard .neuro-hover-lift:hover {
+    transform: none;
+  }
 }

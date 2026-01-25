@@ -570,6 +570,19 @@
   opacity: 0.8;
 }
 
+/* Header Greeting */
+.profile-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.profile-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 @media (max-width: 768px) {
   .profile-dashboard {
     padding: 1rem;
@@ -583,6 +596,10 @@
     padding-right: 1rem;
   }
 
+  .profile-header .greeting-subtext {
+    display: none;
+  }
+
   .stats-overview {
     grid-template-columns: 1fr;
   }
@@ -594,5 +611,19 @@
   .bar-label {
     width: 80px;
     font-size: 0.8rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .profile-dashboard .neuro-stagger-item,
+  .profile-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .profile-dashboard .neuro-hover-lift:hover {
+    transform: none;
   }
 }

@@ -1108,3 +1108,37 @@
 .legend-color.partial {
   background: linear-gradient(180deg, #f59e0b, #d97706);
 }
+
+/* Header Greeting */
+.learning-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.learning-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .learning-dashboard .neuro-stagger-item,
+  .learning-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .learning-dashboard .neuro-hover-lift:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .learning-header .greeting-subtext {
+    display: none;
+  }
+}

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getTimeBasedGreeting } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './ProfileDashboard.css';
 
 interface UserProfile {
@@ -53,6 +55,7 @@ const typeLabels: Record<string, { label: string; icon: string }> = {
 };
 
 export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
@@ -190,10 +193,11 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
   if (loading) {
     return (
-      <div className="profile-dashboard">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Profil...</p>
+      <div className="profile-dashboard neuro-page-enter">
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Profil...</p>
+          <p className="neuro-loading-submessage">Deine Daten werden vorbereitet</p>
         </div>
       </div>
     );
@@ -201,10 +205,10 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
   if (!profile) {
     return (
-      <div className="profile-dashboard">
-        <div className="error-state">
-          <p>{error || 'Profil konnte nicht geladen werden'}</p>
-          <button onClick={handleReload}>Erneut versuchen</button>
+      <div className="profile-dashboard neuro-page-enter">
+        <div className="error-state neuro-empty-state">
+          <p className="neuro-empty-description">{error || 'Profil konnte nicht geladen werden'}</p>
+          <button type="button" className="neuro-button" onClick={handleReload}>Erneut versuchen</button>
         </div>
       </div>
     );
@@ -215,48 +219,52 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
   const maxTopicCount = Math.max(...profile.top_topics.map(([, count]) => count), 1);
 
   return (
-    <div className="profile-dashboard">
-      <div className="profile-header">
-        <button className="back-button" onClick={onBack}>
-          ← Zurück
+    <div className="profile-dashboard neuro-page-enter">
+      <div className="profile-header liquid-glass-nav">
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+          ← Zuruck
         </button>
-        <h1>Dein Profil</h1>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} Dein Profil</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+          {context === 'personal' ? 'Personlich' : 'Arbeit'}
         </span>
         <button
-          className="recalculate-btn"
+          type="button"
+          className="recalculate-btn neuro-hover-lift"
           onClick={handleRecalculate}
           disabled={recalculating}
         >
-          {recalculating ? '...' : '🔄 Aktualisieren'}
+          {recalculating ? '...' : 'Aktualisieren'}
         </button>
       </div>
 
       {error && (
-        <div className="error-banner">
+        <div className="error-banner neuro-stagger-item">
           <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
+          <button type="button" onClick={() => setError(null)}>x</button>
         </div>
       )}
 
       {/* Stats Overview */}
-      <div className="stats-overview">
-        <div className="stat-card">
+      <div className="stats-overview neuro-flow-list">
+        <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
           <span className="stat-icon">💡</span>
           <div className="stat-content">
             <span className="stat-value">{profile.total_ideas}</span>
             <span className="stat-label">Ideen gesamt</span>
           </div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
           <span className="stat-icon">📅</span>
           <div className="stat-content">
             <span className="stat-value">{profile.total_meetings}</span>
             <span className="stat-label">Meetings</span>
           </div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
           <span className="stat-icon">📈</span>
           <div className="stat-content">
             <span className="stat-value">{profile.avg_ideas_per_day.toFixed(1)}</span>
@@ -266,15 +274,15 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       </div>
 
       {/* Business Profile Edit */}
-      <div className="business-profile-section">
+      <div className="business-profile-section liquid-glass neuro-stagger-item">
         <div className="section-header-row">
-          <h2>🏢 Unternehmensprofil</h2>
+          <h2>Unternehmensprofil</h2>
           <button
             type="button"
-            className={`edit-profile-btn ${isEditing ? 'active' : ''}`}
+            className={`edit-profile-btn neuro-hover-lift ${isEditing ? 'active' : ''}`}
             onClick={() => setIsEditing(!isEditing)}
           >
-            {isEditing ? '✕ Abbrechen' : '✏️ Bearbeiten'}
+            {isEditing ? 'Abbrechen' : 'Bearbeiten'}
           </button>
         </div>
 
@@ -396,11 +404,11 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
       {/* Insights */}
       {recommendations && recommendations.insights.length > 0 && (
-        <div className="insights-section">
-          <h2>🎯 Erkenntnisse</h2>
-          <div className="insights-list">
-            {recommendations.insights.map((insight, i) => (
-              <div key={i} className="insight-item">
+        <div className="insights-section neuro-stagger-item">
+          <h2>Erkenntnisse</h2>
+          <div className="insights-list neuro-flow-list">
+            {recommendations.insights.slice(0, 7).map((insight, i) => (
+              <div key={i} className="insight-item neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${i * 50}ms` }}>
                 {insight}
               </div>
             ))}
@@ -408,10 +416,10 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
         </div>
       )}
 
-      <div className="charts-grid">
+      <div className="charts-grid neuro-flow-list">
         {/* Categories Distribution */}
         {profile.top_categories.length > 0 && (
-          <div className="chart-card">
+          <div className="chart-card liquid-glass neuro-stagger-item neuro-hover-lift">
             <h3>Kategorien</h3>
             <div className="bar-chart">
               {profile.top_categories.map(([cat, count]) => (
@@ -432,7 +440,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
         {/* Types Distribution */}
         {profile.top_types.length > 0 && (
-          <div className="chart-card">
+          <div className="chart-card liquid-glass neuro-stagger-item neuro-hover-lift">
             <h3>Typen</h3>
             <div className="bar-chart">
               {profile.top_types.map(([type, count]) => (
@@ -456,9 +464,9 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
       {/* Top Topics */}
       {profile.top_topics.length > 0 && (
-        <div className="topics-section">
-          <h2>🏷️ Top Themen</h2>
-          <div className="topics-cloud">
+        <div className="topics-section neuro-stagger-item">
+          <h2>Top Themen</h2>
+          <div className="topics-cloud liquid-glass neuro-flow-list">
             {profile.top_topics.map(([topic, count]) => (
               <span
                 key={topic}
@@ -478,11 +486,11 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
       {/* Optimal Hours */}
       {recommendations && recommendations.optimal_hours.length > 0 && (
-        <div className="hours-section">
-          <h2>⏰ Produktive Stunden</h2>
-          <div className="hours-display">
-            {recommendations.optimal_hours.map((hour) => (
-              <span key={hour} className="hour-badge">
+        <div className="hours-section neuro-stagger-item">
+          <h2>Produktive Stunden</h2>
+          <div className="hours-display neuro-flow-list">
+            {recommendations.optimal_hours.slice(0, 7).map((hour, index) => (
+              <span key={hour} className="hour-badge neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${index * 50}ms` }}>
                 {hour}:00 - {hour + 1}:00
               </span>
             ))}
@@ -491,15 +499,16 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       )}
 
       {/* Settings */}
-      <div className="settings-section">
-        <h2>⚙️ Einstellungen</h2>
-        <div className="setting-item">
+      <div className="settings-section neuro-stagger-item">
+        <h2>Einstellungen</h2>
+        <div className="setting-item liquid-glass neuro-hover-lift">
           <div className="setting-info">
-            <strong>Auto-Priorität</strong>
-            <p>Automatische Prioritätsvorschläge basierend auf gelernten Mustern</p>
+            <strong>Auto-Prioritat</strong>
+            <p>Automatische Prioritatsvorschlage basierend auf gelernten Mustern</p>
           </div>
           <button
-            className={`toggle-btn ${profile.auto_priority_enabled ? 'active' : ''}`}
+            type="button"
+            className={`toggle-btn neuro-button ${profile.auto_priority_enabled ? 'active neuro-success-burst' : ''}`}
             onClick={handleToggleAutoPriority}
           >
             {profile.auto_priority_enabled ? 'AN' : 'AUS'}
@@ -509,14 +518,14 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
       {/* Suggested Topics */}
       {recommendations && recommendations.suggested_topics.length > 0 && (
-        <div className="suggestions-section">
-          <h2>💡 Vorgeschlagene Themen</h2>
+        <div className="suggestions-section neuro-stagger-item">
+          <h2>Vorgeschlagene Themen</h2>
           <p className="suggestions-hint">
-            Basierend auf deinen Interessen könnten diese Themen interessant sein:
+            Basierend auf deinen Interessen konnten diese Themen interessant sein:
           </p>
-          <div className="suggestions-list">
-            {recommendations.suggested_topics.map((topic, i) => (
-              <span key={i} className="suggestion-tag">
+          <div className="suggestions-list neuro-flow-list">
+            {recommendations.suggested_topics.slice(0, 7).map((topic, i) => (
+              <span key={i} className="suggestion-tag neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${i * 50}ms` }}>
                 {topic}
               </span>
             ))}

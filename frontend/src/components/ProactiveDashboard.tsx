@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getTimeBasedGreeting } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './ProactiveDashboard.css';
 
 interface Suggestion {
@@ -35,6 +37,7 @@ interface ProactiveDashboardProps {
 }
 
 export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [activeTab, setActiveTab] = useState<'suggestions' | 'routines' | 'settings'>('suggestions');
   const [loading, setLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -172,68 +175,72 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   if (loading) {
     return (
-      <div className="proactive-dashboard">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade AI-Vorschläge...</p>
+      <div className="proactive-dashboard neuro-page-enter">
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade AI-Vorschlage...</p>
+          <p className="neuro-loading-submessage">Muster werden analysiert</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="proactive-dashboard">
-      <div className="proactive-header">
-        <button className="back-button" onClick={onBack}>
-          ← Zurück
+    <div className="proactive-dashboard neuro-page-enter">
+      <div className="proactive-header liquid-glass-nav">
+        <button className="back-button neuro-hover-lift" onClick={onBack}>
+          ← Zuruck
         </button>
-        <h1>✨ Proaktive AI</h1>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} Proaktive AI</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+          {context === 'personal' ? 'Personlich' : 'Arbeit'}
         </span>
       </div>
 
-      <div className="proactive-tabs">
+      <div className="proactive-tabs liquid-glass">
         <button
-          className={`tab-btn ${activeTab === 'suggestions' ? 'active' : ''}`}
+          className={`tab-btn neuro-hover-lift ${activeTab === 'suggestions' ? 'active' : ''}`}
           onClick={() => setActiveTab('suggestions')}
         >
-          💡 Vorschläge
+          Vorschlage
           {pendingSuggestions.length > 0 && (
             <span className="badge">{pendingSuggestions.length}</span>
           )}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'routines' ? 'active' : ''}`}
+          className={`tab-btn neuro-hover-lift ${activeTab === 'routines' ? 'active' : ''}`}
           onClick={() => setActiveTab('routines')}
         >
-          🔄 Routinen
+          Routinen
         </button>
         <button
-          className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+          className={`tab-btn neuro-hover-lift ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
-          ⚙️ Einstellungen
+          Einstellungen
         </button>
       </div>
 
       {activeTab === 'suggestions' && (
-        <div className="suggestions-content">
+        <div className="suggestions-content neuro-stagger-item">
           {stats && (
-            <div className="stats-bar">
-              <div className="stat-item">
+            <div className="stats-bar liquid-glass neuro-stagger-item">
+              <div className="stat-item neuro-hover-lift">
                 <span className="stat-label">Gesamt</span>
                 <span className="stat-value">{stats.total_suggestions}</span>
               </div>
-              <div className="stat-item accepted">
+              <div className="stat-item accepted neuro-hover-lift">
                 <span className="stat-label">Angenommen</span>
                 <span className="stat-value">{stats.accepted}</span>
               </div>
-              <div className="stat-item dismissed">
+              <div className="stat-item dismissed neuro-hover-lift">
                 <span className="stat-label">Abgelehnt</span>
                 <span className="stat-value">{stats.dismissed}</span>
               </div>
-              <div className="stat-item rate">
+              <div className="stat-item rate neuro-hover-lift">
                 <span className="stat-label">Akzeptanzrate</span>
                 <span className="stat-value">{Math.round(stats.acceptance_rate * 100)}%</span>
               </div>
@@ -241,15 +248,16 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
           )}
 
           {pendingSuggestions.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">✨</span>
-              <h3>Keine neuen Vorschläge</h3>
-              <p>Die AI analysiert deine Aktivitäten und schlägt relevante Aktionen vor.</p>
+            <div className="empty-state neuro-empty-state neuro-stagger-item">
+              <span className="empty-icon neuro-empty-icon neuro-breathing">✨</span>
+              <h3 className="neuro-empty-title">Keine neuen Vorschlage</h3>
+              <p className="neuro-empty-description">Die AI analysiert deine Aktivitaten und schlagt relevante Aktionen vor.</p>
+              <p className="neuro-empty-encouragement">Neue Vorschlage kommen bald!</p>
             </div>
           ) : (
-            <div className="suggestions-list">
-              {pendingSuggestions.map(suggestion => (
-                <div key={suggestion.id} className="suggestion-card">
+            <div className="suggestions-list neuro-flow-list">
+              {pendingSuggestions.slice(0, 7).map((suggestion, index) => (
+                <div key={suggestion.id} className="suggestion-card liquid-glass neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="suggestion-header">
                     <span className="suggestion-icon">{getSuggestionIcon(suggestion.type)}</span>
                     <div className="suggestion-meta">
@@ -264,16 +272,16 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
                   <p className="suggestion-description">{suggestion.description}</p>
                   <div className="suggestion-actions">
                     <button
-                      className="action-btn accept"
+                      className="action-btn accept neuro-button neuro-success-burst"
                       onClick={() => handleAcceptSuggestion(suggestion.id)}
                     >
-                      ✓ Annehmen
+                      Annehmen
                     </button>
                     <button
-                      className="action-btn dismiss"
+                      className="action-btn dismiss neuro-button"
                       onClick={() => handleDismissSuggestion(suggestion.id)}
                     >
-                      ✕ Ablehnen
+                      Ablehnen
                     </button>
                   </div>
                 </div>
@@ -284,17 +292,18 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       )}
 
       {activeTab === 'routines' && (
-        <div className="routines-content">
+        <div className="routines-content neuro-stagger-item">
           {routines.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">🔄</span>
-              <h3>Keine Routinen erkannt</h3>
-              <p>Die AI erkennt automatisch wiederkehrende Muster in deinem Verhalten.</p>
+            <div className="empty-state neuro-empty-state neuro-stagger-item">
+              <span className="empty-icon neuro-empty-icon neuro-breathing">🔄</span>
+              <h3 className="neuro-empty-title">Keine Routinen erkannt</h3>
+              <p className="neuro-empty-description">Die AI erkennt automatisch wiederkehrende Muster in deinem Verhalten.</p>
+              <p className="neuro-empty-encouragement">Weiter so - Muster werden bald erkannt!</p>
             </div>
           ) : (
-            <div className="routines-list">
-              {routines.map(routine => (
-                <div key={routine.id} className={`routine-card ${routine.enabled ? '' : 'disabled'}`}>
+            <div className="routines-list neuro-flow-list">
+              {routines.slice(0, 7).map((routine, index) => (
+                <div key={routine.id} className={`routine-card liquid-glass neuro-stagger-item neuro-hover-lift ${routine.enabled ? '' : 'disabled'}`} style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="routine-info">
                     <h3 className="routine-name">{routine.name}</h3>
                     <p className="routine-pattern">{routine.pattern}</p>
@@ -321,13 +330,13 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       )}
 
       {activeTab === 'settings' && (
-        <div className="settings-content">
-          <div className="settings-section">
+        <div className="settings-content neuro-stagger-item">
+          <div className="settings-section liquid-glass neuro-stagger-item">
             <h3>Allgemein</h3>
-            <div className="setting-item">
+            <div className="setting-item neuro-hover-lift">
               <div className="setting-info">
-                <span className="setting-label">Proaktive Vorschläge</span>
-                <span className="setting-desc">AI analysiert und schlägt Aktionen vor</span>
+                <span className="setting-label">Proaktive Vorschlage</span>
+                <span className="setting-desc">AI analysiert und schlagt Aktionen vor</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -338,10 +347,10 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
                 <span className="toggle-slider"></span>
               </label>
             </div>
-            <div className="setting-item">
+            <div className="setting-item neuro-hover-lift">
               <div className="setting-info">
                 <span className="setting-label">Benachrichtigungen</span>
-                <span className="setting-desc">Push-Benachrichtigungen für neue Vorschläge</span>
+                <span className="setting-desc">Push-Benachrichtigungen fur neue Vorschlage</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -352,7 +361,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
                 <span className="toggle-slider"></span>
               </label>
             </div>
-            <div className="setting-item">
+            <div className="setting-item neuro-hover-lift">
               <div className="setting-info">
                 <span className="setting-label">Routinen-Erkennung</span>
                 <span className="setting-desc">Automatisch wiederkehrende Muster erkennen</span>
@@ -368,17 +377,17 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
             </div>
           </div>
 
-          <div className="settings-section">
-            <h3>Vorschlags-Häufigkeit</h3>
-            <div className="frequency-options">
+          <div className="settings-section liquid-glass neuro-stagger-item">
+            <h3>Vorschlags-Haufigkeit</h3>
+            <div className="frequency-options neuro-flow-list">
               {[
-                { id: 'low', label: 'Wenig', desc: 'Nur wichtige Vorschläge' },
+                { id: 'low', label: 'Wenig', desc: 'Nur wichtige Vorschlage' },
                 { id: 'medium', label: 'Mittel', desc: 'Ausgewogene Menge' },
-                { id: 'high', label: 'Viel', desc: 'Alle möglichen Vorschläge' },
+                { id: 'high', label: 'Viel', desc: 'Alle moglichen Vorschlage' },
               ].map(option => (
                 <button
                   key={option.id}
-                  className={`frequency-option ${settings.suggestion_frequency === option.id ? 'active' : ''}`}
+                  className={`frequency-option neuro-hover-lift ${settings.suggestion_frequency === option.id ? 'active' : ''}`}
                   onClick={() => setSettings(prev => ({ ...prev, suggestion_frequency: option.id }))}
                 >
                   <span className="frequency-label">{option.label}</span>
@@ -388,8 +397,8 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
             </div>
           </div>
 
-          <button className="save-btn" onClick={handleSaveSettings}>
-            💾 Einstellungen speichern
+          <button className="save-btn neuro-button neuro-success-burst" onClick={handleSaveSettings}>
+            Einstellungen speichern
           </button>
         </div>
       )}

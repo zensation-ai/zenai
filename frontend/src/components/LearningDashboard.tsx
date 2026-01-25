@@ -387,23 +387,23 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
       <div className="tab-content">
         {activeTab === 'overview' && (
           <div className="overview-tab">
-            <div className="stats-grid">
-              <div className="stat-card">
+            <div className="stats-grid neuro-flow-list">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-icon">🎯</div>
                 <div className="stat-value">{data.focus.stats.active_focus_areas}</div>
                 <div className="stat-label">Aktive Fokus-Themen</div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-icon">💡</div>
                 <div className="stat-value">{data.suggestions.active.length}</div>
-                <div className="stat-label">Offene Vorschläge</div>
+                <div className="stat-label">Offene Vorschlage</div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-icon">🔍</div>
                 <div className="stat-value">{data.research.pending.length}</div>
                 <div className="stat-label">Vorbereitete Recherchen</div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-icon">⭐</div>
                 <div className="stat-value">{data.feedback.stats.average_rating.toFixed(1)}</div>
                 <div className="stat-label">Durchschnittliche Bewertung</div>
@@ -515,18 +515,18 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         {activeTab === 'focus' && (
           <div className="focus-tab">
             <div className="focus-actions">
-              <button type="button" className="add-focus-button" onClick={() => setShowAddFocus(true)}>
+              <button type="button" className="add-focus-button neuro-button" onClick={() => setShowAddFocus(true)}>
                 + Neues Fokus-Thema
               </button>
               {data.focus.active_areas.length === 0 && (
-                <button type="button" className="preset-button" onClick={handleCreatePresets}>
+                <button type="button" className="preset-button neuro-hover-lift" onClick={handleCreatePresets}>
                   Preset-Themen laden
                 </button>
               )}
             </div>
 
             {showAddFocus && (
-              <div className="add-focus-form">
+              <div className="add-focus-form liquid-glass neuro-stagger-item">
                 <input
                   type="text"
                   placeholder="Name des Fokus-Themas"
@@ -555,14 +555,16 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
               </div>
             )}
 
-            <div className="focus-list">
+            <div className="focus-list neuro-flow-list">
               {data.focus.active_areas.length === 0 ? (
-                <div className="empty-state">
-                  Keine Fokus-Themen definiert. Füge Themen hinzu, auf die sich die KI konzentrieren soll.
+                <div className="empty-state neuro-empty-state">
+                  <span className="neuro-empty-icon">🎯</span>
+                  <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.learning.title}</h3>
+                  <p className="neuro-empty-description">Fuge Themen hinzu, auf die sich die KI konzentrieren soll.</p>
                 </div>
               ) : (
-                data.focus.active_areas.map((focus) => (
-                  <div key={focus.id} className={`focus-card ${!focus.is_active ? 'inactive' : ''}`}>
+                data.focus.active_areas.slice(0, 7).map((focus, index) => (
+                  <div key={focus.id} className={`focus-card liquid-glass neuro-hover-lift neuro-stagger-item ${!focus.is_active ? 'inactive' : ''}`} style={{ animationDelay: `${index * 50}ms` }}>
                     <div className="focus-header">
                       <h3>{focus.name}</h3>
                       <div className="focus-priority">Priorität: {focus.priority}</div>
@@ -614,13 +616,15 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         {activeTab === 'suggestions' && (
           <div className="suggestions-tab">
             {data.suggestions.active.length === 0 ? (
-              <div className="empty-state">
-                Keine aktiven Vorschläge. Die KI analysiert deine Aktivitäten und macht bald Vorschläge.
+              <div className="empty-state neuro-empty-state">
+                <span className="neuro-empty-icon">💡</span>
+                <h3 className="neuro-empty-title">Keine aktiven Vorschlage</h3>
+                <p className="neuro-empty-description">Die KI analysiert deine Aktivitaten und macht bald Vorschlage.</p>
               </div>
             ) : (
-              <div className="suggestions-list">
-                {data.suggestions.active.map((suggestion) => (
-                  <div key={suggestion.id} className="suggestion-card">
+              <div className="suggestions-list neuro-flow-list">
+                {data.suggestions.active.slice(0, 7).map((suggestion, index) => (
+                  <div key={suggestion.id} className="suggestion-card liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                     <div className="suggestion-header">
                       <span className="suggestion-type-badge">
                         {getSuggestionIcon(suggestion.suggestion_type)}
@@ -668,15 +672,18 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         {activeTab === 'research' && (
           <div className="research-tab">
             {data.research.pending.length === 0 ? (
-              <div className="empty-state">
-                Keine vorbereiteten Recherchen. Erstelle Aufgaben mit Recherche-Hinweisen, und die KI bereitet automatisch Informationen vor.
+              <div className="empty-state neuro-empty-state">
+                <span className="neuro-empty-icon">🔍</span>
+                <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.search.title}</h3>
+                <p className="neuro-empty-description">Erstelle Aufgaben mit Recherche-Hinweisen, und die KI bereitet automatisch Informationen vor.</p>
               </div>
             ) : (
-              <div className="research-list">
-                {data.research.pending.map((research) => (
+              <div className="research-list neuro-flow-list">
+                {data.research.pending.slice(0, 7).map((research, index) => (
                   <div
                     key={research.id}
-                    className="research-card"
+                    className="research-card liquid-glass neuro-hover-lift neuro-stagger-item"
+                    style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => handleViewResearch(research.id)}
                   >
                     <div className="research-status-badge">
@@ -699,20 +706,20 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
 
         {activeTab === 'feedback' && (
           <div className="feedback-tab">
-            <div className="feedback-stats">
-              <div className="stat-card">
+            <div className="feedback-stats neuro-flow-list">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-value">{data.feedback.stats.total_feedback}</div>
                 <div className="stat-label">Gesamt-Feedback</div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-value">{data.feedback.stats.average_rating.toFixed(1)}</div>
                 <div className="stat-label">Durchschnitt</div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-value">{data.feedback.stats.corrections_count}</div>
                 <div className="stat-label">Korrekturen</div>
               </div>
-              <div className="stat-card">
+              <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
                 <div className="stat-value">{data.feedback.stats.applied_count}</div>
                 <div className="stat-label">Angewendet</div>
               </div>

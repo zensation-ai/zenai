@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getTimeBasedGreeting } from '../utils/aiPersonality';
+import '../neurodesign.css';
 import './SyncDashboard.css';
 
 interface Device {
@@ -32,6 +34,7 @@ interface SyncDashboardProps {
 }
 
 export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
+  const greeting = getTimeBasedGreeting();
   const [activeTab, setActiveTab] = useState<'status' | 'devices' | 'changes'>('status');
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -180,48 +183,55 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
 
   if (loading) {
     return (
-      <div className="sync-dashboard">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Sync-Status...</p>
+      <div className="sync-dashboard neuro-page-enter">
+        <div className="loading-state neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Sync-Status...</p>
+          <p className="neuro-loading-submessage">Verbindungen werden gepruft</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="sync-dashboard">
-      <div className="sync-header">
-        <button className="back-button" onClick={onBack}>
-          ← Zurück
+    <div className="sync-dashboard neuro-page-enter">
+      <div className="sync-header liquid-glass-nav">
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+          ← Zuruck
         </button>
-        <h1>🔄 Synchronisation</h1>
+        <div className="header-greeting">
+          <h1>{greeting.emoji} Synchronisation</h1>
+          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+        </div>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+          {context === 'personal' ? 'Personlich' : 'Arbeit'}
         </span>
       </div>
 
-      <div className="sync-tabs">
+      <div className="sync-tabs liquid-glass">
         <button
-          className={`tab-btn ${activeTab === 'status' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-hover-lift ${activeTab === 'status' ? 'active' : ''}`}
           onClick={() => setActiveTab('status')}
         >
-          📊 Status
+          Status
         </button>
         <button
-          className={`tab-btn ${activeTab === 'devices' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-hover-lift ${activeTab === 'devices' ? 'active' : ''}`}
           onClick={() => setActiveTab('devices')}
         >
-          📱 Geräte
+          Gerate
           {syncStatus && syncStatus.devices.length > 0 && (
             <span className="badge">{syncStatus.devices.length}</span>
           )}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'changes' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-hover-lift ${activeTab === 'changes' ? 'active' : ''}`}
           onClick={() => setActiveTab('changes')}
         >
-          📝 Änderungen
+          Anderungen
           {syncStatus && syncStatus.pending_changes > 0 && (
             <span className="badge warning">{syncStatus.pending_changes}</span>
           )}
@@ -229,9 +239,9 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
       </div>
 
       {activeTab === 'status' && syncStatus && (
-        <div className="status-content">
-          <div className="status-card main">
-            <div className={`status-indicator ${syncStatus.sync_enabled ? 'active' : 'inactive'}`}>
+        <div className="status-content neuro-stagger-item">
+          <div className="status-card main liquid-glass neuro-stagger-item neuro-hover-lift">
+            <div className={`status-indicator ${syncStatus.sync_enabled ? 'active neuro-breathing' : 'inactive'}`}>
               <span className="status-icon">
                 {syncStatus.sync_enabled ? '✓' : '✕'}
               </span>
@@ -241,68 +251,70 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
               <p>Letzte Synchronisation: {formatDate(syncStatus.last_sync)}</p>
             </div>
             <button
-              className="sync-btn"
+              type="button"
+              className="sync-btn neuro-button neuro-success-burst"
               onClick={handleManualSync}
               disabled={syncing}
             >
               {syncing ? (
                 <>
-                  <span className="loading-spinner" />
+                  <span className="neuro-loading-spinner" />
                   Synchronisiere...
                 </>
               ) : (
-                <>🔄 Jetzt synchronisieren</>
+                <>Jetzt synchronisieren</>
               )}
             </button>
           </div>
 
-          <div className="stats-grid">
-            <div className="stat-card">
+          <div className="stats-grid neuro-flow-list">
+            <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
               <span className="stat-icon">📱</span>
               <span className="stat-value">{syncStatus.devices.length}</span>
-              <span className="stat-label">Verbundene Geräte</span>
+              <span className="stat-label">Verbundene Gerate</span>
             </div>
-            <div className="stat-card">
+            <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
               <span className="stat-icon">📝</span>
               <span className="stat-value">{syncStatus.pending_changes}</span>
-              <span className="stat-label">Ausstehende Änderungen</span>
+              <span className="stat-label">Ausstehende Anderungen</span>
             </div>
-            <div className="stat-card">
+            <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
               <span className="stat-icon">⏱️</span>
               <span className="stat-value">30s</span>
               <span className="stat-label">Sync-Intervall</span>
             </div>
           </div>
 
-          <div className="sync-info">
+          <div className="sync-info liquid-glass neuro-stagger-item">
             <h4>So funktioniert die Synchronisation</h4>
             <ul>
-              <li>Änderungen werden automatisch alle 30 Sekunden synchronisiert</li>
-              <li>Bei Konflikten gewinnt die neueste Änderung</li>
-              <li>Offline-Änderungen werden beim nächsten Online-Status synchronisiert</li>
-              <li>Push-Benachrichtigungen informieren über wichtige Updates</li>
+              <li>Anderungen werden automatisch alle 30 Sekunden synchronisiert</li>
+              <li>Bei Konflikten gewinnt die neueste Anderung</li>
+              <li>Offline-Anderungen werden beim nachsten Online-Status synchronisiert</li>
+              <li>Push-Benachrichtigungen informieren uber wichtige Updates</li>
             </ul>
           </div>
         </div>
       )}
 
       {activeTab === 'devices' && syncStatus && (
-        <div className="devices-content">
+        <div className="devices-content neuro-stagger-item">
           {syncStatus.devices.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📱</span>
-              <h3>Keine Geräte verbunden</h3>
-              <p>Melde dich auf anderen Geräten an, um sie hier zu sehen.</p>
+            <div className="empty-state neuro-empty-state neuro-stagger-item">
+              <span className="empty-icon neuro-empty-icon neuro-breathing">📱</span>
+              <h3 className="neuro-empty-title">Keine Gerate verbunden</h3>
+              <p className="neuro-empty-description">Melde dich auf anderen Geraten an, um sie hier zu sehen.</p>
+              <p className="neuro-empty-encouragement">Deine Daten sind bereit zur Synchronisation!</p>
             </div>
           ) : (
-            <div className="devices-list">
-              {syncStatus.devices.map(device => (
-                <div key={device.id} className={`device-card ${device.is_current ? 'current' : ''}`}>
+            <div className="devices-list neuro-flow-list">
+              {syncStatus.devices.slice(0, 7).map((device, index) => (
+                <div key={device.id} className={`device-card liquid-glass neuro-stagger-item neuro-hover-lift ${device.is_current ? 'current' : ''}`} style={{ animationDelay: `${index * 50}ms` }}>
                   <span className="device-icon">{getDeviceIcon(device.type)}</span>
                   <div className="device-info">
                     <span className="device-name">
                       {device.name}
-                      {device.is_current && <span className="current-badge">Dieses Gerät</span>}
+                      {device.is_current && <span className="current-badge">Dieses Gerat</span>}
                     </span>
                     <span className="device-last-seen">
                       Zuletzt aktiv: {formatDate(device.last_seen)}
@@ -310,10 +322,11 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
                   </div>
                   {!device.is_current && (
                     <button
-                      className="remove-btn"
+                      type="button"
+                      className="remove-btn neuro-hover-lift"
                       onClick={() => handleRemoveDevice(device.id)}
                     >
-                      ✕
+                      x
                     </button>
                   )}
                 </div>
@@ -324,17 +337,18 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
       )}
 
       {activeTab === 'changes' && (
-        <div className="changes-content">
+        <div className="changes-content neuro-stagger-item">
           {pendingChanges.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">✓</span>
-              <h3>Alles synchronisiert</h3>
-              <p>Keine ausstehenden Änderungen.</p>
+            <div className="empty-state neuro-empty-state neuro-stagger-item">
+              <span className="empty-icon neuro-empty-icon neuro-breathing">✓</span>
+              <h3 className="neuro-empty-title">Alles synchronisiert</h3>
+              <p className="neuro-empty-description">Keine ausstehenden Anderungen.</p>
+              <p className="neuro-empty-encouragement">Perfekt - alles ist auf dem neuesten Stand!</p>
             </div>
           ) : (
-            <div className="changes-list">
-              {pendingChanges.map(change => (
-                <div key={change.id} className={`change-item ${change.synced ? 'synced' : 'pending'}`}>
+            <div className="changes-list neuro-flow-list">
+              {pendingChanges.slice(0, 7).map((change, index) => (
+                <div key={change.id} className={`change-item liquid-glass neuro-stagger-item neuro-hover-lift ${change.synced ? 'synced' : 'pending'}`} style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="change-status">
                     {change.synced ? '✓' : '⏳'}
                   </div>

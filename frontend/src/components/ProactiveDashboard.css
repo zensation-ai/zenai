@@ -508,6 +508,20 @@
   color: var(--primary);
 }
 
+/* Header Greeting */
+.proactive-header .header-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.proactive-header .greeting-subtext {
+  font-size: 0.8rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .proactive-dashboard {
@@ -537,5 +551,23 @@
 
   .suggestion-actions {
     flex-direction: column;
+  }
+
+  .proactive-header .greeting-subtext {
+    display: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .proactive-dashboard .neuro-stagger-item,
+  .proactive-dashboard .neuro-flow-list > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .proactive-dashboard .neuro-hover-lift:hover {
+    transform: none;
   }
 }
