@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import PDFDocument from 'pdfkit';
-import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
+import { queryContext, query, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
@@ -856,4 +856,67 @@ exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="full-backup-${ctx}-${Date.now()}.json"`);
   res.json(backup);
+}));
+
+// ============================================
+// Export History
+// ============================================
+
+/**
+ * GET /api/export/history
+ * Get export history (recent exports)
+ */
+exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+  const offset = parseInt(req.query.offset as string) || 0;
+
+  const result = await query(
+    `SELECT id, export_type, filename, file_size, ideas_count, filters, created_at
+     FROM export_history
+     ORDER BY created_at DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+
+  const countResult = await query(
+    `SELECT COUNT(*) as total FROM export_history`
+  );
+
+  res.json({
+    history: result.rows,
+    pagination: {
+      total: parseInt(countResult.rows[0]?.total || '0'),
+      limit,
+      offset,
+    },
+  });
+}));
+
+/**
+ * POST /api/export/history
+ * Record an export in history
+ */
+exportRouter.post('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { export_type, filename, file_size, ideas_count, filters } = req.body;
+
+  // Validate export_type
+  const validTypes = ['pdf', 'markdown', 'csv', 'json', 'backup'];
+  if (!export_type || !validTypes.includes(export_type)) {
+    throw new ValidationError(`Invalid export_type. Allowed values: ${validTypes.join(', ')}`);
+  }
+
+  const result = await query(
+    `INSERT INTO export_history (export_type, filename, file_size, ideas_count, filters)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, export_type, filename, file_size, ideas_count, filters, created_at`,
+    [
+      export_type,
+      filename || null,
+      file_size || null,
+      ideas_count || 0,
+      JSON.stringify(filters || {}),
+    ]
+  );
+
+  res.status(201).json(result.rows[0]);
 }));

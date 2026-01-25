@@ -545,6 +545,7 @@ function App() {
                 setCurrentPage('ideas');
               }
             }}
+            context={context}
           />
         </Suspense>
       </ErrorBoundary>

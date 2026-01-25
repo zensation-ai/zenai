@@ -62,6 +62,7 @@ interface GraphData {
 interface KnowledgeGraphPageProps {
   onBack: () => void;
   onSelectIdea?: (ideaId: string) => void;
+  context: string;
 }
 
 // Node colors based on idea type
@@ -95,7 +96,7 @@ const relationLabels: Record<string, string> = {
   related_tech: 'Verwandte Tech',
 };
 
-export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGraphPageProps) {
+export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: KnowledgeGraphPageProps) {
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -110,7 +111,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
   const loadGraph = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/knowledge-graph/full?context=personal');
+      const response = await axios.get(`/api/knowledge-graph/full?context=${context}`);
       const data: GraphData = response.data;
       setGraphData(data);
 
@@ -167,7 +168,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
     } finally {
       setLoading(false);
     }
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, context]);
 
   useEffect(() => {
     loadGraph();
@@ -190,7 +191,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
     setGenerating(true);
     try {
       await axios.post('/api/knowledge-graph/topics/generate', {
-        context: 'personal',
+        context,
       });
       showGenerationReward();
       loadGraph();
@@ -207,7 +208,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea }: KnowledgeGr
     setDiscovering(true);
     try {
       await axios.post('/api/knowledge-graph/discover', {
-        context: 'personal',
+        context,
       });
       showGenerationReward();
       loadGraph();
