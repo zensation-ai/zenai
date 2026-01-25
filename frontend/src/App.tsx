@@ -95,7 +95,7 @@ interface ApiStatus {
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('ideas');
   const [ideas, setIdeas] = useState<StructuredIdea[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start true to prevent layout shift
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
