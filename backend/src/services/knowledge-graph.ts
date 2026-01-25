@@ -1030,3 +1030,35 @@ export async function graphEnhancedRetrieval(
     return [];
   }
 }
+
+// ===========================================
+// Re-export Evolution Module (Phase 3)
+// ===========================================
+
+export {
+  // Temporal Edge Management
+  applyGraphDecay,
+  reinforceRelation,
+  getRelationsAtTime,
+  getRelationHistory,
+  // Auto-Discovery
+  discoverRelationsForIdea,
+  processDiscoveryQueue,
+  queueForDiscovery,
+  // Pattern Discovery
+  storePattern,
+  getActivePatterns,
+  // Analytics
+  getGraphEvolutionStats,
+  runGraphEvolutionCycle,
+  // Types
+  TemporalEdge,
+  RelationChange,
+  DiscoveredPattern,
+  AutoDiscoveryResult,
+  DecayResult,
+  DiscoveryMethod,
+  // Config
+  DECAY_CONFIG,
+  DISCOVERY_CONFIG,
+} from './knowledge-graph-evolution';

@@ -1,9 +1,30 @@
 /**
  * Memory Module Exports
  *
- * HiMeS-inspired memory architecture for the Personal AI Brain.
- * Provides short-term, long-term, and coordinated memory management.
+ * HiMeS-inspired 4-Layer memory architecture for the Personal AI Brain.
+ *
+ * Memory Layers:
+ * 1. Working Memory - Active task focus (Prefrontal Cortex)
+ * 2. Episodic Memory - Concrete experiences (Hippocampus)
+ * 3. Short-Term Memory - Session context (Hippocampus)
+ * 4. Long-Term Memory - Persistent knowledge (Neocortex)
  */
+
+// Working memory (active task focus)
+export {
+  workingMemory,
+  WorkingMemorySlot,
+  WorkingMemoryState,
+  SlotType,
+} from './working-memory';
+
+// Episodic memory (concrete experiences)
+export {
+  episodicMemory,
+  Episode,
+  EpisodicRetrievalOptions,
+  EpisodicConsolidationResult,
+} from './episodic-memory';
 
 // Short-term memory (session-based)
 export {
@@ -30,5 +51,6 @@ export {
   memoryCoordinator,
   ContextPart,
   PreparedContext,
+  EnhancedPreparedContext,
   MemorySessionOptions,
 } from './memory-coordinator';
