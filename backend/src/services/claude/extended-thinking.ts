@@ -28,6 +28,40 @@ import {
   getConfidenceLevel,
 } from './confidence';
 import { ClaudeOptions, ConversationMessage } from './core';
+import {
+  calculateDynamicBudget,
+  classifyTaskType,
+  storeThinkingChain,
+  findSimilarSuccessfulChains,
+  generatePrimingPrompt,
+  TaskType,
+  BudgetRecommendation,
+} from './thinking-budget';
+
+// ===========================================
+// Extended Options with Dynamic Budget
+// ===========================================
+
+export interface ExtendedThinkingOptions extends ClaudeOptions {
+  /** Enable dynamic budget calculation */
+  useDynamicBudget?: boolean;
+  /** Task type hint (for budget calculation) */
+  taskTypeHint?: TaskType;
+  /** Session ID for thinking chain persistence */
+  sessionId?: string;
+  /** Store thinking chain for learning */
+  storeChain?: boolean;
+  /** Use priming from similar successful chains */
+  usePriming?: boolean;
+}
+
+export interface ExtendedThinkingResult {
+  response: string;
+  thinking?: string;
+  chainId?: string;
+  budgetUsed: number;
+  budgetRecommendation?: BudgetRecommendation;
+}
 
 // ===========================================
 // Extended Thinking Functions
@@ -304,3 +338,300 @@ export async function generateWithConversationHistoryAdvanced(
   const { generateWithConversationHistory } = await import('./core');
   return generateWithConversationHistory(systemPrompt, userPrompt, conversationHistory, options);
 }
+
+// ===========================================
+// Dynamic Budget Extended Thinking
+// ===========================================
+
+/**
+ * Generate with Extended Thinking using dynamic budget optimization.
+ * This is the recommended function for production use.
+ *
+ * Features:
+ * - Automatic task type classification
+ * - Dynamic budget calculation based on complexity
+ * - Thinking chain persistence for learning
+ * - Priming from similar successful chains
+ *
+ * @param systemPrompt - The system prompt
+ * @param userPrompt - The user prompt
+ * @param context - AI context (personal/work)
+ * @param options - Extended configuration options
+ * @returns Extended thinking result with metadata
+ */
+export async function generateWithDynamicThinking(
+  systemPrompt: string,
+  userPrompt: string,
+  context: AIContext,
+  options: ExtendedThinkingOptions = {}
+): Promise<ExtendedThinkingResult> {
+  const client = getClaudeClient();
+
+  const {
+    useDynamicBudget = true,
+    taskTypeHint,
+    sessionId = `session_${Date.now()}`,
+    storeChain = true,
+    usePriming = true,
+    maxTokens = 16000,
+  } = options;
+
+  // 1. Classify task type
+  const taskType = taskTypeHint || classifyTaskType(userPrompt);
+
+  // 2. Calculate dynamic budget or use provided
+  let budgetRecommendation: BudgetRecommendation | undefined;
+  let thinkingBudget: number;
+
+  if (useDynamicBudget) {
+    budgetRecommendation = await calculateDynamicBudget(userPrompt, taskType, context);
+    thinkingBudget = budgetRecommendation.recommendedBudget;
+
+    logger.info('Dynamic budget calculated', {
+      taskType,
+      budget: thinkingBudget,
+      complexity: budgetRecommendation.complexity.score,
+      similarChains: budgetRecommendation.similarChains.length,
+    });
+  } else {
+    thinkingBudget = options.thinkingBudget || 10000;
+  }
+
+  // 3. Get priming from similar successful chains
+  let enhancedSystemPrompt = systemPrompt;
+
+  if (usePriming && budgetRecommendation?.similarChains && budgetRecommendation.similarChains.length > 0) {
+    const primingPrompt = generatePrimingPrompt(budgetRecommendation.similarChains);
+    if (primingPrompt) {
+      enhancedSystemPrompt = `${systemPrompt}\n\n${primingPrompt}`;
+    }
+  }
+
+  // 4. Execute with Extended Thinking
+  return executeWithProtection(async () => {
+    logger.info('Generating with Dynamic Extended Thinking', {
+      taskType,
+      thinkingBudget,
+      maxTokens,
+      usePriming,
+      promptLength: userPrompt.length,
+    });
+
+    const message = await client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: maxTokens,
+      thinking: {
+        type: 'enabled',
+        budget_tokens: Math.min(thinkingBudget, 128000),
+      },
+      messages: [
+        {
+          role: 'user',
+          content: `${enhancedSystemPrompt}\n\n${userPrompt}`,
+        },
+      ],
+    });
+
+    const result = extractThinkingContent(
+      message.content as Array<{ type: string; text?: string; thinking?: string }>
+    );
+
+    // Calculate actual tokens used
+    const budgetUsed = message.usage?.output_tokens || thinkingBudget;
+
+    logger.info('Dynamic Extended Thinking complete', {
+      taskType,
+      budgetRequested: thinkingBudget,
+      budgetUsed,
+      hasThinking: !!result.thinking,
+      thinkingLength: result.thinking?.length || 0,
+      responseLength: result.response.length,
+    });
+
+    // 5. Store thinking chain for learning
+    let chainId: string | undefined;
+
+    if (storeChain && result.thinking) {
+      try {
+        chainId = await storeThinkingChain(
+          sessionId,
+          context,
+          taskType,
+          userPrompt,
+          result.thinking,
+          budgetUsed
+        );
+      } catch (error) {
+        logger.debug('Failed to store thinking chain', {
+          error: error instanceof Error ? error.message : 'Unknown',
+        });
+      }
+    }
+
+    return {
+      response: result.response,
+      thinking: result.thinking,
+      chainId,
+      budgetUsed,
+      budgetRecommendation,
+    };
+  }, true); // Use extended timeout
+}
+
+/**
+ * Strategic business analysis with Extended Thinking
+ */
+export async function analyzeBusinessOpportunity(
+  opportunity: string,
+  context: AIContext,
+  options: ExtendedThinkingOptions = {}
+): Promise<ExtendedThinkingResult> {
+  const systemPrompt = `Du bist ein erfahrener Business-Stratege und Unternehmensberater.
+
+Analysiere die vorgestellte Geschäftsmöglichkeit systematisch:
+
+1. **Market Fit**: Passt die Idee zu aktuellen Marktbedürfnissen?
+2. **Competitive Landscape**: Wer sind die Wettbewerber? Was ist das Alleinstellungsmerkmal?
+3. **Resource Requirements**: Welche Ressourcen (Kapital, Team, Zeit) werden benötigt?
+4. **Risk Assessment**: Welche Risiken bestehen? Wie können sie mitigiert werden?
+5. **Implementation Roadmap**: Welche Schritte sind für die Umsetzung notwendig?
+
+Gib eine strukturierte, actionable Analyse.`;
+
+  return generateWithDynamicThinking(
+    systemPrompt,
+    opportunity,
+    context,
+    {
+      ...options,
+      taskTypeHint: 'strategic_planning',
+      useDynamicBudget: true,
+    }
+  );
+}
+
+/**
+ * Technical architecture review with Extended Thinking
+ */
+export async function reviewArchitectureDecision(
+  decision: string,
+  codeContext: string,
+  context: AIContext,
+  options: ExtendedThinkingOptions = {}
+): Promise<ExtendedThinkingResult> {
+  const systemPrompt = `Du bist ein Senior Software Architect mit Erfahrung in großen Systemen.
+
+Analysiere diese Architekturentscheidung systematisch:
+
+1. **Skalierbarkeit**: Wie gut skaliert diese Lösung?
+2. **Wartbarkeit**: Ist der Code langfristig wartbar?
+3. **Performance**: Welche Performance-Implikationen gibt es?
+4. **Security**: Gibt es Sicherheitsbedenken?
+5. **Alternativen**: Welche alternativen Ansätze gäbe es?
+6. **Migrationspfad**: Wie sähe eine Migration aus?
+
+Gib konkrete, technisch fundierte Empfehlungen.`;
+
+  const userPrompt = `ARCHITEKTURENTSCHEIDUNG:\n${decision}\n\nKONTEXT:\n${codeContext}`;
+
+  return generateWithDynamicThinking(
+    systemPrompt,
+    userPrompt,
+    context,
+    {
+      ...options,
+      taskTypeHint: 'analysis',
+      useDynamicBudget: true,
+    }
+  );
+}
+
+/**
+ * Multi-document synthesis with Extended Thinking
+ */
+export async function synthesizeDocuments(
+  documents: Array<{ title: string; content: string }>,
+  synthesisGoal: string,
+  context: AIContext,
+  options: ExtendedThinkingOptions = {}
+): Promise<ExtendedThinkingResult> {
+  const systemPrompt = `Du synthetisierst mehrere Dokumente zu einer kohärenten Analyse.
+
+ZIEL: ${synthesisGoal}
+
+Identifiziere und analysiere:
+- **Gemeinsame Themen**: Was verbindet die Dokumente?
+- **Widersprüche**: Wo gibt es unterschiedliche Aussagen?
+- **Wissenslücken**: Was fehlt noch?
+- **Handlungsempfehlungen**: Was sollte als nächstes passieren?
+
+Erstelle eine strukturierte Synthese, die das Beste aus allen Quellen kombiniert.`;
+
+  const docsText = documents
+    .map(d => `[${d.title}]\n${d.content}`)
+    .join('\n\n---\n\n');
+
+  return generateWithDynamicThinking(
+    systemPrompt,
+    docsText,
+    context,
+    {
+      ...options,
+      taskTypeHint: 'synthesis',
+      useDynamicBudget: true,
+    }
+  );
+}
+
+/**
+ * Complex problem solving with Extended Thinking
+ */
+export async function solveProblem(
+  problem: string,
+  constraints: string[],
+  context: AIContext,
+  options: ExtendedThinkingOptions = {}
+): Promise<ExtendedThinkingResult> {
+  const constraintsText = constraints.length > 0
+    ? `\n\nCONSTRAINTS:\n${constraints.map(c => `- ${c}`).join('\n')}`
+    : '';
+
+  const systemPrompt = `Du bist ein systematischer Problemlöser.
+
+Analysiere das Problem schrittweise:
+
+1. **Problem verstehen**: Was ist das Kernproblem?
+2. **Ursachenanalyse**: Was sind die Ursachen?
+3. **Lösungsoptionen**: Welche Lösungen gibt es?
+4. **Bewertung**: Vor- und Nachteile jeder Lösung
+5. **Empfehlung**: Die beste Lösung mit Begründung
+6. **Umsetzung**: Konkrete nächste Schritte
+
+Denke gründlich nach und begründe deine Empfehlungen.`;
+
+  return generateWithDynamicThinking(
+    systemPrompt,
+    `PROBLEM:\n${problem}${constraintsText}`,
+    context,
+    {
+      ...options,
+      taskTypeHint: 'problem_solving',
+      useDynamicBudget: true,
+    }
+  );
+}
+
+// ===========================================
+// Re-exports for convenience
+// ===========================================
+
+export {
+  calculateDynamicBudget,
+  classifyTaskType,
+  storeThinkingChain,
+  findSimilarSuccessfulChains,
+  recordThinkingFeedback,
+  getThinkingStats,
+  TaskType,
+  BudgetRecommendation,
+} from './thinking-budget';
