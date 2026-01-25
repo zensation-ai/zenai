@@ -59,6 +59,7 @@ const ProactiveDashboard = lazy(() => import('./components/ProactiveDashboard').
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
 const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ default: m.InboxTriage })));
 const DashboardHome = lazy(() => import('./components/DashboardHome').then(m => ({ default: m.DashboardHome })));
+const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
 
 // Loading fallback component for lazy-loaded pages
 const PageLoader = () => (
@@ -68,7 +69,7 @@ const PageLoader = () => (
   </div>
 );
 
-type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution' | 'notifications' | 'digest' | 'personalization' | 'learning-tasks' | 'media' | 'stories' | 'export' | 'sync' | 'proactive' | 'triage' | 'dashboard';
+type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution' | 'notifications' | 'digest' | 'personalization' | 'learning-tasks' | 'media' | 'stories' | 'export' | 'sync' | 'proactive' | 'triage' | 'dashboard' | 'chat';
 
 interface StructuredIdea {
   id: string;
@@ -772,6 +773,20 @@ function App() {
     );
   }
 
+  if (currentPage === 'chat') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <ChatPage
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   if (currentPage === 'archive') {
     return (
       <ErrorBoundary>
@@ -899,6 +914,14 @@ function App() {
                 title="Gedanken sortieren"
               >
                 📋 Triage
+              </button>
+              <button
+                type="button"
+                className={`nav-button ${(currentPage as Page) === 'chat' ? 'active' : ''}`}
+                onClick={() => setCurrentPage('chat')}
+                title="Gespräche"
+              >
+                💬 Gespräche
               </button>
               <button
                 type="button"
