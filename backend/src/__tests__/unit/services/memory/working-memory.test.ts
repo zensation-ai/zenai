@@ -115,7 +115,8 @@ describe('Working Memory Service', () => {
       const state = memory.getState('session-1');
       // Should have goal + 1 fact (not 2)
       expect(state?.slots.filter((s: WorkingMemorySlot) => s.type === 'fact')).toHaveLength(1);
-      expect(slot2?.activation).toBeGreaterThan(1.0); // Boosted (capped at 1.0 but with boost logic)
+      // Activation is boosted but capped at 1.0
+      expect(slot2?.activation).toBe(1.0);
     });
 
     it('should evict lowest slot when at capacity', async () => {

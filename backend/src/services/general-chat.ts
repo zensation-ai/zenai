@@ -10,6 +10,7 @@ import { query } from '../utils/database';
 import { logger } from '../utils/logger';
 import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable } from './claude';
 import { getUnifiedContext } from './business-context';
+import { memoryCoordinator, episodicMemory, workingMemory } from './memory';
 
 // ===========================================
 // Types
@@ -41,6 +42,7 @@ export interface ChatSessionWithMessages extends ChatSession {
 
 /**
  * Create a new chat session
+ * Initializes both database session and HiMeS memory layers
  */
 export async function createSession(context: 'personal' | 'work' = 'personal'): Promise<ChatSession> {
   const id = uuidv4();
@@ -52,6 +54,15 @@ export async function createSession(context: 'personal' | 'work' = 'personal'): 
   `, [id, context]);
 
   const row = result.rows[0];
+
+  // Initialize HiMeS memory session for enhanced context
+  try {
+    await memoryCoordinator.startSession(context, { chatSessionId: id });
+    logger.debug('Memory session initialized', { sessionId: id, context });
+  } catch (error) {
+    // Non-critical: continue without memory enhancement
+    logger.warn('Failed to initialize memory session', { sessionId: id, error });
+  }
 
   logger.info('Chat session created', { sessionId: id, context });
 
@@ -133,8 +144,16 @@ export async function getSessions(
 
 /**
  * Delete a session and all its messages
+ * Ends the associated memory session and triggers consolidation
  */
 export async function deleteSession(sessionId: string): Promise<boolean> {
+  // Get session context before deletion for memory consolidation
+  const sessionResult = await query(`
+    SELECT context FROM general_chat_sessions WHERE id = $1
+  `, [sessionId]);
+
+  const context = sessionResult.rows[0]?.context as 'personal' | 'work' | undefined;
+
   const result = await query(`
     DELETE FROM general_chat_sessions
     WHERE id = $1
@@ -142,6 +161,13 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
   `, [sessionId]);
 
   if (result.rows.length > 0) {
+    // End memory session and trigger consolidation (non-blocking)
+    if (context) {
+      memoryCoordinator.endSession(sessionId, true).catch(error => {
+        logger.debug('Failed to end memory session', { sessionId, error });
+      });
+    }
+
     logger.info('Chat session deleted', { sessionId });
     return true;
   }
@@ -233,6 +259,7 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
 
 /**
  * Generate AI response for a chat message
+ * Uses HiMeS 4-layer memory architecture for enhanced context
  */
 export async function generateResponse(
   sessionId: string,
@@ -259,39 +286,76 @@ export async function generateResponse(
     timestamp: row.created_at,
   }));
 
-  // Build enhanced system prompt with user context
+  // Build enhanced system prompt with HiMeS memory context
   let systemPrompt = GENERAL_CHAT_SYSTEM_PROMPT;
+  let memoryStats = { longTermFacts: 0, episodesRetrieved: 0, workingMemorySlots: 0 };
 
   try {
-    // Get user context for personalization
-    const unifiedContext = await getUnifiedContext(contextType);
+    // Use HiMeS memory coordinator for enhanced context
+    const enhancedContext = await memoryCoordinator.prepareEnhancedContext(
+      sessionId,
+      userMessage,
+      contextType,
+      { maxContextTokens: 2000, includeEpisodic: true, includeLongTerm: true }
+    );
 
-    if (unifiedContext.contextDepthScore > 20) {
-      const contextParts: string[] = [];
+    memoryStats = enhancedContext.stats;
 
-      if (unifiedContext.profile?.role) {
-        contextParts.push(`Der Benutzer ist ${unifiedContext.profile.role}.`);
-      }
-      if (unifiedContext.profile?.industry) {
-        contextParts.push(`Branche: ${unifiedContext.profile.industry}.`);
-      }
-      if (unifiedContext.recentTopics.length > 0) {
-        contextParts.push(`Aktuelle Themen: ${unifiedContext.recentTopics.slice(0, 5).join(', ')}.`);
-      }
+    // Add memory-enhanced context to system prompt
+    if (enhancedContext.systemEnhancement) {
+      systemPrompt += `\n\n${enhancedContext.systemEnhancement}`;
+    }
 
-      if (contextParts.length > 0) {
-        systemPrompt += `\n\n[BENUTZER-KONTEXT]\n${contextParts.join('\n')}\nBerücksichtige diesen Kontext wenn relevant.`;
+    // Add working memory context (current goal/focus)
+    const wmContextString = workingMemory.generateContextString(sessionId);
+    if (wmContextString) {
+      systemPrompt += `\n\n${wmContextString}`;
+    }
+
+    // Add emotional context if available
+    if (enhancedContext.episodicMemory?.emotionalTone) {
+      const tone = enhancedContext.episodicMemory.emotionalTone;
+      if (tone.dominantMood !== 'neutral') {
+        systemPrompt += `\n\n[EMOTIONALER KONTEXT]\nBisherige Stimmung: ${tone.dominantMood === 'positive' ? 'positiv' : 'negativ'}. Passe deinen Ton entsprechend an.`;
       }
     }
+
+    logger.debug('Enhanced context prepared', {
+      sessionId,
+      memoryStats,
+      systemPromptLength: systemPrompt.length,
+    });
   } catch (error) {
-    // Context loading failed, continue without it
-    logger.warn('Failed to load user context for chat', { error });
+    // Fallback to basic context if memory fails
+    logger.warn('Memory enhancement failed, using fallback', { sessionId, error });
+
+    try {
+      const unifiedContext = await getUnifiedContext(contextType);
+      if (unifiedContext.contextDepthScore > 20) {
+        const contextParts: string[] = [];
+        if (unifiedContext.profile?.role) {
+          contextParts.push(`Der Benutzer ist ${unifiedContext.profile.role}.`);
+        }
+        if (unifiedContext.profile?.industry) {
+          contextParts.push(`Branche: ${unifiedContext.profile.industry}.`);
+        }
+        if (unifiedContext.recentTopics.length > 0) {
+          contextParts.push(`Aktuelle Themen: ${unifiedContext.recentTopics.slice(0, 5).join(', ')}.`);
+        }
+        if (contextParts.length > 0) {
+          systemPrompt += `\n\n[BENUTZER-KONTEXT]\n${contextParts.join('\n')}\nBerücksichtige diesen Kontext wenn relevant.`;
+        }
+      }
+    } catch {
+      // Continue without any context enhancement
+    }
   }
 
   logger.info('Generating chat response', {
     sessionId,
     historyLength: conversationHistory.length,
     messageLength: userMessage.length,
+    memoryStats,
   });
 
   // Generate response using Claude with conversation history
@@ -307,6 +371,7 @@ export async function generateResponse(
 
 /**
  * Send a message and get AI response (combined operation)
+ * Records the conversation as an episodic memory for future context
  */
 export async function sendMessage(
   sessionId: string,
@@ -319,11 +384,30 @@ export async function sendMessage(
   // Update title if this is the first message
   await updateSessionTitle(sessionId, userMessage);
 
+  // Add user interaction to short-term memory
+  try {
+    await memoryCoordinator.addInteraction(sessionId, 'user', userMessage);
+  } catch (error) {
+    logger.debug('Failed to add user interaction to memory', { sessionId, error });
+  }
+
   // Generate AI response
   const aiResponse = await generateResponse(sessionId, userMessage, contextType);
 
   // Store AI response
   const storedAssistantMessage = await addMessage(sessionId, 'assistant', aiResponse);
+
+  // Add assistant interaction to short-term memory
+  try {
+    await memoryCoordinator.addInteraction(sessionId, 'assistant', aiResponse);
+  } catch (error) {
+    logger.debug('Failed to add assistant interaction to memory', { sessionId, error });
+  }
+
+  // Record as episodic memory (non-blocking, fire-and-forget)
+  recordEpisode(sessionId, userMessage, aiResponse, contextType).catch(error => {
+    logger.debug('Failed to record episodic memory', { sessionId, error });
+  });
 
   logger.info('Chat message exchange complete', {
     sessionId,
@@ -336,3 +420,23 @@ export async function sendMessage(
     assistantMessage: storedAssistantMessage,
   };
 }
+
+/**
+ * Record a conversation exchange as an episodic memory
+ * This enables the AI to recall similar past conversations
+ */
+async function recordEpisode(
+  sessionId: string,
+  trigger: string,
+  response: string,
+  context: 'personal' | 'work'
+): Promise<void> {
+  try {
+    await episodicMemory.store(trigger, response, sessionId, context);
+    logger.debug('Episodic memory recorded', { sessionId, triggerLength: trigger.length });
+  } catch (error) {
+    // Non-critical: log and continue
+    logger.warn('Failed to record episodic memory', { sessionId, error });
+  }
+}
+
