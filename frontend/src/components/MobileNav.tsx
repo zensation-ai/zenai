@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import { AI_PERSONALITY } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './MobileNav.css';
 
@@ -128,11 +129,11 @@ export function MobileNav({
       {/* Hamburger Button with Micro-Interaction */}
       <button
         type="button"
-        className={`mobile-nav-toggle ${isOpen ? 'open' : ''}`}
+        className={`mobile-nav-toggle neuro-press-effect ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-controls="mobile-nav-drawer"
-        aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
+        aria-label={isOpen ? 'Hauptmenü schließen' : 'Hauptmenü öffnen'}
       >
         <span className="hamburger-line" />
         <span className="hamburger-line" />
@@ -161,8 +162,8 @@ export function MobileNav({
             {/* Header */}
             <div className="mobile-nav-header">
               <div className="mobile-nav-title-area">
-                <span className="mobile-nav-logo">🧠</span>
-                <span className="mobile-nav-title">Navigation</span>
+                <span className="mobile-nav-logo" aria-hidden="true">🧠</span>
+                <span className="mobile-nav-title">{AI_PERSONALITY.name}</span>
               </div>
               <button
                 type="button"
@@ -202,8 +203,9 @@ export function MobileNav({
                     <button
                       key={item.page}
                       type="button"
-                      className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+                      className={`mobile-nav-item neuro-hover-lift ${isActive ? 'active' : ''}`}
                       onClick={() => handleNavigate(item.page)}
+                      aria-current={isActive ? 'page' : undefined}
                       style={{
                         '--stagger-delay': `${itemIndex * STAGGER_DELAY}ms`,
                       } as CSSProperties}
@@ -238,9 +240,10 @@ export function MobileNav({
                     {/* Group Header - Collapsible */}
                     <button
                       type="button"
-                      className="mobile-nav-group-header"
+                      className="mobile-nav-group-header neuro-hover-lift"
                       onClick={() => toggleGroup(group.label)}
                       aria-expanded={isGroupActive}
+                      aria-label={`${group.label} ${isGroupActive ? 'zuklappen' : 'aufklappen'}`}
                     >
                       <span className="group-icon">{group.icon}</span>
                       <span className="group-label">{group.label}</span>
@@ -262,8 +265,9 @@ export function MobileNav({
                           <button
                             key={item.page}
                             type="button"
-                            className={`mobile-nav-item nested ${isActive ? 'active' : ''}`}
+                            className={`mobile-nav-item nested neuro-hover-lift ${isActive ? 'active' : ''}`}
                             onClick={() => handleNavigate(item.page)}
+                            aria-current={isActive ? 'page' : undefined}
                             style={{
                               '--item-delay': `${itemIndex * STAGGER_DELAY}ms`,
                             } as CSSProperties}
@@ -290,8 +294,8 @@ export function MobileNav({
             {/* Footer with Quick Actions */}
             <div className="mobile-nav-footer">
               <div className="mobile-nav-hint">
-                <span className="hint-icon">💡</span>
-                <span className="hint-text">Wische nach rechts zum Schließen</span>
+                <span className="hint-icon" aria-hidden="true">💡</span>
+                <span className="hint-text">Tipp: Wische nach rechts oder drücke Escape</span>
               </div>
             </div>
           </nav>

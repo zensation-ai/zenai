@@ -101,7 +101,11 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
   };
 
   return (
-    <div className={`idea-card neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''}`}>
+    <div
+      className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''}`}
+      role="article"
+      aria-label={`${idea.type}: ${idea.title}`}
+    >
       <div className="idea-header">
         <span className="idea-type">{getTypeIcon(idea.type)}</span>
         <h3 className="idea-title">{idea.title}</h3>
@@ -163,8 +167,8 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
 
       {idea.next_steps && idea.next_steps.length > 0 && (
         <div className="idea-steps">
-          <strong>Nächste Schritte:</strong>
-          <ul>
+          <strong id={`steps-label-${idea.id}`}>Nächste Schritte:</strong>
+          <ul aria-labelledby={`steps-label-${idea.id}`}>
             {idea.next_steps.slice(0, 3).map((step, i) => (
               <li key={i}>{step}</li>
             ))}
@@ -173,9 +177,9 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
       )}
 
       {idea.keywords && idea.keywords.length > 0 && (
-        <div className="idea-keywords">
+        <div className="idea-keywords" role="list" aria-label="Keywords">
           {idea.keywords.map((kw, i) => (
-            <span key={i} className="keyword">
+            <span key={i} className="keyword" role="listitem">
               {kw}
             </span>
           ))}

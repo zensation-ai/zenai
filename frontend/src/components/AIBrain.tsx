@@ -5,6 +5,7 @@ import {
   getTimeBasedGreeting,
   getIdleMessage,
   getRandomTip,
+  FEEDBACK_REACTIONS,
 } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './AIBrain.css';
@@ -284,8 +285,8 @@ export function AIBrain({
 
       {/* Interaction easter egg - shows after multiple clicks */}
       {interactionCount > 5 && interactionCount % 5 === 0 && (
-        <div className="ai-brain-easter-egg">
-          Danke fürs Spielen! 😄
+        <div className="ai-brain-easter-egg" role="status" aria-live="polite">
+          {FEEDBACK_REACTIONS.positive[interactionCount % FEEDBACK_REACTIONS.positive.length]}
         </div>
       )}
     </div>

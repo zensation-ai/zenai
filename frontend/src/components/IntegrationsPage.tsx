@@ -234,7 +234,14 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
     return (
       <div className="page integrations-page neuro-page-enter">
         <header className="page-header">
-          <button className="back-button" onClick={onBack}>← Zurück</button>
+          <button
+            type="button"
+            className="back-button neuro-hover-lift"
+            onClick={onBack}
+            aria-label="Zurück zur Übersicht"
+          >
+            ← Zurück
+          </button>
           <h1>⚙️ Integrationen</h1>
         </header>
         <div className="neuro-loading-contextual">
@@ -249,45 +256,76 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   return (
     <div className="page integrations-page neuro-page-enter">
       <header className="page-header">
-        <button className="back-button" onClick={onBack}>← Zurück</button>
+        <button
+          type="button"
+          className="back-button neuro-hover-lift"
+          onClick={onBack}
+          aria-label="Zurück zur Übersicht"
+        >
+          ← Zurück
+        </button>
         <h1>⚙️ Integrationen</h1>
       </header>
 
       {error && (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            aria-label="Fehlermeldung schließen"
+          >
+            ×
+          </button>
         </div>
       )}
 
       {createdKey && (
-        <div className="success-banner">
+        <div className="success-banner" role="alert">
           <strong>API Key erstellt! Kopiere diesen Key jetzt - er wird nicht wieder angezeigt:</strong>
           <code className="api-key-display">{createdKey}</code>
-          <button onClick={() => {
-            navigator.clipboard.writeText(createdKey);
-            showToast('In Zwischenablage kopiert!', 'success');
-          }}>📋 Kopieren</button>
-          <button onClick={() => setCreatedKey(null)}>×</button>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(createdKey);
+              showToast('In Zwischenablage kopiert!', 'success');
+            }}
+            aria-label="API Key in Zwischenablage kopieren"
+          >
+            📋 Kopieren
+          </button>
+          <button
+            type="button"
+            onClick={() => setCreatedKey(null)}
+            aria-label="Erfolgs-Banner schließen"
+          >
+            ×
+          </button>
         </div>
       )}
 
-      <div className="tabs">
+      <div className="tabs" role="group" aria-label="Integrations-Tabs">
         <button
-          className={activeTab === 'integrations' ? 'active' : ''}
+          type="button"
+          className={`neuro-press-effect ${activeTab === 'integrations' ? 'active' : ''}`}
           onClick={() => setActiveTab('integrations')}
+          aria-current={activeTab === 'integrations' ? 'true' : undefined}
         >
           🔗 Integrationen
         </button>
         <button
-          className={activeTab === 'apikeys' ? 'active' : ''}
+          type="button"
+          className={`neuro-press-effect ${activeTab === 'apikeys' ? 'active' : ''}`}
           onClick={() => setActiveTab('apikeys')}
+          aria-current={activeTab === 'apikeys' ? 'true' : undefined}
         >
           🔑 API Keys
         </button>
         <button
-          className={activeTab === 'webhooks' ? 'active' : ''}
+          type="button"
+          className={`neuro-press-effect ${activeTab === 'webhooks' ? 'active' : ''}`}
           onClick={() => setActiveTab('webhooks')}
+          aria-current={activeTab === 'webhooks' ? 'true' : undefined}
         >
           🪝 Webhooks
         </button>
@@ -336,23 +374,29 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                   {integration.isConnected ? (
                     <>
                       <button
-                        className="sync-button"
+                        type="button"
+                        className="sync-button neuro-button"
                         onClick={() => syncIntegration(integration.provider)}
                         disabled={integration.syncStatus === 'syncing'}
+                        aria-label={`${integration.name} synchronisieren`}
                       >
                         {integration.syncStatus === 'syncing' ? 'Sync läuft...' : '🔄 Jetzt synchronisieren'}
                       </button>
                       <button
-                        className="disconnect-button"
+                        type="button"
+                        className="disconnect-button neuro-hover-lift"
                         onClick={() => disconnectIntegration(integration.provider)}
+                        aria-label={`${integration.name} trennen`}
                       >
                         Trennen
                       </button>
                     </>
                   ) : (
                     <button
-                      className="connect-button"
+                      type="button"
+                      className="connect-button neuro-button"
                       onClick={() => connectIntegration(integration.provider)}
+                      aria-label={`Mit ${integration.name} verbinden`}
                     >
                       🔗 Verbinden
                     </button>
@@ -415,7 +459,13 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                     /> Admin
                   </label>
                 </div>
-                <button onClick={createApiKey} disabled={!newKeyName.trim()}>
+                <button
+                  type="button"
+                  className="neuro-button"
+                  onClick={createApiKey}
+                  disabled={!newKeyName.trim()}
+                  aria-label="Neuen API Key erstellen"
+                >
                   + Erstellen
                 </button>
               </div>
@@ -455,7 +505,12 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                           </span>
                         </td>
                         <td>
-                          <button className="delete-button" onClick={() => deleteApiKey(key.id)}>
+                          <button
+                            type="button"
+                            className="delete-button neuro-hover-lift"
+                            onClick={() => deleteApiKey(key.id)}
+                            aria-label={`API Key ${key.name} löschen`}
+                          >
                             🗑️
                           </button>
                         </td>
@@ -508,8 +563,11 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                 </div>
               </div>
               <button
+                type="button"
+                className="neuro-button"
                 onClick={createWebhook}
                 disabled={!newWebhookName.trim() || !newWebhookUrl.trim()}
+                aria-label="Neuen Webhook erstellen"
               >
                 + Webhook erstellen
               </button>
@@ -551,8 +609,22 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
                         </div>
                       )}
                       <div className="webhook-actions">
-                        <button onClick={() => testWebhook(webhook.id)}>🧪 Testen</button>
-                        <button className="delete-button" onClick={() => deleteWebhook(webhook.id)}>🗑️</button>
+                        <button
+                          type="button"
+                          className="neuro-hover-lift"
+                          onClick={() => testWebhook(webhook.id)}
+                          aria-label={`Webhook ${webhook.name} testen`}
+                        >
+                          🧪 Testen
+                        </button>
+                        <button
+                          type="button"
+                          className="delete-button neuro-hover-lift"
+                          onClick={() => deleteWebhook(webhook.id)}
+                          aria-label={`Webhook ${webhook.name} löschen`}
+                        >
+                          🗑️
+                        </button>
                       </div>
                     </div>
                   ))}

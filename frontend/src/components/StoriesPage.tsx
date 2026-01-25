@@ -120,7 +120,12 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
   return (
     <div className="stories-page neuro-page-enter">
       <div className="stories-header">
-        <button className="back-button" onClick={onBack}>
+        <button
+          type="button"
+          className="back-button neuro-hover-lift"
+          onClick={onBack}
+          aria-label="Zurück zur Übersicht"
+        >
           ← Zurück
         </button>
         <h1>📖 Stories</h1>
@@ -145,10 +150,20 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
           {stories.map(story => (
             <div
               key={story.id}
-              className="story-card"
+              className="story-card liquid-glass neuro-hover-lift"
               onClick={() => {
                 setSelectedStory(story);
                 setCurrentItemIndex(0);
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Story: ${story.title}, ${story.items.length} Einträge`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelectedStory(story);
+                  setCurrentItemIndex(0);
+                }
               }}
             >
               <div className="story-cover">
@@ -182,10 +197,16 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
 
       {/* Story Viewer Modal */}
       {selectedStory && (
-        <div className="story-viewer" onClick={() => setSelectedStory(null)}>
-          <div className="story-viewer-content" onClick={e => e.stopPropagation()}>
+        <div
+          className="story-viewer"
+          onClick={() => setSelectedStory(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Story vom ${formatDate(selectedStory.date)}`}
+        >
+          <div className="story-viewer-content liquid-glass" onClick={e => e.stopPropagation()}>
             {/* Progress Bar */}
-            <div className="story-progress">
+            <div className="story-progress" aria-label={`Eintrag ${currentItemIndex + 1} von ${selectedStory.items.length}`}>
               {selectedStory.items.map((_, i) => (
                 <div
                   key={i}
@@ -197,7 +218,14 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
             {/* Header */}
             <div className="story-viewer-header">
               <span className="story-viewer-date">{formatDate(selectedStory.date)}</span>
-              <button className="close-btn" onClick={() => setSelectedStory(null)}>✕</button>
+              <button
+                type="button"
+                className="close-btn neuro-hover-lift"
+                onClick={() => setSelectedStory(null)}
+                aria-label="Story schließen"
+              >
+                ✕
+              </button>
             </div>
 
             {/* Current Item */}
@@ -221,18 +249,22 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
             {/* Navigation */}
             <div className="story-navigation">
               <button
-                className="nav-btn prev"
+                type="button"
+                className="nav-btn prev neuro-press-effect"
                 onClick={handlePrevItem}
                 disabled={currentItemIndex === 0 && stories.findIndex(s => s.id === selectedStory.id) === 0}
+                aria-label="Vorheriger Eintrag"
               >
                 ←
               </button>
-              <span className="nav-counter">
+              <span className="nav-counter" aria-live="polite">
                 {currentItemIndex + 1} / {selectedStory.items.length}
               </span>
               <button
-                className="nav-btn next"
+                type="button"
+                className="nav-btn next neuro-press-effect"
                 onClick={handleNextItem}
+                aria-label="Nächster Eintrag"
               >
                 →
               </button>

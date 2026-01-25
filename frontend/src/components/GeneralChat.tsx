@@ -260,24 +260,24 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
 
   if (loading) {
     return (
-      <div className={`general-chat ${isCompact ? 'compact' : ''}`}>
-        <div className="chat-loading">
-          <div className="loading-spinner" />
+      <div className={`general-chat ${isCompact ? 'compact' : ''}`} role="status" aria-live="polite">
+        <div className="chat-loading neuro-loading-contextual">
+          <div className="loading-spinner neuro-loading-spinner" aria-label="Chat wird geladen" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`general-chat ${isCompact ? 'compact' : ''}`}>
+    <div className={`general-chat liquid-glass ${isCompact ? 'compact' : ''}`}>
       {/* Messages Area */}
-      <div className="chat-messages">
+      <div className="chat-messages" role="log" aria-label="Chat-Nachrichten" aria-live="polite">
         {messages.length === 0 ? (
-          <div className="chat-empty">
-            <div className="chat-empty-avatar">{AI_AVATAR.emoji}</div>
-            <h3 className="chat-empty-title">{EMPTY_STATE_MESSAGES.chat.title}</h3>
-            <p className="chat-empty-description">{EMPTY_STATE_MESSAGES.chat.description}</p>
-            <span className="chat-empty-hint">{EMPTY_STATE_MESSAGES.chat.encouragement}</span>
+          <div className="chat-empty neuro-empty-state neuro-human-fade-in" role="status">
+            <div className="chat-empty-avatar neuro-breathing" aria-hidden="true">{AI_AVATAR.emoji}</div>
+            <h3 className="chat-empty-title neuro-empty-title">{EMPTY_STATE_MESSAGES.chat.title}</h3>
+            <p className="chat-empty-description neuro-empty-description">{EMPTY_STATE_MESSAGES.chat.description}</p>
+            <span className="chat-empty-hint neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.chat.encouragement}</span>
             <div className="chat-empty-name">
               <span>Ich bin {AI_PERSONALITY.name}</span>
             </div>
@@ -287,9 +287,11 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             {messages.map(message => (
               <div
                 key={message.id}
-                className={`chat-message ${message.role}`}
+                className={`chat-message ${message.role} neuro-human-fade-in`}
+                role="article"
+                aria-label={`Nachricht von ${message.role === 'assistant' ? AI_PERSONALITY.name : 'Dir'}`}
               >
-                <div className="chat-message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}>
+                <div className="chat-message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'} aria-hidden="true">
                   {message.role === 'assistant' ? AI_AVATAR.emoji : '👤'}
                 </div>
                 <div className="chat-message-content">
@@ -306,17 +308,17 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
               </div>
             ))}
             {sending && (
-              <div className="chat-message assistant">
-                <div className="chat-message-avatar" title={AI_PERSONALITY.name}>{AI_AVATAR.thinkingEmoji}</div>
+              <div className="chat-message assistant neuro-human-fade-in" role="status" aria-live="polite">
+                <div className="chat-message-avatar neuro-breathing" title={AI_PERSONALITY.name} aria-hidden="true">{AI_AVATAR.thinkingEmoji}</div>
                 <div className="chat-message-content">
                   <div className="chat-message-header">
                     <span className="chat-message-name">{AI_PERSONALITY.name}</span>
                     <span className="chat-message-status">{getRandomMessage('thinking')}</span>
                   </div>
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                  <div className="typing-indicator neuro-typing" aria-label={`${AI_PERSONALITY.name} schreibt`}>
+                    <span className="neuro-typing-dot"></span>
+                    <span className="neuro-typing-dot"></span>
+                    <span className="neuro-typing-dot"></span>
                   </div>
                 </div>
               </div>
@@ -337,14 +339,16 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             placeholder="Frag mich etwas..."
             rows={1}
             disabled={sending}
-            className="chat-input"
+            className="chat-input liquid-glass-input neuro-placeholder-animated"
+            aria-label="Chat-Nachricht eingeben"
           />
           <button
             type="button"
-            className="chat-send-btn"
+            className="chat-send-btn neuro-hover-lift neuro-color-transition"
             onClick={handleSendMessage}
             disabled={sending || !inputValue.trim()}
             title="Nachricht senden"
+            aria-label={sending ? 'Nachricht wird gesendet' : 'Nachricht senden'}
           >
             {sending ? (
               <span className="sending-dots">...</span>
@@ -358,9 +362,10 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
           {sessionId && (
             <button
               type="button"
-              className="new-chat-btn"
+              className="new-chat-btn neuro-hover-lift neuro-color-transition"
               onClick={handleNewChat}
               title="Neuer Chat"
+              aria-label="Neue Chat-Session starten"
             >
               + Neuer Chat
             </button>

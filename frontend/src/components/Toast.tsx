@@ -129,8 +129,10 @@ function ToastItem({ toast }: { toast: Toast }) {
     <div
       className={`toast toast-${toast.type} neuro-hover-lift`}
       onClick={() => dismissToast(toast.id)}
+      role="status"
+      aria-live="polite"
     >
-      <span className="toast-icon">
+      <span className="toast-icon" aria-hidden="true">
         {toast.type === 'success' && '✓'}
         {toast.type === 'error' && '✕'}
         {toast.type === 'warning' && '⚠'}

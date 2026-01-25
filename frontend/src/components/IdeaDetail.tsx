@@ -259,7 +259,11 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   return (
     <div className="idea-detail-overlay" onClick={onClose}>
       <div className="idea-detail-modal liquid-glass neuro-human-fade-in" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button neuro-press-effect neuro-focus-ring" onClick={onClose}>
+        <button
+          className="close-button neuro-press-effect neuro-focus-ring"
+          onClick={onClose}
+          aria-label="Detail-Ansicht schliessen"
+        >
           ×
         </button>
 
@@ -309,8 +313,10 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
                   {draft.content.length > 300 && (
                     <button
                       type="button"
-                      className="expand-button"
+                      className="expand-button neuro-press-effect neuro-focus-ring neuro-hover-lift"
                       onClick={() => setDraftExpanded(!draftExpanded)}
+                      aria-expanded={draftExpanded ? 'true' : 'false'}
+                      aria-label={draftExpanded ? 'Entwurf einklappen' : 'Entwurf vollstaendig anzeigen'}
                     >
                       {draftExpanded ? 'Weniger anzeigen' : 'Mehr anzeigen'}
                     </button>
@@ -364,11 +370,11 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
 
         {idea.next_steps && idea.next_steps.length > 0 && (
           <div className="detail-section">
-            <h3>Nächste Schritte</h3>
-            <ul className="detail-steps">
+            <h3 id="next-steps-heading">Nächste Schritte</h3>
+            <ul className="detail-steps" aria-labelledby="next-steps-heading">
               {idea.next_steps.map((step, i) => (
                 <li key={i}>
-                  <span className="step-number">{i + 1}</span>
+                  <span className="step-number" aria-hidden="true">{i + 1}</span>
                   {step}
                 </li>
               ))}
@@ -378,8 +384,8 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
 
         {idea.context_needed && idea.context_needed.length > 0 && (
           <div className="detail-section">
-            <h3>Benötigter Kontext</h3>
-            <ul className="detail-context">
+            <h3 id="context-needed-heading">Benötigter Kontext</h3>
+            <ul className="detail-context" aria-labelledby="context-needed-heading">
               {idea.context_needed.map((ctx, i) => (
                 <li key={i}>{ctx}</li>
               ))}
@@ -389,10 +395,10 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
 
         {idea.keywords && idea.keywords.length > 0 && (
           <div className="detail-section">
-            <h3>Keywords</h3>
-            <div className="detail-keywords">
+            <h3 id="keywords-heading">Keywords</h3>
+            <div className="detail-keywords" role="list" aria-labelledby="keywords-heading">
               {idea.keywords.map((kw, i) => (
-                <span key={i} className="keyword-tag">
+                <span key={i} className="keyword-tag" role="listitem">
                   {kw}
                 </span>
               ))}
@@ -415,6 +421,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
               className="analyze-button neuro-button neuro-focus-ring"
               onClick={analyzeRelations}
               disabled={analyzing}
+              aria-label="Beziehungen zu anderen Gedanken analysieren"
             >
               {analyzing ? 'Analysiere...' : 'Beziehungen analysieren'}
             </button>
@@ -423,12 +430,16 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
           {loadingRelations ? (
             <div className="loading-indicator">Lade Verknüpfungen...</div>
           ) : relations.length > 0 ? (
-            <div className="relations-list">
+            <div className="relations-list" role="list" aria-label="Verknuepfte Gedanken">
               {relations.map((rel, i) => (
                 <div
                   key={i}
                   className="relation-item neuro-hover-lift neuro-press-effect"
                   onClick={() => onNavigate?.(rel.targetId)}
+                  role="listitem"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && onNavigate?.(rel.targetId)}
+                  aria-label={`${relationLabels[rel.relationType] || rel.relationType}: ${rel.target_title || rel.targetId}`}
                 >
                   <span className="relation-type">{relationLabels[rel.relationType]}</span>
                   <span className="relation-target">{rel.target_title || rel.targetId}</span>
@@ -449,12 +460,16 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
         {suggestions.length > 0 && (
           <div className="detail-section">
             <h3>💡 Vorgeschlagene Verbindungen</h3>
-            <div className="suggestions-list">
+            <div className="suggestions-list" role="list" aria-label="Vorgeschlagene Verbindungen">
               {suggestions.slice(0, 3).map((sug) => (
                 <div
                   key={sug.id}
                   className="suggestion-item neuro-hover-lift neuro-press-effect"
                   onClick={() => onNavigate?.(sug.id)}
+                  role="listitem"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && onNavigate?.(sug.id)}
+                  aria-label={`${sug.title} - ${Math.round(sug.similarity * 100)}% aehnlich`}
                 >
                   <span className="suggestion-title">{sug.title}</span>
                   <span className="suggestion-similarity">

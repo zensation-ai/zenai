@@ -189,11 +189,21 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
   return (
     <div className="meetings-page neuro-page-enter">
       <div className="meetings-header">
-        <button className="back-button" onClick={onBack}>
+        <button
+          type="button"
+          className="back-button neuro-hover-lift"
+          onClick={onBack}
+          aria-label="Zurück zur Übersicht"
+        >
           ← Zurück
         </button>
         <h1>Meetings</h1>
-        <button className="new-meeting-btn" onClick={() => setShowNewMeeting(true)}>
+        <button
+          type="button"
+          className="new-meeting-btn neuro-button"
+          onClick={() => setShowNewMeeting(true)}
+          aria-label="Neues Meeting erstellen"
+        >
           + Neues Meeting
         </button>
       </div>
@@ -201,26 +211,38 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            aria-label="Fehlermeldung schließen"
+          >
+            ×
+          </button>
         </div>
       )}
 
-      <div className="meetings-filters">
+      <div className="meetings-filters" role="group" aria-label="Meeting-Filter">
         <button
-          className={filter === 'all' ? 'active' : ''}
+          type="button"
+          className={`neuro-press-effect ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
+          aria-current={filter === 'all' ? 'true' : undefined}
         >
           Alle ({meetings.length})
         </button>
         <button
-          className={filter === 'scheduled' ? 'active' : ''}
+          type="button"
+          className={`neuro-press-effect ${filter === 'scheduled' ? 'active' : ''}`}
           onClick={() => setFilter('scheduled')}
+          aria-current={filter === 'scheduled' ? 'true' : undefined}
         >
           Geplant ({meetings.filter((m) => m.status === 'scheduled' || m.status === 'in_progress').length})
         </button>
         <button
-          className={filter === 'completed' ? 'active' : ''}
+          type="button"
+          className={`neuro-press-effect ${filter === 'completed' ? 'active' : ''}`}
           onClick={() => setFilter('completed')}
+          aria-current={filter === 'completed' ? 'true' : undefined}
         >
           Abgeschlossen ({meetings.filter((m) => m.status === 'completed').length})
         </button>
@@ -266,12 +288,23 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
 
       {/* New Meeting Modal */}
       {showNewMeeting && (
-        <div className="modal-overlay" onClick={() => setShowNewMeeting(false)}>
-          <div className="new-meeting-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close-button" onClick={() => setShowNewMeeting(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowNewMeeting(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="new-meeting-title"
+        >
+          <div className="new-meeting-modal liquid-glass" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="close-button neuro-hover-lift"
+              onClick={() => setShowNewMeeting(false)}
+              aria-label="Modal schließen"
+            >
               ×
             </button>
-            <h2>Neues Meeting</h2>
+            <h2 id="new-meeting-title">Neues Meeting</h2>
 
             <div className="form-group">
               <label>Titel *</label>
@@ -342,7 +375,12 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
               />
             </div>
 
-            <button className="create-btn" onClick={handleCreateMeeting}>
+            <button
+              type="button"
+              className="create-btn neuro-button"
+              onClick={handleCreateMeeting}
+              aria-label="Meeting erstellen"
+            >
               Meeting erstellen
             </button>
           </div>

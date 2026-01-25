@@ -136,10 +136,11 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
 
           <button
             type="button"
-            className="command-action-btn chat"
+            className="command-action-btn chat neuro-hover-lift"
             onClick={() => onModeChange('chat')}
             disabled={disabled || isProcessing}
             title="Chat-Modus öffnen"
+            aria-label="Zum Chat-Modus wechseln"
           >
             <span className="action-icon">💬</span>
             <span className="action-label">Chat</span>
@@ -147,10 +148,11 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
 
           <button
             type="button"
-            className="command-action-btn primary submit"
+            className="command-action-btn primary submit neuro-button"
             onClick={handleSubmit}
             disabled={disabled || isProcessing || !textValue.trim()}
             title="Gedanken strukturieren"
+            aria-label={isProcessing ? 'Verarbeitung läuft' : 'Gedanken strukturieren und speichern'}
           >
             <span className="action-icon">{isProcessing ? '⏳' : '✨'}</span>
             <span className="action-label">
@@ -165,9 +167,10 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
         <div className="command-chat-container">
           <button
             type="button"
-            className="command-action-btn back"
+            className="command-action-btn back neuro-hover-lift"
             onClick={() => onModeChange('voice')}
             title="Zurück zu Sprachmemo"
+            aria-label="Zurück zum Sprach- und Textmodus"
           >
             <span className="action-icon">←</span>
             <span className="action-label">Zurück</span>

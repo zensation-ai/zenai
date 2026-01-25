@@ -302,7 +302,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     return (
       <div className="learning-dashboard neuro-page-enter">
         <div className="learning-header liquid-glass-nav">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>Zuruck</button>
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
           <h1>KI-Lernzentrum</h1>
         </div>
         <div className="loading-state neuro-loading-contextual">
@@ -318,10 +318,10 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     return (
       <div className="learning-dashboard">
         <div className="learning-header">
-          <button type="button" className="back-button" onClick={onBack}>Zurück</button>
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zurück</button>
           <h1>KI-Lernzentrum</h1>
         </div>
-        <div className="error-state">Dashboard konnte nicht geladen werden</div>
+        <div className="error-state neuro-error-friendly">Dashboard konnte nicht geladen werden</div>
       </div>
     );
   }
@@ -329,12 +329,12 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
   return (
     <div className="learning-dashboard neuro-page-enter">
       <div className="learning-header liquid-glass-nav">
-        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>Zuruck</button>
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
         <div className="header-greeting">
           <h1>{greeting.emoji} KI-Lernzentrum</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
         </div>
-        <button type="button" className="trigger-learning-button neuro-button" onClick={handleTriggerLearning}>
+        <button type="button" className="trigger-learning-button neuro-button" onClick={handleTriggerLearning} aria-label="KI-Lernprozess starten">
           Lernen starten
         </button>
       </div>
@@ -344,6 +344,8 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
           type="button"
           className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
+          aria-label="Ubersicht anzeigen"
+          aria-current={activeTab === 'overview' ? 'page' : undefined}
         >
           Übersicht
         </button>
@@ -351,6 +353,8 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
           type="button"
           className={`tab-button ${activeTab === 'focus' ? 'active' : ''}`}
           onClick={() => setActiveTab('focus')}
+          aria-label="Fokus-Themen anzeigen"
+          aria-current={activeTab === 'focus' ? 'page' : undefined}
         >
           Fokus-Themen ({data.focus.stats.active_focus_areas})
         </button>
@@ -358,6 +362,8 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
           type="button"
           className={`tab-button ${activeTab === 'suggestions' ? 'active' : ''}`}
           onClick={() => setActiveTab('suggestions')}
+          aria-label="Vorschlage anzeigen"
+          aria-current={activeTab === 'suggestions' ? 'page' : undefined}
         >
           Vorschläge ({data.suggestions.active.length})
         </button>
@@ -365,6 +371,8 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
           type="button"
           className={`tab-button ${activeTab === 'research' ? 'active' : ''}`}
           onClick={() => setActiveTab('research')}
+          aria-label="Recherchen anzeigen"
+          aria-current={activeTab === 'research' ? 'page' : undefined}
         >
           Recherchen ({data.research.pending.length})
         </button>
@@ -372,6 +380,8 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
           type="button"
           className={`tab-button ${activeTab === 'feedback' ? 'active' : ''}`}
           onClick={() => setActiveTab('feedback')}
+          aria-label="Feedback anzeigen"
+          aria-current={activeTab === 'feedback' ? 'page' : undefined}
         >
           Feedback
         </button>
@@ -379,6 +389,8 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
           type="button"
           className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
           onClick={() => setActiveTab('profile')}
+          aria-label="Profil anzeigen"
+          aria-current={activeTab === 'profile' ? 'page' : undefined}
         >
           Profil
         </button>
@@ -454,15 +466,17 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
                       <div className="suggestion-actions">
                         <button
                           type="button"
-                          className="accept-btn"
+                          className="accept-btn neuro-hover-lift"
                           onClick={() => handleRespondToSuggestion(suggestion.id, 'accepted')}
+                          aria-label="Vorschlag annehmen"
                         >
                           ✓
                         </button>
                         <button
                           type="button"
-                          className="dismiss-btn"
+                          className="dismiss-btn neuro-hover-lift"
                           onClick={() => handleRespondToSuggestion(suggestion.id, 'dismissed')}
+                          aria-label="Vorschlag ablehnen"
                         >
                           ✕
                         </button>
@@ -515,11 +529,11 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         {activeTab === 'focus' && (
           <div className="focus-tab">
             <div className="focus-actions">
-              <button type="button" className="add-focus-button neuro-button" onClick={() => setShowAddFocus(true)}>
+              <button type="button" className="add-focus-button neuro-button" onClick={() => setShowAddFocus(true)} aria-label="Neues Fokus-Thema erstellen">
                 + Neues Fokus-Thema
               </button>
               {data.focus.active_areas.length === 0 && (
-                <button type="button" className="preset-button neuro-hover-lift" onClick={handleCreatePresets}>
+                <button type="button" className="preset-button neuro-hover-lift" onClick={handleCreatePresets} aria-label="Vordefinierte Fokus-Themen laden">
                   Preset-Themen laden
                 </button>
               )}
@@ -545,10 +559,10 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
                   onChange={(e) => setNewFocus({ ...newFocus, keywords: e.target.value })}
                 />
                 <div className="form-actions">
-                  <button type="button" className="cancel-btn" onClick={() => setShowAddFocus(false)}>
+                  <button type="button" className="cancel-btn neuro-hover-lift" onClick={() => setShowAddFocus(false)} aria-label="Abbrechen">
                     Abbrechen
                   </button>
-                  <button type="button" className="save-btn" onClick={handleAddFocus}>
+                  <button type="button" className="save-btn neuro-button" onClick={handleAddFocus} aria-label="Fokus-Thema erstellen">
                     Erstellen
                   </button>
                 </div>
@@ -592,15 +606,17 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
                       <div className="focus-actions">
                         <button
                           type="button"
-                          className={`toggle-btn ${focus.is_active ? 'active' : ''}`}
+                          className={`toggle-btn neuro-hover-lift ${focus.is_active ? 'active' : ''}`}
                           onClick={() => handleToggleFocus(focus.id, focus.is_active)}
+                          aria-label={focus.is_active ? 'Fokus deaktivieren' : 'Fokus aktivieren'}
                         >
                           {focus.is_active ? 'Deaktivieren' : 'Aktivieren'}
                         </button>
                         <button
                           type="button"
-                          className="delete-btn"
+                          className="delete-btn neuro-hover-lift"
                           onClick={() => handleDeleteFocus(focus.id, focus.name)}
+                          aria-label={`Fokus ${focus.name} loschen`}
                         >
                           Löschen
                         </button>
@@ -648,15 +664,17 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
                       <div className="suggestion-actions">
                         <button
                           type="button"
-                          className="accept-btn"
+                          className="accept-btn neuro-button"
                           onClick={() => handleRespondToSuggestion(suggestion.id, 'accepted')}
+                          aria-label="Vorschlag annehmen"
                         >
                           Annehmen
                         </button>
                         <button
                           type="button"
-                          className="dismiss-btn"
+                          className="dismiss-btn neuro-hover-lift"
                           onClick={() => handleRespondToSuggestion(suggestion.id, 'dismissed')}
+                          aria-label="Vorschlag ablehnen"
                         >
                           Ablehnen
                         </button>
@@ -754,10 +772,10 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
             <div className="profile-header">
               <h2>Dein Profil</h2>
               <div className="profile-actions">
-                <button type="button" className="edit-profile-button" onClick={handleOpenEditProfile}>
+                <button type="button" className="edit-profile-button neuro-hover-lift" onClick={handleOpenEditProfile} aria-label="Profil bearbeiten">
                   Bearbeiten
                 </button>
-                <button type="button" className="analyze-button" onClick={handleAnalyzeProfile}>
+                <button type="button" className="analyze-button neuro-button" onClick={handleAnalyzeProfile} aria-label="Profil analysieren">
                   Analysieren
                 </button>
               </div>
@@ -837,10 +855,10 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
                     />
                   </div>
                   <div className="form-actions">
-                    <button type="button" className="cancel-btn" onClick={() => setShowEditProfile(false)}>
+                    <button type="button" className="cancel-btn neuro-hover-lift" onClick={() => setShowEditProfile(false)} aria-label="Abbrechen">
                       Abbrechen
                     </button>
-                    <button type="button" className="save-btn" onClick={handleSaveProfile} disabled={savingProfile}>
+                    <button type="button" className="save-btn neuro-button" onClick={handleSaveProfile} disabled={savingProfile} aria-label="Profil speichern">
                       {savingProfile ? 'Speichere...' : 'Speichern'}
                     </button>
                   </div>
@@ -904,10 +922,11 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
                 </div>
               </>
             ) : (
-              <div className="empty-state">
-                <p>Noch kein Profil erstellt.</p>
-                <p>Starte die Profil-Analyse, um die KI über dich lernen zu lassen.</p>
-                <button type="button" className="primary-button" onClick={handleAnalyzeProfile}>
+              <div className="empty-state neuro-empty-state">
+                <span className="neuro-empty-icon">👤</span>
+                <h3 className="neuro-empty-title">Noch kein Profil erstellt</h3>
+                <p className="neuro-empty-description">Starte die Profil-Analyse, um die KI über dich lernen zu lassen.</p>
+                <button type="button" className="primary-button neuro-button" onClick={handleAnalyzeProfile} aria-label="Profil jetzt analysieren">
                   Jetzt analysieren
                 </button>
               </div>

@@ -193,10 +193,11 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
       <div className="dashboard-stats">
         <button
           type="button"
-          className="stat-card liquid-glass-nav"
+          className="stat-card liquid-glass-nav neuro-hover-lift"
           onClick={() => onNavigate('ideas')}
+          aria-label={`${isLoading ? 'Laden' : stats.thisWeek} Gedanken anzeigen`}
         >
-          <span className="stat-card-icon">📝</span>
+          <span className="stat-card-icon" aria-hidden="true">📝</span>
           <span className="stat-card-value">
             {isLoading ? '-' : stats.thisWeek}
           </span>
@@ -205,10 +206,11 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
 
         <button
           type="button"
-          className="stat-card liquid-glass-nav highlight"
+          className="stat-card liquid-glass-nav highlight neuro-hover-lift"
           onClick={() => onNavigate('ideas')}
+          aria-label={`${isLoading ? 'Laden' : stats.highPriority} Gedanken mit hoher Priorität anzeigen`}
         >
-          <span className="stat-card-icon">🔥</span>
+          <span className="stat-card-icon" aria-hidden="true">🔥</span>
           <span className="stat-card-value">
             {isLoading ? '-' : stats.highPriority}
           </span>
@@ -217,10 +219,11 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
 
         <button
           type="button"
-          className="stat-card liquid-glass-nav"
+          className="stat-card liquid-glass-nav neuro-hover-lift"
           onClick={() => onNavigate('triage')}
+          aria-label={`${isLoading ? 'Laden' : stats.pendingTriage || 'Unbekannte Anzahl'} Gedanken zu sortieren`}
         >
-          <span className="stat-card-icon">📥</span>
+          <span className="stat-card-icon" aria-hidden="true">📥</span>
           <span className="stat-card-value">
             {isLoading ? '-' : stats.pendingTriage || '?'}
           </span>
@@ -229,10 +232,11 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
 
         <button
           type="button"
-          className="stat-card liquid-glass-nav"
+          className="stat-card liquid-glass-nav neuro-hover-lift"
           onClick={() => onNavigate('archive')}
+          aria-label="Archiv anzeigen"
         >
-          <span className="stat-card-icon">📦</span>
+          <span className="stat-card-icon" aria-hidden="true">📦</span>
           <span className="stat-card-value">-</span>
           <span className="stat-card-label">Archiv</span>
         </button>
@@ -270,8 +274,9 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
           <h2 className="dashboard-section-title">Neueste Gedanken</h2>
           <button
             type="button"
-            className="dashboard-section-link"
+            className="dashboard-section-link neuro-hover-lift neuro-color-transition"
             onClick={() => onNavigate('ideas')}
+            aria-label="Alle Gedanken anzeigen"
           >
             Alle anzeigen →
           </button>
@@ -287,11 +292,12 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
               <button
                 type="button"
                 key={idea.id}
-                className="idea-card-mini liquid-glass-nav"
+                className="idea-card-mini liquid-glass-nav neuro-hover-lift"
                 onClick={() => {
                   // Could navigate to idea detail
                   onNavigate('ideas');
                 }}
+                aria-label={`Gedanke: ${idea.title}`}
               >
                 <div className="idea-card-mini-header">
                   <span className="idea-card-mini-type">
@@ -322,8 +328,9 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
             <p>Noch keine Gedanken erfasst.</p>
             <button
               type="button"
-              className="dashboard-empty-btn"
+              className="dashboard-empty-btn neuro-button neuro-hover-lift"
               onClick={() => onNavigate('ideas')}
+              aria-label="Zur Gedanken-Seite navigieren"
             >
               Zu Gedanken
             </button>

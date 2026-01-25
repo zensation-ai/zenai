@@ -178,14 +178,21 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const buttonLabel = processing
+    ? 'Verarbeitung laeuft'
+    : recording
+    ? 'Aufnahme stoppen'
+    : 'Sprachmemo aufnehmen';
+
   return (
     <div className="record-container">
       <button
         className={`record-button neuro-button neuro-focus-ring ${recording ? 'recording' : ''} ${processing ? 'processing' : ''}`}
         onClick={recording ? stopRecording : startRecording}
         disabled={disabled || processing}
+        aria-label={buttonLabel}
       >
-        <span className="record-icon">
+        <span className="record-icon" aria-hidden="true">
           {processing ? '⏳' : recording ? '⏹️' : '🎤'}
         </span>
         <span className="record-text">
@@ -196,9 +203,9 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
             : 'Sprachmemo aufnehmen'}
         </span>
       </button>
-      {recording && <div className="recording-pulse" />}
+      {recording && <div className="recording-pulse" aria-hidden="true" />}
       {processing && (
-        <div className="processing-info">
+        <div className="processing-info" role="status" aria-live="polite">
           Transkribiere und strukturiere mit KI...
         </div>
       )}

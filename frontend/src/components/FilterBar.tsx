@@ -60,18 +60,24 @@ export function FilterBar({ filters, onFilterChange, counts }: FilterBarProps) {
       <div className="filter-header">
         <button
           type="button"
-          className={`filter-toggle neuro-press-effect neuro-focus-ring ${expanded ? 'expanded' : ''}`}
+          className={`filter-toggle neuro-press-effect neuro-focus-ring neuro-hover-lift ${expanded ? 'expanded' : ''}`}
           onClick={() => setExpanded(!expanded)}
-          aria-expanded={expanded}
+          aria-expanded={expanded ? 'true' : 'false'}
           aria-controls="filter-content"
+          aria-label={`Filter ${expanded ? 'einklappen' : 'ausklappen'}${activeCount > 0 ? `, ${activeCount} aktiv` : ''}`}
         >
           <span className="filter-icon" aria-hidden="true">🔽</span>
           Filter
-          {activeCount > 0 && <span className="active-count" aria-label={`${activeCount} aktive Filter`}>{activeCount}</span>}
+          {activeCount > 0 && <span className="active-count" aria-hidden="true">{activeCount}</span>}
         </button>
 
         {activeCount > 0 && (
-          <button type="button" className="clear-filters neuro-press-effect neuro-focus-ring" onClick={clearFilters} aria-label="Alle Filter zurücksetzen">
+          <button
+            type="button"
+            className="clear-filters neuro-press-effect neuro-focus-ring neuro-hover-lift"
+            onClick={clearFilters}
+            aria-label="Alle Filter zurücksetzen"
+          >
             Filter zurücksetzen
           </button>
         )}

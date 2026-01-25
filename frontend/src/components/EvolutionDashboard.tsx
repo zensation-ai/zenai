@@ -154,7 +154,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
     return (
       <div className="evolution-dashboard neuro-page-enter">
         <header className="evolution-header liquid-glass-nav">
-          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
           <h1>KI-Evolution</h1>
         </header>
         <div className="loading-state neuro-loading-contextual">
@@ -170,12 +170,12 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
     return (
       <div className="evolution-dashboard">
         <header className="evolution-header">
-          <button type="button" className="back-btn" onClick={onBack}>← Zurück</button>
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zurück</button>
           <h1>KI-Evolution</h1>
         </header>
         <div className="error-banner">
           <span>{error || 'Keine Daten verfügbar'}</span>
-          <button type="button" onClick={handleReload}>Erneut versuchen</button>
+          <button type="button" onClick={handleReload} aria-label="Erneut versuchen">Erneut versuchen</button>
         </div>
       </div>
     );
@@ -184,7 +184,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
   return (
     <div className="evolution-dashboard neuro-page-enter">
       <header className="evolution-header liquid-glass-nav">
-        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
+        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
         <div className="header-greeting">
           <h1>{greeting.emoji} KI-Evolution</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
@@ -247,6 +247,8 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
           type="button"
           className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
+          aria-label="Ubersicht anzeigen"
+          aria-current={activeTab === 'overview' ? 'page' : undefined}
         >
           Übersicht
         </button>
@@ -254,6 +256,8 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
           type="button"
           className={`tab ${activeTab === 'timeline' ? 'active' : ''}`}
           onClick={() => setActiveTab('timeline')}
+          aria-label="Timeline anzeigen"
+          aria-current={activeTab === 'timeline' ? 'page' : undefined}
         >
           Timeline ({data.learning_timeline.length})
         </button>
@@ -261,6 +265,8 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
           type="button"
           className={`tab ${activeTab === 'accuracy' ? 'active' : ''}`}
           onClick={() => setActiveTab('accuracy')}
+          aria-label="Genauigkeit anzeigen"
+          aria-current={activeTab === 'accuracy' ? 'page' : undefined}
         >
           Genauigkeit
         </button>
@@ -268,6 +274,8 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
           type="button"
           className={`tab ${activeTab === 'milestones' ? 'active' : ''}`}
           onClick={() => setActiveTab('milestones')}
+          aria-label="Meilensteine anzeigen"
+          aria-current={activeTab === 'milestones' ? 'page' : undefined}
         >
           Meilensteine ({data.total_milestones_achieved})
         </button>
@@ -328,7 +336,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
 
             {/* Upcoming Milestones */}
             {data.upcoming_milestones.length > 0 && (
-              <div className="card upcoming-card">
+              <div className="card upcoming-card liquid-glass neuro-stagger-item">
                 <h3>Nächste Meilensteine</h3>
                 <div className="upcoming-list">
                   {data.upcoming_milestones.slice(0, 3).map((milestone) => (
@@ -405,7 +413,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
 
         {activeTab === 'accuracy' && (
           <div className="accuracy-section">
-            <div className="card accuracy-overview">
+            <div className="card accuracy-overview liquid-glass neuro-stagger-item">
               <h3>Genauigkeits-Entwicklung</h3>
               <div className="accuracy-stats">
                 <div className="accuracy-stat">
@@ -428,7 +436,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
             </div>
 
             {data.snapshots_30d.length > 0 && (
-              <div className="card chart-card">
+              <div className="card chart-card liquid-glass neuro-stagger-item">
                 <h3>Verlauf (30 Tage)</h3>
                 <div className="simple-chart">
                   {data.snapshots_30d.map((snapshot, index) => (
@@ -451,7 +459,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
               </div>
             )}
 
-            <div className="card tips-card">
+            <div className="card tips-card liquid-glass neuro-stagger-item">
               <h3>Genauigkeit verbessern</h3>
               <ul className="tips-list">
                 <li>
@@ -493,7 +501,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
 
             {/* In Progress */}
             {data.upcoming_milestones.length > 0 && (
-              <div className="card progress-card">
+              <div className="card progress-card liquid-glass neuro-stagger-item">
                 <h3>In Arbeit</h3>
                 <div className="progress-list">
                   {data.upcoming_milestones.map((milestone) => (
@@ -521,9 +529,10 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
             )}
 
             {data.achieved_milestones.length === 0 && data.upcoming_milestones.length === 0 && (
-              <div className="empty-state">
-                <p>Starte deine Meilenstein-Reise!</p>
-                <p className="hint">Erfasse Ideen, gib Feedback und nutze Automationen.</p>
+              <div className="empty-state neuro-empty-state">
+                <span className="neuro-empty-icon">🏆</span>
+                <h3 className="neuro-empty-title">Starte deine Meilenstein-Reise!</h3>
+                <p className="neuro-empty-description">Erfasse Ideen, gib Feedback und nutze Automationen.</p>
               </div>
             )}
           </div>

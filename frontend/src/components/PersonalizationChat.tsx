@@ -214,17 +214,18 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
 
   if (loading) {
     return (
-      <div className="personalization-chat">
-        <div className="loading-state">
-          <div className="loading-spinner large" />
-          <p>Lade Personalisierung...</p>
+      <div className="personalization-chat neuro-page-enter">
+        <div className="neuro-loading-contextual">
+          <div className="neuro-loading-spinner" />
+          <p className="neuro-loading-message">Lade Personalisierung...</p>
+          <p className="neuro-loading-submessage">Einen Moment bitte</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="personalization-chat">
+    <div className="personalization-chat neuro-page-enter">
       <div className="chat-header">
         <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
           ← Zurück

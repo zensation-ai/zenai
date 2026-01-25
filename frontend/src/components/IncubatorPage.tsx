@@ -334,12 +334,12 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
 
   const getTypeIcon = (type?: string) => {
     switch (type) {
-      case 'idea': return '\u{1F4A1}';
-      case 'task': return '\u2705';
-      case 'insight': return '\u{1F50D}';
-      case 'problem': return '\u26A0\uFE0F';
-      case 'question': return '\u2753';
-      default: return '\u{1F4AD}';
+      case 'idea': return '💡';
+      case 'task': return '✅';
+      case 'insight': return '🔍';
+      case 'problem': return '⚠️';
+      case 'question': return '❓';
+      default: return '💭';
     }
   };
 
@@ -387,7 +387,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
           data-anticipate="Zurueck zur Uebersicht"
           aria-label="Zurueck zur Hauptseite"
         >
-          &larr; Zurueck
+          ← Zurueck
         </button>
         <div className="header-title">
           {/* NEURO-UX: Personalized greeting based on time of day */}
@@ -405,7 +405,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
           data-anticipate="Daten aktualisieren"
           aria-label="Inkubator aktualisieren"
         >
-          &#8635; Aktualisieren
+          ↻ Aktualisieren
         </button>
       </header>
 
@@ -415,7 +415,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
           <h2>Schneller Gedanke</h2>
           {/* NEURO-UX: Encouraging hint with personality */}
           <p className="hint neuro-inspirational">
-            Keine Struktur noetig - {AI_PERSONALITY.name} kuemmert sich darum!
+            Keine Struktur noetig – {AI_PERSONALITY.name} kuemmert sich darum!
           </p>
           <div className="quick-input-container">
             <textarea
@@ -493,7 +493,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
           {chunkedReadyClusters.length > 0 && (
             <section className="clusters-section ready-section neuro-chunk" aria-labelledby="ready-clusters-heading">
               <h2 id="ready-clusters-heading">
-                <span className="section-icon" aria-hidden="true">&#10024;</span>
+                <span className="section-icon" aria-hidden="true">✨</span>
                 Bereit zur Konsolidierung
                 <span className="badge">{readyClusters.length}</span>
               </h2>
@@ -524,7 +524,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
                       {/* NEURO-UX: Urgency indicator for dormant clusters */}
                       {mood === 'dormant' && (
                         <div className="dormant-reminder neuro-suggested-action" role="status">
-                          <span aria-hidden="true">&#128161;</span>
+                          <span aria-hidden="true">💡</span>
                           Seit {daysSince} Tagen nicht angesehen
                         </div>
                       )}
@@ -626,7 +626,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
               {/* NEURO-UX: Miller's Law - Show "more" indicator */}
               {hasMoreReadyClusters && (
                 <div className="more-clusters-hint neuro-inspirational">
-                  <span aria-hidden="true">&#8595;</span> {readyClusters.length - MILLER_CHUNK_SIZE} weitere Cluster verfuegbar
+                  <span aria-hidden="true">↓</span> {readyClusters.length - MILLER_CHUNK_SIZE} weitere Cluster verfuegbar
                 </div>
               )}
             </section>
@@ -636,7 +636,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
           {chunkedGrowingClusters.length > 0 && (
             <section className="clusters-section growing-section neuro-chunk" aria-labelledby="growing-clusters-heading">
               <h2 id="growing-clusters-heading">
-                <span className="section-icon" aria-hidden="true">&#127793;</span>
+                <span className="section-icon" aria-hidden="true">🌱</span>
                 Wachsende Themen
                 <span className="badge muted">{growingClusters.length}</span>
               </h2>
@@ -688,7 +688,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
               {/* NEURO-UX: Miller's Law - Show "more" indicator */}
               {hasMoreGrowingClusters && (
                 <div className="more-clusters-hint neuro-inspirational">
-                  <span aria-hidden="true">&#8595;</span> {growingClusters.length - MILLER_CHUNK_SIZE} weitere Cluster wachsen
+                  <span aria-hidden="true">↓</span> {growingClusters.length - MILLER_CHUNK_SIZE} weitere Cluster wachsen
                 </div>
               )}
             </section>
@@ -697,7 +697,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
           {/* NEURO-UX: Emotional Empty State with personality */}
           {clusters.length === 0 && (
             <div className="empty-state neuro-empty-state neuro-human-fade-in" role="status">
-              <span className="empty-icon neuro-empty-icon neuro-breathing" aria-hidden="true">&#129504;</span>
+              <span className="empty-icon neuro-empty-icon neuro-breathing" aria-hidden="true">🧠</span>
               <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.ideas.title}</h3>
               <p className="neuro-empty-description">
                 Gib oben einen schnellen Gedanken ein. {AI_PERSONALITY.name} findet automatisch

@@ -80,7 +80,7 @@ export function SearchBar({ onSearch, onClear, isSearching: externalSearching }:
   }, [query, onSearch]);
 
   return (
-    <form className="search-bar liquid-glass-input" onSubmit={handleSubmit}>
+    <form className="search-bar liquid-glass-input" onSubmit={handleSubmit} role="search">
       <span className="search-icon" aria-hidden="true">🔍</span>
       <input
         type="search"

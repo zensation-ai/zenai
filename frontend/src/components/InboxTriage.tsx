@@ -513,20 +513,20 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
 
       <div className="triage-card-container">
         {/* Swipe hints */}
-        <div className="triage-hints">
-          <span className="triage-hint triage-hint-left">← Später</span>
-          <span className="triage-hint triage-hint-right">Priorität →</span>
-          <span className="triage-hint triage-hint-bottom">↓ Archivieren</span>
+        <div className="triage-hints" role="group" aria-label="Swipe-Richtungen">
+          <span className="triage-hint triage-hint-left" aria-hidden="true">← Später</span>
+          <span className="triage-hint triage-hint-right" aria-hidden="true">Priorität →</span>
+          <span className="triage-hint triage-hint-bottom" aria-hidden="true">↓ Archivieren</span>
         </div>
 
         {/* Swipe indicators */}
-        <div className={'swipe-indicator right ' + (direction === 'right' && progress > 0.5 ? 'visible' : '')}>
+        <div className={'swipe-indicator right ' + (direction === 'right' && progress > 0.5 ? 'visible' : '')} aria-hidden="true">
           🔥
         </div>
-        <div className={'swipe-indicator left ' + (direction === 'left' && progress > 0.5 ? 'visible' : '')}>
+        <div className={'swipe-indicator left ' + (direction === 'left' && progress > 0.5 ? 'visible' : '')} aria-hidden="true">
           ⏰
         </div>
-        <div className={'swipe-indicator up ' + (direction === 'up' && progress > 0.5 ? 'visible' : '')}>
+        <div className={'swipe-indicator up ' + (direction === 'up' && progress > 0.5 ? 'visible' : '')} aria-hidden="true">
           📥
         </div>
 
@@ -592,23 +592,25 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
       </div>
 
       {/* Neuro-UX: Quick Actions mit empfohlener Aktion hervorgehoben */}
-      <div className="triage-quick-actions neuro-flow-list">
+      <div className="triage-quick-actions neuro-flow-list" role="group" aria-label="Schnelle Aktionen">
         <button
           className={'triage-action-btn later neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'later' ? 'neuro-pulse-interactive' : '')}
           onClick={() => handleTriageAction('later')}
           disabled={isAnimating}
-          title="Auf später verschieben"
+          title="Auf spaeter verschieben"
+          aria-label="Gedanke auf spaeter verschieben"
         >
-          <span className="action-icon">⏰</span>
-          <span className="action-label">Später</span>
+          <span className="action-icon" aria-hidden="true">⏰</span>
+          <span className="action-label">Spaeter</span>
         </button>
         <button
           className={'triage-action-btn archive neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'archive' ? 'neuro-pulse-interactive' : '')}
           onClick={() => handleTriageAction('archive')}
           disabled={isAnimating}
           title="Archivieren"
+          aria-label="Gedanke archivieren"
         >
-          <span className="action-icon">📥</span>
+          <span className="action-icon" aria-hidden="true">📥</span>
           <span className="action-label">Archiv</span>
         </button>
         <button
@@ -616,20 +618,22 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
           onClick={() => handleTriageAction('keep')}
           disabled={isAnimating}
           title="Behalten wie es ist"
+          aria-label="Gedanke behalten"
         >
-          <span className="action-icon">✓</span>
+          <span className="action-icon" aria-hidden="true">✓</span>
           <span className="action-label">Behalten</span>
         </button>
-        {/* Neuro-UX: Priorität-Button mit besonderer Hervorhebung wenn empfohlen */}
+        {/* Neuro-UX: Prioritaet-Button mit besonderer Hervorhebung wenn empfohlen */}
         <button
           className={'triage-action-btn priority neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'priority' ? 'neuro-button-glow' : '')}
           onClick={() => handleTriageAction('priority')}
           disabled={isAnimating}
-          title="Als Priorität markieren"
+          title="Als Prioritaet markieren"
+          aria-label="Gedanke als Prioritaet markieren"
           style={{ position: 'relative' }}
         >
-          <span className="action-icon">🔥</span>
-          <span className="action-label">Priorität</span>
+          <span className="action-icon" aria-hidden="true">🔥</span>
+          <span className="action-label">Prioritaet</span>
           {/* Neuro-UX: Empfehlungs-Badge für Decision Fatigue Prevention */}
           {recommendedAction === 'priority' && (
             <span

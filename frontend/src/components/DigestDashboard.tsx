@@ -200,7 +200,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
   return (
     <div className="digest-dashboard neuro-page-enter">
       <div className="digest-header liquid-glass-nav">
-        <button className="back-button neuro-hover-lift" onClick={onBack}>
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">
           ← Zuruck
         </button>
         <div className="header-greeting">
@@ -212,16 +212,20 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
         </span>
         <div className="generate-buttons">
           <button
+            type="button"
             className="generate-btn daily neuro-button"
             onClick={() => handleGenerateDigest('daily')}
             disabled={generating !== null}
+            aria-label="Tagesdigest generieren"
           >
             {generating === 'daily' ? '...' : '📅 Tagesdigest'}
           </button>
           <button
+            type="button"
             className="generate-btn weekly neuro-button"
             onClick={() => handleGenerateDigest('weekly')}
             disabled={generating !== null}
+            aria-label="Wochendigest generieren"
           >
             {generating === 'weekly' ? '...' : '📆 Wochendigest'}
           </button>
@@ -231,28 +235,37 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
+          <button type="button" onClick={() => setError(null)} aria-label="Fehlermeldung schliessen">×</button>
         </div>
       )}
 
       {/* Tabs */}
       <div className="digest-tabs">
         <button
+          type="button"
           className={`tab-btn ${activeTab === 'latest' ? 'active' : ''}`}
           onClick={() => setActiveTab('latest')}
+          aria-label="Aktuelle Zusammenfassung anzeigen"
+          aria-current={activeTab === 'latest' ? 'page' : undefined}
         >
           📋 Aktuell
         </button>
         <button
+          type="button"
           className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
+          aria-label="Verlauf anzeigen"
+          aria-current={activeTab === 'history' ? 'page' : undefined}
         >
           📜 Verlauf
           {digestHistory.length > 0 && <span className="badge">{digestHistory.length}</span>}
         </button>
         <button
+          type="button"
           className={`tab-btn ${activeTab === 'goals' ? 'active' : ''}`}
           onClick={() => setActiveTab('goals')}
+          aria-label="Ziele anzeigen"
+          aria-current={activeTab === 'goals' ? 'page' : undefined}
         >
           🎯 Ziele
         </button>
@@ -365,9 +378,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
               <p className="neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.ideas.encouragement}</p>
               <div className="empty-actions">
                 <button
+                  type="button"
                   className="generate-btn daily neuro-button"
                   onClick={() => handleGenerateDigest('daily')}
                   disabled={generating !== null}
+                  aria-label="Ersten Tagesdigest erstellen"
                 >
                   📅 Tagesdigest erstellen
                 </button>
@@ -426,8 +441,10 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
             <div className="section-header-row">
               <h2>🎯 Produktivitatsziele</h2>
               <button
+                type="button"
                 className={`edit-btn neuro-hover-lift ${editingGoals ? 'active' : ''}`}
                 onClick={() => setEditingGoals(!editingGoals)}
+                aria-label={editingGoals ? 'Bearbeitung abbrechen' : 'Ziele bearbeiten'}
               >
                 {editingGoals ? '✕ Abbrechen' : '✏️ Bearbeiten'}
               </button>
@@ -479,9 +496,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
                   <div className="category-toggles">
                     {Object.entries(categoryLabels).map(([key, label]) => (
                       <button
+                        type="button"
                         key={key}
-                        className={`category-toggle ${goalForm.focus_categories.includes(key) ? 'active' : ''}`}
+                        className={`category-toggle neuro-hover-lift ${goalForm.focus_categories.includes(key) ? 'active' : ''}`}
                         onClick={() => toggleFocusCategory(key)}
+                        aria-label={`Kategorie ${label} ${goalForm.focus_categories.includes(key) ? 'entfernen' : 'hinzufugen'}`}
                       >
                         {label}
                       </button>
@@ -500,9 +519,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
 
                 <div className="form-actions">
                   <button
-                    className="save-btn"
+                    type="button"
+                    className="save-btn neuro-button"
                     onClick={handleSaveGoals}
                     disabled={savingGoals}
+                    aria-label="Ziele speichern"
                   >
                     {savingGoals ? 'Speichern...' : '💾 Speichern'}
                   </button>

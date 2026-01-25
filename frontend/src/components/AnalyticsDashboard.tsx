@@ -130,7 +130,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
     return (
       <div className="analytics-dashboard neuro-page-enter">
         <header className="header liquid-glass-nav">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">
             ← Zuruck
           </button>
           <h1>Analytics Dashboard</h1>
@@ -148,7 +148,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
     <div className="analytics-dashboard neuro-page-enter">
       <header className="header liquid-glass-nav">
         <div className="header-content">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">
             ← Zuruck
           </button>
           <div className="header-greeting">

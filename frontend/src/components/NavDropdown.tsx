@@ -160,10 +160,11 @@ export function NavDropdown({
     >
       <button
         type="button"
-        className={`nav-dropdown-trigger ${hasActiveChild ? 'has-active' : ''} ${isOpen ? 'open' : ''}`}
+        className={`nav-dropdown-trigger neuro-hover-lift ${hasActiveChild ? 'has-active' : ''} ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
+        aria-label={`${label} Dropdown-Menü ${isOpen ? 'schließen' : 'öffnen'}`}
       >
         <span className="nav-dropdown-icon">{icon}</span>
         <span className="nav-dropdown-label">{label}</span>

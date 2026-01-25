@@ -97,8 +97,9 @@ export function NetworkStatusDot() {
   return (
     <span
       className={`network-status-dot neuro-status-dot ${isOnline ? 'online' : 'offline'}`}
-      title={isOnline ? 'Online' : 'Offline'}
-      aria-label={isOnline ? 'Online' : 'Offline'}
+      title={isOnline ? 'Verbunden' : 'Keine Verbindung'}
+      aria-label={isOnline ? 'Netzwerkstatus: Verbunden' : 'Netzwerkstatus: Keine Verbindung'}
+      role="status"
     />
   );
 }

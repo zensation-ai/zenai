@@ -219,7 +219,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
     return (
       <div className="automation-dashboard neuro-page-enter">
         <header className="automation-header liquid-glass-nav">
-          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
           <h1>Automationen</h1>
         </header>
         <div className="loading-state neuro-loading-contextual">
@@ -234,7 +234,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
   return (
     <div className="automation-dashboard neuro-page-enter">
       <header className="automation-header liquid-glass-nav">
-        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack}>← Zuruck</button>
+        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Automationen</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
@@ -245,7 +245,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button type="button" onClick={handleReload}>Erneut versuchen</button>
+          <button type="button" onClick={handleReload} aria-label="Erneut versuchen">Erneut versuchen</button>
         </div>
       )}
 
@@ -277,6 +277,8 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
           type="button"
           className={`tab ${activeTab === 'automations' ? 'active' : ''}`}
           onClick={() => setActiveTab('automations')}
+          aria-label="Automationen anzeigen"
+          aria-current={activeTab === 'automations' ? 'page' : undefined}
         >
           Automationen ({automations.length})
         </button>
@@ -284,6 +286,8 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
           type="button"
           className={`tab ${activeTab === 'suggestions' ? 'active' : ''}`}
           onClick={() => setActiveTab('suggestions')}
+          aria-label="Vorschlage anzeigen"
+          aria-current={activeTab === 'suggestions' ? 'page' : undefined}
         >
           Vorschläge ({suggestions.length})
         </button>
@@ -291,6 +295,8 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
           type="button"
           className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
           onClick={() => setActiveTab('stats')}
+          aria-label="Statistiken anzeigen"
+          aria-current={activeTab === 'stats' ? 'page' : undefined}
         >
           Statistiken
         </button>
@@ -357,23 +363,26 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                       <div className="automation-actions">
                         <button
                           type="button"
-                          className="action-btn toggle"
+                          className="action-btn toggle neuro-hover-lift"
                           onClick={(e) => { e.stopPropagation(); handleToggleAutomation(automation.id); }}
+                          aria-label={automation.is_active ? 'Automation deaktivieren' : 'Automation aktivieren'}
                         >
                           {automation.is_active ? '⏸ Deaktivieren' : '▶ Aktivieren'}
                         </button>
                         <button
                           type="button"
-                          className="action-btn execute"
+                          className="action-btn execute neuro-hover-lift"
                           onClick={(e) => { e.stopPropagation(); handleExecuteAutomation(automation.id); }}
+                          aria-label="Automation jetzt ausfuhren"
                         >
                           ▶ Jetzt ausführen
                         </button>
                         {!automation.is_system && (
                           <button
                             type="button"
-                            className="action-btn delete"
+                            className="action-btn delete neuro-hover-lift"
                             onClick={(e) => { e.stopPropagation(); handleDeleteAutomation(automation.id); }}
+                            aria-label="Automation loschen"
                           >
                             🗑 Löschen
                           </button>
@@ -404,6 +413,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                 className="generate-btn neuro-button"
                 onClick={handleGenerateSuggestions}
                 disabled={generating}
+                aria-label="Neue Automations-Vorschlage generieren"
               >
                 {generating ? 'Analysiere...' : '🔄 Neue Vorschlage generieren'}
               </button>
@@ -441,6 +451,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                         type="button"
                         className="accept-btn neuro-button"
                         onClick={() => handleAcceptSuggestion(suggestion.id)}
+                        aria-label="Vorschlag akzeptieren"
                       >
                         ✓ Akzeptieren
                       </button>
@@ -448,6 +459,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                         type="button"
                         className="dismiss-btn neuro-hover-lift"
                         onClick={() => handleDismissSuggestion(suggestion.id)}
+                        aria-label="Vorschlag ablehnen"
                       >
                         ✕ Ablehnen
                       </button>

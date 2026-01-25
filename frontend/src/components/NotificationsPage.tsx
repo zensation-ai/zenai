@@ -240,7 +240,12 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
   return (
     <div className="notifications-page neuro-page-enter">
       <div className="notifications-header">
-        <button className="back-button" onClick={onBack}>
+        <button
+          type="button"
+          className="back-button neuro-hover-lift"
+          onClick={onBack}
+          aria-label="Zurück zur Übersicht"
+        >
           ← Zurück
         </button>
         <h1>🔔 Benachrichtigungen</h1>
@@ -250,36 +255,50 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       </div>
 
       {error && (
-        <div className="error-banner">
+        <div className="error-banner" role="alert">
           <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            aria-label="Fehlermeldung schließen"
+          >
+            ×
+          </button>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="notifications-tabs">
+      <div className="notifications-tabs" role="group" aria-label="Benachrichtigungs-Tabs">
         <button
-          className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
+          aria-current={activeTab === 'overview' ? 'true' : undefined}
         >
           📊 Übersicht
         </button>
         <button
-          className={`tab-btn ${activeTab === 'preferences' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'preferences' ? 'active' : ''}`}
           onClick={() => setActiveTab('preferences')}
+          aria-current={activeTab === 'preferences' ? 'true' : undefined}
         >
           ⚙️ Einstellungen
         </button>
         <button
-          className={`tab-btn ${activeTab === 'devices' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'devices' ? 'active' : ''}`}
           onClick={() => setActiveTab('devices')}
+          aria-current={activeTab === 'devices' ? 'true' : undefined}
         >
           📱 Geräte
-          {devices.length > 0 && <span className="badge">{devices.length}</span>}
+          {devices.length > 0 && <span className="badge neuro-reward-badge">{devices.length}</span>}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+          type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
+          aria-current={activeTab === 'history' ? 'true' : undefined}
         >
           📜 Verlauf
         </button>
@@ -411,9 +430,11 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
                         </div>
                       </div>
                       <button
-                        className={`toggle-btn ${preferences?.[key as keyof NotificationPreferences] ? 'active' : ''}`}
+                        type="button"
+                        className={`toggle-btn neuro-press-effect ${preferences?.[key as keyof NotificationPreferences] ? 'active' : ''}`}
                         onClick={() => handleTogglePreference(key as keyof NotificationPreferences)}
                         disabled={savingPrefs}
+                        aria-label={`${label} ${preferences?.[key as keyof NotificationPreferences] ? 'deaktivieren' : 'aktivieren'}`}
                       >
                         {preferences?.[key as keyof NotificationPreferences] ? 'AN' : 'AUS'}
                       </button>
@@ -448,8 +469,10 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
                   </div>
                   {(preferences?.quiet_hours_start || preferences?.quiet_hours_end) && (
                     <button
-                      className="clear-quiet-hours"
+                      type="button"
+                      className="clear-quiet-hours neuro-hover-lift"
                       onClick={() => handleUpdateQuietHours(null, null)}
+                      aria-label="Ruhezeiten deaktivieren"
                     >
                       Ruhezeiten deaktivieren
                     </button>
@@ -511,9 +534,10 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
                     </div>
                   </div>
                   <button
-                    className="remove-device-btn"
+                    type="button"
+                    className="remove-device-btn neuro-hover-lift"
                     onClick={() => handleRemoveDevice(device.id)}
-                    title="Gerät entfernen"
+                    aria-label={`Gerät ${device.device_name || device.device_model || 'Unbekannt'} entfernen`}
                   >
                     ✕
                   </button>
