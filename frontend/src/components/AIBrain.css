@@ -130,6 +130,8 @@
   position: relative;
   width: 56px;
   height: 56px;
+  /* Fix: Transparent background, no visible box */
+  background: transparent;
 }
 
 /* Brain SVG */
@@ -138,6 +140,9 @@
   height: 100%;
   position: relative;
   z-index: 2;
+  /* Fix: Allow glow effects to extend beyond SVG bounds */
+  overflow: visible;
+  background: transparent;
 }
 
 /* Idle state - subtle breathing */

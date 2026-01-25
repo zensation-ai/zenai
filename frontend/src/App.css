@@ -22,7 +22,8 @@
   padding: 3.5rem 2rem 4.5rem;
   text-align: center;
   position: relative;
-  min-height: 480px; /* Größere Hero Section */
+  /* CLS-Fix: Feste Höhe verhindert Layout-Shift beim Laden */
+  min-height: 420px;
   /* Neuro: Warme Farben aktivieren Belohnungszentrum - intensiver */
   background: linear-gradient(
     180deg,
@@ -34,8 +35,10 @@
     transparent 100%
   );
   overflow: hidden;
-  /* Neuro: Sanfte Übergänge für Flow-State */
-  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Neuro: Sanfte Übergänge für Flow-State - nur transform/opacity für CLS */
+  transition:
+    padding 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Mood-basierte Farbvariationen */
@@ -454,8 +457,9 @@
 }
 
 /* When ideas exist, make hero more compact - Neuro: Progressive Disclosure */
+/* CLS-Fix: Feste min-height statt auto, um Layout-Shift zu vermeiden */
 .hero-section.compact {
-  min-height: auto;
+  min-height: 320px;
   padding: 2rem 2rem 2.5rem;
   background: linear-gradient(
     180deg,

@@ -145,7 +145,8 @@ export function AIBrain({
               <stop offset="50%" stopColor="#f7931e" />
               <stop offset="100%" stopColor="#ff6b35" />
             </linearGradient>
-            <filter id="brainGlow">
+            {/* Fix: Extended filter region to prevent clipping of glow effect */}
+            <filter id="brainGlow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
