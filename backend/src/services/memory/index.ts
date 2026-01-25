@@ -54,3 +54,13 @@ export {
   EnhancedPreparedContext,
   MemorySessionOptions,
 } from './memory-coordinator';
+
+// Memory scheduler (cron jobs for consolidation and decay)
+export {
+  memoryScheduler,
+  startMemoryScheduler,
+  stopMemoryScheduler,
+  ScheduledTask,
+  SchedulerStats,
+  ConsolidationStats,
+} from './memory-scheduler';

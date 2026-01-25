@@ -63,11 +63,15 @@ import { draftsRouter } from './routes/drafts';
 import proactiveRouter from './routes/proactive';
 // Phase 29: General Chat - ChatGPT-like interface
 import { generalChatRouter } from './routes/general-chat';
+// Phase 30: Memory Admin - HiMeS Memory Management
+import { memoryAdminRouter } from './routes/memory-admin';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
+// Phase 30: Memory Scheduler (HiMeS Consolidation & Decay)
+import { startMemoryScheduler, stopMemoryScheduler } from './services/memory';
 
 dotenv.config();
 
@@ -255,6 +259,9 @@ app.use('/api', proactiveRouter);  // /api/:context/proactive/suggestions, /api/
 // Phase 29: General Chat - ChatGPT-like interface
 app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessions/:id/messages, /api/chat/quick
 
+// Phase 30: Memory Admin - HiMeS Memory Management
+app.use('/api/memory', memoryAdminRouter);  // /api/memory/status, /api/memory/consolidate, /api/memory/decay, etc.
+
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"
 // Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
 
@@ -266,8 +273,14 @@ const rateLimitCleanupInterval = setInterval(() => {
 }, 60 * 60 * 1000);
 
 // Clear interval on shutdown (setupGracefulShutdown handles DB cleanup)
-process.once('SIGTERM', () => clearInterval(rateLimitCleanupInterval));
-process.once('SIGINT', () => clearInterval(rateLimitCleanupInterval));
+process.once('SIGTERM', () => {
+  clearInterval(rateLimitCleanupInterval);
+  stopMemoryScheduler();
+});
+process.once('SIGINT', () => {
+  clearInterval(rateLimitCleanupInterval);
+  stopMemoryScheduler();
+});
 
 // 404 Handler for undefined routes
 app.use((req, res) => {
@@ -304,7 +317,7 @@ app.listen(PORT, async () => {
   const cacheStatus = secretsManager.getCacheStatus();
 
   console.log(`
-Personal AI System - Backend (Phase 29)
+Personal AI System - Backend (Phase 30)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
@@ -315,6 +328,14 @@ Database:    ${secretsDbStatus.configured ? secretsDbStatus.type.toUpperCase() :
 AI:          ${aiStatus.configured ? aiStatus.providers.join(', ').toUpperCase() : 'NOT CONFIGURED'}
 Cache:       ${cacheStatus.type.toUpperCase()}
 ========================================================
+Phase 30 APIs (Memory Scheduler):
+  - Scheduler Status:  GET /api/memory/status
+  - Trigger Consolidate: POST /api/memory/consolidate
+  - Trigger Decay:     POST /api/memory/decay
+  - Memory Stats:      GET /api/memory/stats/:context
+  - Get Facts:         GET /api/memory/facts/:context
+  - Get Patterns:      GET /api/memory/patterns/:context
+
 Phase 29 APIs:
   - Create Session:    POST /api/chat/sessions
   - List Sessions:     GET /api/chat/sessions
@@ -438,4 +459,17 @@ Phase 4 APIs:
   // Start periodic connection health checks (every 5 minutes)
   // This keeps connections alive and detects issues early
   startConnectionHealthCheck(5 * 60 * 1000);
+
+  // Phase 30: Start Memory Scheduler (HiMeS Consolidation & Decay)
+  // Runs daily cron jobs for:
+  // - Long-Term Memory Consolidation (2:00 AM)
+  // - Episodic Memory Decay (3:00 AM)
+  // - Memory Stats Logging (hourly)
+  try {
+    await startMemoryScheduler();
+    logger.info('Memory Scheduler started successfully', { operation: 'startup' });
+  } catch (error) {
+    logger.error('Memory Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    // Non-critical - system can operate without scheduled memory maintenance
+  }
 });
