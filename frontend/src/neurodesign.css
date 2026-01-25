@@ -21,15 +21,17 @@
    ============================================ */
 
 :root {
-  /* Dopamin-aktivierende Akzentfarben (Belohnungssystem) */
-  --neuro-reward: #ff6b35;           /* Primäre Belohnungsfarbe */
-  --neuro-reward-light: #ff8f5a;
-  --neuro-reward-glow: rgba(255, 107, 53, 0.4);
+  /* Dopamin-aktivierende Akzentfarben (Belohnungssystem)
+     Reference index.css --primary colors for consistency */
+  --neuro-reward: var(--primary, #ff6b35);
+  --neuro-reward-light: var(--primary-light, #ff8f5a);
+  --neuro-reward-glow: var(--primary-glow, rgba(255, 107, 53, 0.4));
   --neuro-reward-pulse: rgba(255, 107, 53, 0.15);
 
-  /* Erfolgs-Dopamin (Completion Reward) */
-  --neuro-success: #10b981;
-  --neuro-success-glow: rgba(16, 185, 129, 0.35);
+  /* Erfolgs-Dopamin (Completion Reward)
+     Reference index.css --success for consistency */
+  --neuro-success: var(--success, #10b981);
+  --neuro-success-glow: var(--success-glow, rgba(16, 185, 129, 0.35));
   --neuro-success-burst: rgba(16, 185, 129, 0.5);
 
   /* Fokus-fördernde Farben (Präfrontaler Cortex) */

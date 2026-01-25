@@ -5,8 +5,9 @@ import { useConfirm } from './ConfirmDialog';
 import { AIFeedback } from './AIFeedback';
 import { InlineLoader } from './SkeletonLoader';
 import { useNeuroFeedback } from './NeuroFeedback';
-import { getTypeIcon, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
+import { getTypeIcon, getTypeLabel, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
 import { formatDate } from '../utils/dateUtils';
+import { IS_NEW_THRESHOLD_MS } from '../constants';
 import '../neurodesign.css';
 import './IdeaCard.css';
 
@@ -40,7 +41,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
   const { triggerSuccess } = useNeuroFeedback();
 
   // Prüfe ob Karte neu ist (weniger als 5 Minuten alt)
-  const isNew = new Date().getTime() - new Date(idea.created_at).getTime() < 5 * 60 * 1000;
+  const isNew = new Date().getTime() - new Date(idea.created_at).getTime() < IS_NEW_THRESHOLD_MS;
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -108,10 +109,12 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
       className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''} ${isNew ? 'is-new' : ''}`}
       data-type={idea.type}
       role="article"
-      aria-label={`${idea.type}: ${idea.title}`}
+      aria-label={`${getTypeLabel(idea.type)}: ${idea.title}`}
     >
       <div className="idea-header">
-        <span className="idea-type">{getTypeIcon(idea.type)}</span>
+        <span className="idea-type" aria-label={getTypeLabel(idea.type)} title={getTypeLabel(idea.type)}>
+          {getTypeIcon(idea.type)}
+        </span>
         <h3 className="idea-title">{idea.title}</h3>
         <div className="idea-actions">
           {isArchived ? (

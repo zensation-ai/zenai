@@ -172,6 +172,173 @@
   --dashboard-stat-highlight: var(--primary);
 }
 
+/* ============================================
+   DARK MODE SUPPORT
+   Respects user system preference
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Primary Accent - slightly adjusted for dark backgrounds */
+    --primary: #ff7a4a;
+    --primary-dark: #ff6b35;
+    --primary-light: #ff9a70;
+    --primary-lighter: #ffbb99;
+    --primary-glow: rgba(255, 122, 74, 0.4);
+
+    /* Background - Dark Petrol Theme */
+    --background: #0d1821;
+    --background-gradient: linear-gradient(
+      145deg,
+      #0d1821 0%,
+      #122230 20%,
+      #152838 40%,
+      #1a2e40 60%,
+      #152838 80%,
+      #0d1821 100%
+    );
+
+    /* Surfaces - Dark glass morphism */
+    --surface: rgba(25, 45, 60, 0.8);
+    --surface-solid: #1a2e40;
+    --surface-light: rgba(30, 55, 75, 0.65);
+    --surface-hover: rgba(35, 65, 90, 0.88);
+    --surface-warm: rgba(40, 30, 25, 0.8);
+    --surface-petrol: rgba(25, 50, 70, 0.75);
+
+    /* Glassmorphism - Dark frosted glass */
+    --glass-bg: rgba(20, 40, 55, 0.85);
+    --glass-bg-warm: rgba(35, 28, 25, 0.8);
+    --glass-bg-petrol: rgba(20, 45, 65, 0.8);
+    --glass-border: rgba(80, 120, 150, 0.3);
+    --glass-highlight: rgba(255, 255, 255, 0.08);
+    --glass-shadow: rgba(0, 0, 0, 0.4);
+    --glass-warm: rgba(80, 50, 35, 0.4);
+
+    /* Text Colors - Light for dark backgrounds */
+    --text: #e8f0f5;
+    --text-muted: #b8c8d5;
+    --text-secondary: #8aa0b5;
+
+    /* Borders - More visible on dark */
+    --border: rgba(100, 150, 180, 0.2);
+    --border-light: rgba(100, 150, 180, 0.1);
+    --border-warm: rgba(255, 122, 74, 0.25);
+    --border-glow: rgba(255, 122, 74, 0.5);
+
+    /* Enhanced Shadows for dark mode */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 4px 24px rgba(255, 122, 74, 0.4);
+    --shadow-glow-petrol: 0 4px 24px rgba(50, 90, 120, 0.3);
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+
+    /* Card and Filter specific - dark mode */
+    --card-bg: var(--glass-bg);
+    --hover-bg: rgba(35, 65, 90, 0.88);
+    --bg-secondary: rgba(50, 80, 110, 0.2);
+    --bg-tertiary: rgba(255, 122, 74, 0.12);
+    --text-primary: #e8f0f5;
+    --border-color: var(--border);
+
+    /* Command Center - Dark mode */
+    --command-bg: linear-gradient(
+      165deg,
+      rgba(25, 45, 65, 0.95) 0%,
+      rgba(20, 40, 55, 0.92) 100%
+    );
+    --command-border: rgba(255, 122, 74, 0.25);
+    --command-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+
+    /* Dashboard - Dark mode */
+    --dashboard-card-bg: rgba(25, 45, 65, 0.75);
+  }
+
+  /* Adjust animated blobs for dark mode */
+  .blob-1 {
+    background: radial-gradient(
+      ellipse at 30% 30%,
+      rgba(255, 122, 74, 0.15) 0%,
+      rgba(255, 150, 100, 0.08) 25%,
+      rgba(255, 180, 130, 0.04) 45%,
+      transparent 65%
+    );
+  }
+
+  .blob-2 {
+    background: radial-gradient(
+      ellipse at 60% 60%,
+      rgba(50, 90, 120, 0.2) 0%,
+      rgba(60, 110, 150, 0.12) 30%,
+      rgba(70, 130, 170, 0.06) 50%,
+      transparent 75%
+    );
+  }
+
+  .blob-3 {
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 122, 74, 0.1) 0%,
+      rgba(255, 150, 100, 0.05) 35%,
+      transparent 55%
+    );
+  }
+
+  /* Particles in dark mode */
+  .particle-1, .particle-3, .particle-5, .particle-7, .particle-9, .particle-10 {
+    background: rgba(255, 122, 74, 0.6);
+  }
+
+  .particle-2, .particle-4, .particle-8, .particle-11 {
+    background: rgba(80, 140, 180, 0.5);
+  }
+
+  /* Noise texture adjustment */
+  body::before {
+    opacity: 0.04;
+  }
+
+  /* Vignette adjustment for dark mode */
+  body::after {
+    background: radial-gradient(
+      ellipse 120% 100% at 50% 50%,
+      transparent 0%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.15) 75%,
+      rgba(0, 0, 0, 0.25) 100%
+    );
+  }
+
+  /* Scrollbar for dark mode */
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Skeleton loader for dark mode */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.04) 100%
+    );
+  }
+
+  /* Loading overlay for dark mode */
+  .loading::after {
+    background: rgba(15, 30, 45, 0.6);
+  }
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--background-gradient);

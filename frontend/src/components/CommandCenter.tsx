@@ -1,17 +1,15 @@
 import React, { useState, useRef, useCallback, memo, ReactNode } from 'react';
 import { TEXT_PROCESSING_STEPS } from '../utils/aiSteps';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
+import { MAX_TEXT_INPUT_CHARS, CHAR_WARNING_THRESHOLD } from '../constants';
 import '../neurodesign.css';
 import './CommandCenter.css';
 
 export type InputMode = 'voice' | 'chat';
-export type AIActivityType = 'thinking' | 'transcribing' | 'searching' | 'processing' | 'learning' | 'success';
 
 interface CommandCenterProps {
   context: 'personal' | 'work';
-  persona: string;
   isAIActive: boolean;
-  aiActivityType: AIActivityType;
   currentStepIndex: number | null;
   textValue: string;
   onTextChange: (text: string) => void;
@@ -26,8 +24,6 @@ interface CommandCenterProps {
   renderChat?: () => ReactNode;
 }
 
-const MAX_CHARS = 10000;
-
 /**
  * CommandCenter - Central input component with AI status transparency
  *
@@ -39,9 +35,7 @@ const MAX_CHARS = 10000;
  */
 const CommandCenterComponent: React.FC<CommandCenterProps> = ({
   context,
-  persona: _persona,
   isAIActive,
-  aiActivityType: _aiActivityType,
   currentStepIndex,
   textValue,
   onTextChange,
@@ -59,7 +53,7 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const value = e.target.value;
-      if (value.length <= MAX_CHARS) {
+      if (value.length <= MAX_TEXT_INPUT_CHARS) {
         onTextChange(value);
       }
     },
@@ -85,8 +79,8 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
     }
   }, [onSubmit, textValue, isProcessing]);
 
-  const charsRemaining = MAX_CHARS - textValue.length;
-  const showCharWarning = charsRemaining < 500;
+  const charsRemaining = MAX_TEXT_INPUT_CHARS - textValue.length;
+  const showCharWarning = charsRemaining < CHAR_WARNING_THRESHOLD;
   const steps = TEXT_PROCESSING_STEPS;
   const showAIStatus = isAIActive && currentStepIndex !== null && currentStepIndex >= 0;
 

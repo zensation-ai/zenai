@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import axios from 'axios';
 
+// Types and constants
+import type { StructuredIdea, ApiStatus, Page } from './types';
+import { RECENT_CUTOFF_MS, SYNC_INTERVAL_MS, AI_PROCESSING_STEP_DELAY_MS, AI_PROCESSING_INITIAL_DELAY_MS } from './constants';
+
 // Core components - always loaded
-import { IdeaCard } from './components/IdeaCard';
+import { SmartIdeaList } from './components/VirtualizedIdeaList';
 import { RecordButton } from './components/RecordButton';
 import { SearchFilterBar, type Filters } from './components/SearchFilterBar';
 import { QuickStats } from './components/QuickStats';
-// WelcomeMessage entfernt - Hero-Section enthält bereits vollständige Begrüßung
 import { IdeaDetail } from './components/IdeaDetail';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
@@ -69,28 +72,7 @@ const PageLoader = () => (
   </div>
 );
 
-type Page = 'ideas' | 'archive' | 'meetings' | 'profile' | 'integrations' | 'incubator' | 'knowledge-graph' | 'learning' | 'analytics' | 'automations' | 'evolution' | 'notifications' | 'digest' | 'personalization' | 'learning-tasks' | 'media' | 'stories' | 'export' | 'sync' | 'proactive' | 'triage' | 'dashboard' | 'chat';
-
-interface StructuredIdea {
-  id: string;
-  title: string;
-  type: 'idea' | 'task' | 'insight' | 'problem' | 'question';
-  category: 'business' | 'technical' | 'personal' | 'learning';
-  priority: 'low' | 'medium' | 'high';
-  summary: string;
-  next_steps: string[];
-  context_needed: string[];
-  keywords: string[];
-  raw_transcript?: string;
-  created_at: string;
-  updated_at?: string;
-}
-
-interface ApiStatus {
-  database: boolean;
-  ollama: boolean;
-  models: string[];
-}
+// Types imported from ./types - see types/idea.ts for definitions
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('ideas');
@@ -189,13 +171,17 @@ function App() {
   }, [ideas.length, timeGreeting]);
 
   // Check API health on mount and reload ideas when context changes
+  // Performance: Load all data in parallel instead of sequentially
   useEffect(() => {
     const abortController = new AbortController();
 
     const loadData = async () => {
-      await checkHealth(abortController.signal);
-      await loadIdeas(abortController.signal);
-      await loadArchivedCount(abortController.signal);
+      // Parallel loading for faster initial render
+      await Promise.all([
+        checkHealth(abortController.signal),
+        loadIdeas(abortController.signal),
+        loadArchivedCount(abortController.signal),
+      ]);
     };
 
     loadData();
@@ -230,12 +216,12 @@ function App() {
         // Keep locally-added ideas that aren't on the server yet (created in last 2 minutes)
         // This prevents the race condition where cache returns stale data before invalidation
         setIdeas(currentIdeas => {
-          const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+          const recentCutoff = new Date(Date.now() - RECENT_CUTOFF_MS).toISOString();
 
           // Find local ideas that are recent and NOT on server (likely just created)
           const recentLocalIdeas = currentIdeas.filter(localIdea =>
             !serverIdeaIds.has(localIdea.id) &&
-            localIdea.created_at > twoMinutesAgo
+            localIdea.created_at > recentCutoff
           );
 
           // Merge: Server ideas first, then recent local ideas that aren't duplicates
@@ -250,7 +236,7 @@ function App() {
       } catch {
         // Silently fail on sync errors
       }
-    }, 30000); // 30 seconds
+    }, SYNC_INTERVAL_MS);
 
     return () => clearInterval(syncInterval);
   }, [currentPage, context]);
@@ -293,12 +279,12 @@ function App() {
       // This handles the case where server cache hasn't been invalidated yet
       setIdeas(currentIdeas => {
         const serverIdeaIds = new Set(serverIdeas.map(i => i.id));
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        const recentCutoff = new Date(Date.now() - RECENT_CUTOFF_MS).toISOString();
 
         // Keep local ideas that are recent and not on server yet
         const recentLocalIdeas = currentIdeas.filter(localIdea =>
           !serverIdeaIds.has(localIdea.id) &&
-          localIdea.created_at > twoMinutesAgo
+          localIdea.created_at > recentCutoff
         );
 
         if (recentLocalIdeas.length > 0) {
@@ -382,7 +368,7 @@ function App() {
 
     try {
       // Step 1: Analyzing (shown immediately)
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_INITIAL_DELAY_MS));
       setAIOverlay({ visible: true, type: 'text', step: 1 });
 
       // Submit text to context-specific endpoint
@@ -393,9 +379,9 @@ function App() {
 
       // Step 2: Classifying -> Step 3: Extracting
       setAIOverlay({ visible: true, type: 'text', step: 2 });
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_STEP_DELAY_MS));
       setAIOverlay({ visible: true, type: 'text', step: 3 });
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_STEP_DELAY_MS));
 
       const newIdea: StructuredIdea = {
         id: response.data.ideaId,
@@ -828,19 +814,14 @@ function App() {
                   </div>
                 </div>
               ) : (
-                <div className={`ideas-${viewMode}`}>
-                  {archivedIdeas.map((idea) => (
-                    <div key={idea.id} className="idea-wrapper">
-                      <IdeaCard
-                        idea={idea}
-                        onDelete={(id) => setArchivedIdeas(prev => prev.filter((i) => i.id !== id))}
-                        onRestore={handleRestore}
-                        isArchived={true}
-                        context={context}
-                      />
-                    </div>
-                  ))}
-                </div>
+                <SmartIdeaList
+                  ideas={archivedIdeas}
+                  viewMode={viewMode}
+                  onDelete={(id) => setArchivedIdeas(prev => prev.filter((i) => i.id !== id))}
+                  onRestore={handleRestore}
+                  isArchived={true}
+                  context={context}
+                />
               )}
             </section>
           </main>
@@ -867,6 +848,11 @@ function App() {
     {/* Scroll Progress Indicator (Neurodesign) */}
     <ScrollProgress />
     <div className="app" data-context={context}>
+      {/* Skip Link for Keyboard Navigation (a11y) */}
+      <a href="#main-content" className="skip-link">
+        Zum Hauptinhalt springen
+      </a>
+
       {/* Animated Organic Background */}
       <div className="ambient-background" aria-hidden="true">
         <div className="blob-1" />
@@ -889,7 +875,7 @@ function App() {
         <div className="particle particle-12" />
       </div>
 
-      <header className="header liquid-glass-nav">
+      <header className="header liquid-glass-nav" role="banner">
         <div className="header-content">
           <div className="header-left">
             <div className="header-ai-status">
@@ -898,7 +884,7 @@ function App() {
             </div>
           </div>
           <div className="header-center">
-            <nav className="header-nav">
+            <nav className="header-nav" aria-label="Hauptnavigation">
               <button
                 type="button"
                 className={`nav-button ${currentPage === 'ideas' ? 'active' : ''}`}
@@ -1128,9 +1114,7 @@ function App() {
         {/* CommandCenter - Central input with AI transparency */}
         <CommandCenter
           context={context}
-          persona={selectedPersona || 'default'}
           isAIActive={isAIActive}
-          aiActivityType={aiActivityType}
           currentStepIndex={aiOverlay?.step ?? null}
           textValue={textInput}
           onTextChange={setTextInput}
@@ -1166,7 +1150,7 @@ function App() {
         />
       </section>
 
-      <main className="main">
+      <main id="main-content" className="main" role="main">
 
         {/* Error Display */}
         {error && (
@@ -1209,24 +1193,28 @@ function App() {
               {searchResults ? 'Suchergebnisse' : 'Deine Gedanken'}
               <span className="count">{filteredIdeas.length}</span>
             </h2>
-            <div className="view-toggle" role="group" aria-label="Ansicht wählen">
+            <div className="view-toggle" role="tablist" aria-label="Ansicht wählen">
               <button
                 type="button"
+                role="tab"
                 className={viewMode === 'grid' ? 'active' : ''}
                 onClick={() => setViewMode('grid')}
                 title="Rasteransicht"
                 aria-label="Rasteransicht"
-                aria-pressed={viewMode === 'grid'}
+                aria-selected={viewMode === 'grid' ? 'true' : 'false'}
+                tabIndex={viewMode === 'grid' ? 0 : -1}
               >
                 ⊞
               </button>
               <button
                 type="button"
+                role="tab"
                 className={viewMode === 'list' ? 'active' : ''}
                 onClick={() => setViewMode('list')}
                 title="Listenansicht"
                 aria-label="Listenansicht"
-                aria-pressed={viewMode === 'list'}
+                aria-selected={viewMode === 'list' ? 'true' : 'false'}
+                tabIndex={viewMode === 'list' ? 0 : -1}
               >
                 ☰
               </button>
@@ -1278,36 +1266,19 @@ function App() {
               )}
             </div>
           ) : (
-            <div className={`ideas-${viewMode}`} aria-label="Gedankenliste">
-              {filteredIdeas.map((idea) => (
-                <div
-                  key={idea.id}
-                  onClick={() => handleIdeaClick(idea)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleIdeaClick(idea);
-                    }
-                  }}
-                  className="idea-wrapper"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Gedanke: ${idea.title}`}
-                >
-                  <IdeaCard
-                    idea={idea}
-                    onDelete={(id) => setIdeas(prev => prev.filter((i) => i.id !== id))}
-                    onArchive={handleArchive}
-                    context={context}
-                  />
-                </div>
-              ))}
-            </div>
+            <SmartIdeaList
+              ideas={filteredIdeas}
+              viewMode={viewMode}
+              onIdeaClick={handleIdeaClick}
+              onDelete={(id) => setIdeas(prev => prev.filter((i) => i.id !== id))}
+              onArchive={handleArchive}
+              context={context}
+            />
           )}
         </section>
       </main>
 
-      <footer className="footer">
+      <footer className="footer" role="contentinfo">
         <p>Personal AI System • Lokal & Privat</p>
       </footer>
 

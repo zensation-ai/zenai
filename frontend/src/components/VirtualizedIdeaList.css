@@ -1,0 +1,156 @@
+/**
+ * VirtualizedIdeaList Styles
+ *
+ * Styles for the virtualized idea list component.
+ * Supports both grid and list view modes.
+ */
+
+.virtualized-list-container {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for the virtualized container */
+.virtualized-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.virtualized-list-container::-webkit-scrollbar-track {
+  background: rgba(20, 50, 70, 0.03);
+  border-radius: 4px;
+}
+
+.virtualized-list-container::-webkit-scrollbar-thumb {
+  background: rgba(20, 50, 70, 0.15);
+  border-radius: 4px;
+}
+
+.virtualized-list-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 50, 70, 0.25);
+}
+
+/* Inner container for absolute positioning */
+.virtualized-list-inner {
+  position: relative;
+}
+
+/* Row styles */
+.virtualized-row {
+  padding: 0 4px;
+}
+
+/* Grid row specific styles */
+.virtualized-grid-row {
+  align-items: stretch;
+}
+
+/* List row specific styles */
+.virtualized-list-row {
+  padding-bottom: 16px;
+}
+
+/* Idea wrapper in virtualized list */
+.virtualized-idea-wrapper {
+  height: 100%;
+  display: flex;
+}
+
+.virtualized-idea-wrapper .idea-card {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+/* Grid mode specifics */
+.virtualized-grid .virtualized-idea-wrapper {
+  min-height: 280px;
+}
+
+/* List mode specifics */
+.virtualized-list .virtualized-list-row .virtualized-idea-wrapper {
+  width: 100%;
+}
+
+.virtualized-list .idea-card {
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .virtualized-grid-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .virtualized-grid-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .virtualized-list-container {
+    height: 500px !important;
+  }
+}
+
+/* Fade effect at bottom for visual continuity */
+.virtualized-list-container::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(
+    to top,
+    var(--background, #dce5eb) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .virtualized-list-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .virtualized-list-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .virtualized-list-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .virtualized-list-container::after {
+    background: linear-gradient(
+      to top,
+      var(--background, #0d1821) 0%,
+      transparent 100%
+    );
+  }
+}
+
+/* Animation for items entering the viewport */
+@keyframes fadeInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Only apply animations when not in reduced motion mode */
+@media (prefers-reduced-motion: no-preference) {
+  .virtualized-idea-wrapper {
+    animation: fadeInFromBottom 0.2s ease-out;
+  }
+}

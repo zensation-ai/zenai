@@ -1,0 +1,125 @@
+/**
+ * ErrorBoundary Styles
+ *
+ * Uses CSS variables for consistent theming with the rest of the app
+ */
+
+.error-boundary-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: var(--background-gradient, var(--background));
+}
+
+.error-boundary-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 40px;
+  background: var(--glass-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.error-boundary-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.error-boundary-title {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.error-boundary-message {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.error-boundary-details {
+  text-align: left;
+  background: var(--surface-light);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  color: var(--danger);
+  overflow: auto;
+  max-height: 200px;
+  margin-bottom: 24px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid var(--border-light);
+}
+
+.error-boundary-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-boundary-button {
+  padding: 12px 24px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.error-boundary-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.error-boundary-button:active {
+  transform: translateY(0);
+}
+
+.error-boundary-button.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.error-boundary-button.secondary:hover {
+  background: var(--surface-hover);
+}
+
+/* Focus states for accessibility */
+.error-boundary-button:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.error-boundary-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.error-boundary-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.error-boundary-button.secondary:focus-visible {
+  outline-color: var(--text);
+}
+
+/* Dark mode adjustments via CSS variables */
+@media (prefers-color-scheme: dark) {
+  .error-boundary-details {
+    background: var(--surface);
+  }
+}
