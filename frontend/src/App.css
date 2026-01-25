@@ -411,17 +411,34 @@
 }
 
 .hero-section.compact .hero-greeting-container {
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .hero-section.compact .hero-greeting {
-  font-size: 1.15rem;
-  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
   font-weight: 600;
+  /* Neuro-UX: Sanfte Animation für wiederkehrende Benutzer */
+  animation: compactGreetingFade 0.4s ease-out;
+}
+
+@keyframes compactGreetingFade {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-section.compact .hero-subtext {
-  display: none;
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-bottom: 0.75rem;
+  max-width: 350px;
 }
 
 .hero-section.compact .hero-suggested-action {

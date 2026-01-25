@@ -4,21 +4,37 @@ import './Toast.css';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
+/** Default toast duration in milliseconds */
+const DEFAULT_DURATION = 5000;
+/** Extra time added when undo option is present */
+const UNDO_EXTRA_TIME = 2000;
+
 interface Toast {
   id: string;
   message: string;
   type: ToastType;
-  duration?: number;
+  duration: number;
   onUndo?: () => void;
   undoLabel?: string;
+  createdAt: number;
 }
 
-// Simple toast store
+// Simple toast store with cleanup tracking
 let toastListeners: ((toasts: Toast[]) => void)[] = [];
 let toasts: Toast[] = [];
+const dismissTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 const notifyListeners = () => {
   toastListeners.forEach(listener => listener([...toasts]));
+};
+
+/** Clean up timer for a specific toast */
+const clearDismissTimer = (id: string) => {
+  const timer = dismissTimers.get(id);
+  if (timer) {
+    clearTimeout(timer);
+    dismissTimers.delete(id);
+  }
 };
 
 interface ToastOptions {
@@ -29,52 +45,64 @@ interface ToastOptions {
 }
 
 /**
+ * Generate a unique ID using crypto API with fallback
+ */
+const generateId = (): string => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID().substring(0, 9);
+  }
+  return Math.random().toString(36).substring(2, 11);
+};
+
+/**
  * Show a toast notification
  * @param message - The message to display
  * @param typeOrOptions - Either a ToastType string or a ToastOptions object
- * @param duration - Duration in ms (default: 4000, use 0 for permanent)
+ * @param duration - Duration in ms (default: 5000, use 0 for permanent)
+ * @returns The toast ID for programmatic dismissal
  */
 export const showToast = (
   message: string,
   typeOrOptions: ToastType | ToastOptions = 'info',
   duration?: number
 ): string => {
-  const id = Math.random().toString(36).substr(2, 9);
+  const id = generateId();
 
   // Handle both old and new API for backwards compatibility
-  let options: ToastOptions;
-  if (typeof typeOrOptions === 'string') {
-    options = { type: typeOrOptions, duration };
-  } else {
-    options = typeOrOptions;
-  }
+  const options: ToastOptions = typeof typeOrOptions === 'string'
+    ? { type: typeOrOptions, duration }
+    : typeOrOptions;
 
   const toast: Toast = {
     id,
     message,
     type: options.type || 'info',
-    duration: options.duration ?? 4000,
+    duration: options.duration ?? DEFAULT_DURATION,
     onUndo: options.onUndo,
     undoLabel: options.undoLabel || 'Rückgängig',
+    createdAt: Date.now(),
   };
 
   toasts = [...toasts, toast];
   notifyListeners();
 
   // Auto-dismiss - give extra time if there's an undo option
-  const effectiveDuration = toast.duration ?? 4000;
-  if (effectiveDuration > 0) {
-    const dismissTime = toast.onUndo ? effectiveDuration + 2000 : effectiveDuration;
-    setTimeout(() => {
+  if (toast.duration > 0) {
+    const dismissTime = toast.onUndo ? toast.duration + UNDO_EXTRA_TIME : toast.duration;
+    const timer = setTimeout(() => {
+      dismissTimers.delete(id);
       toasts = toasts.filter(t => t.id !== id);
       notifyListeners();
     }, dismissTime);
+    dismissTimers.set(id, timer);
   }
 
   return id;
 };
 
 export const dismissToast = (id: string) => {
+  // Clear any pending auto-dismiss timer
+  clearDismissTimer(id);
   toasts = toasts.filter(t => t.id !== id);
   notifyListeners();
 };

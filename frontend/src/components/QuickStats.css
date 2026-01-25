@@ -1,0 +1,190 @@
+/**
+ * QuickStats - Neuro-UX optimierte Statistik-Anzeige
+ *
+ * Design-Prinzipien:
+ * - Inline-Pills für schnelle visuelle Erfassung
+ * - Hover-States für zusätzliche Informationen
+ * - Konsistente Farbkodierung mit Typ/Priorität
+ */
+
+.quick-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--glass-border);
+  margin-bottom: 1.25rem;
+  transition: all 0.25s ease;
+}
+
+.quick-stats:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* Statistik-Sektionen */
+.quick-stats-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.quick-stats-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  white-space: nowrap;
+  min-width: 85px;
+}
+
+.quick-stats-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Statistik-Pills */
+.quick-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.quick-stat-pill:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--pill-accent, var(--primary));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.quick-stat-pill:active {
+  transform: translateY(0);
+}
+
+.quick-stat-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.quick-stat-name {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.quick-stat-count {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Prioritäts-Pills mit Farbakzent */
+.priority-pill {
+  border-left: 3px solid var(--pill-accent, #f59e0b);
+}
+
+.priority-pill:hover {
+  background: color-mix(in srgb, var(--pill-accent, #f59e0b) 8%, white);
+}
+
+/* Kategorie-Pills */
+.category-pill {
+  background: rgba(var(--pill-accent-rgb, 107, 114, 128), 0.08);
+}
+
+.category-pill[data-category="business"] {
+  --pill-accent: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.category-pill[data-category="business"]:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+}
+
+.category-pill[data-category="technical"] {
+  --pill-accent: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.category-pill[data-category="technical"]:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+}
+
+.category-pill[data-category="personal"] {
+  --pill-accent: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+.category-pill[data-category="personal"]:hover {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: #a855f7;
+}
+
+.category-pill[data-category="learning"] {
+  --pill-accent: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.category-pill[data-category="learning"]:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 768px) {
+  .quick-stats {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .quick-stats-section {
+    width: 100%;
+  }
+
+  .quick-stats-label {
+    min-width: 70px;
+    font-size: 0.55rem;
+  }
+
+  .quick-stat-pill {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.72rem;
+  }
+}
+
+/* Animation beim Erscheinen */
+.quick-stats {
+  animation: quickStatsSlideIn 0.35s ease-out;
+}
+
+@keyframes quickStatsSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

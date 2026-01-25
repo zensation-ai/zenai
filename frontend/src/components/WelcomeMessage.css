@@ -1,0 +1,279 @@
+/**
+ * WelcomeMessage - Neuro-UX optimierte Begrüßung
+ *
+ * Design-Prinzipien:
+ * - Prominente, freundliche Darstellung
+ * - Sanfte Animationen für emotionale Verbindung
+ * - Klare Hierarchie mit visueller Tiefe
+ */
+
+/* Volle Willkommensnachricht */
+.welcome-message-full {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 2rem 2rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 250, 245, 0.92) 50%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: var(--radius-xl, 20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 8px 32px rgba(255, 107, 53, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  animation: welcomeSlideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes welcomeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.welcome-message-full.fading-out {
+  animation: welcomeFadeOut 0.4s ease-out forwards;
+}
+
+@keyframes welcomeFadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+
+.welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 1;
+}
+
+/* Emoji */
+.welcome-emoji-large {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  animation: welcomeEmojiPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+@keyframes welcomeEmojiPop {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotate(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Begrüßungstext */
+.welcome-greeting {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  animation: welcomeTextFade 0.5s ease-out 0.15s both;
+}
+
+@keyframes welcomeTextFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-subtext {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+  max-width: 400px;
+  line-height: 1.5;
+  animation: welcomeTextFade 0.5s ease-out 0.25s both;
+}
+
+/* Vorgeschlagene Aktion */
+.welcome-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 107, 53, 0.08);
+  border-radius: var(--radius-md, 12px);
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: welcomeTextFade 0.5s ease-out 0.35s both;
+}
+
+.suggestion-icon {
+  font-size: 1rem;
+}
+
+/* Status mit Gedanken-Anzahl */
+.welcome-status {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  animation: welcomeTextFade 0.5s ease-out 0.35s both;
+}
+
+.status-count {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.1em;
+}
+
+/* Dismiss-Button */
+.welcome-dismiss {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.welcome-dismiss:hover {
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+/* Progress-Indikator */
+.welcome-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  border-radius: 0 0 var(--radius-xl, 20px) var(--radius-xl, 20px);
+  animation: welcomeProgress linear forwards;
+  width: 100%;
+}
+
+@keyframes welcomeProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* AI-Badge */
+.welcome-ai-badge {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.ai-badge-emoji {
+  font-size: 0.85rem;
+}
+
+.ai-badge-name {
+  font-weight: 500;
+}
+
+/* Kompakte Willkommensnachricht */
+.welcome-message-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.welcome-emoji {
+  font-size: 1.1rem;
+}
+
+.welcome-greeting-compact {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 768px) {
+  .welcome-message-full {
+    padding: 1.25rem 1.5rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .welcome-emoji-large {
+    font-size: 2rem;
+  }
+
+  .welcome-greeting {
+    font-size: 1.35rem;
+  }
+
+  .welcome-subtext {
+    font-size: 0.9rem;
+  }
+
+  .welcome-suggestion {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-message-full,
+  .welcome-emoji-large,
+  .welcome-greeting,
+  .welcome-subtext,
+  .welcome-suggestion,
+  .welcome-status {
+    animation: none !important;
+  }
+
+  .welcome-progress {
+    animation: none !important;
+    width: 100%;
+  }
+}

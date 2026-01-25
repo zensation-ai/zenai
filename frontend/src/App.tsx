@@ -4,9 +4,9 @@ import axios from 'axios';
 // Core components - always loaded
 import { IdeaCard } from './components/IdeaCard';
 import { RecordButton } from './components/RecordButton';
-import { SearchBar } from './components/SearchBar';
-import { Stats } from './components/Stats';
-import { FilterBar, Filters } from './components/FilterBar';
+import { SearchFilterBar, type Filters } from './components/SearchFilterBar';
+import { QuickStats } from './components/QuickStats';
+import { WelcomeMessage } from './components/WelcomeMessage';
 import { IdeaDetail } from './components/IdeaDetail';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
@@ -1129,22 +1129,39 @@ function App() {
           </div>
         )}
 
-        {/* Stats */}
-        <Stats ideas={ideas} />
+        {/* Welcome Message - Prominente Begrüßung mit längerer Anzeigedauer */}
+        {ideas.length === 0 && (
+          <WelcomeMessage
+            greeting={timeGreeting.greeting}
+            emoji={timeGreeting.emoji}
+            subtext={`Ich bin ${AI_PERSONALITY.name}. ${timeGreeting.subtext}`}
+            suggestedAction={timeGreeting.suggestedAction}
+            ideasCount={ideas.length}
+            displayDuration={8000}
+          />
+        )}
 
-        {/* Search & Filter Section */}
-        <section className="search-filter-section">
-          <SearchBar onSearch={handleSearch} onClear={clearSearch} isSearching={isSearching} />
-          {searchResults && (
-            <div className="search-info">
-              <span>{searchResults.length} Ergebnisse für semantische Suche</span>
-              <button type="button" className="clear-search" onClick={clearSearch}>
-                × Suche zurücksetzen
-              </button>
-            </div>
-          )}
-          <FilterBar filters={filters} onFilterChange={setFilters} counts={filterCounts} />
-        </section>
+        {/* Quick Stats - Kompakte Statistik-Übersicht */}
+        <QuickStats
+          ideas={ideas}
+          onFilterClick={(filterType, value) => {
+            setFilters(prev => ({
+              ...prev,
+              [filterType]: prev[filterType] === value ? null : value,
+            }));
+          }}
+        />
+
+        {/* Integrierte Suche und Filter */}
+        <SearchFilterBar
+          filters={filters}
+          onFilterChange={setFilters}
+          onSearch={handleSearch}
+          onClearSearch={clearSearch}
+          isSearching={isSearching}
+          searchResults={searchResults ? searchResults.length : null}
+          counts={filterCounts}
+        />
 
         {/* Ideas List */}
         <section className="ideas-section">
