@@ -152,7 +152,7 @@ const CONFIG = {
 // Memory Coordinator
 // ===========================================
 
-class MemoryCoordinator {
+export class MemoryCoordinator {
   // ===========================================
   // Session Management
   // ===========================================

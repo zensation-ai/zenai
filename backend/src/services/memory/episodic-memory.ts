@@ -106,7 +106,7 @@ const CONFIG = {
 // Episodic Memory Service
 // ===========================================
 
-class EpisodicMemoryService {
+export class EpisodicMemoryService {
   // ===========================================
   // Episode Storage
   // ===========================================

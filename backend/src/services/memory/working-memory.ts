@@ -71,7 +71,7 @@ const CONFIG = {
 // Working Memory Service
 // ===========================================
 
-class WorkingMemoryService {
+export class WorkingMemoryService {
   private states: Map<string, WorkingMemoryState> = new Map();
   private cleanupInterval: NodeJS.Timeout | null = null;
 
