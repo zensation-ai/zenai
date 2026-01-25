@@ -77,10 +77,10 @@
   --glass-shadow: rgba(20, 50, 70, 0.15);
   --glass-warm: rgba(255, 235, 220, 0.55);
 
-  /* Text Colors - Petrol-tinted dark (WCAG AA compliant) */
+  /* Text Colors - Petrol-tinted dark (WCAG AAA compliant, verbesserter Kontrast) */
   --text: #1a2e3d;
-  --text-muted: #2d4555;
-  --text-secondary: #4a6577;
+  --text-muted: #243a4a;      /* Dunkler für besseren Kontrast auf hellen Hintergründen */
+  --text-secondary: #3a5567;  /* Dunkler für WCAG AAA Konformität */
 
   /* Borders & Accents - More visible */
   --border: rgba(20, 50, 70, 0.15);
