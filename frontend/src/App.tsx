@@ -1061,8 +1061,9 @@ function App() {
       </header>
 
       {/* Hero Section with Prominent AI Brain - Neuro-optimiert 2026 */}
+      {/* CLS-Fix: Während des Ladens compact zeigen, um Layout-Shift zu vermeiden */}
       <section
-        className={`hero-section ${ideas.length > 0 ? 'compact' : ''}`}
+        className={`hero-section ${loading || ideas.length > 0 ? 'compact' : ''}`}
         data-mood={humanGreeting.mood}
         data-energy={humanGreeting.energyLevel}
       >
