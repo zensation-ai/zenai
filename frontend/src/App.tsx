@@ -6,7 +6,7 @@ import { IdeaCard } from './components/IdeaCard';
 import { RecordButton } from './components/RecordButton';
 import { SearchFilterBar, type Filters } from './components/SearchFilterBar';
 import { QuickStats } from './components/QuickStats';
-import { WelcomeMessage } from './components/WelcomeMessage';
+// WelcomeMessage entfernt - Hero-Section enthält bereits vollständige Begrüßung
 import { IdeaDetail } from './components/IdeaDetail';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
@@ -1152,17 +1152,9 @@ function App() {
           </div>
         )}
 
-        {/* Welcome Message - Prominente Begrüßung mit längerer Anzeigedauer */}
-        {ideas.length === 0 && (
-          <WelcomeMessage
-            greeting={timeGreeting.greeting}
-            emoji={timeGreeting.emoji}
-            subtext={`Ich bin ${AI_PERSONALITY.name}. ${timeGreeting.subtext}`}
-            suggestedAction={timeGreeting.suggestedAction}
-            ideasCount={ideas.length}
-            displayDuration={8000}
-          />
-        )}
+        {/* WelcomeMessage entfernt - Hero-Section enthält bereits vollständige Begrüßung
+            Die doppelte Anzeige wurde entfernt, da die Hero-Greeting permanent sichtbar ist
+            und die WelcomeMessage nach 8 Sekunden verschwand */}
 
         {/* Quick Stats - Kompakte Statistik-Übersicht */}
         <QuickStats

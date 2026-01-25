@@ -263,7 +263,7 @@
 
 .hero-subtext {
   font-size: 1.1rem;
-  color: var(--text-muted);
+  color: var(--text);  /* Verbesserter Kontrast - von --text-muted zu --text */
   margin: 0 0 1.5rem 0;
   max-width: 460px;
   line-height: 1.6;
