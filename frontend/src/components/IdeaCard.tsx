@@ -39,6 +39,9 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
   const confirm = useConfirm();
   const { triggerSuccess } = useNeuroFeedback();
 
+  // Prüfe ob Karte neu ist (weniger als 5 Minuten alt)
+  const isNew = new Date().getTime() - new Date(idea.created_at).getTime() < 5 * 60 * 1000;
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const confirmed = await confirm({
@@ -102,7 +105,8 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
 
   return (
     <div
-      className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''}`}
+      className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''} ${isNew ? 'is-new' : ''}`}
+      data-type={idea.type}
       role="article"
       aria-label={`${idea.type}: ${idea.title}`}
     >

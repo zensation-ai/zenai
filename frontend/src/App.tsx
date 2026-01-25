@@ -859,13 +859,19 @@ function App() {
         <div className="blob-3" />
         <div className="blob-4" />
         <div className="blob-5" />
-        {/* Floating Particles */}
+        {/* Floating Particles - Enhanced for richer visual experience */}
         <div className="particle particle-1" />
         <div className="particle particle-2" />
         <div className="particle particle-3" />
         <div className="particle particle-4" />
         <div className="particle particle-5" />
         <div className="particle particle-6" />
+        <div className="particle particle-7" />
+        <div className="particle particle-8" />
+        <div className="particle particle-9" />
+        <div className="particle particle-10" />
+        <div className="particle particle-11" />
+        <div className="particle particle-12" />
       </div>
 
       <header className="header liquid-glass-nav">
@@ -1039,12 +1045,29 @@ function App() {
       >
         {/* Ambient Particles - Neuro: Subtile Bewegung fördert Fokus ohne Ablenkung */}
         <div className="hero-ambient" aria-hidden="true">
+          {/* Primary Sparkles */}
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
+          {/* Additional Sparkles for richer effect */}
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          <div className="hero-sparkle" />
+          {/* Micro Sparkles - sehr kleine für Tiefe */}
+          <div className="hero-micro-sparkle" />
+          <div className="hero-micro-sparkle" />
+          <div className="hero-micro-sparkle" />
+          <div className="hero-micro-sparkle" />
+          <div className="hero-micro-sparkle" />
+          <div className="hero-micro-sparkle" />
+          <div className="hero-micro-sparkle" />
+          <div className="hero-micro-sparkle" />
         </div>
 
         {/* Energy Ring - Visualisiert AI-Aktivität */}

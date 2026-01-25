@@ -472,6 +472,61 @@ body::after {
   animation-delay: 10s;
 }
 
+/* Zusätzliche Particles für reicheren visuellen Effekt */
+.particle-7 {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 107, 53, 0.45);
+  left: 15%;
+  animation-duration: 26s;
+  animation-delay: 4s;
+}
+
+.particle-8 {
+  width: 5px;
+  height: 5px;
+  background: rgba(45, 90, 110, 0.35);
+  left: 35%;
+  animation-duration: 21s;
+  animation-delay: 7s;
+}
+
+.particle-9 {
+  width: 7px;
+  height: 7px;
+  background: rgba(255, 140, 90, 0.5);
+  left: 55%;
+  animation-duration: 23s;
+  animation-delay: 1s;
+}
+
+.particle-10 {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 107, 53, 0.55);
+  left: 72%;
+  animation-duration: 19s;
+  animation-delay: 6s;
+}
+
+.particle-11 {
+  width: 6px;
+  height: 6px;
+  background: rgba(26, 80, 120, 0.3);
+  left: 5%;
+  animation-duration: 27s;
+  animation-delay: 12s;
+}
+
+.particle-12 {
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 180, 130, 0.4);
+  left: 95%;
+  animation-duration: 22s;
+  animation-delay: 9s;
+}
+
 @keyframes particleFloat {
   0% {
     opacity: 0;

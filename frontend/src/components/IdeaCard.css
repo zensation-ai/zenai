@@ -86,23 +86,24 @@
 /* Hover State: Dopamin-aktivierendes Feedback */
 .idea-card:hover {
   /* Antizipatorische Elevation */
-  transform: translateY(-4px);
+  transform: translateY(-6px) scale(1.005);
 
-  /* Verstärkte Tiefe für "Greifen"-Gefühl */
+  /* Verstärkte Tiefe für "Greifen"-Gefühl - mit warmem Glow */
   box-shadow:
-    0 16px 48px rgba(20, 50, 70, 0.12),
-    0 6px 16px rgba(20, 50, 70, 0.08),
-    0 0 0 1px rgba(255, 107, 53, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 20px 60px rgba(20, 50, 70, 0.14),
+    0 8px 24px rgba(20, 50, 70, 0.1),
+    0 0 0 1px rgba(255, 107, 53, 0.12),
+    0 0 40px rgba(255, 107, 53, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 
   /* Subtiler Warm-Glow (Belohnungs-Anticipation) */
-  border-color: rgba(255, 107, 53, 0.15);
+  border-color: rgba(255, 107, 53, 0.2);
 
   background: linear-gradient(
     165deg,
-    rgba(255, 255, 255, 0.9) 0%,
-    rgba(255, 253, 250, 0.85) 40%,
-    rgba(255, 255, 255, 0.88) 100%
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 253, 250, 0.9) 40%,
+    rgba(255, 255, 255, 0.92) 100%
   );
 }
 
@@ -492,10 +493,77 @@
 /* Priority Glow für High-Priority Items */
 .idea-card:has(.priority-high) {
   border-left: 3px solid rgba(255, 59, 48, 0.4);
+  position: relative;
+}
+
+.idea-card:has(.priority-high)::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 59, 48, 0.08) 0%,
+    rgba(255, 255, 255, 0.35) 20%,
+    rgba(255, 255, 255, 0.1) 40%,
+    transparent 100%
+  );
 }
 
 .idea-card:has(.priority-high):hover {
-  border-left-color: rgba(255, 59, 48, 0.6);
+  border-left-color: rgba(255, 59, 48, 0.7);
+  box-shadow:
+    0 20px 60px rgba(20, 50, 70, 0.14),
+    0 8px 24px rgba(20, 50, 70, 0.1),
+    0 0 30px rgba(255, 59, 48, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Typ-basierte linke Akzentfarben */
+.idea-card[data-type="idea"] {
+  border-left: 3px solid rgba(245, 158, 11, 0.5);
+}
+
+.idea-card[data-type="task"] {
+  border-left: 3px solid rgba(34, 197, 94, 0.5);
+}
+
+.idea-card[data-type="insight"] {
+  border-left: 3px solid rgba(59, 130, 246, 0.5);
+}
+
+.idea-card[data-type="problem"] {
+  border-left: 3px solid rgba(239, 68, 68, 0.5);
+}
+
+.idea-card[data-type="question"] {
+  border-left: 3px solid rgba(139, 92, 246, 0.5);
+}
+
+/* New Card Indicator - subtiles Pulsieren für kürzlich erstellte Karten */
+.idea-card.is-new {
+  position: relative;
+}
+
+.idea-card.is-new::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 107, 53, 0.1) 0%,
+    rgba(255, 255, 255, 0.35) 20%,
+    rgba(255, 255, 255, 0.1) 40%,
+    transparent 100%
+  ) !important;
+}
+
+.idea-card.is-new .idea-type {
+  animation: newCardTypePulse 2s ease-in-out infinite;
+}
+
+@keyframes newCardTypePulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 2px 8px rgba(255, 107, 53, 0.3));
+  }
 }
 
 /* Cognitive Load Indicator bei vielen Keywords */
