@@ -12,6 +12,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 import {
   AI_PERSONALITY,
   AI_AVATAR,
@@ -241,8 +242,7 @@ export function ChatPage({ context, onBack }: ChatPageProps) {
         );
       }
     } catch (err) {
-      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
-      const errorMessage = axiosError.response?.data?.error?.message || 'Nachricht fehlgeschlagen';
+      const errorMessage = getErrorMessage(err, 'Nachricht fehlgeschlagen');
       showToast(errorMessage, 'error');
       setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
       setInputValue(messageContent);
@@ -402,7 +402,7 @@ export function ChatPage({ context, onBack }: ChatPageProps) {
         {/* Main Chat Area */}
         <main className="chat-main">
           {/* Messages */}
-          <div className="chat-messages" role="log" aria-label="Chat-Nachrichten">
+          <div className="chat-messages" role="region" aria-label="Chat-Nachrichten" aria-live="polite">
             {loadingMessages ? (
               <div className="chat-loading">
                 <div className="loading-spinner" />

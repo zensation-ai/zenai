@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 import {
   AI_PERSONALITY,
   AI_AVATAR,
@@ -169,8 +170,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       });
 
     } catch (err) {
-      const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
-      const errorMessage = axiosError.response?.data?.error?.message || 'Nachricht fehlgeschlagen';
+      const errorMessage = getErrorMessage(err, 'Nachricht fehlgeschlagen');
       showToast(errorMessage, 'error');
 
       // Remove optimistic message on error
@@ -273,7 +273,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       {/* Messages Area */}
       <div className="chat-messages" role="log" aria-label="Chat-Nachrichten" aria-live="polite">
         {messages.length === 0 ? (
-          <div className="chat-empty neuro-empty-state neuro-human-fade-in" role="status">
+          <div className="chat-empty neuro-empty-state neuro-human-fade-in" role="status" aria-label="Leerer Chat - Beginne eine Unterhaltung">
             <div className="chat-empty-avatar neuro-breathing" aria-hidden="true">{AI_AVATAR.emoji}</div>
             <h3 className="chat-empty-title neuro-empty-title">{EMPTY_STATE_MESSAGES.chat.title}</h3>
             <p className="chat-empty-description neuro-empty-description">{EMPTY_STATE_MESSAGES.chat.description}</p>

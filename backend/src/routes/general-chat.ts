@@ -21,11 +21,9 @@ import {
   deleteSession,
   sendMessage,
 } from '../services/general-chat';
+import { isValidUUID } from '../utils/validation';
 
 export const generalChatRouter = Router();
-
-// UUID validation regex
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // ===========================================
 // Create New Session
@@ -95,7 +93,7 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
   const { id } = req.params;
 
   // Validate UUID format
-  if (!UUID_REGEX.test(id)) {
+  if (!isValidUUID(id)) {
     throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
   }
 
@@ -126,7 +124,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, asyncHandler(async 
   const { message } = req.body;
 
   // Validate UUID format
-  if (!UUID_REGEX.test(id)) {
+  if (!isValidUUID(id)) {
     throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
   }
 
@@ -180,7 +178,7 @@ generalChatRouter.delete('/sessions/:id', apiKeyAuth, requireScope('write'), asy
   const { id } = req.params;
 
   // Validate UUID format
-  if (!UUID_REGEX.test(id)) {
+  if (!isValidUUID(id)) {
     throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
   }
 

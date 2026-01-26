@@ -17,6 +17,29 @@ import { generateEmbedding } from '../ai';
 import { cosineSimilarity } from '../../utils/semantic-cache';
 
 // ===========================================
+// Utility Functions
+// ===========================================
+
+/**
+ * Safely parse JSON with fallback value
+ * Prevents crashes from corrupted database data
+ */
+function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
+  if (!json || typeof json !== 'string') {
+    return fallback;
+  }
+  try {
+    return JSON.parse(json) as T;
+  } catch (error) {
+    logger.warn('Failed to parse JSON, using fallback', {
+      jsonPreview: json.substring(0, 100),
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return fallback;
+  }
+}
+
+// ===========================================
 // Types & Interfaces
 // ===========================================
 
@@ -193,7 +216,7 @@ class LongTermMemoryService {
       pattern: r.pattern,
       frequency: r.occurrences,
       lastUsed: r.last_triggered ? new Date(r.last_triggered) : new Date(),
-      associatedTopics: r.associated_topics ? JSON.parse(r.associated_topics) : [],
+      associatedTopics: safeJsonParse<string[]>(r.associated_topics, []),
       confidence: parseFloat(r.confidence),
     }));
 
@@ -211,14 +234,16 @@ class LongTermMemoryService {
     const interactions: SignificantInteraction[] = interactionsResult.rows
       .filter((r: any) => r.summary)
       .map((r: any) => {
-        const metadata = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata || {};
+        const metadata = typeof r.metadata === 'string'
+          ? safeJsonParse<Record<string, unknown>>(r.metadata, {})
+          : r.metadata || {};
         return {
           id: r.id,
           summary: r.summary,
-          topics: metadata.tags || [],
-          outcome: metadata.outcome || '',
+          topics: (metadata.tags as string[]) || [],
+          outcome: (metadata.outcome as string) || '',
           timestamp: new Date(r.last_activity),
-          significance: metadata.significance || 0.5,
+          significance: (metadata.significance as number) || 0.5,
         };
       });
 
@@ -319,8 +344,12 @@ class LongTermMemoryService {
 
     return result.rows.map((r: any) => ({
       id: r.id,
-      messages: typeof r.messages === 'string' ? JSON.parse(r.messages) : r.messages || [],
-      metadata: typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata || {},
+      messages: typeof r.messages === 'string'
+        ? safeJsonParse<any[]>(r.messages, [])
+        : r.messages || [],
+      metadata: typeof r.metadata === 'string'
+        ? safeJsonParse<Record<string, unknown>>(r.metadata, {})
+        : r.metadata || {},
       summary: r.compressed_summary,
     }));
   }

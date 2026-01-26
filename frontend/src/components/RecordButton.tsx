@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 import '../neurodesign.css';
 import './RecordButton.css';
 
@@ -160,8 +161,7 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
       }
     } catch (error: unknown) {
       console.error('Processing error:', error);
-      const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
-      const errorMessage = axiosError.response?.data?.error || axiosError.message || 'Unbekannter Fehler';
+      const errorMessage = getErrorMessage(error, 'Unbekannter Fehler');
       if (isMountedRef.current) {
         showToast(`Verarbeitung fehlgeschlagen: ${errorMessage}`, 'error');
       }
