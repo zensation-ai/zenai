@@ -354,7 +354,7 @@ export async function multiHopSearch(
   // Build final results using the lookup map
   return rawPaths.map(path => ({
     path,
-    ideas: path.map(id => ideaMap.get(id)).filter(Boolean),
+    ideas: path.map(id => ideaMap.get(id)).filter((idea): idea is IdeaInfo => idea !== undefined),
   }));
 }
 
