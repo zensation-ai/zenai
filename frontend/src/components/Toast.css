@@ -153,6 +153,13 @@
 
 .toast-close:active {
   transform: scale(0.95);
+  transition-duration: 0.08s;
+}
+
+.toast-close:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 /* Animation */
@@ -259,5 +266,26 @@
   .toast-undo {
     padding: 4px 10px;
     font-size: 0.75rem;
+  }
+
+  /* Better touch targets on mobile */
+  .toast-close {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast.exiting,
+  .toast-close,
+  .toast-undo {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .toast-progress {
+    transition: none;
   }
 }

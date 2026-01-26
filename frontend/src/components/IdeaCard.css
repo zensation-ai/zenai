@@ -19,7 +19,7 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 20px;
+  border-radius: var(--radius-xl, 24px);
   padding: 1.35rem;
   display: flex;
   flex-direction: column;
@@ -78,7 +78,7 @@
     rgba(255, 255, 255, 0.1) 40%,
     transparent 100%
   );
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--radius-xl, 24px) var(--radius-xl, 24px) 0 0;
   pointer-events: none;
   z-index: 1;
 }
@@ -232,24 +232,25 @@
   opacity: 0.8;
 }
 
-.delete-button:hover {
+/* Higher specificity to override .idea-card:hover opacity without !important */
+.idea-card .delete-button:hover {
   background: rgba(239, 68, 68, 0.12);
   color: #dc2626;
-  opacity: 1 !important;
+  opacity: 1;
   transform: scale(1.1);
 }
 
-.archive-button:hover {
+.idea-card .archive-button:hover {
   background: rgba(59, 130, 246, 0.12);
   color: #2563eb;
-  opacity: 1 !important;
+  opacity: 1;
   transform: scale(1.1);
 }
 
-.restore-button:hover {
+.idea-card .restore-button:hover {
   background: rgba(16, 185, 129, 0.12);
   color: #059669;
-  opacity: 1 !important;
+  opacity: 1;
   transform: scale(1.1);
 }
 
@@ -550,7 +551,7 @@
     rgba(255, 255, 255, 0.35) 20%,
     rgba(255, 255, 255, 0.1) 40%,
     transparent 100%
-  ) !important;
+  );
 }
 
 .idea-card.is-new .idea-type {
