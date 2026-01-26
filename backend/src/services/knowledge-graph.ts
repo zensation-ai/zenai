@@ -44,6 +44,34 @@ interface RelatedIdea {
 }
 
 /**
+ * Simple idea info for graph traversal
+ */
+interface IdeaInfo {
+  id: string;
+  title: string;
+  summary?: string;
+}
+
+/**
+ * Multi-hop search result with path and idea details
+ */
+interface MultiHopPath {
+  path: string[];
+  ideas: IdeaInfo[];
+}
+
+/**
+ * Suggested connection based on embedding similarity
+ */
+interface SuggestedConnection {
+  id: string;
+  title: string;
+  summary: string;
+  keywords: string[];
+  similarity: number;
+}
+
+/**
  * Find and create relationships for a new idea
  */
 export async function analyzeRelationships(ideaId: string): Promise<IdeaRelation[]> {
@@ -264,7 +292,7 @@ export async function getRelationships(ideaId: string): Promise<IdeaRelation[]> 
 export async function multiHopSearch(
   startIdeaId: string,
   maxHops: number = 2
-): Promise<{ path: string[]; ideas: any[] }[]> {
+): Promise<MultiHopPath[]> {
   const rawPaths: string[][] = [];
   const allIdeaIds = new Set<string>();
 
@@ -318,9 +346,9 @@ export async function multiHopSearch(
   `, [Array.from(allIdeaIds)]);
 
   // Create lookup map for O(1) access
-  const ideaMap = new Map<string, any>();
+  const ideaMap = new Map<string, IdeaInfo>();
   for (const idea of ideasResult.rows) {
-    ideaMap.set(idea.id, idea);
+    ideaMap.set(idea.id, { id: idea.id, title: idea.title, summary: idea.summary });
   }
 
   // Build final results using the lookup map
@@ -333,7 +361,7 @@ export async function multiHopSearch(
 /**
  * Get suggested connections for an idea (ideas that might be related but aren't linked yet)
  */
-export async function getSuggestedConnections(ideaId: string): Promise<any[]> {
+export async function getSuggestedConnections(ideaId: string): Promise<SuggestedConnection[]> {
   // Find similar ideas that don't have a relationship yet
   const result = await query(`
     SELECT i.id, i.title, i.summary, i.keywords,

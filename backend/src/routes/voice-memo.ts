@@ -12,6 +12,7 @@ import { learnFromThought, suggestFromLearning } from '../services/learning-engi
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import type { StructuredIdea } from '../types';
 // SECURITY Sprint 2: Zod validation for input
 import { VoiceMemoTextSchema, validateBody } from '../utils/schemas';
 // Phase 24: Cache Invalidation - CRITICAL for ideas to appear after refresh
@@ -55,7 +56,7 @@ const upload = multer({
  */
 async function storeIdea(
   ideaId: string,
-  structured: any,
+  structured: StructuredIdea,
   transcript: string,
   embedding: number[],
   context: AIContext = 'personal'

@@ -7,7 +7,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { cache } from '../utils/cache';
+import { cache, incrementCacheHits, incrementCacheMisses, getResponseCacheStats } from '../utils/cache';
 import { logger } from '../utils/logger';
 import { AIContext } from '../utils/database-context';
 
@@ -117,10 +117,13 @@ export function responseCacheMiddleware(req: Request, res: Response, next: NextF
   const cacheKey = generateCacheKey(req);
 
   // Try to get from cache
-  cache.get<any>(cacheKey).then(cachedResponse => {
+  cache.get<unknown>(cacheKey).then(cachedResponse => {
     if (cachedResponse) {
       // Cache hit!
       logger.debug('Cache HIT', { cacheKey, endpoint: req.path });
+
+      // Track hit statistic (fire-and-forget)
+      incrementCacheHits().catch(() => {});
 
       // Set cache headers
       res.setHeader('X-Cache', 'HIT');
@@ -133,9 +136,12 @@ export function responseCacheMiddleware(req: Request, res: Response, next: NextF
     // Cache miss - intercept response
     logger.debug('Cache MISS', { cacheKey, endpoint: req.path });
 
+    // Track miss statistic (fire-and-forget)
+    incrementCacheMisses().catch(() => {});
+
     const originalJson = res.json.bind(res);
 
-    res.json = function(data: any) {
+    res.json = function(data: unknown) {
       // Set cache headers
       res.setHeader('X-Cache', 'MISS');
       res.setHeader('X-Cache-TTL', ttl.toString());
@@ -215,7 +221,7 @@ export function invalidateCacheAfter(resource?: string) {
     // Intercept response to invalidate after successful mutation
     const originalJson = res.json.bind(res);
 
-    res.json = function(data: any) {
+    res.json = function(data: unknown) {
       // Only invalidate on successful mutations (fire and forget)
       if (res.statusCode >= 200 && res.statusCode < 300) {
         invalidateCacheForContext(context, resource).catch(err => {
@@ -235,7 +241,7 @@ export function invalidateCacheAfter(resource?: string) {
 }
 
 /**
- * Get cache statistics
+ * Get cache statistics including hit/miss rates
  */
 export async function getCacheStatistics(): Promise<{
   enabled: boolean;
@@ -247,13 +253,12 @@ export async function getCacheStatistics(): Promise<{
     return { enabled: false };
   }
 
-  // Note: Actual hit/miss tracking would require counters in Redis
-  // This is a placeholder for future implementation
+  const stats = await getResponseCacheStats();
 
   return {
     enabled: true,
-    hits: undefined, // TODO: Implement counter
-    misses: undefined, // TODO: Implement counter
-    hitRate: undefined,
+    hits: stats.hits,
+    misses: stats.misses,
+    hitRate: stats.hitRate,
   };
 }

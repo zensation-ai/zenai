@@ -45,6 +45,22 @@ import {
   calculateConfidence,
   getConfidenceLevel,
 } from '../services/claude';
+import type { StructuredIdea } from '../types';
+
+/**
+ * Raw structured input from LLM before normalization
+ * Used for type-safe parsing of LLM JSON responses
+ */
+interface RawStructuredInput {
+  title?: string;
+  type?: string;
+  category?: string;
+  priority?: string;
+  summary?: string;
+  next_steps?: string[] | unknown;
+  context_needed?: string[] | unknown;
+  keywords?: string[] | unknown;
+}
 
 export const voiceMemoContextRouter = Router();
 
@@ -301,12 +317,14 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
           type: structured.type,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Don't fail the main request if draft generation fails
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
       logger.warn('Proactive draft generation failed', {
         ideaId,
-        error: error.message || error,
-        stack: error.stack,
+        error: errorMessage,
+        stack: errorStack,
       });
     }
 
@@ -382,12 +400,13 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         ]
       );
       logger.info('Thought saved to loose_thoughts', { thoughtId, context });
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
+      const err = dbError as { code?: string; detail?: string };
       logger.error('Failed to save to loose_thoughts', dbError instanceof Error ? dbError : undefined, {
         thoughtId,
         context,
-        errorCode: dbError?.code,
-        errorDetail: dbError?.detail,
+        errorCode: err?.code,
+        errorDetail: err?.detail,
       });
       throw dbError;
     }
@@ -417,7 +436,7 @@ async function structureThoughtWithPersona(
   transcript: string,
   context: AIContext,
   personaId?: SubPersonaId
-): Promise<any> {
+): Promise<StructuredIdea> {
   const persona = getSubPersona(context, personaId);
 
   // Phase 23: Get active focus context for enhanced relevance
@@ -434,8 +453,9 @@ async function structureThoughtWithPersona(
       logger.info('Structuring with Claude (personalized)', { context, personaId });
       const result = await structureWithClaudePersonalized(transcript, context);
       return result;
-    } catch (error: any) {
-      logger.warn('Claude personalized structuring failed, trying OpenAI', { error: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.warn('Claude personalized structuring failed, trying OpenAI', { error: errorMessage });
     }
   }
 
@@ -462,7 +482,7 @@ OUTPUT FORMAT:
   if (isOpenAIAvailable()) {
     try {
       logger.info('Structuring with OpenAI', { context, personaId });
-      const parsed = await queryOpenAIJSON<any>(systemPrompt, userPrompt);
+      const parsed = await queryOpenAIJSON<RawStructuredInput>(systemPrompt, userPrompt);
 
       return {
         title: parsed.title || 'Unstrukturierte Notiz',
@@ -474,8 +494,9 @@ OUTPUT FORMAT:
         context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
         keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
       };
-    } catch (error: any) {
-      logger.warn('OpenAI structuring failed, trying Ollama', { error: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.warn('OpenAI structuring failed, trying Ollama', { error: errorMessage });
     }
   }
 
@@ -513,7 +534,7 @@ OUTPUT FORMAT:
       context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Both OpenAI and Ollama failed', error instanceof Error ? error : undefined);
 
     // Basic fallback - return unstructured
