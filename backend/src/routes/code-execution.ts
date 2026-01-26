@@ -3,10 +3,11 @@
  *
  * Provides secure code execution capabilities via API.
  * Endpoints:
- * - POST /api/code/execute - Execute code from task description
- * - POST /api/code/run - Execute pre-written code directly
- * - GET /api/code/health - Check code execution service health
- * - GET /api/code/languages - List supported languages
+ * - POST /api/code/execute - Execute code from task description (auth required)
+ * - POST /api/code/run - Execute pre-written code directly (auth required)
+ * - POST /api/code/validate - Validate code safety (auth required)
+ * - GET /api/code/health - Check code execution service health (public)
+ * - GET /api/code/languages - List supported languages (public)
  *
  * @module routes/code-execution
  */
