@@ -12,8 +12,7 @@ import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable
 import { getUnifiedContext } from './business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from './memory';
 import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode, ChatMode, ModeDetectionResult } from './chat-modes';
-import { executeWithTools } from './claude/tool-use';
-import { setToolContext } from './tool-handlers';
+import { executeWithTools, ToolExecutionContext } from './claude/tool-use';
 import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
 import { claudeVision, VisionImage, VisionTask } from './claude-vision';
 
@@ -313,8 +312,12 @@ export async function generateEnhancedResponse(
     throw new Error('Claude API ist nicht verfügbar');
   }
 
-  // Set tool context for tool handlers
-  setToolContext(contextType);
+  // Create request-scoped execution context for tools
+  // This replaces the deprecated global setToolContext() to prevent race conditions
+  const executionContext: ToolExecutionContext = {
+    aiContext: contextType,
+    sessionId,
+  };
 
   // Detect optimal processing mode
   const modeResult = detectChatMode(userMessage);
@@ -541,6 +544,7 @@ export async function generateEnhancedResponse(
           systemPrompt,
           maxIterations: modeResult.mode === 'agent' ? 5 : 3,
           temperature: 0.7,
+          executionContext, // Pass request-scoped context
         }
       );
 

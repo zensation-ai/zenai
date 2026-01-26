@@ -22,6 +22,19 @@ import { getClaudeClient, executeWithProtection, CLAUDE_MODEL } from './client';
 // ===========================================
 
 /**
+ * Execution context passed to tool handlers
+ * This replaces the global context state to enable request-scoped execution
+ */
+export interface ToolExecutionContext {
+  /** The AI context (personal or work) */
+  aiContext: 'personal' | 'work';
+  /** Optional session ID for tracking */
+  sessionId?: string;
+  /** Optional user ID for audit */
+  userId?: string;
+}
+
+/**
  * Tool definition following Claude's schema
  */
 export interface ToolDefinition {
@@ -59,8 +72,12 @@ export interface ToolCall {
 
 /**
  * Handler function for tool execution
+ * Now accepts ToolExecutionContext for request-scoped execution
  */
-export type ToolHandler = (input: Record<string, unknown>) => Promise<string>;
+export type ToolHandler = (
+  input: Record<string, unknown>,
+  context: ToolExecutionContext
+) => Promise<string>;
 
 /**
  * Registered tool with definition and handler
@@ -82,6 +99,8 @@ export interface ToolUseOptions {
   temperature?: number;
   /** Force specific tool usage */
   toolChoice?: { type: 'auto' } | { type: 'any' } | { type: 'tool'; name: string };
+  /** Execution context for request-scoped tool execution */
+  executionContext?: ToolExecutionContext;
 }
 
 /**
@@ -347,14 +366,21 @@ class ToolRegistry {
   }
 
   /**
-   * Execute a tool by name
+   * Execute a tool by name with execution context
+   * @param name - Tool name
+   * @param input - Tool input parameters
+   * @param context - Execution context (request-scoped)
    */
-  async execute(name: string, input: Record<string, unknown>): Promise<string> {
+  async execute(
+    name: string,
+    input: Record<string, unknown>,
+    context: ToolExecutionContext
+  ): Promise<string> {
     const tool = this.tools.get(name);
     if (!tool) {
       throw new Error(`Tool not found: ${name}`);
     }
-    return tool.handler(input);
+    return tool.handler(input, context);
   }
 
   /**
@@ -390,6 +416,7 @@ export async function executeWithTools(
     systemPrompt,
     temperature = 0.7,
     toolChoice = { type: 'auto' },
+    executionContext = { aiContext: 'personal' },
   } = options;
 
   // Get tool definitions
@@ -467,7 +494,7 @@ export async function executeWithTools(
       logger.debug('Executing tool', { name: call.name, input: call.input });
 
       try {
-        const result = await toolRegistry.execute(call.name, call.input);
+        const result = await toolRegistry.execute(call.name, call.input, executionContext);
         toolResults.push({
           tool_use_id: call.id,
           content: result,
@@ -603,7 +630,7 @@ export function extractText(content: Anthropic.ContentBlock[]): string {
  */
 export function registerDefaultTools(): void {
   // These are placeholders - real handlers should be injected
-  toolRegistry.register(TOOL_CALCULATE, async (input) => {
+  toolRegistry.register(TOOL_CALCULATE, async (input, _context) => {
     const expr = input.expression as string;
     try {
       // Safe math evaluation (no eval)

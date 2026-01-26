@@ -624,3 +624,100 @@
     height: 44px;
   }
 }
+
+/* ===========================================
+   SSE Streaming Styles
+   Real-time token display for chat responses
+   =========================================== */
+
+/* Streaming message container */
+.chat-message.streaming {
+  animation: none; /* Disable slide-in during streaming */
+}
+
+/* Streaming indicator in header */
+.streaming-indicator {
+  color: var(--primary);
+  font-weight: 500;
+  animation: streamingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes streamingPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Streaming cursor (blinking) */
+.streaming-cursor {
+  display: inline-block;
+  color: var(--primary);
+  animation: cursorBlink 0.8s step-end infinite;
+  margin-left: 2px;
+  font-weight: normal;
+}
+
+@keyframes cursorBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Thinking block (Extended Thinking display) */
+.chat-thinking-block {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(255, 107, 53, 0.1));
+  border-left: 3px solid var(--primary);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.thinking-label {
+  display: block;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.thinking-preview {
+  font-style: italic;
+  opacity: 0.8;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dark mode for streaming */
+@media (prefers-color-scheme: dark) {
+  .chat-thinking-block {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.08), rgba(255, 107, 53, 0.15));
+  }
+
+  .streaming-cursor {
+    color: var(--primary-light);
+  }
+}
+
+/* Reduced motion for streaming */
+@media (prefers-reduced-motion: reduce) {
+  .streaming-cursor,
+  .streaming-indicator {
+    animation: none !important;
+  }
+
+  .streaming-cursor {
+    opacity: 1;
+  }
+}
