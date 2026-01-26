@@ -185,6 +185,14 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, asyncHandler(async 
       })),
       ragUsed: result.metadata.ragUsed,
       ragDocumentsCount: result.metadata.ragDocumentsCount,
+      ragQuality: result.metadata.ragQuality ? {
+        confidence: result.metadata.ragQuality.confidence,
+        methodsUsed: result.metadata.ragQuality.methodsUsed,
+        topResultScore: result.metadata.ragQuality.topResultScore,
+        hydeUsed: result.metadata.ragQuality.hydeUsed,
+        crossEncoderUsed: result.metadata.ragQuality.crossEncoderUsed,
+        timingMs: result.metadata.ragQuality.timing.total,
+      } : undefined,
       processingTimeMs: result.metadata.processingTimeMs,
     };
   }
@@ -290,6 +298,14 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
       })),
       ragUsed: result.metadata.ragUsed,
       ragDocumentsCount: result.metadata.ragDocumentsCount,
+      ragQuality: result.metadata.ragQuality ? {
+        confidence: result.metadata.ragQuality.confidence,
+        methodsUsed: result.metadata.ragQuality.methodsUsed,
+        topResultScore: result.metadata.ragQuality.topResultScore,
+        hydeUsed: result.metadata.ragQuality.hydeUsed,
+        crossEncoderUsed: result.metadata.ragQuality.crossEncoderUsed,
+        timingMs: result.metadata.ragQuality.timing.total,
+      } : undefined,
       processingTimeMs: result.metadata.processingTimeMs,
     };
   }

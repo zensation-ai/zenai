@@ -14,7 +14,7 @@ import { memoryCoordinator, episodicMemory, workingMemory } from './memory';
 import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode, ChatMode, ModeDetectionResult } from './chat-modes';
 import { executeWithTools } from './claude/tool-use';
 import { setToolContext } from './tool-handlers';
-import { enhancedRAG } from './enhanced-rag';
+import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
 
 // ===========================================
 // Types
@@ -41,6 +41,25 @@ export interface ChatSessionWithMessages extends ChatSession {
 }
 
 /**
+ * RAG quality details
+ */
+export interface RAGQualityMetrics {
+  used: boolean;
+  documentsCount: number;
+  confidence: number;
+  methodsUsed: string[];
+  timing: {
+    total: number;
+    hyde?: number;
+    agentic?: number;
+    crossEncoder?: number;
+  };
+  topResultScore: number;
+  hydeUsed: boolean;
+  crossEncoderUsed: boolean;
+}
+
+/**
  * Response metadata from AI processing
  */
 export interface ResponseMetadata {
@@ -50,6 +69,7 @@ export interface ResponseMetadata {
   toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }>;
   ragUsed: boolean;
   ragDocumentsCount: number;
+  ragQuality?: RAGQualityMetrics;
   processingTimeMs: number;
   memoryStats: {
     longTermFacts: number;
@@ -414,26 +434,99 @@ export async function generateEnhancedResponse(
   // Check if RAG enhancement is needed
   const ragDecision = shouldEnhanceWithRAG(userMessage, modeResult.mode);
   let ragDocumentsCount = 0;
+  let ragQuality: RAGQualityMetrics | undefined;
 
   if (ragDecision.shouldUse) {
     try {
-      const ragResults = await enhancedRAG.quickRetrieve(userMessage, contextType, 5);
+      // Use full RAG for rag_enhanced mode, quick for others
+      const useDeepRAG = modeResult.mode === 'rag_enhanced' || ragDecision.urgency === 'required';
+
+      let ragResults: EnhancedResult[];
+      let ragMetadata: EnhancedRAGResult | undefined;
+
+      if (useDeepRAG) {
+        // Full RAG with HyDE + Cross-Encoder for knowledge-intensive queries
+        ragMetadata = await enhancedRAG.retrieve(userMessage, contextType, {
+          enableHyDE: true,
+          autoDetectHyDE: true,
+          enableCrossEncoder: true,
+          crossEncodeTop: 10,
+          minRelevance: 0.35,
+          maxResults: 8,
+        });
+        ragResults = ragMetadata.results;
+
+        // Build quality metrics
+        ragQuality = {
+          used: true,
+          documentsCount: ragResults.length,
+          confidence: ragMetadata.confidence,
+          methodsUsed: ragMetadata.methodsUsed,
+          timing: ragMetadata.timing,
+          topResultScore: ragResults[0]?.score || 0,
+          hydeUsed: ragMetadata.debug?.hydeUsed || false,
+          crossEncoderUsed: ragMetadata.methodsUsed.includes('cross_encoder'),
+        };
+
+        logger.info('Deep RAG retrieval completed', {
+          sessionId,
+          confidence: ragMetadata.confidence,
+          methods: ragMetadata.methodsUsed,
+          timing: ragMetadata.timing,
+        });
+      } else {
+        // Quick RAG for supplementary context
+        ragResults = await enhancedRAG.quickRetrieve(userMessage, contextType, 5);
+
+        ragQuality = {
+          used: true,
+          documentsCount: ragResults.length,
+          confidence: ragResults.length > 0 ? ragResults[0].score : 0,
+          methodsUsed: ['agentic'],
+          timing: { total: 0 },
+          topResultScore: ragResults[0]?.score || 0,
+          hydeUsed: false,
+          crossEncoderUsed: false,
+        };
+      }
+
       if (ragResults.length > 0) {
         ragDocumentsCount = ragResults.length;
-        const ragContext = ragResults.map(r =>
-          `- ${r.title}: ${r.summary || 'Keine Zusammenfassung'}`
-        ).join('\n');
 
-        systemPrompt += `\n\n[RELEVANTE IDEEN]\n${ragContext}\n\nNutze diese Informationen wenn relevant für die Antwort.`;
+        // Format context with relevance scores for high-quality results
+        const ragContext = ragResults.map(r => {
+          const scoreLabel = r.score >= 0.8 ? '🟢' : r.score >= 0.6 ? '🟡' : '🔵';
+          const relevanceInfo = r.relevanceReason ? ` - ${r.relevanceReason}` : '';
+          return `${scoreLabel} **${r.title}**: ${r.summary || 'Keine Zusammenfassung'}${relevanceInfo}`;
+        }).join('\n');
+
+        // Add source information for transparency
+        const methodInfo = ragQuality?.methodsUsed.length > 1
+          ? ` (via ${ragQuality.methodsUsed.join(' + ')})`
+          : '';
+
+        systemPrompt += `\n\n[RELEVANTE IDEEN${methodInfo}]\n${ragContext}\n\nNutze diese Informationen wenn relevant für die Antwort. Bei hoher Relevanz (🟢) zitiere die Quelle.`;
 
         logger.debug('RAG enhancement applied', {
           sessionId,
           documentsRetrieved: ragDocumentsCount,
           reason: ragDecision.reason,
+          confidence: ragQuality?.confidence,
+          methods: ragQuality?.methodsUsed,
         });
       }
     } catch (error) {
       logger.warn('RAG enhancement failed', { sessionId, error });
+      ragQuality = {
+        used: false,
+        documentsCount: 0,
+        confidence: 0,
+        methodsUsed: [],
+        timing: { total: 0 },
+        topResultScore: 0,
+        hydeUsed: false,
+        crossEncoderUsed: false,
+      };
     }
   }
 
@@ -518,6 +611,7 @@ export async function generateEnhancedResponse(
       toolsCalled,
       ragUsed: ragDocumentsCount > 0,
       ragDocumentsCount,
+      ragQuality,
       processingTimeMs,
       memoryStats,
     },
