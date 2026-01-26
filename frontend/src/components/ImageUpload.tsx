@@ -43,7 +43,8 @@ export function ImageUpload({
   onImagesChange,
   maxImages = 5,
   maxSizeMB = 10,
-  images = [],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  images: _images = [],
   disabled = false,
   compact = false,
 }: ImageUploadProps) {
