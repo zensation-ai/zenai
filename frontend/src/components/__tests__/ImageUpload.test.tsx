@@ -83,7 +83,6 @@ describe('ImageUpload Component', () => {
 
   describe('File Selection', () => {
     it('should call onImagesChange when file is selected', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -97,7 +96,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept multiple files when maxImages > 1', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxImages={3} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -116,7 +114,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should limit number of files to maxImages', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxImages={2} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -140,7 +137,6 @@ describe('ImageUpload Component', () => {
 
   describe('File Validation', () => {
     it('should accept JPEG files', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -155,7 +151,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept PNG files', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -169,7 +164,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept GIF files', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -183,7 +177,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept WebP files', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -197,7 +190,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should reject invalid file formats', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -211,7 +203,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should reject files exceeding max size', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxSizeMB={1} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -296,7 +287,6 @@ describe('ImageUpload Component', () => {
 
   describe('Preview', () => {
     it('should show preview count after selecting files', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -310,7 +300,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show "Bild" for single file', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -323,7 +312,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show "Alle entfernen" button with previews', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -336,7 +324,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should clear all images when "Alle entfernen" is clicked', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -362,7 +350,7 @@ describe('ImageUpload Component', () => {
 
   describe('Remove Individual Image', () => {
     it('should remove image when remove button is clicked', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -396,7 +384,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show mini previews in compact mode', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} compact />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -410,7 +397,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should disable button when at max images in compact mode', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} compact maxImages={1} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -444,7 +430,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show error as alert', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -459,7 +444,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should be keyboard accessible', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
+      const user = userEvent.setup({ pointerEventsCheck: 0 });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const dropzone = screen.getByRole('button', { name: /Bilder hochladen/i });
@@ -479,7 +464,6 @@ describe('ImageUpload Component', () => {
 
   describe('Props', () => {
     it('should use custom maxImages', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxImages={3} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -498,7 +482,6 @@ describe('ImageUpload Component', () => {
     });
 
     it('should use custom maxSizeMB', async () => {
-      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxSizeMB={2} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
