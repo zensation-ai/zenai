@@ -78,8 +78,9 @@ describe('GeneralChat Component', () => {
       },
     });
 
-    // Mock axios.isCancel (type predicate requires cast)
-    mockedAxios.isCancel = vi.fn(() => false) as unknown as typeof axios.isCancel;
+    // Mock axios.isCancel (type predicate requires any cast)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockedAxios as any).isCancel = vi.fn(() => false);
   });
 
   afterEach(() => {
