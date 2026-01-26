@@ -140,17 +140,54 @@
 @keyframes fadeInFromBottom {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Stagger animation with CSS custom property */
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
 /* Only apply animations when not in reduced motion mode */
 @media (prefers-reduced-motion: no-preference) {
   .virtualized-idea-wrapper {
-    animation: fadeInFromBottom 0.2s ease-out;
+    animation: fadeInFromBottom 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
+
+  /* Stagger effect for grid items - first item in row */
+  .virtualized-grid-row .virtualized-idea-wrapper:nth-child(1) {
+    animation-delay: 0ms;
+  }
+
+  /* Second item in row */
+  .virtualized-grid-row .virtualized-idea-wrapper:nth-child(2) {
+    animation-delay: 50ms;
+  }
+
+  /* Third item in row */
+  .virtualized-grid-row .virtualized-idea-wrapper:nth-child(3) {
+    animation-delay: 100ms;
+  }
+
+  /* Fourth item in row */
+  .virtualized-grid-row .virtualized-idea-wrapper:nth-child(4) {
+    animation-delay: 150ms;
+  }
+}
+
+/* Smooth row transitions for virtualized list */
+.virtualized-row {
+  transition: opacity 0.15s ease-out;
 }

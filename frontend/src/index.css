@@ -126,6 +126,10 @@
   --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-exit: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Radius */
   --radius-sm: 10px;
@@ -790,6 +794,24 @@ body::after {
 /* Smooth scrolling for a natural feel */
 html {
   scroll-behavior: smooth;
+}
+
+/* Text selection styling */
+::selection {
+  background: rgba(255, 107, 53, 0.25);
+  color: var(--text);
+}
+
+::-moz-selection {
+  background: rgba(255, 107, 53, 0.25);
+  color: var(--text);
+}
+
+/* Global button active state for better feedback */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 0.08s;
 }
 
 /* Respect user motion preferences */
