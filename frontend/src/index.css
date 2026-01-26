@@ -809,13 +809,25 @@ html {
 /* Global focus styles for accessibility - warm and visible */
 *:focus-visible {
   outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline-offset: 3px;
+  border-radius: 6px;
+  transition: outline-offset 0.15s ease;
 }
 
 /* Remove default focus for mouse users, keep for keyboard */
 *:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* Enhanced focus animation for interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--primary-glow);
 }
 
 /* Skip link for keyboard users */
