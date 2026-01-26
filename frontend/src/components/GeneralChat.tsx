@@ -16,6 +16,7 @@ import {
   EMPTY_STATE_MESSAGES,
   getRandomMessage,
 } from '../utils/aiPersonality';
+import { ImageUpload } from './ImageUpload';
 import './GeneralChat.css';
 
 interface ChatMessage {
@@ -46,6 +47,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -128,10 +130,13 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
   };
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputValue.trim() || sending) return;
+    // Allow sending with only images (no text required)
+    if ((!inputValue.trim() && selectedImages.length === 0) || sending) return;
 
     const messageContent = inputValue.trim();
+    const imagesToSend = [...selectedImages];
     setInputValue('');
+    setSelectedImages([]);
     setSending(true);
 
     try {
@@ -145,20 +150,45 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         }
       }
 
+      // Build display content for user message
+      const imageIndicator = imagesToSend.length > 0
+        ? (imagesToSend.length === 1 ? ' [Bild]' : ` [${imagesToSend.length} Bilder]`)
+        : '';
+      const displayContent = messageContent + imageIndicator;
+
       // Optimistically add user message
       const tempUserMessage: ChatMessage = {
         id: `temp-user-${Date.now()}`,
         sessionId: currentSessionId,
         role: 'user',
-        content: messageContent,
+        content: displayContent,
         createdAt: new Date().toISOString(),
       };
       setMessages(prev => [...prev, tempUserMessage]);
 
-      // Send message to API
-      const res = await axios.post(`/api/chat/sessions/${currentSessionId}/messages`, {
-        message: messageContent,
-      });
+      let res;
+
+      if (imagesToSend.length > 0) {
+        // Use vision endpoint with FormData
+        const formData = new FormData();
+        formData.append('message', messageContent);
+        imagesToSend.forEach(img => formData.append('images', img));
+
+        res = await axios.post(
+          `/api/chat/sessions/${currentSessionId}/messages/vision`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+      } else {
+        // Use standard message endpoint
+        res = await axios.post(`/api/chat/sessions/${currentSessionId}/messages`, {
+          message: messageContent,
+        });
+      }
 
       const { userMessage, assistantMessage } = res.data.data;
 
@@ -176,11 +206,12 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
       setInputValue(messageContent); // Restore input
+      setSelectedImages(imagesToSend); // Restore images
     } finally {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [inputValue, sending, sessionId, context]);
+  }, [inputValue, sending, sessionId, selectedImages]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -331,12 +362,20 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       {/* Input Area */}
       <div className="chat-input-area">
         <div className="chat-input-wrapper">
+          {/* Image Upload Button */}
+          <ImageUpload
+            onImagesChange={setSelectedImages}
+            images={selectedImages}
+            disabled={sending}
+            compact={true}
+            maxImages={5}
+          />
           <textarea
             ref={inputRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Frag mich etwas..."
+            placeholder={selectedImages.length > 0 ? "Frage zum Bild..." : "Frag mich etwas..."}
             rows={1}
             disabled={sending}
             className="chat-input liquid-glass-input neuro-placeholder-animated"
@@ -346,7 +385,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             type="button"
             className="chat-send-btn neuro-hover-lift neuro-color-transition"
             onClick={handleSendMessage}
-            disabled={sending || !inputValue.trim()}
+            disabled={sending || (!inputValue.trim() && selectedImages.length === 0)}
             title="Nachricht senden"
             aria-label={sending ? 'Nachricht wird gesendet' : 'Nachricht senden'}
           >

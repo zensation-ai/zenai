@@ -12,6 +12,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
@@ -21,14 +22,59 @@ import {
   getSessions,
   deleteSession,
   sendMessage,
+  sendMessageWithVision,
   addMessage,
 } from '../services/general-chat';
 import { isValidUUID } from '../utils/validation';
 import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
 import { detectChatMode } from '../services/chat-modes';
 import { query } from '../utils/database';
+import {
+  VisionImage,
+  bufferToVisionImage,
+  isValidImageFormat,
+  ImageMediaType,
+} from '../services/claude-vision';
 
 export const generalChatRouter = Router();
+
+// ===========================================
+// Multer Configuration for Vision Chat
+// ===========================================
+
+/**
+ * Multer storage for vision messages
+ * Uses memory storage for direct buffer access
+ */
+const storage = multer.memoryStorage();
+
+/**
+ * File filter to validate image types
+ */
+const imageFilter = (
+  _req: Request,
+  file: Express.Multer.File,
+  callback: multer.FileFilterCallback
+) => {
+  if (!isValidImageFormat(file.mimetype)) {
+    callback(new Error(`Invalid image format: ${file.mimetype}. Supported: JPEG, PNG, GIF, WebP`));
+    return;
+  }
+  callback(null, true);
+};
+
+/**
+ * Multer upload for vision chat
+ * Max 5 images, 10MB each
+ */
+const visionUpload = multer({
+  storage,
+  fileFilter: imageFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max
+    files: 5,
+  },
+});
 
 // ===========================================
 // Create New Session
@@ -320,6 +366,101 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
     data: responseData,
   });
 }));
+
+// ===========================================
+// Vision Message (Image + Text)
+// ===========================================
+
+/**
+ * POST /api/chat/sessions/:id/messages/vision
+ * Send a message with image(s) and receive AI response
+ *
+ * Body (multipart/form-data):
+ * - message: string (optional) - Text message with the image
+ * - images: File[] (required, 1-5) - Images to analyze
+ * - task?: string - Vision task type (default: 'qa' if message provided, 'describe' otherwise)
+ * - include_metadata?: boolean - Include processing metadata
+ */
+generalChatRouter.post(
+  '/sessions/:id/messages/vision',
+  apiKeyAuth,
+  visionUpload.array('images', 5),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { message, task, include_metadata } = req.body;
+    const includeMetadata = include_metadata === 'true' || include_metadata === true;
+    const files = req.files as Express.Multer.File[];
+
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
+    }
+
+    // Validate images
+    if (!files || files.length === 0) {
+      throw new ValidationError('At least one image is required');
+    }
+
+    // Check session exists and get context
+    const session = await getSession(id);
+    if (!session) {
+      throw new NotFoundError('Chat session');
+    }
+
+    // Convert files to VisionImages
+    const visionImages: VisionImage[] = files.map(file =>
+      bufferToVisionImage(file.buffer, file.mimetype as ImageMediaType)
+    );
+
+    // Determine task based on message presence
+    const visionTask = task || (message ? 'qa' : 'describe');
+
+    logger.info('Processing vision chat message', {
+      sessionId: id,
+      imageCount: visionImages.length,
+      hasMessage: !!message,
+      task: visionTask,
+      includeMetadata,
+    });
+
+    // Send message with vision
+    const result = await sendMessageWithVision(
+      id,
+      message || '',
+      visionImages,
+      visionTask,
+      session.context as 'personal' | 'work',
+      includeMetadata
+    );
+
+    // Build response data
+    const responseData: Record<string, unknown> = {
+      userMessage: result.userMessage,
+      assistantMessage: result.assistantMessage,
+      visionUsed: true,
+      imageCount: visionImages.length,
+    };
+
+    // Include metadata if requested
+    if (includeMetadata && result.metadata) {
+      responseData.metadata = {
+        mode: result.metadata.mode,
+        modeConfidence: result.metadata.modeConfidence,
+        toolsCalled: result.metadata.toolsCalled?.map(t => ({
+          name: t.name,
+          input: t.input,
+        })) || [],
+        visionTask: visionTask,
+        processingTimeMs: result.metadata.processingTimeMs,
+      };
+    }
+
+    res.json({
+      success: true,
+      data: responseData,
+    });
+  })
+);
 
 // ===========================================
 // Streaming Message (SSE)
