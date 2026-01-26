@@ -69,6 +69,8 @@ import { memoryAdminRouter } from './routes/memory-admin';
 import { visionRouter } from './routes/vision';
 // Phase 31: Topic Enhancement - Advanced Topic Analysis
 import { topicEnhancementRouter } from './routes/topic-enhancement';
+// Phase 31: Code Execution - Secure Sandbox
+import { codeExecutionRouter } from './routes/code-execution';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -273,6 +275,9 @@ app.use('/api/vision', visionRouter);  // /api/vision/analyze, /api/vision/extra
 
 // Phase 31: Topic Enhancement - Advanced Topic Analysis
 app.use('/api/topics', topicEnhancementRouter);  // /api/topics/enhanced, /api/topics/quality, /api/topics/similar, etc.
+
+// Phase 31: Code Execution - Secure Docker Sandbox
+app.use('/api/code', codeExecutionRouter);  // /api/code/execute, /api/code/run, /api/code/validate, /api/code/health
 
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"
 // Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
