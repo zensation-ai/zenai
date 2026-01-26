@@ -72,6 +72,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 // Phase 30: Memory Scheduler (HiMeS Consolidation & Decay)
 import { startMemoryScheduler, stopMemoryScheduler } from './services/memory';
+// Phase 31: AI Capabilities Enhancement
+import { registerAllToolHandlers } from './services/tool-handlers';
 
 dotenv.config();
 
@@ -471,5 +473,14 @@ Phase 4 APIs:
   } catch (error) {
     logger.error('Memory Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
     // Non-critical - system can operate without scheduled memory maintenance
+  }
+
+  // Phase 31: Register AI Tool Handlers
+  // Enables Claude Tool Use for structured actions
+  try {
+    registerAllToolHandlers();
+    logger.info('AI Tool Handlers registered successfully', { operation: 'startup' });
+  } catch (error) {
+    logger.error('AI Tool Handlers registration failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
   }
 });
