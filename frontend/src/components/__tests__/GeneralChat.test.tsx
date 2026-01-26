@@ -78,8 +78,8 @@ describe('GeneralChat Component', () => {
       },
     });
 
-    // Mock axios.isCancel
-    mockedAxios.isCancel = vi.fn((_value: unknown) => false);
+    // Mock axios.isCancel (type predicate requires cast)
+    mockedAxios.isCancel = vi.fn(() => false) as unknown as typeof axios.isCancel;
   });
 
   afterEach(() => {
