@@ -5,6 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "prebuild": "rm -rf dist",
     "build": "tsc",
     "start": "node dist/main.js",
     "db:init": "ts-node src/scripts/init-db.ts",
