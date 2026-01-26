@@ -182,3 +182,34 @@ cd frontend && npm test
 
 - AI Features: `docs/AI-FEATURES.md`
 - API Docs: `/api-docs` (Swagger)
+
+## Changelog
+
+### 2026-01-26: Code Execution Production Deployment
+
+**Problem gelöst:** Route-Reihenfolge-Konflikt
+
+- Context-aware Routes (`/api/:context/...`) fingen `/api/code/*` ab
+- Lösung: `codeExecutionRouter` vor context-aware Routes registrieren
+
+**Judge0 Integration:**
+
+- RapidAPI Judge0 CE als Production Provider
+- Timeout-Limits angepasst (CPU: 15s, Wall: 25s) für Free Tier
+- Automatische Provider-Auswahl (Judge0 in Production, Docker lokal)
+
+**Neue Dateien:**
+
+- `backend/src/services/code-execution/executor-provider.ts` - Provider Interface
+- `backend/src/services/code-execution/judge0-executor.ts` - Judge0 API Client
+- `backend/src/services/code-execution/executor-factory.ts` - Factory Pattern
+
+**Getestet und funktioniert:**
+
+```bash
+curl https://ki-ab-production.up.railway.app/api/code/health
+# → {"available":true,"enabled":true,"provider":"judge0"}
+
+curl -X POST /api/code/execute -d '{"task":"Calculate Fibonacci","language":"python"}'
+# → Generiert und führt Code aus
+```
