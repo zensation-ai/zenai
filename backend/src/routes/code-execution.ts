@@ -32,6 +32,22 @@ import {
 export const codeExecutionRouter = Router();
 
 // ===========================================
+// Debug Test Endpoint (no auth, no middleware)
+// ===========================================
+
+/**
+ * GET /api/code/ping
+ * Simple test endpoint to verify route registration
+ */
+codeExecutionRouter.get('/ping', (_req: Request, res: Response) => {
+  res.json({
+    pong: true,
+    timestamp: new Date().toISOString(),
+    message: 'Code execution routes are working',
+  });
+});
+
+// ===========================================
 // Execute Code from Task
 // ===========================================
 
