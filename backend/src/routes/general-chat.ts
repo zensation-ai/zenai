@@ -118,10 +118,14 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
 /**
  * POST /api/chat/sessions/:id/messages
  * Send a message and receive AI response
+ *
+ * Query params:
+ * - include_metadata: boolean - Include processing metadata in response
  */
 generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
+  const includeMetadata = req.query.include_metadata === 'true' || req.body.include_metadata === true;
 
   // Validate UUID format
   if (!isValidUUID(id)) {
@@ -152,17 +156,42 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, asyncHandler(async 
   logger.info('Processing chat message', {
     sessionId: id,
     messageLength: trimmedMessage.length,
+    includeMetadata,
   });
 
   // Send message and get response
-  const result = await sendMessage(id, trimmedMessage, session.context as 'personal' | 'work');
+  const result = await sendMessage(
+    id,
+    trimmedMessage,
+    session.context as 'personal' | 'work',
+    includeMetadata
+  );
+
+  // Build response data
+  const responseData: Record<string, unknown> = {
+    userMessage: result.userMessage,
+    assistantMessage: result.assistantMessage,
+  };
+
+  // Include metadata if requested
+  if (includeMetadata && result.metadata) {
+    responseData.metadata = {
+      mode: result.metadata.mode,
+      modeConfidence: result.metadata.modeConfidence,
+      modeReasoning: result.metadata.modeReasoning,
+      toolsCalled: result.metadata.toolsCalled.map(t => ({
+        name: t.name,
+        input: t.input,
+      })),
+      ragUsed: result.metadata.ragUsed,
+      ragDocumentsCount: result.metadata.ragDocumentsCount,
+      processingTimeMs: result.metadata.processingTimeMs,
+    };
+  }
 
   res.json({
     success: true,
-    data: {
-      userMessage: result.userMessage,
-      assistantMessage: result.assistantMessage,
-    },
+    data: responseData,
   });
 }));
 
@@ -202,9 +231,13 @@ generalChatRouter.delete('/sessions/:id', apiKeyAuth, requireScope('write'), asy
  * POST /api/chat/quick
  * Send a quick message without session management
  * Creates a temporary session, sends message, returns response
+ *
+ * Body params:
+ * - include_metadata: boolean - Include processing metadata in response
  */
 generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const { message, context = 'personal' } = req.body;
+  const { message, context = 'personal', include_metadata = false } = req.body;
+  const includeMetadata = include_metadata === true;
 
   // Validate context
   if (context !== 'personal' && context !== 'work') {
@@ -232,17 +265,37 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
   logger.info('Processing quick chat message', {
     sessionId: session.id,
     messageLength: trimmedMessage.length,
+    includeMetadata,
   });
 
   // Send message and get response
-  const result = await sendMessage(session.id, trimmedMessage, context);
+  const result = await sendMessage(session.id, trimmedMessage, context, includeMetadata);
+
+  // Build response data
+  const responseData: Record<string, unknown> = {
+    sessionId: session.id,
+    userMessage: result.userMessage,
+    assistantMessage: result.assistantMessage,
+  };
+
+  // Include metadata if requested
+  if (includeMetadata && result.metadata) {
+    responseData.metadata = {
+      mode: result.metadata.mode,
+      modeConfidence: result.metadata.modeConfidence,
+      modeReasoning: result.metadata.modeReasoning,
+      toolsCalled: result.metadata.toolsCalled.map(t => ({
+        name: t.name,
+        input: t.input,
+      })),
+      ragUsed: result.metadata.ragUsed,
+      ragDocumentsCount: result.metadata.ragDocumentsCount,
+      processingTimeMs: result.metadata.processingTimeMs,
+    };
+  }
 
   res.json({
     success: true,
-    data: {
-      sessionId: session.id,
-      userMessage: result.userMessage,
-      assistantMessage: result.assistantMessage,
-    },
+    data: responseData,
   });
 }));

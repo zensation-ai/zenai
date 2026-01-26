@@ -335,7 +335,7 @@ export class ReActAgent {
       }
     } catch (e) {
       error = e instanceof Error ? e.message : 'Unknown error';
-      logger.error('ReAct agent failed', { executionId, error, iteration });
+      logger.error('ReAct agent failed', e instanceof Error ? e : undefined, { executionId, iteration });
     }
 
     const executionTimeMs = Date.now() - startTime;

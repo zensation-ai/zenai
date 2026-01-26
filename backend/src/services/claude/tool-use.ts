@@ -247,6 +247,64 @@ export const TOOL_SET_REMINDER: ToolDefinition = {
   },
 };
 
+/**
+ * Remember tool - store important information in long-term memory
+ * Used to persist facts, preferences, and knowledge about the user
+ */
+export const TOOL_REMEMBER: ToolDefinition = {
+  name: 'remember',
+  description:
+    'Speichert wichtige Informationen im Langzeitgedächtnis. Nutze dies wenn der Nutzer explizit sagt "merk dir das", oder wenn wichtige Fakten, Präferenzen oder Erkenntnisse über den Nutzer aus dem Gespräch hervorgehen.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      content: {
+        type: 'string',
+        description: 'Die zu merkende Information (klar und präzise formuliert)',
+      },
+      fact_type: {
+        type: 'string',
+        description: 'Art der Information',
+        enum: ['preference', 'behavior', 'knowledge', 'goal', 'context'],
+      },
+      confidence: {
+        type: 'number',
+        description: 'Konfidenz 0.0-1.0 (wie sicher ist diese Info?). Standard: 0.8 für explizite Aussagen, 0.6 für Inferenzen.',
+      },
+    },
+    required: ['content', 'fact_type'],
+  },
+};
+
+/**
+ * Recall tool - search through episodic and long-term memory
+ * Used to remember past conversations and stored facts
+ */
+export const TOOL_RECALL: ToolDefinition = {
+  name: 'recall',
+  description:
+    'Durchsucht Erinnerungen und frühere Gespräche. Nutze dies wenn der Nutzer fragt "erinnerst du dich", "was habe ich gesagt", "was weißt du über mich", oder wenn Kontext aus früheren Gesprächen relevant sein könnte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Suchanfrage (was soll erinnert werden?)',
+      },
+      memory_type: {
+        type: 'string',
+        description: 'Art der Erinnerung',
+        enum: ['episodes', 'facts', 'all'],
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximale Anzahl Ergebnisse (Standard: 5)',
+      },
+    },
+    required: ['query'],
+  },
+};
+
 // ===========================================
 // Tool Registry
 // ===========================================

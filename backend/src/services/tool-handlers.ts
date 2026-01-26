@@ -14,11 +14,14 @@ import {
   TOOL_CREATE_IDEA,
   TOOL_GET_RELATED,
   TOOL_CALCULATE,
+  TOOL_REMEMBER,
+  TOOL_RECALL,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
 import { AIContext, queryContext } from '../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
 import { generateEmbedding } from './ai';
+import { longTermMemory, episodicMemory } from './memory';
 
 // ===========================================
 // State Management
@@ -236,6 +239,180 @@ async function handleCalculate(input: Record<string, unknown>): Promise<string> 
   }
 }
 
+/**
+ * Remember handler - stores information in long-term memory
+ *
+ * Integrates with HiMeS Long-Term Memory layer to persist:
+ * - User preferences
+ * - Behavioral patterns
+ * - Knowledge and expertise
+ * - Goals and objectives
+ * - Contextual information
+ */
+async function handleRemember(input: Record<string, unknown>): Promise<string> {
+  const content = input.content as string;
+  const factType = (input.fact_type as string) || 'knowledge';
+  const confidence = (input.confidence as number) || 0.8;
+
+  if (!content) {
+    return 'Fehler: Kein Inhalt zum Merken angegeben.';
+  }
+
+  const validFactTypes = ['preference', 'behavior', 'knowledge', 'goal', 'context'];
+  if (!validFactTypes.includes(factType)) {
+    return `Fehler: Ungültiger Fakt-Typ. Erlaubt: ${validFactTypes.join(', ')}`;
+  }
+
+  logger.debug('Tool: remember', { factType, confidence, context: currentContext });
+
+  try {
+    // Store in long-term memory
+    await longTermMemory.addFact(currentContext, {
+      factType: factType as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
+      content,
+      confidence: Math.min(1.0, Math.max(0.0, confidence)),
+      source: 'explicit',
+    });
+
+    logger.info('Fact stored in long-term memory', {
+      factType,
+      confidence,
+      contentPreview: content.substring(0, 50),
+    });
+
+    // Confirm with appropriate response based on fact type
+    const confirmationMessages: Record<string, string> = {
+      preference: 'Präferenz',
+      behavior: 'Verhaltensmuster',
+      knowledge: 'Wissen',
+      goal: 'Ziel',
+      context: 'Kontext-Information',
+    };
+
+    return `✅ ${confirmationMessages[factType] || 'Information'} gespeichert: "${content.substring(0, 80)}${content.length > 80 ? '...' : ''}"
+
+Ich werde mich daran erinnern und diese Information in zukünftigen Gesprächen berücksichtigen.`;
+  } catch (error) {
+    logger.error('Tool remember failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Speichern. Bitte versuche es erneut.';
+  }
+}
+
+/**
+ * Recall handler - searches episodic and long-term memory
+ *
+ * Retrieves relevant memories from:
+ * - Episodic Memory: Past conversations and interactions
+ * - Long-Term Memory: Stored facts, patterns, and significant interactions
+ */
+async function handleRecall(input: Record<string, unknown>): Promise<string> {
+  const query = input.query as string;
+  const memoryType = (input.memory_type as string) || 'all';
+  const limit = Math.min((input.limit as number) || 5, 10);
+
+  if (!query) {
+    return 'Fehler: Keine Suchanfrage angegeben.';
+  }
+
+  logger.debug('Tool: recall', { query, memoryType, limit, context: currentContext });
+
+  try {
+    const results: string[] = [];
+    let episodeCount = 0;
+    let factCount = 0;
+
+    // Retrieve from Episodic Memory (past conversations)
+    if (memoryType === 'episodes' || memoryType === 'all') {
+      const episodes = await episodicMemory.retrieve(query, currentContext, { limit });
+
+      if (episodes.length > 0) {
+        episodeCount = episodes.length;
+        results.push('**Erinnerungen an frühere Gespräche:**');
+
+        for (const episode of episodes) {
+          const timeAgo = formatTimeAgo(episode.timestamp);
+          const emotionalMood = getEmotionalLabel(episode.emotionalValence);
+
+          results.push(
+            `• (${timeAgo}, ${emotionalMood}) Du: "${episode.trigger.substring(0, 100)}${episode.trigger.length > 100 ? '...' : ''}"`
+          );
+        }
+      }
+    }
+
+    // Retrieve from Long-Term Memory (stored facts)
+    if (memoryType === 'facts' || memoryType === 'all') {
+      const longTermResults = await longTermMemory.retrieve(currentContext, query);
+
+      if (longTermResults.facts.length > 0) {
+        factCount = longTermResults.facts.length;
+        results.push('\n**Bekannte Fakten über dich:**');
+
+        for (const fact of longTermResults.facts.slice(0, limit)) {
+          const confidenceLabel = fact.confidence >= 0.8 ? '🟢' : fact.confidence >= 0.6 ? '🟡' : '🔴';
+          results.push(`${confidenceLabel} ${fact.content} (${fact.factType})`);
+        }
+      }
+
+      // Include relevant patterns
+      if (longTermResults.patterns.length > 0 && results.length < limit * 2) {
+        results.push('\n**Erkannte Muster:**');
+        for (const pattern of longTermResults.patterns.slice(0, 3)) {
+          results.push(`• ${pattern.pattern}`);
+        }
+      }
+    }
+
+    if (results.length === 0) {
+      return `Ich habe keine Erinnerungen zu "${query}" gefunden.
+
+Dies kann bedeuten:
+• Wir haben dieses Thema noch nicht besprochen
+• Die Information wurde noch nicht explizit gespeichert
+• Verwende ggf. andere Suchbegriffe`;
+    }
+
+    return `Suchergebnisse für "${query}" (${episodeCount} Episoden, ${factCount} Fakten):\n\n${results.join('\n')}`;
+  } catch (error) {
+    logger.error('Tool recall failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Abrufen der Erinnerungen. Bitte versuche es erneut.';
+  }
+}
+
+/**
+ * Format timestamp as relative time ago
+ */
+function formatTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) {
+    return `vor ${diffMins} Min.`;
+  } else if (diffHours < 24) {
+    return `vor ${diffHours} Std.`;
+  } else if (diffDays === 1) {
+    return 'gestern';
+  } else if (diffDays < 7) {
+    return `vor ${diffDays} Tagen`;
+  } else if (diffDays < 30) {
+    return `vor ${Math.floor(diffDays / 7)} Wochen`;
+  } else {
+    return date.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
+  }
+}
+
+/**
+ * Get emotional label from valence
+ */
+function getEmotionalLabel(valence: number): string {
+  if (valence > 0.3) return 'positive Stimmung';
+  if (valence < -0.3) return 'angespannt';
+  return 'neutral';
+}
+
 // ===========================================
 // Registration
 // ===========================================
@@ -247,13 +424,25 @@ async function handleCalculate(input: Record<string, unknown>): Promise<string> 
 export function registerAllToolHandlers(): void {
   logger.info('Registering tool handlers');
 
+  // Core tools
   toolRegistry.register(TOOL_SEARCH_IDEAS, handleSearchIdeas);
   toolRegistry.register(TOOL_CREATE_IDEA, handleCreateIdea);
   toolRegistry.register(TOOL_GET_RELATED, handleGetRelated);
   toolRegistry.register(TOOL_CALCULATE, handleCalculate);
 
+  // Memory tools (HiMeS integration)
+  toolRegistry.register(TOOL_REMEMBER, handleRemember);
+  toolRegistry.register(TOOL_RECALL, handleRecall);
+
   logger.info('Tool handlers registered', {
-    tools: ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate'],
+    tools: [
+      'search_ideas',
+      'create_idea',
+      'get_related_ideas',
+      'calculate',
+      'remember',
+      'recall',
+    ],
   });
 }
 
