@@ -17,6 +17,18 @@
     0 4px 20px rgba(0, 0, 0, 0.2),
     0 1px 0 rgba(255, 255, 255, 0.04) inset;
   -webkit-app-region: drag;
+  animation: pageHeaderSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pageHeaderSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .page-header-content {
@@ -69,7 +81,14 @@
 }
 
 .page-back-button:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+
+.page-back-button:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .back-arrow {
@@ -153,5 +172,21 @@
 
   .page-subtitle {
     display: none;
+  }
+
+  /* Better touch target for mobile */
+  .page-back-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .page-header,
+  .page-back-button,
+  .back-arrow {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
   }
 }

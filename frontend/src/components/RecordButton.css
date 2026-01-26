@@ -37,6 +37,17 @@
   transform: translateY(-2px);
 }
 
+.record-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.08s;
+}
+
+.record-button:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow), 0 4px 16px var(--primary-glow);
+}
+
 .record-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -117,5 +128,47 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .record-button {
+    background: rgba(40, 55, 70, 0.8);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .record-button:hover:not(:disabled) {
+    background: rgba(50, 65, 80, 0.85);
+  }
+
+  .record-button.recording {
+    background: rgba(239, 68, 68, 0.15);
+  }
+
+  .record-button.processing {
+    background: rgba(255, 107, 53, 0.12);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .record-button,
+  .record-icon,
+  .recording-pulse {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .record-button.recording .record-icon {
+    animation: none;
+  }
+}
+
+/* Mobile touch targets */
+@media (pointer: coarse) {
+  .record-button {
+    min-height: 48px;
+    padding: 1rem 2rem;
   }
 }

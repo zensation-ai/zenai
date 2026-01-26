@@ -41,11 +41,23 @@
   cursor: pointer;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  transition: var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter-toggle:hover {
   background: var(--surface-light);
+  transform: translateY(-1px);
+}
+
+.filter-toggle:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.08s;
+}
+
+.filter-toggle:focus-visible {
+  outline: none;
+  background: var(--surface-light);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .filter-toggle .filter-icon {
@@ -75,12 +87,23 @@
   cursor: pointer;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  transition: var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .clear-filters:hover {
   background: var(--surface-light);
   color: var(--text);
+}
+
+.clear-filters:active {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+
+.clear-filters:focus-visible {
+  outline: none;
+  background: var(--surface-light);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .filter-content {
@@ -144,6 +167,13 @@
 
 .filter-pill:active {
   transform: translateY(0) scale(0.98);
+  transition-duration: 0.08s;
+}
+
+.filter-pill:focus-visible {
+  outline: none;
+  border-color: var(--pill-color, var(--primary));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pill-color, var(--primary)) 30%, transparent);
 }
 
 .pill-icon {
@@ -168,5 +198,49 @@
   .filter-pill {
     padding: 5px 12px;
     font-size: 0.75rem;
+    min-height: 38px; /* Better touch target */
+  }
+
+  .filter-toggle,
+  .clear-filters {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .filter-bar {
+    background: linear-gradient(
+      165deg,
+      rgba(30, 45, 60, 0.7) 0%,
+      rgba(25, 40, 55, 0.65) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .filter-pill {
+    background: rgba(40, 55, 70, 0.75);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+  }
+
+  .filter-pill:hover {
+    background: rgba(50, 65, 80, 0.8);
+  }
+
+  .filter-content {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .filter-bar,
+  .filter-toggle,
+  .filter-pill,
+  .clear-filters,
+  .filter-toggle .filter-icon {
+    transition-duration: 0.01ms !important;
   }
 }

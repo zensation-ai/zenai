@@ -397,6 +397,7 @@
 .neuro-typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .neuro-typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
+/* Note: Using local typingBounce as ChatPage has different timing than GeneralChat */
 @keyframes typingBounce {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
   40% { transform: translateY(-6px); opacity: 1; }
@@ -471,6 +472,16 @@
   cursor: not-allowed;
 }
 
+.chat-send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+  transition-duration: 0.08s;
+}
+
+.chat-send-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+}
+
 .chat-input-footer {
   max-width: 800px;
   margin: 8px auto 0;
@@ -504,13 +515,7 @@
   transform: translateY(-1px);
 }
 
-/* ================================
-   Animations
-================================ */
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+/* Note: @keyframes spin is defined globally in index.css */
 
 /* ================================
    Responsive
@@ -557,5 +562,23 @@
   .chat-message-text {
     padding: 10px 14px;
     font-size: 0.9rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .chat-sidebar,
+  .chat-send-btn,
+  .btn-new-chat,
+  .btn-start-chat,
+  .session-item,
+  .sidebar-toggle,
+  .chat-input {
+    transition-duration: 0.01ms !important;
+  }
+
+  .neuro-typing-dot,
+  .loading-spinner {
+    animation: none !important;
   }
 }

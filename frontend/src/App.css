@@ -543,12 +543,13 @@
   padding: 0.875rem 2rem;
   padding-left: 80px; /* Platz für macOS Traffic Lights */
   background: var(--header-bg);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
   border-bottom: 1px solid var(--header-border);
   box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+    0 4px 24px rgba(0, 0, 0, 0.22),
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
   -webkit-app-region: drag;
   transition: box-shadow 0.3s ease, background 0.3s ease;
 }
@@ -642,31 +643,51 @@
   font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.01em;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle hover glow effect */
+.nav-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.nav-button:hover::before {
+  opacity: 1;
 }
 
 .nav-button:hover {
   background: var(--header-hover);
   color: var(--header-text);
+  transform: translateY(-1px);
 }
 
 .nav-button:active {
   background: rgba(255, 255, 255, 0.12);
-  transition-duration: 0.1s;
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.08s;
 }
 
 .nav-button.active {
   background: var(--primary);
   color: white;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 2px 12px rgba(255, 107, 53, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .nav-button.active:hover {
   background: var(--primary-dark);
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .nav-button.incubator-nav {
@@ -701,8 +722,8 @@
 }
 
 .refresh-button {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid var(--header-border);
   background: rgba(255, 255, 255, 0.06);
@@ -712,15 +733,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition-base);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+/* Glow effect on hover */
+.refresh-button::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(255, 107, 53, 0.3), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.refresh-button:hover::after {
+  opacity: 1;
 }
 
 .refresh-button:hover {
   background: var(--header-hover);
   border-color: var(--primary);
   color: var(--primary);
-  transform: rotate(180deg);
-  box-shadow: 0 0 16px rgba(255, 107, 53, 0.4);
+  transform: rotate(180deg) scale(1.08);
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.45);
+}
+
+.refresh-button:active {
+  transform: rotate(180deg) scale(0.95);
+  transition-duration: 0.1s;
 }
 
 .status-indicators {
@@ -1204,13 +1248,13 @@
 .view-toggle {
   display: flex;
   gap: 3px;
-  background: rgba(255, 255, 255, 0.5);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   padding: 4px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 6px rgba(20, 50, 70, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 8px rgba(20, 50, 70, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .view-toggle button {
@@ -1221,25 +1265,29 @@
   cursor: pointer;
   font-size: 14px;
   color: var(--text-secondary);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .view-toggle button:hover:not(.active) {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
 }
 
 .view-toggle button.active {
   background: white;
   color: var(--text);
   box-shadow:
-    0 2px 8px rgba(20, 50, 70, 0.08),
-    0 1px 2px rgba(20, 50, 70, 0.04);
+    0 3px 12px rgba(20, 50, 70, 0.1),
+    0 1px 3px rgba(20, 50, 70, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   border: none;
 }
 
 .view-toggle button:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
+  transition-duration: 0.08s;
 }
 
 /* Ideas Grid */
@@ -1301,25 +1349,26 @@
   text-align: center;
   padding: 3.5rem 2.5rem;
   color: var(--text-muted);
-  max-width: 440px;
-  margin: 2rem auto;
+  max-width: 460px;
+  margin: 2.5rem auto;
   /* Neuro: Liquid Glass 2026 für Vertrauen und Modernität */
   background: linear-gradient(
     160deg,
-    rgba(255, 255, 255, 0.85) 0%,
-    rgba(255, 252, 248, 0.8) 50%,
-    rgba(255, 250, 245, 0.75) 100%
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 252, 248, 0.82) 50%,
+    rgba(255, 250, 245, 0.78) 100%
   );
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(28px) saturate(200%);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.75);
   box-shadow:
-    0 12px 40px rgba(20, 50, 70, 0.07),
-    0 4px 12px rgba(20, 50, 70, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 16px 48px rgba(20, 50, 70, 0.08),
+    0 6px 16px rgba(20, 50, 70, 0.04),
+    0 0 0 1px rgba(255, 107, 53, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   /* Neuro: Sanftes Atmen für lebendiges Gefühl */
-  animation: emptyStateBreathe 6s ease-in-out infinite;
+  animation: emptyStateBreathe 7s ease-in-out infinite;
   position: relative;
   overflow: hidden;
 }
@@ -1538,27 +1587,51 @@
 
 /* Empty State CTA Button */
 .empty-state-cta {
-  padding: 0.75rem 1.5rem;
-  background: var(--primary);
+  padding: 0.85rem 1.75rem;
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 50%, var(--primary-dark) 100%);
   color: white;
   border: none;
   border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:
+    0 4px 16px rgba(255, 107, 53, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
   margin-top: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer effect */
+.empty-state-cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transition: left 0.5s ease;
+}
+
+.empty-state-cta:hover::before {
+  left: 100%;
 }
 
 .empty-state-cta:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow:
+    0 8px 24px rgba(255, 107, 53, 0.45),
+    0 0 40px rgba(255, 107, 53, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .empty-state-cta:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(-1px) scale(0.98);
+  transition-duration: 0.1s;
 }
 
 .empty-state-cta.secondary {
@@ -1602,7 +1675,7 @@
   }
 
   .main {
-    padding: 1.25rem;
+    padding: 1.25rem 1rem;
   }
 
   .text-input-container {
@@ -1611,12 +1684,102 @@
 
   .ideas-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  /* Better touch targets for mobile */
+  .nav-button {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  .refresh-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .view-toggle button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  /* Hero section mobile optimization */
+  .hero-section {
+    padding: 2rem 1.25rem 3rem;
+    min-height: 360px;
+  }
+
+  .hero-section.compact {
+    min-height: 280px;
+    padding: 1.5rem 1.25rem 2rem;
+  }
+
+  .hero-greeting {
+    font-size: 1.6rem;
+  }
+
+  .hero-section.compact .hero-greeting {
+    font-size: 1.2rem;
+  }
+
+  /* Empty state mobile */
+  .empty-state {
+    padding: 2.5rem 1.75rem;
+    margin: 1.5rem auto;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .header {
+    padding: 0.625rem 0.875rem;
+    padding-left: 60px;
+  }
+
+  .header-logo-text {
+    font-size: 0.95rem;
+  }
+
+  .main {
+    padding: 1rem 0.875rem;
+  }
+
+  .hero-section {
+    padding: 1.75rem 1rem 2.5rem;
+    min-height: 320px;
+  }
+
+  .hero-section.compact {
+    min-height: 260px;
+    padding: 1.25rem 1rem 1.75rem;
+  }
+
+  .hero-greeting {
+    font-size: 1.4rem;
+  }
+
+  .hero-subtext {
+    font-size: 0.95rem;
+  }
+
+  .empty-state {
+    padding: 2rem 1.5rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .empty-state h3 {
+    font-size: 1.1rem;
+  }
+
+  .empty-state p {
+    font-size: 0.9rem;
   }
 }
 
@@ -2192,7 +2355,19 @@
   justify-content: center;
   min-height: 60vh;
   padding: 2rem;
-  gap: 1rem;
+  gap: 1.25rem;
+  animation: pageLoaderFadeIn 0.3s ease-out;
+}
+
+@keyframes pageLoaderFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .page-loader .loading-text {
@@ -2207,5 +2382,73 @@
   }
   50% {
     opacity: 1;
+  }
+}
+
+/* ============================================
+   PAGE TRANSITIONS - Smooth page changes
+   ============================================ */
+
+/* Main content area page transition */
+.main {
+  animation: pageContentEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pageContentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Archive page specific transition */
+.archive-page {
+  animation: pageSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Section animations for staggered reveal */
+.ideas-section {
+  animation: sectionFadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@keyframes sectionFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hero section entrance */
+.hero-section {
+  animation: heroEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes heroEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

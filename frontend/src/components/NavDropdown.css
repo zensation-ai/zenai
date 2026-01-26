@@ -59,7 +59,14 @@
 }
 
 .nav-dropdown-trigger:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.08s;
+}
+
+.nav-dropdown-trigger:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.4);
 }
 
 .nav-dropdown-trigger.open {

@@ -171,6 +171,18 @@
 .welcome-dismiss:hover {
   background: rgba(0, 0, 0, 0.1);
   opacity: 1;
+  transform: scale(1.05);
+}
+
+.welcome-dismiss:active {
+  transform: scale(0.92);
+  transition-duration: 0.08s;
+}
+
+.welcome-dismiss:focus-visible {
+  outline: none;
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--primary, #ff6b35), 0 0 0 4px rgba(255, 107, 53, 0.2);
 }
 
 /* Progress-Indikator */
@@ -261,6 +273,64 @@
   }
 }
 
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .welcome-message-full {
+    background: linear-gradient(
+      160deg,
+      rgba(30, 45, 60, 0.95) 0%,
+      rgba(25, 40, 55, 0.92) 50%,
+      rgba(30, 45, 60, 0.95) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 2px 8px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .welcome-greeting {
+    color: #f1f5f9;
+  }
+
+  .welcome-subtext {
+    color: #94a3b8;
+  }
+
+  .welcome-suggestion {
+    background: rgba(255, 107, 53, 0.15);
+    color: #ff8c61;
+  }
+
+  .welcome-status {
+    color: #94a3b8;
+  }
+
+  .status-count {
+    color: #ff8c61;
+  }
+
+  .welcome-dismiss {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .welcome-dismiss:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .welcome-ai-badge {
+    background: rgba(40, 55, 70, 0.8);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .welcome-greeting-compact {
+    color: #f1f5f9;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .welcome-message-full,
@@ -268,8 +338,10 @@
   .welcome-greeting,
   .welcome-subtext,
   .welcome-suggestion,
-  .welcome-status {
+  .welcome-status,
+  .welcome-dismiss {
     animation: none !important;
+    transition-duration: 0.01ms !important;
   }
 
   .welcome-progress {
