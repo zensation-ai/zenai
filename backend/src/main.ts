@@ -191,13 +191,8 @@ app.use(csrfProtection);
 // Phase 12: API Documentation
 setupSwagger(app);
 
-// DEBUG: Test route to verify routing works
-app.get('/api/test-no-auth', (_req, res) => {
-  res.json({ success: true, message: 'This route has no auth middleware' });
-});
-
-// Phase 31: Code Execution - MOVED TO TOP for debugging
-// Must be before context-aware routes to avoid /:context pattern conflicts
+// Phase 31: Code Execution - Must be before context-aware routes
+// to avoid /:context pattern conflicts with routes like /api/:context/...
 app.use('/api/code', codeExecutionRouter);
 
 // Phase 1-3 Routes
