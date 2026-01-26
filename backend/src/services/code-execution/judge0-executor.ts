@@ -209,14 +209,16 @@ export class Judge0Executor implements ExecutorProvider {
     // Parse memory limit (e.g., "256m" -> 256000 KB)
     const memoryKb = this.parseMemoryLimit(options.memoryLimit);
 
-    // Convert timeout to seconds
-    const timeoutSec = options.timeout / 1000;
+    // Convert timeout to seconds, capped at Judge0 free tier limits
+    // Judge0 CE free tier: cpu_time_limit <= 20s, wall_time_limit <= 30s
+    const timeoutSec = Math.min(options.timeout / 1000, 15);
+    const wallTimeLimit = Math.min(timeoutSec + 5, 25);
 
     return {
       source_code: Buffer.from(code).toString('base64'),
       language_id: languageId,
       cpu_time_limit: timeoutSec,
-      wall_time_limit: timeoutSec + 5, // Extra buffer for wall time
+      wall_time_limit: wallTimeLimit,
       memory_limit: memoryKb,
       max_processes_and_or_threads: options.pidsLimit,
       enable_per_process_and_thread_time_limit: true,
