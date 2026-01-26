@@ -7,6 +7,7 @@
  * - GET /api/chat/sessions - List chat sessions
  * - GET /api/chat/sessions/:id - Get session with messages
  * - POST /api/chat/sessions/:id/messages - Send message and get response
+ * - POST /api/chat/sessions/:id/messages/stream - Stream response with SSE
  * - DELETE /api/chat/sessions/:id - Delete session
  */
 
@@ -20,8 +21,12 @@ import {
   getSessions,
   deleteSession,
   sendMessage,
+  addMessage,
 } from '../services/general-chat';
 import { isValidUUID } from '../utils/validation';
+import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
+import { detectChatMode } from '../services/chat-modes';
+import { query } from '../utils/database';
 
 export const generalChatRouter = Router();
 
@@ -315,3 +320,170 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
     data: responseData,
   });
 }));
+
+// ===========================================
+// Streaming Message (SSE)
+// ===========================================
+
+/**
+ * POST /api/chat/sessions/:id/messages/stream
+ * Send a message and receive AI response via Server-Sent Events
+ *
+ * Supports Extended Thinking for real-time thinking display
+ *
+ * Query params:
+ * - enable_thinking: boolean - Enable Extended Thinking (default: true)
+ * - thinking_budget: number - Max thinking tokens (default: 10000)
+ *
+ * SSE Events:
+ * - thinking_start: Extended thinking begins
+ * - thinking_delta: Thinking content chunk
+ * - thinking_end: Extended thinking complete
+ * - content_start: Response content begins
+ * - content_delta: Response content chunk
+ * - done: Stream complete with metadata
+ * - error: Error occurred
+ */
+generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { message } = req.body;
+  const enableThinking = req.query.enable_thinking !== 'false';
+  const thinkingBudget = parseInt(req.query.thinking_budget as string) || 10000;
+
+  try {
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      res.status(400).json({ success: false, error: 'Invalid session ID format' });
+      return;
+    }
+
+    // Validate message
+    if (!message || typeof message !== 'string') {
+      res.status(400).json({ success: false, error: 'Message is required' });
+      return;
+    }
+
+    const trimmedMessage = message.trim();
+    if (trimmedMessage.length === 0 || trimmedMessage.length > 10000) {
+      res.status(400).json({ success: false, error: 'Invalid message length' });
+      return;
+    }
+
+    // Check session exists
+    const session = await getSession(id);
+    if (!session) {
+      res.status(404).json({ success: false, error: 'Chat session not found' });
+      return;
+    }
+
+    logger.info('Starting streaming chat', {
+      sessionId: id,
+      messageLength: trimmedMessage.length,
+      enableThinking,
+      thinkingBudget,
+    });
+
+    // Store user message first
+    await addMessage(id, 'user', trimmedMessage);
+
+    // Get conversation history
+    const historyResult = await query(`
+      SELECT role, content
+      FROM general_chat_messages
+      WHERE session_id = $1
+      ORDER BY created_at ASC
+      LIMIT 50
+    `, [id]);
+
+    // Build messages array
+    const messages = historyResult.rows.map((row: { role: string; content: string }) => ({
+      role: row.role as 'user' | 'assistant',
+      content: row.content,
+    }));
+
+    // Detect mode for system prompt enhancement
+    const modeResult = detectChatMode(trimmedMessage);
+
+    // Build system prompt
+    let systemPrompt = `Du bist ein hilfreicher, intelligenter KI-Assistent.
+
+Deine Eigenschaften:
+- Du antwortest auf Deutsch, es sei denn der Benutzer schreibt in einer anderen Sprache
+- Du bist freundlich, präzise und hilfreich
+- Du gibst strukturierte, gut lesbare Antworten
+- Du verwendest Markdown-Formatierung wenn sinnvoll
+- Du bist ehrlich und sagst wenn du etwas nicht weißt
+
+Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Problemlösung, Texte verfassen, Code, und vieles mehr.`;
+
+    if (modeResult.mode === 'agent' || modeResult.mode === 'rag_enhanced') {
+      systemPrompt += `\n\n[MODUS: ${modeResult.mode}]\nDiese Anfrage erfordert tieferes Nachdenken. Nutze Extended Thinking um deine Gedanken zu strukturieren.`;
+    }
+
+    // Setup SSE and stream response
+    setupSSEHeaders(res);
+
+    // Collect response for storage
+    let fullResponse = '';
+    let thinkingContent = '';
+
+    // Create custom event handler to collect content
+    const originalWrite = res.write.bind(res);
+    res.write = function(chunk: any, ...args: any[]): boolean {
+      // Parse SSE event to collect content
+      const chunkStr = chunk.toString();
+      const eventMatch = chunkStr.match(/event: (\w+)\ndata: (.+)\n/);
+      if (eventMatch) {
+        const [, eventType, dataStr] = eventMatch;
+        try {
+          const data = JSON.parse(dataStr);
+          if (eventType === 'content_delta' && data.content) {
+            fullResponse += data.content;
+          } else if (eventType === 'thinking_delta' && data.thinking) {
+            thinkingContent += data.thinking;
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+      return originalWrite(chunk, ...args);
+    };
+
+    // Stream the response
+    await thinkingStream(
+      res,
+      messages,
+      systemPrompt,
+      thinkingBudget
+    );
+
+    // Store assistant response after stream completes
+    if (fullResponse) {
+      await addMessage(id, 'assistant', fullResponse);
+      logger.info('Streaming chat complete', {
+        sessionId: id,
+        responseLength: fullResponse.length,
+        hadThinking: thinkingContent.length > 0,
+      });
+    }
+  } catch (error) {
+    logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
+
+    // If headers not sent, send error response
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Streaming failed',
+      });
+    } else {
+      // Headers sent, try to send SSE error
+      try {
+        const errorEvent = `event: error\ndata: ${JSON.stringify({ error: 'Stream failed' })}\n\n`;
+        res.write(errorEvent);
+        res.end();
+      } catch {
+        // Ignore if we can't write
+      }
+    }
+  }
+});

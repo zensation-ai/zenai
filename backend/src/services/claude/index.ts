@@ -121,3 +121,22 @@ export type {
   ToolUseOptions,
   ToolUseResult,
 } from './tool-use';
+
+// ===========================================
+// Streaming Exports
+// ===========================================
+
+export {
+  setupSSEHeaders,
+  streamToSSE,
+  streamAndCollect,
+  simpleStream,
+  thinkingStream,
+} from './streaming';
+
+export type {
+  StreamEventType,
+  StreamEvent,
+  StreamingOptions,
+  StreamingResult,
+} from './streaming';
