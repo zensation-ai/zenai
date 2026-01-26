@@ -233,8 +233,12 @@ function App() {
           // No recent local ideas to preserve, use server data
           return serverIdeas;
         });
-      } catch {
-        // Silently fail on sync errors
+      } catch (err) {
+        // Log sync errors for debugging but don't disrupt user
+        // Only log if not a cancellation (e.g., from component unmount)
+        if (err instanceof Error && err.name !== 'CanceledError') {
+          console.debug('[Sync] Background sync failed:', err.message);
+        }
       }
     }, SYNC_INTERVAL_MS);
 
@@ -393,8 +397,7 @@ function App() {
       setTextInput('');
       showToast('Gedanke erfolgreich strukturiert!', 'success');
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { error?: string } } };
-      const errorMessage = axiosError.response?.data?.error || 'Verarbeitung fehlgeschlagen';
+      const errorMessage = getErrorMessage(err, 'Verarbeitung fehlgeschlagen');
       setError(errorMessage);
       showToast(errorMessage, 'error');
     } finally {
@@ -416,8 +419,7 @@ function App() {
       setSearchResults(response.data.ideas);
       // No toast for empty results - UI shows this clearly
     } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { error?: string } } };
-      const errorMessage = axiosError.response?.data?.error || 'Suche fehlgeschlagen';
+      const errorMessage = getErrorMessage(err, 'Suche fehlgeschlagen');
       setError(errorMessage);
       showToast(errorMessage, 'error');
     } finally {

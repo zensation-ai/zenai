@@ -17,6 +17,59 @@ import { checkKeyExpiry, KeyExpiryInfo } from '../services/api-key-security';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
+// ===========================================
+// In-Memory Rate Limiter Fallback
+// ===========================================
+
+/**
+ * In-memory rate limiter used as fallback when database is unavailable
+ * This ensures rate limiting continues even during DB outages
+ */
+interface MemoryRateLimitEntry {
+  count: number;
+  windowStart: number;
+}
+
+const memoryRateLimits = new Map<string, MemoryRateLimitEntry>();
+let memoryRateLimiterEnabled = false;
+let consecutiveDbErrors = 0;
+const MAX_CONSECUTIVE_ERRORS = 3;
+const MEMORY_CLEANUP_INTERVAL = 60 * 1000; // 1 minute
+
+// Clean up old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of memoryRateLimits.entries()) {
+    if (now - entry.windowStart > 120000) { // 2 minutes old
+      memoryRateLimits.delete(key);
+    }
+  }
+}, MEMORY_CLEANUP_INTERVAL);
+
+/**
+ * Check rate limit using in-memory storage
+ */
+function checkMemoryRateLimit(key: string, limit: number, windowMs: number): { allowed: boolean; count: number; resetAt: number } {
+  const now = Date.now();
+  const windowStart = Math.floor(now / windowMs) * windowMs;
+  const cacheKey = `${key}:${windowStart}`;
+
+  let entry = memoryRateLimits.get(cacheKey);
+
+  if (!entry || entry.windowStart !== windowStart) {
+    entry = { count: 1, windowStart };
+    memoryRateLimits.set(cacheKey, entry);
+  } else {
+    entry.count++;
+  }
+
+  return {
+    allowed: entry.count <= limit,
+    count: entry.count,
+    resetAt: windowStart + windowMs,
+  };
+}
+
 // Extend Express Request type
 declare global {
   namespace Express {
@@ -449,6 +502,15 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
 
     const currentCount = result.rows[0].request_count;
 
+    // Reset error counter on successful DB operation
+    if (consecutiveDbErrors > 0) {
+      consecutiveDbErrors = 0;
+      if (memoryRateLimiterEnabled) {
+        memoryRateLimiterEnabled = false;
+        logger.info('Rate limiter restored to database mode', { operation: 'rateLimiter' });
+      }
+    }
+
     // Set rate limit headers
     res.setHeader('X-RateLimit-Limit', limit);
     res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - currentCount));
@@ -464,10 +526,38 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
 
     next();
   } catch (error) {
-    logger.error('Rate limiter error', error instanceof Error ? error : undefined, { operation: 'rateLimiter' });
-    // SECURITY: Fail open in production to not block users due to DB issues
-    // Rate limiting is defense-in-depth, not critical path
-    logger.warn('Rate limiter bypassed due to error - allowing request', { operation: 'rateLimiter' });
+    consecutiveDbErrors++;
+    logger.error('Rate limiter DB error', error instanceof Error ? error : undefined, {
+      operation: 'rateLimiter',
+      consecutiveErrors: consecutiveDbErrors,
+    });
+
+    // SECURITY: Use in-memory fallback instead of bypassing rate limiting
+    // This maintains protection even during database outages
+    if (consecutiveDbErrors >= MAX_CONSECUTIVE_ERRORS) {
+      memoryRateLimiterEnabled = true;
+      logger.warn('Rate limiter switched to in-memory fallback due to DB errors', {
+        operation: 'rateLimiter',
+        consecutiveErrors: consecutiveDbErrors,
+      });
+    }
+
+    // Apply in-memory rate limiting
+    const memResult = checkMemoryRateLimit(key, limit, windowMs);
+
+    res.setHeader('X-RateLimit-Limit', limit);
+    res.setHeader('X-RateLimit-Remaining', Math.max(0, limit - memResult.count));
+    res.setHeader('X-RateLimit-Reset', new Date(memResult.resetAt).toISOString());
+    res.setHeader('X-RateLimit-Source', 'memory-fallback');
+
+    if (!memResult.allowed) {
+      return res.status(429).json({
+        error: 'Rate limit exceeded',
+        message: `Too many requests. Limit: ${limit}/minute`,
+        retryAfter: Math.ceil((memResult.resetAt - Date.now()) / 1000),
+      });
+    }
+
     next();
   }
 }

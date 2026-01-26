@@ -175,7 +175,7 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
 
       {/* AI Status Timeline - shown during processing */}
       {showAIStatus && (
-        <div className="ai-status-timeline neuro-tooltip-enhanced" role="status" aria-live="polite">
+        <div className="ai-status-timeline neuro-tooltip-enhanced" role="status" aria-live="polite" aria-label="KI-Verarbeitungsstatus">
           <div className="ai-status-header">
             <span className="ai-status-avatar neuro-breathing">{AI_AVATAR.emoji}</span>
             <div className="ai-status-steps">

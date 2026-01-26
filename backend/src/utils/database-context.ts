@@ -11,19 +11,12 @@ import { Pool, QueryResult } from 'pg';
 import dotenv from 'dotenv';
 import { logger } from './logger';
 
+// Re-export isValidUUID from centralized validation module for backward compatibility
+export { isValidUUID } from './validation';
+
 dotenv.config();
 
 export type AIContext = 'personal' | 'work';
-
-// UUID validation regex
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-/**
- * Validate if a string is a valid UUID v4
- */
-export function isValidUUID(id: string): boolean {
-  return UUID_REGEX.test(id);
-}
 
 // ===========================================
 // Pool Configuration (Phase 11 Optimized)

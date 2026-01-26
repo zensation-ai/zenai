@@ -471,7 +471,13 @@ export function validateStringArray(
 // UUID Validation
 // ===========================================
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+/** UUID v1-5 validation regex - exported for direct use */
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Simple UUID validation check */
+export function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
 
 /**
  * Validate UUID format

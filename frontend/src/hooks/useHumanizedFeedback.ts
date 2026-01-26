@@ -87,16 +87,22 @@ const saveProgress = (progress: UserProgress) => {
   }
 };
 
-const calculateStreakDays = (lastActiveDate: string): number => {
-  const today = new Date().toISOString().split('T')[0];
+/**
+ * Calculate streak days based on previous state
+ * Takes currentStreak as parameter to avoid race conditions with storage
+ */
+const calculateStreakDays = (lastActiveDate: string, currentStreak: number, today: string): number => {
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
   if (lastActiveDate === today) {
-    return getStoredProgress().streakDays;
+    // Same day - maintain current streak
+    return currentStreak;
   } else if (lastActiveDate === yesterday) {
-    return getStoredProgress().streakDays + 1;
+    // Consecutive day - increment streak
+    return currentStreak + 1;
   }
-  return 1; // Streak zurückgesetzt
+  // Streak broken - reset to 1
+  return 1;
 };
 
 // ============================================
@@ -135,14 +141,18 @@ export function useHumanizedFeedback(config: HumanizedFeedbackConfig = {}) {
       const today = new Date().toISOString().split('T')[0];
       const isNewDay = prev.lastActiveDate !== today;
 
+      // Calculate streak atomically using values from prev state (not storage)
+      // This prevents race conditions when multiple updates happen quickly
+      const newStreakDays = calculateStreakDays(prev.lastActiveDate, prev.streakDays, today);
+
       const newProgress: UserProgress = {
         ...prev,
         ...updates,
         lastActiveDate: today,
-        // Reset tägliche Zähler wenn neuer Tag
+        // Reset daily counters on new day, otherwise accumulate
         ideasToday: isNewDay ? (updates.ideasToday ?? 0) : (prev.ideasToday + (updates.ideasToday ?? 0)),
         archivedToday: isNewDay ? (updates.archivedToday ?? 0) : (prev.archivedToday + (updates.archivedToday ?? 0)),
-        streakDays: calculateStreakDays(prev.lastActiveDate),
+        streakDays: newStreakDays,
       };
 
       saveProgress(newProgress);

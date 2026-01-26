@@ -164,7 +164,7 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
     // End memory session and trigger consolidation (non-blocking)
     if (context) {
       memoryCoordinator.endSession(sessionId, true).catch(error => {
-        logger.debug('Failed to end memory session', { sessionId, error });
+        logger.warn('Failed to end memory session - memory consolidation may be incomplete', { sessionId, error });
       });
     }
 
@@ -406,7 +406,7 @@ export async function sendMessage(
 
   // Record as episodic memory (non-blocking, fire-and-forget)
   recordEpisode(sessionId, userMessage, aiResponse, contextType).catch(error => {
-    logger.debug('Failed to record episodic memory', { sessionId, error });
+    logger.warn('Failed to record episodic memory - conversation may not be remembered', { sessionId, error });
   });
 
   logger.info('Chat message exchange complete', {
