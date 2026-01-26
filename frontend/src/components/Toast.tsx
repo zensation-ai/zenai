@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import '../neurodesign.css';
 import './Toast.css';
 
@@ -107,6 +107,18 @@ export const dismissToast = (id: string) => {
   notifyListeners();
 };
 
+/**
+ * Clear all toasts and clean up timers
+ * Call this when unmounting the app or during cleanup
+ */
+export const clearAllToasts = () => {
+  // Clear all pending timers
+  dismissTimers.forEach((timer) => clearTimeout(timer));
+  dismissTimers.clear();
+  toasts = [];
+  notifyListeners();
+};
+
 // Hook for components to subscribe to toasts
 export function useToasts() {
   const [localToasts, setLocalToasts] = useState<Toast[]>([]);
@@ -121,8 +133,8 @@ export function useToasts() {
   return localToasts;
 }
 
-// Individual Toast Item with progress bar
-function ToastItem({ toast }: { toast: Toast }) {
+// Individual Toast Item with progress bar - memoized to prevent unnecessary re-renders
+const ToastItem = memo(function ToastItem({ toast }: { toast: Toast }) {
   const [progress, setProgress] = useState(100);
   const startTimeRef = useRef(Date.now());
   const duration = toast.onUndo
@@ -196,7 +208,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       )}
     </div>
   );
-}
+});
 
 // Toast container component
 export function ToastContainer() {

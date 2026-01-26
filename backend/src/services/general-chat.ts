@@ -202,7 +202,9 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
     SELECT context FROM general_chat_sessions WHERE id = $1
   `, [sessionId]);
 
-  const context = sessionResult.rows[0]?.context as 'personal' | 'work' | undefined;
+  const rawContext = sessionResult.rows[0]?.context;
+  const context: 'personal' | 'work' | undefined =
+    rawContext === 'personal' || rawContext === 'work' ? rawContext : undefined;
 
   const result = await query(`
     DELETE FROM general_chat_sessions

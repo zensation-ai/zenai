@@ -303,7 +303,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [inputValue, sending, sessionId, selectedImages]);
+  }, [inputValue, sending, sessionId, selectedImages, context]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

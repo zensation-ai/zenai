@@ -77,8 +77,11 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
       // Fix trailing commas before closing brackets/braces
       jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
 
-      // Fix single quotes to double quotes (but not within strings)
-      jsonStr = jsonStr.replace(/'/g, '"');
+      // Fix single quotes to double quotes - but only for property keys and simple values
+      // This avoids breaking strings that contain apostrophes like "it's"
+      // Pattern: Replace 'key': with "key": and ': 'value' with ": "value"
+      jsonStr = jsonStr.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'\s*:/g, '"$1":');
+      jsonStr = jsonStr.replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g, ': "$1"');
 
       // Remove trailing text after closing brace
       const lastBrace = jsonStr.lastIndexOf('}');

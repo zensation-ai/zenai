@@ -632,9 +632,41 @@ export function registerDefaultTools(): void {
   // These are placeholders - real handlers should be injected
   toolRegistry.register(TOOL_CALCULATE, async (input, _context) => {
     const expr = input.expression as string;
+    if (!expr || typeof expr !== 'string') {
+      return 'Fehler: Ungültiger mathematischer Ausdruck';
+    }
+
     try {
-      // Safe math evaluation (no eval)
-      const result = Function(`"use strict"; return (${expr.replace(/[^0-9+\-*/().%\s]/g, '')})`)();
+      // Safe math evaluation - only allow numbers, operators, and parentheses
+      const sanitized = expr.replace(/[^0-9+\-*/().%\s,]/g, '');
+
+      // Additional validation: check for valid expression structure
+      // Prevent empty expressions or only whitespace
+      if (!sanitized.trim() || !/\d/.test(sanitized)) {
+        return 'Fehler: Ungültiger mathematischer Ausdruck';
+      }
+
+      // Check for balanced parentheses
+      let parenCount = 0;
+      for (const char of sanitized) {
+        if (char === '(') parenCount++;
+        if (char === ')') parenCount--;
+        if (parenCount < 0) {
+          return 'Fehler: Unbalancierte Klammern';
+        }
+      }
+      if (parenCount !== 0) {
+        return 'Fehler: Unbalancierte Klammern';
+      }
+
+      // Evaluate with strict mode
+      const result = Function(`"use strict"; return (${sanitized})`)();
+
+      // Validate result is a finite number
+      if (typeof result !== 'number' || !Number.isFinite(result)) {
+        return 'Fehler: Das Ergebnis ist keine gültige Zahl';
+      }
+
       return `Ergebnis: ${result}`;
     } catch {
       return 'Fehler: Ungültiger mathematischer Ausdruck';
