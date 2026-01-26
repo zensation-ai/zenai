@@ -196,6 +196,10 @@ app.get('/api/test-no-auth', (_req, res) => {
   res.json({ success: true, message: 'This route has no auth middleware' });
 });
 
+// Phase 31: Code Execution - MOVED TO TOP for debugging
+// Must be before context-aware routes to avoid /:context pattern conflicts
+app.use('/api/code', codeExecutionRouter);
+
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);
 app.use('/api/voice-memo', voiceMemoRouter);
@@ -281,8 +285,7 @@ app.use('/api/vision', visionRouter);  // /api/vision/analyze, /api/vision/extra
 // Phase 31: Topic Enhancement - Advanced Topic Analysis
 app.use('/api/topics', topicEnhancementRouter);  // /api/topics/enhanced, /api/topics/quality, /api/topics/similar, etc.
 
-// Phase 31: Code Execution - Secure Docker Sandbox
-app.use('/api/code', codeExecutionRouter);  // /api/code/execute, /api/code/run, /api/code/validate, /api/code/health
+// Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"
 // Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
