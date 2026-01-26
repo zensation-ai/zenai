@@ -27,6 +27,16 @@ const createImageFile = (name: string = 'test.png'): File => {
   return createMockFile(name, 'image/png', 1024);
 };
 
+// Helper to upload files using fireEvent (more robust for hidden inputs)
+const uploadFiles = (input: HTMLInputElement, files: File | File[]) => {
+  const fileList = Array.isArray(files) ? files : [files];
+  Object.defineProperty(input, 'files', {
+    value: fileList,
+    configurable: true,
+  });
+  fireEvent.change(input);
+};
+
 describe('ImageUpload Component', () => {
   const mockOnImagesChange = vi.fn();
 
@@ -73,13 +83,13 @@ describe('ImageUpload Component', () => {
 
   describe('File Selection', () => {
     it('should call onImagesChange when file is selected', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createImageFile();
 
-      await user.upload(input, file);
+      uploadFiles(input, file);
 
       await waitFor(() => {
         expect(mockOnImagesChange).toHaveBeenCalledWith([expect.any(File)]);
@@ -87,7 +97,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept multiple files when maxImages > 1', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxImages={3} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -96,7 +106,7 @@ describe('ImageUpload Component', () => {
         createImageFile('image2.png'),
       ];
 
-      await user.upload(input, files);
+      uploadFiles(input, files);
 
       await waitFor(() => {
         expect(mockOnImagesChange).toHaveBeenCalledWith(
@@ -106,7 +116,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should limit number of files to maxImages', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxImages={2} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -116,7 +126,7 @@ describe('ImageUpload Component', () => {
         createImageFile('img3.png'),
       ];
 
-      await user.upload(input, files);
+      uploadFiles(input, files);
 
       await waitFor(() => {
         expect(screen.getByText(/Maximal 2 Bilder erlaubt/i)).toBeInTheDocument();
@@ -130,13 +140,13 @@ describe('ImageUpload Component', () => {
 
   describe('File Validation', () => {
     it('should accept JPEG files', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createMockFile('photo.jpg', 'image/jpeg');
 
-      await user.upload(input, file);
+      uploadFiles(input, file);
 
       await waitFor(() => {
         expect(mockOnImagesChange).toHaveBeenCalled();
@@ -145,13 +155,13 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept PNG files', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createMockFile('image.png', 'image/png');
 
-      await user.upload(input, file);
+      uploadFiles(input, file);
 
       await waitFor(() => {
         expect(mockOnImagesChange).toHaveBeenCalled();
@@ -159,13 +169,13 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept GIF files', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createMockFile('animation.gif', 'image/gif');
 
-      await user.upload(input, file);
+      uploadFiles(input, file);
 
       await waitFor(() => {
         expect(mockOnImagesChange).toHaveBeenCalled();
@@ -173,13 +183,13 @@ describe('ImageUpload Component', () => {
     });
 
     it('should accept WebP files', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createMockFile('modern.webp', 'image/webp');
 
-      await user.upload(input, file);
+      uploadFiles(input, file);
 
       await waitFor(() => {
         expect(mockOnImagesChange).toHaveBeenCalled();
@@ -187,13 +197,13 @@ describe('ImageUpload Component', () => {
     });
 
     it('should reject invalid file formats', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createMockFile('document.pdf', 'application/pdf');
 
-      await user.upload(input, file);
+      uploadFiles(input, file);
 
       await waitFor(() => {
         expect(screen.getByText(/Ungültiges Format/i)).toBeInTheDocument();
@@ -201,14 +211,14 @@ describe('ImageUpload Component', () => {
     });
 
     it('should reject files exceeding max size', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxSizeMB={1} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       // Create file larger than 1MB (1.5MB)
       const file = createMockFile('large.png', 'image/png', 1.5 * 1024 * 1024);
 
-      await user.upload(input, file);
+      uploadFiles(input, file);
 
       await waitFor(() => {
         expect(screen.getByText(/Datei zu groß/i)).toBeInTheDocument();
@@ -286,13 +296,13 @@ describe('ImageUpload Component', () => {
 
   describe('Preview', () => {
     it('should show preview count after selecting files', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const files = [createImageFile('img1.png'), createImageFile('img2.png')];
 
-      await user.upload(input, files);
+      uploadFiles(input, files);
 
       await waitFor(() => {
         expect(screen.getByText(/2 Bilder ausgewählt/i)).toBeInTheDocument();
@@ -300,12 +310,12 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show "Bild" for single file', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-      await user.upload(input, createImageFile());
+      uploadFiles(input, createImageFile());
 
       await waitFor(() => {
         expect(screen.getByText(/1 Bild ausgewählt/i)).toBeInTheDocument();
@@ -313,12 +323,12 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show "Alle entfernen" button with previews', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-      await user.upload(input, createImageFile());
+      uploadFiles(input, createImageFile());
 
       await waitFor(() => {
         expect(screen.getByText(/Alle entfernen/i)).toBeInTheDocument();
@@ -326,12 +336,12 @@ describe('ImageUpload Component', () => {
     });
 
     it('should clear all images when "Alle entfernen" is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-      await user.upload(input, createImageFile());
+      uploadFiles(input, createImageFile());
 
       await waitFor(() => {
         expect(screen.getByText(/Alle entfernen/i)).toBeInTheDocument();
@@ -352,13 +362,13 @@ describe('ImageUpload Component', () => {
 
   describe('Remove Individual Image', () => {
     it('should remove image when remove button is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const files = [createImageFile('img1.png'), createImageFile('img2.png')];
 
-      await user.upload(input, files);
+      uploadFiles(input, files);
 
       await waitFor(() => {
         expect(screen.getByText(/2 Bilder/i)).toBeInTheDocument();
@@ -386,12 +396,12 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show mini previews in compact mode', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} compact />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-      await user.upload(input, createImageFile());
+      uploadFiles(input, createImageFile());
 
       await waitFor(() => {
         const previewStrip = document.querySelector('.image-upload-preview-strip');
@@ -400,12 +410,12 @@ describe('ImageUpload Component', () => {
     });
 
     it('should disable button when at max images in compact mode', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} compact maxImages={1} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
-      await user.upload(input, createImageFile());
+      uploadFiles(input, createImageFile());
 
       await waitFor(() => {
         const button = screen.getByRole('button', { name: /Bild hinzufügen/i });
@@ -434,13 +444,13 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show error as alert', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const invalidFile = createMockFile('doc.pdf', 'application/pdf');
 
-      await user.upload(input, invalidFile);
+      uploadFiles(input, invalidFile);
 
       await waitFor(() => {
         const alert = screen.getByRole('alert');
@@ -449,7 +459,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should be keyboard accessible', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} />);
 
       const dropzone = screen.getByRole('button', { name: /Bilder hochladen/i });
@@ -469,7 +479,7 @@ describe('ImageUpload Component', () => {
 
   describe('Props', () => {
     it('should use custom maxImages', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxImages={3} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -480,7 +490,7 @@ describe('ImageUpload Component', () => {
         createImageFile('4.png'),
       ];
 
-      await user.upload(input, files);
+      uploadFiles(input, files);
 
       await waitFor(() => {
         expect(screen.getByText(/Maximal 3 Bilder/i)).toBeInTheDocument();
@@ -488,13 +498,13 @@ describe('ImageUpload Component', () => {
     });
 
     it('should use custom maxSizeMB', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ pointerEventsCheck: false });
       render(<ImageUpload onImagesChange={mockOnImagesChange} maxSizeMB={2} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const largeFile = createMockFile('large.png', 'image/png', 3 * 1024 * 1024);
 
-      await user.upload(input, largeFile);
+      uploadFiles(input, largeFile);
 
       await waitFor(() => {
         expect(screen.getByText(/Max: 2MB/i)).toBeInTheDocument();

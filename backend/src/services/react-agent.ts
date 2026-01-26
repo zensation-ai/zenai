@@ -269,7 +269,11 @@ export class ReActAgent {
           // Execute the tool
           let observation: string;
           try {
-            observation = await toolRegistry.execute(parsed.action.tool, parsed.action.input);
+            observation = await toolRegistry.execute(
+              parsed.action.tool,
+              parsed.action.input,
+              { aiContext: task.aiContext }
+            );
           } catch (toolError) {
             observation = `Fehler: ${toolError instanceof Error ? toolError.message : 'Unbekannter Fehler'}`;
           }
