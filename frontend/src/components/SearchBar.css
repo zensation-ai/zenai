@@ -89,19 +89,83 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
-  transition: var(--transition-fast);
+  font-size: 0.75rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-clear:hover {
   background: var(--surface-hover);
   border-color: var(--text-secondary);
   color: var(--text);
+  transform: scale(1.1);
+}
+
+.search-clear:active {
+  transform: scale(0.95);
+  transition-duration: 0.08s;
+}
+
+/* Focus state for keyboard navigation */
+.search-clear:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Input focus-visible state */
+.search-input:focus-visible {
+  outline: none;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .search-bar {
+    background: linear-gradient(
+      165deg,
+      rgba(30, 45, 60, 0.75) 0%,
+      rgba(25, 40, 55, 0.7) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .search-bar:hover:not(:focus-within) {
+    background: linear-gradient(
+      165deg,
+      rgba(35, 50, 65, 0.8) 0%,
+      rgba(30, 45, 60, 0.75) 100%
+    );
+  }
+
+  .search-bar:focus-within {
+    background: rgba(30, 45, 60, 0.85);
+  }
+
+  .search-clear {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .search-clear:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .search-bar,
+  .search-clear,
+  .search-icon {
+    transition-duration: 0.01ms !important;
+  }
+
+  .search-spinner {
+    animation: none;
+  }
 }

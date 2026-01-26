@@ -327,3 +327,65 @@
     height: 48px;
   }
 }
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.04) 100%
+    );
+  }
+
+  .skeleton-card {
+    background: linear-gradient(
+      165deg,
+      rgba(30, 45, 60, 0.75) 0%,
+      rgba(25, 40, 55, 0.68) 50%,
+      rgba(30, 45, 60, 0.72) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .skeleton-card-footer {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .spinner-track {
+    stroke: rgba(255, 255, 255, 0.08);
+  }
+
+  .progress-message {
+    color: #f1f5f9;
+  }
+
+  .progress-sub {
+    color: #94a3b8;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .spinner-progress,
+  .inline-loader-dot,
+  .progress-step.active .step-indicator {
+    animation: none !important;
+  }
+
+  .skeleton {
+    background: rgba(20, 50, 70, 0.08);
+  }
+}
+
+/* Smoother shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

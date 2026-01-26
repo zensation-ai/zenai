@@ -51,6 +51,13 @@
 
 .mobile-nav-toggle:active {
   transform: scale(0.95);
+  transition-duration: 0.08s;
+}
+
+.mobile-nav-toggle:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.4);
 }
 
 .hamburger-line {
