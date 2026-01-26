@@ -19,20 +19,90 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 30
+## Current Phase: 31
 
-Memory Scheduler implementiert:
-- Long-Term Consolidation (täglich 2:00 AM)
-- Episodic Decay (täglich 3:00 AM)
-- Memory Stats Logging (stündlich)
+### Phase 31 Features (AI State-of-the-Art)
+
+**Chat Modes & Tool Use:**
+- Intelligent mode detection (tool_assisted, agent, rag_enhanced, conversation)
+- 6 integrated tools: search_ideas, create_idea, remember, recall, calculate, get_related_ideas
+
+**RAG Pipeline:**
+- HyDE (Hypothetical Document Embeddings)
+- Cross-Encoder Re-ranking
+- Confidence scoring and quality metrics
+
+**Streaming:**
+- SSE with Extended Thinking support
+- Real-time thinking and response display
+
+**Vision Integration:**
+- 8 Vision API endpoints
+- Image analysis, OCR, idea extraction
+- Chat with images support
+- Drag-and-drop ImageUpload component
+
+**Topic Enhancement:**
+- Keyword extraction (TF-IDF)
+- Quality metrics (coherence, separation, density, stability)
+- Smart topic assignment
+- Topic-aware chat context
 
 ## Key Files
 
-- Backend Entry: `backend/src/main.ts`
+### Backend
+- Entry: `backend/src/main.ts`
 - Memory Services: `backend/src/services/memory/`
 - General Chat: `backend/src/routes/general-chat.ts`
-- Frontend App: `frontend/src/App.tsx`
+- Vision Service: `backend/src/services/claude-vision.ts`
+- Vision Routes: `backend/src/routes/vision.ts`
+- Chat Modes: `backend/src/services/chat-modes.ts`
+- Tool Handlers: `backend/src/services/tool-handlers.ts`
+- Enhanced RAG: `backend/src/services/enhanced-rag.ts`
+- Topic Enhancement: `backend/src/services/topic-enhancement.ts`
+- Streaming: `backend/src/services/claude/streaming.ts`
+
+### Frontend
+- App: `frontend/src/App.tsx`
 - Chat Component: `frontend/src/components/GeneralChat.tsx`
+- Image Upload: `frontend/src/components/ImageUpload.tsx`
+
+### Tests
+- Backend: `backend/src/__tests__/`
+- Frontend: `frontend/src/__tests__/` and `frontend/src/components/__tests__/`
+
+## API Endpoints (Phase 31)
+
+### Vision API
+```
+GET  /api/vision/status           - Service availability
+POST /api/vision/analyze          - Analyze with task
+POST /api/vision/extract-text     - OCR extraction
+POST /api/vision/extract-ideas    - Extract ideas
+POST /api/vision/describe         - Quick description
+POST /api/vision/ask              - Q&A about image
+POST /api/vision/compare          - Compare images
+POST /api/vision/document         - Full document processing
+```
+
+### Topic Enhancement API
+```
+GET  /api/topics/enhanced         - Topics with keywords
+GET  /api/topics/quality          - All quality metrics
+GET  /api/topics/:id/quality      - Single topic quality
+GET  /api/topics/similar          - Similar topics
+POST /api/topics/assign/:ideaId   - Smart assignment
+POST /api/topics/context          - Chat context
+GET  /api/topics/orphans          - Unassigned ideas
+```
+
+### Chat API (Enhanced)
+```
+POST /api/chat/sessions/:id/messages         - Send message
+POST /api/chat/sessions/:id/messages/stream  - SSE streaming
+POST /api/chat/sessions/:id/messages/vision  - Message with images
+POST /api/chat/quick                         - Quick chat
+```
 
 ## Environment Variables (Backend)
 
@@ -47,4 +117,23 @@ CONSOLIDATION_SCHEDULE="0 2 * * *"
 DECAY_SCHEDULE="0 3 * * *"
 ENABLE_MEMORY_CONSOLIDATION=true
 ENABLE_MEMORY_DECAY=true
+
+# Optional - AI Settings
+CLAUDE_MODEL=claude-sonnet-4-20250514
+MAX_TOKENS=4096
 ```
+
+## Testing
+
+```bash
+# Backend
+cd backend && npm test
+
+# Frontend
+cd frontend && npm test
+```
+
+## Documentation
+
+- AI Features: `docs/AI-FEATURES.md`
+- API Docs: `/api-docs` (Swagger)
