@@ -48,6 +48,10 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  // Streaming state for real-time token display
+  const [streamingContent, setStreamingContent] = useState<string>('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [thinkingContent, setThinkingContent] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -129,6 +133,10 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
     }
   };
 
+  /**
+   * Send message with SSE streaming support
+   * Uses Server-Sent Events for real-time token-by-token display
+   */
   const handleSendMessage = useCallback(async () => {
     // Allow sending with only images (no text required)
     if ((!inputValue.trim() && selectedImages.length === 0) || sending) return;
@@ -166,15 +174,13 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       };
       setMessages(prev => [...prev, tempUserMessage]);
 
-      let res;
-
       if (imagesToSend.length > 0) {
-        // Use vision endpoint with FormData
+        // Use vision endpoint with FormData (no streaming for vision)
         const formData = new FormData();
         formData.append('message', messageContent);
         imagesToSend.forEach(img => formData.append('images', img));
 
-        res = await axios.post(
+        const res = await axios.post(
           `/api/chat/sessions/${currentSessionId}/messages/vision`,
           formData,
           {
@@ -183,21 +189,104 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             },
           }
         );
-      } else {
-        // Use standard message endpoint
-        res = await axios.post(`/api/chat/sessions/${currentSessionId}/messages`, {
-          message: messageContent,
+
+        const { userMessage, assistantMessage } = res.data.data;
+
+        // Replace temp message with real ones
+        setMessages(prev => {
+          const filtered = prev.filter(m => m.id !== tempUserMessage.id);
+          return [...filtered, userMessage, assistantMessage];
         });
+      } else {
+        // Use SSE streaming for text-only messages
+        setIsStreaming(true);
+        setStreamingContent('');
+        setThinkingContent('');
+
+        try {
+          const response = await fetch(`/api/chat/sessions/${currentSessionId}/messages/stream`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: messageContent }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let accumulatedContent = '';
+          let buffer = '';
+
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+
+              // Process complete SSE events from buffer
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+              for (const line of lines) {
+                if (line.startsWith('event: ')) {
+                  // Event type line - handled with next data line
+                  continue;
+                }
+                if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.slice(6));
+
+                    // Handle different event types based on data content
+                    if (data.content !== undefined) {
+                      accumulatedContent += data.content;
+                      setStreamingContent(accumulatedContent);
+                    }
+                    if (data.thinking !== undefined) {
+                      setThinkingContent(data.thinking);
+                    }
+                    if (data.error) {
+                      throw new Error(data.error);
+                    }
+                  } catch (parseError) {
+                    // Skip malformed JSON
+                    if (line.slice(6).trim() !== '') {
+                      console.warn('Failed to parse SSE data:', line);
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // Stream complete - create final assistant message
+          const finalAssistantMessage: ChatMessage = {
+            id: `assistant-${Date.now()}`,
+            sessionId: currentSessionId,
+            role: 'assistant',
+            content: accumulatedContent,
+            createdAt: new Date().toISOString(),
+          };
+
+          // Update messages with real user message (from temp) and assistant response
+          setMessages(prev => {
+            const filtered = prev.filter(m => m.id !== tempUserMessage.id);
+            const realUserMessage: ChatMessage = {
+              ...tempUserMessage,
+              id: `user-${Date.now()}`,
+            };
+            return [...filtered, realUserMessage, finalAssistantMessage];
+          });
+        } finally {
+          setIsStreaming(false);
+          setStreamingContent('');
+          setThinkingContent('');
+        }
       }
-
-      const { userMessage, assistantMessage } = res.data.data;
-
-      // Replace temp message with real ones
-      setMessages(prev => {
-        // Remove temp message and add real messages
-        const filtered = prev.filter(m => m.id !== tempUserMessage.id);
-        return [...filtered, userMessage, assistantMessage];
-      });
 
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Nachricht fehlgeschlagen');
@@ -207,6 +296,9 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
       setInputValue(messageContent); // Restore input
       setSelectedImages(imagesToSend); // Restore images
+      setIsStreaming(false);
+      setStreamingContent('');
+      setThinkingContent('');
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -338,7 +430,30 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
                 </div>
               </div>
             ))}
-            {sending && (
+            {/* Streaming response - shows content as it arrives */}
+            {isStreaming && streamingContent && (
+              <div className="chat-message assistant neuro-human-fade-in streaming" role="status" aria-live="polite">
+                <div className="chat-message-avatar" title={AI_PERSONALITY.name} aria-hidden="true">{AI_AVATAR.emoji}</div>
+                <div className="chat-message-content">
+                  <div className="chat-message-header">
+                    <span className="chat-message-name">{AI_PERSONALITY.name}</span>
+                    <span className="chat-message-status streaming-indicator">schreibt...</span>
+                  </div>
+                  {thinkingContent && (
+                    <div className="chat-thinking-block" aria-label="KI denkt nach">
+                      <span className="thinking-label">Denke nach...</span>
+                      <span className="thinking-preview">{thinkingContent.slice(0, 100)}...</span>
+                    </div>
+                  )}
+                  <div className="chat-message-text">
+                    {renderContent(streamingContent)}
+                    <span className="streaming-cursor" aria-hidden="true">▋</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Typing indicator - shown while waiting for stream to start */}
+            {sending && !isStreaming && (
               <div className="chat-message assistant neuro-human-fade-in" role="status" aria-live="polite">
                 <div className="chat-message-avatar neuro-breathing" title={AI_PERSONALITY.name} aria-hidden="true">{AI_AVATAR.thinkingEmoji}</div>
                 <div className="chat-message-content">

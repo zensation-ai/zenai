@@ -16,6 +16,7 @@ import {
   TOOL_CALCULATE,
   TOOL_REMEMBER,
   TOOL_RECALL,
+  ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
 import { AIContext, queryContext } from '../utils/database-context';
@@ -24,24 +25,27 @@ import { generateEmbedding } from './ai';
 import { longTermMemory, episodicMemory } from './memory';
 
 // ===========================================
-// State Management
+// DEPRECATED: Legacy Context Management
 // ===========================================
+// These functions are kept for backward compatibility but should not be used.
+// All new code should use the ToolExecutionContext passed to handlers.
 
 /**
- * Current context for tool execution
- * Set this before executing tools that need context
+ * @deprecated Use ToolExecutionContext passed to handlers instead.
+ * This global state is a race condition risk with parallel requests.
  */
 let currentContext: AIContext = 'personal';
 
 /**
- * Set the current context for tool execution
+ * @deprecated Use ToolExecutionContext passed to handlers instead.
  */
 export function setToolContext(context: AIContext): void {
+  logger.warn('setToolContext is deprecated - use ToolExecutionContext instead');
   currentContext = context;
 }
 
 /**
- * Get the current context
+ * @deprecated Use ToolExecutionContext passed to handlers instead.
  */
 export function getToolContext(): AIContext {
   return currentContext;
@@ -53,19 +57,24 @@ export function getToolContext(): AIContext {
 
 /**
  * Search ideas handler
+ * Uses request-scoped context for safe parallel execution
  */
-async function handleSearchIdeas(input: Record<string, unknown>): Promise<string> {
+async function handleSearchIdeas(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
   const query = input.query as string;
   const limit = (input.limit as number) || 5;
+  const context = execContext.aiContext;
 
   if (!query) {
     return 'Fehler: Keine Suchanfrage angegeben.';
   }
 
-  logger.debug('Tool: search_ideas', { query, limit, context: currentContext });
+  logger.debug('Tool: search_ideas', { query, limit, context });
 
   try {
-    const results = await enhancedRAG.quickRetrieve(query, currentContext, limit);
+    const results = await enhancedRAG.quickRetrieve(query, context, limit);
 
     if (results.length === 0) {
       return `Keine Ideen gefunden für: "${query}"`;
@@ -84,20 +93,25 @@ async function handleSearchIdeas(input: Record<string, unknown>): Promise<string
 
 /**
  * Create idea handler
+ * Uses request-scoped context for safe parallel execution
  */
-async function handleCreateIdea(input: Record<string, unknown>): Promise<string> {
+async function handleCreateIdea(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
   const title = input.title as string;
   const type = input.type as string;
   const summary = input.summary as string;
   const category = (input.category as string) || 'personal';
   const priority = (input.priority as string) || 'medium';
   const nextSteps = input.next_steps as string[] | undefined;
+  const context = execContext.aiContext;
 
   if (!title || !type || !summary) {
     return 'Fehler: Titel, Typ und Zusammenfassung sind erforderlich.';
   }
 
-  logger.debug('Tool: create_idea', { title, type, context: currentContext });
+  logger.debug('Tool: create_idea', { title, type, context });
 
   try {
     const id = uuidv4();
@@ -107,12 +121,12 @@ async function handleCreateIdea(input: Record<string, unknown>): Promise<string>
 
     // Insert into database
     await queryContext(
-      currentContext,
+      context,
       `INSERT INTO ideas (id, context, title, type, category, priority, summary, next_steps, embedding, raw_transcript)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         id,
-        currentContext,
+        context,
         title,
         type,
         category,
@@ -140,23 +154,28 @@ async function handleCreateIdea(input: Record<string, unknown>): Promise<string>
 
 /**
  * Get related ideas handler
+ * Uses request-scoped context for safe parallel execution
  */
-async function handleGetRelated(input: Record<string, unknown>): Promise<string> {
+async function handleGetRelated(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
   const ideaId = input.idea_id as string;
   const relationshipTypes = input.relationship_types as string[] | undefined;
+  const context = execContext.aiContext;
 
   if (!ideaId) {
     return 'Fehler: Keine Idee-ID angegeben.';
   }
 
-  logger.debug('Tool: get_related_ideas', { ideaId, relationshipTypes });
+  logger.debug('Tool: get_related_ideas', { ideaId, relationshipTypes, context });
 
   try {
     // Get the source idea first
     const sourceResult = await queryContext(
-      currentContext,
+      context,
       `SELECT id, title, summary FROM ideas WHERE id = $1 AND context = $2`,
-      [ideaId, currentContext]
+      [ideaId, context]
     );
 
     if (sourceResult.rows.length === 0) {
@@ -180,7 +199,7 @@ async function handleGetRelated(input: Record<string, unknown>): Promise<string>
         AND i.is_archived = false
     `;
 
-    const params: (string | string[])[] = [ideaId, currentContext];
+    const params: (string | string[])[] = [ideaId, context];
 
     if (relationshipTypes && relationshipTypes.length > 0) {
       connectionQuery += ` AND kc.relationship_type = ANY($3)`;
@@ -189,13 +208,13 @@ async function handleGetRelated(input: Record<string, unknown>): Promise<string>
 
     connectionQuery += ` ORDER BY kc.strength DESC LIMIT 10`;
 
-    const relatedResult = await queryContext(currentContext, connectionQuery, params);
+    const relatedResult = await queryContext(context, connectionQuery, params);
 
     if (relatedResult.rows.length === 0) {
       return `Keine verbundenen Ideen für "${source.title}" gefunden.`;
     }
 
-    const formatted = relatedResult.rows.map((r: any, i: number) =>
+    const formatted = relatedResult.rows.map((r: { title: string; relationship_type: string; strength: number; summary?: string }, i: number) =>
       `${i + 1}. **${r.title}** (${r.relationship_type}, Stärke: ${(r.strength * 100).toFixed(0)}%)\n   ${r.summary || 'Keine Zusammenfassung'}`
     ).join('\n\n');
 
@@ -208,8 +227,12 @@ async function handleGetRelated(input: Record<string, unknown>): Promise<string>
 
 /**
  * Calculate handler (safe math evaluation)
+ * Context not used but included for consistent handler signature
  */
-async function handleCalculate(input: Record<string, unknown>): Promise<string> {
+async function handleCalculate(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
   const expression = input.expression as string;
 
   if (!expression) {
@@ -234,13 +257,14 @@ async function handleCalculate(input: Record<string, unknown>): Promise<string> 
     }
 
     return `${expression} = **${result}**`;
-  } catch (error) {
+  } catch {
     return `Fehler: Ungültiger mathematischer Ausdruck "${expression}"`;
   }
 }
 
 /**
  * Remember handler - stores information in long-term memory
+ * Uses request-scoped context for safe parallel execution
  *
  * Integrates with HiMeS Long-Term Memory layer to persist:
  * - User preferences
@@ -249,10 +273,14 @@ async function handleCalculate(input: Record<string, unknown>): Promise<string> 
  * - Goals and objectives
  * - Contextual information
  */
-async function handleRemember(input: Record<string, unknown>): Promise<string> {
+async function handleRemember(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
   const content = input.content as string;
   const factType = (input.fact_type as string) || 'knowledge';
   const confidence = (input.confidence as number) || 0.8;
+  const context = execContext.aiContext;
 
   if (!content) {
     return 'Fehler: Kein Inhalt zum Merken angegeben.';
@@ -263,11 +291,11 @@ async function handleRemember(input: Record<string, unknown>): Promise<string> {
     return `Fehler: Ungültiger Fakt-Typ. Erlaubt: ${validFactTypes.join(', ')}`;
   }
 
-  logger.debug('Tool: remember', { factType, confidence, context: currentContext });
+  logger.debug('Tool: remember', { factType, confidence, context });
 
   try {
     // Store in long-term memory
-    await longTermMemory.addFact(currentContext, {
+    await longTermMemory.addFact(context, {
       factType: factType as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
       content,
       confidence: Math.min(1.0, Math.max(0.0, confidence)),
@@ -300,21 +328,26 @@ Ich werde mich daran erinnern und diese Information in zukünftigen Gesprächen 
 
 /**
  * Recall handler - searches episodic and long-term memory
+ * Uses request-scoped context for safe parallel execution
  *
  * Retrieves relevant memories from:
  * - Episodic Memory: Past conversations and interactions
  * - Long-Term Memory: Stored facts, patterns, and significant interactions
  */
-async function handleRecall(input: Record<string, unknown>): Promise<string> {
+async function handleRecall(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
   const query = input.query as string;
   const memoryType = (input.memory_type as string) || 'all';
   const limit = Math.min((input.limit as number) || 5, 10);
+  const context = execContext.aiContext;
 
   if (!query) {
     return 'Fehler: Keine Suchanfrage angegeben.';
   }
 
-  logger.debug('Tool: recall', { query, memoryType, limit, context: currentContext });
+  logger.debug('Tool: recall', { query, memoryType, limit, context });
 
   try {
     const results: string[] = [];
@@ -323,7 +356,7 @@ async function handleRecall(input: Record<string, unknown>): Promise<string> {
 
     // Retrieve from Episodic Memory (past conversations)
     if (memoryType === 'episodes' || memoryType === 'all') {
-      const episodes = await episodicMemory.retrieve(query, currentContext, { limit });
+      const episodes = await episodicMemory.retrieve(query, context, { limit });
 
       if (episodes.length > 0) {
         episodeCount = episodes.length;
@@ -342,7 +375,7 @@ async function handleRecall(input: Record<string, unknown>): Promise<string> {
 
     // Retrieve from Long-Term Memory (stored facts)
     if (memoryType === 'facts' || memoryType === 'all') {
-      const longTermResults = await longTermMemory.retrieve(currentContext, query);
+      const longTermResults = await longTermMemory.retrieve(context, query);
 
       if (longTermResults.facts.length > 0) {
         factCount = longTermResults.facts.length;

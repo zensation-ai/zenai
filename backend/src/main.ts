@@ -311,9 +311,17 @@ app.use(errorHandler);
 // Setup graceful shutdown for database connections
 setupGracefulShutdown();
 
-// Start server
-app.listen(PORT, async () => {
-  // Phase Security Sprint 4: Initialize Secrets Manager first
+// ===========================================
+// Server Startup
+// ===========================================
+
+/**
+ * Initialize and start the server
+ * Ensures secrets are validated BEFORE server accepts requests
+ */
+async function startServer(): Promise<void> {
+  // Phase Security Sprint 4: Initialize Secrets Manager BEFORE server starts
+  // This prevents the server from accepting requests with invalid configuration
   try {
     await secretsManager.initialize();
     logger.info('SecretsManager initialized successfully');
@@ -322,8 +330,10 @@ app.listen(PORT, async () => {
     process.exit(1);
   }
 
-  // Get secrets health status for startup display
-  const secretsHealth = secretsManager.getHealthSummary();
+  // Start server after secrets are validated
+  app.listen(PORT, async () => {
+    // Get secrets health status for startup display
+    const secretsHealth = secretsManager.getHealthSummary();
   const secretsDbStatus = secretsManager.getDatabaseStatus();
   const aiStatus = secretsManager.getAIProviderStatus();
   const cacheStatus = secretsManager.getCacheStatus();
@@ -503,4 +513,12 @@ Phase 4 APIs:
   } catch (error) {
     logger.error('AI Tool Handlers registration failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
   }
+  });
+}
+
+// Start the server
+startServer().catch((error) => {
+  logger.error('FATAL: Server startup failed', error instanceof Error ? error : undefined);
+  console.error('Server startup failed:', error);
+  process.exit(1);
 });
