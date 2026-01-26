@@ -79,7 +79,7 @@ describe('GeneralChat Component', () => {
     });
 
     // Mock axios.isCancel
-    mockedAxios.isCancel = vi.fn(() => false);
+    mockedAxios.isCancel = vi.fn((_value: unknown) => false);
   });
 
   afterEach(() => {
