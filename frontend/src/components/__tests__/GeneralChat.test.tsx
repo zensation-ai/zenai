@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import { GeneralChat } from '../GeneralChat';
@@ -44,6 +44,35 @@ vi.mock('../../utils/aiPersonality', () => ({
 const createMockFile = (name: string = 'test.png'): File => {
   const content = new Uint8Array(1024);
   return new File([content], name, { type: 'image/png' });
+};
+
+// Helper to upload files using fireEvent (more robust for hidden inputs)
+const uploadFiles = (input: HTMLInputElement, files: File | File[]) => {
+  const fileList = Array.isArray(files) ? files : [files];
+  Object.defineProperty(input, 'files', {
+    value: fileList,
+    configurable: true,
+  });
+  fireEvent.change(input);
+};
+
+// Helper to create a mock SSE response for streaming
+const createMockSSEResponse = (content: string = 'Test response') => {
+  const encoder = new TextEncoder();
+  const sseData = `data: ${JSON.stringify({ content })}\n\n`;
+
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(sseData));
+        controller.close();
+      },
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+    }
+  );
 };
 
 describe('GeneralChat Component', () => {
@@ -81,6 +110,9 @@ describe('GeneralChat Component', () => {
     // Mock axios.isCancel (type predicate requires any cast)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mockedAxios as any).isCancel = vi.fn(() => false);
+
+    // Mock fetch for SSE streaming endpoint
+    global.fetch = vi.fn().mockResolvedValue(createMockSSEResponse());
   });
 
   afterEach(() => {
@@ -247,7 +279,6 @@ describe('GeneralChat Component', () => {
 
   describe('Vision Integration', () => {
     it('should enable send button when only image is selected', async () => {
-      const user = userEvent.setup();
       render(<GeneralChat context="personal" />);
 
       await waitFor(() => {
@@ -258,7 +289,7 @@ describe('GeneralChat Component', () => {
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createMockFile();
 
-      await user.upload(fileInput, file);
+      uploadFiles(fileInput, file);
 
       await waitFor(() => {
         const sendButton = screen.getByRole('button', { name: /Nachricht senden/i });
@@ -267,7 +298,6 @@ describe('GeneralChat Component', () => {
     });
 
     it('should change placeholder when image is selected', async () => {
-      const user = userEvent.setup();
       render(<GeneralChat context="personal" />);
 
       await waitFor(() => {
@@ -277,7 +307,7 @@ describe('GeneralChat Component', () => {
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createMockFile();
 
-      await user.upload(fileInput, file);
+      uploadFiles(fileInput, file);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frage zum Bild/i)).toBeInTheDocument();
@@ -294,7 +324,12 @@ describe('GeneralChat Component', () => {
 
       // Select image
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      await user.upload(fileInput, createMockFile());
+      uploadFiles(fileInput, createMockFile());
+
+      // Wait for placeholder to change indicating image is selected
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Frage zum Bild/i)).toBeInTheDocument();
+      });
 
       // Type message
       const input = screen.getByPlaceholderText(/Frage zum Bild/i);
@@ -324,7 +359,7 @@ describe('GeneralChat Component', () => {
       });
 
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      await user.upload(fileInput, createMockFile());
+      uploadFiles(fileInput, createMockFile());
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frage zum Bild/i)).toBeInTheDocument();
@@ -502,10 +537,12 @@ describe('GeneralChat Component', () => {
     it('should show typing indicator while sending', async () => {
       const user = userEvent.setup();
 
-      // Make API call hang
-      mockedAxios.post.mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 5000))
-      );
+      // First call creates session, second call (vision upload) hangs
+      mockedAxios.post
+        .mockResolvedValueOnce({
+          data: { data: { session: { id: 'test-session-id' } } },
+        })
+        .mockImplementation(() => new Promise(() => {})); // Vision upload hangs
 
       render(<GeneralChat context="personal" />);
 
@@ -513,8 +550,17 @@ describe('GeneralChat Component', () => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
       });
 
-      const input = screen.getByPlaceholderText(/Frag mich etwas/i);
-      await user.type(input, 'Test{Enter}');
+      // Upload image to trigger vision endpoint (uses axios, not fetch streaming)
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      uploadFiles(fileInput, createMockFile());
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText(/Frage zum Bild/i)).toBeInTheDocument();
+      });
+
+      // Send with image - this uses axios.post which we made hang
+      const sendButton = screen.getByRole('button', { name: /Nachricht senden/i });
+      await user.click(sendButton);
 
       await waitFor(() => {
         expect(screen.getByText('Thinking...')).toBeInTheDocument();
@@ -610,7 +656,8 @@ describe('GeneralChat Component', () => {
     it('should restore input on send error', async () => {
       const user = userEvent.setup();
 
-      mockedAxios.post.mockRejectedValueOnce(new Error('Network error'));
+      // Mock fetch to reject (text messages use SSE streaming via fetch)
+      vi.mocked(global.fetch).mockRejectedValueOnce(new Error('Network error'));
 
       render(<GeneralChat context="personal" />);
 
