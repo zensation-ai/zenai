@@ -304,6 +304,77 @@ function hashText(text: string): string {
 // Cache Stats (for monitoring)
 // ===========================================
 
+const STATS_KEY_HITS = 'cache:stats:response:hits';
+const STATS_KEY_MISSES = 'cache:stats:response:misses';
+
+/**
+ * Increment cache hit counter
+ */
+export async function incrementCacheHits(): Promise<void> {
+  const client = getClient();
+  if (!client || !isConnected) return;
+
+  try {
+    await client.incr(STATS_KEY_HITS);
+  } catch {
+    // Silently ignore - stats are not critical
+  }
+}
+
+/**
+ * Increment cache miss counter
+ */
+export async function incrementCacheMisses(): Promise<void> {
+  const client = getClient();
+  if (!client || !isConnected) return;
+
+  try {
+    await client.incr(STATS_KEY_MISSES);
+  } catch {
+    // Silently ignore - stats are not critical
+  }
+}
+
+/**
+ * Get response cache hit/miss statistics
+ */
+export async function getResponseCacheStats(): Promise<{
+  hits: number;
+  misses: number;
+  hitRate: string;
+}> {
+  const client = getClient();
+  if (!client || !isConnected) {
+    return { hits: 0, misses: 0, hitRate: '0%' };
+  }
+
+  try {
+    const [hitsStr, missesStr] = await client.mget(STATS_KEY_HITS, STATS_KEY_MISSES);
+    const hits = parseInt(hitsStr || '0', 10);
+    const misses = parseInt(missesStr || '0', 10);
+    const total = hits + misses;
+    const hitRate = total > 0 ? `${((hits / total) * 100).toFixed(1)}%` : '0%';
+
+    return { hits, misses, hitRate };
+  } catch {
+    return { hits: 0, misses: 0, hitRate: '0%' };
+  }
+}
+
+/**
+ * Reset response cache statistics
+ */
+export async function resetResponseCacheStats(): Promise<void> {
+  const client = getClient();
+  if (!client || !isConnected) return;
+
+  try {
+    await client.del(STATS_KEY_HITS, STATS_KEY_MISSES);
+  } catch {
+    // Silently ignore
+  }
+}
+
 export async function getCacheStats(): Promise<{
   connected: boolean;
   keys?: number;
