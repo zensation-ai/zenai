@@ -141,7 +141,27 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     transcript = transcriptionResult.text;
   } else if (audioBase64) {
     // Base64 audio (JSON body)
-    const buffer = Buffer.from(audioBase64, 'base64');
+    // Validate base64 string format before decoding
+    if (typeof audioBase64 !== 'string' || audioBase64.length === 0) {
+      throw new ValidationError('Invalid audioBase64: must be a non-empty string');
+    }
+    // Basic base64 format validation
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    const cleanBase64 = audioBase64.replace(/\s/g, '');
+    if (!base64Regex.test(cleanBase64)) {
+      throw new ValidationError('Invalid audioBase64: not a valid base64 string');
+    }
+    let buffer: Buffer;
+    try {
+      buffer = Buffer.from(cleanBase64, 'base64');
+      // Check if buffer has actual content (at least a minimal audio header)
+      if (buffer.length < 100) {
+        throw new ValidationError('Invalid audioBase64: decoded data too small for valid audio');
+      }
+    } catch (error) {
+      if (error instanceof ValidationError) throw error;
+      throw new ValidationError('Invalid audioBase64: failed to decode base64 data');
+    }
     const transcriptionResult = await transcribeAudio(buffer, 'audio.webm');
     transcript = transcriptionResult.text;
   } else {

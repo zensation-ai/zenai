@@ -275,7 +275,9 @@ notificationsRouter.post('/send', apiKeyAuth, requireScope('admin'), asyncHandle
  */
 notificationsRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const limit = parseInt(req.query.limit as string) || 20;
+  // Validate and constrain limit to prevent excessive queries
+  const parsedLimit = parseInt(req.query.limit as string, 10);
+  const limit = Number.isNaN(parsedLimit) ? 20 : Math.min(Math.max(parsedLimit, 1), 100);
 
   const result = await queryContext(
     ctx,

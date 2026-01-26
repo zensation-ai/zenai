@@ -235,7 +235,7 @@ async function handleCalculate(
 ): Promise<string> {
   const expression = input.expression as string;
 
-  if (!expression) {
+  if (!expression || typeof expression !== 'string') {
     return 'Fehler: Kein mathematischer Ausdruck angegeben.';
   }
 
@@ -243,16 +243,34 @@ async function handleCalculate(
 
   try {
     // Safe math evaluation - only allow numbers and basic operators
-    const sanitized = expression.replace(/[^0-9+\-*/().%\s]/g, '');
+    const sanitized = expression.replace(/[^0-9+\-*/().%\s,]/g, '');
 
     if (sanitized !== expression.replace(/\s/g, '')) {
       return 'Fehler: Ungültige Zeichen im Ausdruck. Nur Zahlen und +, -, *, /, (), % erlaubt.';
     }
 
+    // Check for valid expression structure
+    if (!sanitized.trim() || !/\d/.test(sanitized)) {
+      return 'Fehler: Ungültiger mathematischer Ausdruck.';
+    }
+
+    // Check for balanced parentheses
+    let parenCount = 0;
+    for (const char of sanitized) {
+      if (char === '(') parenCount++;
+      if (char === ')') parenCount--;
+      if (parenCount < 0) {
+        return 'Fehler: Unbalancierte Klammern im Ausdruck.';
+      }
+    }
+    if (parenCount !== 0) {
+      return 'Fehler: Unbalancierte Klammern im Ausdruck.';
+    }
+
     // Use Function constructor for evaluation (safer than eval but still limited)
     const result = Function(`"use strict"; return (${sanitized})`)();
 
-    if (typeof result !== 'number' || !isFinite(result)) {
+    if (typeof result !== 'number' || !Number.isFinite(result)) {
       return 'Fehler: Das Ergebnis ist keine gültige Zahl.';
     }
 
