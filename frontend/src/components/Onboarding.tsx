@@ -60,7 +60,7 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
           setIsTyping(false);
           clearInterval(timer);
         }
-      }, 30);
+      }, 50);
       return () => clearInterval(timer);
     }
   }, [currentStep, isTyping, introText]);
