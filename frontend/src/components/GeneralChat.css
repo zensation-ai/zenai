@@ -555,3 +555,72 @@
     animation: none;
   }
 }
+
+/* ===========================================
+   Vision/Image Upload Integration
+   =========================================== */
+
+/* Image indicator in messages */
+.chat-message .image-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+
+.chat-message.user .image-indicator {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.image-indicator svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Input wrapper with image upload */
+.chat-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+/* Adjust input when images are selected */
+.chat-input-wrapper .image-upload-compact {
+  flex-shrink: 0;
+}
+
+/* Image preview tooltip */
+.chat-input-wrapper .image-upload-preview-strip {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 0.5rem;
+  padding: 0.35rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Style adjustment for compact upload in chat */
+.chat-input-area .image-upload-compact {
+  position: relative;
+}
+
+.chat-input-area .image-upload-button {
+  width: 40px;
+  height: 40px;
+}
+
+@media (max-width: 768px) {
+  .chat-input-area .image-upload-button {
+    width: 44px;
+    height: 44px;
+  }
+}

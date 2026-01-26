@@ -65,6 +65,10 @@ import proactiveRouter from './routes/proactive';
 import { generalChatRouter } from './routes/general-chat';
 // Phase 30: Memory Admin - HiMeS Memory Management
 import { memoryAdminRouter } from './routes/memory-admin';
+// Phase 31: Vision Integration - Claude Vision API
+import { visionRouter } from './routes/vision';
+// Phase 31: Topic Enhancement - Advanced Topic Analysis
+import { topicEnhancementRouter } from './routes/topic-enhancement';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -264,6 +268,12 @@ app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessi
 // Phase 30: Memory Admin - HiMeS Memory Management
 app.use('/api/memory', memoryAdminRouter);  // /api/memory/status, /api/memory/consolidate, /api/memory/decay, etc.
 
+// Phase 31: Vision Integration - Claude Vision API
+app.use('/api/vision', visionRouter);  // /api/vision/analyze, /api/vision/extract-text, /api/vision/describe, etc.
+
+// Phase 31: Topic Enhancement - Advanced Topic Analysis
+app.use('/api/topics', topicEnhancementRouter);  // /api/topics/enhanced, /api/topics/quality, /api/topics/similar, etc.
+
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"
 // Routes integriert in evolutionRouter: /api/:context/evolution/learning-curve, /api/:context/evolution/domain-strengths, etc.
 
@@ -319,7 +329,7 @@ app.listen(PORT, async () => {
   const cacheStatus = secretsManager.getCacheStatus();
 
   console.log(`
-Personal AI System - Backend (Phase 30)
+Personal AI System - Backend (Phase 31)
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs
@@ -330,6 +340,16 @@ Database:    ${secretsDbStatus.configured ? secretsDbStatus.type.toUpperCase() :
 AI:          ${aiStatus.configured ? aiStatus.providers.join(', ').toUpperCase() : 'NOT CONFIGURED'}
 Cache:       ${cacheStatus.type.toUpperCase()}
 ========================================================
+Phase 31 APIs (Vision Integration):
+  - Vision Status:     GET /api/vision/status
+  - Analyze Image:     POST /api/vision/analyze
+  - Extract Text (OCR):POST /api/vision/extract-text
+  - Extract Ideas:     POST /api/vision/extract-ideas
+  - Describe Image:    POST /api/vision/describe
+  - Ask About Image:   POST /api/vision/ask
+  - Compare Images:    POST /api/vision/compare
+  - Process Document:  POST /api/vision/document
+
 Phase 30 APIs (Memory Scheduler):
   - Scheduler Status:  GET /api/memory/status
   - Trigger Consolidate: POST /api/memory/consolidate
