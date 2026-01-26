@@ -191,6 +191,11 @@ app.use(csrfProtection);
 // Phase 12: API Documentation
 setupSwagger(app);
 
+// DEBUG: Test route to verify routing works
+app.get('/api/test-no-auth', (_req, res) => {
+  res.json({ success: true, message: 'This route has no auth middleware' });
+});
+
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);
 app.use('/api/voice-memo', voiceMemoRouter);
