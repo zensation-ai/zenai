@@ -11,6 +11,10 @@ import { logger } from '../utils/logger';
 import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable } from './claude';
 import { getUnifiedContext } from './business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from './memory';
+import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode, ChatMode, ModeDetectionResult } from './chat-modes';
+import { executeWithTools } from './claude/tool-use';
+import { setToolContext } from './tool-handlers';
+import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
 
 // ===========================================
 // Types
@@ -34,6 +38,52 @@ export interface ChatMessage {
 
 export interface ChatSessionWithMessages extends ChatSession {
   messages: ChatMessage[];
+}
+
+/**
+ * RAG quality details
+ */
+export interface RAGQualityMetrics {
+  used: boolean;
+  documentsCount: number;
+  confidence: number;
+  methodsUsed: string[];
+  timing: {
+    total: number;
+    hyde?: number;
+    agentic?: number;
+    crossEncoder?: number;
+  };
+  topResultScore: number;
+  hydeUsed: boolean;
+  crossEncoderUsed: boolean;
+}
+
+/**
+ * Response metadata from AI processing
+ */
+export interface ResponseMetadata {
+  mode: ChatMode;
+  modeConfidence: number;
+  modeReasoning: string;
+  toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }>;
+  ragUsed: boolean;
+  ragDocumentsCount: number;
+  ragQuality?: RAGQualityMetrics;
+  processingTimeMs: number;
+  memoryStats: {
+    longTermFacts: number;
+    episodesRetrieved: number;
+    workingMemorySlots: number;
+  };
+}
+
+/**
+ * Enhanced response with metadata
+ */
+export interface EnhancedResponse {
+  content: string;
+  metadata: ResponseMetadata;
 }
 
 // ===========================================
@@ -260,15 +310,45 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
 /**
  * Generate AI response for a chat message
  * Uses HiMeS 4-layer memory architecture for enhanced context
+ *
+ * ENHANCED: Now uses intelligent mode detection and tool execution
  */
 export async function generateResponse(
   sessionId: string,
   userMessage: string,
   contextType: 'personal' | 'work' = 'personal'
 ): Promise<string> {
+  const enhanced = await generateEnhancedResponse(sessionId, userMessage, contextType);
+  return enhanced.content;
+}
+
+/**
+ * Generate AI response with full metadata
+ * Uses intelligent mode detection, tool execution, and RAG enhancement
+ */
+export async function generateEnhancedResponse(
+  sessionId: string,
+  userMessage: string,
+  contextType: 'personal' | 'work' = 'personal'
+): Promise<EnhancedResponse> {
+  const startTime = Date.now();
+
   if (!isClaudeAvailable()) {
     throw new Error('Claude API ist nicht verfügbar');
   }
+
+  // Set tool context for tool handlers
+  setToolContext(contextType);
+
+  // Detect optimal processing mode
+  const modeResult = detectChatMode(userMessage);
+
+  logger.info('Chat mode detected', {
+    sessionId,
+    mode: modeResult.mode,
+    confidence: modeResult.confidence,
+    reasoning: modeResult.reasoning,
+  });
 
   // Get conversation history
   const messagesResult = await query(`
@@ -351,33 +431,214 @@ export async function generateResponse(
     }
   }
 
+  // Check if RAG enhancement is needed
+  const ragDecision = shouldEnhanceWithRAG(userMessage, modeResult.mode);
+  let ragDocumentsCount = 0;
+  let ragQuality: RAGQualityMetrics | undefined;
+
+  if (ragDecision.shouldUse) {
+    try {
+      // Use full RAG for rag_enhanced mode, quick for others
+      const useDeepRAG = modeResult.mode === 'rag_enhanced' || ragDecision.urgency === 'required';
+
+      let ragResults: EnhancedResult[];
+      let ragMetadata: EnhancedRAGResult | undefined;
+
+      if (useDeepRAG) {
+        // Full RAG with HyDE + Cross-Encoder for knowledge-intensive queries
+        ragMetadata = await enhancedRAG.retrieve(userMessage, contextType, {
+          enableHyDE: true,
+          autoDetectHyDE: true,
+          enableCrossEncoder: true,
+          crossEncodeTop: 10,
+          minRelevance: 0.35,
+          maxResults: 8,
+        });
+        ragResults = ragMetadata.results;
+
+        // Build quality metrics
+        ragQuality = {
+          used: true,
+          documentsCount: ragResults.length,
+          confidence: ragMetadata.confidence,
+          methodsUsed: ragMetadata.methodsUsed,
+          timing: ragMetadata.timing,
+          topResultScore: ragResults[0]?.score || 0,
+          hydeUsed: ragMetadata.debug?.hydeUsed || false,
+          crossEncoderUsed: ragMetadata.methodsUsed.includes('cross_encoder'),
+        };
+
+        logger.info('Deep RAG retrieval completed', {
+          sessionId,
+          confidence: ragMetadata.confidence,
+          methods: ragMetadata.methodsUsed,
+          timing: ragMetadata.timing,
+        });
+      } else {
+        // Quick RAG for supplementary context
+        ragResults = await enhancedRAG.quickRetrieve(userMessage, contextType, 5);
+
+        ragQuality = {
+          used: true,
+          documentsCount: ragResults.length,
+          confidence: ragResults.length > 0 ? ragResults[0].score : 0,
+          methodsUsed: ['agentic'],
+          timing: { total: 0 },
+          topResultScore: ragResults[0]?.score || 0,
+          hydeUsed: false,
+          crossEncoderUsed: false,
+        };
+      }
+
+      if (ragResults.length > 0) {
+        ragDocumentsCount = ragResults.length;
+
+        // Format context with relevance scores for high-quality results
+        const ragContext = ragResults.map(r => {
+          const scoreLabel = r.score >= 0.8 ? '🟢' : r.score >= 0.6 ? '🟡' : '🔵';
+          const relevanceInfo = r.relevanceReason ? ` - ${r.relevanceReason}` : '';
+          return `${scoreLabel} **${r.title}**: ${r.summary || 'Keine Zusammenfassung'}${relevanceInfo}`;
+        }).join('\n');
+
+        // Add source information for transparency
+        const methodInfo = ragQuality?.methodsUsed.length > 1
+          ? ` (via ${ragQuality.methodsUsed.join(' + ')})`
+          : '';
+
+        systemPrompt += `\n\n[RELEVANTE IDEEN${methodInfo}]\n${ragContext}\n\nNutze diese Informationen wenn relevant für die Antwort. Bei hoher Relevanz (🟢) zitiere die Quelle.`;
+
+        logger.debug('RAG enhancement applied', {
+          sessionId,
+          documentsRetrieved: ragDocumentsCount,
+          reason: ragDecision.reason,
+          confidence: ragQuality?.confidence,
+          methods: ragQuality?.methodsUsed,
+        });
+      }
+    } catch (error) {
+      logger.warn('RAG enhancement failed', { sessionId, error });
+      ragQuality = {
+        used: false,
+        documentsCount: 0,
+        confidence: 0,
+        methodsUsed: [],
+        timing: { total: 0 },
+        topResultScore: 0,
+        hydeUsed: false,
+        crossEncoderUsed: false,
+      };
+    }
+  }
+
   logger.info('Generating chat response', {
     sessionId,
     historyLength: conversationHistory.length,
     messageLength: userMessage.length,
+    mode: modeResult.mode,
     memoryStats,
+    ragDocuments: ragDocumentsCount,
   });
 
-  // Generate response using Claude with conversation history
-  const response = await generateWithConversationHistory(
-    systemPrompt,
-    userMessage,
-    conversationHistory,
-    { maxTokens: 2000 }
-  );
+  let response: string;
+  let toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }> = [];
 
-  return response;
+  // Process based on detected mode
+  if (modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent') {
+    // Use tools for tool_assisted or agent modes
+    const tools = modeResult.suggestedTools || getDefaultToolsForMode(modeResult.mode);
+
+    try {
+      // Add tool usage instructions to system prompt
+      systemPrompt += `\n\n[WERKZEUG-MODUS]\nDu hast Zugriff auf Werkzeuge um dem Benutzer zu helfen. Nutze sie proaktiv wenn sinnvoll.`;
+
+      // Build messages for tool execution
+      const messages = conversationHistory.map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      }));
+      messages.push({ role: 'user' as const, content: userMessage });
+
+      const toolResult = await executeWithTools(
+        messages,
+        tools.length > 0 ? tools : 'all',
+        {
+          systemPrompt,
+          maxIterations: modeResult.mode === 'agent' ? 5 : 3,
+          temperature: 0.7,
+        }
+      );
+
+      response = toolResult.response;
+      toolsCalled = toolResult.toolsCalled;
+
+      logger.info('Tool-assisted response generated', {
+        sessionId,
+        toolsCalled: toolsCalled.map(t => t.name),
+        iterations: toolResult.iterations,
+      });
+    } catch (error) {
+      // Fallback to standard response on tool error
+      logger.warn('Tool execution failed, falling back to standard response', {
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown',
+      });
+
+      response = await generateWithConversationHistory(
+        systemPrompt,
+        userMessage,
+        conversationHistory,
+        { maxTokens: 2000 }
+      );
+    }
+  } else {
+    // Standard conversation or RAG-enhanced mode
+    response = await generateWithConversationHistory(
+      systemPrompt,
+      userMessage,
+      conversationHistory,
+      { maxTokens: 2000 }
+    );
+  }
+
+  const processingTimeMs = Date.now() - startTime;
+
+  return {
+    content: response,
+    metadata: {
+      mode: modeResult.mode,
+      modeConfidence: modeResult.confidence,
+      modeReasoning: modeResult.reasoning,
+      toolsCalled,
+      ragUsed: ragDocumentsCount > 0,
+      ragDocumentsCount,
+      ragQuality,
+      processingTimeMs,
+      memoryStats,
+    },
+  };
+}
+
+/**
+ * Result from sendMessage with optional metadata
+ */
+export interface SendMessageResult {
+  userMessage: ChatMessage;
+  assistantMessage: ChatMessage;
+  metadata?: ResponseMetadata;
 }
 
 /**
  * Send a message and get AI response (combined operation)
  * Records the conversation as an episodic memory for future context
+ *
+ * @param includeMetadata - If true, includes processing metadata in response
  */
 export async function sendMessage(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' = 'personal'
-): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage }> {
+  contextType: 'personal' | 'work' = 'personal',
+  includeMetadata: boolean = false
+): Promise<SendMessageResult> {
   // Store user message
   const storedUserMessage = await addMessage(sessionId, 'user', userMessage);
 
@@ -391,8 +652,17 @@ export async function sendMessage(
     logger.debug('Failed to add user interaction to memory', { sessionId, error });
   }
 
-  // Generate AI response
-  const aiResponse = await generateResponse(sessionId, userMessage, contextType);
+  // Generate AI response (with or without metadata)
+  let aiResponse: string;
+  let metadata: ResponseMetadata | undefined;
+
+  if (includeMetadata) {
+    const enhancedResult = await generateEnhancedResponse(sessionId, userMessage, contextType);
+    aiResponse = enhancedResult.content;
+    metadata = enhancedResult.metadata;
+  } else {
+    aiResponse = await generateResponse(sessionId, userMessage, contextType);
+  }
 
   // Store AI response
   const storedAssistantMessage = await addMessage(sessionId, 'assistant', aiResponse);
@@ -413,11 +683,14 @@ export async function sendMessage(
     sessionId,
     userMessageId: storedUserMessage.id,
     assistantMessageId: storedAssistantMessage.id,
+    mode: metadata?.mode,
+    toolsCalled: metadata?.toolsCalled.map(t => t.name),
   });
 
   return {
     userMessage: storedUserMessage,
     assistantMessage: storedAssistantMessage,
+    metadata,
   };
 }
 
