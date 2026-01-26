@@ -55,10 +55,11 @@
 
 **Code Execution Sandbox:**
 
-- Docker-basierte sichere Code-Ausführung
+- Dual-Provider: Docker (local) oder Judge0 (production)
 - Unterstützt Python 3.11, Node.js 20, Bash
 - Safety-Validator mit 77 Sicherheitschecks
 - Resource Limits (CPU, Memory, PIDs, Network)
+- Automatische Provider-Auswahl basierend auf Umgebung
 - Claude-basierter Code-Generator
 
 ## Key Files
@@ -154,11 +155,17 @@ ENABLE_MEMORY_DECAY=true
 CLAUDE_MODEL=claude-sonnet-4-20250514
 MAX_TOKENS=4096
 
-# Optional - Code Execution
+# Optional - Code Execution (Local Docker)
 ENABLE_CODE_EXECUTION=true
 CODE_EXECUTION_TIMEOUT=30000
 CODE_EXECUTION_MEMORY_LIMIT=256m
 CODE_SANDBOX_DIR=/tmp/code-sandbox
+EXECUTOR_PROVIDER=docker              # or 'judge0' to force specific provider
+
+# Optional - Code Execution (Production Judge0)
+JUDGE0_API_KEY=your-rapidapi-key      # Required for production
+JUDGE0_API_URL=https://judge0-ce.p.rapidapi.com
+JUDGE0_RAPIDAPI_HOST=judge0-ce.p.rapidapi.com
 ```
 
 ## Testing

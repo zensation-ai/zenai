@@ -1,8 +1,9 @@
 /**
  * Code Execution Module
  *
- * Provides secure code execution capabilities using Docker sandboxing.
- * Supports Python, Node.js, and Bash with automatic safety validation.
+ * Provides secure code execution capabilities using Docker (local)
+ * or Judge0 API (production). Supports Python, Node.js, and Bash
+ * with automatic safety validation.
  *
  * @module services/code-execution
  *
@@ -72,6 +73,48 @@ export {
 } from './execution-service';
 
 // ===========================================
+// Provider Exports
+// ===========================================
+
+export type {
+  ExecutorProvider,
+  ExecutorProviderType,
+  ProviderConfig,
+  DockerConfig,
+  Judge0Config,
+} from './executor-provider';
+
+export {
+  JUDGE0_LANGUAGE_IDS,
+  JUDGE0_LANGUAGE_NAMES,
+  DEFAULT_DOCKER_CONFIG,
+  DEFAULT_JUDGE0_CONFIG,
+  getPreferredProvider,
+} from './executor-provider';
+
+export {
+  ExecutorFactory,
+  getExecutorFactory,
+  getExecutor,
+  isExecutionAvailable,
+} from './executor-factory';
+
+// ===========================================
+// Executor Exports
+// ===========================================
+
+export {
+  SandboxExecutor,
+  getSandboxExecutor,
+  isSandboxAvailable,
+} from './sandbox-executor';
+
+export {
+  Judge0Executor,
+  getJudge0Executor,
+} from './judge0-executor';
+
+// ===========================================
 // Component Exports
 // ===========================================
 
@@ -86,9 +129,3 @@ export {
   quickSafetyCheck,
   formatSafetyReport,
 } from './safety-validator';
-
-export {
-  SandboxExecutor,
-  getSandboxExecutor,
-  isSandboxAvailable,
-} from './sandbox-executor';

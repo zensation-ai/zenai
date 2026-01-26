@@ -29,6 +29,7 @@ import {
   LANGUAGE_CONFIGS,
   getLanguageConfig,
 } from './types';
+import { ExecutorProvider } from './executor-provider';
 
 // ===========================================
 // Executor Class
@@ -36,8 +37,10 @@ import {
 
 /**
  * Docker-based sandbox executor for secure code execution
+ * Implements ExecutorProvider interface for factory pattern
  */
-export class SandboxExecutor {
+export class SandboxExecutor implements ExecutorProvider {
+  readonly name = 'docker';
   private readonly tempDir: string;
   private readonly pullImages: boolean;
 
@@ -53,6 +56,13 @@ export class SandboxExecutor {
   ) {
     this.tempDir = tempDir;
     this.pullImages = pullImages;
+  }
+
+  /**
+   * Get supported languages for Docker execution
+   */
+  getSupportedLanguages(): SupportedLanguage[] {
+    return ['python', 'nodejs', 'bash'];
   }
 
   /**

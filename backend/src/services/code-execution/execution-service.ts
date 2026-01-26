@@ -4,7 +4,7 @@
  * High-level service that orchestrates the entire code execution flow:
  * 1. Code generation from task description
  * 2. Safety validation
- * 3. Sandboxed execution
+ * 3. Sandboxed execution (Docker or Judge0)
  * 4. Result formatting
  *
  * @module services/code-execution/execution-service
@@ -13,7 +13,7 @@
 import { logger } from '../../utils/logger';
 import { generateCode } from './code-generator';
 import { validateCode, formatSafetyReport } from './safety-validator';
-import { getSandboxExecutor, isSandboxAvailable } from './sandbox-executor';
+import { getExecutorFactory, isExecutionAvailable } from './executor-factory';
 import {
   SupportedLanguage,
   ExecuteCodeInput,
@@ -58,7 +58,7 @@ function getExecutionOptions(): Partial<ExecutionOptions> {
  * 1. Validates that code execution is available
  * 2. Generates code using Claude
  * 3. Validates the code for security
- * 4. Executes in a sandboxed Docker container
+ * 4. Executes in a sandboxed environment (Docker or Judge0)
  * 5. Returns formatted results
  *
  * @param input - The execution input with task, language, etc.
@@ -93,12 +93,15 @@ export async function executeCodeFromTask(
     };
   }
 
-  // Check Docker availability
-  const sandboxAvailable = await isSandboxAvailable();
-  if (!sandboxAvailable) {
+  // Check execution provider availability
+  const executorAvailable = await isExecutionAvailable();
+  if (!executorAvailable) {
+    const factory = getExecutorFactory();
+    const info = factory.getProviderInfo();
     return {
       success: false,
-      error: 'Docker sandbox is not available. Ensure Docker is running.',
+      error: `No execution provider available. Configure JUDGE0_API_KEY for production or ensure Docker is running for development.`,
+      errorDetails: `Provider info: ${JSON.stringify(info)}`,
     };
   }
 
@@ -128,16 +131,20 @@ export async function executeCodeFromTask(
       };
     }
 
-    // Step 3: Execute code in sandbox
-    logger.debug('Step 3: Executing code in sandbox');
-    const executor = getSandboxExecutor();
+    // Step 3: Execute code via provider
+    logger.debug('Step 3: Executing code');
+    const factory = getExecutorFactory();
+    const executor = await factory.getExecutor();
     const executionOptions = getExecutionOptions();
+
+    logger.debug('Using executor', { provider: executor.name });
     const result = await executor.execute(generated.code, language, executionOptions);
 
     // Step 4: Format and return results
     const totalTime = Date.now() - startTime;
     logger.info('Code execution completed', {
       success: result.success,
+      provider: executor.name,
       totalTimeMs: totalTime,
       executionTimeMs: result.executionTimeMs,
     });
@@ -209,11 +216,11 @@ export async function executeCodeDirect(
     };
   }
 
-  const sandboxAvailable = await isSandboxAvailable();
-  if (!sandboxAvailable) {
+  const executorAvailable = await isExecutionAvailable();
+  if (!executorAvailable) {
     return {
       success: false,
-      error: 'Docker sandbox is not available',
+      error: 'No execution provider available',
     };
   }
 
@@ -239,9 +246,12 @@ export async function executeCodeDirect(
       }
     }
 
-    // Execute
-    const executor = getSandboxExecutor();
+    // Execute via factory
+    const factory = getExecutorFactory();
+    const executor = await factory.getExecutor();
     const executionOptions = getExecutionOptions();
+
+    logger.debug('Using executor for direct execution', { provider: executor.name });
     const result = await executor.execute(code, language, executionOptions);
 
     return {
@@ -277,7 +287,8 @@ export async function executeCodeDirect(
 export async function checkCodeExecutionHealth(): Promise<{
   available: boolean;
   enabled: boolean;
-  dockerRunning: boolean;
+  provider: string | null;
+  providerType: string | null;
   error?: string;
 }> {
   const enabled = isCodeExecutionEnabled();
@@ -286,27 +297,31 @@ export async function checkCodeExecutionHealth(): Promise<{
     return {
       available: false,
       enabled: false,
-      dockerRunning: false,
+      provider: null,
+      providerType: null,
       error: 'Code execution is disabled',
     };
   }
 
   try {
-    const dockerRunning = await isSandboxAvailable();
+    const factory = getExecutorFactory();
+    await factory.initialize();
+    const info = factory.getProviderInfo();
 
     return {
-      available: dockerRunning,
+      available: info.available,
       enabled: true,
-      dockerRunning,
-      error: dockerRunning ? undefined : 'Docker is not running',
+      provider: info.name,
+      providerType: info.type,
+      error: info.available ? undefined : 'No execution provider available',
     };
   } catch (error) {
     return {
       available: false,
       enabled: true,
-      dockerRunning: false,
+      provider: null,
+      providerType: null,
       error: error instanceof Error ? error.message : String(error),
     };
   }
 }
-
