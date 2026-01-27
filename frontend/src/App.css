@@ -640,11 +640,12 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   white-space: nowrap;
-  background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 50%, #6bcf9f 100%);
+  /* Midnight Dark Petrol Theme */
+  background: linear-gradient(135deg, #1a535c 0%, #0d4955 50%, #0a3d47 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(107, 207, 159, 0.3);
+  text-shadow: 0 0 30px rgba(13, 73, 85, 0.4);
 }
 
 .header-center {
