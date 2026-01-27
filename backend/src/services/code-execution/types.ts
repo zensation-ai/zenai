@@ -304,7 +304,7 @@ export const MAX_INPUT_DATA_LENGTH = 100_000;
 export const TIMEOUT_EXIT_CODE = 124;
 
 /** Docker container name prefix */
-export const CONTAINER_PREFIX = 'ki-ab-sandbox';
+export const CONTAINER_PREFIX = 'zenai-sandbox';
 
 /** Temp directory for code files */
 export const CODE_SANDBOX_DIR = process.env.CODE_SANDBOX_DIR || '/tmp/code-sandbox';

@@ -15,7 +15,7 @@ enum DeepLink: Equatable {
     case settings
 
     static func from(url: URL) -> DeepLink? {
-        guard url.scheme == "personalai" else { return nil }
+        guard url.scheme == "zenai" || url.scheme == "personalai" else { return nil }
 
         let path = url.host ?? url.path
         let pathComponents = url.pathComponents.filter { $0 != "/" }
@@ -287,12 +287,12 @@ struct SplashView: View {
 
                 // App Name
                 VStack(spacing: 4) {
-                    Text("Personal AI Brain")
+                    Text("ZenAI")
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.zensationText)
 
-                    Text("Dein digitales Gedächtnis")
+                    Text("Enterprise AI by ZenSation")
                         .font(.subheadline)
                         .foregroundColor(.zensationTextMuted)
                 }

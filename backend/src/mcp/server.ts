@@ -1,7 +1,11 @@
 /**
- * MCP (Model Context Protocol) Server for KI-AB Personal AI Brain
+ * MCP (Model Context Protocol) Server for ZenAI Enterprise Platform
  *
- * Exposes the Personal AI Brain functionality via MCP for integration
+ * ZenAI - Enterprise AI Platform by ZenSation Enterprise Solutions
+ * © Alexander Bering. All rights reserved.
+ * https://zensation.ai | https://zensation.app | https://zensation.sh
+ *
+ * Exposes ZenAI functionality via MCP for integration
  * with Claude Desktop, other MCP clients, and AI assistants.
  *
  * Tools:
@@ -12,10 +16,10 @@
  * - get_related_ideas: Find related ideas via knowledge graph
  *
  * Resources:
- * - kiab://ideas/{id}: Individual idea details
- * - kiab://ideas: List of recent ideas
- * - kiab://drafts/{id}: Individual draft
- * - kiab://context/{name}: Context-specific data
+ * - zenai://ideas/{id}: Individual idea details
+ * - zenai://ideas: List of recent ideas
+ * - zenai://drafts/{id}: Individual draft
+ * - zenai://context/{name}: Context-specific data
  */
 
 import { AIContext, queryContext } from '../utils/database-context';
@@ -217,7 +221,7 @@ export class KIABMCPServer {
 
   constructor(config: Partial<MCPServerConfig> = {}) {
     this.config = {
-      name: config.name || 'ki-ab-brain',
+      name: config.name || 'zenai-brain',
       version: config.version || '1.0.0',
       defaultContext: config.defaultContext || 'personal',
     };
@@ -513,13 +517,13 @@ export class KIABMCPServer {
 
     const resources: MCPResource[] = [
       {
-        uri: 'kiab://ideas',
+        uri: 'zenai://ideas',
         name: 'Alle Ideen',
         description: 'Liste aller Ideen im Personal AI Brain',
         mimeType: 'application/json',
       },
       {
-        uri: 'kiab://stats',
+        uri: 'zenai://stats',
         name: 'Statistiken',
         description: 'Übersicht und Statistiken',
         mimeType: 'application/json',
@@ -529,7 +533,7 @@ export class KIABMCPServer {
     // Add individual ideas as resources
     for (const idea of recentIdeas.rows) {
       resources.push({
-        uri: `kiab://ideas/${idea.id}`,
+        uri: `zenai://ideas/${idea.id}`,
         name: idea.title,
         description: `${idea.type} - Details zur Idee`,
         mimeType: 'application/json',
@@ -546,7 +550,7 @@ export class KIABMCPServer {
 
     let content: any;
 
-    if (uri === 'kiab://ideas') {
+    if (uri === 'zenai://ideas') {
       // List all ideas
       const result = await queryContext(
         this.config.defaultContext,
@@ -557,7 +561,7 @@ export class KIABMCPServer {
          LIMIT 100`
       );
       content = { ideas: result.rows };
-    } else if (uri === 'kiab://stats') {
+    } else if (uri === 'zenai://stats') {
       content = await this.handleGetStats({});
     } else {
       // Individual idea

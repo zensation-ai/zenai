@@ -1,7 +1,10 @@
 {
-  "name": "personal-ai-frontend",
+  "name": "zenai-frontend",
   "private": true,
   "version": "1.0.0",
+  "description": "ZenAI - Enterprise AI Platform by ZenSation Enterprise Solutions",
+  "author": "Alexander Bering <alex@zensation.ai>",
+  "homepage": "https://zensation.ai",
   "type": "module",
   "scripts": {
     "dev": "vite",

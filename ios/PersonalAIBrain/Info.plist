@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>de</string>
     <key>CFBundleDisplayName</key>
-    <string>AI Brain</string>
+    <string>ZenAI</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -76,10 +76,10 @@
     <array>
         <dict>
             <key>CFBundleURLName</key>
-            <string>de.personal.aibrain</string>
+            <string>ai.zensation.zenai</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>personalai</string>
+                <string>zenai</string>
             </array>
         </dict>
     </array>
