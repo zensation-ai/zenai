@@ -855,26 +855,18 @@ function App() {
         Zum Hauptinhalt springen
       </a>
 
-      {/* Animated Organic Background */}
+      {/* Animated Organic Background - Performance-optimiert */}
       <div className="ambient-background" aria-hidden="true">
         <div className="blob-1" />
         <div className="blob-2" />
         <div className="blob-3" />
-        <div className="blob-4" />
-        <div className="blob-5" />
-        {/* Floating Particles - Enhanced for richer visual experience */}
+        {/* blob-4 und blob-5 entfernt: Performance-Optimierung, 3 Blobs sind ausreichend */}
+        {/* Floating Particles: Reduziert von 12 auf 5 für bessere Performance */}
         <div className="particle particle-1" />
         <div className="particle particle-2" />
         <div className="particle particle-3" />
         <div className="particle particle-4" />
         <div className="particle particle-5" />
-        <div className="particle particle-6" />
-        <div className="particle particle-7" />
-        <div className="particle particle-8" />
-        <div className="particle particle-9" />
-        <div className="particle particle-10" />
-        <div className="particle particle-11" />
-        <div className="particle particle-12" />
       </div>
 
       <header className="header liquid-glass-nav" role="banner">
@@ -1055,29 +1047,14 @@ function App() {
         data-mood={humanGreeting.mood}
         data-energy={humanGreeting.energyLevel}
       >
-        {/* Ambient Particles - Neuro: Subtile Bewegung fördert Fokus ohne Ablenkung */}
+        {/* Ambient Particles - Performance-optimiert: 6 statt 20 Sparkles */}
         <div className="hero-ambient" aria-hidden="true">
-          {/* Primary Sparkles */}
+          {/* Reduzierte Sparkles für bessere Performance bei gleichem visuellen Effekt */}
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
           <div className="hero-sparkle" />
-          <div className="hero-sparkle" />
-          <div className="hero-sparkle" />
-          {/* Additional Sparkles for richer effect */}
-          <div className="hero-sparkle" />
-          <div className="hero-sparkle" />
-          <div className="hero-sparkle" />
-          <div className="hero-sparkle" />
-          <div className="hero-sparkle" />
-          <div className="hero-sparkle" />
-          {/* Micro Sparkles - sehr kleine für Tiefe */}
-          <div className="hero-micro-sparkle" />
-          <div className="hero-micro-sparkle" />
-          <div className="hero-micro-sparkle" />
-          <div className="hero-micro-sparkle" />
-          <div className="hero-micro-sparkle" />
-          <div className="hero-micro-sparkle" />
+          {/* Micro Sparkles: Reduziert auf 2 für subtile Tiefenwirkung */}
           <div className="hero-micro-sparkle" />
           <div className="hero-micro-sparkle" />
         </div>

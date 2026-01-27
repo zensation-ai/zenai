@@ -512,13 +512,15 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
           </button>
         </div>
         <div className="chat-input-footer">
-          <span className="chat-hint">Enter zum Senden</span>
+          <span className="chat-hint" title="Enter sendet die Nachricht, Shift+Enter für neue Zeile">
+            Enter zum Senden · Shift+Enter für neue Zeile
+          </span>
           {sessionId && (
             <button
               type="button"
               className="new-chat-btn neuro-hover-lift neuro-color-transition"
               onClick={handleNewChat}
-              title="Neuer Chat"
+              title="Startet eine neue Unterhaltung (bisherige bleibt erhalten)"
               aria-label="Neue Chat-Session starten"
             >
               + Neuer Chat

@@ -386,6 +386,8 @@
   gap: 6px;
 }
 
+/* Keywords sind derzeit nicht interaktiv - daher kein pointer-cursor
+   Dies vermeidet falsche Affordance (sieht klickbar aus, ist es aber nicht) */
 .keyword {
   font-size: 0.7rem;
   font-weight: 500;
@@ -394,22 +396,19 @@
   border: 1px solid rgba(255, 107, 53, 0.15);
   border-radius: 20px;
   color: var(--primary-dark);
-  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  cursor: default; /* Korrigiert: Nicht mehr irreführend klickbar */
   position: relative;
 }
 
+/* Subtiler Hover-Effekt ohne "klickbar"-Suggestion */
 .keyword:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.22), rgba(255, 140, 90, 0.15));
-  border-color: rgba(255, 107, 53, 0.3);
-  transform: translateY(-2px) scale(1.06);
-  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.22);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.16), rgba(255, 140, 90, 0.1));
+  border-color: rgba(255, 107, 53, 0.22);
+  /* Kein transform - Keywords sind nicht interaktiv */
 }
 
-.keyword:active {
-  transform: translateY(0) scale(0.96);
-  transition-duration: 0.1s;
-}
+/* Active-State entfernt - Keywords sind nicht klickbar */
 
 .idea-footer {
   display: flex;
@@ -440,33 +439,39 @@
    NEURO-OPTIMIERUNGEN 2025/2026
    =========================================== */
 
-/* Sanftes Breathing für Idle-State (subkonsciente Ruhe) */
+/* Performance-Optimierung: Breathing-Animation nur für einzelne Karte bei Fokus
+   Die permanente Animation aller Karten wurde entfernt (verursachte hohe CPU-Last)
+   Stattdessen: Subtiler Hover-Effekt für aktive Interaktion */
 @media (prefers-reduced-motion: no-preference) {
   .idea-card {
-    animation:
-      cardEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-      cardBreathing 6s ease-in-out 1s infinite;
+    animation: cardEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* Breathing nur bei Fokus (Keyboard-Navigation) - nicht permanent */
+  .idea-card:focus-within {
+    animation: cardBreathing 4s ease-in-out infinite;
   }
 
   @keyframes cardBreathing {
     0%, 100% {
       box-shadow:
-        0 4px 16px rgba(20, 50, 70, 0.06),
-        0 1px 4px rgba(20, 50, 70, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        0 12px 36px rgba(20, 50, 70, 0.1),
+        0 4px 12px rgba(20, 50, 70, 0.06),
+        0 0 0 3px rgba(255, 107, 53, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
     50% {
       box-shadow:
-        0 5px 18px rgba(20, 50, 70, 0.07),
-        0 2px 5px rgba(20, 50, 70, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        0 14px 40px rgba(20, 50, 70, 0.12),
+        0 5px 14px rgba(20, 50, 70, 0.07),
+        0 0 0 4px rgba(255, 107, 53, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
     }
   }
 
   .idea-card:hover {
-    animation: none;
     opacity: 1;
-    transform: translateY(-4px);
+    transform: translateY(-5px) scale(1.008);
   }
 }
 
