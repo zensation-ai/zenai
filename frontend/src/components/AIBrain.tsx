@@ -132,125 +132,175 @@ export function AIBrain({
         <div className="brain-glow-ring ring-2" />
         <div className="brain-glow-ring ring-3" />
 
-        {/* Brain SVG - Sunset Orange Theme (Erkennungsmerkmal) */}
+        {/* Brain SVG - Sunset Orange Theme (Erkennungsmerkmal) - High Quality */}
         <svg
           className="ai-brain-svg"
           viewBox="0 0 100 100"
           xmlns="http://www.w3.org/2000/svg"
           role="img"
           aria-label="AI Brain Animation"
+          style={{ background: 'transparent' }}
         >
           <defs>
-            {/* Sunset Orange Gradient for brain - Erkennungsmerkmal */}
+            {/* Premium Sunset Orange Gradient - ZenAI Signature */}
             <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#ffb347" />
+              <stop offset="35%" stopColor="#ff9f33" />
               <stop offset="50%" stopColor="#ff8c00" />
+              <stop offset="65%" stopColor="#ff7a1a" />
               <stop offset="100%" stopColor="#ff6347" />
             </linearGradient>
-            {/* Fix: Extended filter region to prevent clipping of glow effect */}
+            {/* Inner highlight gradient for depth */}
+            <linearGradient id="brainHighlight" x1="0%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.3)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+            </linearGradient>
+            {/* Soft glow filter - extended region */}
             <filter id="brainGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            {/* Subtle inner shadow for depth */}
+            <filter id="innerGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="1" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
           </defs>
 
-          {/* Brain shape - stylized */}
+          {/* Brain shape - organic, detailed */}
           <g className="brain-group" filter="url(#brainGlow)">
-            {/* Left hemisphere */}
+            {/* Left hemisphere - organic curves */}
             <path
               className="brain-hemisphere left"
-              d="M25 50
-                 C25 35, 30 25, 40 22
-                 C45 20, 48 22, 50 25
-                 C50 30, 48 35, 48 40
-                 C48 45, 50 48, 50 50
-                 C50 55, 48 60, 45 65
-                 C42 70, 38 75, 35 75
-                 C28 75, 25 65, 25 50Z"
+              d="M24 50
+                 C24 38, 27 28, 35 23
+                 C40 20, 44 20, 47 22
+                 C49 24, 50 26, 50 28
+                 C50 32, 48 36, 47 40
+                 C46 44, 48 47, 49 50
+                 C50 53, 48 57, 46 62
+                 C44 67, 41 72, 37 74
+                 C32 76, 28 74, 26 70
+                 C24 65, 24 58, 24 50Z"
               fill="url(#brainGradient)"
             />
+            {/* Left hemisphere highlight */}
+            <path
+              className="brain-hemisphere-highlight"
+              d="M28 45
+                 C28 38, 30 32, 36 28
+                 C40 25, 44 26, 46 30
+                 C45 34, 43 38, 42 42
+                 C40 38, 35 36, 32 40
+                 C29 44, 28 48, 28 45Z"
+              fill="url(#brainHighlight)"
+            />
 
-            {/* Right hemisphere */}
+            {/* Right hemisphere - organic curves */}
             <path
               className="brain-hemisphere right"
-              d="M75 50
-                 C75 35, 70 25, 60 22
-                 C55 20, 52 22, 50 25
-                 C50 30, 52 35, 52 40
-                 C52 45, 50 48, 50 50
-                 C50 55, 52 60, 55 65
-                 C58 70, 62 75, 65 75
-                 C72 75, 75 65, 75 50Z"
+              d="M76 50
+                 C76 38, 73 28, 65 23
+                 C60 20, 56 20, 53 22
+                 C51 24, 50 26, 50 28
+                 C50 32, 52 36, 53 40
+                 C54 44, 52 47, 51 50
+                 C50 53, 52 57, 54 62
+                 C56 67, 59 72, 63 74
+                 C68 76, 72 74, 74 70
+                 C76 65, 76 58, 76 50Z"
               fill="url(#brainGradient)"
             />
+            {/* Right hemisphere highlight */}
+            <path
+              className="brain-hemisphere-highlight"
+              d="M72 45
+                 C72 38, 70 32, 64 28
+                 C60 25, 56 26, 54 30
+                 C55 34, 57 38, 58 42
+                 C60 38, 65 36, 68 40
+                 C71 44, 72 48, 72 45Z"
+              fill="url(#brainHighlight)"
+            />
 
-            {/* Neural connections - left */}
+            {/* Brain folds - left (gyri/sulci) */}
             <path
               className="neural-path path-1"
-              d="M30 35 Q35 40, 40 35 Q45 30, 45 40"
-              stroke="rgba(255,255,255,0.6)"
-              strokeWidth="1.5"
+              d="M28 36 Q33 32, 38 36 Q43 40, 44 45"
+              stroke="rgba(255,255,255,0.55)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
               fill="none"
             />
             <path
               className="neural-path path-2"
-              d="M28 50 Q35 55, 42 50 Q48 45, 48 55"
-              stroke="rgba(255,255,255,0.5)"
-              strokeWidth="1.5"
+              d="M27 50 Q34 46, 40 50 Q46 54, 45 60"
+              stroke="rgba(255,255,255,0.45)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
               fill="none"
             />
             <path
               className="neural-path path-3"
-              d="M32 62 Q38 58, 42 62 Q46 66, 44 70"
-              stroke="rgba(255,255,255,0.4)"
-              strokeWidth="1.5"
+              d="M30 64 Q36 60, 40 64 Q44 68, 42 72"
+              stroke="rgba(255,255,255,0.35)"
+              strokeWidth="1.4"
+              strokeLinecap="round"
               fill="none"
             />
 
-            {/* Neural connections - right */}
+            {/* Brain folds - right (gyri/sulci) */}
             <path
               className="neural-path path-4"
-              d="M70 35 Q65 40, 60 35 Q55 30, 55 40"
-              stroke="rgba(255,255,255,0.6)"
-              strokeWidth="1.5"
+              d="M72 36 Q67 32, 62 36 Q57 40, 56 45"
+              stroke="rgba(255,255,255,0.55)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
               fill="none"
             />
             <path
               className="neural-path path-5"
-              d="M72 50 Q65 55, 58 50 Q52 45, 52 55"
-              stroke="rgba(255,255,255,0.5)"
-              strokeWidth="1.5"
+              d="M73 50 Q66 46, 60 50 Q54 54, 55 60"
+              stroke="rgba(255,255,255,0.45)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
               fill="none"
             />
             <path
               className="neural-path path-6"
-              d="M68 62 Q62 58, 58 62 Q54 66, 56 70"
-              stroke="rgba(255,255,255,0.4)"
-              strokeWidth="1.5"
+              d="M70 64 Q64 60, 60 64 Q56 68, 58 72"
+              stroke="rgba(255,255,255,0.35)"
+              strokeWidth="1.4"
+              strokeLinecap="round"
               fill="none"
             />
 
-            {/* Central connection */}
-            <line
+            {/* Corpus callosum - central connection */}
+            <path
               className="neural-path center-line"
-              x1="50" y1="28"
-              x2="50" y2="72"
-              stroke="rgba(255,255,255,0.3)"
-              strokeWidth="1"
-              strokeDasharray="3,3"
+              d="M50 30 C50 35, 50 40, 50 50 C50 60, 50 65, 50 70"
+              stroke="rgba(255,255,255,0.25)"
+              strokeWidth="1.2"
+              strokeDasharray="4,3"
+              strokeLinecap="round"
+              fill="none"
             />
 
-            {/* Neural nodes */}
-            <circle className="neural-node node-1" cx="35" cy="38" r="2" fill="white" />
-            <circle className="neural-node node-2" cx="42" cy="52" r="2" fill="white" />
-            <circle className="neural-node node-3" cx="38" cy="65" r="2" fill="white" />
-            <circle className="neural-node node-4" cx="65" cy="38" r="2" fill="white" />
-            <circle className="neural-node node-5" cx="58" cy="52" r="2" fill="white" />
-            <circle className="neural-node node-6" cx="62" cy="65" r="2" fill="white" />
-            <circle className="neural-node node-center" cx="50" cy="50" r="3" fill="white" />
+            {/* Neural nodes - synaptic points */}
+            <circle className="neural-node node-1" cx="34" cy="38" r="2.2" fill="white" opacity="0.9" />
+            <circle className="neural-node node-2" cx="40" cy="52" r="2" fill="white" opacity="0.85" />
+            <circle className="neural-node node-3" cx="36" cy="66" r="1.8" fill="white" opacity="0.8" />
+            <circle className="neural-node node-4" cx="66" cy="38" r="2.2" fill="white" opacity="0.9" />
+            <circle className="neural-node node-5" cx="60" cy="52" r="2" fill="white" opacity="0.85" />
+            <circle className="neural-node node-6" cx="64" cy="66" r="1.8" fill="white" opacity="0.8" />
+            {/* Central node - larger, brighter */}
+            <circle className="neural-node node-center" cx="50" cy="50" r="3.5" fill="white" opacity="1" />
+            {/* Additional synaptic detail */}
+            <circle className="neural-node node-7" cx="44" cy="42" r="1.5" fill="white" opacity="0.6" />
+            <circle className="neural-node node-8" cx="56" cy="42" r="1.5" fill="white" opacity="0.6" />
           </g>
         </svg>
 
