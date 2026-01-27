@@ -20,6 +20,14 @@ import { apiKeyAuth, optionalAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
 import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
 
+// ===========================================
+// Type-safe row interfaces for aggregate queries
+// ===========================================
+interface CountRow { count: string }
+interface TypeCountRow extends CountRow { type: string }
+interface CategoryCountRow extends CountRow { category: string }
+interface PriorityCountRow extends CountRow { priority: string }
+
 export const ideasRouter = Router();
 
 // Context-aware router for routes like /api/:context/ideas/*
@@ -68,9 +76,9 @@ ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
 
   res.json({
     total: parseInt(totalResult.rows[0].total),
-    byType: typeResult.rows.reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
-    byCategory: categoryResult.rows.reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
-    byPriority: priorityResult.rows.reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
+    byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {} as Record<string, number>),
+    byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {} as Record<string, number>),
+    byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {} as Record<string, number>),
   });
 }));
 
@@ -95,7 +103,7 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
 
   // Build exclusion clause
   let excludeClause = '';
-  const params: any[] = [ctx, limit];
+  const params: (string | number)[] = [ctx, limit];
   if (excludeIds.length > 0) {
     excludeClause = ` AND i.id NOT IN (${excludeIds.map((_, idx) => `$${idx + 3}`).join(',')})`;
     params.push(...excludeIds);
@@ -173,7 +181,8 @@ ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID,
   const ideaTitle = ideaCheck.rows[0].title;
 
   // Apply action based on type
-  let updateData: Record<string, any> = {};
+  // Type-safe update data with allowed triage fields only
+  let updateData: { priority?: 'low' | 'medium' | 'high'; is_archived?: boolean } = {};
   let actionDescription = '';
 
   switch (action) {
@@ -196,10 +205,18 @@ ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID,
 
   // Update idea if needed
   if (Object.keys(updateData).length > 0) {
+    // Defense in Depth: Whitelist allowed column names to prevent any SQL injection
+    const ALLOWED_TRIAGE_COLUMNS = new Set(['priority', 'is_archived']);
+    const safeKeys = Object.keys(updateData).filter(k => ALLOWED_TRIAGE_COLUMNS.has(k));
+
+    if (safeKeys.length !== Object.keys(updateData).length) {
+      throw new ValidationError('Invalid update fields detected');
+    }
+
     await queryContext(
       ctx,
-      `UPDATE ideas SET ${Object.keys(updateData).map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
-      [ideaId, ...Object.values(updateData)]
+      `UPDATE ideas SET ${safeKeys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
+      [ideaId, ...safeKeys.map(k => updateData[k as keyof typeof updateData])]
     );
 
     // Learn from priority changes
@@ -937,8 +954,8 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
 
   res.json({
     total: parseInt(totalResult.rows[0].total),
-    byType: typeResult.rows.reduce((acc: Record<string, number>, row: any) => ({ ...acc, [row.type]: parseInt(row.count) }), {}),
-    byCategory: categoryResult.rows.reduce((acc: Record<string, number>, row: any) => ({ ...acc, [row.category]: parseInt(row.count) }), {}),
-    byPriority: priorityResult.rows.reduce((acc: Record<string, number>, row: any) => ({ ...acc, [row.priority]: parseInt(row.count) }), {}),
+    byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {} as Record<string, number>),
+    byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {} as Record<string, number>),
+    byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {} as Record<string, number>),
   });
 }));
