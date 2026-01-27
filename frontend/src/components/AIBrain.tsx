@@ -132,7 +132,7 @@ export function AIBrain({
         <div className="brain-glow-ring ring-2" />
         <div className="brain-glow-ring ring-3" />
 
-        {/* Brain SVG - ZenAI Green Theme */}
+        {/* Brain SVG - Sunset Orange Theme (Erkennungsmerkmal) */}
         <svg
           className="ai-brain-svg"
           viewBox="0 0 100 100"
@@ -141,17 +141,12 @@ export function AIBrain({
           aria-label="AI Brain Animation"
         >
           <defs>
-            {/* ZenAI Green Gradient for brain */}
+            {/* Sunset Orange Gradient for brain - Erkennungsmerkmal */}
             <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#a8e6cf" />
-              <stop offset="50%" stopColor="#88d8b0" />
-              <stop offset="100%" stopColor="#6bcf9f" />
+              <stop offset="0%" stopColor="#ffb347" />
+              <stop offset="50%" stopColor="#ff8c00" />
+              <stop offset="100%" stopColor="#ff6347" />
             </linearGradient>
-            {/* Dark green background circle gradient */}
-            <radialGradient id="brainBgGradient" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#234a3c" />
-              <stop offset="100%" stopColor="#1a3a2f" />
-            </radialGradient>
             {/* Fix: Extended filter region to prevent clipping of glow effect */}
             <filter id="brainGlow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2" result="coloredBlur" />
@@ -161,9 +156,6 @@ export function AIBrain({
               </feMerge>
             </filter>
           </defs>
-
-          {/* Dark green background circle */}
-          <circle cx="50" cy="50" r="48" fill="url(#brainBgGradient)" />
 
           {/* Brain shape - stylized */}
           <g className="brain-group" filter="url(#brainGlow)">
