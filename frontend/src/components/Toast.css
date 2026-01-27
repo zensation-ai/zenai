@@ -38,6 +38,7 @@
   overflow: hidden;
 }
 
+/* Visuelles Feedback: Hover zeigt Klickbarkeit für Dismiss */
 .toast:hover {
   transform: translateX(-8px) scale(1.015);
   box-shadow:
@@ -45,6 +46,26 @@
     0 8px 20px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Klick-Hinweis: Subtile Animation zeigt Interaktivität */
+.toast::after {
+  content: 'Klicken zum Schließen';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.toast:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Toast Types */

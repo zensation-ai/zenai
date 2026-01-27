@@ -30,3 +30,26 @@ export const AI_PROCESSING_STEP_DELAY_MS = 200;
 
 /** Initial delay before showing first AI processing step */
 export const AI_PROCESSING_INITIAL_DELAY_MS = 300;
+
+// ============================================
+// Animation Timing Constants
+// Konsistente Werte für alle UI-Animationen
+// ============================================
+
+/** Instant feedback (80ms) - für sofortiges taktiles Feedback */
+export const ANIM_INSTANT_MS = 80;
+
+/** Quick transition (150ms) - für schnelle Hover-Effekte */
+export const ANIM_QUICK_MS = 150;
+
+/** Natural transition (280ms) - für Standard-Übergänge */
+export const ANIM_NATURAL_MS = 280;
+
+/** Deliberate transition (450ms) - für bewusste, langsame Animationen */
+export const ANIM_DELIBERATE_MS = 450;
+
+/** Card stagger delay (50ms) - Verzögerung zwischen gestaffelten Karten-Animationen */
+export const CARD_STAGGER_DELAY_MS = 50;
+
+/** Maximum stagger items (7) - Miller's Law: 7±2 Items */
+export const MAX_STAGGER_ITEMS = 7;
