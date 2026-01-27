@@ -10,6 +10,10 @@
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
+  /* Ensure no background or rectangle */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .ai-brain-container:hover {
@@ -136,6 +140,15 @@
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
+  /* Ensure no pseudo-elements create rectangles */
+  border-radius: 50%;
+  overflow: visible;
+}
+
+/* Remove any potential rectangle from pseudo-elements */
+.ai-brain-wrapper::before,
+.ai-brain-wrapper::after {
+  display: none !important;
 }
 
 /* Brain SVG */
@@ -148,17 +161,31 @@
   overflow: visible;
   background: transparent !important;
   background-color: transparent !important;
+  /* Ensure no rectangular clipping or borders */
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-/* Idle state - subtle breathing */
+/* Ensure the brain group has no rectangle */
+.ai-brain-svg .brain-group {
+  background: transparent !important;
+}
+
+/* Idle state - subtle breathing with smooth transitions */
 .brain-group {
   transform-origin: center;
   animation: brainBreathing 4s ease-in-out infinite;
+  /* Smooth transition when switching between idle and active */
+  transition: filter 0.5s ease, transform 0.3s ease;
+  will-change: transform, filter;
 }
 
 /* Active state - smooth, continuous thinking animation */
+/* Uses animation-fill-mode to prevent jump on state change */
 .ai-brain-container.active .brain-group {
   animation: brainPulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-fill-mode: both;
 }
 
 /* Brain hemispheres */
@@ -450,6 +477,11 @@
 .ai-brain-container.large .ai-brain-wrapper {
   width: 120px;
   height: 120px;
+  /* Ensure no rectangle in large mode */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 50%;
 }
 
 .ai-brain-container.large .ring-1 { width: 150px; height: 150px; }
@@ -458,10 +490,12 @@
 
 .ai-brain-container.large .brain-group {
   animation: brainBreathingLarge 5s ease-in-out infinite;
+  animation-fill-mode: both;
 }
 
 .ai-brain-container.large.active .brain-group {
   animation: brainPulseLarge 2s ease-in-out infinite;
+  animation-fill-mode: both;
 }
 
 .ai-brain-container.large .brain-hemisphere {

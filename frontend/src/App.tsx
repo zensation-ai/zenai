@@ -874,25 +874,52 @@ function App() {
           <div className="header-left">
             <div className="header-logo-container">
               <div className="header-logo-icon">
-                {/* ZenAI Logo: Orange Brain on Midnight Petrol circle */}
-                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" className="zenai-logo-svg">
+                {/* ZenAI Logo: macOS-style - Orange Brain on Dark Circle */}
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="zenai-logo-svg">
                   <defs>
                     <linearGradient id="zenLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#ffb347" />
-                      <stop offset="50%" stopColor="#ff8c00" />
+                      <stop offset="40%" stopColor="#ff9f33" />
+                      <stop offset="60%" stopColor="#ff8c00" />
                       <stop offset="100%" stopColor="#ff6347" />
                     </linearGradient>
+                    <linearGradient id="zenLogoHighlight" x1="0%" y1="0%" x2="50%" y2="100%">
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                    </linearGradient>
                   </defs>
-                  {/* Midnight Petrol Green background circle */}
-                  <circle cx="20" cy="20" r="18" fill="#0d3d3d" />
-                  {/* Simplified brain shape - Sunset Orange */}
-                  <g transform="translate(8, 8) scale(0.6)">
-                    <path d="M20 25 C18 20, 19 15, 23 13 C26 11, 28 12, 30 14 C32 12, 34 11, 37 13 C41 15, 42 20, 40 25 C42 27, 43 31, 40 36 C37 40, 33 42, 30 41 C27 42, 23 40, 20 36 C17 31, 18 27, 20 25Z" fill="url(#zenLogoGradient)" />
-                    {/* Neural nodes */}
-                    <circle cx="25" cy="22" r="1.5" fill="white" opacity="0.9" />
-                    <circle cx="35" cy="22" r="1.5" fill="white" opacity="0.9" />
-                    <circle cx="30" cy="28" r="2" fill="white" opacity="0.9" />
-                  </g>
+                  {/* Dark background circle with subtle border */}
+                  <circle cx="50" cy="50" r="48" fill="#1a2634" />
+                  <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+                  {/* Left hemisphere */}
+                  <path
+                    d="M30 50 C30 40, 33 32, 40 28 C44 26, 47 27, 49 30 C49 35, 47 40, 46 45 C45 50, 47 55, 45 60 C42 66, 38 68, 34 66 C30 63, 30 56, 30 50Z"
+                    fill="url(#zenLogoGradient)"
+                  />
+                  <path
+                    d="M33 45 C33 40, 35 35, 40 32 C43 31, 46 33, 46 37 C44 38, 40 38, 37 42 C34 45, 33 48, 33 45Z"
+                    fill="url(#zenLogoHighlight)"
+                  />
+                  {/* Right hemisphere */}
+                  <path
+                    d="M70 50 C70 40, 67 32, 60 28 C56 26, 53 27, 51 30 C51 35, 53 40, 54 45 C55 50, 53 55, 55 60 C58 66, 62 68, 66 66 C70 63, 70 56, 70 50Z"
+                    fill="url(#zenLogoGradient)"
+                  />
+                  <path
+                    d="M67 45 C67 40, 65 35, 60 32 C57 31, 54 33, 54 37 C56 38, 60 38, 63 42 C66 45, 67 48, 67 45Z"
+                    fill="url(#zenLogoHighlight)"
+                  />
+                  {/* Neural connections */}
+                  <line x1="37" y1="40" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+                  <line x1="63" y1="40" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+                  <line x1="40" y1="60" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+                  <line x1="60" y1="60" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+                  {/* Neural nodes */}
+                  <circle cx="37" cy="40" r="3" fill="#ff9f33" />
+                  <circle cx="63" cy="40" r="3" fill="#ff9f33" />
+                  <circle cx="40" cy="60" r="3" fill="#ff9f33" />
+                  <circle cx="60" cy="60" r="3" fill="#ff9f33" />
+                  <circle cx="50" cy="50" r="4" fill="#ffb347" />
                 </svg>
                 {/* AI status indicator */}
                 <span className={`logo-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />

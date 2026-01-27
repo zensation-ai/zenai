@@ -158,6 +158,10 @@
   z-index: 1;
   /* Neuro: Sanftes Atmen für lebendiges Gefühl */
   animation: heroBrainBreathing 5s ease-in-out infinite;
+  /* Ensure no background rectangle */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 @keyframes heroBrainBreathing {
