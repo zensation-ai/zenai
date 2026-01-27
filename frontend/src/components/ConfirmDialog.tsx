@@ -102,17 +102,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     };
   }, [state.isOpen, handleCancel]);
 
-  // Prevent body scroll when dialog is open
-  useEffect(() => {
-    if (state.isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [state.isOpen]);
+  // Note: Removed body.overflow manipulation as it blocks scrolling in parent modals
+  // The dialog overlay with position:fixed and z-index:10000 is sufficient for modal behavior
 
   const variantClass = state.variant || 'danger';
 

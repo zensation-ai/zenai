@@ -366,6 +366,8 @@
   background: white;
   border: 1px solid #e0e0e0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 500px;
+  overflow-y: auto;
 }
 
 .feedback-header {
@@ -532,7 +534,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1001; /* Higher than IdeaDetail modal (1000) */
   animation: fadeIn 0.2s ease;
 }
 
