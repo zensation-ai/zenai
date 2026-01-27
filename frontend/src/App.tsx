@@ -872,8 +872,31 @@ function App() {
       <header className="header liquid-glass-nav" role="banner">
         <div className="header-content">
           <div className="header-left">
-            <div className="header-ai-status">
-              <span className={`ai-status-dot neuro-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />
+            <div className="header-logo-container">
+              <div className="header-logo-icon">
+                {/* ZenAI Logo: Brain on dark green circle */}
+                <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" className="zenai-logo-svg">
+                  <defs>
+                    <linearGradient id="zenLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#a8e6cf" />
+                      <stop offset="50%" stopColor="#88d8b0" />
+                      <stop offset="100%" stopColor="#6bcf9f" />
+                    </linearGradient>
+                  </defs>
+                  {/* Dark green background circle */}
+                  <circle cx="20" cy="20" r="18" fill="#1a3a2f" />
+                  {/* Simplified brain shape */}
+                  <g transform="translate(8, 8) scale(0.6)">
+                    <path d="M20 25 C18 20, 19 15, 23 13 C26 11, 28 12, 30 14 C32 12, 34 11, 37 13 C41 15, 42 20, 40 25 C42 27, 43 31, 40 36 C37 40, 33 42, 30 41 C27 42, 23 40, 20 36 C17 31, 18 27, 20 25Z" fill="url(#zenLogoGradient)" />
+                    {/* Neural nodes */}
+                    <circle cx="25" cy="22" r="1.5" fill="white" opacity="0.9" />
+                    <circle cx="35" cy="22" r="1.5" fill="white" opacity="0.9" />
+                    <circle cx="30" cy="28" r="2" fill="white" opacity="0.9" />
+                  </g>
+                </svg>
+                {/* AI status indicator */}
+                <span className={`logo-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />
+              </div>
               <span className="header-logo-text">ZenAI</span>
             </div>
           </div>

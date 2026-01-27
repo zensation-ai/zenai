@@ -42,20 +42,22 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: 10px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--header-text-muted, #c8d4de);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
   transition: all var(--dropdown-timing-fast) ease;
   overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .nav-dropdown-trigger:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--header-text, #f8fafc);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .nav-dropdown-trigger:active {
@@ -66,7 +68,7 @@
 .nav-dropdown-trigger:focus-visible {
   outline: none;
   background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 0 0 3px rgba(107, 207, 159, 0.4);
 }
 
 .nav-dropdown-trigger.open {
@@ -76,9 +78,9 @@
 }
 
 .nav-dropdown-trigger.has-active {
-  background: rgba(255, 107, 53, 0.2);
-  color: var(--primary-light, #ff8c5a);
-  border-color: rgba(255, 107, 53, 0.3);
+  background: rgba(107, 207, 159, 0.2);
+  color: #a8e6cf;
+  border-color: rgba(107, 207, 159, 0.4);
 }
 
 [data-context="work"] .nav-dropdown-trigger.has-active {
@@ -359,7 +361,7 @@
 }
 
 .nav-dropdown-item:hover {
-  background: rgba(255, 107, 53, 0.08);
+  background: rgba(107, 207, 159, 0.08);
   color: #1a2e3d;
   transform: translateX(2px);
 }
@@ -369,12 +371,12 @@
 }
 
 .nav-dropdown-item.hovered {
-  background: rgba(255, 107, 53, 0.1);
+  background: rgba(107, 207, 159, 0.1);
 }
 
 .nav-dropdown-item.active {
-  background: rgba(255, 107, 53, 0.12);
-  color: var(--primary, #ff6b35);
+  background: rgba(107, 207, 159, 0.12);
+  color: #6bcf9f;
   font-weight: 600;
 }
 
@@ -434,7 +436,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary, #ff6b35);
+  color: #6bcf9f;
   animation: checkmarkPop 0.3s var(--dropdown-easing-bounce);
 }
 
@@ -464,7 +466,7 @@
   pointer-events: none;
   background: radial-gradient(
     ellipse at center,
-    rgba(255, 107, 53, 0.15) 0%,
+    rgba(107, 207, 159, 0.15) 0%,
     transparent 70%
   );
   opacity: 0;
