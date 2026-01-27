@@ -434,6 +434,8 @@
 .draft-text.expanded {
   display: block;
   -webkit-line-clamp: unset;
+  overflow-y: auto;
+  max-height: 400px;
 }
 
 .draft-actions {
