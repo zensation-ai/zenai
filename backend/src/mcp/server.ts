@@ -565,7 +565,7 @@ export class KIABMCPServer {
       content = await this.handleGetStats({});
     } else {
       // Individual idea
-      const ideaMatch = uri.match(/kiab:\/\/ideas\/([a-f0-9-]+)/);
+      const ideaMatch = uri.match(/zenai:\/\/ideas\/([a-f0-9-]+)/);
       if (ideaMatch) {
         const ideaId = ideaMatch[1];
         const result = await queryContext(
