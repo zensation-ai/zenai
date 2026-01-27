@@ -24,14 +24,14 @@
   position: relative;
   /* CLS-Fix: Feste Höhe verhindert Layout-Shift beim Laden */
   min-height: 420px;
-  /* ZenAI: Enterprise AI Gradient - Professional Green */
+  /* ZenAI: Enterprise AI Gradient - Orange/Petrol Brand Colors */
   background: linear-gradient(
     180deg,
-    rgba(107, 207, 159, 0.02) 0%,
-    rgba(136, 216, 176, 0.06) 15%,
-    rgba(168, 230, 207, 0.08) 40%,
-    rgba(136, 216, 176, 0.05) 65%,
-    rgba(107, 207, 159, 0.02) 85%,
+    rgba(255, 107, 53, 0.02) 0%,
+    rgba(255, 140, 66, 0.05) 15%,
+    rgba(255, 107, 53, 0.06) 40%,
+    rgba(26, 58, 74, 0.04) 65%,
+    rgba(45, 90, 110, 0.02) 85%,
     transparent 100%
   );
   overflow: hidden;
@@ -41,15 +41,15 @@
     background 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Mood-basierte Farbvariationen - ZenAI Green Theme */
+/* Mood-basierte Farbvariationen - ZenAI Orange/Petrol Theme */
 .hero-section[data-mood="energetisch"],
 .hero-section[data-mood="motiviert"] {
   background: linear-gradient(
     180deg,
-    rgba(107, 207, 159, 0.04) 0%,
-    rgba(136, 216, 176, 0.10) 30%,
-    rgba(168, 230, 207, 0.12) 50%,
-    rgba(136, 216, 176, 0.06) 70%,
+    rgba(255, 107, 53, 0.04) 0%,
+    rgba(255, 140, 66, 0.08) 30%,
+    rgba(255, 107, 53, 0.10) 50%,
+    rgba(255, 140, 66, 0.05) 70%,
     transparent 100%
   );
 }
@@ -58,10 +58,10 @@
 .hero-section[data-mood="reflektiv"] {
   background: linear-gradient(
     180deg,
-    rgba(107, 207, 159, 0.03) 0%,
-    rgba(136, 216, 176, 0.05) 30%,
-    rgba(168, 230, 207, 0.06) 50%,
-    rgba(107, 207, 159, 0.03) 70%,
+    rgba(26, 58, 74, 0.03) 0%,
+    rgba(45, 90, 110, 0.05) 30%,
+    rgba(26, 58, 74, 0.04) 50%,
+    rgba(45, 90, 110, 0.03) 70%,
     transparent 100%
   );
 }
@@ -75,7 +75,7 @@
   animation-duration: 8s;
 }
 
-/* ZenAI ambient glow behind hero - Green Enterprise Branding */
+/* ZenAI ambient glow behind hero - Orange/Petrol Enterprise Branding */
 .hero-section::before {
   content: '';
   position: absolute;
@@ -87,9 +87,9 @@
   height: 100%;
   background: radial-gradient(
     ellipse 65% 55% at 50% 40%,
-    rgba(107, 207, 159, 0.12) 0%,
-    rgba(136, 216, 176, 0.06) 35%,
-    rgba(168, 230, 207, 0.03) 55%,
+    rgba(255, 107, 53, 0.10) 0%,
+    rgba(255, 140, 66, 0.05) 35%,
+    rgba(255, 107, 53, 0.02) 55%,
     transparent 75%
   );
   pointer-events: none;
@@ -134,7 +134,7 @@
 
 .hero-energy-ring.active {
   opacity: 1;
-  border-color: rgba(107, 207, 159, 0.4);
+  border-color: rgba(255, 107, 53, 0.4);
   animation: energyRingPulse 2s ease-in-out infinite;
 }
 
@@ -142,12 +142,12 @@
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.5;
-    border-color: rgba(107, 207, 159, 0.4);
+    border-color: rgba(255, 107, 53, 0.4);
   }
   50% {
     transform: translate(-50%, -50%) scale(1.15);
     opacity: 0.2;
-    border-color: rgba(136, 216, 176, 0.2);
+    border-color: rgba(255, 140, 66, 0.2);
   }
 }
 
@@ -173,7 +173,7 @@
   }
 }
 
-/* Hero ambient glow behind brain - ZenAI Green Theme */
+/* Hero ambient glow behind brain - ZenAI Orange/Petrol Theme */
 .hero-brain::before {
   content: '';
   position: absolute;
@@ -184,9 +184,9 @@
   height: 380px;
   background: radial-gradient(
     circle at center,
-    rgba(107, 207, 159, 0.15) 0%,
-    rgba(136, 216, 176, 0.08) 25%,
-    rgba(168, 230, 207, 0.04) 45%,
+    rgba(255, 107, 53, 0.12) 0%,
+    rgba(255, 140, 66, 0.06) 25%,
+    rgba(255, 107, 53, 0.03) 45%,
     transparent 70%
   );
   border-radius: 50%;
@@ -195,7 +195,7 @@
   z-index: -1;
 }
 
-/* Secondary green glow - soft, multi-layered depth */
+/* Secondary orange glow - soft, multi-layered depth */
 .hero-brain::after {
   content: '';
   position: absolute;
@@ -206,8 +206,8 @@
   height: 220px;
   background: radial-gradient(
     circle at center,
-    rgba(136, 216, 176, 0.1) 0%,
-    rgba(168, 230, 207, 0.04) 50%,
+    rgba(255, 140, 66, 0.08) 0%,
+    rgba(255, 107, 53, 0.03) 50%,
     transparent 70%
   );
   border-radius: 50%;
@@ -1686,42 +1686,99 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Footer - ZenSation Enterprise Branding - ZenAI Green Theme */
+/* Footer - Modern ZenAI Footer with Navigation */
 .footer {
-  text-align: center;
-  padding: 1.5rem 2rem;
+  padding: 2.5rem 2rem 1.5rem;
   color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  border-top: 1px solid rgba(107, 207, 159, 0.15);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(245, 255, 250, 0.8) 100%);
+  border-top: 1px solid rgba(255, 107, 53, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(250, 252, 255, 0.95) 100%);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  transition: all 0.3s ease;
+  margin-top: auto;
 }
 
 .footer-content {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  max-width: 800px;
+  gap: 2rem;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
-.footer-brand {
-  font-size: 0.875rem;
+/* Footer Navigation */
+.footer-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.footer-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footer-nav-group h4 {
+  font-size: 0.8rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 50%, #6bcf9f 100%);
+  color: var(--text);
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.footer-nav-group button {
+  background: none;
+  border: none;
+  padding: 0.4rem 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.footer-nav-group button:hover {
+  color: var(--primary, #ff6b35);
+  transform: translateX(4px);
+}
+
+/* Brand Section */
+.footer-brand-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.footer-brand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-logo-icon {
+  font-size: 1.5rem;
+}
+
+.footer-logo-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary, #ff6b35) 0%, #ff8c42 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0;
 }
 
-.footer-copyright {
-  font-size: 0.7rem;
+.footer-tagline {
+  font-size: 0.8rem;
   color: var(--text-muted);
   margin: 0;
 }
@@ -1729,36 +1786,72 @@
 .footer-links {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
+  gap: 1.25rem;
 }
 
 .footer-links a {
-  color: #6bcf9f;
+  color: var(--primary, #ff6b35);
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   transition: all 0.2s ease;
+  opacity: 0.85;
 }
 
 .footer-links a:hover {
-  color: #88d8b0;
+  opacity: 1;
   text-decoration: underline;
 }
 
-.footer-divider {
-  color: rgba(107, 207, 159, 0.3);
-  font-size: 0.65rem;
+/* Footer Bottom */
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.footer:hover {
-  border-top-color: rgba(107, 207, 159, 0.25);
+.footer-copyright {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.footer-version {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 2rem 1.5rem 1.5rem;
+  }
+
+  .footer-nav {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .footer-brand-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 }
 
 @media (max-width: 480px) {
   .footer-links {
     flex-wrap: wrap;
-    justify-content: center;
+    gap: 1rem;
   }
 }
 

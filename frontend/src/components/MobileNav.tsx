@@ -111,14 +111,15 @@ export function MobileNav({
   };
 
   // Calculate total items for cognitive load indicator
-  const totalItems = 4 + navGroups.reduce((sum, g) => sum + g.items.length, 0);
+  const totalItems = 5 + navGroups.reduce((sum, g) => sum + g.items.length, 0);
   const cognitiveLevel = totalItems <= 10 ? 'low' : totalItems <= 15 ? 'medium' : 'high';
 
-  // Main navigation items
+  // Main navigation items - matching desktop nav for consistency
   const mainNavItems: NavItem[] = [
-    { label: 'Dashboard', icon: '📊', page: 'dashboard' },
     { label: 'Gedanken', icon: '💭', page: 'ideas' },
     { label: 'Triage', icon: '📋', page: 'triage' },
+    { label: 'Gespräche', icon: '💬', page: 'chat' },
+    { label: 'Dashboard', icon: '📊', page: 'dashboard' },
     { label: 'Archiv', icon: '📥', page: 'archive' },
   ];
 

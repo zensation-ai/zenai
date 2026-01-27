@@ -1,36 +1,109 @@
 /* ============================================
    Dashboard Home
    Overview page with stats, search, and activity
+   Modernized with better navigation and UX
    ============================================ */
 
 .dashboard-home {
-  padding: 2rem;
+  min-height: 100vh;
+  background: var(--bg-gradient, linear-gradient(180deg, rgba(245, 247, 250, 1) 0%, rgba(240, 243, 247, 1) 100%));
+}
+
+.dashboard-content {
+  padding: 1.5rem 2rem 2rem;
   max-width: 1000px;
   margin: 0 auto;
 }
 
-/* Greeting */
+/* AI Greeting Card - Humanized */
 .dashboard-greeting {
-  margin-bottom: 2rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-lg, 14px);
 }
 
-.dashboard-greeting h1 {
-  font-size: 1.75rem;
+.greeting-avatar {
+  flex-shrink: 0;
+}
+
+.dashboard-ai-avatar {
+  font-size: 2.5rem;
+  display: block;
+}
+
+.greeting-content h2 {
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text, #1a1a2e);
   margin: 0 0 0.25rem 0;
 }
 
-.dashboard-greeting p {
+.greeting-content p {
   color: var(--text-secondary, #64748b);
   font-size: 0.95rem;
   margin: 0;
 }
 
-.dashboard-ai-avatar {
-  display: inline-block;
-  margin-right: 0.5rem;
+/* Quick Actions Grid */
+.dashboard-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem;
+  border-radius: var(--radius-lg, 14px);
+  border: 1px solid var(--glass-border, rgba(255, 107, 53, 0.1));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary, #ff6b35);
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.15);
+}
+
+.quick-action-btn.primary {
+  background: linear-gradient(135deg, var(--primary, #ff6b35) 0%, #ff8c42 100%);
+  border-color: transparent;
+  color: white;
+}
+
+.quick-action-btn.primary:hover {
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.35);
+}
+
+.quick-action-btn.primary .quick-action-icon,
+.quick-action-btn.primary .quick-action-label {
+  color: white;
+}
+
+.quick-action-icon {
+  font-size: 1.5rem;
+}
+
+.quick-action-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text, #1a1a2e);
 }
 
 /* Stats Grid */
