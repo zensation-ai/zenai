@@ -130,8 +130,12 @@
   position: relative;
   width: 56px;
   height: 56px;
-  /* Fix: Transparent background, no visible box */
-  background: transparent;
+  /* Fix: Fully transparent - no background, border, or shadow */
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 /* Brain SVG */
@@ -142,7 +146,8 @@
   z-index: 2;
   /* Fix: Allow glow effects to extend beyond SVG bounds */
   overflow: visible;
-  background: transparent;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Idle state - subtle breathing */
@@ -151,9 +156,9 @@
   animation: brainBreathing 4s ease-in-out infinite;
 }
 
-/* Active state - more pronounced pulse */
+/* Active state - smooth, continuous thinking animation */
 .ai-brain-container.active .brain-group {
-  animation: brainPulse 1.5s ease-in-out infinite;
+  animation: brainPulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* Brain hemispheres */
@@ -173,7 +178,7 @@
 }
 
 .ai-brain-container.active .neural-path {
-  animation: neuralFlow 2s ease-in-out infinite;
+  animation: neuralFlow 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .ai-brain-container.active .neural-path.path-1 { animation-delay: 0s; }
@@ -194,7 +199,7 @@
 }
 
 .ai-brain-container.active .neural-node {
-  animation: nodePulse 1.2s ease-in-out infinite;
+  animation: nodePulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .ai-brain-container.active .node-1 { animation-delay: 0s; }
@@ -203,7 +208,28 @@
 .ai-brain-container.active .node-4 { animation-delay: 0.1s; }
 .ai-brain-container.active .node-5 { animation-delay: 0.3s; }
 .ai-brain-container.active .node-6 { animation-delay: 0.5s; }
-.ai-brain-container.active .node-center { animation-delay: 0s; animation-duration: 0.8s; }
+.ai-brain-container.active .node-7 { animation-delay: 0.15s; }
+.ai-brain-container.active .node-8 { animation-delay: 0.35s; }
+.ai-brain-container.active .node-center { animation-delay: 0s; animation-duration: 1.2s; }
+
+/* Hemisphere highlight animation */
+.brain-hemisphere-highlight {
+  opacity: 0.6;
+  transition: opacity 0.5s ease;
+}
+
+.ai-brain-container.active .brain-hemisphere-highlight {
+  animation: highlightPulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
 
 /* Glow rings */
 .brain-glow-ring {
@@ -285,33 +311,55 @@
 @keyframes brainBreathing {
   0%, 100% {
     transform: scale(1);
-    opacity: 0.7;
+    opacity: 0.85;
   }
   50% {
-    transform: scale(1.02);
-    opacity: 0.9;
+    transform: scale(1.03);
+    opacity: 1;
   }
 }
 
+/* Smooth, organic thinking animation */
 @keyframes brainPulse {
-  0%, 100% {
-    transform: scale(1);
-    filter: brightness(1);
+  0% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1) saturate(1);
+  }
+  25% {
+    transform: scale(1.04) rotate(0.5deg);
+    filter: brightness(1.1) saturate(1.05);
   }
   50% {
-    transform: scale(1.08);
-    filter: brightness(1.2);
+    transform: scale(1.08) rotate(0deg);
+    filter: brightness(1.2) saturate(1.1);
+  }
+  75% {
+    transform: scale(1.04) rotate(-0.5deg);
+    filter: brightness(1.1) saturate(1.05);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1) saturate(1);
   }
 }
 
+/* Smooth flowing neural activity */
 @keyframes neuralFlow {
   0% {
     stroke-dashoffset: 100;
     opacity: 0.3;
   }
+  30% {
+    stroke-dashoffset: 50;
+    opacity: 0.7;
+  }
   50% {
     stroke-dashoffset: 0;
     opacity: 1;
+  }
+  70% {
+    stroke-dashoffset: -50;
+    opacity: 0.7;
   }
   100% {
     stroke-dashoffset: -100;
@@ -322,20 +370,40 @@
 @keyframes centerPulse {
   0%, 100% {
     opacity: 0.3;
+    stroke-width: 1;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.9;
+    stroke-width: 1.5;
   }
 }
 
+/* Organic node pulsation - smooth and natural */
 @keyframes nodePulse {
-  0%, 100% {
+  0% {
     opacity: 0.4;
     transform: scale(1);
+    filter: blur(0px);
+  }
+  30% {
+    opacity: 0.7;
+    transform: scale(1.2);
+    filter: blur(0px);
   }
   50% {
     opacity: 1;
-    transform: scale(1.5);
+    transform: scale(1.4);
+    filter: blur(0.3px);
+  }
+  70% {
+    opacity: 0.7;
+    transform: scale(1.2);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+    filter: blur(0px);
   }
 }
 
