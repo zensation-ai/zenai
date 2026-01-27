@@ -75,13 +75,13 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
 
   // Remember/Recall patterns
   { pattern: /merk(e?)\s+(dir|es\s+dir)/i, tools: ['remember'], weight: 0.95 },
-  { pattern: /erinner(e|st)?\s+(dich|mich)/i, tools: ['recall'], weight: 0.9 },
+  { pattern: /erinner(e|st)?\s+(du\s+)?(dich|mich)/i, tools: ['recall'], weight: 0.9 },
   { pattern: /vergiss\s+nicht/i, tools: ['remember'], weight: 0.85 },
   { pattern: /was\s+(hatte|habe)\s+ich\s+(dir\s+)?gesagt/i, tools: ['recall'], weight: 0.9 },
 
   // Calculate patterns
   { pattern: /berechn(e|en?)/i, tools: ['calculate'], weight: 0.95 },
-  { pattern: /rechne\s+(aus|zusammen)/i, tools: ['calculate'], weight: 0.9 },
+  { pattern: /rechne\s+.{0,30}(aus|zusammen)/i, tools: ['calculate'], weight: 0.9 },
   { pattern: /wie\s+viel\s+(ist|sind|ergibt)/i, tools: ['calculate'], weight: 0.8 },
   { pattern: /(\d+\s*[\+\-\*\/]\s*\d+)/i, tools: ['calculate'], weight: 0.85 },
 
@@ -424,13 +424,16 @@ export function getDefaultToolsForMode(mode: ChatMode): string[] {
  * Check if a message is a simple greeting/small talk
  */
 export function isSimpleConversation(message: string): boolean {
+  const trimmed = message.trim();
+
+  // Simple patterns that should match the entire message (with optional punctuation)
   const simplePatterns = [
-    /^(hallo|hi|hey|guten\s+(morgen|tag|abend)|servus|moin)/i,
-    /^(danke|vielen\s+dank|thx|thanks)/i,
-    /^(ja|nein|ok|okay|alles\s+klar|verstanden)/i,
-    /^wie\s+geht('?s|\s+es\s+dir)/i,
-    /^(tschüss|bye|auf\s+wiedersehen|bis\s+(bald|später|dann))/i,
+    /^(hallo|hi|hey|guten\s+(morgen|tag|abend)|servus|moin)[!?.]*$/i,
+    /^(danke|vielen\s+dank|thx|thanks)[!?.]*$/i,
+    /^(ja|nein|ok|okay|alles\s+klar|verstanden)[!?.]*$/i,
+    /^wie\s+geht('?s|\s+es\s+dir)\??$/i,
+    /^(tschüss|bye|auf\s+wiedersehen|bis\s+(bald|später|dann))[!?.]*$/i,
   ];
 
-  return simplePatterns.some(p => p.test(message.trim()));
+  return simplePatterns.some(p => p.test(trimmed));
 }
