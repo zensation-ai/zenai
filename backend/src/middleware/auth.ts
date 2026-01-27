@@ -431,7 +431,9 @@ let rateLimitsTableInitialized = false;
  * Uses queryContext to ensure it's created in the correct schema
  */
 async function ensureRateLimitsTable(): Promise<void> {
-  if (rateLimitsTableInitialized) return;
+  if (rateLimitsTableInitialized) {
+    return;
+  }
 
   try {
     await queryContext('personal', `

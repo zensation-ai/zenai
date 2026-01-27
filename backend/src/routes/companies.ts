@@ -10,7 +10,17 @@ interface Company {
   id: string;
   name: string;
   description: string | null;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Database row type (may have settings as string from JSON column)
+interface CompanyDatabaseRow {
+  id: string;
+  name: string;
+  description: string | null;
+  settings: string | Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
@@ -281,8 +291,8 @@ companiesRouter.get('/:id/stats', apiKeyAuth, asyncHandler(async (req, res) => {
   });
 }));
 
-// Helper function
-function formatCompany(row: any): Company {
+// Helper function to convert database row to Company type
+function formatCompany(row: CompanyDatabaseRow): Company {
   return {
     id: row.id,
     name: row.name,

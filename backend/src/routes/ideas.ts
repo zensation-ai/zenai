@@ -296,7 +296,7 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   }
 
   let whereClause = '';
-  const params: any[] = [];
+  const params: (string | number | boolean)[] = [];
   let paramIndex = 1;
 
   if (typeResult.data) {

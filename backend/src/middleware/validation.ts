@@ -165,8 +165,9 @@ export const trainingFeedbackSchema = z.object({
 
 /**
  * Request validation schema type
+ * Exported for use in route definitions
  */
-interface RequestSchema {
+export interface RequestSchema {
   body?: ZodSchema;
   query?: ZodSchema;
   params?: ZodSchema;
