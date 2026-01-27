@@ -24,14 +24,14 @@
   position: relative;
   /* CLS-Fix: Feste Höhe verhindert Layout-Shift beim Laden */
   min-height: 420px;
-  /* ZenAI: Enterprise AI Gradient - Professional Purple/Blue */
+  /* ZenAI: Enterprise AI Gradient - Professional Green */
   background: linear-gradient(
     180deg,
-    rgba(102, 126, 234, 0.02) 0%,
-    rgba(118, 75, 162, 0.06) 15%,
-    rgba(240, 147, 251, 0.08) 40%,
-    rgba(118, 75, 162, 0.05) 65%,
-    rgba(102, 126, 234, 0.02) 85%,
+    rgba(107, 207, 159, 0.02) 0%,
+    rgba(136, 216, 176, 0.06) 15%,
+    rgba(168, 230, 207, 0.08) 40%,
+    rgba(136, 216, 176, 0.05) 65%,
+    rgba(107, 207, 159, 0.02) 85%,
     transparent 100%
   );
   overflow: hidden;
@@ -41,15 +41,15 @@
     background 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Mood-basierte Farbvariationen - ZenAI Purple/Blue Theme */
+/* Mood-basierte Farbvariationen - ZenAI Green Theme */
 .hero-section[data-mood="energetisch"],
 .hero-section[data-mood="motiviert"] {
   background: linear-gradient(
     180deg,
-    rgba(102, 126, 234, 0.04) 0%,
-    rgba(118, 75, 162, 0.10) 30%,
-    rgba(240, 147, 251, 0.12) 50%,
-    rgba(118, 75, 162, 0.06) 70%,
+    rgba(107, 207, 159, 0.04) 0%,
+    rgba(136, 216, 176, 0.10) 30%,
+    rgba(168, 230, 207, 0.12) 50%,
+    rgba(136, 216, 176, 0.06) 70%,
     transparent 100%
   );
 }
@@ -58,10 +58,10 @@
 .hero-section[data-mood="reflektiv"] {
   background: linear-gradient(
     180deg,
-    rgba(102, 126, 234, 0.03) 0%,
-    rgba(118, 75, 162, 0.05) 30%,
-    rgba(240, 147, 251, 0.06) 50%,
-    rgba(102, 126, 234, 0.03) 70%,
+    rgba(107, 207, 159, 0.03) 0%,
+    rgba(136, 216, 176, 0.05) 30%,
+    rgba(168, 230, 207, 0.06) 50%,
+    rgba(107, 207, 159, 0.03) 70%,
     transparent 100%
   );
 }
@@ -75,7 +75,7 @@
   animation-duration: 8s;
 }
 
-/* ZenAI ambient glow behind hero - Enterprise AI Branding */
+/* ZenAI ambient glow behind hero - Green Enterprise Branding */
 .hero-section::before {
   content: '';
   position: absolute;
@@ -87,9 +87,9 @@
   height: 100%;
   background: radial-gradient(
     ellipse 65% 55% at 50% 40%,
-    rgba(102, 126, 234, 0.12) 0%,
-    rgba(118, 75, 162, 0.06) 35%,
-    rgba(240, 147, 251, 0.03) 55%,
+    rgba(107, 207, 159, 0.12) 0%,
+    rgba(136, 216, 176, 0.06) 35%,
+    rgba(168, 230, 207, 0.03) 55%,
     transparent 75%
   );
   pointer-events: none;
@@ -134,7 +134,7 @@
 
 .hero-energy-ring.active {
   opacity: 1;
-  border-color: rgba(102, 126, 234, 0.4);
+  border-color: rgba(107, 207, 159, 0.4);
   animation: energyRingPulse 2s ease-in-out infinite;
 }
 
@@ -142,12 +142,12 @@
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.5;
-    border-color: rgba(102, 126, 234, 0.4);
+    border-color: rgba(107, 207, 159, 0.4);
   }
   50% {
     transform: translate(-50%, -50%) scale(1.15);
     opacity: 0.2;
-    border-color: rgba(118, 75, 162, 0.2);
+    border-color: rgba(136, 216, 176, 0.2);
   }
 }
 
@@ -169,7 +169,7 @@
   }
 }
 
-/* Hero ambient glow behind brain - Neuro: Tiefenwirkung fokussiert Aufmerksamkeit */
+/* Hero ambient glow behind brain - ZenAI Green Theme */
 .hero-brain::before {
   content: '';
   position: absolute;
@@ -180,9 +180,9 @@
   height: 380px;
   background: radial-gradient(
     circle at center,
-    rgba(255, 107, 53, 0.18) 0%,
-    rgba(255, 140, 90, 0.1) 25%,
-    rgba(255, 180, 120, 0.05) 45%,
+    rgba(107, 207, 159, 0.15) 0%,
+    rgba(136, 216, 176, 0.08) 25%,
+    rgba(168, 230, 207, 0.04) 45%,
     transparent 70%
   );
   border-radius: 50%;
@@ -191,7 +191,7 @@
   z-index: -1;
 }
 
-/* Secondary warm glow - soft, multi-layered depth */
+/* Secondary green glow - soft, multi-layered depth */
 .hero-brain::after {
   content: '';
   position: absolute;
@@ -202,8 +202,8 @@
   height: 220px;
   background: radial-gradient(
     circle at center,
-    rgba(255, 140, 90, 0.12) 0%,
-    rgba(255, 180, 120, 0.04) 50%,
+    rgba(136, 216, 176, 0.1) 0%,
+    rgba(168, 230, 207, 0.04) 50%,
     transparent 70%
   );
   border-radius: 50%;
@@ -248,13 +248,14 @@
 }
 
 /* Hero greeting - Neuro: Große Typografie für schnelle Erfassung */
+/* Animation verlangsamt für bessere Lesbarkeit (1.5s statt 0.8s) */
 .hero-greeting {
   font-size: 2rem;
   font-weight: 700;
   color: var(--text);
   margin: 0;
   letter-spacing: -0.025em;
-  animation: heroGreetingReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: heroGreetingReveal 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
   position: relative;
   line-height: 1.25;
   /* Neuro: Text-Rendering für bessere Lesbarkeit */
@@ -270,7 +271,8 @@
   margin: 0 0 1.5rem 0;
   max-width: 460px;
   line-height: 1.6;
-  animation: heroSubtextReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+  /* Animation verlangsamt für bessere Lesbarkeit (1.2s statt 0.8s, mit Delay) */
+  animation: heroSubtextReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
   position: relative;
   opacity: 0;
 }
@@ -503,8 +505,8 @@
   font-size: 1.35rem;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  /* Neuro-UX: Layout-stabile Animation */
-  animation: heroGreetingReveal 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* Neuro-UX: Layout-stabile Animation - verlangsamt für Lesbarkeit */
+  animation: heroGreetingReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
   opacity: 0;
 }
 
@@ -580,30 +582,53 @@
   flex-shrink: 0;
 }
 
-.header-ai-status {
+/* ZenAI Logo Container */
+.header-logo-container {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.ai-status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--header-text-secondary);
-  transition: all 0.3s ease;
+.header-logo-icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
 }
 
-.ai-status-dot.active {
-  background: var(--primary);
-  box-shadow: 0 0 12px var(--primary-glow);
-  animation: statusPulse 1.5s ease-in-out infinite;
+.zenai-logo-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 8px rgba(26, 58, 47, 0.4));
+  transition: all 0.3s ease;
 }
 
-@keyframes statusPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.8; }
+.header-logo-icon:hover .zenai-logo-svg {
+  filter: drop-shadow(0 4px 12px rgba(107, 207, 159, 0.5));
+  transform: scale(1.05);
+}
+
+.logo-status-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #64748b;
+  border: 2px solid var(--header-bg);
+  transition: all 0.3s ease;
+}
+
+.logo-status-dot.active {
+  background: #6bcf9f;
+  box-shadow: 0 0 8px rgba(107, 207, 159, 0.8);
+  animation: logoStatusPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes logoStatusPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); box-shadow: 0 0 12px rgba(107, 207, 159, 1); }
 }
 
 .header-logo-text {
@@ -611,11 +636,11 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   white-space: nowrap;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 50%, #6bcf9f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+  text-shadow: 0 0 30px rgba(107, 207, 159, 0.3);
 }
 
 .header-center {
@@ -641,9 +666,9 @@
 .nav-button {
   padding: 8px 14px;
   border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
-  color: var(--header-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
@@ -654,6 +679,7 @@
   gap: 6px;
   position: relative;
   overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Subtle hover glow effect */
@@ -672,27 +698,29 @@
 }
 
 .nav-button:hover {
-  background: var(--header-hover);
-  color: var(--header-text);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .nav-button:active {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   transform: translateY(0) scale(0.98);
   transition-duration: 0.08s;
 }
 
 .nav-button.active {
-  background: var(--primary);
-  color: white;
+  background: linear-gradient(135deg, #234a3c 0%, #1a3a2f 100%);
+  color: #a8e6cf;
   font-weight: 600;
-  box-shadow: 0 2px 12px rgba(255, 107, 53, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: rgba(107, 207, 159, 0.4);
+  box-shadow: 0 2px 12px rgba(107, 207, 159, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .nav-button.active:hover {
-  background: var(--primary-dark);
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #2a5a4a 0%, #234a3c 100%);
+  box-shadow: 0 4px 16px rgba(107, 207, 159, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .nav-button.incubator-nav {
@@ -1653,7 +1681,7 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Footer - ZenSation Enterprise Branding */
+/* Footer - ZenSation Enterprise Branding - ZenAI Green Theme */
 .footer {
   text-align: center;
   padding: 1.5rem 2rem;
@@ -1661,8 +1689,8 @@
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  border-top: 1px solid rgba(102, 126, 234, 0.15);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(248, 250, 255, 0.8) 100%);
+  border-top: 1px solid rgba(107, 207, 159, 0.15);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(245, 255, 250, 0.8) 100%);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   transition: all 0.3s ease;
@@ -1680,7 +1708,7 @@
 .footer-brand {
   font-size: 0.875rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 50%, #6bcf9f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1701,7 +1729,7 @@
 }
 
 .footer-links a {
-  color: #667eea;
+  color: #6bcf9f;
   text-decoration: none;
   font-weight: 500;
   font-size: 0.75rem;
@@ -1709,17 +1737,17 @@
 }
 
 .footer-links a:hover {
-  color: #764ba2;
+  color: #88d8b0;
   text-decoration: underline;
 }
 
 .footer-divider {
-  color: rgba(102, 126, 234, 0.3);
+  color: rgba(107, 207, 159, 0.3);
   font-size: 0.65rem;
 }
 
 .footer:hover {
-  border-top-color: rgba(102, 126, 234, 0.25);
+  border-top-color: rgba(107, 207, 159, 0.25);
 }
 
 @media (max-width: 480px) {

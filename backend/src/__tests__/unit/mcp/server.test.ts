@@ -53,8 +53,13 @@ describe('MCP Server', () => {
   let server: KIABMCPServer;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     server = new KIABMCPServer();
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   // ===========================================
@@ -65,7 +70,7 @@ describe('MCP Server', () => {
     it('should create server with default config', () => {
       const config = server.getConfig();
 
-      expect(config.name).toBe('ki-ab-brain');
+      expect(config.name).toBe('zenai-brain');
       expect(config.version).toBe('1.0.0');
       expect(config.defaultContext).toBe('personal');
     });
@@ -456,7 +461,7 @@ describe('MCP Server', () => {
 
       const response = await server.handleRequest({ method: 'resources/list' });
 
-      const ideasResource = response.resources!.find(r => r.uri === 'kiab://ideas');
+      const ideasResource = response.resources!.find(r => r.uri === 'zenai://ideas');
       expect(ideasResource).toBeDefined();
     });
 
@@ -465,7 +470,7 @@ describe('MCP Server', () => {
 
       const response = await server.handleRequest({ method: 'resources/list' });
 
-      const statsResource = response.resources!.find(r => r.uri === 'kiab://stats');
+      const statsResource = response.resources!.find(r => r.uri === 'zenai://stats');
       expect(statsResource).toBeDefined();
     });
   });
@@ -482,11 +487,11 @@ describe('MCP Server', () => {
 
       const response = await server.handleRequest({
         method: 'resources/read',
-        params: { uri: 'kiab://ideas' },
+        params: { uri: 'zenai://ideas' },
       });
 
       expect(response.contents).toBeDefined();
-      expect(response.contents![0].uri).toBe('kiab://ideas');
+      expect(response.contents![0].uri).toBe('zenai://ideas');
 
       const content = JSON.parse(response.contents![0].text);
       expect(content.ideas).toHaveLength(2);
@@ -508,7 +513,7 @@ describe('MCP Server', () => {
 
       const response = await server.handleRequest({
         method: 'resources/read',
-        params: { uri: `kiab://ideas/${testId}` },
+        params: { uri: `zenai://ideas/${testId}` },
       });
 
       // Implementation returns content, not contents
@@ -524,7 +529,7 @@ describe('MCP Server', () => {
 
       const response = await server.handleRequest({
         method: 'resources/read',
-        params: { uri: 'kiab://ideas/non-existent-id' },
+        params: { uri: 'zenai://ideas/non-existent-id' },
       });
 
       // Implementation returns isError: true instead of throwing
@@ -534,7 +539,7 @@ describe('MCP Server', () => {
     it('should return error for unknown resource', async () => {
       const response = await server.handleRequest({
         method: 'resources/read',
-        params: { uri: 'kiab://unknown/resource' },
+        params: { uri: 'zenai://unknown/resource' },
       });
 
       // Implementation returns isError: true instead of throwing
