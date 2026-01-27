@@ -874,7 +874,7 @@ function App() {
           <div className="header-left">
             <div className="header-ai-status">
               <span className={`ai-status-dot neuro-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />
-              <span className="header-logo-text">Personal AI Brain</span>
+              <span className="header-logo-text">ZenAI</span>
             </div>
           </div>
           <div className="header-center">
@@ -1258,7 +1258,17 @@ function App() {
       </main>
 
       <footer className="footer" role="contentinfo">
-        <p>Personal AI System • Lokal & Privat</p>
+        <div className="footer-content">
+          <p className="footer-brand">ZenAI by ZenSation Enterprise Solutions</p>
+          <p className="footer-copyright">&copy; {new Date().getFullYear()} Alexander Bering. All rights reserved.</p>
+          <div className="footer-links">
+            <a href="https://zensation.ai" target="_blank" rel="noopener noreferrer">zensation.ai</a>
+            <span className="footer-divider">|</span>
+            <a href="https://zensation.app" target="_blank" rel="noopener noreferrer">zensation.app</a>
+            <span className="footer-divider">|</span>
+            <a href="https://zensation.sh" target="_blank" rel="noopener noreferrer">zensation.sh</a>
+          </div>
+        </div>
       </footer>
 
       {/* Detail Modal */}

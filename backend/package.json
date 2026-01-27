@@ -1,7 +1,8 @@
 {
-  "name": "personal-ai-backend",
+  "name": "zenai-backend",
   "version": "1.0.0",
-  "description": "Personal AI System - Backend API for voice memo structuring",
+  "description": "ZenAI - Enterprise AI Platform by ZenSation Enterprise Solutions",
+  "homepage": "https://zensation.ai",
   "main": "dist/main.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
@@ -31,7 +32,7 @@
     "mistral",
     "pgvector"
   ],
-  "author": "Alexander Bering",
+  "author": "Alexander Bering <alex@zensation.ai> (https://zensation.ai)",
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

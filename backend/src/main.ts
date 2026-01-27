@@ -122,6 +122,14 @@ if (!process.env.ALLOWED_ORIGINS && process.env.NODE_ENV === 'production') {
 // Vercel preview URL patterns for dynamic deployments
 const vercelPreviewPatterns = [
   /^https:\/\/frontend-[a-z0-9]+-alexander-berings-projects\.vercel\.app$/,
+  /^https:\/\/zenai-[a-z0-9]+\.vercel\.app$/,
+  /^https:\/\/zenai\.vercel\.app$/,
+  /^https:\/\/zensation\.ai$/,
+  /^https:\/\/zensation\.app$/,
+  /^https:\/\/zensation\.sh$/,
+  /^https:\/\/.*\.zensation\.ai$/,
+  /^https:\/\/.*\.zensation\.app$/,
+  // Legacy patterns for migration
   /^https:\/\/ki-ab-[a-z0-9]+\.vercel\.app$/,
   /^https:\/\/ki-ab\.vercel\.app$/,
 ];
@@ -347,7 +355,23 @@ async function startServer(): Promise<void> {
   const cacheStatus = secretsManager.getCacheStatus();
 
   console.log(`
-Personal AI System - Backend (Phase 31)
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║   ███████╗███████╗███╗   ██╗ █████╗ ██╗                       ║
+║   ╚══███╔╝██╔════╝████╗  ██║██╔══██╗██║                       ║
+║     ███╔╝ █████╗  ██╔██╗ ██║███████║██║                       ║
+║    ███╔╝  ██╔══╝  ██║╚██╗██║██╔══██║██║                       ║
+║   ███████╗███████╗██║ ╚████║██║  ██║██║                       ║
+║   ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝                       ║
+║                                                               ║
+║   Enterprise AI Platform by ZenSation Enterprise Solutions   ║
+║   © ${new Date().getFullYear()} Alexander Bering. All rights reserved.            ║
+║                                                               ║
+╠═══════════════════════════════════════════════════════════════╣
+║   zensation.ai  |  zensation.app  |  zensation.sh            ║
+╚═══════════════════════════════════════════════════════════════╝
+
+ZenAI Backend - Phase 31
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs

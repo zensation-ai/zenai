@@ -1,6 +1,20 @@
-# PersonalAIBrain
+# ZenAI
 
-A personal AI-powered brain that captures, structures, and connects your ideas across personal and work contexts.
+<div align="center">
+  <img src="frontend/public/zenai-brain.svg" alt="ZenAI Logo" width="120" />
+
+  **Enterprise AI Platform by ZenSation Enterprise Solutions**
+
+  [![Website](https://img.shields.io/badge/Website-zensation.ai-667eea)](https://zensation.ai)
+  [![App](https://img.shields.io/badge/App-zensation.app-764ba2)](https://zensation.app)
+  [![Platform](https://img.shields.io/badge/Platform-zensation.sh-f093fb)](https://zensation.sh)
+
+  *© 2026 Alexander Bering. All rights reserved.*
+</div>
+
+---
+
+A powerful enterprise AI platform that captures, structures, and connects your ideas across personal and work contexts with state-of-the-art AI capabilities.
 
 ## Features
 
@@ -49,7 +63,7 @@ A personal AI-powered brain that captures, structures, and connects your ideas a
 ### Infrastructure
 - **GitHub Actions** CI/CD
 - **Railway** for backend hosting
-- Production URL: `https://ki-ab-production.up.railway.app`
+- Production URL: `https://zenai-production.up.railway.app`
 
 ## Getting Started
 
@@ -241,17 +255,36 @@ This is a personal project, but suggestions are welcome via issues.
 
 ## License
 
-Private project - All rights reserved
+**Proprietary Software** - © 2026 Alexander Bering / ZenSation Enterprise Solutions. All rights reserved.
+
+This software and associated documentation files are proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited without express written permission from ZenSation Enterprise Solutions.
 
 ## Support
 
-For issues or questions:
-- Check [EXECUTION_PLAN.md](EXECUTION_PLAN.md) for setup guides
-- Review API documentation at `/api-docs`
-- Check Railway logs for backend issues
+For enterprise support and inquiries:
+- Visit [zensation.ai](https://zensation.ai)
+- Check API documentation at `/api-docs`
+- Contact: alex@zensation.ai
+
+## ZenSation Enterprise Solutions
+
+ZenAI is the flagship AI platform by ZenSation Enterprise Solutions, providing cutting-edge artificial intelligence solutions for businesses and individuals.
+
+**Our Platforms:**
+- **[zensation.ai](https://zensation.ai)** - Enterprise AI Solutions
+- **[zensation.app](https://zensation.app)** - Application Platform
+- **[zensation.sh](https://zensation.sh)** - Developer Tools
 
 ---
 
-**Current Status**: Phase 21 complete, OpenAI integration active, CI/CD deployed
+<div align="center">
 
-Built with ❤️ by Alexander Bering
+  **ZenAI - Enterprise AI Platform**
+
+  Phase 31 • Vision Integration • Claude AI Powered
+
+  Built with excellence by [Alexander Bering](https://zensation.ai)
+
+  *© 2026 ZenSation Enterprise Solutions*
+
+</div>

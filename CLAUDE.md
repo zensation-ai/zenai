@@ -1,12 +1,17 @@
-# KI-AB Project Context
+# ZenAI Project Context
+
+> **ZenAI - Enterprise AI Platform**
+> © 2026 Alexander Bering / ZenSation Enterprise Solutions
+> https://zensation.ai | https://zensation.app | https://zensation.sh
 
 ## Deployment URLs
 
 | Service | URL | Notes |
 |---------|-----|-------|
 | **Frontend (Production)** | https://frontend-mu-six-93.vercel.app/ | Aktive Vercel-Deployment |
-| **Backend (Production)** | https://ki-ab-production.up.railway.app | Railway Auto-Deploy auf `main` |
+| **Backend (Production)** | https://zenai-production.up.railway.app | Railway Auto-Deploy auf `main` |
 | **Database** | Supabase | PostgreSQL mit pgvector |
+| **Website** | https://zensation.ai | ZenSation Enterprise Solutions |
 
 ## Architecture
 
