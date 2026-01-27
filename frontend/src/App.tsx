@@ -1307,16 +1307,52 @@ function App() {
         </section>
       </main>
 
-      <footer className="footer" role="contentinfo">
+      <footer className="footer liquid-glass-nav" role="contentinfo">
         <div className="footer-content">
-          <p className="footer-brand">ZenAI by ZenSation Enterprise Solutions</p>
-          <p className="footer-copyright">&copy; {new Date().getFullYear()} Alexander Bering. All rights reserved.</p>
-          <div className="footer-links">
-            <a href="https://zensation.ai" target="_blank" rel="noopener noreferrer">zensation.ai</a>
-            <span className="footer-divider">|</span>
-            <a href="https://zensation.app" target="_blank" rel="noopener noreferrer">zensation.app</a>
-            <span className="footer-divider">|</span>
-            <a href="https://zensation.sh" target="_blank" rel="noopener noreferrer">zensation.sh</a>
+          {/* Quick Navigation */}
+          <nav className="footer-nav" aria-label="Footer-Navigation">
+            <div className="footer-nav-group">
+              <h4>Navigation</h4>
+              <button type="button" onClick={() => setCurrentPage('ideas')}>💭 Gedanken</button>
+              <button type="button" onClick={() => setCurrentPage('chat')}>💬 Gespräche</button>
+              <button type="button" onClick={() => setCurrentPage('dashboard')}>📊 Dashboard</button>
+            </div>
+            <div className="footer-nav-group">
+              <h4>KI-Features</h4>
+              <button type="button" onClick={() => setCurrentPage('incubator')}>🧠 Inkubator</button>
+              <button type="button" onClick={() => setCurrentPage('learning')}>📚 Lernen</button>
+              <button type="button" onClick={() => setCurrentPage('analytics')}>📈 Analytics</button>
+            </div>
+            <div className="footer-nav-group">
+              <h4>System</h4>
+              <button type="button" onClick={() => setCurrentPage('profile')}>👤 Profil</button>
+              <button type="button" onClick={() => setCurrentPage('export')}>📤 Export</button>
+              <button type="button" onClick={() => setCurrentPage('integrations')}>🔗 Integrationen</button>
+            </div>
+          </nav>
+
+          {/* Brand Section */}
+          <div className="footer-brand-section">
+            <div className="footer-brand-info">
+              <div className="footer-logo">
+                <span className="footer-logo-icon">🧠</span>
+                <span className="footer-logo-text">ZenAI</span>
+              </div>
+              <p className="footer-tagline">Dein intelligenter Gedanken-Assistent</p>
+            </div>
+            <div className="footer-links">
+              <a href="https://zensation.ai" target="_blank" rel="noopener noreferrer">zensation.ai</a>
+              <a href="https://zensation.app" target="_blank" rel="noopener noreferrer">zensation.app</a>
+              <a href="https://zensation.sh" target="_blank" rel="noopener noreferrer">zensation.sh</a>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="footer-bottom">
+            <p className="footer-copyright">
+              &copy; {new Date().getFullYear()} Alexander Bering / ZenSation Enterprise Solutions
+            </p>
+            <p className="footer-version">Phase 31 • v2026.1</p>
           </div>
         </div>
       </footer>

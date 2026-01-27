@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
+import { PageHeader } from './PageHeader';
 import '../neurodesign.css';
 import './DashboardHome.css';
 
@@ -178,16 +179,51 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
     return 'Guten Abend';
   };
 
+  // Quick action items for navigation
+  const quickActions = [
+    { label: 'Neuer Gedanke', icon: '✨', page: 'ideas', primary: true },
+    { label: 'Chat starten', icon: '💬', page: 'chat' },
+    { label: 'Inkubator', icon: '🧠', page: 'incubator' },
+    { label: 'Analytics', icon: '📈', page: 'analytics' },
+  ];
+
   return (
-    <div className="dashboard-home liquid-glass-nav" data-context={context}>
-      {/* Greeting */}
-      <div className="dashboard-greeting">
-        <h1>{getGreeting()}!</h1>
-        <p>
-          <span className="dashboard-ai-avatar neuro-breathing">{AI_AVATAR.emoji}</span>
-          {AI_PERSONALITY.name} ist bereit, deine Gedanken zu strukturieren.
-        </p>
-      </div>
+    <div className="dashboard-home" data-context={context}>
+      <PageHeader
+        title="Dashboard"
+        icon="🏠"
+        subtitle={`${getGreeting()} – ${AI_PERSONALITY.name} ist bereit`}
+        onBack={() => onNavigate('ideas')}
+        backLabel="Gedanken"
+      />
+
+      <div className="dashboard-content">
+        {/* AI Greeting Card */}
+        <div className="dashboard-greeting liquid-glass-nav">
+          <div className="greeting-avatar">
+            <span className="dashboard-ai-avatar neuro-breathing">{AI_AVATAR.emoji}</span>
+          </div>
+          <div className="greeting-content">
+            <h2>{getGreeting()}!</h2>
+            <p>{AI_PERSONALITY.name} ist bereit, deine Gedanken zu strukturieren.</p>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="dashboard-quick-actions">
+          {quickActions.map((action) => (
+            <button
+              key={action.page}
+              type="button"
+              className={`quick-action-btn liquid-glass-nav neuro-hover-lift ${action.primary ? 'primary' : ''}`}
+              onClick={() => onNavigate(action.page)}
+              aria-label={action.label}
+            >
+              <span className="quick-action-icon">{action.icon}</span>
+              <span className="quick-action-label">{action.label}</span>
+            </button>
+          ))}
+        </div>
 
       {/* Stats Grid */}
       <div className="dashboard-stats">
@@ -337,6 +373,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };
