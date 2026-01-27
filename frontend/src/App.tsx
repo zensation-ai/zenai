@@ -874,18 +874,18 @@ function App() {
           <div className="header-left">
             <div className="header-logo-container">
               <div className="header-logo-icon">
-                {/* ZenAI Logo: Brain on dark green circle */}
+                {/* ZenAI Logo: Orange Brain on Midnight Petrol circle */}
                 <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" className="zenai-logo-svg">
                   <defs>
                     <linearGradient id="zenLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#a8e6cf" />
-                      <stop offset="50%" stopColor="#88d8b0" />
-                      <stop offset="100%" stopColor="#6bcf9f" />
+                      <stop offset="0%" stopColor="#ffb347" />
+                      <stop offset="50%" stopColor="#ff8c00" />
+                      <stop offset="100%" stopColor="#ff6347" />
                     </linearGradient>
                   </defs>
-                  {/* Dark green background circle */}
-                  <circle cx="20" cy="20" r="18" fill="#1a3a2f" />
-                  {/* Simplified brain shape */}
+                  {/* Midnight Petrol Green background circle */}
+                  <circle cx="20" cy="20" r="18" fill="#0d3d3d" />
+                  {/* Simplified brain shape - Sunset Orange */}
                   <g transform="translate(8, 8) scale(0.6)">
                     <path d="M20 25 C18 20, 19 15, 23 13 C26 11, 28 12, 30 14 C32 12, 34 11, 37 13 C41 15, 42 20, 40 25 C42 27, 43 31, 40 36 C37 40, 33 42, 30 41 C27 42, 23 40, 20 36 C17 31, 18 27, 20 25Z" fill="url(#zenLogoGradient)" />
                     {/* Neural nodes */}

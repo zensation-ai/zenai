@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
   <defs>
-    <!-- ZenAI Gradient - Elegant Purple/Blue -->
+    <!-- ZenAI Gradient - Sunset Orange (Erkennungsmerkmal) -->
     <linearGradient id="zenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#667eea"/>
-      <stop offset="50%" style="stop-color:#764ba2"/>
-      <stop offset="100%" style="stop-color:#f093fb"/>
+      <stop offset="0%" style="stop-color:#ffb347"/>
+      <stop offset="50%" style="stop-color:#ff8c00"/>
+      <stop offset="100%" style="stop-color:#ff6347"/>
     </linearGradient>
     <!-- Glow Effect -->
     <filter id="glow">
@@ -16,13 +16,10 @@
     </filter>
     <!-- Neural Connection Gradient -->
     <linearGradient id="neuralGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.6"/>
-      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:0.6"/>
+      <stop offset="0%" style="stop-color:#ffb347;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#ff6347;stop-opacity:0.6"/>
     </linearGradient>
   </defs>
-
-  <!-- Background Circle -->
-  <circle cx="60" cy="60" r="56" fill="url(#zenGradient)" opacity="0.1"/>
 
   <!-- Brain Structure - Left Hemisphere -->
   <path d="M35 55

@@ -83,7 +83,7 @@
 .ai-brain-tooltip-greeting {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--primary, #6bcf9f);
+  color: var(--primary, #ff8c00);
 }
 
 .ai-brain-tooltip-message {
@@ -162,7 +162,7 @@
 }
 
 .ai-brain-container.active .brain-hemisphere {
-  filter: drop-shadow(0 0 8px rgba(107, 207, 159, 0.8));
+  filter: drop-shadow(0 0 8px rgba(255, 140, 0, 0.8));
 }
 
 /* Neural paths animation */
@@ -212,7 +212,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(107, 207, 159, 0.2);
+  border: 1px solid rgba(255, 140, 0, 0.2);
   opacity: 0;
   pointer-events: none;
 }
@@ -254,7 +254,7 @@
   position: absolute;
   width: 4px;
   height: 4px;
-  background: var(--primary, #6bcf9f);
+  background: var(--primary, #ff8c00);
   border-radius: 50%;
   opacity: 0;
 }
@@ -274,7 +274,7 @@
 .ai-brain-label {
   font-size: 0.65rem;
   font-weight: 500;
-  color: var(--primary, #6bcf9f);
+  color: var(--primary, #ff8c00);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   animation: labelFade 1.5s ease-in-out infinite;
@@ -397,11 +397,11 @@
 }
 
 .ai-brain-container.large .brain-hemisphere {
-  filter: drop-shadow(0 0 12px rgba(107, 207, 159, 0.4));
+  filter: drop-shadow(0 0 12px rgba(255, 140, 0, 0.4));
 }
 
 .ai-brain-container.large.active .brain-hemisphere {
-  filter: drop-shadow(0 0 20px rgba(107, 207, 159, 0.8));
+  filter: drop-shadow(0 0 20px rgba(255, 140, 0, 0.8));
 }
 
 .ai-brain-container.large .particle {
@@ -457,8 +457,8 @@
   gap: 6px;
   margin-top: 12px;
   padding: 8px 14px;
-  background: rgba(107, 207, 159, 0.08);
-  border: 1px solid rgba(107, 207, 159, 0.15);
+  background: rgba(255, 140, 0, 0.08);
+  border: 1px solid rgba(255, 140, 0, 0.15);
   border-radius: 20px;
   font-size: 0.75rem;
   color: var(--text-muted, #4a6577);
@@ -493,14 +493,14 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 10px;
-  background: var(--primary, #6bcf9f);
+  background: var(--primary, #ff8c00);
   color: white;
   font-size: 0.65rem;
   font-weight: 600;
   border-radius: 12px;
   animation: easterEggPop 2s ease forwards;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(107, 207, 159, 0.4);
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.4);
 }
 
 @keyframes easterEggPop {
