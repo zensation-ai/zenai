@@ -129,7 +129,7 @@ export function errorHandler(
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction // Required for Express error handler signature
 ): void {
   // Get request ID from response locals (set by requestIdMiddleware)
   const requestId = res.locals.requestId || 'unknown';

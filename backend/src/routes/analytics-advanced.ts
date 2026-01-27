@@ -520,8 +520,16 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncH
 // Helper Functions
 // ===========================================
 
-function formatCategoryTrend(rows: any[]): Record<string, any[]> {
-  const result: Record<string, any[]> = {};
+// Type-safe row interfaces for analytics queries
+interface CategoryTrendRow { category: string; week: string; count: string }
+interface HourlyRow { hour: string; count: string }
+interface WeekTrendItem { week: string; count: number }
+interface PeakHourRow { hour: string; count: string }
+interface PeakDayRow { dow: string; count: string }
+interface CategoryRow { category: string; count: string; percentage: string }
+
+function formatCategoryTrend(rows: CategoryTrendRow[]): Record<string, WeekTrendItem[]> {
+  const result: Record<string, WeekTrendItem[]> = {};
 
   rows.forEach(row => {
     const category = row.category;
@@ -537,7 +545,7 @@ function formatCategoryTrend(rows: any[]): Record<string, any[]> {
   return result;
 }
 
-function fillHourlyGaps(rows: any[]): { hour: number; count: number }[] {
+function fillHourlyGaps(rows: HourlyRow[]): { hour: number; count: number }[] {
   const hourMap = new Map<number, number>();
   rows.forEach(r => hourMap.set(parseInt(r.hour), parseInt(r.count)));
 
@@ -548,9 +556,9 @@ function fillHourlyGaps(rows: any[]): { hour: number; count: number }[] {
 }
 
 function generatePatternInsights(
-  peakHours: any[],
-  peakDays: any[],
-  categories: any[],
+  peakHours: PeakHourRow[],
+  peakDays: PeakDayRow[],
+  categories: CategoryRow[],
   dayNames: string[]
 ): string[] {
   const insights: string[] = [];

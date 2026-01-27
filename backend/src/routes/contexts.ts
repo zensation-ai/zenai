@@ -55,24 +55,24 @@ router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res:
     WHERE is_archived = false
   `;
 
-  const params: any[] = [];
+  const params: (string | number)[] = [];
   let paramIndex = 1;
 
   if (type) {
     query += ` AND type = $${paramIndex}`;
-    params.push(type);
+    params.push(String(type));
     paramIndex++;
   }
 
   if (priority) {
     query += ` AND priority = $${paramIndex}`;
-    params.push(priority);
+    params.push(String(priority));
     paramIndex++;
   }
 
   if (category) {
     query += ` AND category = $${paramIndex}`;
-    params.push(category);
+    params.push(String(category));
     paramIndex++;
   }
 
@@ -252,7 +252,7 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
 
   // Build exclusion clause
   let excludeClause = '';
-  const params: any[] = [parseInt(limit as string)];
+  const params: (string | number)[] = [parseInt(limit as string)];
 
   if (excludeIds.length > 0) {
     excludeClause = ` AND id NOT IN (${excludeIds.map((_, idx) => `$${idx + 2}`).join(',')})`;

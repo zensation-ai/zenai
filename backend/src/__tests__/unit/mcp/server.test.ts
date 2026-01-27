@@ -342,7 +342,7 @@ describe('MCP Server', () => {
   describe('tools/call - get_related_ideas', () => {
     it('should find related ideas', async () => {
       mockGetSuggestedConnections.mockResolvedValue([
-        { id: 'rel-1', title: 'Related 1', similarity: 0.8 },
+        { id: 'rel-1', title: 'Related 1', similarity: 0.8, summary: 'Test summary', keywords: ['test'] },
       ]);
 
       mockQueryContext.mockResolvedValue({
