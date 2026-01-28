@@ -498,3 +498,9 @@ export const ErrorCodes = {
 } as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
+
+// ============================================
+// Database Row Types (Re-export)
+// ============================================
+
+export * from './database-rows';
