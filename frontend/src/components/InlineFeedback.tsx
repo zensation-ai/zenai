@@ -84,6 +84,7 @@ export function InlineFeedback({
       );
     } catch (error) {
       console.error('Failed to submit feedback:', error);
+      showToast('Feedback konnte nicht gesendet werden', 'error');
     }
   }, [context, ideaId]);
 
@@ -319,6 +320,7 @@ export function FeedbackIndicator({
       onFeedback?.(isPositive);
     } catch (error) {
       console.error('Feedback failed:', error);
+      showToast('Feedback konnte nicht gesendet werden', 'error');
     }
   };
 

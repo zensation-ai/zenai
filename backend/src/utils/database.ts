@@ -2,6 +2,9 @@ import { Pool, PoolClient } from 'pg';
 import dotenv from 'dotenv';
 import { logger } from './logger';
 
+// Re-export PoolClient type for use in services
+export type { PoolClient } from 'pg';
+
 dotenv.config();
 
 /**

@@ -231,6 +231,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
       handleReload();
     } catch (error) {
       console.error('Failed to mark as viewed:', error);
+      showToast('Aktion fehlgeschlagen', 'error');
     }
   };
 

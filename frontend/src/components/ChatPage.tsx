@@ -132,6 +132,7 @@ export function ChatPage({ context, onBack }: ChatPageProps) {
     } catch (err) {
       if (axios.isCancel(err)) return;
       console.error('Failed to load sessions:', err);
+      showToast('Chat-Sitzungen konnten nicht geladen werden', 'error');
     } finally {
       setLoadingSessions(false);
     }

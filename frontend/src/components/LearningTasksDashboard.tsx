@@ -116,6 +116,7 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
       console.error('Failed to load learning data:', err);
+      showToast('Lernziele konnten nicht geladen werden', 'error');
     } finally {
       setLoading(false);
     }
@@ -230,6 +231,7 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
       setInsights(prev => prev.filter(i => i.id !== insightId));
     } catch (err) {
       console.error('Failed to acknowledge insight:', err);
+      showToast('Einsicht konnte nicht bestätigt werden', 'error');
     }
   };
 

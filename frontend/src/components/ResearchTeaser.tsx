@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
 import './ResearchTeaser.css';
 
 interface ResearchTeaserProps {
@@ -38,6 +39,7 @@ export function ResearchTeaser({ research, context, onDismiss }: ResearchTeaserP
         await axios.put(`/api/${context}/research/${research.id}/viewed`);
       } catch (error) {
         console.error('Failed to load research:', error);
+        showToast('Recherche konnte nicht geladen werden', 'error');
       } finally {
         setLoading(false);
       }
@@ -52,6 +54,7 @@ export function ResearchTeaser({ research, context, onDismiss }: ResearchTeaserP
       onDismiss?.();
     } catch (error) {
       console.error('Failed to dismiss research:', error);
+      showToast('Recherche konnte nicht verworfen werden', 'error');
     }
   };
 
