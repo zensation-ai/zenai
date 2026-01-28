@@ -17,7 +17,7 @@ jest.mock('../../utils/database-context', () => ({
     personal: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 100, avgQueryTime: 5 },
     work: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 50, avgQueryTime: 6 },
   }),
-  getHealthCheckStatus: jest.fn().mockReturnValue({ isOpen: false, failures: 0 }),
+  getHealthCheckStatus: jest.fn().mockReturnValue({ lastCheck: new Date().toISOString(), status: 'ok' }),
 }));
 
 jest.mock('../../utils/ollama', () => ({
@@ -154,7 +154,7 @@ describe('Health API Integration Tests', () => {
       expect(response.body.services.databases.work.status).toBe('disconnected');
     });
 
-    it('should return degraded status when Ollama is down but databases are up', async () => {
+    it('should return healthy status when Ollama is down but Claude is available', async () => {
       mockTestConnections.mockResolvedValue({ personal: true, work: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: false, models: [] });
 
@@ -177,6 +177,17 @@ describe('Health API Integration Tests', () => {
       expect(response.body.status).toBe('unhealthy');
       expect(response.body.services.databases.personal.status).toBe('disconnected');
       expect(response.body.services.databases.work.status).toBe('disconnected');
+    });
+
+    it('should return unhealthy status when all services are down', async () => {
+      mockTestConnections.mockResolvedValue({ personal: false, work: false });
+      mockCheckOllamaHealth.mockResolvedValue({ available: false, models: [] });
+
+      const response = await request(app)
+        .get('/health/detailed')
+        .expect(503);
+
+      expect(response.body.status).toBe('unhealthy');
     });
 
     it('should handle database connection test errors', async () => {
