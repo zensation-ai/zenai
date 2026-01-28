@@ -53,6 +53,7 @@ import {
   searchMeetings,
   getAllActionItems,
 } from '../../services/meetings';
+import { errorHandler } from '../../middleware/errorHandler';
 
 const mockCreateMeeting = createMeeting as jest.MockedFunction<typeof createMeeting>;
 const mockGetMeetings = getMeetings as jest.MockedFunction<typeof getMeetings>;
@@ -98,6 +99,7 @@ describe('Meetings API Integration Tests', () => {
     app = express();
     app.use(express.json());
     app.use('/api/meetings', meetingsRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(() => {

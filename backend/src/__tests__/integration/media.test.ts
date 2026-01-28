@@ -58,8 +58,18 @@ jest.mock('fs/promises', () => ({
   access: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
 import { query } from '../../utils/database';
 import { generateEmbedding } from '../../utils/ollama';
+import { errorHandler } from '../../middleware/errorHandler';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
@@ -71,6 +81,7 @@ describe('Media API Integration Tests', () => {
     app = express();
     app.use(express.json());
     app.use('/api', mediaRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(() => {

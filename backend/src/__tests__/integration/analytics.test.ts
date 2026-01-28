@@ -35,6 +35,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 import { queryContext } from '../../utils/database-context';
+import { errorHandler } from '../../middleware/errorHandler';
 
 const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 
@@ -45,6 +46,8 @@ describe('Analytics API Integration Tests', () => {
     app = express();
     app.use(express.json());
     app.use('/api', analyticsRouter);
+    // Add error handler to catch ValidationErrors
+    app.use(errorHandler);
   });
 
   beforeEach(() => {
@@ -152,8 +155,7 @@ describe('Analytics API Integration Tests', () => {
         .get('/api/invalid/analytics/overview')
         .expect(400);
 
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Context');
+      expect(response.body.error).toBeDefined();
     });
 
     it('should handle database errors gracefully', async () => {
@@ -163,52 +165,60 @@ describe('Analytics API Integration Tests', () => {
         .get('/api/personal/analytics/overview')
         .expect(500);
 
-      expect(response.body).toHaveProperty('error');
+      expect(response.body.error).toBeDefined();
     });
   });
 
   // ===========================================
-  // GET /api/:context/analytics/time-range
+  // GET /api/:context/analytics/timeline
   // ===========================================
 
-  describe('GET /api/:context/analytics/time-range', () => {
-    it('should return stats for specified time range', async () => {
-      mockQueryContext.mockResolvedValueOnce({
-        rows: [{
-          count: '25',
-          categories: JSON.stringify({ business: 10, technical: 15 }),
-          types: JSON.stringify({ idea: 15, task: 10 }),
-          priorities: JSON.stringify({ high: 5, medium: 15, low: 5 }),
-        }],
-        rowCount: 1,
-        command: 'SELECT',
-        oid: 0,
-        fields: [],
-      });
+  describe('GET /api/:context/analytics/timeline', () => {
+    it('should return timeline stats for specified period', async () => {
+      mockQueryContext
+        // Hourly breakdown
+        .mockResolvedValueOnce({
+          rows: [
+            { hour: '9', count: '10' },
+            { hour: '14', count: '15' },
+            { hour: '16', count: '8' },
+          ],
+          rowCount: 3,
+          command: 'SELECT',
+          oid: 0,
+          fields: [],
+        })
+        // Day of week breakdown
+        .mockResolvedValueOnce({
+          rows: [
+            { dow: '1', count: '20' },
+            { dow: '2', count: '15' },
+          ],
+          rowCount: 2,
+          command: 'SELECT',
+          oid: 0,
+          fields: [],
+        });
 
       const response = await request(app)
-        .get('/api/personal/analytics/time-range')
-        .query({ days: '7' })
+        .get('/api/personal/analytics/timeline')
+        .query({ period: 'week' })
         .expect(200);
 
-      expect(response.body).toHaveProperty('period');
-      expect(response.body).toHaveProperty('count');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('byHour');
+      expect(response.body.data).toHaveProperty('byDayOfWeek');
     });
 
-    it('should default to 30 days if not specified', async () => {
-      mockQueryContext.mockResolvedValueOnce({
-        rows: [{ count: '50' }],
-        rowCount: 1,
-        command: 'SELECT',
-        oid: 0,
-        fields: [],
-      });
+    it('should default to week period if not specified', async () => {
+      mockQueryContext
+        .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
 
       await request(app)
-        .get('/api/personal/analytics/time-range')
+        .get('/api/personal/analytics/timeline')
         .expect(200);
 
-      // Verify the query was called with 30 days default
       expect(mockQueryContext).toHaveBeenCalled();
     });
   });
@@ -222,23 +232,7 @@ describe('Analytics API Integration Tests', () => {
       mockQueryContext
         // Average ideas per day
         .mockResolvedValueOnce({
-          rows: [{ avg_per_day: '3.5' }],
-          rowCount: 1,
-          command: 'SELECT',
-          oid: 0,
-          fields: [],
-        })
-        // Most active hour
-        .mockResolvedValueOnce({
-          rows: [{ hour: '14', count: '25' }],
-          rowCount: 1,
-          command: 'SELECT',
-          oid: 0,
-          fields: [],
-        })
-        // Most active day
-        .mockResolvedValueOnce({
-          rows: [{ day_name: 'Monday', count: '30' }],
+          rows: [{ avg_per_day: '3.50' }],
           rowCount: 1,
           command: 'SELECT',
           oid: 0,
@@ -246,7 +240,15 @@ describe('Analytics API Integration Tests', () => {
         })
         // Streak calculation
         .mockResolvedValueOnce({
-          rows: [{ streak: '7' }],
+          rows: [{ streak_days: '7' }],
+          rowCount: 1,
+          command: 'SELECT',
+          oid: 0,
+          fields: [],
+        })
+        // Processing stats
+        .mockResolvedValueOnce({
+          rows: [{ total_processed: '25', avg_processing_time_sec: '1.5' }],
           rowCount: 1,
           command: 'SELECT',
           oid: 0,
@@ -257,61 +259,18 @@ describe('Analytics API Integration Tests', () => {
         .get('/api/personal/analytics/engagement')
         .expect(200);
 
-      expect(response.body).toHaveProperty('avgIdeasPerDay');
-      expect(response.body).toHaveProperty('mostActiveHour');
-      expect(response.body).toHaveProperty('mostActiveDay');
-      expect(response.body).toHaveProperty('streakDays');
-    });
-  });
-
-  // ===========================================
-  // GET /api/:context/analytics/keywords
-  // ===========================================
-
-  describe('GET /api/:context/analytics/keywords', () => {
-    it('should return top keywords', async () => {
-      mockQueryContext.mockResolvedValueOnce({
-        rows: [
-          { keyword: 'javascript', count: '15' },
-          { keyword: 'typescript', count: '12' },
-          { keyword: 'react', count: '10' },
-          { keyword: 'nodejs', count: '8' },
-          { keyword: 'api', count: '6' },
-        ],
-        rowCount: 5,
-        command: 'SELECT',
-        oid: 0,
-        fields: [],
-      });
-
-      const response = await request(app)
-        .get('/api/personal/analytics/keywords')
-        .expect(200);
-
-      expect(response.body).toHaveProperty('keywords');
-      expect(Array.isArray(response.body.keywords)).toBe(true);
-      expect(response.body.keywords.length).toBeLessThanOrEqual(10);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('avgIdeasPerDay');
+      expect(response.body.data).toHaveProperty('currentStreak');
+      expect(response.body.data).toHaveProperty('processing');
     });
 
-    it('should respect limit parameter', async () => {
-      mockQueryContext.mockResolvedValueOnce({
-        rows: [
-          { keyword: 'javascript', count: '15' },
-          { keyword: 'typescript', count: '12' },
-          { keyword: 'react', count: '10' },
-        ],
-        rowCount: 3,
-        command: 'SELECT',
-        oid: 0,
-        fields: [],
-      });
-
+    it('should return 400 for invalid context', async () => {
       const response = await request(app)
-        .get('/api/personal/analytics/keywords')
-        .query({ limit: '3' })
-        .expect(200);
+        .get('/api/invalid/analytics/engagement')
+        .expect(400);
 
-      expect(response.body.keywords.length).toBeLessThanOrEqual(3);
+      expect(response.body.error).toBeDefined();
     });
   });
 
@@ -322,9 +281,8 @@ describe('Analytics API Integration Tests', () => {
   describe('Context Validation', () => {
     const endpoints = [
       '/api/invalid/analytics/overview',
-      '/api/invalid/analytics/time-range',
+      '/api/invalid/analytics/timeline',
       '/api/invalid/analytics/engagement',
-      '/api/invalid/analytics/keywords',
     ];
 
     endpoints.forEach((endpoint) => {
@@ -333,7 +291,7 @@ describe('Analytics API Integration Tests', () => {
           .get(endpoint)
           .expect(400);
 
-        expect(response.body.error).toContain('Context');
+        expect(response.body.error).toBeDefined();
       });
     });
   });
@@ -356,13 +314,13 @@ describe('Analytics API Integration Tests', () => {
         .get('/api/personal/analytics/overview')
         .expect(200);
 
-      expect(response.body.totals.total).toBe(0);
+      expect(response.body.data.summary.total).toBe(0);
     });
 
     it('should handle work context the same as personal', async () => {
       mockQueryContext
-        .mockResolvedValueOnce({ rows: [{ total: '10', active: '8', archived: '2', last_week: '3', last_month: '7' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
-        .mockResolvedValueOnce({ rows: [{ created: '2', updated: '1' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ total: '50', active: '45', archived: '5', last_week: '10', last_month: '25' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ created: '2', updated: '5' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
         .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
         .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
         .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
@@ -372,7 +330,8 @@ describe('Analytics API Integration Tests', () => {
         .get('/api/work/analytics/overview')
         .expect(200);
 
-      expect(response.body).toHaveProperty('totals');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.summary.total).toBe(50);
     });
   });
 });

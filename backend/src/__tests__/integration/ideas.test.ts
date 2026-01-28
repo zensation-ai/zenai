@@ -47,7 +47,17 @@ jest.mock('../../services/learning-engine', () => ({
   learnFromThought: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
 import { queryContext } from '../../utils/database-context';
+import { errorHandler } from '../../middleware/errorHandler';
 
 const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 
@@ -58,6 +68,8 @@ describe('Ideas API Integration Tests', () => {
     app = express();
     app.use(express.json());
     app.use('/api/ideas', ideasRouter);
+    // Add error handler to catch ValidationErrors
+    app.use(errorHandler);
   });
 
   beforeEach(() => {
