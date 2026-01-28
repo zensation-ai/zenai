@@ -250,7 +250,7 @@ export const SkeletonLoader = ({
 
   const renderSkeletonItem = (index: number) => (
     <div
-      key={index}
+      key={`skeleton-${type}-${index}`}
       className={`skeleton-item ${type} ${animating ? 'animating' : ''}`}
       style={getDefaultStyle()}
       aria-hidden="true"

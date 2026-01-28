@@ -12,6 +12,8 @@ import { Router, Request, Response } from 'express';
 import { memoryScheduler, longTermMemory, episodicMemory } from '../services/memory';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { apiKeyAuth, asyncHandler } from '../middleware/auth';
+import { ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
 
@@ -21,38 +23,32 @@ const router = Router();
  *   get:
  *     summary: Get memory scheduler status
  *     tags: [Memory Admin]
+ *     security:
+ *       - ApiKeyAuth: []
  *     responses:
  *       200:
  *         description: Scheduler status
  */
-router.get('/status', async (_req: Request, res: Response) => {
-  try {
-    const status = memoryScheduler.getStatus();
-    const config = memoryScheduler.getConfig();
+router.get('/status', apiKeyAuth, asyncHandler(async (_req: Request, res: Response) => {
+  const status = memoryScheduler.getStatus();
+  const config = memoryScheduler.getConfig();
 
-    res.json({
-      success: true,
-      data: {
-        scheduler: status,
-        config: {
-          timezone: config.TIMEZONE,
-          consolidationSchedule: config.CONSOLIDATION_SCHEDULE,
-          decaySchedule: config.DECAY_SCHEDULE,
-          statsSchedule: config.STATS_SCHEDULE,
-          consolidationEnabled: config.ENABLE_CONSOLIDATION,
-          decayEnabled: config.ENABLE_DECAY,
-          statsEnabled: config.ENABLE_STATS_LOGGING,
-        },
+  res.json({
+    success: true,
+    data: {
+      scheduler: status,
+      config: {
+        timezone: config.TIMEZONE,
+        consolidationSchedule: config.CONSOLIDATION_SCHEDULE,
+        decaySchedule: config.DECAY_SCHEDULE,
+        statsSchedule: config.STATS_SCHEDULE,
+        consolidationEnabled: config.ENABLE_CONSOLIDATION,
+        decayEnabled: config.ENABLE_DECAY,
+        statsEnabled: config.ENABLE_STATS_LOGGING,
       },
-    });
-  } catch (error) {
-    logger.error('Failed to get memory status', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { message: 'Failed to get memory status' },
-    });
-  }
-});
+    },
+  });
+}));
 
 /**
  * @swagger
@@ -60,6 +56,8 @@ router.get('/status', async (_req: Request, res: Response) => {
  *   post:
  *     summary: Manually trigger memory consolidation
  *     tags: [Memory Admin]
+ *     security:
+ *       - ApiKeyAuth: []
  *     requestBody:
  *       content:
  *         application/json:
@@ -74,40 +72,29 @@ router.get('/status', async (_req: Request, res: Response) => {
  *       200:
  *         description: Consolidation results
  */
-router.post('/consolidate', async (req: Request, res: Response) => {
-  try {
-    const { context } = req.body;
+router.post('/consolidate', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.body;
 
-    // Validate context if provided
-    if (context && !isValidContext(context)) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Invalid context. Use "personal" or "work".' },
-      });
-    }
-
-    logger.info('Manual consolidation triggered', {
-      context: context || 'all',
-      operation: 'manualConsolidation',
-    });
-
-    const results = await memoryScheduler.triggerConsolidation(context as AIContext | undefined);
-
-    res.json({
-      success: true,
-      data: {
-        message: 'Consolidation completed',
-        results,
-      },
-    });
-  } catch (error) {
-    logger.error('Manual consolidation failed', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { message: 'Consolidation failed' },
-    });
+  // Validate context if provided
+  if (context && !isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
-});
+
+  logger.info('Manual consolidation triggered', {
+    context: context || 'all',
+    operation: 'manualConsolidation',
+  });
+
+  const results = await memoryScheduler.triggerConsolidation(context as AIContext | undefined);
+
+  res.json({
+    success: true,
+    data: {
+      message: 'Consolidation completed',
+      results,
+    },
+  });
+}));
 
 /**
  * @swagger
@@ -115,6 +102,8 @@ router.post('/consolidate', async (req: Request, res: Response) => {
  *   post:
  *     summary: Manually trigger episodic memory decay
  *     tags: [Memory Admin]
+ *     security:
+ *       - ApiKeyAuth: []
  *     requestBody:
  *       content:
  *         application/json:
@@ -129,40 +118,29 @@ router.post('/consolidate', async (req: Request, res: Response) => {
  *       200:
  *         description: Decay results
  */
-router.post('/decay', async (req: Request, res: Response) => {
-  try {
-    const { context } = req.body;
+router.post('/decay', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.body;
 
-    // Validate context if provided
-    if (context && !isValidContext(context)) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Invalid context. Use "personal" or "work".' },
-      });
-    }
-
-    logger.info('Manual decay triggered', {
-      context: context || 'all',
-      operation: 'manualDecay',
-    });
-
-    const results = await memoryScheduler.triggerDecay(context as AIContext | undefined);
-
-    res.json({
-      success: true,
-      data: {
-        message: 'Decay applied',
-        results,
-      },
-    });
-  } catch (error) {
-    logger.error('Manual decay failed', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { message: 'Decay failed' },
-    });
+  // Validate context if provided
+  if (context && !isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
-});
+
+  logger.info('Manual decay triggered', {
+    context: context || 'all',
+    operation: 'manualDecay',
+  });
+
+  const results = await memoryScheduler.triggerDecay(context as AIContext | undefined);
+
+  res.json({
+    success: true,
+    data: {
+      message: 'Decay applied',
+      results,
+    },
+  });
+}));
 
 /**
  * @swagger
@@ -170,6 +148,8 @@ router.post('/decay', async (req: Request, res: Response) => {
  *   get:
  *     summary: Get detailed memory statistics for a context
  *     tags: [Memory Admin]
+ *     security:
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: path
  *         name: context
@@ -181,39 +161,28 @@ router.post('/decay', async (req: Request, res: Response) => {
  *       200:
  *         description: Memory statistics
  */
-router.get('/stats/:context', async (req: Request, res: Response) => {
-  try {
-    const { context } = req.params;
+router.get('/stats/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
 
-    if (!isValidContext(context)) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Invalid context. Use "personal" or "work".' },
-      });
-    }
-
-    const [ltStats, epStats] = await Promise.all([
-      longTermMemory.getStats(context as AIContext),
-      episodicMemory.getStats(context as AIContext),
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        context,
-        longTermMemory: ltStats,
-        episodicMemory: epStats,
-        timestamp: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    logger.error('Failed to get memory stats', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { message: 'Failed to get memory stats' },
-    });
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
-});
+
+  const [ltStats, epStats] = await Promise.all([
+    longTermMemory.getStats(context as AIContext),
+    episodicMemory.getStats(context as AIContext),
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      context,
+      longTermMemory: ltStats,
+      episodicMemory: epStats,
+      timestamp: new Date().toISOString(),
+    },
+  });
+}));
 
 /**
  * @swagger
@@ -221,6 +190,8 @@ router.get('/stats/:context', async (req: Request, res: Response) => {
  *   get:
  *     summary: Get all stored facts for a context
  *     tags: [Memory Admin]
+ *     security:
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: path
  *         name: context
@@ -232,35 +203,24 @@ router.get('/stats/:context', async (req: Request, res: Response) => {
  *       200:
  *         description: Stored facts
  */
-router.get('/facts/:context', async (req: Request, res: Response) => {
-  try {
-    const { context } = req.params;
+router.get('/facts/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
 
-    if (!isValidContext(context)) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Invalid context. Use "personal" or "work".' },
-      });
-    }
-
-    const facts = await longTermMemory.getFacts(context as AIContext);
-
-    res.json({
-      success: true,
-      data: {
-        context,
-        facts,
-        count: facts.length,
-      },
-    });
-  } catch (error) {
-    logger.error('Failed to get facts', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { message: 'Failed to get facts' },
-    });
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
-});
+
+  const facts = await longTermMemory.getFacts(context as AIContext);
+
+  res.json({
+    success: true,
+    data: {
+      context,
+      facts,
+      count: facts.length,
+    },
+  });
+}));
 
 /**
  * @swagger
@@ -268,6 +228,8 @@ router.get('/facts/:context', async (req: Request, res: Response) => {
  *   get:
  *     summary: Get all stored patterns for a context
  *     tags: [Memory Admin]
+ *     security:
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: path
  *         name: context
@@ -279,34 +241,23 @@ router.get('/facts/:context', async (req: Request, res: Response) => {
  *       200:
  *         description: Stored patterns
  */
-router.get('/patterns/:context', async (req: Request, res: Response) => {
-  try {
-    const { context } = req.params;
+router.get('/patterns/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
 
-    if (!isValidContext(context)) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'Invalid context. Use "personal" or "work".' },
-      });
-    }
-
-    const patterns = await longTermMemory.getPatterns(context as AIContext);
-
-    res.json({
-      success: true,
-      data: {
-        context,
-        patterns,
-        count: patterns.length,
-      },
-    });
-  } catch (error) {
-    logger.error('Failed to get patterns', error instanceof Error ? error : undefined);
-    res.status(500).json({
-      success: false,
-      error: { message: 'Failed to get patterns' },
-    });
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
-});
+
+  const patterns = await longTermMemory.getPatterns(context as AIContext);
+
+  res.json({
+    success: true,
+    data: {
+      context,
+      patterns,
+      count: patterns.length,
+    },
+  });
+}));
 
 export const memoryAdminRouter = router;

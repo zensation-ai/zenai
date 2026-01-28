@@ -148,7 +148,7 @@ export function CodeExecutionResult({
           </div>
           <ul className="warnings-list">
             {warnings.map((warning, index) => (
-              <li key={index}>{warning}</li>
+              <li key={`warning-${index}-${warning.slice(0, 20)}`}>{warning}</li>
             ))}
           </ul>
         </div>

@@ -95,7 +95,7 @@ export const StaggeredList = ({
       <div className="staggered-list-items">
         {visibleItems.map((child, index) => (
           <div
-            key={index}
+            key={`stagger-item-${index}`}
             className="staggered-item"
             style={{
               '--stagger-delay': `${index * staggerDelay}ms`,

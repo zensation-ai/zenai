@@ -138,7 +138,7 @@ export const PredictiveLoading = ({
 
           return (
             <div
-              key={index}
+              key={`step-${stepNum}-${step.slice(0, 20)}`}
               className={`predictive-step ${isActive ? 'active' : ''} ${isPast ? 'complete' : ''} ${isFuture ? 'pending' : ''}`}
             >
               <div className="step-dot">
