@@ -439,7 +439,7 @@ ${conversationText}`;
       const session = this.sessions.get(oldestSessionId);
       // Persist before evicting if it has messages
       if (session && session.messages.length > 0) {
-        this.persistSession(oldestSessionId).catch(() => {});
+        this.persistSession(oldestSessionId).catch(err => logger.warn('Failed to persist oldest session', { sessionId: oldestSessionId, error: err instanceof Error ? err.message : String(err) }));
       }
       this.sessions.delete(oldestSessionId);
       logger.info('Evicted oldest session', { sessionId: oldestSessionId });
@@ -472,7 +472,7 @@ ${conversationText}`;
       const session = this.sessions.get(id);
       // Persist before cleanup if it has messages
       if (session && session.messages.length > 0) {
-        this.persistSession(id).catch(() => {});
+        this.persistSession(id).catch(err => logger.warn('Failed to persist session on cleanup', { sessionId: id, error: err instanceof Error ? err.message : String(err) }));
       }
       this.sessions.delete(id);
     }

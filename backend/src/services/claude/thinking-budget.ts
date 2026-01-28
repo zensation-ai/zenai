@@ -542,7 +542,7 @@ export async function recordThinkingFeedback(
     });
 
     // Trigger strategy optimization (async)
-    optimizeBudgetStrategies(context).catch(() => {});
+    optimizeBudgetStrategies(context).catch(err => logger.debug('Budget optimization skipped', { context, error: err instanceof Error ? err.message : String(err) }));
   } catch (error) {
     logger.error('Failed to record thinking feedback', error instanceof Error ? error : undefined, {
       chainId,

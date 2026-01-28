@@ -372,7 +372,7 @@ export async function executeAutomation(
            last_run_at = NOW()
        WHERE id = $1`,
       [automationId]
-    ).catch(() => {});
+    ).catch(err => logger.warn('Failed to update automation failure count', { automationId, error: err instanceof Error ? err.message : String(err) }));
 
     logger.error('Automation execution failed', error instanceof Error ? error : undefined, {
       automationId,
@@ -478,7 +478,7 @@ async function executeAction(
           action.config.title || 'Automation',
           interpolateTemplate(action.config.message as string || '', triggerData),
         ]
-      ).catch(() => {});
+      ).catch(err => logger.warn('Failed to save automation notification', { context, error: err instanceof Error ? err.message : String(err) }));
       break;
 
     case 'tag_idea':
@@ -491,7 +491,7 @@ async function executeAction(
            SET keywords = keywords || $1::jsonb
            WHERE id = $2`,
           [JSON.stringify(tags), ideaId]
-        ).catch(() => {});
+        ).catch(err => logger.warn('Failed to tag idea via automation', { ideaId, tags, error: err instanceof Error ? err.message : String(err) }));
       }
       break;
 
@@ -503,7 +503,7 @@ async function executeAction(
           context,
           `UPDATE ideas SET priority = $1 WHERE id = $2`,
           [newPriority, targetIdeaId]
-        ).catch(() => {});
+        ).catch(err => logger.warn('Failed to set idea priority via automation', { targetIdeaId, newPriority, error: err instanceof Error ? err.message : String(err) }));
       }
       break;
 
@@ -520,7 +520,7 @@ async function executeAction(
           interpolateTemplate(action.config.description as string || '', triggerData),
           context,
         ]
-      ).catch(() => {});
+      ).catch(err => logger.warn('Failed to create task via automation', { context, error: err instanceof Error ? err.message : String(err) }));
       break;
 
     case 'slack_message':

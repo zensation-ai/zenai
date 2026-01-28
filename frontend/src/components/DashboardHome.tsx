@@ -83,24 +83,33 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
     setIsLoading(true);
 
     try {
+      // SECURITY: API key must be configured - no hardcoded fallbacks
+      const apiKey = import.meta.env.VITE_API_KEY;
+      if (!apiKey) {
+        console.error('VITE_API_KEY is not configured. Dashboard data cannot be loaded.');
+        showToast('API-Key nicht konfiguriert', 'error');
+        setIsLoading(false);
+        return;
+      }
+
       // Fetch stats, activity, and recent ideas in parallel
       const [statsRes, activityRes, ideasRes] = await Promise.all([
         fetch(`${apiBase}/${context}/ideas/stats/summary`, {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': import.meta.env.VITE_API_KEY || 'dev-key',
+            'x-api-key': apiKey,
           },
         }),
         fetch(`${apiBase}/${context}/ai-activity?limit=5`, {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': import.meta.env.VITE_API_KEY || 'dev-key',
+            'x-api-key': apiKey,
           },
         }).catch(() => null), // Activity endpoint might not exist yet
         fetch(`${apiBase}/${context}/ideas?limit=6`, {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': import.meta.env.VITE_API_KEY || 'dev-key',
+            'x-api-key': apiKey,
           },
         }),
       ]);

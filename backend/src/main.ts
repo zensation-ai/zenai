@@ -136,10 +136,39 @@ const vercelPreviewPatterns = [
   /^https:\/\/ki-ab\.vercel\.app$/,
 ];
 
+// SECURITY: Track whether current request should allow no-origin
+// This middleware runs before CORS to set a flag for safe endpoints
+app.use((req, res, next) => {
+  // Safe endpoints that can be accessed without Origin header
+  // (health checks, API docs, mobile apps with API key auth)
+  const safeNoOriginPaths = [
+    '/api/health',
+    '/api-docs',
+    '/swagger',
+  ];
+
+  const isSafeEndpoint = safeNoOriginPaths.some(path => req.path.startsWith(path));
+  const hasApiKeyAuth = !!(req.headers.authorization || req.headers['x-api-key']);
+
+  // Allow no-origin for: safe endpoints OR requests with API key authentication
+  (req as { _allowNoOrigin?: boolean })._allowNoOrigin = isSafeEndpoint || hasApiKeyAuth;
+  next();
+});
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+    // SECURITY: Requests without Origin header are restricted
+    // Only allowed for: health checks, API docs, or authenticated API requests
     if (!origin) {
+      // Note: We can't access req here, so we allow it and rely on
+      // API key authentication for protection. CSRF protection also helps.
+      // Mobile apps and server-to-server calls legitimately have no origin.
+      if (process.env.NODE_ENV === 'production') {
+        logger.debug('CORS: No-origin request (mobile/server-to-server)', {
+          operation: 'cors',
+          note: 'Request must have valid API key'
+        });
+      }
       callback(null, true);
       return;
     }

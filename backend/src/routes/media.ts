@@ -12,6 +12,79 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 
+// SECURITY: Magic number signatures for file type validation
+// This prevents MIME type spoofing attacks
+const MAGIC_SIGNATURES: Record<string, { bytes: number[]; offset: number }[]> = {
+  'image/jpeg': [{ bytes: [0xFF, 0xD8, 0xFF], offset: 0 }],
+  'image/png': [{ bytes: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], offset: 0 }],
+  'image/heic': [
+    { bytes: [0x00, 0x00, 0x00], offset: 0 }, // ftyp at offset 4
+    // heic files have 'ftypheic' or 'ftyphevc' at various offsets
+  ],
+  'video/mp4': [{ bytes: [0x00, 0x00, 0x00], offset: 0 }], // ftyp signature
+  'video/quicktime': [{ bytes: [0x00, 0x00, 0x00], offset: 0 }], // ftyp signature
+  'audio/mpeg': [
+    { bytes: [0xFF, 0xFB], offset: 0 }, // MP3 frame sync
+    { bytes: [0xFF, 0xFA], offset: 0 },
+    { bytes: [0xFF, 0xF3], offset: 0 },
+    { bytes: [0xFF, 0xF2], offset: 0 },
+    { bytes: [0x49, 0x44, 0x33], offset: 0 }, // ID3 tag
+  ],
+  'audio/wav': [{ bytes: [0x52, 0x49, 0x46, 0x46], offset: 0 }], // RIFF
+  'audio/m4a': [{ bytes: [0x00, 0x00, 0x00], offset: 0 }], // ftyp signature (M4A)
+};
+
+/**
+ * SECURITY: Validate file content against claimed MIME type using magic numbers
+ * This prevents MIME type spoofing where attacker uploads executable with fake extension
+ */
+async function validateFileMagicNumber(filePath: string, claimedMimeType: string): Promise<boolean> {
+  try {
+    const fd = await fs.open(filePath, 'r');
+    const buffer = Buffer.alloc(16);
+    await fd.read(buffer, 0, 16, 0);
+    await fd.close();
+
+    const signatures = MAGIC_SIGNATURES[claimedMimeType];
+    if (!signatures) {
+      // No signature defined for this MIME type - allow but log
+      logger.debug('No magic signature defined for MIME type', { claimedMimeType });
+      return true;
+    }
+
+    // Check if any of the signatures match
+    for (const sig of signatures) {
+      let matches = true;
+      for (let i = 0; i < sig.bytes.length; i++) {
+        if (buffer[sig.offset + i] !== sig.bytes[i]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) {
+        return true;
+      }
+    }
+
+    // For MP4/MOV/M4A, check for 'ftyp' at offset 4
+    if (['video/mp4', 'video/quicktime', 'audio/m4a', 'image/heic'].includes(claimedMimeType)) {
+      const ftypCheck = buffer.toString('ascii', 4, 8);
+      if (ftypCheck === 'ftyp') {
+        return true;
+      }
+    }
+
+    logger.warn('File magic number mismatch', {
+      claimedMimeType,
+      actualBytes: buffer.slice(0, 8).toString('hex'),
+    });
+    return false;
+  } catch (error) {
+    logger.error('Failed to validate file magic number', error instanceof Error ? error : undefined);
+    return false;
+  }
+}
+
 // Validation helpers
 const VALID_CONTEXTS = ['personal', 'work'] as const;
 const MAX_LIMIT = 100;
@@ -116,6 +189,14 @@ router.post('/:context/media', apiKeyAuth, requireScope('write'), upload.single(
 
   // Validate context
   validateContext(context);
+
+  // SECURITY: Validate file content matches claimed MIME type (prevent MIME spoofing)
+  const isValidMagic = await validateFileMagicNumber(file.path, file.mimetype);
+  if (!isValidMagic) {
+    // Delete the uploaded file immediately
+    await fs.unlink(file.path).catch(err => logger.warn('Failed to delete invalid file', { path: file.path, error: err instanceof Error ? err.message : String(err) }));
+    throw new ValidationError('File content does not match declared MIME type. Possible file type spoofing detected.');
+  }
 
   // Determine media type
   const mediaType = file.mimetype.startsWith('image/') ? 'photo' : 'video';

@@ -148,31 +148,14 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     apiKey = apiKeyHeader;
   }
 
-  // Development mode bypass - SECURITY HARDENED
-  // Requires BOTH conditions:
-  // 1. True local development (not Railway/Vercel/cloud)
-  // 2. Explicit opt-in via ALLOW_DEV_BYPASS=true
-  const isLocalDev = process.env.NODE_ENV === 'development' &&
-                     !process.env.RAILWAY_ENVIRONMENT &&
-                     !process.env.VERCEL;
-  const devBypassEnabled = process.env.ALLOW_DEV_BYPASS === 'true';
-
-  if (!apiKey && isLocalDev && devBypassEnabled) {
-    logger.warn('DEV AUTH BYPASS ACTIVE', {
-      operation: 'apiKeyAuth',
-      ip: req.ip || req.socket?.remoteAddress,
-      path: req.path,
-      method: req.method,
-      securityNote: 'Dev bypass should NEVER be enabled in production'
-    });
-    req.apiKey = {
-      id: 'dev-mode',
-      name: 'Development Mode (Read-Only)',
-      scopes: ['read'], // SECURITY: No write/admin permissions in dev mode
-      rateLimit: 100
-    };
-    return next();
-  }
+  // SECURITY: Development mode bypass has been REMOVED for production safety.
+  // All requests now require valid API key authentication.
+  // For local development, use: npm run generate-api-key to create a dev key.
+  //
+  // The previous bypass code has been intentionally removed because:
+  // 1. It could be accidentally enabled in production
+  // 2. It bypassed authentication entirely
+  // 3. Creating a dev API key is trivial and more secure
 
   if (!apiKey) {
     return res.status(401).json({

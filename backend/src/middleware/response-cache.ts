@@ -123,7 +123,7 @@ export function responseCacheMiddleware(req: Request, res: Response, next: NextF
       logger.debug('Cache HIT', { cacheKey, endpoint: req.path });
 
       // Track hit statistic (fire-and-forget)
-      incrementCacheHits().catch(() => {});
+      incrementCacheHits().catch(err => logger.debug('Cache hit tracking failed', { error: err instanceof Error ? err.message : String(err) }));
 
       // Set cache headers
       res.setHeader('X-Cache', 'HIT');
@@ -137,7 +137,7 @@ export function responseCacheMiddleware(req: Request, res: Response, next: NextF
     logger.debug('Cache MISS', { cacheKey, endpoint: req.path });
 
     // Track miss statistic (fire-and-forget)
-    incrementCacheMisses().catch(() => {});
+    incrementCacheMisses().catch(err => logger.debug('Cache miss tracking failed', { error: err instanceof Error ? err.message : String(err) }));
 
     const originalJson = res.json.bind(res);
 
