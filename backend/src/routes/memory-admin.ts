@@ -12,8 +12,8 @@ import { Router, Request, Response } from 'express';
 import { memoryScheduler, longTermMemory, episodicMemory } from '../services/memory';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
-import { apiKeyAuth, asyncHandler } from '../middleware/auth';
-import { ValidationError } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
 
