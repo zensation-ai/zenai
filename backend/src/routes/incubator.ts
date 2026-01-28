@@ -22,8 +22,7 @@ import { runDailyLearning, getPersonalizedPromptContext } from '../services/lear
 import { getUserProfile, getRecommendations } from '../services/user-profile';
 import { AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
 

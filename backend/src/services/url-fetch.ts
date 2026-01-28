@@ -247,15 +247,15 @@ export async function fetchUrl(url: string, options: FetchOptions = {}): Promise
 function extractTitle($: CheerioDoc): string {
   // Try Open Graph title first
   const ogTitle = $('meta[property="og:title"]').attr('content');
-  if (ogTitle?.trim()) return ogTitle.trim();
+  if (ogTitle?.trim()) {return ogTitle.trim();}
 
   // Try Twitter title
   const twitterTitle = $('meta[name="twitter:title"]').attr('content');
-  if (twitterTitle?.trim()) return twitterTitle.trim();
+  if (twitterTitle?.trim()) {return twitterTitle.trim();}
 
   // Try h1
   const h1 = $('h1').first().text();
-  if (h1?.trim()) return h1.trim();
+  if (h1?.trim()) {return h1.trim();}
 
   // Fallback to <title>
   const title = $('title').text();
@@ -265,15 +265,15 @@ function extractTitle($: CheerioDoc): string {
 function extractDescription($: CheerioDoc): string {
   // Try Open Graph description
   const ogDesc = $('meta[property="og:description"]').attr('content');
-  if (ogDesc?.trim()) return ogDesc.trim();
+  if (ogDesc?.trim()) {return ogDesc.trim();}
 
   // Try Twitter description
   const twitterDesc = $('meta[name="twitter:description"]').attr('content');
-  if (twitterDesc?.trim()) return twitterDesc.trim();
+  if (twitterDesc?.trim()) {return twitterDesc.trim();}
 
   // Try standard meta description
   const metaDesc = $('meta[name="description"]').attr('content');
-  if (metaDesc?.trim()) return metaDesc.trim();
+  if (metaDesc?.trim()) {return metaDesc.trim();}
 
   return '';
 }
@@ -281,15 +281,15 @@ function extractDescription($: CheerioDoc): string {
 function extractMainImage($: CheerioDoc, baseUrl: string): string | undefined {
   // Try Open Graph image
   const ogImage = $('meta[property="og:image"]').attr('content');
-  if (ogImage) return resolveUrl(ogImage, baseUrl);
+  if (ogImage) {return resolveUrl(ogImage, baseUrl);}
 
   // Try Twitter image
   const twitterImage = $('meta[name="twitter:image"]').attr('content');
-  if (twitterImage) return resolveUrl(twitterImage, baseUrl);
+  if (twitterImage) {return resolveUrl(twitterImage, baseUrl);}
 
   // Try first large image in content
   const contentImg = $('article img, main img, .content img').first().attr('src');
-  if (contentImg) return resolveUrl(contentImg, baseUrl);
+  if (contentImg) {return resolveUrl(contentImg, baseUrl);}
 
   return undefined;
 }
@@ -297,15 +297,15 @@ function extractMainImage($: CheerioDoc, baseUrl: string): string | undefined {
 function extractAuthor($: CheerioDoc): string | undefined {
   // Try meta author
   const metaAuthor = $('meta[name="author"]').attr('content');
-  if (metaAuthor?.trim()) return metaAuthor.trim();
+  if (metaAuthor?.trim()) {return metaAuthor.trim();}
 
   // Try JSON-LD
   const jsonLd = $('script[type="application/ld+json"]').first().html();
   if (jsonLd) {
     try {
       const data = JSON.parse(jsonLd);
-      if (data.author?.name) return data.author.name;
-      if (typeof data.author === 'string') return data.author;
+      if (data.author?.name) {return data.author.name;}
+      if (typeof data.author === 'string') {return data.author;}
     } catch {
       // Ignore JSON parse errors
     }
@@ -322,7 +322,7 @@ function extractAuthor($: CheerioDoc): string | undefined {
 
   for (const selector of authorSelectors) {
     const author = $(selector).first().text();
-    if (author?.trim()) return author.trim();
+    if (author?.trim()) {return author.trim();}
   }
 
   return undefined;
@@ -333,18 +333,18 @@ function extractPublishedDate($: CheerioDoc): string | undefined {
   const metaDate = $('meta[property="article:published_time"]').attr('content') ||
                    $('meta[name="date"]').attr('content') ||
                    $('meta[name="DC.date.issued"]').attr('content');
-  if (metaDate) return metaDate;
+  if (metaDate) {return metaDate;}
 
   // Try time element
   const timeElement = $('time[datetime]').first().attr('datetime');
-  if (timeElement) return timeElement;
+  if (timeElement) {return timeElement;}
 
   // Try JSON-LD
   const jsonLd = $('script[type="application/ld+json"]').first().html();
   if (jsonLd) {
     try {
       const data = JSON.parse(jsonLd);
-      if (data.datePublished) return data.datePublished;
+      if (data.datePublished) {return data.datePublished;}
     } catch {
       // Ignore JSON parse errors
     }

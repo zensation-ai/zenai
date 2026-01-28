@@ -837,8 +837,8 @@ export function validateCode(
  * @returns true if code passes quick safety check
  */
 export function quickSafetyCheck(code: string, language: SupportedLanguage): boolean {
-  if (code.length > MAX_CODE_LENGTH) return false;
-  if (!code.trim()) return true;
+  if (code.length > MAX_CODE_LENGTH) {return false;}
+  if (!code.trim()) {return true;}
 
   // Check only critical patterns for speed
   const forbidden = FORBIDDEN_PATTERNS[language];

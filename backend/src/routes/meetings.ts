@@ -13,7 +13,7 @@ import {
 import { transcribeAudio } from '../services/whisper';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { validateUUID } from '../utils/validation';
 
 export const meetingsRouter = Router();

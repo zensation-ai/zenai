@@ -159,7 +159,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         throw new ValidationError('Invalid audioBase64: decoded data too small for valid audio');
       }
     } catch (error) {
-      if (error instanceof ValidationError) throw error;
+      if (error instanceof ValidationError) {throw error;}
       throw new ValidationError('Invalid audioBase64: failed to decode base64 data');
     }
     const transcriptionResult = await transcribeAudio(buffer, 'audio.webm');

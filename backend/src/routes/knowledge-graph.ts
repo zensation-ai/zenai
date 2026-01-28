@@ -20,7 +20,7 @@ import {
 import { isValidContext, AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 
 export const knowledgeGraphRouter = Router();
 

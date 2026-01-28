@@ -313,8 +313,8 @@ class CrossEncoderReranker {
 
       let movement: 'boosted' | 'demoted' | 'unchanged' = 'unchanged';
       if (oldPos >= 0 && newPos >= 0) {
-        if (newPos < oldPos - 1) movement = 'boosted';
-        else if (newPos > oldPos + 1) movement = 'demoted';
+        if (newPos < oldPos - 1) {movement = 'boosted';}
+        else if (newPos > oldPos + 1) {movement = 'demoted';}
       }
 
       return { ...result, movement };
@@ -373,7 +373,7 @@ export async function hybridRerank(
 ): Promise<RerankedResult[]> {
   const { crossEncodeTop = 10, minRelevance = 0.3 } = options;
 
-  if (results.length === 0) return [];
+  if (results.length === 0) {return [];}
 
   // Step 1: Quick heuristic pre-filter
   const preFiltered = quickHeuristicFilter(query, results);
@@ -417,11 +417,11 @@ function quickHeuristicFilter(
       // Title match boost
       const titleLower = result.title.toLowerCase();
       for (const term of queryTerms) {
-        if (titleLower.includes(term)) boost += 0.1;
+        if (titleLower.includes(term)) {boost += 0.1;}
       }
 
       // Exact phrase boost
-      if (titleLower.includes(query.toLowerCase())) boost += 0.2;
+      if (titleLower.includes(query.toLowerCase())) {boost += 0.2;}
 
       return {
         ...result,

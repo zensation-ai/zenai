@@ -574,7 +574,7 @@ import { NotFoundError } from '../middleware/errorHandler';
  * Safely parse numeric string from DB to number
  */
 export function parseDbNumber(value: string | null | undefined, defaultValue = 0): number {
-  if (value === null || value === undefined) return defaultValue;
+  if (value === null || value === undefined) {return defaultValue;}
   const parsed = parseFloat(value);
   return isNaN(parsed) ? defaultValue : parsed;
 }
@@ -583,7 +583,7 @@ export function parseDbNumber(value: string | null | undefined, defaultValue = 0
  * Safely parse integer string from DB to number
  */
 export function parseDbInt(value: string | null | undefined, defaultValue = 0): number {
-  if (value === null || value === undefined) return defaultValue;
+  if (value === null || value === undefined) {return defaultValue;}
   const parsed = parseInt(value, 10);
   return isNaN(parsed) ? defaultValue : parsed;
 }

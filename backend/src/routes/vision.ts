@@ -447,7 +447,7 @@ visionRouter.post(
 visionRouter.use((err: Error, _req: Request, res: Response, next: Function) => {
   if (err instanceof multer.MulterError) {
     let message = 'File upload error';
-    let status = 400;
+    const status = 400;
 
     switch (err.code) {
       case 'LIMIT_FILE_SIZE':

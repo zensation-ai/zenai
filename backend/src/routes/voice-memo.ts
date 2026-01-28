@@ -11,7 +11,7 @@ import { triggerWebhook } from '../services/webhooks';
 import { learnFromThought, suggestFromLearning } from '../services/learning-engine';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import type { StructuredIdea } from '../types';
 // SECURITY Sprint 2: Zod validation for input
 import { VoiceMemoTextSchema, validateBody } from '../utils/schemas';

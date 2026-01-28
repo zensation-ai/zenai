@@ -149,8 +149,8 @@ export async function extractTopicKeywords(
     const keywords: TopicKeyword[] = [];
 
     for (const [word, freq] of wordFreq.entries()) {
-      if (stopWords.has(word)) continue;
-      if (freq < 2) continue; // At least 2 occurrences
+      if (stopWords.has(word)) {continue;}
+      if (freq < 2) {continue;} // At least 2 occurrences
 
       // Simple TF-IDF: freq * log(totalDocs / docFreq)
       // Simplified: just use frequency weighted by word length

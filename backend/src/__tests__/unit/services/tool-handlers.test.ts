@@ -21,7 +21,7 @@ import {
   getToolContext,
   registerAllToolHandlers,
 } from '../../../services/tool-handlers';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const toolRegistry: any = {}; // Stubbed - original API changed
 
 // Mock dependencies
@@ -70,9 +70,9 @@ jest.mock('../../../utils/logger', () => ({
 import { enhancedRAG } from '../../../services/enhanced-rag';
 import { queryContext } from '../../../utils/database-context';
 // Original memory imports removed - API has changed
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const longTermMemory: any = { store: jest.fn() };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const episodicMemory: any = { recordEpisode: jest.fn() };
 
 // TODO: Re-enable and update tests when API is stabilized

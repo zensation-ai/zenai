@@ -11,10 +11,10 @@ import { logger } from '../utils/logger';
 import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable } from './claude';
 import { getUnifiedContext } from './business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from './memory';
-import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode, ChatMode, ModeDetectionResult } from './chat-modes';
+import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode, ChatMode } from './chat-modes';
 import { executeWithTools, ToolExecutionContext } from './claude/tool-use';
 import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
-import { claudeVision, VisionImage, VisionTask } from './claude-vision';
+import { claudeVision, VisionImage } from './claude-vision';
 
 // ===========================================
 // Types

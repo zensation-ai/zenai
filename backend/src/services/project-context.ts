@@ -240,7 +240,7 @@ export async function detectProjectType(projectPath: string): Promise<ProjectTyp
 
     // Check each project type
     for (const [type, patterns] of Object.entries(CONFIG_PATTERNS)) {
-      if (type === 'unknown') continue;
+      if (type === 'unknown') {continue;}
 
       for (const pattern of patterns) {
         if (pattern.includes('*')) {
@@ -282,7 +282,7 @@ export async function detectFrameworks(
   const depNames = new Set(dependencies.map((d) => d.name));
 
   for (const [framework, indicators] of Object.entries(FRAMEWORK_INDICATORS)) {
-    if (framework === 'unknown') continue;
+    if (framework === 'unknown') {continue;}
 
     // Check package dependencies
     const hasPackage = indicators.packages.some((pkg) => depNames.has(pkg));
@@ -447,7 +447,7 @@ export async function scanProjectStructure(
   const directories: string[] = [];
 
   async function scan(currentPath: string, depth: number): Promise<void> {
-    if (depth > maxDepth) return;
+    if (depth > maxDepth) {return;}
 
     try {
       const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
@@ -457,7 +457,7 @@ export async function scanProjectStructure(
         const relativePath = path.relative(projectPath, entryPath);
 
         if (entry.isDirectory()) {
-          if (IGNORED_DIRECTORIES.has(entry.name)) continue;
+          if (IGNORED_DIRECTORIES.has(entry.name)) {continue;}
 
           directories.push(relativePath);
           files.push({
@@ -468,7 +468,7 @@ export async function scanProjectStructure(
 
           await scan(entryPath, depth + 1);
         } else {
-          if (IGNORED_FILES.has(entry.name)) continue;
+          if (IGNORED_FILES.has(entry.name)) {continue;}
 
           const stats = await fs.promises.stat(entryPath);
           const ext = path.extname(entry.name).slice(1);
@@ -673,7 +673,7 @@ export function identifyKeyFiles(structure: ProjectStructure, projectType: Proje
   ];
 
   for (const file of structure.files) {
-    if (file.type !== 'file') continue;
+    if (file.type !== 'file') {continue;}
 
     // Check priority files
     if (priorityFiles.includes(file.name)) {

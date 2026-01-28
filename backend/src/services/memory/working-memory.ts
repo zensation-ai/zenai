@@ -165,7 +165,7 @@ export class WorkingMemoryService {
    */
   getState(sessionId: string): WorkingMemoryState | null {
     const state = this.states.get(sessionId);
-    if (!state) return null;
+    if (!state) {return null;}
 
     // Check if expired
     if (Date.now() - state.lastActivity.getTime() > CONFIG.SESSION_TIMEOUT_MS) {
@@ -253,7 +253,7 @@ export class WorkingMemoryService {
 
     for (const item of items) {
       const slot = await this.add(sessionId, item.type, item.content, item.priority);
-      if (slot) added.push(slot);
+      if (slot) {added.push(slot);}
     }
 
     return added;
@@ -264,10 +264,10 @@ export class WorkingMemoryService {
    */
   async activate(sessionId: string, slotId: string): Promise<void> {
     const state = this.states.get(sessionId);
-    if (!state) return;
+    if (!state) {return;}
 
     const slot = state.slots.find(s => s.id === slotId);
-    if (!slot) return;
+    if (!slot) {return;}
 
     // Boost activation
     slot.activation = Math.min(1.0, slot.activation + 0.3);
@@ -283,7 +283,7 @@ export class WorkingMemoryService {
    */
   async activateByContent(sessionId: string, content: string): Promise<void> {
     const state = this.states.get(sessionId);
-    if (!state) return;
+    if (!state) {return;}
 
     const contentLower = content.toLowerCase();
     const matchingSlots = state.slots.filter(s =>
@@ -312,18 +312,18 @@ export class WorkingMemoryService {
         sourceSlot.embedding = await generateEmbedding(sourceSlot.content);
       }
 
-      if (sourceSlot.embedding.length === 0) return;
+      if (sourceSlot.embedding.length === 0) {return;}
 
       // Calculate similarity and spread activation
       for (const slot of state.slots) {
-        if (slot.id === sourceSlot.id) continue;
+        if (slot.id === sourceSlot.id) {continue;}
 
         // Generate embedding if not cached
         if (!slot.embedding) {
           slot.embedding = await generateEmbedding(slot.content);
         }
 
-        if (slot.embedding.length === 0) continue;
+        if (slot.embedding.length === 0) {continue;}
 
         const similarity = cosineSimilarity(sourceSlot.embedding, slot.embedding);
 
@@ -352,10 +352,10 @@ export class WorkingMemoryService {
    */
   remove(sessionId: string, slotId: string): boolean {
     const state = this.states.get(sessionId);
-    if (!state) return false;
+    if (!state) {return false;}
 
     const index = state.slots.findIndex(s => s.id === slotId);
-    if (index === -1) return false;
+    if (index === -1) {return false;}
 
     // Don't allow removing goal slots
     if (state.slots[index].type === 'goal') {
@@ -378,7 +378,7 @@ export class WorkingMemoryService {
    */
   addSubGoal(sessionId: string, subGoal: string): void {
     const state = this.states.get(sessionId);
-    if (!state) return;
+    if (!state) {return;}
 
     if (!state.subGoals.includes(subGoal)) {
       state.subGoals.push(subGoal);
@@ -391,7 +391,7 @@ export class WorkingMemoryService {
    */
   removeSubGoal(sessionId: string, subGoal: string): void {
     const state = this.states.get(sessionId);
-    if (!state) return;
+    if (!state) {return;}
 
     const index = state.subGoals.indexOf(subGoal);
     if (index !== -1) {
@@ -438,7 +438,7 @@ export class WorkingMemoryService {
     // Find candidates (never evict goals)
     const candidates = state.slots.filter(s => s.type !== 'goal');
 
-    if (candidates.length === 0) return;
+    if (candidates.length === 0) {return;}
 
     // Sort by activation * priority (lowest first)
     candidates.sort((a, b) =>
@@ -486,7 +486,7 @@ export class WorkingMemoryService {
    */
   generateContextString(sessionId: string): string {
     const state = this.states.get(sessionId);
-    if (!state) return '';
+    if (!state) {return '';}
 
     // Apply decay first
     this.applyDecay(state);
@@ -536,7 +536,7 @@ export class WorkingMemoryService {
    */
   getActiveSlots(sessionId: string): WorkingMemorySlot[] {
     const state = this.states.get(sessionId);
-    if (!state) return [];
+    if (!state) {return [];}
 
     this.applyDecay(state);
 
@@ -554,7 +554,7 @@ export class WorkingMemoryService {
    */
   async persist(sessionId: string): Promise<void> {
     const state = this.states.get(sessionId);
-    if (!state) return;
+    if (!state) {return;}
 
     try {
       await queryContext(
@@ -608,7 +608,7 @@ export class WorkingMemoryService {
         [sessionId]
       );
 
-      if (result.rows.length === 0) return null;
+      if (result.rows.length === 0) {return null;}
 
       const row = result.rows[0];
       const slots = JSON.parse(row.slots || '[]');

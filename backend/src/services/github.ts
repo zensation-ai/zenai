@@ -13,7 +13,7 @@
  * @module services/github
  */
 
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
 
@@ -458,8 +458,8 @@ export async function searchCode(
   const { repo, language, limit = 10 } = options;
 
   let searchQuery = query;
-  if (repo) searchQuery += ` repo:${repo}`;
-  if (language) searchQuery += ` language:${language}`;
+  if (repo) {searchQuery += ` repo:${repo}`;}
+  if (language) {searchQuery += ` language:${language}`;}
 
   const response = await axios.get(`${GITHUB_API_BASE}/search/code`, {
     headers: getAuthHeaders(accessToken),
@@ -580,9 +580,9 @@ function mapPullRequest(data: Record<string, unknown>): GitHubPullRequest {
 export function formatRepository(repo: GitHubRepository): string {
   const parts: string[] = [];
   parts.push(`**${repo.fullName}**`);
-  if (repo.description) parts.push(`> ${repo.description}`);
+  if (repo.description) {parts.push(`> ${repo.description}`);}
   parts.push(`⭐ ${repo.stargazersCount} | 🍴 ${repo.forksCount} | 📝 ${repo.openIssuesCount} issues`);
-  if (repo.language) parts.push(`Language: ${repo.language}`);
+  if (repo.language) {parts.push(`Language: ${repo.language}`);}
   parts.push(`URL: ${repo.htmlUrl}`);
   return parts.join('\n');
 }
@@ -593,7 +593,7 @@ export function formatRepository(repo: GitHubRepository): string {
 export function formatIssue(issue: GitHubIssue): string {
   const parts: string[] = [];
   parts.push(`**#${issue.number}: ${issue.title}** (${issue.state})`);
-  if (issue.body) parts.push(`> ${issue.body.slice(0, 200)}${issue.body.length > 200 ? '...' : ''}`);
+  if (issue.body) {parts.push(`> ${issue.body.slice(0, 200)}${issue.body.length > 200 ? '...' : ''}`);}
   if (issue.labels.length > 0) {
     parts.push(`Labels: ${issue.labels.map(l => l.name).join(', ')}`);
   }
@@ -610,7 +610,7 @@ export function formatPullRequest(pr: GitHubPullRequest): string {
   parts.push(`${stateEmoji} **#${pr.number}: ${pr.title}**`);
   parts.push(`${pr.head.ref} → ${pr.base.ref}`);
   parts.push(`+${pr.additions} -${pr.deletions} | ${pr.changedFiles} files`);
-  if (pr.body) parts.push(`> ${pr.body.slice(0, 150)}${pr.body.length > 150 ? '...' : ''}`);
+  if (pr.body) {parts.push(`> ${pr.body.slice(0, 150)}${pr.body.length > 150 ? '...' : ''}`);}
   parts.push(`By: ${pr.user.login} | ${pr.htmlUrl}`);
   return parts.join('\n');
 }
@@ -628,7 +628,7 @@ export function formatSearchResults(results: GitHubSearchResult): string {
 
   for (const repo of results.items) {
     parts.push(`• **${repo.fullName}** ⭐${repo.stargazersCount}`);
-    if (repo.description) parts.push(`  ${repo.description.slice(0, 80)}${repo.description.length > 80 ? '...' : ''}`);
+    if (repo.description) {parts.push(`  ${repo.description.slice(0, 80)}${repo.description.length > 80 ? '...' : ''}`);}
   }
 
   return parts.join('\n');

@@ -16,8 +16,8 @@ import {
   validateRequiredString,
   parseIntSafe,
 } from '../utils/validation';
-import { apiKeyAuth, optionalAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
 import { getFirstRowOrThrow, getFirstRowOrNull, parseDbInt } from '../types/database-rows';
 

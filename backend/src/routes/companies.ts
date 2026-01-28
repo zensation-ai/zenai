@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { query } from '../utils/database';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, ConflictError, NotFoundError } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
 
 export const companiesRouter = Router();
 

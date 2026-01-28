@@ -10,7 +10,6 @@ import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
 import {
   getEvolutionDashboard,
   createDailySnapshot,

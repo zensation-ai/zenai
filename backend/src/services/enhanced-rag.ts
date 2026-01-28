@@ -367,7 +367,7 @@ class EnhancedRAGService {
     results: EnhancedResult[],
     methodsUsed: string[]
   ): number {
-    if (results.length === 0) return 0;
+    if (results.length === 0) {return 0;}
 
     // Base confidence from top score
     let confidence = results[0].score;

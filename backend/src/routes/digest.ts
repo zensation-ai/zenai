@@ -13,7 +13,7 @@ import { queryContext, AIContext, isValidContext } from '../utils/database-conte
 import { logger } from '../utils/logger';
 import { queryOllamaJSON } from '../utils/ollama';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
 export const digestRouter = Router();
 

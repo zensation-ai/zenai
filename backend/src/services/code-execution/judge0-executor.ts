@@ -416,7 +416,7 @@ export class Judge0Executor implements ExecutorProvider {
    * Decode base64 string safely
    */
   private decodeBase64(encoded: string | null): string {
-    if (!encoded) return '';
+    if (!encoded) {return '';}
     try {
       return Buffer.from(encoded, 'base64').toString('utf-8');
     } catch {
