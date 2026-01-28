@@ -91,16 +91,19 @@ describe('Automations API Integration Tests', () => {
   describe('GET /api/:context/automations/stats', () => {
     it('should return automation statistics', async () => {
       const mockStats = {
-        total: 15,
-        active: 12,
-        inactive: 3,
-        totalExecutions: 150,
-        successRate: 0.95,
-        byTrigger: {
+        total_automations: 15,
+        active_automations: 12,
+        total_executions: 150,
+        successful_executions: 142,
+        failed_executions: 8,
+        success_rate: 0.95,
+        automations_by_trigger: {
           time_based: 5,
           event_based: 7,
           condition_based: 3,
         },
+        top_automations: [],
+        pending_suggestions: 0,
       };
 
       mockGetAutomationStats.mockResolvedValueOnce(mockStats);

@@ -137,13 +137,14 @@ describe('Analytics API Integration Tests', () => {
         .get('/api/personal/analytics/overview')
         .expect(200);
 
-      expect(response.body).toHaveProperty('totals');
-      expect(response.body).toHaveProperty('recent');
-      expect(response.body).toHaveProperty('distribution');
-      expect(response.body).toHaveProperty('trend');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('summary');
+      expect(response.body.data).toHaveProperty('recentActivity');
+      expect(response.body.data).toHaveProperty('distribution');
+      expect(response.body.data).toHaveProperty('dailyTrend');
 
-      expect(response.body.totals.total).toBe(100);
-      expect(response.body.totals.active).toBe(85);
+      expect(response.body.data.summary.total).toBe(100);
+      expect(response.body.data.summary.active).toBe(85);
     });
 
     it('should return 400 for invalid context', async () => {
