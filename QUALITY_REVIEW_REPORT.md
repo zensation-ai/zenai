@@ -8,20 +8,21 @@
 
 ## Status: ABGESCHLOSSEN
 
-### Durchgeführte Fixes (2 Commits)
+### Durchgeführte Fixes (4 Commits)
 
 | Phase | Beschreibung | Status |
 |-------|--------------|--------|
 | **Commit 1** | Security Fixes, React Keys, Dead Code Removal | ✅ Fertig |
 | **Commit 2** | Console.error → showToast, PoolClient Types, Test Coverage | ✅ Fertig |
+| **Commit 3** | Docs Update | ✅ Fertig |
+| **Commit 4** | TypeScript Row-Types, NotFoundError Pattern, Weitere Tests | ✅ Fertig |
 
-### Verbleibende Issues (Niedrige Priorität)
+### Verbleibende Issues (Sehr niedrige Priorität)
 
 | Kategorie | Verbleibend | Notizen |
 |-----------|-------------|---------|
-| TypeScript `any` | ~180 | Hauptsächlich DB row mapping |
-| Unsafe `.rows[0]` | ~275 | Erfordert größere Refactoring-Arbeit |
-| Frontend Tests | ~55 | Basis-Tests erstellt, mehr Coverage erwünscht |
+| TypeScript `any` | ~140 | Infrastructure für Typisierung vorhanden |
+| Frontend Tests | ~50 | 7 Test-Dateien erstellt, Basis-Coverage vorhanden |
 
 ---
 
@@ -68,7 +69,7 @@
 - thought-incubator.ts: 3 Funktionen
 - database.ts: Export hinzugefügt
 
-### ✅ NEU - Frontend Tests (5 neue Test-Dateien)
+### ✅ NEU - Frontend Tests (7 Test-Dateien, ~1.500 Zeilen)
 
 | Test-Datei | Zeilen | Coverage |
 |------------|--------|----------|
@@ -77,6 +78,44 @@
 | SearchFilterBar.test.tsx | ~240 | Search, Filters, A11y |
 | QuickStats.test.tsx | ~200 | Stats display, Interactions |
 | SkeletonLoader.test.tsx | ~200 | Types, Animation, Edge cases |
+| RecordButton.test.tsx | ~280 | MediaRecorder, Permissions, States |
+| MobileNav.test.tsx | ~240 | Navigation, Active State, Touch |
+
+### ✅ NEU - TypeScript Database Row Types
+
+**Datei:** `backend/src/types/database-rows.ts` (~600 Zeilen)
+
+**40+ typisierte Interfaces:**
+- Core: IdeaRow, MediaItemRow, MeetingRow, CompanyRow
+- Drafts: DraftRow, DraftFeedbackAggregateRow, PatternEffectivenessRow
+- Analytics: LearningCurveRow, DomainStrengthRow, SatisfactionMetricRow
+- Memory: EpisodeRow, FactRow, PatternRow
+- Device: DeviceTokenRow, NotificationPreferencesRow
+- Sessions: ChatSessionRow, ChatMessageRow, LearningSessionRow
+- Automation: AutomationRow, AutomationSuggestionRow
+- Learning: LearningProfileRow, LearningTaskRow
+- Topics: TopicRow, TopicWithQualityRow
+- Incubator: LooseThoughtRow, ThoughtClusterRow
+- Feedback: AIFeedbackRow, InteractionFeedbackRow
+- Aggregates: CountRow, StatsSummaryRow
+
+### ✅ NEU - Database Utility Functions
+
+**Sichere Row-Zugriffe:**
+```typescript
+// Statt: result.rows[0] // Kann undefined sein!
+// Jetzt:
+import { getFirstRowOrThrow, getFirstRowOrNull } from '../types/database-rows';
+
+const idea = getFirstRowOrThrow(result, 'Idea'); // Wirft NotFoundError
+const profile = getFirstRowOrNull(result); // Gibt null zurück
+```
+
+**Weitere Utilities:**
+- `parseDbNumber(value, default)` - Sichere Zahlenkonvertierung
+- `parseDbInt(value, default)` - Sichere Integer-Konvertierung
+- `mapRows(result, mapper)` - Typsichere Row-Mapping
+- `hasRows(result)` - Type Guard
 
 ---
 
