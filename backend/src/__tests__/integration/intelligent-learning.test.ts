@@ -321,7 +321,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
     describe('DELETE /api/:context/focus/:id', () => {
       it('should delete a domain focus', async () => {
-        mockDeleteDomainFocus.mockResolvedValueOnce(undefined);
+        mockDeleteDomainFocus.mockResolvedValueOnce(true);
 
         const res = await request(app)
           .delete(`/api/work/focus/${sampleFocus.id}`)

@@ -28,8 +28,30 @@ jest.mock('../../utils/ollama', () => ({
   generateEmbedding: jest.fn(),
 }));
 
-jest.mock('../../utils/database', () => ({
-  query: jest.fn(),
+jest.mock('../../utils/database-context', () => ({
+  queryContext: jest.fn(),
+  AIContext: {},
+}));
+
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
+jest.mock('../../middleware/response-cache', () => ({
+  invalidateCacheForContext: jest.fn(),
+}));
+
+jest.mock('../../utils/schemas', () => ({
+  VoiceMemoTextSchema: {
+    parse: (data: any) => data,
+    safeParse: (data: any) => ({ success: true, data }),
+  },
+  validateBody: () => (req: any, res: any, next: any) => next(),
 }));
 
 jest.mock('../../services/knowledge-graph', () => ({
@@ -58,14 +80,14 @@ jest.mock('../../utils/embedding', () => ({
 
 import { transcribeAudio, checkWhisperAvailable } from '../../services/whisper';
 import { structureWithOllama, generateEmbedding } from '../../utils/ollama';
-import { query } from '../../utils/database';
+import { queryContext } from '../../utils/database-context';
 import { suggestFromLearning } from '../../services/learning-engine';
 
 const mockTranscribeAudio = transcribeAudio as jest.MockedFunction<typeof transcribeAudio>;
 const mockCheckWhisperAvailable = checkWhisperAvailable as jest.MockedFunction<typeof checkWhisperAvailable>;
 const mockStructureWithOllama = structureWithOllama as jest.MockedFunction<typeof structureWithOllama>;
 const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
-const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 const mockSuggestFromLearning = suggestFromLearning as jest.MockedFunction<typeof suggestFromLearning>;
 
 describe('Voice Memo API Integration Tests', () => {
@@ -93,7 +115,7 @@ describe('Voice Memo API Integration Tests', () => {
     });
 
     mockGenerateEmbedding.mockResolvedValue(Array(768).fill(0.1));
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 } as any);
+    mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
     mockSuggestFromLearning.mockResolvedValue(null);
   });
 
@@ -272,7 +294,7 @@ describe('Voice Memo API Integration Tests', () => {
         .send({ text: 'Database test' })
         .expect(200);
 
-      expect(mockQuery).toHaveBeenCalledWith(
+      expect(mockQueryContext).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO ideas'),
         expect.any(Array)
       );
@@ -301,7 +323,7 @@ describe('Voice Memo API Integration Tests', () => {
       expect(response.body.language).toBe('de');
       expect(response.body.processingTime).toBeDefined();
       expect(mockStructureWithOllama).not.toHaveBeenCalled();
-      expect(mockQuery).not.toHaveBeenCalled();
+      expect(mockQueryContext).not.toHaveBeenCalled();
     });
 
     it('should return error if no audio file', async () => {
@@ -369,7 +391,7 @@ describe('Voice Memo API Integration Tests', () => {
     });
 
     it('should handle database errors', async () => {
-      mockQuery.mockRejectedValue(new Error('Connection failed'));
+      mockQueryContext.mockRejectedValue(new Error('Connection failed'));
 
       const response = await request(app)
         .post('/api/voice-memo/text')
@@ -408,7 +430,7 @@ describe('Voice Memo API Integration Tests', () => {
         .send({ text: 'Test with embedding' })
         .expect(200);
 
-      expect(mockQuery).toHaveBeenCalledWith(
+      expect(mockQueryContext).toHaveBeenCalledWith(
         expect.stringContaining('embedding'),
         expect.arrayContaining([expect.stringContaining('[')])
       );
@@ -423,7 +445,7 @@ describe('Voice Memo API Integration Tests', () => {
         .expect(200);
 
       // Should use query without embedding columns
-      expect(mockQuery).toHaveBeenCalled();
+      expect(mockQueryContext).toHaveBeenCalled();
     });
   });
 });
