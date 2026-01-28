@@ -51,7 +51,16 @@ jest.mock('../../utils/schemas', () => ({
     parse: (data: any) => data,
     safeParse: (data: any) => ({ success: true, data }),
   },
-  validateBody: () => (req: any, res: any, next: any) => next(),
+  validateBody: () => (req: any, res: any, next: any) => {
+    // Simulate Zod validation behavior for text field
+    if (req.body && !req.body.text && req.body.text !== undefined) {
+      return res.status(400).json({ error: 'Validation failed', details: 'No text provided' });
+    }
+    if (!req.body || (!req.body.text && Object.keys(req.body).length === 0)) {
+      return res.status(400).json({ error: 'No text provided' });
+    }
+    next();
+  },
 }));
 
 jest.mock('../../services/knowledge-graph', () => ({
@@ -82,6 +91,7 @@ import { transcribeAudio, checkWhisperAvailable } from '../../services/whisper';
 import { structureWithOllama, generateEmbedding } from '../../utils/ollama';
 import { queryContext } from '../../utils/database-context';
 import { suggestFromLearning } from '../../services/learning-engine';
+import { errorHandler } from '../../middleware/errorHandler';
 
 const mockTranscribeAudio = transcribeAudio as jest.MockedFunction<typeof transcribeAudio>;
 const mockCheckWhisperAvailable = checkWhisperAvailable as jest.MockedFunction<typeof checkWhisperAvailable>;
@@ -97,6 +107,7 @@ describe('Voice Memo API Integration Tests', () => {
     app = express();
     app.use(express.json());
     app.use('/api/voice-memo', voiceMemoRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(() => {

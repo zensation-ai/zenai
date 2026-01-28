@@ -269,10 +269,10 @@ describe('Meetings API Integration Tests', () => {
   });
 
   // ===========================================
-  // PATCH /api/meetings/:id/status
+  // PUT /api/meetings/:id/status
   // ===========================================
 
-  describe('PATCH /api/meetings/:id/status', () => {
+  describe('PUT /api/meetings/:id/status', () => {
     it('should update meeting status', async () => {
       mockUpdateMeetingStatus.mockResolvedValueOnce({
         ...sampleMeeting,
@@ -280,7 +280,7 @@ describe('Meetings API Integration Tests', () => {
       } as any);
 
       const res = await request(app)
-        .patch(`/api/meetings/${sampleMeeting.id}/status`)
+        .put(`/api/meetings/${sampleMeeting.id}/status`)
         .send({ status: 'completed' })
         .expect(200);
 
@@ -293,7 +293,7 @@ describe('Meetings API Integration Tests', () => {
 
     it('should return 400 for invalid status', async () => {
       const res = await request(app)
-        .patch(`/api/meetings/${sampleMeeting.id}/status`)
+        .put(`/api/meetings/${sampleMeeting.id}/status`)
         .send({ status: 'invalid_status' })
         .expect(400);
 
@@ -307,12 +307,14 @@ describe('Meetings API Integration Tests', () => {
 
   describe('POST /api/meetings/:id/notes', () => {
     it('should process and store meeting notes', async () => {
+      // Need to mock getMeeting first since route checks if meeting exists
+      mockGetMeeting.mockResolvedValueOnce(sampleMeeting as any);
       mockProcessMeetingNotes.mockResolvedValueOnce(sampleNotes as any);
 
       const res = await request(app)
         .post(`/api/meetings/${sampleMeeting.id}/notes`)
         .send({
-          raw_notes: 'Raw meeting notes here',
+          transcript: 'Raw meeting notes here',
         })
         .expect(200);
 
@@ -323,6 +325,9 @@ describe('Meetings API Integration Tests', () => {
     });
 
     it('should return 400 when notes are missing', async () => {
+      // Need to mock getMeeting first since route checks if meeting exists
+      mockGetMeeting.mockResolvedValueOnce(sampleMeeting as any);
+
       const res = await request(app)
         .post(`/api/meetings/${sampleMeeting.id}/notes`)
         .send({})
