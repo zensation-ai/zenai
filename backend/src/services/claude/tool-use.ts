@@ -213,7 +213,7 @@ export const TOOL_GET_RELATED: ToolDefinition = {
  */
 export const TOOL_WEB_SEARCH: ToolDefinition = {
   name: 'web_search',
-  description: 'Durchsucht das Web nach aktuellen Informationen. Nutze dies für Recherche zu aktuellen Themen.',
+  description: 'Durchsucht das Web nach aktuellen Informationen. Nutze dies für Recherche zu aktuellen Themen, Nachrichten, oder wenn der Nutzer nach aktuellen Informationen fragt.',
   input_schema: {
     type: 'object',
     properties: {
@@ -221,8 +221,30 @@ export const TOOL_WEB_SEARCH: ToolDefinition = {
         type: 'string',
         description: 'Die Suchanfrage',
       },
+      count: {
+        type: 'number',
+        description: 'Anzahl der Ergebnisse (Standard: 5, Max: 10)',
+      },
     },
     required: ['query'],
+  },
+};
+
+/**
+ * Fetch URL tool - fetch and extract content from a URL
+ */
+export const TOOL_FETCH_URL: ToolDefinition = {
+  name: 'fetch_url',
+  description: 'Ruft den Inhalt einer URL ab und extrahiert den lesbaren Text. Nutze dies wenn der Nutzer einen Link teilt und wissen möchte was darin steht, oder wenn du Details zu einem Suchergebnis brauchst.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      url: {
+        type: 'string',
+        description: 'Die URL die abgerufen werden soll',
+      },
+    },
+    required: ['url'],
   },
 };
 

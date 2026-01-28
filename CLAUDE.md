@@ -67,6 +67,13 @@
 - Automatische Provider-Auswahl basierend auf Umgebung
 - Claude-basierter Code-Generator
 
+**Web Tools:**
+
+- `web_search`: Web-Suche via Brave Search API (Privacy-first, DuckDuckGo Fallback)
+- `fetch_url`: URL-Inhalte abrufen und extrahieren (Readability-ähnlich)
+- Intelligente Content-Extraktion (Titel, Autor, Datum, Hauptinhalt)
+- HTML-zu-Text-Konvertierung mit Noise-Filterung
+
 ## Key Files
 
 ### Backend
@@ -80,6 +87,8 @@
 - Code Execution Route: `backend/src/routes/code-execution.ts`
 - Chat Modes: `backend/src/services/chat-modes.ts`
 - Tool Handlers: `backend/src/services/tool-handlers.ts`
+- Web Search: `backend/src/services/web-search.ts`
+- URL Fetch: `backend/src/services/url-fetch.ts`
 - Enhanced RAG: `backend/src/services/enhanced-rag.ts`
 - Topic Enhancement: `backend/src/services/topic-enhancement.ts`
 - Streaming: `backend/src/services/claude/streaming.ts`
@@ -171,6 +180,9 @@ EXECUTOR_PROVIDER=docker              # or 'judge0' to force specific provider
 JUDGE0_API_KEY=your-rapidapi-key      # Required for production
 JUDGE0_API_URL=https://judge0-ce.p.rapidapi.com
 JUDGE0_RAPIDAPI_HOST=judge0-ce.p.rapidapi.com
+
+# Optional - Web Search (Brave Search API)
+BRAVE_SEARCH_API_KEY=your-brave-api-key  # Falls nicht gesetzt: DuckDuckGo Fallback
 ```
 
 ## Testing
@@ -189,6 +201,29 @@ cd frontend && npm test
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-01-28: Web Tools Integration
+
+**Neue Features:**
+
+- `web_search` Tool: Web-Suche via Brave Search API
+  - Privacy-first Alternative zu Google
+  - DuckDuckGo Fallback ohne API-Key
+  - Konfigurierbare Ergebnis-Anzahl
+
+- `fetch_url` Tool: URL-Inhalte abrufen
+  - Intelligente Content-Extraktion (Readability-ähnlich)
+  - Metadata: Titel, Autor, Datum, Beschreibung
+  - Noise-Filterung (Ads, Navigation, Footer)
+  - Word Count und Lesezeit-Schätzung
+
+**Neue Dateien:**
+- `backend/src/services/web-search.ts`
+- `backend/src/services/url-fetch.ts`
+- `backend/src/__tests__/web-search.test.ts`
+- `backend/src/__tests__/url-fetch.test.ts`
+
+---
 
 ### 2026-01-26: Code Execution Production Deployment
 

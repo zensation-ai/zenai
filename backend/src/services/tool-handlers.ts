@@ -16,6 +16,8 @@ import {
   TOOL_CALCULATE,
   TOOL_REMEMBER,
   TOOL_RECALL,
+  TOOL_WEB_SEARCH,
+  TOOL_FETCH_URL,
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
@@ -23,6 +25,8 @@ import { AIContext, queryContext } from '../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
 import { generateEmbedding } from './ai';
 import { longTermMemory, episodicMemory } from './memory';
+import { searchWeb, formatSearchResults } from './web-search';
+import { fetchUrl, formatForTool, isValidUrl } from './url-fetch';
 
 // ===========================================
 // DEPRECATED: Legacy Context Management
@@ -465,6 +469,65 @@ function getEmotionalLabel(valence: number): string {
 }
 
 // ===========================================
+// Web Search & URL Fetch Handlers
+// ===========================================
+
+/**
+ * Web search handler - searches the web for information
+ * Uses Brave Search API (privacy-first) with DuckDuckGo fallback
+ */
+async function handleWebSearch(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const query = input.query as string;
+  const count = Math.min((input.count as number) || 5, 10);
+
+  if (!query || typeof query !== 'string') {
+    return 'Fehler: Keine Suchanfrage angegeben.';
+  }
+
+  logger.debug('Tool: web_search', { query, count });
+
+  try {
+    const results = await searchWeb(query, { count });
+    return formatSearchResults(results);
+  } catch (error) {
+    logger.error('Tool web_search failed', error instanceof Error ? error : undefined);
+    return 'Fehler bei der Websuche. Bitte versuche es erneut.';
+  }
+}
+
+/**
+ * Fetch URL handler - fetches and extracts content from a URL
+ * Uses intelligent content extraction for readable output
+ */
+async function handleFetchUrl(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const url = input.url as string;
+
+  if (!url || typeof url !== 'string') {
+    return 'Fehler: Keine URL angegeben.';
+  }
+
+  if (!isValidUrl(url)) {
+    return 'Fehler: Ungültige URL. Bitte eine vollständige URL mit http:// oder https:// angeben.';
+  }
+
+  logger.debug('Tool: fetch_url', { url });
+
+  try {
+    const result = await fetchUrl(url, { timeout: 15000, maxContentLength: 30000 });
+    return formatForTool(result);
+  } catch (error) {
+    logger.error('Tool fetch_url failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Abrufen der URL: ${url}`;
+  }
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -485,6 +548,10 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_REMEMBER, handleRemember);
   toolRegistry.register(TOOL_RECALL, handleRecall);
 
+  // Web tools (Internet access)
+  toolRegistry.register(TOOL_WEB_SEARCH, handleWebSearch);
+  toolRegistry.register(TOOL_FETCH_URL, handleFetchUrl);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -493,6 +560,8 @@ export function registerAllToolHandlers(): void {
       'calculate',
       'remember',
       'recall',
+      'web_search',
+      'fetch_url',
     ],
   });
 }
@@ -501,5 +570,7 @@ export function registerAllToolHandlers(): void {
  * Check if handlers are registered
  */
 export function areToolsRegistered(): boolean {
-  return toolRegistry.has('search_ideas');
+  return toolRegistry.has('search_ideas') &&
+         toolRegistry.has('web_search') &&
+         toolRegistry.has('fetch_url');
 }
