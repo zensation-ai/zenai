@@ -1,0 +1,168 @@
+/**
+ * VoiceInput Component Styles
+ *
+ * Compact voice recording button for chat integration.
+ * Follows NeuroDesign principles with smooth animations.
+ */
+
+.voice-input-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.voice-input-btn:hover:not(:disabled) {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.15));
+  transform: scale(1.05);
+}
+
+.voice-input-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.voice-input-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Compact mode */
+.voice-input-btn.compact {
+  padding: 0.5rem;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+/* Icons */
+.voice-input-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.voice-input-btn.compact .voice-input-icon {
+  font-size: 1.1rem;
+}
+
+/* Recording state */
+.voice-input-btn.recording {
+  background: rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+.voice-input-btn.recording:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.recording-icon {
+  color: var(--error-color, #ef4444);
+  animation: pulse-recording 1s ease-in-out infinite;
+}
+
+/* Processing state */
+.voice-input-btn.processing {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.processing-icon {
+  animation: spin 1s linear infinite;
+}
+
+/* Duration display */
+.voice-input-duration {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--error-color, #ef4444);
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+/* Pulse animation overlay */
+.voice-input-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.3);
+  animation: pulse-expand 1.5s ease-out infinite;
+  pointer-events: none;
+}
+
+/* Animations */
+@keyframes pulse-recording {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes pulse-expand {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .voice-input-btn {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .voice-input-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .voice-input-btn.recording {
+    background: rgba(239, 68, 68, 0.15);
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .voice-input-btn {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .voice-input-btn.compact {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Accessibility: Focus styles */
+.voice-input-btn:focus-visible {
+  outline: 2px solid var(--focus-color, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Integration with chat input wrapper */
+.chat-input-wrapper .voice-input-btn {
+  flex-shrink: 0;
+}

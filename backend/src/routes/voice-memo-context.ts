@@ -168,6 +168,23 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     throw new ValidationError('Either audio file, audioBase64, or text required');
   }
 
+  // Check for transcribeOnly mode (for VoiceInput chat integration)
+  const transcribeOnly = req.body.transcribeOnly === 'true' || req.body.transcribeOnly === true;
+
+  if (transcribeOnly) {
+    // Return only the transcript without creating an idea
+    const duration = Date.now() - startTime;
+    logger.info('Transcribe-only completed', { context, duration });
+
+    return res.json({
+      success: true,
+      context,
+      mode: 'transcribe_only',
+      transcript: transcript.trim(),
+      duration,
+    });
+  }
+
   // Get the selected persona (or default for context)
   const persona = getSubPersona(context as AIContext, effectivePersonaId as SubPersonaId | undefined);
   const immediateStructure = shouldImmediatelyStructure(context as AIContext, effectivePersonaId as SubPersonaId | undefined);

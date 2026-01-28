@@ -17,6 +17,7 @@ import {
   getRandomMessage,
 } from '../utils/aiPersonality';
 import { ImageUpload } from './ImageUpload';
+import { VoiceInput } from './VoiceInput';
 import './GeneralChat.css';
 
 interface ChatMessage {
@@ -484,6 +485,13 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             disabled={sending}
             compact={true}
             maxImages={5}
+          />
+          {/* Voice Input Button */}
+          <VoiceInput
+            onTranscript={(text) => setInputValue((prev) => prev ? `${prev} ${text}` : text)}
+            disabled={sending}
+            context={context}
+            compact={true}
           />
           <textarea
             ref={inputRef}
