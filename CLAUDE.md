@@ -31,7 +31,7 @@
 **Chat Modes & Tool Use:**
 
 - Intelligent mode detection (tool_assisted, agent, rag_enhanced, conversation)
-- 6 integrated tools: search_ideas, create_idea, remember, recall, calculate, get_related_ideas
+- 16 integrated tools (see Tools section below)
 
 **RAG Pipeline:**
 
@@ -74,6 +74,38 @@
 - Intelligente Content-Extraktion (Titel, Autor, Datum, Hauptinhalt)
 - HTML-zu-Text-Konvertierung mit Noise-Filterung
 
+**GitHub Integration:**
+
+- `github_search`: Repository-Suche auf GitHub
+- `github_create_issue`: Issues aus Gesprächen erstellen
+- `github_repo_info`: Repository-Details abrufen
+- `github_list_issues`: Issues eines Repos auflisten
+- `github_pr_summary`: Pull Request Zusammenfassungen
+
+**Project/Workspace Context:**
+
+- `analyze_project`: Umfassende Projektanalyse
+- `get_project_summary`: Schnelle Projektübersicht
+- `list_project_files`: Projektstruktur anzeigen
+- Erkennung von 11 Projekttypen (TypeScript, Python, Rust, Go, etc.)
+- Framework-Erkennung (React, Express, Django, etc.)
+- Pattern-Erkennung (Testing, Docker, CI/CD, Architektur)
+
+**Voice Input:**
+
+- VoiceInput-Komponente im Chat-Interface
+- MediaRecorder API für Browser-native Aufnahme
+- Whisper-Transkription via Backend
+- transcribeOnly-Modus für direkte Chat-Integration
+
+**Artifacts System:**
+
+- ArtifactPanel für Code, Markdown, Mermaid, CSV
+- Automatische Extraktion aus AI-Antworten
+- Syntax-Highlighting mit Prism
+- Copy/Download Funktionalität
+- Große Code-Blöcke (>15 Zeilen) als Artifacts
+
 ## Key Files
 
 ### Backend
@@ -89,6 +121,9 @@
 - Tool Handlers: `backend/src/services/tool-handlers.ts`
 - Web Search: `backend/src/services/web-search.ts`
 - URL Fetch: `backend/src/services/url-fetch.ts`
+- GitHub Service: `backend/src/services/github.ts`
+- Project Context: `backend/src/services/project-context.ts`
+- Project Context Routes: `backend/src/routes/project-context.ts`
 - Enhanced RAG: `backend/src/services/enhanced-rag.ts`
 - Topic Enhancement: `backend/src/services/topic-enhancement.ts`
 - Streaming: `backend/src/services/claude/streaming.ts`
@@ -98,6 +133,9 @@
 - App: `frontend/src/App.tsx`
 - Chat Component: `frontend/src/components/GeneralChat.tsx`
 - Image Upload: `frontend/src/components/ImageUpload.tsx`
+- Voice Input: `frontend/src/components/VoiceInput.tsx`
+- Artifact Panel: `frontend/src/components/ArtifactPanel.tsx`
+- Project Context: `frontend/src/components/ProjectContext.tsx`
 - Code Result Component: `frontend/src/components/CodeExecutionResult.tsx`
 
 ### Tests
@@ -151,6 +189,15 @@ POST /api/chat/sessions/:id/messages/vision  - Message with images
 POST /api/chat/quick                         - Quick chat
 ```
 
+### Project Context API
+
+```
+POST /api/project/analyze                    - Full project analysis
+POST /api/project/summary                    - Quick project summary
+POST /api/project/structure                  - File structure scan
+GET  /api/project/health                     - Service availability
+```
+
 ## Environment Variables (Backend)
 
 ```bash
@@ -183,6 +230,9 @@ JUDGE0_RAPIDAPI_HOST=judge0-ce.p.rapidapi.com
 
 # Optional - Web Search (Brave Search API)
 BRAVE_SEARCH_API_KEY=your-brave-api-key  # Falls nicht gesetzt: DuckDuckGo Fallback
+
+# Optional - GitHub Integration
+GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...     # Für github_* Tools
 ```
 
 ## Testing
@@ -201,6 +251,44 @@ cd frontend && npm test
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-01-28: AI Competitive Analysis Implementation
+
+**Neue Features (basierend auf State-of-the-Art Analyse):**
+
+- **GitHub Integration** (5 neue Tools)
+  - Repository-Suche, Issue-Erstellung, PR-Summaries
+  - OAuth2 + Personal Access Token Support
+  - 11 Tests
+
+- **Project/Workspace Context** (3 neue Tools)
+  - Erkennung von 11 Projekttypen
+  - Framework- und Pattern-Erkennung
+  - AI-ready Context-Generierung
+  - 31 Tests
+
+- **Voice Input**
+  - VoiceInput-Komponente für Chat-Interface
+  - Browser-native MediaRecorder
+  - Whisper-Transkription
+
+- **Artifacts System**
+  - Slide-out Panel für Code/Markdown/Mermaid
+  - Syntax-Highlighting mit Prism
+  - Auto-Extraktion aus AI-Antworten
+
+**Neue Dateien:**
+- `backend/src/services/github.ts`
+- `backend/src/services/project-context.ts`
+- `backend/src/routes/project-context.ts`
+- `frontend/src/components/VoiceInput.tsx`
+- `frontend/src/components/ArtifactPanel.tsx`
+- `frontend/src/components/ProjectContext.tsx`
+- `frontend/src/types/artifacts.ts`
+
+**Tool-Anzahl:** 6 → 16 Tools
+
+---
 
 ### 2026-01-28: Web Tools Integration
 
