@@ -649,7 +649,7 @@ export async function warmEmbeddingCache(
         try {
           await getCachedEmbedding(text);
           warmed++;
-        } catch (error) {
+        } catch (_error) {
           failed++;
         }
       })

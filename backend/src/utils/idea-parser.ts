@@ -102,7 +102,7 @@ export function parseJsonArray(value: string | string[] | null | undefined, fiel
       }
       logger.warn('Parsed JSON is not an array', { fieldName, valueType: typeof parsed });
       return [];
-    } catch (error) {
+    } catch (_error) {
       // Not valid JSON - might be a comma-separated string
       if (value.includes(',')) {
         return value.split(',').map(s => s.trim()).filter(s => s.length > 0);

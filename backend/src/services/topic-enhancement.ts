@@ -132,7 +132,7 @@ export async function extractTopicKeywords(
       `SELECT COUNT(DISTINCT id) as total FROM ideas WHERE context = $1`,
       [context]
     );
-    const totalDocs = parseInt(allIdeasResult.rows[0]?.total || '1', 10);
+    const _totalDocs = parseInt(allIdeasResult.rows[0]?.total || '1', 10);
 
     // Calculate TF-IDF-like scores
     const stopWords = new Set([

@@ -86,7 +86,7 @@ async function transcribeWithLocalWhisper(
       if (fs.existsSync(tempInputPath)) {fs.unlinkSync(tempInputPath);}
       if (fs.existsSync(`${tempOutputPath}.txt`)) {fs.unlinkSync(`${tempOutputPath}.txt`);}
       if (fs.existsSync(`${tempOutputPath}.json`)) {fs.unlinkSync(`${tempOutputPath}.json`);}
-    } catch (e) {
+    } catch (_e) {
       // Ignore cleanup errors
     }
   }

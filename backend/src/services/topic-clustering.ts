@@ -302,7 +302,7 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
  */
 function initializeCentroids(ideas: IdeaEmbedding[], k: number): number[][] {
   const centroids: number[][] = [];
-  const dim = ideas[0].embedding.length;
+  const _dim = ideas[0].embedding.length;
 
   // First centroid is random
   const firstIdx = Math.floor(Math.random() * ideas.length);

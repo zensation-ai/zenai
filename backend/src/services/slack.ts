@@ -34,7 +34,7 @@ interface SlackTokens {
   scopes: string[];
 }
 
-interface SlackMessage {
+interface _SlackMessage {
   id: string;
   externalId: string;
   channelId: string;
@@ -352,7 +352,7 @@ async function convertMessageToIdea(
  * Convert reaction to idea
  */
 async function convertReactionToIdea(event: any): Promise<void> {
-  const { item, user } = event;
+  const { item, user: _user } = event;
 
   if (item.type !== 'message') {return;}
 
@@ -396,7 +396,7 @@ export async function handleSlashCommand(
   text: string,
   userId: string,
   channelId: string,
-  responseUrl: string
+  _responseUrl: string
 ): Promise<any> {
   switch (command) {
     case '/idea':

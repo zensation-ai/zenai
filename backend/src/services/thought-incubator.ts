@@ -76,7 +76,7 @@ const CONFIG = {
  * Calculate advanced maturity score for a cluster
  * Considers multiple factors for more accurate readiness assessment
  */
-async function calculateAdvancedMaturity(
+async function _calculateAdvancedMaturity(
   client: PoolClient,
   clusterId: string
 ): Promise<{ score: number; factors: Record<string, number>; isReady: boolean }> {

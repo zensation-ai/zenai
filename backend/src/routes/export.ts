@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
 import PDFDocument from 'pdfkit';
 import { queryContext, query, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
-import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 // Phase Security Sprint 3: Audit Logging
 import { auditLogger } from '../services/audit-logger';
 
@@ -445,7 +444,7 @@ exportRouter.get('/ideas/:id/markdown', apiKeyAuth, asyncHandler(async (req: Req
   const nextSteps = parseJSON(idea.next_steps);
   if (nextSteps.length > 0) {
     markdown += `## Next Steps\n\n`;
-    nextSteps.forEach((step: string, i: number) => {
+    nextSteps.forEach((step: string, _i: number) => {
       markdown += `- [ ] ${step}\n`;
     });
     markdown += `\n`;
