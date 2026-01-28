@@ -570,7 +570,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
                 <ul className="neuro-flow-list">
                   {/* Miller's Law: Max 3 Steps anzeigen */}
                   {currentIdea.nextSteps.slice(0, 3).map((step, index) => (
-                    <li key={index} className="neuro-stagger-item">
+                    <li key={`next-step-${index}-${step.slice(0, 20)}`} className="neuro-stagger-item">
                       {step}
                     </li>
                   ))}

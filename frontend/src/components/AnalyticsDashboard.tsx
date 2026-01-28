@@ -340,7 +340,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
               </div>
               <div className="insights-list neuro-flow-list">
                 {patterns.insights.slice(0, 7).map((insight, index) => (
-                  <div key={index} className="insight-item neuro-stagger-item">
+                  <div key={`insight-${index}-${insight.slice(0, 30)}`} className="insight-item neuro-stagger-item">
                     <span className="insight-icon">✨</span>
                     <span>{insight}</span>
                   </div>
