@@ -7,6 +7,7 @@
  */
 
 import { getPool, AIContext } from '../utils/database-context';
+import { PoolClient } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
@@ -76,7 +77,7 @@ const CONFIG = {
  * Considers multiple factors for more accurate readiness assessment
  */
 async function calculateAdvancedMaturity(
-  client: any,
+  client: PoolClient,
   clusterId: string
 ): Promise<{ score: number; factors: Record<string, number>; isReady: boolean }> {
   // Get detailed cluster statistics
@@ -306,7 +307,7 @@ async function analyzeAndAssignCluster(thoughtId: string, context: AIContext = '
  * Update cluster centroid using running average
  */
 async function updateClusterCentroid(
-  client: any,
+  client: PoolClient,
   clusterId: string,
   newEmbedding: string
 ): Promise<void> {
@@ -342,7 +343,7 @@ async function updateClusterCentroid(
 /**
  * Update cluster metadata (count, maturity, status)
  */
-async function updateClusterMetadata(client: any, clusterId: string): Promise<void> {
+async function updateClusterMetadata(client: PoolClient, clusterId: string): Promise<void> {
   // Count thoughts and calculate maturity
   const statsResult = await client.query(
     `SELECT

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { showToast } from './Toast';
 import './StoriesPage.css';
 import '../neurodesign.css';
 
@@ -42,6 +43,7 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
       setStories(res.data.stories || []);
     } catch (err) {
       console.error('Failed to load stories:', err);
+      showToast('Stories konnten nicht geladen werden', 'error');
       setStories([]);
     } finally {
       setLoading(false);

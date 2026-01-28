@@ -41,6 +41,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       setMedia(res.data.media || []);
     } catch (err) {
       console.error('Failed to load media:', err);
+      showToast('Medien konnten nicht geladen werden', 'error');
     } finally {
       setLoading(false);
     }

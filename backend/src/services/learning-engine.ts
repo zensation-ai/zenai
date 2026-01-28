@@ -10,7 +10,7 @@
  * WICHTIG: Lernt mit JEDER Handlung, nicht nur täglich!
  */
 
-import { pool, query } from '../utils/database';
+import { pool, query, PoolClient } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
@@ -470,7 +470,7 @@ export async function learnFromCorrection(
 /**
  * Reduziere Confidence nach einem Fehler
  */
-async function reduceConfidenceAfterError(client: any, userId: string): Promise<void> {
+async function reduceConfidenceAfterError(client: PoolClient, userId: string): Promise<void> {
   try {
     await client.query(
       `UPDATE user_profile
@@ -493,7 +493,7 @@ async function reduceConfidenceAfterError(client: any, userId: string): Promise<
  * Decay alte Präferenzen um Verfestigung von Fehlern zu verhindern
  * Wird bei jedem Lernen aufgerufen, reduziert alle Werte leicht
  */
-async function applyPreferenceDecay(client: any, userId: string): Promise<void> {
+async function applyPreferenceDecay(client: PoolClient, userId: string): Promise<void> {
   const DECAY_RATE = 0.98; // 2% Reduktion pro Lernevent
 
   try {
@@ -545,7 +545,7 @@ async function applyPreferenceDecay(client: any, userId: string): Promise<void> 
  * Increment a preference counter with optional weight
  */
 async function incrementPreference(
-  client: any,
+  client: PoolClient,
   userId: string,
   field: string,
   key: string,
@@ -572,7 +572,7 @@ async function incrementPreference(
  * Decrement a preference counter (for negative learning)
  */
 async function decrementPreference(
-  client: any,
+  client: PoolClient,
   userId: string,
   field: string,
   key: string,
@@ -599,7 +599,7 @@ async function decrementPreference(
  * Increment topic interest with optional weight
  */
 async function incrementTopicInterest(
-  client: any,
+  client: PoolClient,
   userId: string,
   topic: string,
   weight: number = 1
@@ -628,7 +628,7 @@ async function incrementTopicInterest(
  * Learn priority keywords from user behavior
  */
 async function learnPriorityKeywords(
-  client: any,
+  client: PoolClient,
   userId: string,
   keywords: string[],
   priority: string
@@ -686,7 +686,7 @@ async function learnPriorityKeywords(
  * Update thinking patterns based on new idea
  */
 async function updateThinkingPatterns(
-  client: any,
+  client: PoolClient,
   userId: string,
   idea: any
 ): Promise<void> {
@@ -767,7 +767,7 @@ async function updateThinkingPatterns(
  * Update language style from text
  */
 async function updateLanguageStyle(
-  client: any,
+  client: PoolClient,
   userId: string,
   text: string
 ): Promise<void> {
@@ -827,7 +827,7 @@ async function updateLanguageStyle(
  * Track topic transitions
  */
 async function updateTopicChains(
-  client: any,
+  client: PoolClient,
   userId: string,
   currentCategory: string
 ): Promise<void> {
@@ -881,7 +881,7 @@ async function updateTopicChains(
  * Update learning confidence
  */
 async function updateLearningConfidence(
-  client: any,
+  client: PoolClient,
   userId: string
 ): Promise<void> {
   try {
@@ -1047,7 +1047,7 @@ export async function runDailyLearning(userId: string = 'default'): Promise<{
  * Update interest embedding from recent ideas
  */
 async function updateInterestEmbedding(
-  client: any,
+  client: PoolClient,
   userId: string,
   ideas: any[]
 ): Promise<void> {

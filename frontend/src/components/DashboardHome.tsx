@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import { PageHeader } from './PageHeader';
+import { showToast } from './Toast';
 import '../neurodesign.css';
 import './DashboardHome.css';
 
@@ -142,6 +143,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
       }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
+      showToast('Dashboard-Daten konnten nicht geladen werden', 'error');
     } finally {
       setIsLoading(false);
     }
