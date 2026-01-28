@@ -249,6 +249,142 @@ export const TOOL_FETCH_URL: ToolDefinition = {
 };
 
 /**
+ * GitHub search repositories tool
+ */
+export const TOOL_GITHUB_SEARCH: ToolDefinition = {
+  name: 'github_search',
+  description: 'Durchsucht GitHub nach Repositories. Nutze dies wenn der Nutzer nach Code-Projekten, Libraries oder Open-Source Software sucht.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Suchanfrage (z.B. "react state management", "python web framework")',
+      },
+      limit: {
+        type: 'number',
+        description: 'Anzahl der Ergebnisse (Standard: 5, Max: 10)',
+      },
+    },
+    required: ['query'],
+  },
+};
+
+/**
+ * GitHub create issue tool
+ */
+export const TOOL_GITHUB_CREATE_ISSUE: ToolDefinition = {
+  name: 'github_create_issue',
+  description: 'Erstellt ein neues Issue in einem GitHub Repository. Nutze dies wenn der Nutzer aus einer Idee oder einem Problem ein GitHub Issue erstellen möchte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer (Username oder Organisation)',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+      title: {
+        type: 'string',
+        description: 'Titel des Issues',
+      },
+      body: {
+        type: 'string',
+        description: 'Beschreibung des Issues (Markdown)',
+      },
+      labels: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Labels für das Issue (optional)',
+      },
+    },
+    required: ['owner', 'repo', 'title'],
+  },
+};
+
+/**
+ * GitHub get repository info tool
+ */
+export const TOOL_GITHUB_REPO_INFO: ToolDefinition = {
+  name: 'github_repo_info',
+  description: 'Ruft Informationen über ein GitHub Repository ab. Nutze dies um Details zu einem Projekt zu erfahren.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+    },
+    required: ['owner', 'repo'],
+  },
+};
+
+/**
+ * GitHub list issues tool
+ */
+export const TOOL_GITHUB_LIST_ISSUES: ToolDefinition = {
+  name: 'github_list_issues',
+  description: 'Listet Issues eines GitHub Repositories auf. Nutze dies um offene Probleme oder Feature-Requests zu sehen.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+      state: {
+        type: 'string',
+        enum: ['open', 'closed', 'all'],
+        description: 'Status der Issues (Standard: open)',
+      },
+      limit: {
+        type: 'number',
+        description: 'Anzahl der Issues (Standard: 5)',
+      },
+    },
+    required: ['owner', 'repo'],
+  },
+};
+
+/**
+ * GitHub PR summary tool
+ */
+export const TOOL_GITHUB_PR_SUMMARY: ToolDefinition = {
+  name: 'github_pr_summary',
+  description: 'Ruft eine Zusammenfassung eines Pull Requests ab. Nutze dies um zu verstehen was ein PR ändert.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+      pr_number: {
+        type: 'number',
+        description: 'Pull Request Nummer',
+      },
+    },
+    required: ['owner', 'repo', 'pr_number'],
+  },
+};
+
+/**
  * Calculate tool - perform calculations
  */
 export const TOOL_CALCULATE: ToolDefinition = {
