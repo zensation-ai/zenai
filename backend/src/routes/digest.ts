@@ -525,7 +525,7 @@ function selectWeeklyHighlights(ideas: any[]): DigestHighlight[] {
 async function generateAIInsights(
   ideas: any[],
   type: 'daily' | 'weekly',
-  context: AIContext
+  _context: AIContext
 ): Promise<{ summary: string; insights: string[]; recommendations: string[] }> {
   const ideaSummaries = ideas.slice(0, 20).map(i =>
     `- ${i.title} (${i.type}, ${i.category}, Priorität: ${i.priority})`

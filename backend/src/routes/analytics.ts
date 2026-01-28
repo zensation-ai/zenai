@@ -19,7 +19,7 @@ export const analyticsRouter = Router();
 // Types
 // ===========================================
 
-interface TimeRangeStats {
+interface _TimeRangeStats {
   period: string;
   count: number;
   categories: Record<string, number>;
@@ -27,7 +27,7 @@ interface TimeRangeStats {
   priorities: Record<string, number>;
 }
 
-interface EngagementStats {
+interface _EngagementStats {
   avgIdeasPerDay: number;
   mostActiveHour: number;
   mostActiveDay: string;
