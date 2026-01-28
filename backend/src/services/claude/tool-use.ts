@@ -213,7 +213,7 @@ export const TOOL_GET_RELATED: ToolDefinition = {
  */
 export const TOOL_WEB_SEARCH: ToolDefinition = {
   name: 'web_search',
-  description: 'Durchsucht das Web nach aktuellen Informationen. Nutze dies für Recherche zu aktuellen Themen.',
+  description: 'Durchsucht das Web nach aktuellen Informationen. Nutze dies für Recherche zu aktuellen Themen, Nachrichten, oder wenn der Nutzer nach aktuellen Informationen fragt.',
   input_schema: {
     type: 'object',
     properties: {
@@ -221,8 +221,166 @@ export const TOOL_WEB_SEARCH: ToolDefinition = {
         type: 'string',
         description: 'Die Suchanfrage',
       },
+      count: {
+        type: 'number',
+        description: 'Anzahl der Ergebnisse (Standard: 5, Max: 10)',
+      },
     },
     required: ['query'],
+  },
+};
+
+/**
+ * Fetch URL tool - fetch and extract content from a URL
+ */
+export const TOOL_FETCH_URL: ToolDefinition = {
+  name: 'fetch_url',
+  description: 'Ruft den Inhalt einer URL ab und extrahiert den lesbaren Text. Nutze dies wenn der Nutzer einen Link teilt und wissen möchte was darin steht, oder wenn du Details zu einem Suchergebnis brauchst.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      url: {
+        type: 'string',
+        description: 'Die URL die abgerufen werden soll',
+      },
+    },
+    required: ['url'],
+  },
+};
+
+/**
+ * GitHub search repositories tool
+ */
+export const TOOL_GITHUB_SEARCH: ToolDefinition = {
+  name: 'github_search',
+  description: 'Durchsucht GitHub nach Repositories. Nutze dies wenn der Nutzer nach Code-Projekten, Libraries oder Open-Source Software sucht.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Suchanfrage (z.B. "react state management", "python web framework")',
+      },
+      limit: {
+        type: 'number',
+        description: 'Anzahl der Ergebnisse (Standard: 5, Max: 10)',
+      },
+    },
+    required: ['query'],
+  },
+};
+
+/**
+ * GitHub create issue tool
+ */
+export const TOOL_GITHUB_CREATE_ISSUE: ToolDefinition = {
+  name: 'github_create_issue',
+  description: 'Erstellt ein neues Issue in einem GitHub Repository. Nutze dies wenn der Nutzer aus einer Idee oder einem Problem ein GitHub Issue erstellen möchte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer (Username oder Organisation)',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+      title: {
+        type: 'string',
+        description: 'Titel des Issues',
+      },
+      body: {
+        type: 'string',
+        description: 'Beschreibung des Issues (Markdown)',
+      },
+      labels: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Labels für das Issue (optional)',
+      },
+    },
+    required: ['owner', 'repo', 'title'],
+  },
+};
+
+/**
+ * GitHub get repository info tool
+ */
+export const TOOL_GITHUB_REPO_INFO: ToolDefinition = {
+  name: 'github_repo_info',
+  description: 'Ruft Informationen über ein GitHub Repository ab. Nutze dies um Details zu einem Projekt zu erfahren.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+    },
+    required: ['owner', 'repo'],
+  },
+};
+
+/**
+ * GitHub list issues tool
+ */
+export const TOOL_GITHUB_LIST_ISSUES: ToolDefinition = {
+  name: 'github_list_issues',
+  description: 'Listet Issues eines GitHub Repositories auf. Nutze dies um offene Probleme oder Feature-Requests zu sehen.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+      state: {
+        type: 'string',
+        enum: ['open', 'closed', 'all'],
+        description: 'Status der Issues (Standard: open)',
+      },
+      limit: {
+        type: 'number',
+        description: 'Anzahl der Issues (Standard: 5)',
+      },
+    },
+    required: ['owner', 'repo'],
+  },
+};
+
+/**
+ * GitHub PR summary tool
+ */
+export const TOOL_GITHUB_PR_SUMMARY: ToolDefinition = {
+  name: 'github_pr_summary',
+  description: 'Ruft eine Zusammenfassung eines Pull Requests ab. Nutze dies um zu verstehen was ein PR ändert.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      owner: {
+        type: 'string',
+        description: 'Repository-Besitzer',
+      },
+      repo: {
+        type: 'string',
+        description: 'Repository-Name',
+      },
+      pr_number: {
+        type: 'number',
+        description: 'Pull Request Nummer',
+      },
+    },
+    required: ['owner', 'repo', 'pr_number'],
   },
 };
 
@@ -321,6 +479,73 @@ export const TOOL_RECALL: ToolDefinition = {
       },
     },
     required: ['query'],
+  },
+};
+
+/**
+ * Analyze project tool - comprehensive project analysis
+ */
+export const TOOL_ANALYZE_PROJECT: ToolDefinition = {
+  name: 'analyze_project',
+  description: 'Analysiert ein Software-Projekt und liefert umfassenden Kontext. Nutze dies wenn der Nutzer über sein Projekt, seine Codebase oder technische Fragen spricht, oder wenn du Kontext über das Projekt benötigst um bessere Antworten zu geben.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      project_path: {
+        type: 'string',
+        description: 'Pfad zum Projektverzeichnis',
+      },
+      include_readme: {
+        type: 'string',
+        description: 'README-Inhalt einbeziehen (true/false, Standard: true)',
+        enum: ['true', 'false'],
+      },
+    },
+    required: ['project_path'],
+  },
+};
+
+/**
+ * Get project summary tool - quick project overview
+ */
+export const TOOL_PROJECT_SUMMARY: ToolDefinition = {
+  name: 'get_project_summary',
+  description: 'Gibt eine kurze Zusammenfassung eines Projekts zurück. Schneller als analyze_project, ideal für einen schnellen Überblick.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      project_path: {
+        type: 'string',
+        description: 'Pfad zum Projektverzeichnis',
+      },
+    },
+    required: ['project_path'],
+  },
+};
+
+/**
+ * List project files tool - get project structure
+ */
+export const TOOL_LIST_PROJECT_FILES: ToolDefinition = {
+  name: 'list_project_files',
+  description: 'Listet die Dateistruktur eines Projekts auf. Nutze dies um zu verstehen wie ein Projekt organisiert ist.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      project_path: {
+        type: 'string',
+        description: 'Pfad zum Projektverzeichnis',
+      },
+      max_depth: {
+        type: 'number',
+        description: 'Maximale Tiefe der Verzeichnisstruktur (Standard: 3)',
+      },
+      filter_extension: {
+        type: 'string',
+        description: 'Nur Dateien mit dieser Erweiterung anzeigen (z.B. "ts", "py")',
+      },
+    },
+    required: ['project_path'],
   },
 };
 

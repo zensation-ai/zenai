@@ -17,6 +17,9 @@ import {
   getRandomMessage,
 } from '../utils/aiPersonality';
 import { ImageUpload } from './ImageUpload';
+import { VoiceInput } from './VoiceInput';
+import { ArtifactPanel, ArtifactButton } from './ArtifactPanel';
+import { extractArtifacts, type Artifact } from '../types/artifacts';
 import './GeneralChat.css';
 
 interface ChatMessage {
@@ -52,6 +55,9 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [thinkingContent, setThinkingContent] = useState<string>('');
+  // Artifacts state
+  const [artifacts, setArtifacts] = useState<Map<string, Artifact[]>>(new Map());
+  const [activeArtifact, setActiveArtifact] = useState<{ artifact: Artifact; messageId: string; index: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -324,15 +330,87 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
     });
   };
 
+  // Extract and cache artifacts from message content
+  const getMessageArtifacts = useCallback((messageId: string, content: string): { text: string; messageArtifacts: Artifact[] } => {
+    // Check cache first
+    const cached = artifacts.get(messageId);
+    if (cached) {
+      // Return processed text with artifact references
+      const { text } = extractArtifacts(content);
+      return { text, messageArtifacts: cached };
+    }
+
+    // Extract artifacts
+    const { text, artifacts: extracted } = extractArtifacts(content);
+
+    // Cache if any found
+    if (extracted.length > 0) {
+      setArtifacts(prev => new Map(prev).set(messageId, extracted));
+    }
+
+    return { text, messageArtifacts: extracted };
+  }, [artifacts]);
+
   // Render markdown-like formatting (safe, no dangerouslySetInnerHTML)
-  const renderContent = (content: string) => {
-    // Split by code blocks
-    const parts = content.split(/(```[\s\S]*?```)/g);
+  const renderContent = (content: string, messageId?: string) => {
+    // Extract artifacts if messageId provided
+    let processedContent = content;
+    let messageArtifacts: Artifact[] = [];
+
+    if (messageId) {
+      const result = getMessageArtifacts(messageId, content);
+      processedContent = result.text;
+      messageArtifacts = result.messageArtifacts;
+    }
+
+    // Split by code blocks and artifact references
+    const parts = processedContent.split(/(```[\s\S]*?```|\[\[ARTIFACT:[^\]]+\]\])/g);
 
     return parts.map((part, i) => {
+      // Check for artifact reference
+      const artifactMatch = part.match(/\[\[ARTIFACT:([^\]]+)\]\]/);
+      if (artifactMatch) {
+        const artifactId = artifactMatch[1];
+        const artifact = messageArtifacts.find(a => a.id === artifactId);
+        if (artifact && messageId) {
+          const artifactIndex = messageArtifacts.indexOf(artifact);
+          return (
+            <ArtifactButton
+              key={i}
+              artifact={artifact}
+              onClick={() => setActiveArtifact({ artifact, messageId, index: artifactIndex })}
+            />
+          );
+        }
+        return null;
+      }
+
       if (part.startsWith('```') && part.endsWith('```')) {
-        // Code block
-        const code = part.slice(3, -3).replace(/^\w+\n/, ''); // Remove language identifier
+        // Code block - check if it's large enough to be an artifact
+        const codeContent = part.slice(3, -3);
+        const langMatch = codeContent.match(/^(\w+)\n/);
+        const language = langMatch ? langMatch[1] : 'text';
+        const code = langMatch ? codeContent.slice(langMatch[0].length) : codeContent;
+
+        // Large code blocks become inline artifacts
+        if (code.split('\n').length >= 15 && messageId) {
+          const inlineArtifact: Artifact = {
+            id: `inline-${messageId}-${i}`,
+            title: `${language.charAt(0).toUpperCase() + language.slice(1)} Code`,
+            type: 'code',
+            language,
+            content: code,
+          };
+          return (
+            <ArtifactButton
+              key={i}
+              artifact={inlineArtifact}
+              onClick={() => setActiveArtifact({ artifact: inlineArtifact, messageId, index: -1 })}
+            />
+          );
+        }
+
+        // Small code blocks render inline
         return (
           <pre key={i} className="code-block">
             <code>{code}</code>
@@ -381,6 +459,28 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
     });
   };
 
+  // Navigate between artifacts in the same message
+  const navigateArtifact = useCallback((direction: 'prev' | 'next') => {
+    if (!activeArtifact) return;
+
+    const messageArtifacts = artifacts.get(activeArtifact.messageId) || [];
+    const currentIndex = activeArtifact.index;
+
+    if (direction === 'prev' && currentIndex > 0) {
+      setActiveArtifact({
+        artifact: messageArtifacts[currentIndex - 1],
+        messageId: activeArtifact.messageId,
+        index: currentIndex - 1,
+      });
+    } else if (direction === 'next' && currentIndex < messageArtifacts.length - 1) {
+      setActiveArtifact({
+        artifact: messageArtifacts[currentIndex + 1],
+        messageId: activeArtifact.messageId,
+        index: currentIndex + 1,
+      });
+    }
+  }, [activeArtifact, artifacts]);
+
   if (loading) {
     return (
       <div className={`general-chat ${isCompact ? 'compact' : ''}`} role="status" aria-live="polite">
@@ -425,7 +525,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
                     <span className="chat-message-time">{formatTime(message.createdAt)}</span>
                   </div>
                   <div className="chat-message-text">
-                    {renderContent(message.content)}
+                    {renderContent(message.content, message.id)}
                   </div>
                 </div>
               </div>
@@ -485,6 +585,13 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             compact={true}
             maxImages={5}
           />
+          {/* Voice Input Button */}
+          <VoiceInput
+            onTranscript={(text) => setInputValue((prev) => prev ? `${prev} ${text}` : text)}
+            disabled={sending}
+            context={context}
+            compact={true}
+          />
           <textarea
             ref={inputRef}
             value={inputValue}
@@ -528,6 +635,18 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
           )}
         </div>
       </div>
+
+      {/* Artifact Panel */}
+      {activeArtifact && (
+        <ArtifactPanel
+          artifact={activeArtifact.artifact}
+          onClose={() => setActiveArtifact(null)}
+          onPrevious={() => navigateArtifact('prev')}
+          onNext={() => navigateArtifact('next')}
+          hasPrevious={activeArtifact.index > 0}
+          hasNext={activeArtifact.index >= 0 && activeArtifact.index < (artifacts.get(activeArtifact.messageId)?.length || 0) - 1}
+        />
+      )}
     </div>
   );
 }

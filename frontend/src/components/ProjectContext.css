@@ -1,0 +1,240 @@
+/**
+ * ProjectContext Component Styles
+ */
+
+.project-context {
+  background: var(--surface-color, #1e1e1e);
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #333);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.project-context.expanded {
+  border-color: var(--primary-color, #6366f1);
+}
+
+/* Toggle Button */
+.project-context-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.project-context-toggle:hover {
+  background: var(--hover-color, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #fff);
+}
+
+.project-icon {
+  font-size: 16px;
+}
+
+.project-name-mini {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toggle-icon {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Panel */
+.project-context-panel {
+  padding: 12px;
+  padding-top: 0;
+  border-top: 1px solid var(--border-color, #333);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Input Section */
+.project-input-section {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  margin-top: 12px;
+}
+
+.project-path-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--input-bg, #2a2a2a);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.project-path-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+}
+
+.project-path-input::placeholder {
+  color: var(--text-tertiary, #666);
+}
+
+.project-analyze-btn,
+.project-clear-btn {
+  padding: 8px 12px;
+  background: var(--button-bg, #333);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
+}
+
+.project-analyze-btn:hover:not(:disabled),
+.project-clear-btn:hover {
+  background: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+}
+
+.project-analyze-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.project-clear-btn {
+  background: transparent;
+}
+
+.project-clear-btn:hover {
+  background: var(--error-color, #ef4444);
+  border-color: var(--error-color, #ef4444);
+}
+
+/* Project Info Section */
+.project-info-section {
+  background: var(--card-bg, #252525);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.project-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.project-language-icon {
+  font-size: 20px;
+}
+
+.project-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.project-version {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+/* Meta Info */
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.meta-item {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+/* Frameworks */
+.project-frameworks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.framework-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--primary-color-dim, rgba(99, 102, 241, 0.15));
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--primary-color, #6366f1);
+}
+
+/* Patterns */
+.project-patterns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pattern-tag {
+  padding: 2px 8px;
+  background: var(--surface-color, #1e1e1e);
+  border-radius: 4px;
+  font-size: 10px;
+  color: var(--text-tertiary, #888);
+}
+
+.pattern-more {
+  padding: 2px 8px;
+  font-size: 10px;
+  color: var(--text-tertiary, #888);
+}
+
+/* Help Text */
+.project-help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-tertiary, #666);
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .project-input-section {
+    flex-wrap: wrap;
+  }
+
+  .project-path-input {
+    width: 100%;
+  }
+
+  .project-meta {
+    gap: 8px;
+  }
+}

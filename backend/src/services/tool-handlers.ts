@@ -16,6 +16,16 @@ import {
   TOOL_CALCULATE,
   TOOL_REMEMBER,
   TOOL_RECALL,
+  TOOL_WEB_SEARCH,
+  TOOL_FETCH_URL,
+  TOOL_GITHUB_SEARCH,
+  TOOL_GITHUB_CREATE_ISSUE,
+  TOOL_GITHUB_REPO_INFO,
+  TOOL_GITHUB_LIST_ISSUES,
+  TOOL_GITHUB_PR_SUMMARY,
+  TOOL_ANALYZE_PROJECT,
+  TOOL_PROJECT_SUMMARY,
+  TOOL_LIST_PROJECT_FILES,
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
@@ -23,6 +33,10 @@ import { AIContext, queryContext } from '../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
 import { generateEmbedding } from './ai';
 import { longTermMemory, episodicMemory } from './memory';
+import { searchWeb, formatSearchResults } from './web-search';
+import { fetchUrl, formatForTool, isValidUrl } from './url-fetch';
+import * as github from './github';
+import * as projectContext from './project-context';
 
 // ===========================================
 // DEPRECATED: Legacy Context Management
@@ -465,6 +479,398 @@ function getEmotionalLabel(valence: number): string {
 }
 
 // ===========================================
+// Web Search & URL Fetch Handlers
+// ===========================================
+
+/**
+ * Web search handler - searches the web for information
+ * Uses Brave Search API (privacy-first) with DuckDuckGo fallback
+ */
+async function handleWebSearch(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const query = input.query as string;
+  const count = Math.min((input.count as number) || 5, 10);
+
+  if (!query || typeof query !== 'string') {
+    return 'Fehler: Keine Suchanfrage angegeben.';
+  }
+
+  logger.debug('Tool: web_search', { query, count });
+
+  try {
+    const results = await searchWeb(query, { count });
+    return formatSearchResults(results);
+  } catch (error) {
+    logger.error('Tool web_search failed', error instanceof Error ? error : undefined);
+    return 'Fehler bei der Websuche. Bitte versuche es erneut.';
+  }
+}
+
+/**
+ * Fetch URL handler - fetches and extracts content from a URL
+ * Uses intelligent content extraction for readable output
+ */
+async function handleFetchUrl(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const url = input.url as string;
+
+  if (!url || typeof url !== 'string') {
+    return 'Fehler: Keine URL angegeben.';
+  }
+
+  if (!isValidUrl(url)) {
+    return 'Fehler: Ungültige URL. Bitte eine vollständige URL mit http:// oder https:// angeben.';
+  }
+
+  logger.debug('Tool: fetch_url', { url });
+
+  try {
+    const result = await fetchUrl(url, { timeout: 15000, maxContentLength: 30000 });
+    return formatForTool(result);
+  } catch (error) {
+    logger.error('Tool fetch_url failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Abrufen der URL: ${url}`;
+  }
+}
+
+// ===========================================
+// GitHub Handlers
+// ===========================================
+
+/**
+ * GitHub search repositories handler
+ */
+async function handleGitHubSearch(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const query = input.query as string;
+  const limit = Math.min((input.limit as number) || 5, 10);
+
+  if (!query || typeof query !== 'string') {
+    return 'Fehler: Keine Suchanfrage angegeben.';
+  }
+
+  if (!github.isGitHubAvailable()) {
+    return 'GitHub-Integration nicht konfiguriert. Bitte GITHUB_PERSONAL_ACCESS_TOKEN setzen.';
+  }
+
+  logger.debug('Tool: github_search', { query, limit });
+
+  try {
+    const results = await github.searchRepositories(query, { limit });
+    return github.formatSearchResults(results);
+  } catch (error) {
+    logger.error('Tool github_search failed', error instanceof Error ? error : undefined);
+    return 'Fehler bei der GitHub-Suche. Bitte versuche es erneut.';
+  }
+}
+
+/**
+ * GitHub create issue handler
+ */
+async function handleGitHubCreateIssue(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const owner = input.owner as string;
+  const repo = input.repo as string;
+  const title = input.title as string;
+  const body = input.body as string | undefined;
+  const labels = input.labels as string[] | undefined;
+
+  if (!owner || !repo || !title) {
+    return 'Fehler: owner, repo und title sind erforderlich.';
+  }
+
+  if (!github.isGitHubAvailable()) {
+    return 'GitHub-Integration nicht konfiguriert.';
+  }
+
+  logger.debug('Tool: github_create_issue', { owner, repo, title });
+
+  try {
+    const issue = await github.createIssue({ owner, repo, title, body, labels });
+    return `✅ Issue erstellt:\n${github.formatIssue(issue)}`;
+  } catch (error) {
+    logger.error('Tool github_create_issue failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Erstellen des Issues: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
+/**
+ * GitHub repository info handler
+ */
+async function handleGitHubRepoInfo(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const owner = input.owner as string;
+  const repo = input.repo as string;
+
+  if (!owner || !repo) {
+    return 'Fehler: owner und repo sind erforderlich.';
+  }
+
+  if (!github.isGitHubAvailable()) {
+    return 'GitHub-Integration nicht konfiguriert.';
+  }
+
+  logger.debug('Tool: github_repo_info', { owner, repo });
+
+  try {
+    const repository = await github.getRepository(owner, repo);
+    return github.formatRepository(repository);
+  } catch (error) {
+    logger.error('Tool github_repo_info failed', error instanceof Error ? error : undefined);
+    return `Repository ${owner}/${repo} nicht gefunden oder kein Zugriff.`;
+  }
+}
+
+/**
+ * GitHub list issues handler
+ */
+async function handleGitHubListIssues(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const owner = input.owner as string;
+  const repo = input.repo as string;
+  const state = (input.state as 'open' | 'closed' | 'all') || 'open';
+  const limit = Math.min((input.limit as number) || 5, 20);
+
+  if (!owner || !repo) {
+    return 'Fehler: owner und repo sind erforderlich.';
+  }
+
+  if (!github.isGitHubAvailable()) {
+    return 'GitHub-Integration nicht konfiguriert.';
+  }
+
+  logger.debug('Tool: github_list_issues', { owner, repo, state, limit });
+
+  try {
+    const issues = await github.listIssues(owner, repo, { state, limit });
+
+    if (issues.length === 0) {
+      return `Keine ${state === 'all' ? '' : state + 'en'} Issues in ${owner}/${repo} gefunden.`;
+    }
+
+    const parts: string[] = [`**Issues in ${owner}/${repo}** (${state}):\n`];
+    for (const issue of issues) {
+      parts.push(github.formatIssue(issue));
+      parts.push('');
+    }
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool github_list_issues failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Abrufen der Issues.`;
+  }
+}
+
+/**
+ * GitHub PR summary handler
+ */
+async function handleGitHubPRSummary(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const owner = input.owner as string;
+  const repo = input.repo as string;
+  const prNumber = input.pr_number as number;
+
+  if (!owner || !repo || !prNumber) {
+    return 'Fehler: owner, repo und pr_number sind erforderlich.';
+  }
+
+  if (!github.isGitHubAvailable()) {
+    return 'GitHub-Integration nicht konfiguriert.';
+  }
+
+  logger.debug('Tool: github_pr_summary', { owner, repo, prNumber });
+
+  try {
+    const pr = await github.getPullRequest(owner, repo, prNumber);
+    const files = await github.getPullRequestFiles(owner, repo, prNumber);
+
+    const parts: string[] = [github.formatPullRequest(pr), '\n**Geänderte Dateien:**'];
+
+    for (const file of files.slice(0, 10)) {
+      parts.push(`• ${file.filename} (+${file.additions}/-${file.deletions}) [${file.status}]`);
+    }
+
+    if (files.length > 10) {
+      parts.push(`... und ${files.length - 10} weitere Dateien`);
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool github_pr_summary failed', error instanceof Error ? error : undefined);
+    return `PR #${prNumber} in ${owner}/${repo} nicht gefunden.`;
+  }
+}
+
+// ===========================================
+// Project Context Handlers
+// ===========================================
+
+/**
+ * Analyze project handler - provides comprehensive project analysis
+ * Returns detailed information about project structure, dependencies, and patterns
+ */
+async function handleAnalyzeProject(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const projectPath = input.project_path as string;
+  const includeReadme = input.include_readme !== 'false';
+
+  if (!projectPath || typeof projectPath !== 'string') {
+    return 'Fehler: Kein Projektpfad angegeben.';
+  }
+
+  logger.debug('Tool: analyze_project', { projectPath, includeReadme });
+
+  try {
+    const context = await projectContext.generateProjectContext(projectPath);
+
+    // Build response
+    const parts: string[] = [context.summary];
+
+    if (context.keyFiles.length > 0) {
+      parts.push('\n## Wichtige Dateien');
+      parts.push(context.keyFiles.map((f) => `• ${f}`).join('\n'));
+    }
+
+    if (context.techStack.length > 0) {
+      parts.push('\n## Tech Stack');
+      parts.push(context.techStack.join(', '));
+    }
+
+    if (context.focusAreas.length > 0) {
+      parts.push('\n## Empfohlene Fokus-Bereiche');
+      parts.push(context.focusAreas.map((a) => `• ${a}`).join('\n'));
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool analyze_project failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Analysieren des Projekts: ${projectPath}. Stelle sicher, dass der Pfad existiert.`;
+  }
+}
+
+/**
+ * Get project summary handler - quick project overview
+ */
+async function handleProjectSummary(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const projectPath = input.project_path as string;
+
+  if (!projectPath || typeof projectPath !== 'string') {
+    return 'Fehler: Kein Projektpfad angegeben.';
+  }
+
+  logger.debug('Tool: get_project_summary', { projectPath });
+
+  try {
+    const summary = await projectContext.getQuickProjectSummary(projectPath);
+    return summary;
+  } catch (error) {
+    logger.error('Tool get_project_summary failed', error instanceof Error ? error : undefined);
+    return `Fehler: Projekt nicht gefunden unter ${projectPath}`;
+  }
+}
+
+/**
+ * List project files handler - get project file structure
+ */
+async function handleListProjectFiles(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const projectPath = input.project_path as string;
+  const maxDepth = (input.max_depth as number) || 3;
+  const filterExtension = input.filter_extension as string | undefined;
+
+  if (!projectPath || typeof projectPath !== 'string') {
+    return 'Fehler: Kein Projektpfad angegeben.';
+  }
+
+  logger.debug('Tool: list_project_files', { projectPath, maxDepth, filterExtension });
+
+  try {
+    const structure = await projectContext.scanProjectStructure(projectPath, maxDepth);
+
+    let files = structure.files.filter((f) => f.type === 'file');
+
+    // Filter by extension if specified
+    if (filterExtension) {
+      const ext = filterExtension.startsWith('.') ? filterExtension.slice(1) : filterExtension;
+      files = files.filter((f) => f.extension === ext);
+    }
+
+    // Build tree-like output
+    const parts: string[] = [
+      `📁 **${structure.rootPath}**`,
+      `📊 ${structure.totalFiles} Dateien, ${structure.totalDirectories} Verzeichnisse`,
+      '',
+    ];
+
+    // Group files by directory
+    const filesByDir: Record<string, projectContext.ProjectFile[]> = { '/': [] };
+
+    for (const file of files) {
+      const dir = file.path.includes('/') ? file.path.split('/').slice(0, -1).join('/') : '/';
+      if (!filesByDir[dir]) {
+        filesByDir[dir] = [];
+      }
+      filesByDir[dir].push(file);
+    }
+
+    // Sort directories and output
+    const sortedDirs = Object.keys(filesByDir).sort();
+
+    for (const dir of sortedDirs.slice(0, 20)) {
+      if (dir !== '/') {
+        parts.push(`📂 ${dir}/`);
+      }
+      for (const file of filesByDir[dir].slice(0, 10)) {
+        const indent = dir === '/' ? '' : '  ';
+        const sizeStr = file.size ? ` (${formatFileSize(file.size)})` : '';
+        parts.push(`${indent}📄 ${file.name}${sizeStr}`);
+      }
+      if (filesByDir[dir].length > 10) {
+        parts.push(`  ... und ${filesByDir[dir].length - 10} weitere`);
+      }
+    }
+
+    if (sortedDirs.length > 20) {
+      parts.push(`\n... und ${sortedDirs.length - 20} weitere Verzeichnisse`);
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool list_project_files failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Lesen des Verzeichnisses: ${projectPath}`;
+  }
+}
+
+/**
+ * Format file size in human-readable format
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -485,6 +891,22 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_REMEMBER, handleRemember);
   toolRegistry.register(TOOL_RECALL, handleRecall);
 
+  // Web tools (Internet access)
+  toolRegistry.register(TOOL_WEB_SEARCH, handleWebSearch);
+  toolRegistry.register(TOOL_FETCH_URL, handleFetchUrl);
+
+  // GitHub tools (optional - requires GITHUB_PERSONAL_ACCESS_TOKEN)
+  toolRegistry.register(TOOL_GITHUB_SEARCH, handleGitHubSearch);
+  toolRegistry.register(TOOL_GITHUB_CREATE_ISSUE, handleGitHubCreateIssue);
+  toolRegistry.register(TOOL_GITHUB_REPO_INFO, handleGitHubRepoInfo);
+  toolRegistry.register(TOOL_GITHUB_LIST_ISSUES, handleGitHubListIssues);
+  toolRegistry.register(TOOL_GITHUB_PR_SUMMARY, handleGitHubPRSummary);
+
+  // Project context tools (codebase analysis)
+  toolRegistry.register(TOOL_ANALYZE_PROJECT, handleAnalyzeProject);
+  toolRegistry.register(TOOL_PROJECT_SUMMARY, handleProjectSummary);
+  toolRegistry.register(TOOL_LIST_PROJECT_FILES, handleListProjectFiles);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -493,6 +915,16 @@ export function registerAllToolHandlers(): void {
       'calculate',
       'remember',
       'recall',
+      'web_search',
+      'fetch_url',
+      'github_search',
+      'github_create_issue',
+      'github_repo_info',
+      'github_list_issues',
+      'github_pr_summary',
+      'analyze_project',
+      'get_project_summary',
+      'list_project_files',
     ],
   });
 }
@@ -501,5 +933,8 @@ export function registerAllToolHandlers(): void {
  * Check if handlers are registered
  */
 export function areToolsRegistered(): boolean {
-  return toolRegistry.has('search_ideas');
+  return toolRegistry.has('search_ideas') &&
+         toolRegistry.has('web_search') &&
+         toolRegistry.has('fetch_url') &&
+         toolRegistry.has('analyze_project');
 }
