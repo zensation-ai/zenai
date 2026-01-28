@@ -61,6 +61,7 @@ import {
   getExecutionHistory,
   deleteAutomation,
 } from '../../services/automation-registry';
+import { errorHandler } from '../../middleware/errorHandler';
 
 const mockRegisterAutomation = registerAutomation as jest.MockedFunction<typeof registerAutomation>;
 const mockGetAutomation = getAutomation as jest.MockedFunction<typeof getAutomation>;
@@ -78,6 +79,7 @@ describe('Automations API Integration Tests', () => {
     app = express();
     app.use(express.json());
     app.use('/api', automationsRouter);
+    app.use(errorHandler);
   });
 
   beforeEach(() => {
@@ -91,16 +93,21 @@ describe('Automations API Integration Tests', () => {
   describe('GET /api/:context/automations/stats', () => {
     it('should return automation statistics', async () => {
       const mockStats = {
-        total: 15,
-        active: 12,
-        inactive: 3,
-        totalExecutions: 150,
-        successRate: 0.95,
-        byTrigger: {
-          time_based: 5,
-          event_based: 7,
-          condition_based: 3,
+        total_automations: 15,
+        active_automations: 12,
+        total_executions: 150,
+        successful_executions: 142,
+        failed_executions: 8,
+        success_rate: 0.95,
+        automations_by_trigger: {
+          webhook: 5,
+          schedule: 4,
+          event: 3,
+          manual: 2,
+          pattern: 1,
         },
+        top_automations: [],
+        pending_suggestions: 0,
       };
 
       mockGetAutomationStats.mockResolvedValueOnce(mockStats);
@@ -132,17 +139,31 @@ describe('Automations API Integration Tests', () => {
       const mockSuggestions = [
         {
           id: 'sug-1',
+          context: 'personal' as const,
           name: 'Weekly Review Reminder',
           description: 'Send reminder every Monday',
-          trigger: { type: 'time_based', schedule: '0 9 * * 1' },
+          trigger: { type: 'schedule' as const, config: { cron: '0 9 * * 1' } },
+          actions: [{ type: 'notification' as const, config: { message: 'Review time' }, order: 1 }],
+          reasoning: 'Based on usage patterns',
           confidence: 0.85,
+          based_on_pattern: 'recurring_task',
+          sample_matches: 5,
+          status: 'pending' as const,
+          created_at: '2026-01-20T10:00:00Z',
         },
         {
           id: 'sug-2',
+          context: 'personal' as const,
           name: 'High Priority Alert',
           description: 'Notify when high priority idea is created',
-          trigger: { type: 'event_based', event: 'idea.created' },
+          trigger: { type: 'event' as const, config: { eventName: 'idea.created' } },
+          actions: [{ type: 'notification' as const, config: { message: 'High priority' }, order: 1 }],
+          reasoning: 'Based on priority patterns',
           confidence: 0.92,
+          based_on_pattern: 'category_priority',
+          sample_matches: 10,
+          status: 'pending' as const,
+          created_at: '2026-01-20T10:00:00Z',
         },
       ];
 
@@ -189,17 +210,37 @@ describe('Automations API Integration Tests', () => {
       const mockAutomations = [
         {
           id: 'auto-1',
+          context: 'personal' as const,
           name: 'Daily Digest',
-          trigger: { type: 'time_based', schedule: '0 8 * * *' },
-          isActive: true,
-          executionCount: 30,
+          description: 'Sends daily digest',
+          trigger: { type: 'schedule' as const, config: { cron: '0 8 * * *' } },
+          conditions: [],
+          actions: [{ type: 'notification' as const, config: { message: 'Daily digest' }, order: 1 }],
+          is_active: true,
+          is_system: false,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+          last_run_at: '2026-01-21T08:00:00Z',
+          run_count: 30,
+          success_count: 30,
+          failure_count: 0,
         },
         {
           id: 'auto-2',
+          context: 'personal' as const,
           name: 'Idea Backup',
-          trigger: { type: 'event_based', event: 'idea.created' },
-          isActive: true,
-          executionCount: 150,
+          description: 'Backs up new ideas',
+          trigger: { type: 'event' as const, config: { eventName: 'idea.created' } },
+          conditions: [],
+          actions: [{ type: 'webhook_call' as const, config: { url: 'https://example.com' }, order: 1 }],
+          is_active: true,
+          is_system: false,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+          last_run_at: '2026-01-21T10:00:00Z',
+          run_count: 150,
+          success_count: 148,
+          failure_count: 2,
         },
       ];
 
@@ -218,10 +259,10 @@ describe('Automations API Integration Tests', () => {
 
       await request(app)
         .get('/api/personal/automations')
-        .query({ active: 'true' })
+        .query({ active_only: 'true' })
         .expect(200);
 
-      expect(mockListAutomations).toHaveBeenCalledWith('personal', { active: true });
+      expect(mockListAutomations).toHaveBeenCalledWith('personal', { active_only: true });
     });
   });
 
@@ -233,13 +274,20 @@ describe('Automations API Integration Tests', () => {
     it('should return a specific automation', async () => {
       const mockAutomation = {
         id: 'auto-1',
+        context: 'personal' as const,
         name: 'Daily Digest',
         description: 'Sends daily digest email',
-        trigger: { type: 'time_based', schedule: '0 8 * * *' },
-        actions: [{ type: 'send_email', template: 'digest' }],
-        isActive: true,
-        executionCount: 30,
-        lastExecuted: '2026-01-20T08:00:00Z',
+        trigger: { type: 'schedule' as const, config: { cron: '0 8 * * *' } },
+        conditions: [],
+        actions: [{ type: 'notification' as const, config: { template: 'digest' }, order: 1 }],
+        is_active: true,
+        is_system: false,
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        last_run_at: '2026-01-20T08:00:00Z',
+        run_count: 30,
+        success_count: 29,
+        failure_count: 1,
       };
 
       mockGetAutomation.mockResolvedValueOnce(mockAutomation);
@@ -272,16 +320,26 @@ describe('Automations API Integration Tests', () => {
       const newAutomation = {
         name: 'Test Automation',
         description: 'Test description',
-        trigger: { type: 'time_based', schedule: '0 9 * * 1' },
-        actions: [{ type: 'create_digest' }],
+        trigger: { type: 'schedule' as const, config: { cron: '0 9 * * 1' } },
+        actions: [{ type: 'notification' as const, config: {}, order: 1 }],
       };
 
       const createdAutomation = {
         id: 'auto-new',
-        ...newAutomation,
-        isActive: true,
-        executionCount: 0,
-        createdAt: '2026-01-21T10:00:00Z',
+        context: 'personal' as const,
+        name: newAutomation.name,
+        description: newAutomation.description,
+        trigger: newAutomation.trigger,
+        conditions: [],
+        actions: newAutomation.actions,
+        is_active: true,
+        is_system: false,
+        created_at: '2026-01-21T10:00:00Z',
+        updated_at: '2026-01-21T10:00:00Z',
+        last_run_at: null,
+        run_count: 0,
+        success_count: 0,
+        failure_count: 0,
       };
 
       mockRegisterAutomation.mockResolvedValueOnce(createdAutomation);
@@ -317,10 +375,14 @@ describe('Automations API Integration Tests', () => {
   describe('POST /api/:context/automations/:id/execute', () => {
     it('should execute an automation manually', async () => {
       const executionResult = {
+        id: 'exec-123',
+        automation_id: 'auto-1',
+        trigger_data: {},
+        actions_executed: 1,
         success: true,
-        executionId: 'exec-123',
-        duration: 150,
-        results: [{ action: 'create_digest', success: true }],
+        error_message: null,
+        duration_ms: 150,
+        executed_at: '2026-01-21T10:00:00Z',
       };
 
       mockExecuteAutomation.mockResolvedValueOnce(executionResult);
@@ -372,43 +434,49 @@ describe('Automations API Integration Tests', () => {
   });
 
   // ===========================================
-  // GET /api/:context/automations/:id/history
+  // GET /api/:context/automations/:id/executions
   // ===========================================
 
-  describe('GET /api/:context/automations/:id/history', () => {
+  describe('GET /api/:context/automations/:id/executions', () => {
     it('should return execution history', async () => {
-      const mockHistory = [
+      const mockExecutions = [
         {
           id: 'exec-1',
-          automationId: 'auto-1',
-          executedAt: '2026-01-21T08:00:00Z',
+          automation_id: 'auto-1',
+          trigger_data: {},
+          actions_executed: 1,
           success: true,
-          duration: 120,
+          error_message: null,
+          duration_ms: 120,
+          executed_at: '2026-01-21T08:00:00Z',
         },
         {
           id: 'exec-2',
-          automationId: 'auto-1',
-          executedAt: '2026-01-20T08:00:00Z',
+          automation_id: 'auto-1',
+          trigger_data: {},
+          actions_executed: 1,
           success: true,
-          duration: 115,
+          error_message: null,
+          duration_ms: 115,
+          executed_at: '2026-01-20T08:00:00Z',
         },
       ];
 
-      mockGetExecutionHistory.mockResolvedValueOnce(mockHistory);
+      mockGetExecutionHistory.mockResolvedValueOnce(mockExecutions);
 
       const response = await request(app)
-        .get('/api/personal/automations/auto-1/history')
+        .get('/api/personal/automations/auto-1/executions')
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.history).toHaveLength(2);
+      expect(response.body.executions).toHaveLength(2);
     });
 
-    it('should respect limit parameter for history', async () => {
+    it('should respect limit parameter for executions', async () => {
       mockGetExecutionHistory.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/automations/auto-1/history')
+        .get('/api/personal/automations/auto-1/executions')
         .query({ limit: '5' })
         .expect(200);
 
