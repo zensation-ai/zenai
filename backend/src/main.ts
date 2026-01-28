@@ -71,6 +71,8 @@ import { visionRouter } from './routes/vision';
 import { topicEnhancementRouter } from './routes/topic-enhancement';
 // Phase 31: Code Execution - Secure Sandbox
 import { codeExecutionRouter } from './routes/code-execution';
+// Phase 31: Project Context - Codebase Analysis
+import projectContextRouter from './routes/project-context';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Error Handling
@@ -287,6 +289,10 @@ app.use('/api/vision', visionRouter);  // /api/vision/analyze, /api/vision/extra
 
 // Phase 31: Topic Enhancement - Advanced Topic Analysis
 app.use('/api/topics', topicEnhancementRouter);  // /api/topics/enhanced, /api/topics/quality, /api/topics/similar, etc.
+
+// Phase 31: Project Context - Codebase Analysis
+app.use('/api/project', projectContextRouter);  // /api/project/analyze, /api/project/summary, /api/project/structure
+app.use('/api/:context/project', projectContextRouter);  // Context-aware: /api/personal/project/analyze, etc.
 
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 

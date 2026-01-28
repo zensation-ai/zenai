@@ -482,6 +482,73 @@ export const TOOL_RECALL: ToolDefinition = {
   },
 };
 
+/**
+ * Analyze project tool - comprehensive project analysis
+ */
+export const TOOL_ANALYZE_PROJECT: ToolDefinition = {
+  name: 'analyze_project',
+  description: 'Analysiert ein Software-Projekt und liefert umfassenden Kontext. Nutze dies wenn der Nutzer über sein Projekt, seine Codebase oder technische Fragen spricht, oder wenn du Kontext über das Projekt benötigst um bessere Antworten zu geben.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      project_path: {
+        type: 'string',
+        description: 'Pfad zum Projektverzeichnis',
+      },
+      include_readme: {
+        type: 'string',
+        description: 'README-Inhalt einbeziehen (true/false, Standard: true)',
+        enum: ['true', 'false'],
+      },
+    },
+    required: ['project_path'],
+  },
+};
+
+/**
+ * Get project summary tool - quick project overview
+ */
+export const TOOL_PROJECT_SUMMARY: ToolDefinition = {
+  name: 'get_project_summary',
+  description: 'Gibt eine kurze Zusammenfassung eines Projekts zurück. Schneller als analyze_project, ideal für einen schnellen Überblick.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      project_path: {
+        type: 'string',
+        description: 'Pfad zum Projektverzeichnis',
+      },
+    },
+    required: ['project_path'],
+  },
+};
+
+/**
+ * List project files tool - get project structure
+ */
+export const TOOL_LIST_PROJECT_FILES: ToolDefinition = {
+  name: 'list_project_files',
+  description: 'Listet die Dateistruktur eines Projekts auf. Nutze dies um zu verstehen wie ein Projekt organisiert ist.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      project_path: {
+        type: 'string',
+        description: 'Pfad zum Projektverzeichnis',
+      },
+      max_depth: {
+        type: 'number',
+        description: 'Maximale Tiefe der Verzeichnisstruktur (Standard: 3)',
+      },
+      filter_extension: {
+        type: 'string',
+        description: 'Nur Dateien mit dieser Erweiterung anzeigen (z.B. "ts", "py")',
+      },
+    },
+    required: ['project_path'],
+  },
+};
+
 // ===========================================
 // Tool Registry
 // ===========================================

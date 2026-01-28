@@ -23,6 +23,9 @@ import {
   TOOL_GITHUB_REPO_INFO,
   TOOL_GITHUB_LIST_ISSUES,
   TOOL_GITHUB_PR_SUMMARY,
+  TOOL_ANALYZE_PROJECT,
+  TOOL_PROJECT_SUMMARY,
+  TOOL_LIST_PROJECT_FILES,
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
@@ -33,6 +36,7 @@ import { longTermMemory, episodicMemory } from './memory';
 import { searchWeb, formatSearchResults } from './web-search';
 import { fetchUrl, formatForTool, isValidUrl } from './url-fetch';
 import * as github from './github';
+import * as projectContext from './project-context';
 
 // ===========================================
 // DEPRECATED: Legacy Context Management
@@ -711,6 +715,162 @@ async function handleGitHubPRSummary(
 }
 
 // ===========================================
+// Project Context Handlers
+// ===========================================
+
+/**
+ * Analyze project handler - provides comprehensive project analysis
+ * Returns detailed information about project structure, dependencies, and patterns
+ */
+async function handleAnalyzeProject(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const projectPath = input.project_path as string;
+  const includeReadme = input.include_readme !== 'false';
+
+  if (!projectPath || typeof projectPath !== 'string') {
+    return 'Fehler: Kein Projektpfad angegeben.';
+  }
+
+  logger.debug('Tool: analyze_project', { projectPath, includeReadme });
+
+  try {
+    const context = await projectContext.generateProjectContext(projectPath);
+
+    // Build response
+    const parts: string[] = [context.summary];
+
+    if (context.keyFiles.length > 0) {
+      parts.push('\n## Wichtige Dateien');
+      parts.push(context.keyFiles.map((f) => `• ${f}`).join('\n'));
+    }
+
+    if (context.techStack.length > 0) {
+      parts.push('\n## Tech Stack');
+      parts.push(context.techStack.join(', '));
+    }
+
+    if (context.focusAreas.length > 0) {
+      parts.push('\n## Empfohlene Fokus-Bereiche');
+      parts.push(context.focusAreas.map((a) => `• ${a}`).join('\n'));
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool analyze_project failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Analysieren des Projekts: ${projectPath}. Stelle sicher, dass der Pfad existiert.`;
+  }
+}
+
+/**
+ * Get project summary handler - quick project overview
+ */
+async function handleProjectSummary(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const projectPath = input.project_path as string;
+
+  if (!projectPath || typeof projectPath !== 'string') {
+    return 'Fehler: Kein Projektpfad angegeben.';
+  }
+
+  logger.debug('Tool: get_project_summary', { projectPath });
+
+  try {
+    const summary = await projectContext.getQuickProjectSummary(projectPath);
+    return summary;
+  } catch (error) {
+    logger.error('Tool get_project_summary failed', error instanceof Error ? error : undefined);
+    return `Fehler: Projekt nicht gefunden unter ${projectPath}`;
+  }
+}
+
+/**
+ * List project files handler - get project file structure
+ */
+async function handleListProjectFiles(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const projectPath = input.project_path as string;
+  const maxDepth = (input.max_depth as number) || 3;
+  const filterExtension = input.filter_extension as string | undefined;
+
+  if (!projectPath || typeof projectPath !== 'string') {
+    return 'Fehler: Kein Projektpfad angegeben.';
+  }
+
+  logger.debug('Tool: list_project_files', { projectPath, maxDepth, filterExtension });
+
+  try {
+    const structure = await projectContext.scanProjectStructure(projectPath, maxDepth);
+
+    let files = structure.files.filter((f) => f.type === 'file');
+
+    // Filter by extension if specified
+    if (filterExtension) {
+      const ext = filterExtension.startsWith('.') ? filterExtension.slice(1) : filterExtension;
+      files = files.filter((f) => f.extension === ext);
+    }
+
+    // Build tree-like output
+    const parts: string[] = [
+      `📁 **${structure.rootPath}**`,
+      `📊 ${structure.totalFiles} Dateien, ${structure.totalDirectories} Verzeichnisse`,
+      '',
+    ];
+
+    // Group files by directory
+    const filesByDir: Record<string, projectContext.ProjectFile[]> = { '/': [] };
+
+    for (const file of files) {
+      const dir = file.path.includes('/') ? file.path.split('/').slice(0, -1).join('/') : '/';
+      if (!filesByDir[dir]) {
+        filesByDir[dir] = [];
+      }
+      filesByDir[dir].push(file);
+    }
+
+    // Sort directories and output
+    const sortedDirs = Object.keys(filesByDir).sort();
+
+    for (const dir of sortedDirs.slice(0, 20)) {
+      if (dir !== '/') {
+        parts.push(`📂 ${dir}/`);
+      }
+      for (const file of filesByDir[dir].slice(0, 10)) {
+        const indent = dir === '/' ? '' : '  ';
+        const sizeStr = file.size ? ` (${formatFileSize(file.size)})` : '';
+        parts.push(`${indent}📄 ${file.name}${sizeStr}`);
+      }
+      if (filesByDir[dir].length > 10) {
+        parts.push(`  ... und ${filesByDir[dir].length - 10} weitere`);
+      }
+    }
+
+    if (sortedDirs.length > 20) {
+      parts.push(`\n... und ${sortedDirs.length - 20} weitere Verzeichnisse`);
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool list_project_files failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Lesen des Verzeichnisses: ${projectPath}`;
+  }
+}
+
+/**
+ * Format file size in human-readable format
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -742,6 +902,11 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_GITHUB_LIST_ISSUES, handleGitHubListIssues);
   toolRegistry.register(TOOL_GITHUB_PR_SUMMARY, handleGitHubPRSummary);
 
+  // Project context tools (codebase analysis)
+  toolRegistry.register(TOOL_ANALYZE_PROJECT, handleAnalyzeProject);
+  toolRegistry.register(TOOL_PROJECT_SUMMARY, handleProjectSummary);
+  toolRegistry.register(TOOL_LIST_PROJECT_FILES, handleListProjectFiles);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -757,6 +922,9 @@ export function registerAllToolHandlers(): void {
       'github_repo_info',
       'github_list_issues',
       'github_pr_summary',
+      'analyze_project',
+      'get_project_summary',
+      'list_project_files',
     ],
   });
 }
@@ -767,5 +935,6 @@ export function registerAllToolHandlers(): void {
 export function areToolsRegistered(): boolean {
   return toolRegistry.has('search_ideas') &&
          toolRegistry.has('web_search') &&
-         toolRegistry.has('fetch_url');
+         toolRegistry.has('fetch_url') &&
+         toolRegistry.has('analyze_project');
 }
