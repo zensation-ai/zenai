@@ -211,13 +211,16 @@ describe('Intelligent Learning API Integration Tests', () => {
   let app: Express;
 
   beforeAll(async () => {
-    // Import router after mocks are set up
+    // Import router and error handler after mocks are set up
     const { default: router } = await import('../../routes/intelligent-learning');
+    const { errorHandler } = await import('../../middleware/errorHandler');
     intelligentLearningRouter = router;
 
     app = express();
     app.use(express.json());
     app.use('/api', intelligentLearningRouter);
+    // Add error handler for proper error responses
+    app.use(errorHandler);
   });
 
   beforeEach(() => {
@@ -288,7 +291,7 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('PATCH /api/:context/focus/:id', () => {
+    describe('PUT /api/:context/focus/:id', () => {
       it('should update a domain focus', async () => {
         mockUpdateDomainFocus.mockResolvedValueOnce({
           ...sampleFocus,
@@ -296,7 +299,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .patch(`/api/work/focus/${sampleFocus.id}`)
+          .put(`/api/work/focus/${sampleFocus.id}`)
           .send({ name: 'Updated Name' })
           .expect(200);
 
@@ -304,24 +307,23 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('POST /api/:context/focus/:id/toggle', () => {
+    describe('PUT /api/:context/focus/:id/toggle', () => {
       it('should toggle domain focus active status', async () => {
-        mockToggleDomainFocus.mockResolvedValueOnce({
-          ...sampleFocus,
-          is_active: false,
-        } as any);
+        mockToggleDomainFocus.mockResolvedValueOnce(true);
 
         const res = await request(app)
-          .post(`/api/work/focus/${sampleFocus.id}/toggle`)
+          .put(`/api/work/focus/${sampleFocus.id}/toggle`)
+          .send({ is_active: false })
           .expect(200);
 
-        expect(res.body.focus.is_active).toBe(false);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toContain('deaktiviert');
       });
     });
 
     describe('DELETE /api/:context/focus/:id', () => {
       it('should delete a domain focus', async () => {
-        mockDeleteDomainFocus.mockResolvedValueOnce(undefined);
+        mockDeleteDomainFocus.mockResolvedValueOnce(true);
 
         const res = await request(app)
           .delete(`/api/work/focus/${sampleFocus.id}`)
@@ -331,7 +333,7 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('GET /api/:context/focus/stats', () => {
+    describe('GET /api/:context/focus-stats', () => {
       it('should return focus statistics', async () => {
         mockGetDomainFocusStats.mockResolvedValueOnce({
           total: 5,
@@ -340,7 +342,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .get('/api/work/focus/stats')
+          .get('/api/work/focus-stats')
           .expect(200);
 
         expect(res.body).toHaveProperty('stats');
@@ -361,52 +363,60 @@ describe('Intelligent Learning API Integration Tests', () => {
         const res = await request(app)
           .post('/api/work/feedback')
           .send({
-            idea_id: sampleFeedback.idea_id,
+            response_type: 'chat',
+            original_response: 'AI response text',
             rating: 5,
-            feedback_type: 'helpful',
-            comment: 'Very useful suggestion',
+            feedback_text: 'Very useful suggestion',
           })
           .expect(201);
 
         expect(res.body).toHaveProperty('feedback');
       });
 
-      it('should return 400 when idea_id is missing', async () => {
+      it('should return 400 when response_type is missing', async () => {
         const res = await request(app)
           .post('/api/work/feedback')
-          .send({ rating: 5 })
+          .send({ rating: 5, original_response: 'test' })
           .expect(400);
 
         expect(res.body).toHaveProperty('error');
       });
     });
 
-    describe('POST /api/:context/feedback/:ideaId/thumbs-up', () => {
+    describe('POST /api/:context/feedback/thumbs-up', () => {
       it('should record thumbs up', async () => {
         mockQuickThumbsUp.mockResolvedValueOnce({ success: true } as any);
 
         const res = await request(app)
-          .post(`/api/work/feedback/${sampleFeedback.idea_id}/thumbs-up`)
-          .expect(200);
+          .post('/api/work/feedback/thumbs-up')
+          .send({
+            response_type: 'chat',
+            original_response: 'AI response text',
+          })
+          .expect(201);
 
         expect(res.body.success).toBe(true);
       });
     });
 
-    describe('POST /api/:context/feedback/:ideaId/thumbs-down', () => {
+    describe('POST /api/:context/feedback/thumbs-down', () => {
       it('should record thumbs down with reason', async () => {
         mockQuickThumbsDown.mockResolvedValueOnce({ success: true } as any);
 
         const res = await request(app)
-          .post(`/api/work/feedback/${sampleFeedback.idea_id}/thumbs-down`)
-          .send({ reason: 'Not relevant' })
-          .expect(200);
+          .post('/api/work/feedback/thumbs-down')
+          .send({
+            response_type: 'chat',
+            original_response: 'AI response text',
+            feedback_text: 'Not relevant',
+          })
+          .expect(201);
 
         expect(res.body.success).toBe(true);
       });
     });
 
-    describe('GET /api/:context/feedback/stats', () => {
+    describe('GET /api/:context/feedback-stats', () => {
       it('should return feedback statistics', async () => {
         mockGetFeedbackStats.mockResolvedValueOnce({
           total: 100,
@@ -416,7 +426,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .get('/api/work/feedback/stats')
+          .get('/api/work/feedback-stats')
           .expect(200);
 
         expect(res.body).toHaveProperty('stats');
@@ -430,12 +440,12 @@ describe('Intelligent Learning API Integration Tests', () => {
   // ===========================================
 
   describe('Proactive Research', () => {
-    describe('GET /api/:context/research/pending', () => {
+    describe('GET /api/:context/research', () => {
       it('should return pending research items', async () => {
         mockGetPendingResearch.mockResolvedValueOnce([sampleResearch] as any);
 
         const res = await request(app)
-          .get('/api/work/research/pending')
+          .get('/api/work/research')
           .expect(200);
 
         expect(res.body).toHaveProperty('research');
@@ -466,12 +476,12 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('POST /api/:context/research/:id/dismiss', () => {
+    describe('PUT /api/:context/research/:id/dismiss', () => {
       it('should dismiss research', async () => {
-        mockDismissResearch.mockResolvedValueOnce({ success: true } as any);
+        mockDismissResearch.mockResolvedValueOnce(true);
 
         const res = await request(app)
-          .post(`/api/work/research/${sampleResearch.id}/dismiss`)
+          .put(`/api/work/research/${sampleResearch.id}/dismiss`)
           .expect(200);
 
         expect(res.body).toHaveProperty('message');
@@ -484,8 +494,8 @@ describe('Intelligent Learning API Integration Tests', () => {
 
         const res = await request(app)
           .post('/api/work/research/trigger')
-          .send({ idea_id: sampleResearch.idea_id })
-          .expect(200);
+          .send({ query: 'research query' })
+          .expect(201);
 
         expect(res.body).toHaveProperty('research');
       });
@@ -510,24 +520,22 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('POST /api/:context/suggestions/:id/respond', () => {
+    describe('PUT /api/:context/suggestions/:id/respond', () => {
       it('should respond to a suggestion', async () => {
-        mockRespondToSuggestion.mockResolvedValueOnce({
-          ...sampleSuggestion,
-          status: 'accepted',
-        } as any);
+        mockRespondToSuggestion.mockResolvedValueOnce(undefined);
 
         const res = await request(app)
-          .post(`/api/work/suggestions/${sampleSuggestion.id}/respond`)
-          .send({ response: 'accept' })
+          .put(`/api/work/suggestions/${sampleSuggestion.id}/respond`)
+          .send({ response: 'accepted' })
           .expect(200);
 
-        expect(res.body.suggestion.status).toBe('accepted');
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toContain('angenommen');
       });
 
       it('should return 400 for invalid response', async () => {
         const res = await request(app)
-          .post(`/api/work/suggestions/${sampleSuggestion.id}/respond`)
+          .put(`/api/work/suggestions/${sampleSuggestion.id}/respond`)
           .send({ response: 'invalid_response' })
           .expect(400);
 
@@ -535,7 +543,7 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('GET /api/:context/suggestions/stats', () => {
+    describe('GET /api/:context/suggestion-stats', () => {
       it('should return suggestion statistics', async () => {
         mockGetSuggestionStats.mockResolvedValueOnce({
           total: 50,
@@ -546,7 +554,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .get('/api/work/suggestions/stats')
+          .get('/api/work/suggestion-stats')
           .expect(200);
 
         expect(res.body).toHaveProperty('stats');
@@ -605,7 +613,7 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('GET /api/:context/profile/stats', () => {
+    describe('GET /api/:context/profile-stats', () => {
       it('should return profile statistics', async () => {
         mockGetProfileStats.mockResolvedValueOnce({
           completeness: 0.75,
@@ -613,7 +621,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .get('/api/work/profile/stats')
+          .get('/api/work/profile-stats')
           .expect(200);
 
         expect(res.body).toHaveProperty('stats');
@@ -621,7 +629,7 @@ describe('Intelligent Learning API Integration Tests', () => {
       });
     });
 
-    describe('GET /api/:context/profile/context', () => {
+    describe('GET /api/:context/profile-context', () => {
       it('should return personalized context', async () => {
         mockGetPersonalizedContext.mockResolvedValueOnce({
           context: 'work',
@@ -630,7 +638,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .get('/api/work/profile/context')
+          .get('/api/work/profile-context')
           .expect(200);
 
         expect(res.body).toHaveProperty('personalized_context');
