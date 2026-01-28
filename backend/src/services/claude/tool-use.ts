@@ -654,7 +654,7 @@ export async function executeWithTools(
   }
 
   const toolsCalled: ToolUseResult['toolsCalled'] = [];
-  let currentMessages = [...messages];
+  const currentMessages = [...messages];
   let iterations = 0;
   let stopReason = 'end_turn';
   let finalResponse = '';
@@ -874,8 +874,8 @@ export function registerDefaultTools(): void {
       // Check for balanced parentheses
       let parenCount = 0;
       for (const char of sanitized) {
-        if (char === '(') parenCount++;
-        if (char === ')') parenCount--;
+        if (char === '(') {parenCount++;}
+        if (char === ')') {parenCount--;}
         if (parenCount < 0) {
           return 'Fehler: Unbalancierte Klammern';
         }

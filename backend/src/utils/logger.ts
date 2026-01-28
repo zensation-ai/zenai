@@ -125,7 +125,7 @@ const REDACTED = '[REDACTED]';
  * Check if a value looks like sensitive data
  */
 function isSensitiveValue(value: unknown): boolean {
-  if (typeof value !== 'string') return false;
+  if (typeof value !== 'string') {return false;}
   return SENSITIVE_PATTERNS.some(pattern => pattern.test(value));
 }
 
@@ -135,7 +135,7 @@ function isSensitiveValue(value: unknown): boolean {
  */
 function filterSensitiveData<T>(obj: T, depth: number = 0): T {
   // Prevent infinite recursion
-  if (depth > 10) return obj;
+  if (depth > 10) {return obj;}
 
   if (obj === null || obj === undefined) {
     return obj;

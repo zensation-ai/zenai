@@ -221,13 +221,13 @@ export class EpisodicMemoryService {
     let arousalCount = 0;
 
     for (const word of positiveWords) {
-      if (text.includes(word)) positiveCount++;
+      if (text.includes(word)) {positiveCount++;}
     }
     for (const word of negativeWords) {
-      if (text.includes(word)) negativeCount++;
+      if (text.includes(word)) {negativeCount++;}
     }
     for (const word of highArousalWords) {
-      if (text.includes(word)) arousalCount++;
+      if (text.includes(word)) {arousalCount++;}
     }
 
     // Calculate valence (-1 to +1)
@@ -726,7 +726,7 @@ export class EpisodicMemoryService {
    * Parse embedding from database format
    */
   private parseEmbedding(embedding: any): number[] {
-    if (Array.isArray(embedding)) return embedding;
+    if (Array.isArray(embedding)) {return embedding;}
     if (typeof embedding === 'string') {
       const cleaned = embedding.replace(/[\[\]]/g, '');
       return cleaned.split(',').map(Number);

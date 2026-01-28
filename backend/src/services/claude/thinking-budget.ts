@@ -260,7 +260,7 @@ export function analyzeComplexity(input: string, context?: AIContext): Complexit
   ];
   let questionDepth = 1;
   for (const marker of deepQuestionMarkers) {
-    if (marker.test(inputLower)) questionDepth++;
+    if (marker.test(inputLower)) {questionDepth++;}
   }
   questionDepth = Math.min(questionDepth, 5);
 
@@ -272,7 +272,7 @@ export function analyzeComplexity(input: string, context?: AIContext): Complexit
   ];
   let crossRefCount = 0;
   for (const marker of crossRefMarkers) {
-    if (marker.test(inputLower)) crossRefCount++;
+    if (marker.test(inputLower)) {crossRefCount++;}
   }
   const crossReferenceNeed = Math.min(crossRefCount / 3, 1);
 
@@ -284,7 +284,7 @@ export function analyzeComplexity(input: string, context?: AIContext): Complexit
   ];
   let temporalCount = 0;
   for (const marker of temporalMarkers) {
-    if (marker.test(inputLower)) temporalCount++;
+    if (marker.test(inputLower)) {temporalCount++;}
   }
   const temporalComplexity = Math.min(temporalCount / 3, 1);
 
@@ -554,7 +554,7 @@ export async function recordThinkingFeedback(
  * Generate priming prompt from successful chains
  */
 export function generatePrimingPrompt(similarChains: ThinkingChain[]): string {
-  if (similarChains.length === 0) return '';
+  if (similarChains.length === 0) {return '';}
 
   const insights = similarChains.map((chain, i) => {
     // Extract key reasoning patterns from thinking content
@@ -622,7 +622,7 @@ async function optimizeBudgetStrategies(context: AIContext): Promise<void> {
       const taskType = row.task_type as TaskType;
       const strategy = BUDGET_STRATEGIES[taskType];
 
-      if (!strategy) continue;
+      if (!strategy) {continue;}
 
       const correlation = parseFloat(row.token_quality_correlation) || 0;
       const avgQuality = parseFloat(row.avg_quality) || 0;
@@ -766,7 +766,7 @@ function rowToThinkingChain(row: any): ThinkingChain {
  * Parse embedding from database format
  */
 function parseEmbedding(embedding: any): number[] {
-  if (Array.isArray(embedding)) return embedding;
+  if (Array.isArray(embedding)) {return embedding;}
   if (typeof embedding === 'string') {
     const cleaned = embedding.replace(/[\[\]]/g, '');
     return cleaned.split(',').map(Number);

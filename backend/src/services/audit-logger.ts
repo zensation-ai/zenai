@@ -78,7 +78,7 @@ let auditTableInitialized = false;
  * Ensure audit_logs table exists
  */
 async function ensureAuditTable(): Promise<void> {
-  if (auditTableInitialized) return;
+  if (auditTableInitialized) {return;}
 
   try {
     await pool.query(`
@@ -125,7 +125,7 @@ async function ensureAuditTable(): Promise<void> {
  * Extract client information from request
  */
 function extractRequestInfo(req?: Request): AuditLogEntry['request'] {
-  if (!req) return undefined;
+  if (!req) {return undefined;}
 
   // Get real IP (handle proxies)
   let ip = req.ip;

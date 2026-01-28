@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../utils/database';
 import { isValidUUID } from '../utils/database-context';
 import { generateApiKey, apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 // Phase Security Sprint 3: API Key Security Service
 import {
@@ -17,7 +17,6 @@ import {
   getUnusedKeys,
   getKeySecuritySummary,
   extendKeyExpiry,
-  checkKeyExpiry,
 } from '../services/api-key-security';
 // Phase Security Sprint 3: Audit Logging
 import { auditLogger } from '../services/audit-logger';

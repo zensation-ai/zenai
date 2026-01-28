@@ -16,13 +16,13 @@
 
 // Skip entire test suite until tests are updated
 // Original imports removed - API has changed significantly
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+ 
 const EpisodicMemoryService: any = class {};
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+ 
 const episodicMemory: any = {};
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+ 
 type EpisodeType = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+ 
 type EmotionalContext = any;
 
 // Mock dependencies
@@ -55,7 +55,7 @@ const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof ge
 
 // TODO: Re-enable and update tests when API is stabilized
 describe.skip('Episodic Memory Service', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let memory: any;
 
   beforeEach(() => {

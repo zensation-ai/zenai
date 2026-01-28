@@ -312,7 +312,7 @@ const STATS_KEY_MISSES = 'cache:stats:response:misses';
  */
 export async function incrementCacheHits(): Promise<void> {
   const client = getClient();
-  if (!client || !isConnected) return;
+  if (!client || !isConnected) {return;}
 
   try {
     await client.incr(STATS_KEY_HITS);
@@ -326,7 +326,7 @@ export async function incrementCacheHits(): Promise<void> {
  */
 export async function incrementCacheMisses(): Promise<void> {
   const client = getClient();
-  if (!client || !isConnected) return;
+  if (!client || !isConnected) {return;}
 
   try {
     await client.incr(STATS_KEY_MISSES);
@@ -366,7 +366,7 @@ export async function getResponseCacheStats(): Promise<{
  */
 export async function resetResponseCacheStats(): Promise<void> {
   const client = getClient();
-  if (!client || !isConnected) return;
+  if (!client || !isConnected) {return;}
 
   try {
     await client.del(STATS_KEY_HITS, STATS_KEY_MISSES);

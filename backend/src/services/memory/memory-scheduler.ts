@@ -106,9 +106,9 @@ function parseCronExpression(expression: string): {
   }
 
   const parse = (value: string): number | '*' => {
-    if (value === '*') return '*';
+    if (value === '*') {return '*';}
     const num = parseInt(value, 10);
-    if (isNaN(num)) throw new Error(`Invalid cron value: ${value}`);
+    if (isNaN(num)) {throw new Error(`Invalid cron value: ${value}`);}
     return num;
   };
 
@@ -189,7 +189,7 @@ class SimpleCronScheduler {
    * Schedule the next run for a job
    */
   private scheduleNextRun(job: CronJob): void {
-    if (!job.enabled) return;
+    if (!job.enabled) {return;}
 
     try {
       const nextRun = getNextRunTime(job.schedule);
@@ -232,7 +232,7 @@ class SimpleCronScheduler {
    * Start the scheduler
    */
   start(): void {
-    if (this.running) return;
+    if (this.running) {return;}
 
     this.running = true;
 

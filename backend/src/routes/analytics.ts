@@ -10,9 +10,8 @@
 
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
-import { logger } from '../utils/logger';
 import { apiKeyAuth } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
 export const analyticsRouter = Router();
 

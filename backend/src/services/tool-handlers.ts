@@ -271,8 +271,8 @@ async function handleCalculate(
     // Check for balanced parentheses
     let parenCount = 0;
     for (const char of sanitized) {
-      if (char === '(') parenCount++;
-      if (char === ')') parenCount--;
+      if (char === '(') {parenCount++;}
+      if (char === ')') {parenCount--;}
       if (parenCount < 0) {
         return 'Fehler: Unbalancierte Klammern im Ausdruck.';
       }
@@ -473,8 +473,8 @@ function formatTimeAgo(date: Date): string {
  * Get emotional label from valence
  */
 function getEmotionalLabel(valence: number): string {
-  if (valence > 0.3) return 'positive Stimmung';
-  if (valence < -0.3) return 'angespannt';
+  if (valence > 0.3) {return 'positive Stimmung';}
+  if (valence < -0.3) {return 'angespannt';}
   return 'neutral';
 }
 
@@ -865,8 +865,8 @@ async function handleListProjectFiles(
  * Format file size in human-readable format
  */
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024) {return `${bytes} B`;}
+  if (bytes < 1024 * 1024) {return `${(bytes / 1024).toFixed(1)} KB`;}
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 

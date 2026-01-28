@@ -246,7 +246,7 @@ class HyDEService {
     const allResults = new Map<string, HyDERetrievalResult>();
 
     for (const embedding of embeddings) {
-      if (embedding.length === 0) continue;
+      if (embedding.length === 0) {continue;}
 
       const result = await queryContext(
         context,
@@ -358,7 +358,7 @@ class HyDEService {
     maxResults: number
   ): Promise<HyDERetrievalResult[]> {
     const queryEmbedding = await generateEmbedding(query);
-    if (queryEmbedding.length === 0) return [];
+    if (queryEmbedding.length === 0) {return [];}
 
     const result = await queryContext(
       context,

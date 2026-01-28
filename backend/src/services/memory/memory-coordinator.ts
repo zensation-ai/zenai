@@ -774,7 +774,7 @@ export class MemoryCoordinator {
       sections.push(`[RELEVANTE IDEEN]\n${documents.map(d => d.content).join('\n')}`);
     }
 
-    if (sections.length === 0) return '';
+    if (sections.length === 0) {return '';}
 
     return `\n\n=== PERSÖNLICHER KONTEXT (4-Layer Memory) ===\n${sections.join('\n\n')}\n\nBerücksichtige diesen Kontext bei deiner Antwort.`;
   }
