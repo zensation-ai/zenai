@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RecordButton } from '../RecordButton';
 
@@ -46,9 +46,8 @@ class MockMediaRecorder {
 const mockGetUserMedia = vi.fn();
 
 describe('RecordButton Component', () => {
-  const mockOnRecordingComplete = vi.fn();
-  const mockOnProcessingStart = vi.fn();
-  const mockOnProcessingEnd = vi.fn();
+  const mockOnTranscript = vi.fn();
+  const mockOnRecordingChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,7 +78,7 @@ describe('RecordButton Component', () => {
     it('renders record button', () => {
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -91,7 +90,7 @@ describe('RecordButton Component', () => {
     it('shows microphone icon in idle state', () => {
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -104,7 +103,7 @@ describe('RecordButton Component', () => {
     it('button is not disabled initially', () => {
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -120,7 +119,7 @@ describe('RecordButton Component', () => {
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -138,7 +137,7 @@ describe('RecordButton Component', () => {
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -150,15 +149,34 @@ describe('RecordButton Component', () => {
         expect(button).toHaveClass('recording');
       });
     });
-  });
 
-  describe('Recording Duration', () => {
-    it('displays recording duration', async () => {
+    it('calls onRecordingChange with true when recording starts', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
+          onRecordingChange={mockOnRecordingChange}
+          context="personal"
+        />
+      );
+
+      const button = screen.getByRole('button');
+      await user.click(button);
+
+      await waitFor(() => {
+        expect(mockOnRecordingChange).toHaveBeenCalledWith(true);
+      });
+    });
+  });
+
+  describe('Recording Duration', () => {
+    it('tracks recording time', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+      render(
+        <RecordButton
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -171,10 +189,10 @@ describe('RecordButton Component', () => {
         vi.advanceTimersByTime(5000);
       });
 
-      // Duration should be displayed somewhere
+      // Duration should be tracked (implementation-specific display)
       await waitFor(() => {
-        const duration = screen.queryByText(/0:0[0-5]|00:0[0-5]/);
-        // Duration display may or may not be present
+        // Button should still be in recording state
+        expect(button).toHaveClass('recording');
       });
     });
   });
@@ -185,7 +203,7 @@ describe('RecordButton Component', () => {
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -207,12 +225,13 @@ describe('RecordButton Component', () => {
       });
     });
 
-    it('calls onRecordingComplete with audio blob', async () => {
+    it('calls onRecordingChange with false when recording stops', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
+          onRecordingChange={mockOnRecordingChange}
           context="personal"
         />
       );
@@ -225,7 +244,7 @@ describe('RecordButton Component', () => {
       await user.click(button);
 
       await waitFor(() => {
-        expect(mockOnRecordingComplete).toHaveBeenCalled();
+        expect(mockOnRecordingChange).toHaveBeenCalledWith(false);
       });
     });
   });
@@ -238,7 +257,7 @@ describe('RecordButton Component', () => {
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -259,7 +278,7 @@ describe('RecordButton Component', () => {
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -274,7 +293,7 @@ describe('RecordButton Component', () => {
     it('has accessible label', () => {
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -287,31 +306,10 @@ describe('RecordButton Component', () => {
       ).toBeTruthy();
     });
 
-    it('updates label during recording', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
+    it('is keyboard accessible', () => {
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
-          context="personal"
-        />
-      );
-
-      const button = screen.getByRole('button');
-      const initialLabel = button.getAttribute('aria-label') || button.getAttribute('title');
-
-      await user.click(button);
-
-      await waitFor(() => {
-        const recordingLabel = button.getAttribute('aria-label') || button.getAttribute('title');
-        // Label should change to indicate recording state
-      });
-    });
-
-    it('is keyboard accessible', async () => {
-      render(
-        <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
@@ -322,29 +320,29 @@ describe('RecordButton Component', () => {
     });
   });
 
-  describe('Processing State', () => {
-    it('shows processing indicator after recording', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
+  describe('Context Prop', () => {
+    it('accepts personal context', () => {
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
-          onProcessingStart={mockOnProcessingStart}
+          onTranscript={mockOnTranscript}
           context="personal"
         />
       );
 
       const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
+    });
 
-      // Start and stop recording
-      await user.click(button);
-      await waitFor(() => expect(button).toHaveClass('recording'));
-      await user.click(button);
+    it('accepts work context', () => {
+      render(
+        <RecordButton
+          onTranscript={mockOnTranscript}
+          context="work"
+        />
+      );
 
-      // Processing callback may be called
-      await waitFor(() => {
-        // Check if processing state or callback was triggered
-      });
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
     });
   });
 
@@ -352,7 +350,7 @@ describe('RecordButton Component', () => {
     it('respects disabled prop', () => {
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
           disabled={true}
         />
@@ -367,7 +365,7 @@ describe('RecordButton Component', () => {
 
       render(
         <RecordButton
-          onRecordingComplete={mockOnRecordingComplete}
+          onTranscript={mockOnTranscript}
           context="personal"
           disabled={true}
         />
@@ -377,6 +375,34 @@ describe('RecordButton Component', () => {
       await user.click(button);
 
       expect(mockGetUserMedia).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Persona Prop', () => {
+    it('accepts persona prop', () => {
+      render(
+        <RecordButton
+          onTranscript={mockOnTranscript}
+          context="personal"
+          persona="assistant"
+        />
+      );
+
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
+    });
+
+    it('handles null persona', () => {
+      render(
+        <RecordButton
+          onTranscript={mockOnTranscript}
+          context="personal"
+          persona={null}
+        />
+      );
+
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
     });
   });
 });

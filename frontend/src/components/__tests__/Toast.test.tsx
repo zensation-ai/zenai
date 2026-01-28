@@ -13,12 +13,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ToastContainer, showToast, clearToasts } from '../Toast';
+import { ToastContainer, showToast, clearAllToasts } from '../Toast';
 
 describe('Toast Component', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    clearToasts();
+    clearAllToasts();
   });
 
   afterEach(() => {
@@ -207,7 +207,7 @@ describe('Toast Component', () => {
     });
   });
 
-  describe('clearToasts function', () => {
+  describe('clearAllToasts function', () => {
     it('removes all toasts when called', async () => {
       render(<ToastContainer />);
 
@@ -222,7 +222,7 @@ describe('Toast Component', () => {
       });
 
       act(() => {
-        clearToasts();
+        clearAllToasts();
       });
 
       await waitFor(() => {

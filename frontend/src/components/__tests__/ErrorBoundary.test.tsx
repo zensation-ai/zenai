@@ -22,15 +22,6 @@ const ThrowError = ({ shouldThrow }: { shouldThrow: boolean }) => {
   return <div>Child component rendered</div>;
 };
 
-// Component that throws an error on first render then works
-let renderCount = 0;
-const ThrowOnceError = () => {
-  renderCount++;
-  if (renderCount === 1) {
-    throw new Error('First render error');
-  }
-  return <div>Component recovered</div>;
-};
 
 describe('ErrorBoundary Component', () => {
   // Suppress console.error during error boundary tests
@@ -38,7 +29,6 @@ describe('ErrorBoundary Component', () => {
 
   beforeEach(() => {
     console.error = vi.fn();
-    renderCount = 0;
   });
 
   afterEach(() => {

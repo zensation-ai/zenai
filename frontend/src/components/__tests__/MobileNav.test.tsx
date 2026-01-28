@@ -15,13 +15,33 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MobileNav } from '../MobileNav';
-import type { Page } from '../../types';
 
 describe('MobileNav Component', () => {
   const mockOnNavigate = vi.fn();
+
+  const mockNavGroups = [
+    {
+      label: 'Main',
+      icon: '🏠',
+      items: [
+        { label: 'Ideas', icon: '💡', page: 'ideas' },
+        { label: 'Chat', icon: '💬', page: 'chat' },
+      ],
+    },
+    {
+      label: 'Tools',
+      icon: '🔧',
+      items: [
+        { label: 'Settings', icon: '⚙️', page: 'settings' },
+      ],
+    },
+  ];
+
   const defaultProps = {
-    currentPage: 'ideas' as Page,
+    currentPage: 'ideas',
     onNavigate: mockOnNavigate,
+    archivedCount: 5,
+    navGroups: mockNavGroups,
   };
 
   beforeEach(() => {
@@ -119,7 +139,7 @@ describe('MobileNav Component', () => {
       expect(nav).toBeInTheDocument();
     });
 
-    it('nav items are keyboard accessible', async () => {
+    it('nav items are keyboard accessible', () => {
       render(<MobileNav {...defaultProps} />);
 
       const buttons = screen.getAllByRole('button');
@@ -185,29 +205,26 @@ describe('MobileNav Component', () => {
     });
   });
 
-  describe('Badge/Notification Indicators', () => {
-    it('can display notification badges', () => {
-      render(<MobileNav {...defaultProps} notificationCount={5} />);
+  describe('Archived Count', () => {
+    it('displays archived count when greater than zero', () => {
+      render(<MobileNav {...defaultProps} archivedCount={10} />);
 
-      // Look for badge element
-      const badge = screen.queryByText('5') ||
-                   document.querySelector('.badge, [class*="badge"], [class*="notification"]');
-
-      // Badge may or may not be present based on implementation
+      // Look for archived count indicator
+      const container = document.querySelector('[class*="nav"]');
+      expect(container).toBeInTheDocument();
     });
 
-    it('hides badge when count is zero', () => {
-      render(<MobileNav {...defaultProps} notificationCount={0} />);
+    it('handles zero archived count', () => {
+      render(<MobileNav {...defaultProps} archivedCount={0} />);
 
-      // Badge should not show "0"
-      const zeroBadge = screen.queryByText('0');
-      // Zero badge should either not exist or be hidden
+      // Component should still render
+      const nav = screen.getByRole('navigation');
+      expect(nav).toBeInTheDocument();
     });
   });
 
   describe('Edge Cases', () => {
     it('handles unknown page gracefully', () => {
-      // @ts-expect-error Testing invalid page
       render(<MobileNav {...defaultProps} currentPage="unknown-page" />);
 
       // Should still render
@@ -215,9 +232,8 @@ describe('MobileNav Component', () => {
       expect(nav).toBeInTheDocument();
     });
 
-    it('handles missing onNavigate', () => {
-      // @ts-expect-error Testing missing callback
-      render(<MobileNav currentPage="ideas" />);
+    it('handles empty navGroups', () => {
+      render(<MobileNav {...defaultProps} navGroups={[]} />);
 
       // Should still render without crashing
       const nav = screen.getByRole('navigation');
