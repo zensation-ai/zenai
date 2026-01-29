@@ -234,7 +234,7 @@ export async function structureWithClaudeAdvanced(
   };
 
   // Track context usage (async)
-  trackContextUsage(context, 'new', unifiedContext).catch(() => {});
+  trackContextUsage(context, 'new', unifiedContext).catch(err => logger.debug('Context usage tracking skipped', { context, error: err instanceof Error ? err.message : String(err) }));
 
   logger.info('Advanced structuring complete', {
     confidence: result.confidence.overall,

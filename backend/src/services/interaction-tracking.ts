@@ -246,7 +246,7 @@ export async function recordCorrection(
     });
 
     // Trigger pattern extraction asynchronously
-    extractPatternsFromCorrection(context, fieldName, oldStr, newStr).catch(() => {});
+    extractPatternsFromCorrection(context, fieldName, oldStr, newStr).catch(err => logger.debug('Pattern extraction skipped', { context, fieldName, error: err instanceof Error ? err.message : String(err) }));
 
     return id;
   } catch (error) {

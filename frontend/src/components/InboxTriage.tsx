@@ -144,6 +144,14 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
     setIsLoading(true);
     setError(null);
 
+    // SECURITY: API key must be configured - no hardcoded fallbacks
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      setError('API-Key nicht konfiguriert. Bitte VITE_API_KEY setzen.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const excludeParam = processedIds.length > 0 ? '&exclude=' + processedIds.join(',') : '';
       // Neuro-UX: Miller's Law - Limitiere auf MAX_VISIBLE_ITEMS
@@ -152,7 +160,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': import.meta.env.VITE_API_KEY || 'dev-key',
+            'x-api-key': apiKey,
           },
         }
       );
@@ -247,6 +255,14 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
       // Neuro-UX: Dopamin-Belohnung triggern
       showDopamineReward(action);
 
+      // SECURITY: API key must be configured
+      const apiKey = import.meta.env.VITE_API_KEY;
+      if (!apiKey) {
+        setError('API-Key nicht konfiguriert');
+        setIsAnimating(false);
+        return;
+      }
+
       try {
         const response = await fetch(
           apiBase + '/' + context + '/ideas/' + currentIdea.id + '/triage',
@@ -254,7 +270,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-api-key': import.meta.env.VITE_API_KEY || 'dev-key',
+              'x-api-key': apiKey,
             },
             body: JSON.stringify({ action }),
           }

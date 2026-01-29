@@ -102,6 +102,8 @@ export class SemanticCache<T = unknown> {
     misses: 0,
     totalHitSimilarity: 0,
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private cleanupInterval: any = null;
 
   constructor(config: Partial<SemanticCacheConfig> = {}) {
     this.config = {
@@ -111,11 +113,49 @@ export class SemanticCache<T = unknown> {
       enableSemanticMatching: config.enableSemanticMatching ?? true,
     };
 
+    // SECURITY: Start automatic cleanup interval (every 5 minutes)
+    // This prevents memory leaks from expired entries that are never accessed
+    this.startAutoCleanup();
+
     logger.info('SemanticCache initialized', {
       similarityThreshold: this.config.similarityThreshold,
       ttlMs: this.config.ttlMs,
       maxEntries: this.config.maxEntries,
+      autoCleanupEnabled: true,
     });
+  }
+
+  /**
+   * Start automatic cleanup interval
+   */
+  private startAutoCleanup(): void {
+    // Clean up every 5 minutes
+    const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+    this.cleanupInterval = setInterval(() => {
+      const cleaned = this.cleanup();
+      if (cleaned > 0) {
+        logger.info('Automatic cache cleanup completed', {
+          expiredEntriesRemoved: cleaned,
+          remainingEntries: this.cache.size,
+        });
+      }
+    }, CLEANUP_INTERVAL_MS);
+
+    // Don't let cleanup interval keep the process alive
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref();
+    }
+  }
+
+  /**
+   * Stop automatic cleanup (call on shutdown)
+   */
+  stopAutoCleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+      logger.debug('Automatic cache cleanup stopped');
+    }
   }
 
   /**

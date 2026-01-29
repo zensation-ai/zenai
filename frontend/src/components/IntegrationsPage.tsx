@@ -102,10 +102,38 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
     }
   };
 
+  // SECURITY: Whitelist of allowed OAuth provider domains
+  const ALLOWED_OAUTH_DOMAINS = [
+    'login.microsoftonline.com',
+    'accounts.google.com',
+    'slack.com',
+    'github.com',
+    'oauth.slack.com',
+  ];
+
   const connectIntegration = async (provider: string) => {
     try {
       const response = await axios.get(`/api/integrations/${provider}/auth`);
-      window.location.href = response.data.authUrl;
+      const authUrl = response.data.authUrl;
+
+      // SECURITY: Validate OAuth URL to prevent open redirect attacks
+      try {
+        const url = new URL(authUrl);
+        const isAllowedDomain = ALLOWED_OAUTH_DOMAINS.some(
+          domain => url.hostname === domain || url.hostname.endsWith(`.${domain}`)
+        );
+
+        if (!isAllowedDomain) {
+          console.error('OAuth URL domain not in whitelist:', url.hostname);
+          setError(`Sicherheitsfehler: Ungültige OAuth-URL für ${provider}`);
+          return;
+        }
+
+        window.location.href = authUrl;
+      } catch {
+        console.error('Invalid OAuth URL received:', authUrl);
+        setError(`Ungültige OAuth-URL für ${provider}`);
+      }
     } catch (err: unknown) {
       setError(getErrorMessage(err, `Verbindung zu ${provider} fehlgeschlagen`));
     }

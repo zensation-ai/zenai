@@ -39,15 +39,30 @@ function parseConnectionString(url: string): {
 
   // Railway internal connections (.railway.internal) don't need SSL
   const isInternalRailway = host.endsWith('.railway.internal');
-  // Supabase and other managed DB services need SSL but with rejectUnauthorized: false
-  // This is safe for managed services where we trust the provider
+  // Supabase and other managed DB services
   const isSupabase = host.includes('supabase.co');
+
+  // SECURITY: SSL Configuration with proper certificate validation
+  // - Allow explicit override via DB_SSL_REJECT_UNAUTHORIZED env var
+  // - Default to secure (rejectUnauthorized: true) in production
+  // - Supabase pooler connections may need rejectUnauthorized: false due to connection pooling
+  const sslRejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== undefined
+    ? process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
+    : !isSupabase; // Supabase pooler requires false, others default to true
 
   const sslConfig = isInternalRailway
     ? false // No SSL for internal Railway network
     : process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: isSupabase ? false : true } // Supabase needs false
+      ? { rejectUnauthorized: sslRejectUnauthorized }
       : undefined;
+
+  if (isSupabase && !sslRejectUnauthorized) {
+    logger.warn('Database SSL: rejectUnauthorized=false for Supabase connection', {
+      host,
+      securityNote: 'Set DB_SSL_REJECT_UNAUTHORIZED=true if using direct connection (not pooler)',
+      operation: 'parseConnectionString',
+    });
+  }
 
   logger.info('Database connection config', {
     host,
@@ -59,7 +74,7 @@ function parseConnectionString(url: string): {
 
   return {
     host,
-    port: parseInt(parsed.port || '5432'),
+    port: parseInt(parsed.port || '5432', 10),
     user: parsed.username,
     password: parsed.password,
     database: parsed.pathname.slice(1), // Remove leading /
@@ -74,13 +89,24 @@ const useConnectionString = !!databaseUrl;
 // Base config from DATABASE_URL or individual vars
 const baseConfig = useConnectionString && databaseUrl
   ? parseConnectionString(databaseUrl)
-  : {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'localpass',
-      database: 'personal_ai', // Default for non-URL config
-    };
+  : (() => {
+      // SECURITY: Require explicit DB_PASSWORD in non-URL mode
+      // No more hardcoded fallback passwords
+      const dbPassword = process.env.DB_PASSWORD;
+      if (!dbPassword && process.env.NODE_ENV === 'production') {
+        logger.error('CRITICAL: DB_PASSWORD is required in production when not using DATABASE_URL', undefined, {
+          operation: 'databaseConfig'
+        });
+        throw new Error('DB_PASSWORD environment variable is required');
+      }
+      return {
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || '5432', 10),
+        user: process.env.DB_USER || 'postgres',
+        password: dbPassword || '', // Empty string for local dev without password
+        database: 'personal_ai', // Default for non-URL config
+      };
+    })();
 
 const POOL_CONFIG = {
   ...baseConfig,
@@ -175,18 +201,22 @@ type QueryParam = string | number | boolean | Date | null | undefined | Buffer |
  * Phase 23: Added automatic retry for transient errors (ECONNRESET, ETIMEDOUT)
  * Phase 24: CRITICAL FIX - Schema Separation with search_path
  *
- * SIMPLIFICATION: All queries now use 'personal' schema only.
- * The context parameter is kept for API compatibility but ignored.
- * This eliminates schema-routing complexity while keeping the API structure
- * intact for future re-implementation of context separation.
+ * Executes queries with proper schema isolation based on context.
+ * Each context (personal/work) uses its own PostgreSQL schema.
+ * This ensures complete data separation between contexts.
  */
 export async function queryContext(
   context: AIContext,
   text: string,
   params?: QueryParam[]
 ): Promise<QueryResult> {
-  // SIMPLIFICATION: Always use 'personal' schema - ignore context parameter
-  const effectiveContext: AIContext = 'personal';
+  // Validate context parameter to prevent SQL injection via search_path
+  if (!isValidContext(context)) {
+    throw new Error(`Invalid context: ${context}. Must be 'personal' or 'work'.`);
+  }
+
+  // Use the actual context for schema routing
+  const effectiveContext: AIContext = context;
 
   const pool = getPool(effectiveContext);
   const start = Date.now();
@@ -200,7 +230,7 @@ export async function queryContext(
     const client = await pool.connect();
 
     try {
-      // All queries go to 'personal' schema
+      // Set search_path to the appropriate schema based on context
       await client.query(`SET search_path TO ${effectiveContext}, public`);
 
       // Execute query in correct schema

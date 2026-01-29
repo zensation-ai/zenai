@@ -149,7 +149,7 @@ export async function structureWithClaudePersonalized(
     const result = validateAndNormalizeIdea(parsed, 'Unstrukturierte Notiz');
 
     // Track that we used context (async, don't await)
-    trackContextUsage(context, 'new', unifiedContext).catch(() => {});
+    trackContextUsage(context, 'new', unifiedContext).catch(err => logger.debug('Context usage tracking skipped', { context, error: err instanceof Error ? err.message : String(err) }));
 
     return result;
   });
