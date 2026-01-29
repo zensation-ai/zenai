@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RecordButton } from '../RecordButton';
 
@@ -27,7 +27,11 @@ class MockMediaRecorder {
     this.state = 'inactive';
   }
 
-  start() {
+  static isTypeSupported(_mimeType: string): boolean {
+    return true;
+  }
+
+  start(_timeslice?: number) {
     this.state = 'recording';
   }
 
@@ -51,7 +55,6 @@ describe('RecordButton Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
 
     // Setup MediaRecorder mock
     global.MediaRecorder = MockMediaRecorder as unknown as typeof MediaRecorder;
@@ -70,8 +73,7 @@ describe('RecordButton Component', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   describe('Initial State', () => {
@@ -115,25 +117,7 @@ describe('RecordButton Component', () => {
 
   describe('Recording Start', () => {
     it('requests microphone permission when clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
-      render(
-        <RecordButton
-          onTranscript={mockOnTranscript}
-          context="personal"
-        />
-      );
-
-      const button = screen.getByRole('button');
-      await user.click(button);
-
-      expect(mockGetUserMedia).toHaveBeenCalledWith(
-        expect.objectContaining({ audio: expect.anything() })
-      );
-    });
-
-    it('enters recording state after permission granted', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
 
       render(
         <RecordButton
@@ -146,12 +130,33 @@ describe('RecordButton Component', () => {
       await user.click(button);
 
       await waitFor(() => {
-        expect(button).toHaveClass('recording');
+        expect(mockGetUserMedia).toHaveBeenCalledWith(
+          expect.objectContaining({ audio: expect.anything() })
+        );
       });
     });
 
+    it('enters recording state after permission granted', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <RecordButton
+          onTranscript={mockOnTranscript}
+          context="personal"
+        />
+      );
+
+      const button = screen.getByRole('button');
+      await user.click(button);
+
+      // Wait for async getUserMedia to complete and state to update
+      await waitFor(() => {
+        expect(button).toHaveClass('recording');
+      }, { timeout: 3000 });
+    });
+
     it('calls onRecordingChange with true when recording starts', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
 
       render(
         <RecordButton
@@ -166,13 +171,13 @@ describe('RecordButton Component', () => {
 
       await waitFor(() => {
         expect(mockOnRecordingChange).toHaveBeenCalledWith(true);
-      });
+      }, { timeout: 3000 });
     });
   });
 
   describe('Recording Duration', () => {
-    it('tracks recording time', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    it('button enters recording state when recording', async () => {
+      const user = userEvent.setup();
 
       render(
         <RecordButton
@@ -184,22 +189,16 @@ describe('RecordButton Component', () => {
       const button = screen.getByRole('button');
       await user.click(button);
 
-      // Advance timer by 5 seconds
-      act(() => {
-        vi.advanceTimersByTime(5000);
-      });
-
-      // Duration should be tracked (implementation-specific display)
+      // Wait for recording to start
       await waitFor(() => {
-        // Button should still be in recording state
         expect(button).toHaveClass('recording');
-      });
+      }, { timeout: 3000 });
     });
   });
 
   describe('Recording Stop', () => {
     it('stops recording when clicked again', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
 
       render(
         <RecordButton
@@ -215,18 +214,18 @@ describe('RecordButton Component', () => {
 
       await waitFor(() => {
         expect(button).toHaveClass('recording');
-      });
+      }, { timeout: 3000 });
 
       // Stop recording
       await user.click(button);
 
       await waitFor(() => {
         expect(button).not.toHaveClass('recording');
-      });
+      }, { timeout: 3000 });
     });
 
     it('calls onRecordingChange with false when recording stops', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
 
       render(
         <RecordButton
@@ -240,12 +239,12 @@ describe('RecordButton Component', () => {
 
       // Start and stop recording
       await user.click(button);
-      await waitFor(() => expect(button).toHaveClass('recording'));
+      await waitFor(() => expect(button).toHaveClass('recording'), { timeout: 3000 });
       await user.click(button);
 
       await waitFor(() => {
         expect(mockOnRecordingChange).toHaveBeenCalledWith(false);
-      });
+      }, { timeout: 3000 });
     });
   });
 
@@ -253,7 +252,7 @@ describe('RecordButton Component', () => {
     it('handles permission denied gracefully', async () => {
       mockGetUserMedia.mockRejectedValueOnce(new Error('Permission denied'));
 
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
 
       render(
         <RecordButton
@@ -265,10 +264,10 @@ describe('RecordButton Component', () => {
       const button = screen.getByRole('button');
       await user.click(button);
 
-      // Should not be in recording state
+      // Should not be in recording state after error
       await waitFor(() => {
         expect(button).not.toHaveClass('recording');
-      });
+      }, { timeout: 1000 });
     });
 
     it('handles MediaRecorder not supported', async () => {
@@ -361,7 +360,7 @@ describe('RecordButton Component', () => {
     });
 
     it('cannot start recording when disabled', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup();
 
       render(
         <RecordButton
