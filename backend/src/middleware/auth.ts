@@ -201,8 +201,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
       // Invalid keys are rejected even in development mode
       logger.warn('Invalid API key rejected', {
         operation: 'apiKeyAuth',
-        keyPrefix: apiKey.substring(0, 10),
-        isLocalDev
+        keyPrefix: apiKey.substring(0, 10)
       });
       return res.status(401).json({
         error: 'Invalid API key',

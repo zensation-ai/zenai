@@ -94,7 +94,7 @@ const baseConfig = useConnectionString && databaseUrl
       // No more hardcoded fallback passwords
       const dbPassword = process.env.DB_PASSWORD;
       if (!dbPassword && process.env.NODE_ENV === 'production') {
-        logger.error('CRITICAL: DB_PASSWORD is required in production when not using DATABASE_URL', {
+        logger.error('CRITICAL: DB_PASSWORD is required in production when not using DATABASE_URL', undefined, {
           operation: 'databaseConfig'
         });
         throw new Error('DB_PASSWORD environment variable is required');
