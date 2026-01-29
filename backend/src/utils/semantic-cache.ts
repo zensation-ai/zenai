@@ -689,8 +689,12 @@ export async function warmEmbeddingCache(
         try {
           await getCachedEmbedding(text);
           warmed++;
-        } catch (_error) {
+        } catch (embeddingError) {
           failed++;
+          logger.debug('Embedding warm-up failed for text', {
+            textLength: text.length,
+            error: embeddingError instanceof Error ? embeddingError.message : 'Unknown',
+          });
         }
       })
     );

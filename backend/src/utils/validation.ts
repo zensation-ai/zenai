@@ -666,3 +666,44 @@ export function checkContext(
 
   return result.data;
 }
+
+// ===========================================
+// Simple Integer Helpers (for quick migration)
+// ===========================================
+
+/**
+ * Simple parseInt with radix 10 and default value
+ * Use this for quick migration of parseInt() calls
+ *
+ * @example
+ * // Instead of: parseInt(req.query.limit as string) || 20
+ * // Use: toInt(req.query.limit, 20)
+ */
+export function toInt(value: string | number | undefined | null, defaultValue: number = 0): number {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.floor(value) : defaultValue;
+  }
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? defaultValue : parsed;
+}
+
+/**
+ * Simple parseInt with radix 10, default value, and bounds
+ * Ensures the result is within [min, max] range
+ *
+ * @example
+ * // Instead of: Math.min(parseInt(req.query.limit as string) || 20, 100)
+ * // Use: toIntBounded(req.query.limit, 20, 1, 100)
+ */
+export function toIntBounded(
+  value: string | number | undefined | null,
+  defaultValue: number,
+  min: number,
+  max: number
+): number {
+  const parsed = toInt(value, defaultValue);
+  return Math.max(min, Math.min(max, parsed));
+}

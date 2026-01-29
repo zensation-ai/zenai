@@ -25,7 +25,7 @@ import {
   sendMessageWithVision,
   addMessage,
 } from '../services/general-chat';
-import { isValidUUID } from '../utils/validation';
+import { isValidUUID, toInt, toIntBounded } from '../utils/validation';
 import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
 import { detectChatMode } from '../services/chat-modes';
 import { query } from '../utils/database';
@@ -114,7 +114,7 @@ generalChatRouter.post('/sessions', apiKeyAuth, asyncHandler(async (req: Request
  */
 generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
-  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+  const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
 
   // Validate context
   if (context !== 'personal' && context !== 'work') {
@@ -489,7 +489,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, async (req: 
   const { id } = req.params;
   const { message } = req.body;
   const enableThinking = req.query.enable_thinking !== 'false';
-  const thinkingBudget = parseInt(req.query.thinking_budget as string) || 10000;
+  const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
 
   try {
     // Validate UUID format

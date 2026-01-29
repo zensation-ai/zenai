@@ -12,6 +12,7 @@ import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { toInt } from '../utils/validation';
 
 export const analyticsRouter = Router();
 
@@ -127,25 +128,25 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
     success: true,
     data: {
       summary: {
-        total: parseInt(total.total),
-        active: parseInt(total.active),
-        archived: parseInt(total.archived),
-        lastWeek: parseInt(total.last_week),
-        lastMonth: parseInt(total.last_month),
+        total: toInt(total.total),
+        active: toInt(total.active),
+        archived: toInt(total.archived),
+        lastWeek: toInt(total.last_week),
+        lastMonth: toInt(total.last_month),
       },
       recentActivity: {
-        created: parseInt(recent.created),
-        updated: parseInt(recent.updated),
+        created: toInt(recent.created),
+        updated: toInt(recent.updated),
         period: '24 hours',
       },
       distribution: {
-        byCategory: categoryStats.rows.reduce((acc: Record<string, number>, r: { category: string; count: string }) => ({ ...acc, [r.category]: parseInt(r.count) }), {}),
-        byType: typeStats.rows.reduce((acc: Record<string, number>, r: { type: string; count: string }) => ({ ...acc, [r.type]: parseInt(r.count) }), {}),
-        byPriority: priorityStats.rows.reduce((acc: Record<string, number>, r: { priority: string; count: string }) => ({ ...acc, [r.priority]: parseInt(r.count) }), {}),
+        byCategory: categoryStats.rows.reduce((acc: Record<string, number>, r: { category: string; count: string }) => ({ ...acc, [r.category]: toInt(r.count) }), {}),
+        byType: typeStats.rows.reduce((acc: Record<string, number>, r: { type: string; count: string }) => ({ ...acc, [r.type]: toInt(r.count) }), {}),
+        byPriority: priorityStats.rows.reduce((acc: Record<string, number>, r: { priority: string; count: string }) => ({ ...acc, [r.priority]: toInt(r.count) }), {}),
       },
       dailyTrend: dailyTrend.rows.map((r: { date: string; count: string }) => ({
         date: r.date,
-        count: parseInt(r.count),
+        count: toInt(r.count),
       })),
       generatedAt: new Date().toISOString(),
     },
@@ -211,13 +212,13 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
       period,
       interval: intervalLabel,
       byHour: hourlyResult.rows.map((r: { hour: string; count: string }) => ({
-        hour: parseInt(r.hour),
-        count: parseInt(r.count),
+        hour: toInt(r.hour),
+        count: toInt(r.count),
       })),
       byDayOfWeek: dowResult.rows.map((r: { dow: string; count: string }) => ({
-        day: dayNames[parseInt(r.dow)],
-        dayIndex: parseInt(r.dow),
-        count: parseInt(r.count),
+        day: dayNames[toInt(r.dow)],
+        dayIndex: toInt(r.dow),
+        count: toInt(r.count),
       })),
       insights: generateInsights(hourlyResult.rows, dowResult.rows, dayNames),
     },
@@ -283,9 +284,9 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
     success: true,
     data: {
       avgIdeasPerDay: parseFloat(avgDaily.rows[0]?.avg_per_day || '0').toFixed(2),
-      currentStreak: parseInt(streak.rows[0]?.streak_days || '0'),
+      currentStreak: toInt(streak.rows[0]?.streak_days),
       processing: {
-        totalProcessed: parseInt(processing.rows[0]?.total_processed || '0'),
+        totalProcessed: toInt(processing.rows[0]?.total_processed),
         avgProcessingTime: parseFloat(processing.rows[0]?.avg_processing_time_sec || '0').toFixed(2) + 's',
       },
       period: '30 days',
@@ -307,27 +308,27 @@ function generateInsights(
   // Find peak hour
   if (hourlyData.length > 0) {
     const peakHour = hourlyData.reduce((max, r) =>
-      parseInt(r.count) > parseInt(max.count) ? r : max
+      toInt(r.count) > toInt(max.count) ? r : max
     );
-    insights.push(`Most active hour: ${peakHour.hour}:00 - ${parseInt(peakHour.hour) + 1}:00`);
+    insights.push(`Most active hour: ${peakHour.hour}:00 - ${toInt(peakHour.hour) + 1}:00`);
   }
 
   // Find peak day
   if (dowData.length > 0) {
     const peakDay = dowData.reduce((max, r) =>
-      parseInt(r.count) > parseInt(max.count) ? r : max
+      toInt(r.count) > toInt(max.count) ? r : max
     );
-    insights.push(`Most active day: ${dayNames[parseInt(peakDay.dow)]}`);
+    insights.push(`Most active day: ${dayNames[toInt(peakDay.dow)]}`);
   }
 
   // Calculate weekend vs weekday ratio
   if (dowData.length > 0) {
     const weekendCount = dowData
-      .filter(r => [0, 6].includes(parseInt(r.dow)))
-      .reduce((sum, r) => sum + parseInt(r.count), 0);
+      .filter(r => [0, 6].includes(toInt(r.dow)))
+      .reduce((sum, r) => sum + toInt(r.count), 0);
     const weekdayCount = dowData
-      .filter(r => ![0, 6].includes(parseInt(r.dow)))
-      .reduce((sum, r) => sum + parseInt(r.count), 0);
+      .filter(r => ![0, 6].includes(toInt(r.dow)))
+      .reduce((sum, r) => sum + toInt(r.count), 0);
 
     if (weekdayCount > 0) {
       const ratio = (weekendCount / weekdayCount * 100).toFixed(0);
