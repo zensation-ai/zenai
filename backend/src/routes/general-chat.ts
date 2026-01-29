@@ -567,26 +567,47 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
     // Collect response for storage
     let fullResponse = '';
     let thinkingContent = '';
+    let sseBuffer = ''; // Buffer for partial SSE events
 
-    // Create custom event handler to collect content
+    // Create custom event handler to collect content with proper SSE parsing
     const originalWrite = res.write.bind(res);
     res.write = function(chunk: any, ...args: any[]): boolean {
-      // Parse SSE event to collect content
-      const chunkStr = chunk.toString();
-      const eventMatch = chunkStr.match(/event: (\w+)\ndata: (.+)\n/);
-      if (eventMatch) {
-        const [, eventType, dataStr] = eventMatch;
-        try {
-          const data = JSON.parse(dataStr);
-          if (eventType === 'content_delta' && data.content) {
-            fullResponse += data.content;
-          } else if (eventType === 'thinking_delta' && data.thinking) {
-            thinkingContent += data.thinking;
+      // Accumulate chunks in buffer for proper SSE parsing
+      sseBuffer += chunk.toString();
+
+      // Process complete SSE events (terminated by \n\n)
+      let eventEnd: number;
+      while ((eventEnd = sseBuffer.indexOf('\n\n')) !== -1) {
+        const eventBlock = sseBuffer.slice(0, eventEnd);
+        sseBuffer = sseBuffer.slice(eventEnd + 2);
+
+        // Parse the event block (format: "event: type\ndata: json")
+        const lines = eventBlock.split('\n');
+        let eventType = '';
+        let dataStr = '';
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            dataStr = line.slice(6);
           }
-        } catch {
-          // Ignore parse errors
+        }
+
+        if (eventType && dataStr) {
+          try {
+            const data = JSON.parse(dataStr);
+            if (eventType === 'content_delta' && data.content) {
+              fullResponse += data.content;
+            } else if (eventType === 'thinking_delta' && data.thinking) {
+              thinkingContent += data.thinking;
+            }
+          } catch {
+            // Ignore parse errors for malformed JSON
+          }
         }
       }
+
       return originalWrite(chunk, ...args);
     };
 
@@ -622,8 +643,13 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
         const errorEvent = `event: error\ndata: ${JSON.stringify({ error: 'Stream failed' })}\n\n`;
         res.write(errorEvent);
         res.end();
-      } catch {
-        // Ignore if we can't write
+      } catch (writeError) {
+        // Log the write failure for debugging
+        logger.debug('Failed to write SSE error event', {
+          sessionId: id,
+          originalError: error instanceof Error ? error.message : 'Unknown',
+          writeError: writeError instanceof Error ? writeError.message : 'Unknown',
+        });
       }
     }
   }

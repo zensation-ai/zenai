@@ -18,6 +18,7 @@
  * - Manages memory lifecycle
  */
 
+import { createHash } from 'crypto';
 import { AIContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
@@ -138,6 +139,8 @@ const CONFIG = {
   DEFAULT_MAX_CONTEXT_TOKENS: 8000,
   /** Approximate chars per token (for estimation) */
   CHARS_PER_TOKEN: 4,
+  /** Max concurrent embedding API calls */
+  MAX_EMBEDDING_CONCURRENCY: 5,
   /** Priority weights for different memory types */
   PRIORITY_WEIGHTS: {
     working: 1.0,      // Highest priority (current task)
@@ -147,6 +150,50 @@ const CONFIG = {
     pre_retrieved: 0.5, // Related documents
   },
 };
+
+/**
+ * Process items with limited concurrency to avoid API rate limits
+ */
+async function processWithConcurrency<T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  maxConcurrency: number
+): Promise<R[]> {
+  const results: R[] = [];
+  const executing: Promise<void>[] = [];
+
+  for (const item of items) {
+    const promise = processor(item).then((result) => {
+      results.push(result);
+    });
+
+    executing.push(promise);
+
+    if (executing.length >= maxConcurrency) {
+      await Promise.race(executing);
+      // Remove completed promises
+      const completedIndices: number[] = [];
+      for (let i = 0; i < executing.length; i++) {
+        // Check if promise is settled by racing with already-resolved promise
+        const isSettled = await Promise.race([
+          executing[i].then(() => true),
+          Promise.resolve(false)
+        ]);
+        if (isSettled) {
+          completedIndices.push(i);
+        }
+      }
+      // Remove in reverse order to maintain indices
+      for (let i = completedIndices.length - 1; i >= 0; i--) {
+        executing.splice(completedIndices[i], 1);
+      }
+    }
+  }
+
+  // Wait for remaining promises
+  await Promise.all(executing);
+  return results;
+}
 
 // ===========================================
 // Memory Coordinator
@@ -226,8 +273,9 @@ export class MemoryCoordinator {
       minRelevance = CONFIG.DEFAULT_MIN_RELEVANCE,
     } = options;
 
-    // Check semantic cache first
-    const cacheKey = `context:${sessionId}:${userQuery.substring(0, 100)}`;
+    // Check semantic cache first (use hash of full query to avoid collisions)
+    const queryHash = createHash('sha256').update(userQuery).digest('hex').substring(0, 16);
+    const cacheKey = `context:${sessionId}:${queryHash}`;
     const cached = await semanticCache.get(cacheKey) as PreparedContext | null;
     if (cached) {
       logger.debug('Using cached prepared context', { sessionId });
@@ -869,7 +917,14 @@ export class MemoryCoordinator {
   private calculateDecay(timestamp: number | undefined, decayRate: number = 0.05): number {
     if (!timestamp) {return 1.0;}
 
-    const ageMs = Date.now() - timestamp;
+    const now = Date.now();
+    // Handle future timestamps (data corruption) - no decay for future items
+    if (timestamp > now) {
+      logger.debug('Future timestamp detected in decay calculation', { timestamp, now });
+      return 1.0;
+    }
+
+    const ageMs = now - timestamp;
     const ageHours = ageMs / (1000 * 60 * 60);
 
     // Exponential decay: relevance decreases over time
@@ -922,8 +977,10 @@ export class MemoryCoordinator {
       }
 
       // Score each part based on semantic similarity, decay, and type
-      const scoredParts = await Promise.all(
-        parts.map(async part => {
+      // Use limited concurrency to avoid API rate limits
+      const scoredParts = await processWithConcurrency(
+        parts,
+        async (part) => {
           try {
             const partEmbedding = await generateEmbedding(part.content);
             const similarity = cosineSimilarity(queryEmbedding, partEmbedding);
@@ -932,7 +989,7 @@ export class MemoryCoordinator {
             const typeBoost = this.getTypeBoost(part.type);
 
             // Calculate time decay (if timestamp available in metadata)
-            const timestamp = (part as any).timestamp || Date.now();
+            const timestamp = (part as ContextPart & { timestamp?: number }).timestamp || Date.now();
             const decay = this.calculateDecay(timestamp);
 
             // Calculate position penalty for very long context
@@ -961,7 +1018,8 @@ export class MemoryCoordinator {
               relevance: part.relevance * this.getTypeBoost(part.type),
             };
           }
-        })
+        },
+        CONFIG.MAX_EMBEDDING_CONCURRENCY
       );
 
       // Calculate dynamic threshold based on distribution

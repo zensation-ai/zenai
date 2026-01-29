@@ -611,7 +611,20 @@ export class WorkingMemoryService {
       if (result.rows.length === 0) {return null;}
 
       const row = result.rows[0];
-      const slots = JSON.parse(row.slots || '[]');
+      let slots: any[] = [];
+      try {
+        slots = JSON.parse(row.slots || '[]');
+        if (!Array.isArray(slots)) {
+          logger.warn('Working memory slots is not an array, resetting', { sessionId });
+          slots = [];
+        }
+      } catch (parseError) {
+        logger.warn('Failed to parse working memory slots, resetting', {
+          sessionId,
+          error: parseError instanceof Error ? parseError.message : 'Unknown',
+        });
+        slots = [];
+      }
 
       const state: WorkingMemoryState = {
         sessionId: row.session_id,
