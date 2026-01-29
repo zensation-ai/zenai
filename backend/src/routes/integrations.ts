@@ -13,8 +13,25 @@ import * as slack from '../services/slack';
 import { apiKeyAuth, requireScope, optionalAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { toInt } from '../utils/validation';
 
 export const integrationsRouter = Router();
+
+// Helper to get redirect URI with production safety check
+function getRedirectUri(provider: 'microsoft' | 'slack'): string {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const envKey = provider === 'microsoft' ? 'MICROSOFT_REDIRECT_URI' : 'SLACK_REDIRECT_URI';
+  const uri = process.env[envKey];
+
+  if (!uri && isProduction) {
+    throw new ValidationError(
+      `${envKey} environment variable is required in production`
+    );
+  }
+
+  // Only use localhost fallback in non-production
+  return uri || `http://localhost:3000/api/integrations/${provider}/callback`;
+}
 
 // ==========================================
 // General Integration Management
@@ -162,7 +179,7 @@ integrationsRouter.patch('/:provider', apiKeyAuth, requireScope('write'), asyncH
  */
 integrationsRouter.get('/microsoft/auth', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const clientId = process.env.MICROSOFT_CLIENT_ID;
-  const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:3000/api/integrations/microsoft/callback';
+  const redirectUri = getRedirectUri('microsoft');
 
   if (!clientId) {
     throw new ValidationError('Microsoft not configured. Set MICROSOFT_CLIENT_ID environment variable');
@@ -204,7 +221,7 @@ integrationsRouter.get('/microsoft/callback', asyncHandler(async (req: Request, 
 
   const clientId = process.env.MICROSOFT_CLIENT_ID!;
   const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
-  const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:3000/api/integrations/microsoft/callback';
+  const redirectUri = getRedirectUri('microsoft');
 
   // Exchange code for tokens
   const tokens = await microsoft.exchangeCodeForTokens(
@@ -283,8 +300,8 @@ integrationsRouter.post('/microsoft/sync', apiKeyAuth, requireScope('write'), as
  * Get upcoming synced calendar events
  */
 integrationsRouter.get('/microsoft/events', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const hours = parseInt(req.query.hours as string) || 24;
-  const limit = parseInt(req.query.limit as string) || 10;
+  const hours = toInt(req.query.hours as string, 24);
+  const limit = toInt(req.query.limit as string, 10);
 
   const events = await microsoft.getUpcomingEvents(hours, limit);
 
@@ -318,7 +335,7 @@ integrationsRouter.delete('/microsoft', apiKeyAuth, requireScope('write'), async
  */
 integrationsRouter.get('/slack/auth', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const clientId = process.env.SLACK_CLIENT_ID;
-  const redirectUri = process.env.SLACK_REDIRECT_URI || 'http://localhost:3000/api/integrations/slack/callback';
+  const redirectUri = getRedirectUri('slack');
 
   if (!clientId) {
     throw new ValidationError('Slack not configured. Set SLACK_CLIENT_ID environment variable');
@@ -351,7 +368,7 @@ integrationsRouter.get('/slack/callback', asyncHandler(async (req: Request, res:
 
   const clientId = process.env.SLACK_CLIENT_ID!;
   const clientSecret = process.env.SLACK_CLIENT_SECRET!;
-  const redirectUri = process.env.SLACK_REDIRECT_URI || 'http://localhost:3000/api/integrations/slack/callback';
+  const redirectUri = getRedirectUri('slack');
 
   const tokens = await slack.exchangeCodeForTokens(
     code as string,

@@ -288,78 +288,100 @@ export class SandboxExecutor implements ExecutorProvider {
 
       let stdout = '';
       let stderr = '';
-      let killed = false;
-      let resolved = false;
+      let settled = false; // Track if promise is already settled
+
+      // Helper to prevent double resolution/rejection
+      const settleOnce = <T>(fn: () => T): T | undefined => {
+        if (settled) return undefined;
+        settled = true;
+        return fn();
+      };
 
       // Set up timeout
-      const timer = setTimeout(() => {
-        if (!resolved) {
-          killed = true;
+      const timer = setTimeout(async () => {
+        settleOnce(() => {
           logger.warn('Execution timeout', { executionId, timeout });
 
           // Kill the process
           proc.kill('SIGKILL');
 
-          // Also try to stop the container
-          this.forceStopContainer(executionId);
+          // Stop the container asynchronously (don't block rejection)
+          this.forceStopContainer(executionId).catch((err) => {
+            logger.debug('Container cleanup after timeout failed', { executionId, error: err });
+          });
 
           reject(new Error('timeout'));
-        }
+        });
       }, timeout);
 
-      // Collect stdout
+      // Collect stdout with strict limit
       proc.stdout.on('data', (data: Buffer) => {
         const chunk = data.toString();
-        if (stdout.length < MAX_OUTPUT_LENGTH * 1.1) {
-          stdout += chunk;
+        if (stdout.length < MAX_OUTPUT_LENGTH) {
+          stdout += chunk.slice(0, MAX_OUTPUT_LENGTH - stdout.length);
         }
       });
 
-      // Collect stderr
+      // Collect stderr with strict limit
       proc.stderr.on('data', (data: Buffer) => {
         const chunk = data.toString();
-        if (stderr.length < MAX_OUTPUT_LENGTH * 1.1) {
-          stderr += chunk;
+        if (stderr.length < MAX_OUTPUT_LENGTH) {
+          stderr += chunk.slice(0, MAX_OUTPUT_LENGTH - stderr.length);
         }
       });
 
       // Handle completion
       proc.on('close', (code) => {
         clearTimeout(timer);
-        if (!resolved && !killed) {
-          resolved = true;
+        settleOnce(() => {
           resolve({
             stdout,
             stderr,
             exitCode: code ?? -1,
           });
-        }
+        });
       });
 
       // Handle errors
       proc.on('error', (err) => {
         clearTimeout(timer);
-        if (!resolved) {
-          resolved = true;
+        settleOnce(() => {
           reject(err);
-        }
+        });
       });
     });
   }
 
   /**
    * Force stop a container by execution ID
+   * Returns a promise that resolves when cleanup is complete
    */
-  private forceStopContainer(executionId: string): void {
+  private async forceStopContainer(executionId: string): Promise<void> {
     const containerName = `${CONTAINER_PREFIX}-${executionId.slice(0, 8)}`;
 
-    spawn('docker', ['kill', containerName], {
-      stdio: 'ignore',
+    // Kill container
+    await new Promise<void>((resolve) => {
+      const killProc = spawn('docker', ['kill', containerName], {
+        stdio: 'ignore',
+      });
+      killProc.on('close', () => resolve());
+      killProc.on('error', () => resolve()); // Ignore errors (container may not exist)
+      // Timeout after 5 seconds
+      setTimeout(() => resolve(), 5000);
     });
 
-    spawn('docker', ['rm', '-f', containerName], {
-      stdio: 'ignore',
+    // Remove container
+    await new Promise<void>((resolve) => {
+      const rmProc = spawn('docker', ['rm', '-f', containerName], {
+        stdio: 'ignore',
+      });
+      rmProc.on('close', () => resolve());
+      rmProc.on('error', () => resolve()); // Ignore errors
+      // Timeout after 5 seconds
+      setTimeout(() => resolve(), 5000);
     });
+
+    logger.debug('Container force stopped', { executionId, containerName });
   }
 
   /**

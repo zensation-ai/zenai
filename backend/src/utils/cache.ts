@@ -74,9 +74,11 @@ function getClient(): Redis | null {
           redisErrorLogged = true;
         }
       });
-    } catch (_error) {
+    } catch (initError) {
       if (!redisErrorLogged) {
-        logger.warn('Redis initialization failed, caching disabled');
+        logger.warn('Redis initialization failed, caching disabled', {
+          error: initError instanceof Error ? initError.message : 'Unknown',
+        });
         redisErrorLogged = true;
       }
       redis = null;

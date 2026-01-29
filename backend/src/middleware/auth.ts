@@ -35,6 +35,7 @@ let memoryRateLimiterEnabled = false;
 let consecutiveDbErrors = 0;
 const MAX_CONSECUTIVE_ERRORS = 3;
 const MEMORY_CLEANUP_INTERVAL = 60 * 1000; // 1 minute
+const MAX_RATE_LIMIT_ENTRIES = 10000; // Prevent unbounded growth
 
 // Clean up old entries periodically
 setInterval(() => {
@@ -53,6 +54,19 @@ function checkMemoryRateLimit(key: string, limit: number, windowMs: number): { a
   const now = Date.now();
   const windowStart = Math.floor(now / windowMs) * windowMs;
   const cacheKey = `${key}:${windowStart}`;
+
+  // Cleanup when approaching max entries to prevent unbounded growth
+  if (memoryRateLimits.size >= MAX_RATE_LIMIT_ENTRIES) {
+    // Remove oldest entries (first 10%)
+    const entriesToRemove = Math.floor(MAX_RATE_LIMIT_ENTRIES * 0.1);
+    const iterator = memoryRateLimits.keys();
+    for (let i = 0; i < entriesToRemove; i++) {
+      const keyToRemove = iterator.next().value;
+      if (keyToRemove) {
+        memoryRateLimits.delete(keyToRemove);
+      }
+    }
+  }
 
   let entry = memoryRateLimits.get(cacheKey);
 
@@ -212,20 +226,44 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     // Verify the key against stored hash(es)
     let keyData = null;
 
-    // SECURITY: Always verify hash, even for UUID-based keys
+    // SECURITY: Always verify hash for all key types
     for (const row of result.rows) {
-      // For UUID lookup, the apiKey IS the ID, so we need a different check
       if (isUUID) {
-        // UUID-based auth: verify row exists and is valid
-        // Note: This is less secure - we can't verify the actual key
-        // Log a security warning and allow with reduced trust
-        keyData = row;
-        logger.warn('UUID auth bypassed hash verification', {
-          operation: 'apiKeyAuth',
-          keyId: row.id,
-          securityNote: 'Migrate to ab_live_xxx format for full security'
-        });
-        break;
+        // UUID-based auth is DEPRECATED and requires key_hash verification
+        // UUID lookup by ID still requires the stored key_hash to match
+        // Client must provide the full key (UUID + secret), we verify against hash
+        if (!row.key_hash) {
+          logger.error('UUID auth rejected: no key_hash stored', undefined, {
+            operation: 'apiKeyAuth',
+            keyId: row.id,
+            securityNote: 'UUID keys must have key_hash for authentication'
+          });
+          continue; // Skip this row, try next if any
+        }
+        // For UUID keys, require a query parameter or header with the actual secret
+        // This is a security hardening - UUID alone is no longer sufficient
+        const keySecret = req.headers['x-api-key-secret'] as string | undefined;
+        if (!keySecret) {
+          logger.warn('DEPRECATED: UUID-based API key auth rejected - secret required', {
+            operation: 'apiKeyAuth',
+            keyIdPrefix: apiKey.substring(0, 8),
+            securityNote: 'UUID auth requires x-api-key-secret header or migrate to ab_live_xxx format'
+          });
+          return res.status(401).json({
+            error: 'UUID auth requires secret',
+            message: 'UUID-based authentication is deprecated. Provide x-api-key-secret header or migrate to ab_live_xxx format keys.'
+          });
+        }
+        // Verify the secret against stored hash
+        if (await verifyApiKey(keySecret, row.key_hash)) {
+          keyData = row;
+          logger.warn('UUID auth with secret verification successful', {
+            operation: 'apiKeyAuth',
+            keyId: row.id,
+            deprecationNote: 'Please migrate to ab_live_xxx format keys'
+          });
+          break;
+        }
       } else {
         // Standard ab_ key: verify against hash
         if (await verifyApiKey(apiKey, row.key_hash)) {

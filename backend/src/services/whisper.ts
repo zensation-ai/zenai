@@ -86,8 +86,11 @@ async function transcribeWithLocalWhisper(
       if (fs.existsSync(tempInputPath)) {fs.unlinkSync(tempInputPath);}
       if (fs.existsSync(`${tempOutputPath}.txt`)) {fs.unlinkSync(`${tempOutputPath}.txt`);}
       if (fs.existsSync(`${tempOutputPath}.json`)) {fs.unlinkSync(`${tempOutputPath}.json`);}
-    } catch (_e) {
-      // Ignore cleanup errors
+    } catch (cleanupError) {
+      // Log cleanup errors at debug level (non-critical)
+      logger.debug('Whisper temp file cleanup failed', {
+        error: cleanupError instanceof Error ? cleanupError.message : 'Unknown',
+      });
     }
   }
 }
