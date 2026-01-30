@@ -25,16 +25,21 @@ describe('Toast Component', () => {
   });
 
   describe('ToastContainer rendering', () => {
-    it('renders without crashing', () => {
+    it('renders without crashing', async () => {
       render(<ToastContainer />);
-      // Container returns null when no toasts, so we just verify it doesn't crash
-      expect(true).toBe(true);
+      // Wait for effects to settle
+      await waitFor(() => {
+        // Container returns null when no toasts, so we just verify it doesn't crash
+        expect(true).toBe(true);
+      });
     });
 
-    it('initially shows no toasts', () => {
+    it('initially shows no toasts', async () => {
       render(<ToastContainer />);
-      // Container returns null when empty
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      // Wait for effects to settle, then verify no toasts
+      await waitFor(() => {
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      });
     });
   });
 
