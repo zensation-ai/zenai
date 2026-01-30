@@ -415,8 +415,9 @@ apiKeysRouter.get('/security/summary', apiKeyAuth, requireScope('admin'), asyncH
 apiKeysRouter.get('/security/expiring', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const daysAhead = parseInt(req.query.days as string) || 7;
 
+  // SECURITY FIX: Generic error message to prevent information disclosure
   if (daysAhead < 1 || daysAhead > 90) {
-    throw new ValidationError('Days must be between 1 and 90.');
+    throw new ValidationError('Invalid days parameter.');
   }
 
   const expiringKeys = await getExpiringKeys(daysAhead);
@@ -454,8 +455,9 @@ apiKeysRouter.get('/security/expired', apiKeyAuth, requireScope('admin'), asyncH
 apiKeysRouter.get('/security/unused', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const daysUnused = parseInt(req.query.days as string) || 30;
 
+  // SECURITY FIX: Generic error message to prevent information disclosure
   if (daysUnused < 1 || daysUnused > 365) {
-    throw new ValidationError('Days must be between 1 and 365.');
+    throw new ValidationError('Invalid days parameter.');
   }
 
   const unusedKeys = await getUnusedKeys(daysUnused);

@@ -82,10 +82,11 @@ export async function createMeeting(data: {
 }): Promise<Meeting> {
   const id = uuidv4();
 
+  // SECURITY: Explicit column selection instead of RETURNING *
   const result = await query(
     `INSERT INTO meetings (id, company_id, title, date, duration_minutes, participants, location, meeting_type)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING *`,
+     RETURNING id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at`,
     [
       id,
       data.company_id || 'personal',
@@ -136,9 +137,11 @@ export async function getMeetings(filters?: {
   const limit = filters?.limit || 20;
   const offset = filters?.offset || 0;
 
+  // SECURITY: Explicit column selection instead of SELECT *
   const [meetingsResult, countResult] = await Promise.all([
     query(
-      `SELECT * FROM meetings ${whereClause} ORDER BY date DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      `SELECT id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at
+       FROM meetings ${whereClause} ORDER BY date DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     ),
     query(`SELECT COUNT(*) as total FROM meetings ${whereClause}`, params),
@@ -154,7 +157,12 @@ export async function getMeetings(filters?: {
  * Get a single meeting by ID
  */
 export async function getMeeting(id: string): Promise<Meeting | null> {
-  const result = await query('SELECT * FROM meetings WHERE id = $1', [id]);
+  // SECURITY: Explicit column selection instead of SELECT *
+  const result = await query(
+    `SELECT id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at
+     FROM meetings WHERE id = $1`,
+    [id]
+  );
   return result.rows.length > 0 ? formatMeeting(result.rows[0]) : null;
 }
 
@@ -162,8 +170,10 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
  * Update meeting status
  */
 export async function updateMeetingStatus(id: string, status: Meeting['status']): Promise<Meeting | null> {
+  // SECURITY: Explicit column selection instead of RETURNING *
   const result = await query(
-    'UPDATE meetings SET status = $2, updated_at = NOW() WHERE id = $1 RETURNING *',
+    `UPDATE meetings SET status = $2, updated_at = NOW() WHERE id = $1
+     RETURNING id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at`,
     [id, status]
   );
   return result.rows.length > 0 ? formatMeeting(result.rows[0]) : null;
@@ -249,8 +259,11 @@ STRUKTURIERTE NOTIZEN:`;
  * Get notes for a meeting
  */
 export async function getMeetingNotes(meetingId: string): Promise<MeetingNotes | null> {
+  // SECURITY: Explicit column selection instead of SELECT * (excluding embedding for performance)
   const result = await query(
-    'SELECT * FROM meeting_notes WHERE meeting_id = $1',
+    `SELECT id, meeting_id, raw_transcript, structured_summary, key_decisions, action_items,
+            topics_discussed, follow_ups, sentiment, created_at
+     FROM meeting_notes WHERE meeting_id = $1`,
     [meetingId]
   );
 
@@ -284,10 +297,13 @@ export async function searchMeetings(
     return [];
   }
 
+  // SECURITY: Explicit column selection instead of SELECT *
   const result = await query(
     `SELECT
-      mn.*,
-      m.*,
+      mn.id, mn.meeting_id, mn.raw_transcript, mn.structured_summary, mn.key_decisions,
+      mn.action_items, mn.topics_discussed, mn.follow_ups, mn.sentiment, mn.created_at,
+      m.id as m_id, m.company_id, m.title, m.date, m.duration_minutes, m.participants,
+      m.location, m.meeting_type, m.status, m.created_at as m_created_at, m.updated_at,
       mn.embedding <-> $1 as distance
      FROM meeting_notes mn
      JOIN meetings m ON mn.meeting_id = m.id
@@ -298,7 +314,19 @@ export async function searchMeetings(
   );
 
   return result.rows.map((row) => ({
-    meeting: formatMeeting(row),
+    meeting: formatMeeting({
+      id: row.m_id,
+      company_id: row.company_id,
+      title: row.title,
+      date: row.date,
+      duration_minutes: row.duration_minutes,
+      participants: row.participants,
+      location: row.location,
+      meeting_type: row.meeting_type,
+      status: row.status,
+      created_at: row.m_created_at,
+      updated_at: row.updated_at,
+    }),
     notes: {
       id: row.id,
       meeting_id: row.meeting_id,
@@ -331,8 +359,11 @@ export async function getAllActionItems(filters?: {
     params.push(filters.company_id);
   }
 
+  // SECURITY: Explicit column selection instead of SELECT *
   const result = await query(
-    `SELECT mn.id as notes_id, mn.action_items, m.*
+    `SELECT mn.id as notes_id, mn.action_items,
+            m.id, m.company_id, m.title, m.date, m.duration_minutes, m.participants,
+            m.location, m.meeting_type, m.status, m.created_at, m.updated_at
      FROM meeting_notes mn
      JOIN meetings m ON mn.meeting_id = m.id
      ${whereClause}

@@ -56,7 +56,15 @@ export interface InteractionEvent {
  * Get the user profile
  */
 export async function getUserProfile(profileId: string = 'default'): Promise<UserProfile> {
-  const result = await query('SELECT * FROM user_profile WHERE id = $1', [profileId]);
+  // SECURITY: Explicit column selection instead of SELECT *
+  const result = await query(
+    `SELECT id, preferred_categories, preferred_types, topic_interests, active_hours,
+            productivity_patterns, total_ideas, total_meetings, avg_ideas_per_day,
+            priority_keywords, auto_priority_enabled, thinking_patterns, language_style,
+            created_at, updated_at
+     FROM user_profile WHERE id = $1`,
+    [profileId]
+  );
 
   if (result.rows.length === 0) {
     // Create default profile if it doesn't exist

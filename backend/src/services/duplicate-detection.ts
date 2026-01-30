@@ -207,9 +207,10 @@ export async function mergeIdeas(
 ): Promise<{ success: boolean; message: string }> {
   try {
     // Get both ideas
+    // SECURITY: Explicit column selection instead of SELECT *
     const [primary, secondary] = await Promise.all([
-      queryContext(context, `SELECT * FROM ideas WHERE id = $1`, [primaryId]),
-      queryContext(context, `SELECT * FROM ideas WHERE id = $1`, [secondaryId]),
+      queryContext(context, `SELECT id, content, keywords, next_steps FROM ideas WHERE id = $1`, [primaryId]),
+      queryContext(context, `SELECT id, content, keywords, next_steps FROM ideas WHERE id = $1`, [secondaryId]),
     ]);
 
     if (primary.rows.length === 0 || secondary.rows.length === 0) {
