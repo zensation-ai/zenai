@@ -488,10 +488,12 @@ generalChatRouter.post(
 generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
-  const enableThinking = req.query.enable_thinking !== 'false';
-  const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
 
   try {
+    // Parse parameters inside try block to catch any parsing errors
+    const enableThinking = req.query.enable_thinking !== 'false';
+    const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
+
     // Validate UUID format
     if (!isValidUUID(id)) {
       res.status(400).json({ success: false, error: 'Invalid session ID format' });
