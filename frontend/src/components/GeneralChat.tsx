@@ -186,6 +186,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         formData.append('message', messageContent);
         imagesToSend.forEach(img => formData.append('images', img));
 
+        // RELIABILITY FIX: Add timeout for image processing to prevent infinite loading
         const res = await axios.post(
           `/api/chat/sessions/${currentSessionId}/messages/vision`,
           formData,
@@ -193,6 +194,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
+            timeout: 120000, // 2 minute timeout for image processing
           }
         );
 

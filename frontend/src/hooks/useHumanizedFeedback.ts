@@ -131,6 +131,15 @@ export function useHumanizedFeedback(config: HumanizedFeedbackConfig = {}) {
 
   // Refs
   const lastPraiseRef = useRef<string | null>(null);
+  const isMountedRef = useRef<boolean>(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // ============================================
   // PROGRESS TRACKING
@@ -206,9 +215,11 @@ export function useHumanizedFeedback(config: HumanizedFeedbackConfig = {}) {
       const praise = getProgressPraise(progress);
       if (praise && praise !== lastPraiseRef.current) {
         lastPraiseRef.current = praise;
-        // Zeige Lob nach kurzer Verzögerung
+        // MEMORY FIX: Check mounted state before triggering after timeout
         setTimeout(() => {
-          neuroFeedback.triggerInsight(praise);
+          if (isMountedRef.current) {
+            neuroFeedback.triggerInsight(praise);
+          }
         }, 2800);
       }
     }
