@@ -269,7 +269,8 @@
 }
 
 .context-step input::placeholder {
-  color: var(--text-tertiary, #6b7280);
+  color: var(--text-muted, #5a6d7a);
+  opacity: 1;
 }
 
 /* Goals Step */

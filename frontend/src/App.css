@@ -716,16 +716,17 @@
 }
 
 .nav-button.active {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.25) 0%, rgba(255, 90, 42, 0.3) 100%);
-  color: #ffb08a;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.22) 0%, rgba(255, 90, 42, 0.28) 100%);
+  color: #ffc4a3;
   font-weight: 600;
-  border-color: rgba(255, 107, 53, 0.5);
-  box-shadow: 0 2px 12px rgba(255, 107, 53, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 107, 53, 0.45);
+  box-shadow: 0 2px 12px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .nav-button.active:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.35) 0%, rgba(255, 90, 42, 0.4) 100%);
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.32) 0%, rgba(255, 90, 42, 0.38) 100%);
+  color: #ffd4bb;
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .nav-button.incubator-nav {

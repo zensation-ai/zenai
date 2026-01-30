@@ -129,7 +129,8 @@
 }
 
 .quick-input-container textarea::placeholder {
-  color: #7a8fa0;
+  color: var(--text-muted, #7a8fa0);
+  opacity: 1;
 }
 
 .submit-thought-button {
