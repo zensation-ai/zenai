@@ -75,6 +75,27 @@ BEGIN
             ON %I.ideas USING GIN(metadata)
         ', schema_name, schema_name);
 
+        -- Composite index for context + is_archived (common filter pattern)
+        EXECUTE format('
+            CREATE INDEX IF NOT EXISTS idx_%I_ideas_context_archived
+            ON %I.ideas(context, is_archived)
+            WHERE is_archived = false
+        ', schema_name, schema_name);
+
+        -- Index for thought_history triaged_at queries
+        EXECUTE format('
+            CREATE INDEX IF NOT EXISTS idx_%I_thought_history_triaged
+            ON %I.thought_history(idea_id, triaged_at DESC)
+            WHERE triaged_at IS NOT NULL
+        ', schema_name, schema_name);
+
+        -- Index for business_contexts active lookup
+        EXECUTE format('
+            CREATE INDEX IF NOT EXISTS idx_%I_business_contexts_active
+            ON %I.business_contexts(context, is_active)
+            WHERE is_active = true
+        ', schema_name, schema_name);
+
         -- ==========================================
         -- IDEA_RELATIONSHIPS TABLE INDEXES
         -- ==========================================

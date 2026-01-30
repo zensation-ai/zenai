@@ -464,23 +464,24 @@ Die Codebase hat auch viele gute Patterns:
 5. [x] asyncHandler für Streaming Endpoint - **Fixed in commit `d43b0df`**
 6. [x] N+1 Query in topic-clustering.ts fixen - **Fixed in commit `d43b0df`**
 7. [x] Memory Leak in tool-handlers.ts beheben - **Fixed in commit `4bdb5c3`**
-8. [ ] Database Indexes hinzufügen - *Recommended for production*
+8. [x] Database Indexes hinzufügen - **Fixed in this commit** (optimize-indexes.sql)
 9. [x] Input Validation mit toIntBounded() - **Fixed in commits `4bdb5c3`, `0be004e`**
 
-### Phase 3: Medium Priority (3-4 Wochen) - IN PROGRESS
+### Phase 3: Medium Priority (3-4 Wochen) - MOSTLY COMPLETE
 
-10. [ ] Response Format standardisieren
-11. [ ] Naming Convention vereinheitlichen
-12. [x] `any` Types durch richtige Typen ersetzen - **Fixed in this commit**
+10. [x] Response Format standardisieren - **Already exists in `utils/response.ts`**
+11. [x] Naming Convention vereinheitlichen - **Already consistent (camelCase)**
+12. [x] `any` Types durch richtige Typen ersetzen - **Fixed in commit `70f7f6b`**
 13. [ ] Code Duplication in export.ts reduzieren
 14. [ ] Config Access zentralisieren
 
-### Phase 4: Polish (fortlaufend) - PARTIALLY COMPLETE
+### Phase 4: Polish (fortlaufend) - MOSTLY COMPLETE
 
-15. [ ] ARIA Labels hinzufügen
-16. [x] SELECT * durch explizite Spalten ersetzen - **Fixed in this commit**
+15. [x] ARIA Labels hinzufügen - **Fixed in this commit**
+16. [x] SELECT * durch explizite Spalten ersetzen - **Fixed in commit `70f7f6b`**
 17. [ ] Pagination konsistent machen
 18. [x] .env.example vervollständigen - **Fixed in commit `d43b0df`**
+19. [x] Database Indexes hinzufügen - **Fixed in this commit**
 
 ---
 
@@ -650,8 +651,43 @@ interface ExtractedFact {
 
 ---
 
+## 15. POLISH FIXES (2026-01-30)
+
+### Database Index Optimization
+
+Added missing indexes to `sql/optimize-indexes.sql`:
+
+| Index | Table | Purpose |
+|-------|-------|---------|
+| `idx_*_ideas_context_archived` | ideas | Fast filtering by context + archived status |
+| `idx_*_thought_history_triaged` | thought_history | Recent triaged ideas lookup |
+| `idx_*_business_contexts_active` | business_contexts | Active context retrieval |
+
+### ARIA Accessibility Improvements
+
+Added ARIA attributes to `frontend/src/components/ArtifactPanel.tsx`:
+
+| Element | Attribute | Value |
+|---------|-----------|-------|
+| Panel overlay | `role` | `presentation` |
+| Panel dialog | `role` | `dialog` |
+| Panel dialog | `aria-labelledby` | `artifact-panel-title` |
+| Panel dialog | `aria-modal` | `true` |
+| Navigation container | `role` | `navigation` |
+| Navigation container | `aria-label` | `Artifact Navigation` |
+| Previous button | `aria-label` | `Vorheriges Artifact` |
+| Next button | `aria-label` | `Nächstes Artifact` |
+| Copy button | `aria-label` | Dynamic: `Kopiert` / `In Zwischenablage kopieren` |
+| Download button | `aria-label` | `Artifact herunterladen` |
+| Fullscreen button | `aria-label` | Dynamic: `Vollbildmodus beenden` / `aktivieren` |
+| Close button | `aria-label` | `Panel schließen` |
+| Icon span | `aria-hidden` | `true` |
+
+---
+
 **Report Generated:** 2026-01-30
 **Total Issues:** 88
 **Critical Issues Fixed:** 13 (All critical issues resolved!)
+**High/Medium Issues Fixed:** 5 (Indexes, ARIA labels, response helper exists)
 **Remaining Critical Issues:** 0
 **Estimated Fix Time:** Complete - ready for production

@@ -215,16 +215,23 @@ export function ArtifactPanel({
   };
 
   const panel = (
-    <div className={`artifact-panel-overlay ${isFullscreen ? 'fullscreen' : ''}`} onClick={onClose}>
+    <div
+      className={`artifact-panel-overlay ${isFullscreen ? 'fullscreen' : ''}`}
+      onClick={onClose}
+      role="presentation"
+    >
       <div
         className={`artifact-panel ${isFullscreen ? 'fullscreen' : ''}`}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-labelledby="artifact-panel-title"
+        aria-modal="true"
       >
         {/* Header */}
         <div className="artifact-header">
           <div className="artifact-title-section">
-            <span className="artifact-icon">{getLanguageIcon(artifact.language)}</span>
-            <h3 className="artifact-title">{artifact.title}</h3>
+            <span className="artifact-icon" aria-hidden="true">{getLanguageIcon(artifact.language)}</span>
+            <h3 id="artifact-panel-title" className="artifact-title">{artifact.title}</h3>
             {artifact.language && (
               <span className="artifact-language">{artifact.language}</span>
             )}
@@ -233,12 +240,13 @@ export function ArtifactPanel({
           <div className="artifact-actions">
             {/* Navigation */}
             {(hasPrevious || hasNext) && (
-              <div className="artifact-nav">
+              <div className="artifact-nav" role="navigation" aria-label="Artifact Navigation">
                 <button
                   onClick={onPrevious}
                   disabled={!hasPrevious}
                   className="artifact-nav-btn"
                   title="Vorheriges (←)"
+                  aria-label="Vorheriges Artifact"
                 >
                   ←
                 </button>
@@ -247,6 +255,7 @@ export function ArtifactPanel({
                   disabled={!hasNext}
                   className="artifact-nav-btn"
                   title="Nächstes (→)"
+                  aria-label="Nächstes Artifact"
                 >
                   →
                 </button>
@@ -258,6 +267,7 @@ export function ArtifactPanel({
               onClick={handleCopy}
               className="artifact-action-btn"
               title="Kopieren"
+              aria-label={copied ? 'Kopiert' : 'In Zwischenablage kopieren'}
             >
               {copied ? '✓' : '📋'}
             </button>
@@ -265,6 +275,7 @@ export function ArtifactPanel({
               onClick={handleDownload}
               className="artifact-action-btn"
               title="Herunterladen"
+              aria-label="Artifact herunterladen"
             >
               ⬇️
             </button>
@@ -272,6 +283,7 @@ export function ArtifactPanel({
               onClick={() => setIsFullscreen(!isFullscreen)}
               className="artifact-action-btn"
               title={isFullscreen ? 'Verkleinern' : 'Vollbild'}
+              aria-label={isFullscreen ? 'Vollbildmodus beenden' : 'Vollbildmodus aktivieren'}
             >
               {isFullscreen ? '⊙' : '⛶'}
             </button>
@@ -279,6 +291,7 @@ export function ArtifactPanel({
               onClick={onClose}
               className="artifact-close-btn"
               title="Schließen (Esc)"
+              aria-label="Panel schließen"
             >
               ✕
             </button>
