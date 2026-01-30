@@ -213,8 +213,8 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
 
         // Create a new AbortController for this streaming request
         const streamAbortController = new AbortController();
-        // Store reference for potential cleanup on unmount
-        const currentAbortRef = abortControllerRef.current;
+        // Store reference for cleanup on unmount
+        abortControllerRef.current = streamAbortController;
 
         try {
           const response = await fetch(`/api/chat/sessions/${currentSessionId}/messages/stream`, {
