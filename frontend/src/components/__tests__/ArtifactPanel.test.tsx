@@ -41,9 +41,7 @@ vi.mock('../Toast', () => ({
 }));
 
 describe('ArtifactPanel Component', () => {
-  const mockClipboard = {
-    writeText: vi.fn().mockResolvedValue(undefined),
-  };
+  const mockWriteText = vi.fn().mockResolvedValue(undefined);
 
   const mockArtifact: Artifact = {
     id: 'test-artifact-1',
@@ -60,7 +58,11 @@ describe('ArtifactPanel Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(navigator, { clipboard: mockClipboard });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: mockWriteText },
+      writable: true,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
@@ -338,7 +340,7 @@ describe('ArtifactPanel Component', () => {
       const copyButton = screen.getByRole('button', { name: /zwischenablage/i });
       await user.click(copyButton);
 
-      expect(mockClipboard.writeText).toHaveBeenCalledWith('print("Hello, World!")');
+      expect(mockWriteText).toHaveBeenCalledWith('print("Hello, World!")');
     });
   });
 

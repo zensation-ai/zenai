@@ -17,13 +17,15 @@ import userEvent from '@testing-library/user-event';
 import { CodeExecutionResult } from '../CodeExecutionResult';
 
 describe('CodeExecutionResult Component', () => {
-  const mockClipboard = {
-    writeText: vi.fn().mockResolvedValue(undefined),
-  };
+  const mockWriteText = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(navigator, { clipboard: mockClipboard });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: mockWriteText },
+      writable: true,
+      configurable: true,
+    });
   });
 
   describe('Basic rendering', () => {
@@ -227,7 +229,7 @@ describe('CodeExecutionResult Component', () => {
       const copyCodeButton = screen.getAllByRole('button', { name: /kopieren/i })[0];
       await user.click(copyCodeButton);
 
-      expect(mockClipboard.writeText).toHaveBeenCalledWith("print('copy me')");
+      expect(mockWriteText).toHaveBeenCalledWith("print('copy me')");
     });
 
     it('copies output to clipboard', async () => {
@@ -245,7 +247,7 @@ describe('CodeExecutionResult Component', () => {
       const copyOutputButton = copyButtons[copyButtons.length - 1];
       await user.click(copyOutputButton);
 
-      expect(mockClipboard.writeText).toHaveBeenCalledWith('hello');
+      expect(mockWriteText).toHaveBeenCalledWith('hello');
     });
 
     it('shows copied confirmation after copying', async () => {
