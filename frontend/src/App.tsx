@@ -22,6 +22,7 @@ import './components/NavDropdown.css';
 import { GeneralChat } from './components/GeneralChat';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
+import { ThemeToggle } from './components/ThemeToggle';
 import { AIProcessingOverlay, type ProcessType } from './components/AIProcessingOverlay';
 import { CommandCenter, type InputMode } from './components/CommandCenter';
 import { safeLocalStorage } from './utils/storage';
@@ -1011,6 +1012,7 @@ function App() {
             </nav>
           </div>
           <div className="header-right">
+            <ThemeToggle className="compact" />
             <PersonaSelector
               context={context}
               selectedPersona={selectedPersona}

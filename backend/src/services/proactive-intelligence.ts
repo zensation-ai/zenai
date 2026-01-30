@@ -451,10 +451,16 @@ async function performWebSearch(
     }
   }
 
-  // TODO: SAP API Integration
+  // SAP API Integration (optional enterprise feature)
+  // Requires: SAP_API_KEY environment variable
+  // Endpoint: SAP API Business Hub (https://api.sap.com)
   if (sources.includes('sap')) {
-    // SAP API Hub Suche (benötigt API Key)
-    logger.debug('SAP search not yet implemented');
+    if (process.env.SAP_API_KEY) {
+      // SAP API Hub search implementation would go here
+      logger.debug('SAP API integration available but not yet implemented');
+    } else {
+      logger.debug('SAP search skipped - no API key configured');
+    }
   }
 
   return results;

@@ -1,0 +1,62 @@
+/**
+ * Theme Toggle Styles
+ */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.theme-toggle:hover {
+  background: var(--surface-hover, var(--glass-bg));
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.theme-toggle:active {
+  transform: translateY(0);
+}
+
+.theme-toggle-icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.theme-toggle-label {
+  font-weight: 500;
+}
+
+/* Compact variant for navbar */
+.theme-toggle.compact {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.theme-toggle.compact .theme-toggle-icon {
+  font-size: 1rem;
+}
+
+/* Icon-only variant */
+.theme-toggle.icon-only {
+  padding: 0.5rem;
+}
+
+.theme-toggle.icon-only .theme-toggle-icon {
+  font-size: 1.25rem;
+}

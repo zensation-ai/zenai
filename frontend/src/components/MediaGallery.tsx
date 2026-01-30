@@ -138,6 +138,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
             className="upload-btn neuro-button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
+            aria-label="Medien hochladen"
           >
             {uploading ? '...' : '📤 Hochladen'}
           </button>
@@ -145,11 +146,13 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       </div>
 
       {/* Filters */}
-      <div className="media-filters">
+      <div className="media-filters" role="group" aria-label="Medienfilter">
         <button
           type="button"
           className={`filter-btn neuro-press-effect ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
+          aria-label="Alle Medien anzeigen"
+          aria-pressed={filter === 'all'}
         >
           Alle ({media.length})
         </button>
@@ -157,6 +160,8 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
           type="button"
           className={`filter-btn neuro-press-effect ${filter === 'image' ? 'active' : ''}`}
           onClick={() => setFilter('image')}
+          aria-label="Nur Bilder anzeigen"
+          aria-pressed={filter === 'image'}
         >
           🖼️ Bilder ({media.filter(m => m.type === 'image').length})
         </button>
@@ -164,6 +169,8 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
           type="button"
           className={`filter-btn neuro-press-effect ${filter === 'video' ? 'active' : ''}`}
           onClick={() => setFilter('video')}
+          aria-label="Nur Videos anzeigen"
+          aria-pressed={filter === 'video'}
         >
           🎬 Videos ({media.filter(m => m.type === 'video').length})
         </button>
@@ -179,6 +186,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
             type="button"
             className="action-btn neuro-button"
             onClick={() => fileInputRef.current?.click()}
+            aria-label="Erste Medien-Datei hochladen"
           >
             📤 Erste Datei hochladen
           </button>
@@ -218,7 +226,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       {selectedMedia && (
         <div className="modal-overlay neuro-focus-mode active" onClick={() => setSelectedMedia(null)}>
           <div className="media-modal liquid-glass neuro-human-fade-in" onClick={e => e.stopPropagation()}>
-            <button type="button" className="close-btn neuro-press-effect" onClick={() => setSelectedMedia(null)}>✕</button>
+            <button type="button" className="close-btn neuro-press-effect" onClick={() => setSelectedMedia(null)} aria-label="Modal schließen">✕</button>
 
             <div className="modal-media">
               {selectedMedia.type === 'image' ? (
