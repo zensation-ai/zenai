@@ -5,6 +5,21 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 // Phase Security Sprint 3: Audit Logging
 import { auditLogger } from '../services/audit-logger';
+// Export utilities (reduces code duplication)
+import {
+  formatDate,
+  escapeCSV,
+  parseJSON,
+  buildFilterClause,
+  renderIdeaToPDF,
+  renderIdeaToMarkdown,
+  generateMarkdownHeader,
+  calculatePriorityStats,
+  capitalize,
+  PRIORITY_COLORS,
+  PRIORITY_EMOJIS,
+  IdeaRow,
+} from '../utils/export-helpers';
 
 export const exportRouter = Router();
 
@@ -14,49 +29,6 @@ export const exportRouter = Router();
 function getContext(req: Request): AIContext {
   const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
   return isValidContext(context) ? context : 'personal';
-}
-
-/**
- * Format date for display
- */
-function formatDate(date: Date | string): string {
-  const d = new Date(date);
-  return d.toLocaleDateString('de-DE', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-/**
- * Escape CSV field (handle commas, quotes, newlines)
- */
-function escapeCSV(field: unknown): string {
-  if (field === null || field === undefined) {return '';}
-  const str = String(field);
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-/**
- * Parse JSON fields safely - returns string array for export formatting
- */
-function parseJSON(field: unknown): string[] {
-  if (!field) {return [];}
-  if (Array.isArray(field)) {return field.map(item => String(item));}
-  if (typeof field === 'string') {
-    try {
-      const parsed = JSON.parse(field);
-      return Array.isArray(parsed) ? parsed.map(item => String(item)) : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
 }
 
 // ============================================
