@@ -22,6 +22,10 @@ beforeAll(() => {
 // Global afterAll - runs once after all tests
 afterAll(async () => {
   // Cleanup any open handles
+  // Clear all timers to prevent leaks
+  jest.clearAllTimers();
+  // Small delay to allow pending microtasks to complete
+  await new Promise(resolve => setImmediate(resolve));
 });
 
 // Export test utilities

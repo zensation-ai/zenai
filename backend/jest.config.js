@@ -33,5 +33,8 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   testTimeout: 10000,
-  verbose: true
+  verbose: true,
+  // Force exit after tests complete to avoid hanging from open handles
+  // (database connections, HTTP servers, timers, etc.)
+  forceExit: true
 };

@@ -157,13 +157,15 @@ describe('GeneralChat Component', () => {
       });
     });
 
-    it('should show loading state', () => {
+    it('should show loading state', async () => {
       // Mock slow API response
       mockedAxios.get.mockImplementation(() => new Promise(() => {}));
 
       render(<GeneralChat context="personal" />);
 
-      expect(screen.getByRole('status')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toBeInTheDocument();
+      });
     });
 
     it('should apply compact class when isCompact is true', async () => {

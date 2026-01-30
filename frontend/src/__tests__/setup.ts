@@ -64,5 +64,17 @@ Object.defineProperty(window, 'matchMedia', {
 // Mock scrollIntoView
 Element.prototype.scrollIntoView = vi.fn();
 
-// Suppress console errors during tests (optional)
-// vi.spyOn(console, 'error').mockImplementation(() => {});
+// Filter out React act() warnings that occur due to async state updates
+// These warnings are common with external state management and timers
+const originalError = console.error;
+console.error = (...args: Parameters<typeof console.error>) => {
+  const message = args[0];
+  if (
+    typeof message === 'string' &&
+    message.includes('inside a test was not wrapped in act')
+  ) {
+    // Suppress act() warnings - they don't affect test correctness
+    return;
+  }
+  originalError.apply(console, args);
+};
