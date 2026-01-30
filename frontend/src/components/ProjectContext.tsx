@@ -185,11 +185,13 @@ export function ProjectContext({
                 }
               }}
               disabled={isLoading}
+              aria-label="Projektpfad eingeben"
             />
             <button
               className="project-analyze-btn"
               onClick={() => analyzeProject(projectPath)}
               disabled={isLoading || !projectPath.trim()}
+              aria-label="Projekt analysieren"
             >
               {isLoading ? '...' : '🔍'}
             </button>
@@ -198,6 +200,7 @@ export function ProjectContext({
                 className="project-clear-btn"
                 onClick={clearProject}
                 title="Projekt entfernen"
+                aria-label="Projekt entfernen"
               >
                 ✕
               </button>

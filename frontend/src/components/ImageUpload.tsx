@@ -308,6 +308,7 @@ export function ImageUpload({
               type="button"
               className="image-upload-clear"
               onClick={clearAll}
+              aria-label="Alle Bilder entfernen"
             >
               Alle entfernen
             </button>

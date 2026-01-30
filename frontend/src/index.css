@@ -973,3 +973,93 @@ select:focus-visible {
   opacity: 0;
   transition: opacity 0.2s ease;
 }
+
+/* ============================================
+   MANUAL THEME OVERRIDE CLASSES
+   Allow user to override system preference
+   ============================================ */
+
+/* Force Light Mode - Override system dark mode preference */
+:root.light-mode {
+  /* Primary Accent - Sunset Orange */
+  --primary: #ff6b35;
+  --primary-dark: #e85a2a;
+  --primary-light: #ff8c5a;
+  --primary-glow: rgba(255, 107, 53, 0.35);
+
+  /* Background - Light theme */
+  --background: #dce5eb;
+  --background-gradient: linear-gradient(
+    145deg,
+    #d5e0e8 0%,
+    #e0e6e2 15%,
+    #e8e5de 30%,
+    #efe8e0 45%,
+    #e6e8ec 60%,
+    #dde6ed 75%,
+    #d8e2ea 100%
+  );
+
+  /* Surfaces - Light glass morphism */
+  --surface: rgba(240, 245, 248, 0.8);
+  --surface-solid: #edf2f5;
+  --glass-bg: rgba(238, 244, 250, 0.78);
+  --glass-border: rgba(180, 205, 225, 0.55);
+  --glass-shadow: rgba(20, 50, 70, 0.15);
+
+  /* Text Colors - Dark for light backgrounds */
+  --text: #1a2e3d;
+  --text-muted: #243a4a;
+  --text-secondary: #3a5567;
+
+  /* Borders */
+  --border: rgba(20, 50, 70, 0.15);
+  --border-light: rgba(20, 50, 70, 0.08);
+}
+
+/* Force Dark Mode - Apply dark theme regardless of system preference */
+:root.dark-mode {
+  /* Primary Accent - adjusted for dark backgrounds */
+  --primary: #ff7a4a;
+  --primary-dark: #ff6b35;
+  --primary-light: #ff9a70;
+  --primary-glow: rgba(255, 122, 74, 0.4);
+
+  /* Background - Dark Petrol Theme */
+  --background: #0d1821;
+  --background-gradient: linear-gradient(
+    145deg,
+    #0d1821 0%,
+    #122230 20%,
+    #152838 40%,
+    #1a2e40 60%,
+    #152838 80%,
+    #0d1821 100%
+  );
+
+  /* Surfaces - Dark glass morphism */
+  --surface: rgba(25, 45, 60, 0.8);
+  --surface-solid: #1a2e40;
+  --glass-bg: rgba(20, 40, 55, 0.85);
+  --glass-border: rgba(80, 120, 150, 0.3);
+  --glass-shadow: rgba(0, 0, 0, 0.4);
+
+  /* Text Colors - Light for dark backgrounds */
+  --text: #e8f0f5;
+  --text-muted: #b8c8d5;
+  --text-secondary: #8aa0b5;
+
+  /* Borders */
+  --border: rgba(100, 150, 180, 0.2);
+  --border-light: rgba(100, 150, 180, 0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 4px 24px rgba(255, 122, 74, 0.4);
+
+  /* Card specific */
+  --card-bg: var(--glass-bg);
+  --hover-bg: rgba(35, 65, 90, 0.88);
+}

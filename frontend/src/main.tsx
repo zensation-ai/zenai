@@ -5,6 +5,7 @@ import App from './App';
 import './index.css';
 import { safeLocalStorage } from './utils/storage';
 import { ConfirmProvider } from './components/ConfirmDialog';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeNative } from './utils/native';
 
 // API configuration from environment
@@ -32,10 +33,39 @@ axios.interceptors.request.use((config) => {
 // Initialize native features (Capacitor)
 initializeNative();
 
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        console.log('[PWA] Service Worker registered:', registration.scope);
+
+        // Check for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New content available, show update notification
+                console.log('[PWA] New content available, refresh to update');
+              }
+            });
+          }
+        });
+      })
+      .catch((error) => {
+        console.error('[PWA] Service Worker registration failed:', error);
+      });
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ConfirmProvider>
-      <App />
-    </ConfirmProvider>
+    <ThemeProvider>
+      <ConfirmProvider>
+        <App />
+      </ConfirmProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );
