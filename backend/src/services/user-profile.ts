@@ -56,7 +56,15 @@ export interface InteractionEvent {
  * Get the user profile
  */
 export async function getUserProfile(profileId: string = 'default'): Promise<UserProfile> {
-  const result = await query('SELECT * FROM user_profile WHERE id = $1', [profileId]);
+  // SECURITY: Explicit column selection instead of SELECT *
+  const result = await query(
+    `SELECT id, preferred_categories, preferred_types, topic_interests, active_hours,
+            productivity_patterns, total_ideas, total_meetings, avg_ideas_per_day,
+            priority_keywords, auto_priority_enabled, thinking_patterns, language_style,
+            created_at, updated_at
+     FROM user_profile WHERE id = $1`,
+    [profileId]
+  );
 
   if (result.rows.length === 0) {
     // Create default profile if it doesn't exist
@@ -128,9 +136,10 @@ async function updateProfileFromInteraction(event: InteractionEvent): Promise<vo
       await incrementPreference(profileId, 'preferred_types', idea.type);
 
       // Update topic interests based on keywords
+      // PERFORMANCE FIX: Batch update instead of N+1 queries
       const keywords = parseJsonbWithDefault<string[]>(idea.keywords, []);
-      for (const keyword of keywords) {
-        await incrementTopicInterest(profileId, keyword);
+      if (keywords.length > 0) {
+        await batchIncrementTopicInterests(profileId, keywords);
       }
 
       // Track active hours
@@ -167,7 +176,7 @@ async function incrementPreference(
 }
 
 /**
- * Increment topic interest
+ * Increment topic interest (single topic)
  */
 async function incrementTopicInterest(profileId: string, topic: string): Promise<void> {
   const normalizedTopic = topic.toLowerCase().trim();
@@ -181,6 +190,41 @@ async function incrementTopicInterest(profileId: string, topic: string): Promise
      updated_at = NOW()
      WHERE id = $1`,
     [profileId, `{${normalizedTopic}}`, normalizedTopic]
+  );
+}
+
+/**
+ * Batch increment topic interests
+ * PERFORMANCE FIX: Single query instead of N queries for N keywords
+ */
+async function batchIncrementTopicInterests(profileId: string, topics: string[]): Promise<void> {
+  if (topics.length === 0) return;
+
+  // Normalize all topics
+  const normalizedTopics = topics.map(t => t.toLowerCase().trim()).filter(t => t.length > 0);
+  if (normalizedTopics.length === 0) return;
+
+  // Build a single UPDATE query that increments all topics at once
+  // Using jsonb_object_agg to merge all increments in one operation
+  const topicUpdates = normalizedTopics.map(topic => `'${topic.replace(/'/g, "''")}', 1`).join(', ');
+
+  await query(
+    `UPDATE user_profile
+     SET topic_interests = (
+       SELECT jsonb_object_agg(
+         key,
+         COALESCE((topic_interests->>key)::int, 0) + COALESCE((new_values->>key)::int, 0)
+       )
+       FROM (
+         SELECT key FROM jsonb_object_keys(COALESCE(topic_interests, '{}')) AS key
+         UNION
+         SELECT key FROM jsonb_object_keys(jsonb_build_object(${topicUpdates})) AS key
+       ) AS keys,
+       LATERAL (SELECT jsonb_build_object(${topicUpdates}) AS new_values) nv
+     ),
+     updated_at = NOW()
+     WHERE id = $1`,
+    [profileId]
   );
 }
 

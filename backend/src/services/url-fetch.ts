@@ -7,7 +7,7 @@
  * @module services/url-fetch
  */
 
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { logger } from '../utils/logger';
 
@@ -222,17 +222,22 @@ export async function fetchUrl(url: string, options: FetchOptions = {}): Promise
       success: true,
     };
   } catch (error) {
-    const axiosError = error as AxiosError;
+    // SECURITY FIX: Proper type checking instead of unsafe type casting
     let errorMessage = 'Fehler beim Abrufen der URL.';
 
-    if (axiosError.code === 'ECONNABORTED') {
-      errorMessage = 'Zeitüberschreitung beim Abrufen der URL.';
-    } else if (axiosError.response) {
-      errorMessage = `HTTP ${axiosError.response.status}: ${axiosError.response.statusText}`;
-    } else if (axiosError.code === 'ENOTFOUND') {
-      errorMessage = 'Domain nicht gefunden.';
-    } else if (axiosError.code === 'ECONNREFUSED') {
-      errorMessage = 'Verbindung abgelehnt.';
+    if (axios.isAxiosError(error)) {
+      // Safely handle Axios errors with proper type checking
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Zeitüberschreitung beim Abrufen der URL.';
+      } else if (error.response) {
+        errorMessage = `HTTP ${error.response.status}: ${error.response.statusText}`;
+      } else if (error.code === 'ENOTFOUND') {
+        errorMessage = 'Domain nicht gefunden.';
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Verbindung abgelehnt.';
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
     }
 
     logger.warn('URL fetch failed', { url, error: errorMessage });

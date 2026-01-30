@@ -75,11 +75,13 @@ const VALID_PRIORITIES = ['low', 'medium', 'high'];
 
 /**
  * Validate filter parameter against allowlist
+ * SECURITY FIX: Don't expose allowlist values in error messages
  */
 function validateFilterParam(value: string | undefined, allowlist: string[], paramName: string): string | undefined {
   if (!value) {return undefined;}
   if (!allowlist.includes(value)) {
-    throw new ValidationError(`Invalid ${paramName}: ${value}. Allowed values: ${allowlist.join(', ')}`);
+    // Generic error message to prevent information disclosure
+    throw new ValidationError(`Invalid ${paramName} parameter.`);
   }
   return value;
 }

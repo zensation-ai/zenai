@@ -10,6 +10,7 @@ import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { toIntBounded } from '../utils/validation';
 import {
   getEvolutionDashboard,
   createDailySnapshot,
@@ -150,8 +151,9 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
+    // SECURITY FIX: Use bounded integer parsing for both limit and offset
+    const limit = toIntBounded(req.query.limit as string, 50, 1, 200);
+    const offset = toIntBounded(req.query.offset as string, 0, 0, 100000); // Reasonable max offset
     const eventType = req.query.event_type as string | undefined;
 
     if (!isValidContext(context)) {

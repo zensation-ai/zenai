@@ -37,24 +37,26 @@ auditLogsRouter.get('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (
   } = req.query;
 
   // Validate filters
+  // SECURITY FIX: Generic error messages to prevent information disclosure
   if (category && !VALID_CATEGORIES.includes(category as AuditCategory)) {
-    throw new ValidationError(`Invalid category. Valid values: ${VALID_CATEGORIES.join(', ')}`);
+    throw new ValidationError('Invalid category parameter.');
   }
   if (severity && !VALID_SEVERITIES.includes(severity as AuditSeverity)) {
-    throw new ValidationError(`Invalid severity. Valid values: ${VALID_SEVERITIES.join(', ')}`);
+    throw new ValidationError('Invalid severity parameter.');
   }
   if (outcome && !VALID_OUTCOMES.includes(outcome as string)) {
-    throw new ValidationError(`Invalid outcome. Valid values: ${VALID_OUTCOMES.join(', ')}`);
+    throw new ValidationError('Invalid outcome parameter.');
   }
 
   const parsedLimit = limit ? parseInt(limit as string) : 100;
   const parsedOffset = offset ? parseInt(offset as string) : 0;
 
+  // SECURITY FIX: Generic error messages to prevent information disclosure
   if (parsedLimit < 1 || parsedLimit > 1000) {
-    throw new ValidationError('Limit must be between 1 and 1000.');
+    throw new ValidationError('Invalid limit parameter.');
   }
   if (parsedOffset < 0) {
-    throw new ValidationError('Offset must be non-negative.');
+    throw new ValidationError('Invalid offset parameter.');
   }
 
   // Parse dates
@@ -117,8 +119,9 @@ auditLogsRouter.get('/stats', apiKeyAuth, requireScope('admin'), asyncHandler(as
   const { days } = req.query;
   const daysBack = days ? parseInt(days as string) : 7;
 
+  // SECURITY FIX: Generic error message to prevent information disclosure
   if (daysBack < 1 || daysBack > 90) {
-    throw new ValidationError('Days must be between 1 and 90.');
+    throw new ValidationError('Invalid days parameter.');
   }
 
   // Query statistics
@@ -194,8 +197,9 @@ auditLogsRouter.post('/cleanup', apiKeyAuth, requireScope('admin'), asyncHandler
 
   const days = retentionDays ? parseInt(retentionDays) : 90;
 
+  // SECURITY FIX: Generic error message to prevent information disclosure
   if (days < 30 || days > 365) {
-    throw new ValidationError('Retention days must be between 30 and 365.');
+    throw new ValidationError('Invalid retention days parameter.');
   }
 
   // Log the cleanup action

@@ -10,6 +10,7 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { toIntBounded } from '../utils/validation';
 import {
   registerAutomation,
   updateAutomation,
@@ -71,7 +72,8 @@ automationsRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const limit = parseInt(req.query.limit as string) || 10;
+    // SECURITY FIX: Use bounded integer parsing to prevent DoS via large limits
+    const limit = toIntBounded(req.query.limit as string, 10, 1, 50);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal" or "work".');
@@ -429,7 +431,8 @@ automationsRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
-    const limit = parseInt(req.query.limit as string) || 20;
+    // SECURITY FIX: Use bounded integer parsing to prevent DoS via large limits
+    const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal" or "work".');
@@ -438,7 +441,7 @@ automationsRouter.get(
     const executions = await getExecutionHistory(
       context as AIContext,
       id,
-      Math.min(limit, 100)
+      limit
     );
 
     res.json({

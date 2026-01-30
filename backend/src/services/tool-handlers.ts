@@ -43,26 +43,47 @@ import * as projectContext from './project-context';
 // ===========================================
 // These functions are kept for backward compatibility but should not be used.
 // All new code should use the ToolExecutionContext passed to handlers.
+// WARNING: Global state is a race condition risk with parallel requests!
 
 /**
  * @deprecated Use ToolExecutionContext passed to handlers instead.
  * This global state is a race condition risk with parallel requests.
+ * SECURITY FIX: Using AsyncLocalStorage would be the proper solution,
+ * but for now we add a request-id based Map for safer parallel handling.
  */
-let currentContext: AIContext = 'personal';
+const contextByRequestId = new Map<string, AIContext>();
+let fallbackContext: AIContext = 'personal';
 
 /**
  * @deprecated Use ToolExecutionContext passed to handlers instead.
+ * If you must use this, provide a requestId for safe parallel execution.
  */
-export function setToolContext(context: AIContext): void {
+export function setToolContext(context: AIContext, requestId?: string): void {
   logger.warn('setToolContext is deprecated - use ToolExecutionContext instead');
-  currentContext = context;
+  if (requestId) {
+    contextByRequestId.set(requestId, context);
+    // Auto-cleanup after 5 minutes to prevent memory leaks
+    setTimeout(() => contextByRequestId.delete(requestId), 5 * 60 * 1000);
+  } else {
+    fallbackContext = context;
+  }
 }
 
 /**
  * @deprecated Use ToolExecutionContext passed to handlers instead.
  */
-export function getToolContext(): AIContext {
-  return currentContext;
+export function getToolContext(requestId?: string): AIContext {
+  if (requestId && contextByRequestId.has(requestId)) {
+    return contextByRequestId.get(requestId)!;
+  }
+  return fallbackContext;
+}
+
+/**
+ * Clear context for a specific request (call after request completes)
+ */
+export function clearToolContext(requestId: string): void {
+  contextByRequestId.delete(requestId);
 }
 
 // ===========================================

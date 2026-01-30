@@ -355,30 +355,61 @@ export class SandboxExecutor implements ExecutorProvider {
   /**
    * Force stop a container by execution ID
    * Returns a promise that resolves when cleanup is complete
+   * Properly cleans up timeouts to prevent memory leaks
    */
   private async forceStopContainer(executionId: string): Promise<void> {
     const containerName = `${CONTAINER_PREFIX}-${executionId.slice(0, 8)}`;
 
-    // Kill container
+    // Kill container with proper timeout cleanup
     await new Promise<void>((resolve) => {
+      let resolved = false;
       const killProc = spawn('docker', ['kill', containerName], {
         stdio: 'ignore',
       });
-      killProc.on('close', () => resolve());
-      killProc.on('error', () => resolve()); // Ignore errors (container may not exist)
-      // Timeout after 5 seconds
-      setTimeout(() => resolve(), 5000);
+
+      const timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      }, 5000);
+
+      const cleanup = () => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeoutId);
+          resolve();
+        }
+      };
+
+      killProc.on('close', cleanup);
+      killProc.on('error', cleanup); // Ignore errors (container may not exist)
     });
 
-    // Remove container
+    // Remove container with proper timeout cleanup
     await new Promise<void>((resolve) => {
+      let resolved = false;
       const rmProc = spawn('docker', ['rm', '-f', containerName], {
         stdio: 'ignore',
       });
-      rmProc.on('close', () => resolve());
-      rmProc.on('error', () => resolve()); // Ignore errors
-      // Timeout after 5 seconds
-      setTimeout(() => resolve(), 5000);
+
+      const timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      }, 5000);
+
+      const cleanup = () => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeoutId);
+          resolve();
+        }
+      };
+
+      rmProc.on('close', cleanup);
+      rmProc.on('error', cleanup); // Ignore errors
     });
 
     logger.debug('Container force stopped', { executionId, containerName });
@@ -455,11 +486,12 @@ export class SandboxExecutor implements ExecutorProvider {
 
   /**
    * Cleanup execution artifacts
+   * Properly awaits async operations to prevent unhandled promise rejections
    */
   private async cleanup(codeDir: string, executionId: string): Promise<void> {
     try {
-      // Force stop any lingering container
-      this.forceStopContainer(executionId);
+      // Force stop any lingering container - await the async operation
+      await this.forceStopContainer(executionId);
 
       // Remove temporary directory
       if (existsSync(codeDir)) {

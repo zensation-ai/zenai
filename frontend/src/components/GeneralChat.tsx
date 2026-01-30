@@ -186,6 +186,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         formData.append('message', messageContent);
         imagesToSend.forEach(img => formData.append('images', img));
 
+        // RELIABILITY FIX: Add timeout for image processing to prevent infinite loading
         const res = await axios.post(
           `/api/chat/sessions/${currentSessionId}/messages/vision`,
           formData,
@@ -193,6 +194,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
+            timeout: 120000, // 2 minute timeout for image processing
           }
         );
 
@@ -209,6 +211,11 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         setStreamingContent('');
         setThinkingContent('');
 
+        // Create a new AbortController for this streaming request
+        const streamAbortController = new AbortController();
+        // Store reference for cleanup on unmount
+        abortControllerRef.current = streamAbortController;
+
         try {
           const response = await fetch(`/api/chat/sessions/${currentSessionId}/messages/stream`, {
             method: 'POST',
@@ -216,6 +223,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ message: messageContent }),
+            signal: streamAbortController.signal, // Add abort signal to prevent memory leaks
           });
 
           if (!response.ok) {
@@ -295,6 +303,11 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       }
 
     } catch (err) {
+      // Don't show error for aborted requests (e.g., component unmount or context change)
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+
       const errorMessage = getErrorMessage(err, 'Nachricht fehlgeschlagen');
       showToast(errorMessage, 'error');
 

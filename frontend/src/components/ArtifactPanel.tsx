@@ -153,11 +153,13 @@ export function ArtifactPanel({
         );
 
       case 'html':
+        // Security: Use restrictive sandbox without allow-scripts to prevent XSS
+        // Only allow same-origin for CSS/fonts, no script execution
         return (
           <div className="artifact-html-preview">
             <iframe
               srcDoc={artifact.content}
-              sandbox="allow-scripts"
+              sandbox="allow-same-origin"
               title={artifact.title}
               style={{
                 width: '100%',
@@ -351,7 +353,11 @@ export function ArtifactButton({ artifact, onClick }: ArtifactButtonProps) {
   };
 
   return (
-    <button className="artifact-inline-btn" onClick={onClick}>
+    <button
+      className="artifact-inline-btn"
+      onClick={onClick}
+      aria-label={`${artifact.type} öffnen: ${artifact.title}`}
+    >
       <span className="artifact-inline-icon">{getTypeIcon(artifact.type)}</span>
       <span className="artifact-inline-title">{artifact.title}</span>
       <span className="artifact-inline-action">Öffnen →</span>
