@@ -50,8 +50,19 @@ import * as projectContext from './project-context';
  * This global state is a race condition risk with parallel requests.
  * SECURITY FIX: Using AsyncLocalStorage would be the proper solution,
  * but for now we add a request-id based Map for safer parallel handling.
+ *
+ * PERFORMANCE FIX (2026-01-30): Store timeout handles for proper cleanup,
+ * limit max entries to prevent unbounded memory growth.
  */
-const contextByRequestId = new Map<string, AIContext>();
+interface ContextEntry {
+  context: AIContext;
+  timeoutHandle: ReturnType<typeof setTimeout>;
+}
+
+const contextByRequestId = new Map<string, ContextEntry>();
+const MAX_CONTEXT_ENTRIES = 10000; // Safety limit for high-load scenarios
+const CONTEXT_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+
 let fallbackContext: AIContext = 'personal';
 
 /**
@@ -61,9 +72,38 @@ let fallbackContext: AIContext = 'personal';
 export function setToolContext(context: AIContext, requestId?: string): void {
   logger.warn('setToolContext is deprecated - use ToolExecutionContext instead');
   if (requestId) {
-    contextByRequestId.set(requestId, context);
-    // Auto-cleanup after 5 minutes to prevent memory leaks
-    setTimeout(() => contextByRequestId.delete(requestId), 5 * 60 * 1000);
+    // Clear existing entry if present (prevents duplicate timeouts)
+    const existing = contextByRequestId.get(requestId);
+    if (existing) {
+      clearTimeout(existing.timeoutHandle);
+    }
+
+    // Enforce max entries to prevent memory exhaustion
+    if (contextByRequestId.size >= MAX_CONTEXT_ENTRIES) {
+      // Remove oldest entry (first in Map iteration order)
+      const oldestKey = contextByRequestId.keys().next().value;
+      if (oldestKey) {
+        const oldEntry = contextByRequestId.get(oldestKey);
+        if (oldEntry) {
+          clearTimeout(oldEntry.timeoutHandle);
+        }
+        contextByRequestId.delete(oldestKey);
+      }
+      logger.warn('Tool context map at capacity, evicting oldest entry', {
+        maxEntries: MAX_CONTEXT_ENTRIES,
+      });
+    }
+
+    const timeoutHandle = setTimeout(() => {
+      contextByRequestId.delete(requestId);
+    }, CONTEXT_EXPIRY_MS);
+
+    // Prevent timeout from keeping Node.js process alive
+    if (timeoutHandle.unref) {
+      timeoutHandle.unref();
+    }
+
+    contextByRequestId.set(requestId, { context, timeoutHandle });
   } else {
     fallbackContext = context;
   }
@@ -73,17 +113,25 @@ export function setToolContext(context: AIContext, requestId?: string): void {
  * @deprecated Use ToolExecutionContext passed to handlers instead.
  */
 export function getToolContext(requestId?: string): AIContext {
-  if (requestId && contextByRequestId.has(requestId)) {
-    return contextByRequestId.get(requestId)!;
+  if (requestId) {
+    const entry = contextByRequestId.get(requestId);
+    if (entry) {
+      return entry.context;
+    }
   }
   return fallbackContext;
 }
 
 /**
  * Clear context for a specific request (call after request completes)
+ * IMPORTANT: Always call this after a request to free memory immediately
  */
 export function clearToolContext(requestId: string): void {
-  contextByRequestId.delete(requestId);
+  const entry = contextByRequestId.get(requestId);
+  if (entry) {
+    clearTimeout(entry.timeoutHandle);
+    contextByRequestId.delete(requestId);
+  }
 }
 
 // ===========================================

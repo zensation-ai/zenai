@@ -21,6 +21,7 @@ import { isValidContext, AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+import { toIntBounded, toFloatBounded } from '../utils/validation';
 
 export const knowledgeGraphRouter = Router();
 
@@ -66,7 +67,7 @@ knowledgeGraphRouter.get('/relations/:ideaId', apiKeyAuth, asyncHandler(async (r
 knowledgeGraphRouter.get('/multi-hop/:ideaId', apiKeyAuth, asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const { ideaId } = req.params;
-  const maxHops = parseInt(req.query.maxHops as string) || 2;
+  const maxHops = toIntBounded(req.query.maxHops as string, 2, 1, 5);
 
   const paths = await multiHopSearch(ideaId, maxHops);
 
@@ -141,8 +142,8 @@ knowledgeGraphRouter.get('/subgraph/:ideaId', apiKeyAuth, asyncHandler(async (re
   const startTime = Date.now();
   const { ideaId } = req.params;
   const context = (req.query.context as string) || 'personal';
-  const depth = parseInt(req.query.depth as string) || 2;
-  const minStrength = parseFloat(req.query.minStrength as string) || 0.5;
+  const depth = toIntBounded(req.query.depth as string, 2, 1, 5);
+  const minStrength = toFloatBounded(req.query.minStrength as string, 0.5, 0, 1);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal" or "work".');

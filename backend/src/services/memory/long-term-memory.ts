@@ -98,6 +98,36 @@ export interface ConsolidationResult {
   interactionsStored: number;
 }
 
+/** Conversation message structure for memory processing */
+export interface ConversationMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: string;
+}
+
+/** Session with messages for consolidation */
+export interface SessionWithMessages {
+  id: string;
+  messages: ConversationMessage[];
+  metadata: Record<string, unknown>;
+  summary?: string;
+}
+
+/** AI-extracted pattern from conversations */
+interface ExtractedPattern {
+  patternType?: 'topic' | 'action' | 'style';
+  pattern: string;
+  confidence?: number;
+  associatedTopics?: string[];
+}
+
+/** AI-extracted fact about the user */
+interface ExtractedFact {
+  factType?: 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context';
+  content: string;
+  confidence?: number;
+}
+
 // ===========================================
 // Configuration
 // ===========================================
@@ -331,7 +361,7 @@ class LongTermMemoryService {
   private async getRecentSessions(
     context: AIContext,
     hours: number
-  ): Promise<Array<{ id: string; messages: any[]; metadata: any; summary?: string }>> {
+  ): Promise<SessionWithMessages[]> {
     const result = await queryContext(
       context,
       `SELECT id, messages, metadata, compressed_summary
@@ -342,15 +372,15 @@ class LongTermMemoryService {
       [context, hours]
     );
 
-    return result.rows.map((r: any) => ({
-      id: r.id,
+    return result.rows.map((r: Record<string, unknown>) => ({
+      id: r.id as string,
       messages: typeof r.messages === 'string'
-        ? safeJsonParse<any[]>(r.messages, [])
-        : r.messages || [],
+        ? safeJsonParse<ConversationMessage[]>(r.messages, [])
+        : (r.messages as ConversationMessage[]) || [],
       metadata: typeof r.metadata === 'string'
         ? safeJsonParse<Record<string, unknown>>(r.metadata, {})
-        : r.metadata || {},
-      summary: r.compressed_summary,
+        : (r.metadata as Record<string, unknown>) || {},
+      summary: r.compressed_summary as string | undefined,
     }));
   }
 
@@ -358,7 +388,7 @@ class LongTermMemoryService {
    * Extract recurring patterns from sessions
    */
   private async extractPatterns(
-    sessions: Array<{ id: string; messages: any[]; metadata: any }>,
+    sessions: SessionWithMessages[],
     context: AIContext
   ): Promise<FrequentPattern[]> {
     // Combine all messages for analysis
@@ -370,8 +400,8 @@ class LongTermMemoryService {
 
     // Extract user messages
     const userMessages = allMessages
-      .filter((m: any) => m.role === 'user')
-      .map((m: any) => m.content)
+      .filter((m: ConversationMessage) => m.role === 'user')
+      .map((m: ConversationMessage) => m.content)
       .join('\n');
 
     try {
@@ -396,12 +426,12 @@ Antworte als JSON:
   ]
 }`;
 
-      const result = await queryClaudeJSON<{ patterns: any[] }>(
+      const result = await queryClaudeJSON<{ patterns: ExtractedPattern[] }>(
         'Du analysierst Konversationsmuster. Antworte nur mit JSON.',
         patternsPrompt
       );
 
-      return (result.patterns || []).map((p: any) => ({
+      return (result.patterns || []).map((p: ExtractedPattern) => ({
         id: uuidv4(),
         patternType: p.patternType || 'topic',
         pattern: p.pattern,
@@ -420,13 +450,13 @@ Antworte als JSON:
    * Extract facts about the user from sessions
    */
   private async extractFacts(
-    sessions: Array<{ id: string; messages: any[]; metadata: any }>,
+    sessions: SessionWithMessages[],
     context: AIContext
   ): Promise<PersonalizationFact[]> {
     const allMessages = sessions.flatMap(s => s.messages);
     const userMessages = allMessages
-      .filter((m: any) => m.role === 'user')
-      .map((m: any) => m.content)
+      .filter((m: ConversationMessage) => m.role === 'user')
+      .map((m: ConversationMessage) => m.content)
       .join('\n');
 
     if (userMessages.length < 100) {
@@ -455,14 +485,14 @@ Antworte als JSON:
   ]
 }`;
 
-      const result = await queryClaudeJSON<{ facts: any[] }>(
+      const result = await queryClaudeJSON<{ facts: ExtractedFact[] }>(
         'Du extrahierst Fakten über Nutzer aus Konversationen. Antworte nur mit JSON.',
         factsPrompt
       );
 
       return (result.facts || [])
-        .filter((f: any) => f.confidence >= CONFIG.MIN_FACT_CONFIDENCE)
-        .map((f: any) => ({
+        .filter((f: ExtractedFact) => (f.confidence ?? 0) >= CONFIG.MIN_FACT_CONFIDENCE)
+        .map((f: ExtractedFact) => ({
           id: uuidv4(),
           factType: f.factType || 'knowledge',
           content: f.content,
@@ -599,7 +629,7 @@ Antworte als JSON:
    */
   private async storeSignificantInteractions(
     context: AIContext,
-    sessions: Array<{ id: string; messages: any[]; metadata: any; summary?: string }>
+    sessions: SessionWithMessages[]
   ): Promise<number> {
     const memory = this.memories.get(context);
     if (!memory) {return 0;}
@@ -608,11 +638,12 @@ Antworte als JSON:
 
     for (const session of sessions) {
       if (session.summary && session.messages.length >= 4) {
+        const metadata = session.metadata as { tags?: string[]; outcome?: string };
         const interaction: SignificantInteraction = {
           id: session.id,
           summary: session.summary,
-          topics: session.metadata.tags || [],
-          outcome: session.metadata.outcome || '',
+          topics: metadata.tags || [],
+          outcome: metadata.outcome || '',
           timestamp: new Date(),
           significance: session.messages.length >= 10 ? 0.8 : 0.5,
         };

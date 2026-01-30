@@ -488,10 +488,12 @@ generalChatRouter.post(
 generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
-  const enableThinking = req.query.enable_thinking !== 'false';
-  const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
 
   try {
+    // Parse parameters inside try block to catch any parsing errors
+    const enableThinking = req.query.enable_thinking !== 'false';
+    const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
+
     // Validate UUID format
     if (!isValidUUID(id)) {
       res.status(400).json({ success: false, error: 'Invalid session ID format' });
@@ -571,7 +573,11 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
 
     // Create custom event handler to collect content with proper SSE parsing
     const originalWrite = res.write.bind(res);
-    res.write = function(chunk: any, ...args: any[]): boolean {
+    res.write = function(
+      chunk: string | Uint8Array,
+      encodingOrCallback?: BufferEncoding | ((error: Error | null | undefined) => void),
+      callback?: (error: Error | null | undefined) => void
+    ): boolean {
       // Accumulate chunks in buffer for proper SSE parsing
       sseBuffer += chunk.toString();
 
@@ -608,7 +614,14 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
         }
       }
 
-      return originalWrite(chunk, ...args);
+      // Call originalWrite with proper overload handling
+      if (typeof encodingOrCallback === 'function') {
+        return originalWrite(chunk, encodingOrCallback);
+      } else if (encodingOrCallback !== undefined) {
+        return originalWrite(chunk, encodingOrCallback, callback);
+      } else {
+        return originalWrite(chunk);
+      }
     };
 
     // Stream the response
@@ -631,11 +644,17 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
 
+    // SECURITY: Don't expose error details in production
+    const isProduction = process.env.NODE_ENV === 'production';
+    const safeErrorMessage = isProduction
+      ? 'An error occurred while processing your request'
+      : (error instanceof Error ? error.message : 'Streaming failed');
+
     // If headers not sent, send error response
     if (!res.headersSent) {
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Streaming failed',
+        error: safeErrorMessage,
       });
     } else {
       // Headers sent, try to send SSE error

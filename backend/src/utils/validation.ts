@@ -707,3 +707,28 @@ export function toIntBounded(
   const parsed = toInt(value, defaultValue);
   return Math.max(min, Math.min(max, parsed));
 }
+
+/**
+ * Safely parse a float value with bounds checking
+ * Returns defaultValue if parsing fails or value is NaN
+ * Ensures the result is within [min, max] range
+ *
+ * @example
+ * // Instead of: parseFloat(req.query.threshold as string) || 0.75
+ * // Use: toFloatBounded(req.query.threshold, 0.75, 0, 1)
+ */
+export function toFloatBounded(
+  value: string | number | undefined | null,
+  defaultValue: number,
+  min: number,
+  max: number
+): number {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+  const parsed = typeof value === 'number' ? value : parseFloat(value);
+  if (isNaN(parsed)) {
+    return defaultValue;
+  }
+  return Math.max(min, Math.min(max, parsed));
+}

@@ -162,25 +162,42 @@ export async function generateTopics(
       const topicId = topicResult.rows[0].id;
       topicsCreated++;
 
-      // Assign ideas to topic
-      for (const ideaId of cluster.ideaIds) {
-        const membershipScore = calculateMembershipScore(
-          ideas.find(i => i.id === ideaId)!.embedding,
-          centroid
-        );
+      // PERFORMANCE FIX: Batch insert memberships instead of N individual inserts
+      // This reduces N*2 queries per cluster to just 2 queries per cluster
+      if (cluster.ideaIds.length > 0) {
+        // Create Map for O(1) idea lookups
+        const ideasMap = new Map(ideas.map(idea => [idea.id, idea]));
 
+        // Prepare batch data for memberships
+        const membershipValues: string[] = [];
+        const membershipParams: (string | number)[] = [];
+        let paramIdx = 1;
+
+        for (const ideaId of cluster.ideaIds) {
+          const idea = ideasMap.get(ideaId);
+          if (!idea) continue;
+
+          const membershipScore = calculateMembershipScore(idea.embedding, centroid);
+          membershipValues.push(`($${paramIdx}, $${paramIdx + 1}, $${paramIdx + 2}, TRUE)`);
+          membershipParams.push(ideaId, topicId, membershipScore);
+          paramIdx += 3;
+        }
+
+        // Batch insert memberships
+        if (membershipValues.length > 0) {
+          await client.query(`
+            INSERT INTO idea_topic_memberships (idea_id, topic_id, membership_score, is_primary)
+            VALUES ${membershipValues.join(', ')}
+            ON CONFLICT (idea_id, topic_id) DO UPDATE SET membership_score = EXCLUDED.membership_score
+          `, membershipParams);
+        }
+
+        // Batch update primary_topic_id using ANY()
         await client.query(`
-          INSERT INTO idea_topic_memberships (idea_id, topic_id, membership_score, is_primary)
-          VALUES ($1, $2, $3, TRUE)
-          ON CONFLICT (idea_id, topic_id) DO UPDATE SET membership_score = $3
-        `, [ideaId, topicId, membershipScore]);
+          UPDATE ideas SET primary_topic_id = $1 WHERE id = ANY($2::uuid[])
+        `, [topicId, cluster.ideaIds]);
 
-        // Update primary_topic_id on idea
-        await client.query(`
-          UPDATE ideas SET primary_topic_id = $1 WHERE id = $2
-        `, [topicId, ideaId]);
-
-        ideasAssigned++;
+        ideasAssigned += cluster.ideaIds.length;
       }
     }
 

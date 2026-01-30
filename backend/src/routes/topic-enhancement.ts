@@ -16,7 +16,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
-import { isValidUUID } from '../utils/validation';
+import { isValidUUID, toFloatBounded, toIntBounded } from '../utils/validation';
 import { AIContext } from '../utils/database-context';
 import {
   getTopicsWithKeywords,
@@ -223,11 +223,8 @@ topicEnhancementRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.query.context);
-    const threshold = parseFloat(req.query.threshold as string) || 0.75;
-
-    if (threshold < 0 || threshold > 1) {
-      throw new ValidationError('Threshold must be between 0 and 1');
-    }
+    // toFloatBounded ensures value is within valid range (0-1)
+    const threshold = toFloatBounded(req.query.threshold as string, 0.75, 0, 1);
 
     logger.info('Finding similar topics', { context, threshold });
 
@@ -382,7 +379,7 @@ topicEnhancementRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.query.context);
-    const limit = parseInt(req.query.limit as string) || 50;
+    const limit = toIntBounded(req.query.limit as string, 50, 1, 200);
 
     logger.info('Fetching orphaned ideas', { context, limit });
 

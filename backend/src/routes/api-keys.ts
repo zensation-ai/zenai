@@ -10,6 +10,7 @@ import { isValidUUID } from '../utils/database-context';
 import { generateApiKey, apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { toIntBounded } from '../utils/validation';
 // Phase Security Sprint 3: API Key Security Service
 import {
   getExpiringKeys,
@@ -413,12 +414,8 @@ apiKeysRouter.get('/security/summary', apiKeyAuth, requireScope('admin'), asyncH
  * Phase Security Sprint 3
  */
 apiKeysRouter.get('/security/expiring', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
-  const daysAhead = parseInt(req.query.days as string) || 7;
-
-  // SECURITY FIX: Generic error message to prevent information disclosure
-  if (daysAhead < 1 || daysAhead > 90) {
-    throw new ValidationError('Invalid days parameter.');
-  }
+  // toIntBounded ensures value is within valid range (1-90 days)
+  const daysAhead = toIntBounded(req.query.days as string, 7, 1, 90);
 
   const expiringKeys = await getExpiringKeys(daysAhead);
 
@@ -453,12 +450,8 @@ apiKeysRouter.get('/security/expired', apiKeyAuth, requireScope('admin'), asyncH
  * Phase Security Sprint 3
  */
 apiKeysRouter.get('/security/unused', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
-  const daysUnused = parseInt(req.query.days as string) || 30;
-
-  // SECURITY FIX: Generic error message to prevent information disclosure
-  if (daysUnused < 1 || daysUnused > 365) {
-    throw new ValidationError('Invalid days parameter.');
-  }
+  // toIntBounded ensures value is within valid range (1-365 days)
+  const daysUnused = toIntBounded(req.query.days as string, 30, 1, 365);
 
   const unusedKeys = await getUnusedKeys(daysUnused);
 
@@ -480,9 +473,10 @@ apiKeysRouter.post('/:id/extend', apiKeyAuth, requireScope('admin'), asyncHandle
   const { id } = req.params;
   validateApiKeyId(id);
 
-  const additionalDays = parseInt(req.body.additionalDays);
+  // toIntBounded ensures value is within valid range; returns 0 if invalid/missing
+  const additionalDays = toIntBounded(req.body.additionalDays, 0, 0, 365);
 
-  if (isNaN(additionalDays) || additionalDays < 1 || additionalDays > 365) {
+  if (additionalDays < 1) {
     throw new ValidationError('additionalDays must be between 1 and 365.');
   }
 

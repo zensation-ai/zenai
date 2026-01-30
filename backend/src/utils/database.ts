@@ -47,7 +47,20 @@ function getPoolConfig() {
     };
   }
 
-  // Individual environment variables
+  // Individual environment variables - only for development
+  // SECURITY: In production, DATABASE_URL is required
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'DATABASE_URL environment variable is required in production. ' +
+      'Individual DB_* variables are only supported in development.'
+    );
+  }
+
+  logger.warn('Using individual DB_* environment variables (development mode)', {
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'ai_brain',
+  });
+
   return {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
