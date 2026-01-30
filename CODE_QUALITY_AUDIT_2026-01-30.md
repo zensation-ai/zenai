@@ -537,8 +537,33 @@ After deeper analysis, the SQL injection patterns flagged in the initial audit a
 
 ---
 
+## 12. ADDITIONAL FIXES (2026-01-30, Commit `4bdb5c3`)
+
+### Security Fixes
+
+| Issue | File | Fix Applied |
+|-------|------|-------------|
+| Hardcoded localhost defaults | `database.ts` | Throw error if DATABASE_URL missing in production |
+| Ollama localhost in production | `learning-engine.ts` | Added `isOllamaConfigured()` check, skip if not configured |
+| Error message information disclosure | `general-chat.ts` | Hide error details in production responses |
+
+### Performance Fixes
+
+| Issue | File | Fix Applied |
+|-------|------|-------------|
+| Memory leak in context map | `tool-handlers.ts` | Proper timeout cleanup, max 10,000 entries, `unref()` timers |
+
+### Input Validation Improvements
+
+| File | Changes |
+|------|---------|
+| `proactive.ts` | Use `toIntBounded()` for `limit` (1-50) and `days` (1-365) |
+| `api-keys.ts` | Use `toIntBounded()` for `days` (1-90/365) and `additionalDays` (1-365) |
+
+---
+
 **Report Generated:** 2026-01-30
 **Total Issues:** 88
-**Critical Issues Fixed:** 4 (OAuth, Slack signature, streaming error, N+1 query)
-**Remaining Critical Issues:** 9
-**Estimated Fix Time:** 6-10 Wochen für vollständige Remediation
+**Critical Issues Fixed:** 8 (OAuth, Slack signature, streaming error, N+1 query, localhost defaults, memory leak, error disclosure, input validation)
+**Remaining Critical Issues:** 5
+**Estimated Fix Time:** 4-6 Wochen für vollständige Remediation
