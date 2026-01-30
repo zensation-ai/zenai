@@ -562,8 +562,38 @@ After deeper analysis, the SQL injection patterns flagged in the initial audit a
 
 ---
 
+## 13. FURTHER FIXES (2026-01-30, Commit `0be004e`)
+
+### New Utilities
+
+| Utility | File | Description |
+|---------|------|-------------|
+| `toFloatBounded()` | `validation.ts` | Safe float parsing with min/max bounds |
+
+### Input Validation Improvements
+
+| File | Parameter | Bounds |
+|------|-----------|--------|
+| `knowledge-graph.ts` | `maxHops` | 1-5 |
+| `knowledge-graph.ts` | `depth` | 1-5 |
+| `knowledge-graph.ts` | `minStrength` | 0-1 |
+| `topic-enhancement.ts` | `threshold` | 0-1 |
+| `topic-enhancement.ts` | `limit` | 1-200 |
+| `proactive.ts` | `minConfidence` | 0-1 |
+
+### Startup Environment Validation
+
+Added `validateEnvironmentVariables()` in `main.ts`:
+- Validates `ENABLE_CODE_EXECUTION` is boolean
+- Validates `CODE_EXECUTION_TIMEOUT` is 1000-300000ms
+- Validates `CODE_EXECUTION_MEMORY_LIMIT` format (e.g., `256m`)
+- **FATAL in production**: `JUDGE0_API_KEY` required if code execution enabled
+- **FATAL in production**: `SLACK_SIGNING_SECRET` required if Slack configured
+
+---
+
 **Report Generated:** 2026-01-30
 **Total Issues:** 88
-**Critical Issues Fixed:** 8 (OAuth, Slack signature, streaming error, N+1 query, localhost defaults, memory leak, error disclosure, input validation)
-**Remaining Critical Issues:** 5
-**Estimated Fix Time:** 4-6 Wochen für vollständige Remediation
+**Critical Issues Fixed:** 10 (OAuth, Slack signature, streaming error, N+1 query, localhost defaults, memory leak, error disclosure, input validation, float validation, startup validation)
+**Remaining Critical Issues:** 3
+**Estimated Fix Time:** 2-3 Wochen für vollständige Remediation
