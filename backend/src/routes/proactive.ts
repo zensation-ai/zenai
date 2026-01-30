@@ -12,7 +12,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { toIntBounded } from '../utils/validation';
+import { toIntBounded, toFloatBounded } from '../utils/validation';
 import {
   proactiveSuggestionEngine,
   SuggestionType,
@@ -121,7 +121,7 @@ router.get('/routines', apiKeyAuth, requireScope('read'), asyncHandler(async (re
   }
 
   const activeOnly = req.query.activeOnly !== 'false';
-  const minConfidence = parseFloat(req.query.minConfidence as string) || 0;
+  const minConfidence = toFloatBounded(req.query.minConfidence as string, 0, 0, 1);
 
   const patterns = await routineDetectionService.getPatterns(context as AIContext, {
     activeOnly,

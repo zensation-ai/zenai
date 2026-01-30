@@ -363,6 +363,75 @@ app.use(errorHandler);
 setupGracefulShutdown();
 
 // ===========================================
+// Environment Validation
+// ===========================================
+
+/**
+ * Validate environment variables that aren't covered by SecretsManager
+ * Logs warnings for misconfigured optional variables
+ * Throws for invalid required variables in production
+ */
+function validateEnvironmentVariables(): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const warnings: string[] = [];
+
+  // Validate CODE_EXECUTION settings
+  if (process.env.ENABLE_CODE_EXECUTION) {
+    const value = process.env.ENABLE_CODE_EXECUTION.toLowerCase();
+    if (value !== 'true' && value !== 'false') {
+      warnings.push(`ENABLE_CODE_EXECUTION should be 'true' or 'false', got '${value}'`);
+    }
+  }
+
+  if (process.env.CODE_EXECUTION_TIMEOUT) {
+    const timeout = parseInt(process.env.CODE_EXECUTION_TIMEOUT, 10);
+    if (isNaN(timeout) || timeout < 1000 || timeout > 300000) {
+      warnings.push('CODE_EXECUTION_TIMEOUT should be between 1000 and 300000 ms');
+    }
+  }
+
+  if (process.env.CODE_EXECUTION_MEMORY_LIMIT) {
+    const limit = process.env.CODE_EXECUTION_MEMORY_LIMIT;
+    if (!/^\d+[kmg]?$/i.test(limit)) {
+      warnings.push(`CODE_EXECUTION_MEMORY_LIMIT '${limit}' is not a valid memory limit (e.g., '256m', '1g')`);
+    }
+  }
+
+  // Validate Judge0 in production if code execution is enabled
+  if (isProduction && process.env.ENABLE_CODE_EXECUTION === 'true') {
+    if (!process.env.JUDGE0_API_KEY) {
+      warnings.push('JUDGE0_API_KEY is required for code execution in production');
+    }
+  }
+
+  // Validate Slack signing secret in production if Slack is configured
+  if (isProduction && process.env.SLACK_CLIENT_ID && !process.env.SLACK_SIGNING_SECRET) {
+    warnings.push('SLACK_SIGNING_SECRET is required in production when Slack integration is enabled');
+  }
+
+  // Log all warnings
+  if (warnings.length > 0) {
+    logger.warn('Environment validation warnings', { warnings });
+    if (isProduction) {
+      // In production, some warnings are fatal
+      const fatalWarnings = warnings.filter(w =>
+        w.includes('required') || w.includes('JUDGE0') || w.includes('SLACK_SIGNING_SECRET')
+      );
+      if (fatalWarnings.length > 0) {
+        logger.error('FATAL: Required environment variables missing in production');
+        fatalWarnings.forEach(w => logger.error(`  - ${w}`));
+        process.exit(1);
+      }
+    }
+  }
+
+  logger.info('Environment validation complete', {
+    production: isProduction,
+    warnings: warnings.length,
+  });
+}
+
+// ===========================================
 // Server Startup
 // ===========================================
 
@@ -380,6 +449,9 @@ async function startServer(): Promise<void> {
     logger.error('FATAL: SecretsManager initialization failed', error instanceof Error ? error : undefined);
     process.exit(1);
   }
+
+  // Additional environment validation (2026-01-30)
+  validateEnvironmentVariables();
 
   // Start server after secrets are validated
   app.listen(PORT, async () => {
