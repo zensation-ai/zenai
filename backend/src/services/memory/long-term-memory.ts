@@ -204,78 +204,145 @@ class LongTermMemoryService {
 
   /**
    * Load memory from database
+   * Supports both HiMeS schema (Phase 27+) and legacy schema
    */
   private async loadFromDatabase(context: AIContext): Promise<LongTermMemory> {
-    // Load personalization facts
-    const factsResult = await queryContext(
-      context,
-      `SELECT id, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences
-       FROM personalization_facts
-       WHERE context = $1 AND is_active = true
-       ORDER BY confidence DESC, occurrences DESC
-       LIMIT $2`,
-      [context, CONFIG.MAX_FACTS]
-    );
+    // Load personalization facts with schema detection
+    let facts: PersonalizationFact[] = [];
 
-    const facts: PersonalizationFact[] = factsResult.rows.map((r: any) => ({
-      id: r.id,
-      factType: r.fact_type,
-      content: r.content,
-      confidence: parseFloat(r.confidence),
-      source: r.source,
-      firstSeen: new Date(r.first_seen),
-      lastConfirmed: new Date(r.last_confirmed),
-      occurrences: r.occurrences,
-    }));
+    try {
+      // Try HiMeS schema first (Phase 27+)
+      const factsResult = await queryContext(
+        context,
+        `SELECT id, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences
+         FROM personalization_facts
+         WHERE context = $1 AND is_active = true
+         ORDER BY confidence DESC, occurrences DESC
+         LIMIT $2`,
+        [context, CONFIG.MAX_FACTS]
+      );
+
+      facts = factsResult.rows.map((r: any) => ({
+        id: r.id,
+        factType: r.fact_type,
+        content: r.content,
+        confidence: parseFloat(r.confidence),
+        source: r.source,
+        firstSeen: new Date(r.first_seen),
+        lastConfirmed: new Date(r.last_confirmed),
+        occurrences: r.occurrences,
+      }));
+    } catch (hiMeSError) {
+      // Fall back to legacy schema
+      logger.debug('HiMeS schema not available, trying legacy schema', {
+        context,
+        error: hiMeSError instanceof Error ? hiMeSError.message : 'Unknown',
+      });
+
+      try {
+        const legacyResult = await queryContext(
+          context,
+          `SELECT id, category, fact_key, fact_value, confidence, source, created_at, updated_at
+           FROM personalization_facts
+           LIMIT $1`,
+          [CONFIG.MAX_FACTS]
+        );
+
+        facts = legacyResult.rows.map((r: any) => ({
+          id: r.id,
+          factType: (r.category || 'knowledge') as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
+          content: r.fact_value || r.fact_key || '',
+          confidence: parseFloat(r.confidence) || 0.7,
+          source: (r.source || 'inferred') as 'explicit' | 'inferred' | 'consolidated',
+          firstSeen: new Date(r.created_at || Date.now()),
+          lastConfirmed: new Date(r.updated_at || Date.now()),
+          occurrences: 1,
+        }));
+
+        logger.info('Loaded facts from legacy schema', {
+          context,
+          factCount: facts.length,
+        });
+      } catch (legacyError) {
+        // Table doesn't exist or other error - start with empty facts
+        logger.debug('No personalization_facts table available', {
+          context,
+          error: legacyError instanceof Error ? legacyError.message : 'Unknown',
+        });
+      }
+    }
 
     // Load frequent patterns from routine_patterns table
-    const patternsResult = await queryContext(
-      context,
-      `SELECT id, pattern_type, action_type as pattern, confidence, occurrences, last_triggered,
-              trigger_config->>'keywords' as associated_topics
-       FROM routine_patterns
-       WHERE context = $1 AND is_active = true
-       ORDER BY confidence DESC, occurrences DESC
-       LIMIT $2`,
-      [context, CONFIG.MAX_PATTERNS]
-    );
+    let patterns: FrequentPattern[] = [];
+    try {
+      const patternsResult = await queryContext(
+        context,
+        `SELECT id, pattern_type, action_type as pattern, confidence, occurrences, last_triggered,
+                trigger_config->>'keywords' as associated_topics
+         FROM routine_patterns
+         WHERE context = $1 AND is_active = true
+         ORDER BY confidence DESC, occurrences DESC
+         LIMIT $2`,
+        [context, CONFIG.MAX_PATTERNS]
+      );
 
-    const patterns: FrequentPattern[] = patternsResult.rows.map((r: any) => ({
-      id: r.id,
-      patternType: r.pattern_type === 'time_based' ? 'time' : r.pattern_type === 'context_based' ? 'topic' : 'action',
-      pattern: r.pattern,
-      frequency: r.occurrences,
-      lastUsed: r.last_triggered ? new Date(r.last_triggered) : new Date(),
-      associatedTopics: safeJsonParse<string[]>(r.associated_topics, []),
-      confidence: parseFloat(r.confidence),
-    }));
+      patterns = patternsResult.rows.map((r: any) => ({
+        id: r.id,
+        patternType: r.pattern_type === 'time_based' ? 'time' : r.pattern_type === 'context_based' ? 'topic' : 'action',
+        pattern: r.pattern,
+        frequency: r.occurrences,
+        lastUsed: r.last_triggered ? new Date(r.last_triggered) : new Date(),
+        associatedTopics: safeJsonParse<string[]>(r.associated_topics, []),
+        confidence: parseFloat(r.confidence),
+      }));
+    } catch (patternError) {
+      logger.debug('routine_patterns table not available', {
+        context,
+        error: patternError instanceof Error ? patternError.message : 'Unknown',
+      });
+    }
 
     // Load significant interactions from conversation_sessions
-    const interactionsResult = await queryContext(
-      context,
-      `SELECT id, compressed_summary as summary, metadata, last_activity
-       FROM conversation_sessions
-       WHERE context = $1 AND compressed_summary IS NOT NULL
-       ORDER BY last_activity DESC
-       LIMIT $2`,
-      [context, CONFIG.MAX_INTERACTIONS]
-    );
+    let interactions: SignificantInteraction[] = [];
+    try {
+      const interactionsResult = await queryContext(
+        context,
+        `SELECT id, compressed_summary as summary, metadata, last_activity
+         FROM conversation_sessions
+         WHERE context = $1 AND compressed_summary IS NOT NULL
+         ORDER BY last_activity DESC
+         LIMIT $2`,
+        [context, CONFIG.MAX_INTERACTIONS]
+      );
 
-    const interactions: SignificantInteraction[] = interactionsResult.rows
-      .filter((r: any) => r.summary)
-      .map((r: any) => {
-        const metadata = typeof r.metadata === 'string'
-          ? safeJsonParse<Record<string, unknown>>(r.metadata, {})
-          : r.metadata || {};
-        return {
-          id: r.id,
-          summary: r.summary,
-          topics: (metadata.tags as string[]) || [],
-          outcome: (metadata.outcome as string) || '',
-          timestamp: new Date(r.last_activity),
-          significance: (metadata.significance as number) || 0.5,
-        };
+      interactions = interactionsResult.rows
+        .filter((r: any) => r.summary)
+        .map((r: any) => {
+          const metadata = typeof r.metadata === 'string'
+            ? safeJsonParse<Record<string, unknown>>(r.metadata, {})
+            : r.metadata || {};
+          return {
+            id: r.id,
+            summary: r.summary,
+            topics: (metadata.tags as string[]) || [],
+            outcome: (metadata.outcome as string) || '',
+            timestamp: new Date(r.last_activity),
+            significance: (metadata.significance as number) || 0.5,
+          };
+        });
+    } catch (interactionError) {
+      logger.debug('conversation_sessions table not available', {
+        context,
+        error: interactionError instanceof Error ? interactionError.message : 'Unknown',
       });
+    }
+
+    logger.info('Long-term memory loaded from database', {
+      context,
+      facts: facts.length,
+      patterns: patterns.length,
+      interactions: interactions.length,
+    });
 
     return {
       context,
