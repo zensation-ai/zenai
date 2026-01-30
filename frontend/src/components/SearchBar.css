@@ -67,7 +67,8 @@
 }
 
 .search-input::placeholder {
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  opacity: 1;
 }
 
 .search-spinner {

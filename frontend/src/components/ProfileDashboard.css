@@ -473,7 +473,7 @@
 .form-group input::placeholder,
 .form-group textarea::placeholder {
   color: var(--text-muted);
-  opacity: 0.6;
+  opacity: 1;
 }
 
 .form-actions {

@@ -122,9 +122,9 @@
 }
 
 .filter-group label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

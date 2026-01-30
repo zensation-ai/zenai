@@ -87,8 +87,9 @@
 }
 
 .command-textarea::placeholder {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-style: italic;
+  opacity: 1;
 }
 
 .command-textarea:disabled {
