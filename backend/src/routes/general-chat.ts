@@ -573,7 +573,11 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
 
     // Create custom event handler to collect content with proper SSE parsing
     const originalWrite = res.write.bind(res);
-    res.write = function(chunk: any, ...args: any[]): boolean {
+    res.write = function(
+      chunk: string | Uint8Array,
+      encodingOrCallback?: BufferEncoding | ((error: Error | null | undefined) => void),
+      callback?: (error: Error | null | undefined) => void
+    ): boolean {
       // Accumulate chunks in buffer for proper SSE parsing
       sseBuffer += chunk.toString();
 
@@ -610,7 +614,14 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
         }
       }
 
-      return originalWrite(chunk, ...args);
+      // Call originalWrite with proper overload handling
+      if (typeof encodingOrCallback === 'function') {
+        return originalWrite(chunk, encodingOrCallback);
+      } else if (encodingOrCallback !== undefined) {
+        return originalWrite(chunk, encodingOrCallback, callback);
+      } else {
+        return originalWrite(chunk);
+      }
     };
 
     // Stream the response

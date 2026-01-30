@@ -427,7 +427,9 @@ export async function getReadyClusters(userId: string = 'default', context: AICo
 
   try {
     const result = await client.query(
-      `SELECT c.*,
+      `SELECT c.id, c.user_id, c.title, c.summary, c.suggested_type, c.suggested_category,
+              c.thought_count, c.confidence_score, c.maturity_score, c.status,
+              c.created_at, c.updated_at,
               json_agg(json_build_object(
                 'id', t.id,
                 'raw_input', t.raw_input,
@@ -463,7 +465,9 @@ export async function getAllClusters(
   try {
     if (includeThoughts) {
       const result = await client.query(
-        `SELECT c.*,
+        `SELECT c.id, c.user_id, c.title, c.summary, c.suggested_type, c.suggested_category,
+                c.thought_count, c.confidence_score, c.maturity_score, c.status,
+                c.created_at, c.updated_at,
                 COALESCE(json_agg(
                   CASE WHEN t.id IS NOT NULL THEN
                     json_build_object(
@@ -485,7 +489,10 @@ export async function getAllClusters(
       return result.rows;
     } else {
       const result = await client.query(
-        `SELECT * FROM thought_clusters
+        `SELECT id, user_id, title, summary, suggested_type, suggested_category,
+                thought_count, confidence_score, maturity_score, status,
+                created_at, updated_at
+         FROM thought_clusters
          WHERE user_id = $1 AND status NOT IN ('consolidated', 'dismissed')
          ORDER BY status = 'ready' DESC, maturity_score DESC, updated_at DESC`,
         [userId]
@@ -586,7 +593,10 @@ export async function consolidateCluster(
 
     // Get cluster with summary
     const clusterResult = await client.query(
-      `SELECT * FROM thought_clusters WHERE id = $1`,
+      `SELECT id, user_id, title, summary, suggested_type, suggested_category,
+              thought_count, confidence_score, maturity_score, status,
+              created_at, updated_at
+       FROM thought_clusters WHERE id = $1`,
       [clusterId]
     );
 
@@ -600,7 +610,10 @@ export async function consolidateCluster(
     if (!cluster.title || !cluster.summary) {
       await generateClusterSummary(clusterId, context);
       const updated = await client.query(
-        `SELECT * FROM thought_clusters WHERE id = $1`,
+        `SELECT id, user_id, title, summary, suggested_type, suggested_category,
+                thought_count, confidence_score, maturity_score, status,
+                created_at, updated_at
+         FROM thought_clusters WHERE id = $1`,
         [clusterId]
       );
       Object.assign(cluster, updated.rows[0]);

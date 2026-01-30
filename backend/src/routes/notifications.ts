@@ -147,7 +147,9 @@ notificationsRouter.get('/preferences', apiKeyAuth, asyncHandler(async (req: Req
 
   const result = await queryContext(
     ctx,
-    `SELECT * FROM notification_preferences LIMIT 1`
+    `SELECT id, cluster_ready, daily_digest, weekly_insights, priority_reminders,
+            quiet_hours_start, quiet_hours_end, updated_at
+     FROM notification_preferences LIMIT 1`
   );
 
   if (result.rows.length === 0) {

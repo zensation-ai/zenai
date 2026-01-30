@@ -294,7 +294,7 @@ router.get('/media-file/:id', apiKeyAuth, asyncHandler(async (req: Request, res:
   validateMediaId(id);
 
   const result = await query(
-    'SELECT * FROM media_items WHERE id = $1',
+    'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
 
@@ -516,7 +516,7 @@ router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHand
 
   // Get media item
   const result = await query(
-    'SELECT * FROM media_items WHERE id = $1',
+    'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
 
@@ -615,7 +615,7 @@ router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHa
 
   // Get media item
   const result = await query(
-    'SELECT * FROM media_items WHERE id = $1',
+    'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
 
@@ -663,7 +663,7 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
   validateMediaId(id);
 
   const result = await query(
-    'SELECT * FROM media_items WHERE id = $1',
+    'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
 

@@ -22,10 +22,16 @@ export type WebhookEventType =
   | 'calendar.synced'
   | 'slack.message_processed';
 
+/** Generic webhook data - contains event-specific payload */
+interface WebhookEventData {
+  id?: string;
+  [key: string]: unknown;
+}
+
 interface WebhookPayload {
   event: WebhookEventType;
   timestamp: string;
-  data: any;
+  data: WebhookEventData;
 }
 
 interface Webhook {
