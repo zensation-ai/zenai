@@ -43,7 +43,24 @@ interface LanguageStyle {
   [key: string]: unknown;
 }
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+// Ollama URL - no default to prevent silent failures in production
+// When not configured, embedding-based features will be disabled
+const OLLAMA_URL = process.env.OLLAMA_URL;
+
+/**
+ * Check if Ollama is configured and available
+ */
+function isOllamaConfigured(): boolean {
+  if (!OLLAMA_URL) {
+    return false;
+  }
+  // Don't allow localhost in production
+  if (process.env.NODE_ENV === 'production' && OLLAMA_URL.includes('localhost')) {
+    logger.warn('OLLAMA_URL contains localhost in production - this will likely fail');
+    return false;
+  }
+  return true;
+}
 
 // Learning thresholds - NIEDRIG gesetzt für schnelles Lernen
 const CONFIG = {
@@ -115,12 +132,14 @@ export async function suggestFromLearning(
 
     const profile = profileResult.rows[0] || {};
 
-    // Generate embedding for input text
+    // Generate embedding for input text (only if Ollama is configured)
     let inputEmbedding: number[] = [];
-    try {
-      inputEmbedding = await generateEmbedding(text);
-    } catch (err) {
-      logger.debug('Learning: Embedding generation failed, using keyword-only mode');
+    if (isOllamaConfigured()) {
+      try {
+        inputEmbedding = await generateEmbedding(text);
+      } catch (err) {
+        logger.debug('Learning: Embedding generation failed, using keyword-only mode');
+      }
     }
 
     // Initialize counters
@@ -1064,6 +1083,12 @@ async function updateInterestEmbedding(
       .join(' ');
 
     if (textContent.length < 50) {return;} // Zu wenig Content
+
+    // Only generate embeddings if Ollama is configured
+    if (!isOllamaConfigured()) {
+      logger.debug('Skipping interest embedding update - Ollama not configured');
+      return;
+    }
 
     const embedding = await generateEmbedding(textContent.substring(0, 5000));
 

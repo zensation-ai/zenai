@@ -12,6 +12,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { toIntBounded } from '../utils/validation';
 import {
   proactiveSuggestionEngine,
   SuggestionType,
@@ -37,7 +38,7 @@ router.get('/suggestions', apiKeyAuth, requireScope('read'), asyncHandler(async 
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const limit = parseInt(req.query.limit as string) || 5;
+  const limit = toIntBounded(req.query.limit as string, 5, 1, 50);
   const types = req.query.types
     ? (req.query.types as string).split(',') as SuggestionType[]
     : undefined;
@@ -144,7 +145,7 @@ router.post('/routines/analyze', apiKeyAuth, requireScope('write'), asyncHandler
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const days = parseInt(req.body.days as string) || 30;
+  const days = toIntBounded(req.body.days as string, 30, 1, 365);
 
   const patterns = await routineDetectionService.analyzeUserPatterns(context as AIContext, days);
 

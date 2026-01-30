@@ -633,11 +633,17 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
 
+    // SECURITY: Don't expose error details in production
+    const isProduction = process.env.NODE_ENV === 'production';
+    const safeErrorMessage = isProduction
+      ? 'An error occurred while processing your request'
+      : (error instanceof Error ? error.message : 'Streaming failed');
+
     // If headers not sent, send error response
     if (!res.headersSent) {
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Streaming failed',
+        error: safeErrorMessage,
       });
     } else {
       // Headers sent, try to send SSE error
