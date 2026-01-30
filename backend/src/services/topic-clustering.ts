@@ -130,10 +130,12 @@ export async function generateTopics(
       DELETE FROM idea_topics WHERE context = $1 AND is_auto_generated = TRUE
     `, [context]);
 
+    // PERFORMANCE FIX: Create Set for O(1) membership checks instead of O(n) includes()
     // Create new topics with LLM-generated names
     for (let i = 0; i < validClusters.length; i++) {
       const cluster = validClusters[i];
-      const clusterIdeas = ideas.filter(idea => cluster.ideaIds.includes(idea.id));
+      const clusterIdeaIds = new Set(cluster.ideaIds);
+      const clusterIdeas = ideas.filter(idea => clusterIdeaIds.has(idea.id));
 
       // Generate topic name and description using LLM
       const topicInfo = await labelCluster(clusterIdeas);
@@ -218,6 +220,10 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
 
   const dim = ideas[0].embedding.length;
 
+  // PERFORMANCE FIX: Create Map for O(1) lookups instead of O(n) find() calls
+  // This reduces overall complexity from O(n²) to O(n) per iteration
+  const ideasMap = new Map<string, IdeaEmbedding>(ideas.map(idea => [idea.id, idea]));
+
   // Initialize centroids using K-Means++ initialization
   const centroids = initializeCentroids(ideas, k);
 
@@ -253,7 +259,8 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
 
       const newCentroid = new Array(dim).fill(0);
       for (const ideaId of clusterIdeas) {
-        const embedding = ideas.find(idea => idea.id === ideaId)!.embedding;
+        // O(1) lookup via Map instead of O(n) find()
+        const embedding = ideasMap.get(ideaId)!.embedding;
         for (let d = 0; d < dim; d++) {
           newCentroid[d] += embedding[d];
         }
@@ -282,7 +289,8 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
 
     let coherence = 0;
     for (const ideaId of clusterIdeas) {
-      const embedding = ideas.find(idea => idea.id === ideaId)!.embedding;
+      // O(1) lookup via Map instead of O(n) find()
+      const embedding = ideasMap.get(ideaId)!.embedding;
       coherence += cosineSimilarity(embedding, centroids[i]);
     }
     coherence /= clusterIdeas.length;

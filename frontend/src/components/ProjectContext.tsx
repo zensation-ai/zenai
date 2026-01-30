@@ -50,6 +50,10 @@ export function ProjectContext({
 
     setIsLoading(true);
 
+    // Create AbortController with timeout to prevent infinite loading states
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     try {
       const response = await fetch(`/api/${context}/project/analyze`, {
         method: 'POST',
@@ -57,7 +61,10 @@ export function ProjectContext({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ projectPath: path }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -89,6 +96,12 @@ export function ProjectContext({
         throw new Error(data.error || 'Projekt konnte nicht analysiert werden');
       }
     } catch (error) {
+      // Don't show error for aborted requests
+      if (error instanceof Error && error.name === 'AbortError') {
+        showToast('Analyse abgebrochen (Timeout)', 'warning');
+        return;
+      }
+
       console.error('Project analysis failed:', error);
       showToast(
         `Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,

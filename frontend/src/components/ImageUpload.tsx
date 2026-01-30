@@ -73,6 +73,7 @@ export function ImageUpload({
 
   /**
    * Process selected files
+   * Properly cleans up object URLs on validation errors to prevent memory leaks
    */
   const processFiles = useCallback((files: FileList | File[]) => {
     setError(null);
@@ -85,16 +86,20 @@ export function ImageUpload({
     }
 
     const validFiles: SelectedImage[] = [];
+    const createdUrls: string[] = []; // Track created URLs for cleanup on error
 
     for (const file of fileArray) {
       const validationError = validateFile(file);
       if (validationError) {
         setError(validationError);
-        continue;
+        // Clean up any URLs created so far in this batch on validation error
+        createdUrls.forEach(url => URL.revokeObjectURL(url));
+        return; // Stop processing on first error
       }
 
       // Create preview URL
       const preview = URL.createObjectURL(file);
+      createdUrls.push(preview);
       validFiles.push({
         id: generateId(),
         file,
@@ -252,7 +257,13 @@ export function ImageUpload({
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-label="Bilder hochladen - Klicken oder ziehen"
-        onKeyDown={(e) => e.key === 'Enter' && openFilePicker()}
+        onKeyDown={(e) => {
+          // Support both Enter and Space keys for accessibility (WCAG)
+          if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+            e.preventDefault();
+            openFilePicker();
+          }
+        }}
       >
         <input
           ref={fileInputRef}

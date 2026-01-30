@@ -209,6 +209,11 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         setStreamingContent('');
         setThinkingContent('');
 
+        // Create a new AbortController for this streaming request
+        const streamAbortController = new AbortController();
+        // Store reference for potential cleanup on unmount
+        const currentAbortRef = abortControllerRef.current;
+
         try {
           const response = await fetch(`/api/chat/sessions/${currentSessionId}/messages/stream`, {
             method: 'POST',
@@ -216,6 +221,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ message: messageContent }),
+            signal: streamAbortController.signal, // Add abort signal to prevent memory leaks
           });
 
           if (!response.ok) {
@@ -295,6 +301,11 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       }
 
     } catch (err) {
+      // Don't show error for aborted requests (e.g., component unmount or context change)
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+
       const errorMessage = getErrorMessage(err, 'Nachricht fehlgeschlagen');
       showToast(errorMessage, 'error');
 
