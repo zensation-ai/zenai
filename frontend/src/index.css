@@ -77,10 +77,10 @@
   --glass-shadow: rgba(20, 50, 70, 0.15);
   --glass-warm: rgba(255, 235, 220, 0.55);
 
-  /* Text Colors - Petrol-tinted dark (WCAG AAA compliant, verbesserter Kontrast) */
+  /* Text Colors - Petrol-tinted dark (WCAG AA+ compliant, verbesserter Kontrast) */
   --text: #1a2e3d;
-  --text-muted: #1e3444;      /* Dunkler für besseren Kontrast auf hellen Hintergründen (min 7:1) */
-  --text-secondary: #2a4555;  /* Dunkler für WCAG AAA Konformität auf Glasmorphism (min 5.5:1) */
+  --text-muted: #3a4d5a;      /* Dunkel genug für WCAG AA auf Glassmorphism (~5.5:1 auf weiß) */
+  --text-secondary: #4a5d6a;  /* Dunkel für WCAG AA auf hellem Hintergrund (~4.5:1 auf weiß) */
 
   /* Borders & Accents - More visible */
   --border: rgba(20, 50, 70, 0.15);
@@ -1037,10 +1037,10 @@ select:focus-visible {
   --glass-border: rgba(180, 205, 225, 0.55);
   --glass-shadow: rgba(20, 50, 70, 0.15);
 
-  /* Text Colors - Dark for light backgrounds (WCAG AAA) */
+  /* Text Colors - Dark for light backgrounds (WCAG AA+) */
   --text: #1a2e3d;
-  --text-muted: #1e3444;
-  --text-secondary: #2a4555;
+  --text-muted: #3a4d5a;
+  --text-secondary: #4a5d6a;
 
   /* Borders */
   --border: rgba(20, 50, 70, 0.15);

@@ -48,7 +48,7 @@
 
 .search-icon {
   font-size: 1.1rem;
-  color: var(--text-secondary);
+  color: #4a5d6a; /* Dunkel für guten Kontrast auf Glassmorphism */
   transition: var(--transition-fast);
 }
 
@@ -67,7 +67,7 @@
 }
 
 .search-input::placeholder {
-  color: var(--text-muted);
+  color: #5a6d7a; /* Mittelgrau für Placeholder - lesbar aber dezent */
   opacity: 1;
 }
 
@@ -82,7 +82,7 @@
 .search-clear {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  color: var(--text-secondary);
+  color: #4a5d6a; /* Dunkel für guten Kontrast */
   width: 26px;
   height: 26px;
   border-radius: 50%;

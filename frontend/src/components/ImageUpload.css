@@ -78,7 +78,7 @@
 
 .image-upload-hint {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: #4a5d6a; /* Dunkel für guten Kontrast */
 }
 
 /* Error message */
@@ -106,12 +106,12 @@
 
 .image-upload-preview-header span {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #4a5d6a; /* Dunkel für guten Kontrast */
 }
 
 .image-upload-clear {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: #4a5d6a; /* Dunkel für guten Kontrast */
   background: none;
   border: none;
   cursor: pointer;
@@ -213,7 +213,7 @@
   border-radius: var(--radius-md);
   border: 1.5px solid var(--border);
   background: rgba(255, 255, 255, 0.8);
-  color: var(--text-muted);
+  color: #4a5d6a; /* Dunkel für guten Kontrast */
   cursor: pointer;
   display: flex;
   align-items: center;

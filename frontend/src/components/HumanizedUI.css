@@ -798,20 +798,20 @@
 .empty-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-primary, #1a1a1a);
+  color: #1a2e3d; /* Dunkel für guten Kontrast */
   margin: 0;
 }
 
 .empty-description {
   font-size: 0.9375rem;
-  color: var(--text-secondary, #666);
+  color: #3a4d5a; /* Dunkler für bessere Lesbarkeit auf Glassmorphism */
   margin: 0;
   line-height: 1.5;
 }
 
 .empty-encouragement {
   font-size: 0.875rem;
-  color: var(--neuro-reward, #ff6b35);
+  color: #b84520; /* Dunkleres Orange für WCAG AA */
   font-style: italic;
   margin: 0;
 }
