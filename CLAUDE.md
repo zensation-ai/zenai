@@ -9,7 +9,7 @@
 | Service | URL | Notes |
 |---------|-----|-------|
 | **Frontend (Production)** | https://frontend-mu-six-93.vercel.app/ | Aktive Vercel-Deployment |
-| **Backend (Production)** | https://zenai-production.up.railway.app | Railway Auto-Deploy auf `main` |
+| **Backend (Production)** | https://ki-ab-production.up.railway.app | Railway Auto-Deploy auf `main` |
 | **Database** | Supabase | PostgreSQL mit pgvector |
 | **Website** | https://zensation.ai | ZenSation Enterprise Solutions |
 
@@ -352,6 +352,24 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-01-31: Database Reset & Production Deployment Fix
+
+**Database Reset Scripts:**
+
+- `backend/scripts/reset-database.ts` - Programmatisches Reset via Node.js
+- `backend/sql/reset_all_user_data.sql` - SQL für Supabase SQL Editor
+- Löscht alle Benutzerdaten, behält System-Konfigurationen
+
+**Deployment Fix:**
+
+- Railway URL korrigiert: `ki-ab-production.up.railway.app`
+- Docker HEALTHCHECK entfernt (Railway handled dies)
+- Dockerfile optimiert für Railway-Deployment
+
+**Datenbank-Status:** Zurückgesetzt auf Ausgangszustand (keine Testdaten)
+
+---
 
 ### 2026-01-28: Integration Test Suite Stabilisierung
 
