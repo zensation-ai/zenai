@@ -379,7 +379,18 @@ mockQueryContext
 - Docker HEALTHCHECK entfernt (Railway handled dies)
 - Dockerfile optimiert für Railway-Deployment
 
-**Datenbank-Status:** Vollständig zurückgesetzt - bereit für Produktionseinsatz
+**Vercel Environment Variables aktualisiert:**
+
+- `VITE_API_KEY` mit neuem Key aktualisiert
+- `VITE_API_URL` zeigt auf Railway Backend
+- Redeploy durchgeführt - Frontend läuft
+
+**Aktuelle Produktions-URLs:**
+
+- Frontend: <https://frontend-mu-six-93.vercel.app/>
+- Backend: <https://ki-ab-production.up.railway.app>
+
+**Status:** Vollständig produktionsbereit - lokale und Vercel-Deployments funktionieren
 
 ---
 
