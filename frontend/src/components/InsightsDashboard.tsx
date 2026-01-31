@@ -142,15 +142,16 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            id={`tab-${tab.id}`}
             type="button"
             role="tab"
-            className={`insights-tab neuro-hover-lift ${activeTab === tab.id ? 'active' : ''}`}
+            className={`insights-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
             aria-selected={activeTab === tab.id}
             aria-controls={`tabpanel-${tab.id}`}
-            title={tab.description}
+            aria-label={`${tab.label}: ${tab.description}`}
           >
-            <span className="insights-tab-icon">{tab.icon}</span>
+            <span className="insights-tab-icon" aria-hidden="true">{tab.icon}</span>
             <span className="insights-tab-label">{tab.label}</span>
           </button>
         ))}

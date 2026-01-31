@@ -269,3 +269,61 @@ export const STATE_STRINGS = {
     },
   },
 } as const;
+
+// ============================================
+// INSIGHTS DASHBOARD (Consolidated View)
+// ============================================
+
+export const INSIGHTS_STRINGS = {
+  title: 'Insights',
+  tabs: {
+    dashboard: {
+      label: 'Dashboard',
+      description: 'Übersicht und Statistiken',
+    },
+    analytics: {
+      label: 'Analytics',
+      description: 'Detaillierte Analysen',
+    },
+    digest: {
+      label: 'Digest',
+      description: 'Tägliche Zusammenfassung',
+    },
+    knowledge: {
+      label: 'Wissen',
+      description: 'Wissensgraph',
+    },
+  },
+} as const;
+
+// ============================================
+// AI WORKSHOP (Consolidated View)
+// ============================================
+
+export const AI_WORKSHOP_STRINGS = {
+  title: 'KI-Werkstatt',
+  tabs: {
+    incubator: {
+      label: 'Inkubator',
+      description: 'Ideen entwickeln',
+    },
+    proactive: {
+      label: 'Proaktiv',
+      description: 'KI-Vorschläge',
+    },
+    evolution: {
+      label: 'Evolution',
+      description: 'Ideen-Entwicklung',
+    },
+  },
+} as const;
+
+// ============================================
+// MOBILE NAVIGATION
+// ============================================
+
+export const MOBILE_NAV_STRINGS = {
+  toggle: 'Navigation öffnen',
+  close: 'Navigation schließen',
+  drawer: 'Mobile Navigation',
+} as const;

@@ -116,15 +116,16 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            id={`tab-${tab.id}`}
             type="button"
             role="tab"
-            className={`workshop-tab neuro-hover-lift ${activeTab === tab.id ? 'active' : ''}`}
+            className={`workshop-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
             aria-selected={activeTab === tab.id}
             aria-controls={`tabpanel-${tab.id}`}
-            title={tab.description}
+            aria-label={`${tab.label}: ${tab.description}`}
           >
-            <span className="workshop-tab-icon">{tab.icon}</span>
+            <span className="workshop-tab-icon" aria-hidden="true">{tab.icon}</span>
             <span className="workshop-tab-label">{tab.label}</span>
           </button>
         ))}

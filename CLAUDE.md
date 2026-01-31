@@ -353,7 +353,19 @@ mockQueryContext
 
 ## Changelog
 
-### 2026-01-31: Database Reset & Production Deployment Fix
+### 2026-01-31: Production Ready - Database Reset & API Key Fix
+
+**API-Key-Generierung korrigiert:**
+
+- `generate-api-key.ts` war veraltet (fehlende `company_id`)
+- Korrektes Script: `npm run create-web-key` (mit `company_id`)
+- Neuer API-Key generiert und in `.env` / `.env.production` eingetragen
+
+**Testdaten vollständig gelöscht:**
+
+- Alle Ideas aus `personal`, `work` und `public` Schemas entfernt
+- Chat-Verläufe, Voice Memos, Drafts gelöscht
+- App bereit für Produktionseinsatz
 
 **Database Reset Scripts:**
 
@@ -367,7 +379,7 @@ mockQueryContext
 - Docker HEALTHCHECK entfernt (Railway handled dies)
 - Dockerfile optimiert für Railway-Deployment
 
-**Datenbank-Status:** Zurückgesetzt auf Ausgangszustand (keine Testdaten)
+**Datenbank-Status:** Vollständig zurückgesetzt - bereit für Produktionseinsatz
 
 ---
 

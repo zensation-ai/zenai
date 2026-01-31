@@ -45,12 +45,22 @@
 .workshop-tab:hover {
   background: var(--surface-hover);
   color: var(--text);
+  transform: translateY(-1px);
+}
+
+.workshop-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
 }
 
 .workshop-tab.active {
   background: var(--primary);
   color: white;
   box-shadow: var(--shadow-glow);
+}
+
+.workshop-tab.active:focus-visible {
+  box-shadow: var(--shadow-glow), 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
 }
 
 .workshop-tab-icon {

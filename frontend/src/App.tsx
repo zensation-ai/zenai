@@ -931,41 +931,49 @@ function App() {
               {/* Haupt-Tab 1: Gedanken */}
               <button
                 type="button"
-                className={`nav-button ${currentPage === 'ideas' ? 'active' : ''}`}
+                className={`nav-button neuro-focus-ring ${currentPage === 'ideas' ? 'active' : ''}`}
                 onClick={() => setCurrentPage('ideas')}
                 title="Deine Gedanken"
+                aria-label="Gedanken: Deine Ideen und Notizen anzeigen"
+                aria-current={currentPage === 'ideas' ? 'page' : undefined}
               >
-                💭 Gedanken
+                <span aria-hidden="true">💭</span> Gedanken
               </button>
 
               {/* Haupt-Tab 2: Chat */}
               <button
                 type="button"
-                className={`nav-button ${(currentPage as Page) === 'chat' ? 'active' : ''}`}
+                className={`nav-button neuro-focus-ring ${(currentPage as Page) === 'chat' ? 'active' : ''}`}
                 onClick={() => setCurrentPage('chat')}
                 title="KI-Gespräche"
+                aria-label="Chat: KI-Gespräche führen"
+                aria-current={(currentPage as Page) === 'chat' ? 'page' : undefined}
               >
-                💬 Chat
+                <span aria-hidden="true">💬</span> Chat
               </button>
 
               {/* Haupt-Tab 3: Insights (konsolidiert Dashboard/Analytics/Digest/Graph) */}
               <button
                 type="button"
-                className={`nav-button ${['insights', 'dashboard', 'analytics', 'digest', 'knowledge-graph'].includes(currentPage as string) ? 'active' : ''}`}
+                className={`nav-button neuro-focus-ring ${['insights', 'dashboard', 'analytics', 'digest', 'knowledge-graph'].includes(currentPage as string) ? 'active' : ''}`}
                 onClick={() => setCurrentPage('insights')}
                 title="Statistiken und Übersicht"
+                aria-label="Insights: Statistiken, Analytics und Wissensübersicht"
+                aria-current={['insights', 'dashboard', 'analytics', 'digest', 'knowledge-graph'].includes(currentPage as string) ? 'page' : undefined}
               >
-                📊 Insights
+                <span aria-hidden="true">📊</span> Insights
               </button>
 
               {/* Haupt-Tab 4: Archiv */}
               <button
                 type="button"
-                className={`nav-button ${(currentPage as Page) === 'archive' ? 'active' : ''} ${archivedCount > 0 ? 'has-items' : ''}`}
+                className={`nav-button neuro-focus-ring ${(currentPage as Page) === 'archive' ? 'active' : ''} ${archivedCount > 0 ? 'has-items' : ''}`}
                 onClick={() => setCurrentPage('archive')}
                 title="Archivierte Gedanken"
+                aria-label={`Archiv: Archivierte Gedanken${archivedCount > 0 ? ` (${archivedCount} Einträge)` : ''}`}
+                aria-current={(currentPage as Page) === 'archive' ? 'page' : undefined}
               >
-                📥 Archiv {archivedCount > 0 && <span className="badge">{archivedCount}</span>}
+                <span aria-hidden="true">📥</span> Archiv {archivedCount > 0 && <span className="badge" aria-hidden="true">{archivedCount}</span>}
               </button>
 
               {/* Mehr-Dropdown: Alle sekundären Features */}
@@ -1013,8 +1021,8 @@ function App() {
                 title={apiStatus?.ollama ? 'LLM verbunden' : 'LLM getrennt'}
               />
             </div>
-            <button type="button" className="refresh-button" onClick={() => loadIdeas()} title="Neu laden" aria-label="Neu laden">
-              ↻
+            <button type="button" className="refresh-button neuro-focus-ring" onClick={() => loadIdeas()} title="Neu laden" aria-label="Daten neu laden">
+              <span aria-hidden="true">↻</span>
             </button>
             {/* Mobile Navigation - Konsolidiert 2026 */}
             <MobileNav
