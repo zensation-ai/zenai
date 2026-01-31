@@ -50,9 +50,7 @@ USER nodejs
 # Expose port
 EXPOSE 3000
 
-# Health check - use PORT env var (Railway sets this dynamically)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000}/api/health || exit 1
+# Railway handles health checks - no HEALTHCHECK needed
 
 # Start with dumb-init
 ENTRYPOINT ["dumb-init", "--"]
