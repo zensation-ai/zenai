@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'ai.zensation.zenai',
-  appName: 'ZenAI',
+  appId: 'ai.zensation.mybrain',
+  appName: 'My Brain',
   webDir: 'dist',
   server: {
     // Production: Use Railway backend

@@ -24,7 +24,7 @@
   position: relative;
   /* CLS-Fix: Feste Höhe verhindert Layout-Shift beim Laden */
   min-height: 420px;
-  /* ZenAI: Enterprise AI Gradient - Orange/Petrol Brand Colors */
+  /* My Brain: Enterprise AI Gradient - Orange/Petrol Brand Colors */
   background: linear-gradient(
     180deg,
     rgba(255, 107, 53, 0.02) 0%,
@@ -41,7 +41,7 @@
     background 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Mood-basierte Farbvariationen - ZenAI Orange/Petrol Theme */
+/* Mood-basierte Farbvariationen - My Brain Orange/Petrol Theme */
 .hero-section[data-mood="energetisch"],
 .hero-section[data-mood="motiviert"] {
   background: linear-gradient(
@@ -75,7 +75,7 @@
   animation-duration: 8s;
 }
 
-/* ZenAI ambient glow behind hero - Orange/Petrol Enterprise Branding */
+/* My Brain ambient glow behind hero - Orange/Petrol Enterprise Branding */
 .hero-section::before {
   content: '';
   position: absolute;
@@ -173,7 +173,7 @@
   }
 }
 
-/* Hero ambient glow behind brain - ZenAI Orange/Petrol Theme */
+/* Hero ambient glow behind brain - My Brain Orange/Petrol Theme */
 .hero-brain::before {
   content: '';
   position: absolute;
@@ -586,7 +586,7 @@
   flex-shrink: 0;
 }
 
-/* ZenAI Logo Container */
+/* My Brain Logo Container */
 .header-logo-container {
   display: flex;
   align-items: center;
@@ -600,14 +600,14 @@
   flex-shrink: 0;
 }
 
-.zenai-logo-svg {
+.mybrain-logo-svg {
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 2px 8px rgba(255, 107, 53, 0.3));
   transition: all 0.3s ease;
 }
 
-.header-logo-icon:hover .zenai-logo-svg {
+.header-logo-icon:hover .mybrain-logo-svg {
   filter: drop-shadow(0 4px 12px rgba(255, 140, 90, 0.5));
   transform: scale(1.05);
 }
@@ -1688,7 +1688,7 @@
   box-shadow: var(--shadow-md);
 }
 
-/* Footer - Modern ZenAI Footer with Navigation */
+/* Footer - Modern My Brain Footer with Navigation */
 /* ============================================
    FOOTER - Minimal & Clean 2026
    ============================================ */

@@ -1,9 +1,9 @@
 {
-  "name": "zenai-frontend",
+  "name": "mybrain-frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "ZenAI - Enterprise AI Platform by ZenSation Enterprise Solutions",
-  "author": "Alexander Bering <alex@zensation.ai>",
+  "description": "My Brain - Personal AI Assistant. Designed, Developed and Owned by Alexander Bering",
+  "author": "Alexander Bering",
   "homepage": "https://zensation.ai",
   "type": "module",
   "scripts": {

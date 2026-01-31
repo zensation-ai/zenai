@@ -142,7 +142,7 @@ export function AIBrain({
           style={{ background: 'transparent' }}
         >
           <defs>
-            {/* Premium Sunset Orange Gradient - ZenAI Signature */}
+            {/* Premium Sunset Orange Gradient - My Brain Signature */}
             <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#ffb347" />
               <stop offset="35%" stopColor="#ff9f33" />

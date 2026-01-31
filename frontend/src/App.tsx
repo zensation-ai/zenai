@@ -872,8 +872,8 @@ function App() {
           <div className="header-left">
             <div className="header-logo-container">
               <div className="header-logo-icon">
-                {/* ZenAI Logo: macOS-style - Orange Brain on Dark Circle */}
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="zenai-logo-svg">
+                {/* My Brain Logo: macOS-style - Orange Brain on Dark Circle */}
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="mybrain-logo-svg">
                   <defs>
                     <linearGradient id="zenLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#ffb347" />
@@ -922,7 +922,7 @@ function App() {
                 {/* AI status indicator */}
                 <span className={`logo-status-dot ${isAIActive ? 'active' : ''}`} title={isAIActive ? `KI arbeitet: ${aiActivityType}` : 'KI bereit'} />
               </div>
-              <span className="header-logo-text">ZenAI</span>
+              <span className="header-logo-text">My Brain</span>
             </div>
           </div>
           <div className="header-center">
@@ -1289,18 +1289,14 @@ function App() {
         <div className="footer-content footer-minimal">
           <div className="footer-brand">
             <span className="footer-logo-icon">🧠</span>
-            <span className="footer-logo-text">ZenAI</span>
+            <span className="footer-logo-text">My Brain</span>
             <span className="footer-separator">•</span>
             <span className="footer-tagline">Dein intelligenter Gedanken-Assistent</span>
           </div>
-          <div className="footer-links">
-            <a href="https://zensation.ai" target="_blank" rel="noopener noreferrer">zensation.ai</a>
-            <span className="footer-dot">·</span>
-            <a href="https://zensation.app" target="_blank" rel="noopener noreferrer">zensation.app</a>
-          </div>
           <div className="footer-meta">
-            <span className="footer-copyright">© {new Date().getFullYear()} ZenSation</span>
-            <span className="footer-version">v2026.1</span>
+            <span className="footer-copyright">© {new Date().getFullYear()} Alexander Bering</span>
+            <span className="footer-separator">•</span>
+            <span className="footer-tagline">Designed, Developed and Owned by Alexander Bering</span>
           </div>
         </div>
       </footer>
