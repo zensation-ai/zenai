@@ -11,6 +11,7 @@ build/
 .env
 .env.local
 .env.*.local
+.env.production
 
 # IDE
 .idea/
@@ -18,10 +19,11 @@ build/
 *.swp
 *.swo
 
-# Xcode
+# Xcode / Capacitor iOS
 *.xcuserstate
 xcuserdata/
 *.xcworkspace/xcuserdata/
+frontend/ios/
 
 # OS
 .DS_Store

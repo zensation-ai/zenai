@@ -1,14 +1,13 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.personalai.brain',
-  appName: 'Personal AI Brain',
+  appId: 'ai.zensation.zenai',
+  appName: 'ZenAI',
   webDir: 'dist',
   server: {
-    // For development: connect to local backend
-    // Remove or change for production
-    url: process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : undefined,
-    cleartext: true, // Allow HTTP for local development
+    // Production: Use Railway backend
+    // The web assets are bundled in the app, API calls go to production
+    androidScheme: 'https',
   },
   ios: {
     // iOS-specific settings

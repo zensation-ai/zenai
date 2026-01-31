@@ -58,38 +58,20 @@
       "type": "image/png"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "ZenAI Desktop Dashboard"
-    },
-    {
-      "src": "/screenshots/mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "ZenAI Mobile View"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Neue Idee",
       "short_name": "Idee",
       "description": "Schnell eine neue Idee erfassen",
       "url": "/?action=new-idea",
-      "icons": [{ "src": "/icons/shortcut-idea.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Chat starten",
       "short_name": "Chat",
       "description": "AI Chat starten",
       "url": "/chat",
-      "icons": [{ "src": "/icons/shortcut-chat.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
-  ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  ]
 }
