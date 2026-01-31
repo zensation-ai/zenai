@@ -223,7 +223,7 @@
 .delete-button:disabled,
 .archive-button:disabled,
 .restore-button:disabled {
-  opacity: 0.3;
+  opacity: 0.45; /* Erhöht für bessere Accessibility */
   cursor: not-allowed;
   pointer-events: none;
 }
