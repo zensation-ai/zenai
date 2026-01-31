@@ -2,6 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import dotenv from 'dotenv';
+
+// CRITICAL: Load environment variables BEFORE any other imports
+// This ensures services like OpenAI are initialized with correct API keys
+dotenv.config();
+
 // Phase Security Sprint 4: Secrets Manager - must be imported early
 import { secretsManager } from './services/secrets-manager';
 import { voiceMemoRouter } from './routes/voice-memo';
@@ -83,7 +88,7 @@ import { startMemoryScheduler, stopMemoryScheduler } from './services/memory';
 // Phase 31: AI Capabilities Enhancement
 import { registerAllToolHandlers } from './services/tool-handlers';
 
-dotenv.config();
+// NOTE: dotenv.config() is called at the top of this file before other imports
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -256,6 +261,10 @@ app.use('/api/audit-logs', auditLogsRouter);
 // Phase 5: Thought Incubator
 app.use('/api/incubator', incubatorRouter);
 
+// Phase 29: General Chat - ChatGPT-like interface
+// IMPORTANT: Must be registered BEFORE context-aware routes to prevent /api/chat/* being matched as /api/:context/*
+app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessions/:id/messages, /api/chat/quick
+
 // Phase 6: Context-Aware Routes
 app.use('/api', contextsRouter);
 app.use('/api', voiceMemoContextRouter);
@@ -306,9 +315,6 @@ app.use('/api', draftsRouter);  // /api/:context/ideas/:id/draft, /api/:context/
 
 // Phase 27: Proactive Intelligence System - "KI macht proaktive Vorschläge"
 app.use('/api', proactiveRouter);  // /api/:context/proactive/suggestions, /api/:context/proactive/routines, etc.
-
-// Phase 29: General Chat - ChatGPT-like interface
-app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessions/:id/messages, /api/chat/quick
 
 // Phase 30: Memory Admin - HiMeS Memory Management
 app.use('/api/memory', memoryAdminRouter);  // /api/memory/status, /api/memory/consolidate, /api/memory/decay, etc.

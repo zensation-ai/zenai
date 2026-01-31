@@ -141,9 +141,9 @@
   gap: 6px;
   padding: 7px 14px;
   border-radius: 20px;
-  border: 1.5px solid rgba(20, 50, 70, 0.15);
-  background: rgba(255, 255, 255, 0.75);
-  color: var(--text-muted);
+  border: 1.5px solid rgba(20, 50, 70, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -191,20 +191,28 @@
 }
 
 @media (max-width: 600px) {
+  .filter-bar {
+    padding: 0.875rem 1rem;
+  }
+
   .filter-pills {
     gap: 6px;
   }
 
   .filter-pill {
-    padding: 5px 12px;
+    padding: 8px 14px;
     font-size: 0.75rem;
-    min-height: 38px; /* Better touch target */
+    min-height: 44px; /* WCAG 2.5.5 touch target */
   }
 
   .filter-toggle,
   .clear-filters {
     min-height: 44px;
     padding: 10px 14px;
+  }
+
+  .filter-group label {
+    font-size: 0.7rem;
   }
 }
 
@@ -220,9 +228,9 @@
   }
 
   .filter-pill {
-    background: rgba(40, 55, 70, 0.75);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: var(--text-muted);
+    background: rgba(40, 55, 70, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-secondary);
   }
 
   .filter-pill:hover {

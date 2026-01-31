@@ -3,6 +3,9 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
+  /* Safe area support for devices with notches */
+  bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  right: max(24px, env(safe-area-inset-right, 24px));
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -155,8 +158,10 @@
   font-size: 1.1rem;
   cursor: pointer;
   padding: 0;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,6 +245,11 @@
   transform: scale(0.95);
 }
 
+.toast-undo:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
 /* Progress Bar */
 .toast-progress {
   position: absolute;
@@ -273,7 +283,7 @@
   .toast-container {
     left: 16px;
     right: 16px;
-    bottom: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
     max-width: none;
   }
 
@@ -288,10 +298,17 @@
     font-size: 0.75rem;
   }
 
-  /* Better touch targets on mobile */
+  /* Better touch targets on mobile (WCAG 2.5.5 min 44px) */
   .toast-close {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .toast-undo {
+    min-height: 44px;
+    padding: 10px 14px;
   }
 }
 

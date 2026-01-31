@@ -79,8 +79,8 @@
 
   /* Text Colors - Petrol-tinted dark (WCAG AAA compliant, verbesserter Kontrast) */
   --text: #1a2e3d;
-  --text-muted: #243a4a;      /* Dunkler für besseren Kontrast auf hellen Hintergründen */
-  --text-secondary: #334d5c;  /* Dunkler für WCAG AAA Konformität auf Glasmorphism */
+  --text-muted: #1e3444;      /* Dunkler für besseren Kontrast auf hellen Hintergründen (min 7:1) */
+  --text-secondary: #2a4555;  /* Dunkler für WCAG AAA Konformität auf Glasmorphism (min 5.5:1) */
 
   /* Borders & Accents - More visible */
   --border: rgba(20, 50, 70, 0.15);
@@ -137,12 +137,12 @@
   --radius-lg: 18px;
   --radius-xl: 24px;
 
-  /* Dark Petrol Header Theme (WCAG AA compliant) */
+  /* Dark Petrol Header Theme (WCAG AA compliant, min 4.5:1 contrast) */
   --header-bg: linear-gradient(135deg, #0f1d2a 0%, #162736 50%, #1a2e3d 100%);
   --header-bg-solid: #142230;
   --header-text: #f8fafc;
-  --header-text-muted: #c8d4de;
-  --header-text-secondary: #a0b3c4;
+  --header-text-muted: #d4dde5;      /* Heller für besseren Kontrast auf Header */
+  --header-text-secondary: #b8c8d4;  /* Heller für WCAG AA auf dunklem Header */
   --header-border: rgba(255, 255, 255, 0.12);
   --header-glass: rgba(20, 34, 48, 0.85);
   --header-hover: rgba(255, 255, 255, 0.12);
@@ -218,10 +218,10 @@
     --glass-shadow: rgba(0, 0, 0, 0.4);
     --glass-warm: rgba(80, 50, 35, 0.4);
 
-    /* Text Colors - Light for dark backgrounds */
+    /* Text Colors - Light for dark backgrounds (WCAG AA min 4.5:1) */
     --text: #e8f0f5;
-    --text-muted: #b8c8d5;
-    --text-secondary: #8aa0b5;
+    --text-muted: #c8d6e0;      /* Heller für besseren Kontrast auf dunklem Hintergrund */
+    --text-secondary: #a0b8c8;  /* Heller für WCAG AA Konformität */
 
     /* Borders - More visible on dark */
     --border: rgba(100, 150, 180, 0.2);
@@ -331,9 +331,9 @@
   .skeleton {
     background: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.04) 0%,
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.04) 100%
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.16) 50%,
+      rgba(255, 255, 255, 0.08) 100%
     );
   }
 
@@ -927,9 +927,9 @@ select:focus-visible {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(20, 50, 70, 0.06) 0%,
-    rgba(20, 50, 70, 0.1) 50%,
-    rgba(20, 50, 70, 0.06) 100%
+    rgba(20, 50, 70, 0.12) 0%,
+    rgba(20, 50, 70, 0.22) 50%,
+    rgba(20, 50, 70, 0.12) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
@@ -1007,10 +1007,10 @@ select:focus-visible {
   --glass-border: rgba(180, 205, 225, 0.55);
   --glass-shadow: rgba(20, 50, 70, 0.15);
 
-  /* Text Colors - Dark for light backgrounds */
+  /* Text Colors - Dark for light backgrounds (WCAG AAA) */
   --text: #1a2e3d;
-  --text-muted: #243a4a;
-  --text-secondary: #3a5567;
+  --text-muted: #1e3444;
+  --text-secondary: #2a4555;
 
   /* Borders */
   --border: rgba(20, 50, 70, 0.15);
@@ -1044,10 +1044,10 @@ select:focus-visible {
   --glass-border: rgba(80, 120, 150, 0.3);
   --glass-shadow: rgba(0, 0, 0, 0.4);
 
-  /* Text Colors - Light for dark backgrounds */
+  /* Text Colors - Light for dark backgrounds (WCAG AA min 4.5:1) */
   --text: #e8f0f5;
-  --text-muted: #b8c8d5;
-  --text-secondary: #8aa0b5;
+  --text-muted: #c8d6e0;
+  --text-secondary: #a0b8c8;
 
   /* Borders */
   --border: rgba(100, 150, 180, 0.2);

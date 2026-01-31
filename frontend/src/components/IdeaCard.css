@@ -193,9 +193,11 @@
   border: none;
   border-radius: 50%;
   color: var(--text-muted);
-  font-size: 0.85rem;
-  width: 30px;
-  height: 30px;
+  font-size: 0.9rem;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -258,6 +260,15 @@
 .archive-button:active,
 .restore-button:active {
   transform: scale(0.95);
+}
+
+/* Focus-visible states for keyboard navigation (WCAG 2.4.7) */
+.delete-button:focus-visible,
+.archive-button:focus-visible,
+.restore-button:focus-visible {
+  outline: none;
+  opacity: 1;
+  box-shadow: 0 0 0 3px var(--primary-glow, rgba(255, 107, 53, 0.35));
 }
 
 .idea-summary {

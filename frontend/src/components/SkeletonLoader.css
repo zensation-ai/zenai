@@ -6,9 +6,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(20, 50, 70, 0.06) 0%,
-    rgba(20, 50, 70, 0.12) 50%,
-    rgba(20, 50, 70, 0.06) 100%
+    rgba(20, 50, 70, 0.12) 0%,
+    rgba(20, 50, 70, 0.22) 50%,
+    rgba(20, 50, 70, 0.12) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
@@ -333,9 +333,9 @@
   .skeleton {
     background: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.04) 0%,
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.04) 100%
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.16) 50%,
+      rgba(255, 255, 255, 0.08) 100%
     );
   }
 
@@ -362,7 +362,7 @@
   }
 
   .progress-sub {
-    color: #94a3b8;
+    color: #a8b8c8;
   }
 }
 
@@ -376,7 +376,7 @@
   }
 
   .skeleton {
-    background: rgba(20, 50, 70, 0.08);
+    background: rgba(20, 50, 70, 0.15);
   }
 }
 
