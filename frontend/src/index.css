@@ -131,11 +131,41 @@
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Radius */
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  /* Radius - Vollständiges System */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Spacing - Konsistentes System */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+  --spacing-4xl: 48px;
+
+  /* Semantic Colors - Error, Warning, Success */
+  --color-error: #ef4444;
+  --color-error-light: #fca5a5;
+  --color-error-dark: #dc2626;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+
+  /* Status Colors */
+  --status-online: #22c55e;
+  --status-offline: #6b7280;
+  --status-busy: #f59e0b;
+  --status-error: #ef4444;
+
+  /* Context Colors - Work Mode */
+  --context-work-primary: #3b82f6;
+  --context-work-secondary: #60a5fa;
+  --context-work-hover: #2563eb;
 
   /* Dark Petrol Header Theme (WCAG AA compliant, min 4.5:1 contrast) */
   --header-bg: linear-gradient(135deg, #0f1d2a 0%, #162736 50%, #1a2e3d 100%);

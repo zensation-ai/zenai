@@ -184,6 +184,7 @@ const ToastItem = memo(function ToastItem({ toast }: { toast: Toast }) {
           type="button"
           className="toast-undo neuro-press-effect neuro-focus-ring"
           onClick={handleUndo}
+          aria-label={`${toast.undoLabel}: ${toast.message}`}
         >
           {toast.undoLabel}
         </button>

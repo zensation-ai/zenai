@@ -32,29 +32,48 @@ export interface ApiStatus {
 
 // Note: Filters type is defined in SearchFilterBar.tsx to match component requirements
 
+/**
+ * Page Types - Konsolidierte Navigation 2026
+ *
+ * Haupt-Tabs (4):
+ * - ideas: Gedanken-Sammlung mit integrierter Sortierung
+ * - chat: KI-Gespräche
+ * - insights: Dashboard + Analytics + Digest + Graph kombiniert
+ * - archive: Archivierte Gedanken
+ *
+ * Sekundäre Seiten (via "Mehr"-Dropdown):
+ * - ai-workshop: KI-Werkstatt (Inkubator + Proaktiv + Evolution kombiniert)
+ * - learning: Lernen (mit Lernzielen als Tab)
+ * - profile, integrations, automations, etc.
+ */
 export type Page =
+  // Haupt-Navigation (4 Tabs)
   | 'ideas'
+  | 'chat'
+  | 'insights'
   | 'archive'
-  | 'meetings'
-  | 'profile'
-  | 'integrations'
-  | 'incubator'
-  | 'knowledge-graph'
+  // Sekundäre Seiten
+  | 'ai-workshop'
   | 'learning'
-  | 'analytics'
-  | 'automations'
-  | 'evolution'
-  | 'notifications'
-  | 'digest'
-  | 'personalization'
-  | 'learning-tasks'
+  | 'profile'
+  | 'meetings'
   | 'media'
   | 'stories'
+  | 'automations'
+  | 'integrations'
+  | 'notifications'
   | 'export'
   | 'sync'
+  | 'personalization'
+  // Legacy-Seiten (intern weitergeleitet)
+  | 'incubator'
   | 'proactive'
-  | 'triage'
+  | 'evolution'
   | 'dashboard'
-  | 'chat';
+  | 'analytics'
+  | 'digest'
+  | 'knowledge-graph'
+  | 'learning-tasks'
+  | 'triage';
 
 export type Context = 'personal' | 'work';

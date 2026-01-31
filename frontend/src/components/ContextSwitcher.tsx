@@ -59,7 +59,7 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
       <div className="context-toggle" role="group" aria-label="Kontext wählen">
         <button
           type="button"
-          className={`context-option neuro-press-effect ${context === 'personal' ? 'active' : ''}`}
+          className={`context-option neuro-press-effect neuro-focus-ring ${context === 'personal' ? 'active' : ''}`}
           onClick={() => onContextChange('personal')}
           title="Persönlicher Kontext"
           aria-pressed={context === 'personal'}
@@ -70,7 +70,7 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
         </button>
         <button
           type="button"
-          className={`context-option neuro-press-effect ${context === 'work' ? 'active' : ''}`}
+          className={`context-option neuro-press-effect neuro-focus-ring ${context === 'work' ? 'active' : ''}`}
           onClick={() => onContextChange('work')}
           title="Arbeits-Kontext"
           aria-pressed={context === 'work'}
@@ -86,10 +86,10 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
           <span className="suggestion-text">
             Wechsel zu {suggestedContext === 'personal' ? '🏠 Privat' : '💼 Arbeit'}?
           </span>
-          <button type="button" className="suggestion-accept neuro-press-effect" onClick={handleSuggestionAccept} aria-label="Kontextwechsel akzeptieren">
+          <button type="button" className="suggestion-accept neuro-press-effect neuro-focus-ring" onClick={handleSuggestionAccept} aria-label="Kontextwechsel akzeptieren">
             Ja
           </button>
-          <button type="button" className="suggestion-dismiss neuro-press-effect" onClick={handleSuggestionDismiss} aria-label="Kontextwechsel ablehnen">
+          <button type="button" className="suggestion-dismiss neuro-press-effect neuro-focus-ring" onClick={handleSuggestionDismiss} aria-label="Kontextwechsel ablehnen">
             Nein
           </button>
         </div>

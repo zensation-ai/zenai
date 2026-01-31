@@ -73,16 +73,18 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
             <div className="error-boundary-actions">
               <button
-                className="error-boundary-button"
+                className="error-boundary-button neuro-button neuro-focus-ring"
                 onClick={this.handleReset}
                 type="button"
+                aria-label="Fehler ignorieren und erneut versuchen"
               >
                 Erneut versuchen
               </button>
               <button
-                className="error-boundary-button secondary"
+                className="error-boundary-button secondary neuro-focus-ring"
                 onClick={() => window.location.reload()}
                 type="button"
+                aria-label="Seite komplett neu laden"
               >
                 Seite neu laden
               </button>

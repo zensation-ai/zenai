@@ -115,11 +115,11 @@ export function MobileNav({
   const cognitiveLevel = totalItems <= 10 ? 'low' : totalItems <= 15 ? 'medium' : 'high';
 
   // Main navigation items - matching desktop nav for consistency
+  // Konsolidiert 2026: 4 Haupt-Tabs
   const mainNavItems: NavItem[] = [
     { label: 'Gedanken', icon: '💭', page: 'ideas' },
-    { label: 'Triage', icon: '📋', page: 'triage' },
-    { label: 'Gespräche', icon: '💬', page: 'chat' },
-    { label: 'Dashboard', icon: '📊', page: 'dashboard' },
+    { label: 'Chat', icon: '💬', page: 'chat' },
+    { label: 'Insights', icon: '📊', page: 'insights' },
     { label: 'Archiv', icon: '📥', page: 'archive' },
   ];
 
@@ -130,7 +130,7 @@ export function MobileNav({
       {/* Hamburger Button with Micro-Interaction */}
       <button
         type="button"
-        className={`mobile-nav-toggle neuro-press-effect ${isOpen ? 'open' : ''}`}
+        className={`mobile-nav-toggle neuro-press-effect neuro-focus-ring ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-controls="mobile-nav-drawer"
@@ -168,7 +168,7 @@ export function MobileNav({
               </div>
               <button
                 type="button"
-                className="mobile-nav-close"
+                className="mobile-nav-close neuro-focus-ring"
                 onClick={() => setIsOpen(false)}
                 aria-label="Menü schließen"
               >
@@ -204,7 +204,7 @@ export function MobileNav({
                     <button
                       key={item.page}
                       type="button"
-                      className={`mobile-nav-item neuro-hover-lift ${isActive ? 'active' : ''}`}
+                      className={`mobile-nav-item neuro-hover-lift neuro-focus-ring ${isActive ? 'active' : ''}`}
                       onClick={() => handleNavigate(item.page)}
                       aria-current={isActive ? 'page' : undefined}
                       style={{
@@ -241,7 +241,7 @@ export function MobileNav({
                     {/* Group Header - Collapsible */}
                     <button
                       type="button"
-                      className="mobile-nav-group-header neuro-hover-lift"
+                      className="mobile-nav-group-header neuro-hover-lift neuro-focus-ring"
                       onClick={() => toggleGroup(group.label)}
                       aria-expanded={isGroupActive}
                       aria-label={`${group.label} ${isGroupActive ? 'zuklappen' : 'aufklappen'}`}
@@ -266,7 +266,7 @@ export function MobileNav({
                           <button
                             key={item.page}
                             type="button"
-                            className={`mobile-nav-item nested neuro-hover-lift ${isActive ? 'active' : ''}`}
+                            className={`mobile-nav-item nested neuro-hover-lift neuro-focus-ring ${isActive ? 'active' : ''}`}
                             onClick={() => handleNavigate(item.page)}
                             aria-current={isActive ? 'page' : undefined}
                             style={{

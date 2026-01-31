@@ -165,10 +165,14 @@ export function InlineLoader({
   text
 }: InlineLoaderProps) {
   return (
-    <span className={`inline-loader inline-loader-${size} inline-loader-${color}`}>
-      <span className="inline-loader-dot" />
-      <span className="inline-loader-dot" />
-      <span className="inline-loader-dot" />
+    <span
+      className={`inline-loader inline-loader-${size} inline-loader-${color}`}
+      role="status"
+      aria-label={text || 'Lädt...'}
+    >
+      <span className="inline-loader-dot" aria-hidden="true" />
+      <span className="inline-loader-dot" aria-hidden="true" />
+      <span className="inline-loader-dot" aria-hidden="true" />
       {text && <span className="inline-loader-text">{text}</span>}
     </span>
   );

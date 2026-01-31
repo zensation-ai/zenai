@@ -618,10 +618,9 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
           />
           <button
             type="button"
-            className="chat-send-btn neuro-hover-lift neuro-color-transition"
+            className="chat-send-btn neuro-hover-lift neuro-color-transition neuro-focus-ring"
             onClick={handleSendMessage}
             disabled={sending || (!inputValue.trim() && selectedImages.length === 0)}
-            title="Nachricht senden"
             aria-label={sending ? 'Nachricht wird gesendet' : 'Nachricht senden'}
           >
             {sending ? (
@@ -638,10 +637,9 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
           {sessionId && (
             <button
               type="button"
-              className="new-chat-btn neuro-hover-lift neuro-color-transition"
+              className="new-chat-btn neuro-hover-lift neuro-color-transition neuro-focus-ring"
               onClick={handleNewChat}
-              title="Startet eine neue Unterhaltung (bisherige bleibt erhalten)"
-              aria-label="Neue Chat-Session starten"
+              aria-label="Neue Chat-Session starten (bisherige bleibt erhalten)"
             >
               + Neuer Chat
             </button>

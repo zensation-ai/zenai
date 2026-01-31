@@ -160,7 +160,7 @@ export function NavDropdown({
     >
       <button
         type="button"
-        className={`nav-dropdown-trigger neuro-hover-lift ${hasActiveChild ? 'has-active' : ''} ${isOpen ? 'open' : ''}`}
+        className={`nav-dropdown-trigger neuro-hover-lift neuro-focus-ring ${hasActiveChild ? 'has-active' : ''} ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -223,11 +223,12 @@ export function NavDropdown({
                   <button
                     key={item.page}
                     type="button"
-                    className={`nav-dropdown-item ${isActive ? 'active' : ''} ${isHovered ? 'hovered' : ''}`}
+                    className={`nav-dropdown-item neuro-focus-ring ${isActive ? 'active' : ''} ${isHovered ? 'hovered' : ''}`}
                     onClick={() => handleItemClick(item.page)}
                     onMouseEnter={() => handleItemHover(item.page)}
                     onMouseLeave={() => handleItemHover(null)}
                     role="menuitem"
+                    aria-label={item.description ? `${item.label}: ${item.description}` : item.label}
                     style={{
                       '--stagger-delay': `${itemIndex * STAGGER_DELAY}ms`,
                     } as CSSProperties}

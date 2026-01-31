@@ -144,7 +144,7 @@ export function SearchFilterBar({
           {query && !isSearching && (
             <button
               type="button"
-              className="sfb-search-clear neuro-press-effect"
+              className="sfb-search-clear neuro-press-effect neuro-focus-ring"
               onClick={handleClearSearch}
               aria-label="Suche löschen"
             >
@@ -156,12 +156,13 @@ export function SearchFilterBar({
         {/* Filter-Toggle */}
         <button
           type="button"
-          className={`sfb-filter-toggle neuro-press-effect ${showFilters ? 'active' : ''} ${
+          className={`sfb-filter-toggle neuro-press-effect neuro-focus-ring ${showFilters ? 'active' : ''} ${
             activeFilterCount > 0 ? 'has-filters' : ''
           }`}
           onClick={() => setShowFilters(!showFilters)}
           aria-expanded={showFilters}
           aria-controls="sfb-filter-panel"
+          aria-label={`Filter ${showFilters ? 'ausblenden' : 'anzeigen'}${activeFilterCount > 0 ? `, ${activeFilterCount} aktiv` : ''}`}
         >
           <span className="sfb-filter-icon" aria-hidden="true">⚙️</span>
           <span className="sfb-filter-label">Filter</span>
@@ -175,14 +176,15 @@ export function SearchFilterBar({
 
       {/* Suchergebnis-Info */}
       {searchResults !== null && (
-        <div className="sfb-search-info">
+        <div className="sfb-search-info" role="status" aria-live="polite">
           <span className="sfb-result-count">
             {searchResults} {searchResults === 1 ? 'Ergebnis' : 'Ergebnisse'} gefunden
           </span>
           <button
             type="button"
-            className="sfb-clear-search neuro-press-effect"
+            className="sfb-clear-search neuro-press-effect neuro-focus-ring"
             onClick={handleClearSearch}
+            aria-label="Suchergebnisse zurücksetzen"
           >
             × Suche zurücksetzen
           </button>
@@ -200,11 +202,12 @@ export function SearchFilterBar({
                 <button
                   key={opt.value}
                   type="button"
-                  className={`sfb-pill neuro-press-effect ${
+                  className={`sfb-pill neuro-press-effect neuro-focus-ring ${
                     filters.type === opt.value ? 'active' : ''
                   }`}
                   onClick={() => toggleFilter('type', opt.value)}
                   aria-pressed={filters.type === opt.value}
+                  aria-label={`${opt.label} filtern${counts.types[opt.value] > 0 ? `, ${counts.types[opt.value]} vorhanden` : ''}`}
                 >
                   <span className="sfb-pill-icon" aria-hidden="true">{opt.icon}</span>
                   <span className="sfb-pill-label">{opt.label}</span>
@@ -224,11 +227,12 @@ export function SearchFilterBar({
                 <button
                   key={opt.value}
                   type="button"
-                  className={`sfb-pill sfb-pill-priority neuro-press-effect ${
+                  className={`sfb-pill sfb-pill-priority neuro-press-effect neuro-focus-ring ${
                     filters.priority === opt.value ? 'active' : ''
                   }`}
                   onClick={() => toggleFilter('priority', opt.value)}
                   aria-pressed={filters.priority === opt.value}
+                  aria-label={`Priorität ${opt.label} filtern`}
                   data-priority={opt.value}
                 >
                   <span className="sfb-pill-icon" aria-hidden="true">{opt.icon}</span>
@@ -249,11 +253,12 @@ export function SearchFilterBar({
                 <button
                   key={opt.value}
                   type="button"
-                  className={`sfb-pill sfb-pill-category neuro-press-effect ${
+                  className={`sfb-pill sfb-pill-category neuro-press-effect neuro-focus-ring ${
                     filters.category === opt.value ? 'active' : ''
                   }`}
                   onClick={() => toggleFilter('category', opt.value)}
                   aria-pressed={filters.category === opt.value}
+                  aria-label={`Kategorie ${opt.label} filtern`}
                   style={{ '--category-color': opt.color } as React.CSSProperties}
                   data-category={opt.value}
                 >
@@ -270,8 +275,9 @@ export function SearchFilterBar({
           {activeFilterCount > 0 && (
             <button
               type="button"
-              className="sfb-clear-all neuro-press-effect"
+              className="sfb-clear-all neuro-press-effect neuro-focus-ring"
               onClick={clearAllFilters}
+              aria-label="Alle Filter zurücksetzen"
             >
               Alle Filter zurücksetzen
             </button>

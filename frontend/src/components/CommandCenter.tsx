@@ -130,25 +130,24 @@ const CommandCenterComponent: React.FC<CommandCenterProps> = ({
 
           <button
             type="button"
-            className="command-action-btn chat neuro-hover-lift"
+            className="command-action-btn chat neuro-hover-lift neuro-focus-ring"
             onClick={() => onModeChange('chat')}
             disabled={disabled || isProcessing}
-            title="Chat-Modus öffnen"
             aria-label="Zum Chat-Modus wechseln"
           >
-            <span className="action-icon">💬</span>
+            <span className="action-icon" aria-hidden="true">💬</span>
             <span className="action-label">Chat</span>
           </button>
 
           <button
             type="button"
-            className="command-action-btn primary submit neuro-button"
+            className="command-action-btn primary submit neuro-button neuro-focus-ring"
             onClick={handleSubmit}
             disabled={disabled || isProcessing || !textValue.trim()}
-            title="Gedanken strukturieren"
             aria-label={isProcessing ? 'Verarbeitung läuft' : 'Gedanken strukturieren und speichern'}
+            aria-busy={isProcessing}
           >
-            <span className="action-icon">{isProcessing ? '⏳' : '✨'}</span>
+            <span className="action-icon" aria-hidden="true">{isProcessing ? '⏳' : '✨'}</span>
             <span className="action-label">
               {isProcessing ? 'Verarbeite...' : 'Strukturieren'}
             </span>

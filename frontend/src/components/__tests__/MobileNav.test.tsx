@@ -101,9 +101,9 @@ describe('MobileNav Component', () => {
       const hamburgerButton = buttons[0];
       await user.click(hamburgerButton);
 
-      // Find Gespräche (chat) nav item
-      const chatButton = await screen.findByRole('button', { name: /gespräche/i });
-      await user.click(chatButton);
+      // Find Chat nav item (first one - the main nav item)
+      const chatButtons = await screen.findAllByRole('button', { name: /chat/i });
+      await user.click(chatButtons[0]);
 
       expect(mockOnNavigate).toHaveBeenCalledWith('chat');
     });

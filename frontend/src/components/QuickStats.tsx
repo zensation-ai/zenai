@@ -84,10 +84,10 @@ export function QuickStats({ ideas, onFilterClick }: QuickStatsProps) {
               <button
                 key={type}
                 type="button"
-                className="quick-stat-pill neuro-press-effect"
+                className="quick-stat-pill neuro-press-effect neuro-focus-ring"
                 onClick={() => handleClick('type', type)}
                 style={{ '--pill-accent': config.color } as React.CSSProperties}
-                aria-label={`${config.label}: ${count}`}
+                aria-label={`Nach ${config.label} filtern, ${count} vorhanden`}
               >
                 <span className="quick-stat-icon" aria-hidden="true">{config.icon}</span>
                 <span className="quick-stat-name">{config.label}:</span>
@@ -109,10 +109,10 @@ export function QuickStats({ ideas, onFilterClick }: QuickStatsProps) {
               <button
                 key={priority}
                 type="button"
-                className="quick-stat-pill priority-pill neuro-press-effect"
+                className="quick-stat-pill priority-pill neuro-press-effect neuro-focus-ring"
                 onClick={() => handleClick('priority', priority)}
                 style={{ '--pill-accent': config.color } as React.CSSProperties}
-                aria-label={`Priorität ${config.label}: ${count}`}
+                aria-label={`Nach Priorität ${config.label} filtern, ${count} vorhanden`}
               >
                 <span className="quick-stat-icon" aria-hidden="true">{config.icon}</span>
                 <span className="quick-stat-name">{config.label}:</span>
@@ -135,10 +135,10 @@ export function QuickStats({ ideas, onFilterClick }: QuickStatsProps) {
                 <button
                   key={category}
                   type="button"
-                  className="quick-stat-pill category-pill neuro-press-effect"
+                  className="quick-stat-pill category-pill neuro-press-effect neuro-focus-ring"
                   onClick={() => handleClick('category', category)}
                   data-category={category}
-                  aria-label={`Kategorie ${category}: ${count}`}
+                  aria-label={`Nach Kategorie ${category} filtern, ${count} vorhanden`}
                 >
                   <span className="quick-stat-name">{category}:</span>
                   <span className="quick-stat-count">{count}</span>

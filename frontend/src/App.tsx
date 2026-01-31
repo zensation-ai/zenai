@@ -42,28 +42,29 @@ import { ScrollProgress } from './components/AnticipatoryUI';
 import './App.css';
 
 // Lazy-loaded page components for code-splitting
+// === Neue konsolidierte Komponenten (2026) ===
+const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
+const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ default: m.AIWorkshop })));
+
+// === Haupt-Seiten ===
+const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
+const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
+
+// === Sekundäre Seiten (via Mehr-Dropdown) ===
 const MeetingsPage = lazy(() => import('./components/MeetingsPage').then(m => ({ default: m.MeetingsPage })));
 const ProfileDashboard = lazy(() => import('./components/ProfileDashboard').then(m => ({ default: m.ProfileDashboard })));
 const IntegrationsPage = lazy(() => import('./components/IntegrationsPage').then(m => ({ default: m.IntegrationsPage })));
-const IncubatorPage = lazy(() => import('./components/IncubatorPage').then(m => ({ default: m.IncubatorPage })));
-const KnowledgeGraphPage = lazy(() => import('./components/KnowledgeGraph/KnowledgeGraphPage'));
 const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
-const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
 const AutomationDashboard = lazy(() => import('./components/AutomationDashboard').then(m => ({ default: m.AutomationDashboard })));
-const EvolutionDashboard = lazy(() => import('./components/EvolutionDashboard').then(m => ({ default: m.EvolutionDashboard })));
 const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
-const DigestDashboard = lazy(() => import('./components/DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const PersonalizationChat = lazy(() => import('./components/PersonalizationChat').then(m => ({ default: m.PersonalizationChat })));
-const LearningTasksDashboard = lazy(() => import('./components/LearningTasksDashboard').then(m => ({ default: m.LearningTasksDashboard })));
 const MediaGallery = lazy(() => import('./components/MediaGallery').then(m => ({ default: m.MediaGallery })));
 const StoriesPage = lazy(() => import('./components/StoriesPage').then(m => ({ default: m.StoriesPage })));
 const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m => ({ default: m.ExportDashboard })));
 const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
-const ProactiveDashboard = lazy(() => import('./components/ProactiveDashboard').then(m => ({ default: m.ProactiveDashboard })));
-const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
+
+// === Triage (bleibt als separate Seite) ===
 const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ default: m.InboxTriage })));
-const DashboardHome = lazy(() => import('./components/DashboardHome').then(m => ({ default: m.DashboardHome })));
-const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
 
 // Loading fallback component for lazy-loaded pages
 const PageLoader = () => (
@@ -475,59 +476,38 @@ function App() {
     }
   }, [ideas]);
 
-  // Render sub-pages (all wrapped in ErrorBoundary and Suspense for crash protection and lazy loading)
-  if (currentPage === 'meetings') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <MeetingsPage onBack={() => setCurrentPage('ideas')} />
-        </Suspense>
-      </ErrorBoundary>
-    );
-  }
+  // ============================================
+  // KONSOLIDIERTE NAVIGATION 2026
+  // Haupt-Tabs: ideas, chat, insights, archive
+  // Sekundäre Seiten via "Mehr"-Dropdown
+  // ============================================
 
-  if (currentPage === 'profile') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <ProfileDashboard onBack={() => setCurrentPage('ideas')} context={context} />
-        </Suspense>
-      </ErrorBoundary>
-    );
-  }
+  // === HAUPT-TABS ===
 
-  if (currentPage === 'integrations') {
+  // Chat - KI-Gespräche
+  if (currentPage === 'chat') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <IntegrationsPage onBack={() => setCurrentPage('ideas')} />
-        </Suspense>
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'incubator') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <IncubatorPage
+          <ChatPage
+            context={context}
             onBack={() => setCurrentPage('ideas')}
-            onIdeaCreated={() => {
-              loadIdeas();
-              setCurrentPage('ideas');
-            }}
           />
         </Suspense>
+        <ToastContainer />
       </ErrorBoundary>
     );
   }
 
-  if (currentPage === 'knowledge-graph') {
+  // Insights - Konsolidiertes Dashboard (Dashboard + Analytics + Digest + Graph)
+  if (currentPage === 'insights') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <KnowledgeGraphPage
+          <InsightsDashboard
+            context={context}
             onBack={() => setCurrentPage('ideas')}
+            onNavigate={(page) => setCurrentPage(page as Page)}
             onSelectIdea={(ideaId) => {
               const idea = ideas.find(i => i.id === ideaId);
               if (idea) {
@@ -535,14 +515,90 @@ function App() {
                 setCurrentPage('ideas');
               }
             }}
-            context={context}
           />
         </Suspense>
+        <ToastContainer />
       </ErrorBoundary>
     );
   }
 
-  if (currentPage === 'learning') {
+  // === LEGACY-WEITERLEITUNGEN zu Insights ===
+  if (currentPage === 'dashboard' || currentPage === 'analytics' || currentPage === 'digest' || currentPage === 'knowledge-graph') {
+    // Automatisch zu Insights weiterleiten mit passendem Tab
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <InsightsDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+            onNavigate={(page) => setCurrentPage(page as Page)}
+            onSelectIdea={(ideaId) => {
+              const idea = ideas.find(i => i.id === ideaId);
+              if (idea) {
+                setSelectedIdea(idea);
+                setCurrentPage('ideas');
+              }
+            }}
+            initialTab={
+              currentPage === 'analytics' ? 'analytics' :
+              currentPage === 'digest' ? 'digest' :
+              currentPage === 'knowledge-graph' ? 'connections' :
+              'overview'
+            }
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // === KI-WERKSTATT (Inkubator + Proaktiv + Evolution) ===
+  if (currentPage === 'ai-workshop') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <AIWorkshop
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+            onIdeaCreated={() => {
+              loadIdeas();
+              setCurrentPage('ideas');
+            }}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // Legacy-Weiterleitungen zu KI-Werkstatt
+  if (currentPage === 'incubator' || currentPage === 'proactive' || currentPage === 'evolution') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <AIWorkshop
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+            onIdeaCreated={() => {
+              loadIdeas();
+              setCurrentPage('ideas');
+            }}
+            initialTab={
+              currentPage === 'proactive' ? 'proactive' :
+              currentPage === 'evolution' ? 'evolution' :
+              'incubator'
+            }
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // === SEKUNDÄRE SEITEN (via Mehr-Dropdown) ===
+
+  // Lernen (mit integriertem Lernziele-Tab)
+  if (currentPage === 'learning' || currentPage === 'learning-tasks') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
@@ -556,174 +612,7 @@ function App() {
     );
   }
 
-  if (currentPage === 'analytics') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <AnalyticsDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'automations') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <AutomationDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'evolution') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <EvolutionDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'notifications') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <NotificationsPage
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'digest') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <DigestDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'personalization') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <PersonalizationChat
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'learning-tasks') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <LearningTasksDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'media') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <MediaGallery
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'stories') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <StoriesPage
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'export') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <ExportDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'sync') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <SyncDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  if (currentPage === 'proactive') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <ProactiveDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
+  // Triage - Gedanken sortieren
   if (currentPage === 'triage') {
     return (
       <ErrorBoundary>
@@ -746,15 +635,47 @@ function App() {
     );
   }
 
-  if (currentPage === 'dashboard') {
+  // Meetings
+  if (currentPage === 'meetings') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <DashboardHome
+          <MeetingsPage onBack={() => setCurrentPage('ideas')} />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  // Profil
+  if (currentPage === 'profile') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <ProfileDashboard onBack={() => setCurrentPage('ideas')} context={context} />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  // Integrationen
+  if (currentPage === 'integrations') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <IntegrationsPage onBack={() => setCurrentPage('ideas')} />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  // Automationen
+  if (currentPage === 'automations') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <AutomationDashboard
             context={context}
-            apiBase="/api"
-            onNavigate={(page) => setCurrentPage(page as Page)}
-            showToast={showToast}
+            onBack={() => setCurrentPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -762,11 +683,87 @@ function App() {
     );
   }
 
-  if (currentPage === 'chat') {
+  // Benachrichtigungen
+  if (currentPage === 'notifications') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <ChatPage
+          <NotificationsPage
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // Personalisierung
+  if (currentPage === 'personalization') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <PersonalizationChat
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // Medien
+  if (currentPage === 'media') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <MediaGallery
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // Stories
+  if (currentPage === 'stories') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <StoriesPage
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // Export
+  if (currentPage === 'export') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <ExportDashboard
+            context={context}
+            onBack={() => setCurrentPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
+  // Sync
+  if (currentPage === 'sync') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <SyncDashboard
             context={context}
             onBack={() => setCurrentPage('ideas')}
           />
@@ -929,81 +926,69 @@ function App() {
             </div>
           </div>
           <div className="header-center">
+            {/* Konsolidierte Navigation 2026: 4 Haupt-Tabs + 1 Mehr-Dropdown */}
             <nav className="header-nav" aria-label="Hauptnavigation">
+              {/* Haupt-Tab 1: Gedanken */}
               <button
                 type="button"
                 className={`nav-button ${currentPage === 'ideas' ? 'active' : ''}`}
                 onClick={() => setCurrentPage('ideas')}
-                title="Gedanken"
+                title="Deine Gedanken"
               >
                 💭 Gedanken
               </button>
-              <button
-                type="button"
-                className="nav-button"
-                onClick={() => setCurrentPage('triage')}
-                title="Gedanken sortieren"
-              >
-                📋 Triage
-              </button>
+
+              {/* Haupt-Tab 2: Chat */}
               <button
                 type="button"
                 className={`nav-button ${(currentPage as Page) === 'chat' ? 'active' : ''}`}
                 onClick={() => setCurrentPage('chat')}
-                title="Gespräche"
+                title="KI-Gespräche"
               >
-                💬 Gespräche
+                💬 Chat
               </button>
+
+              {/* Haupt-Tab 3: Insights (konsolidiert Dashboard/Analytics/Digest/Graph) */}
               <button
                 type="button"
-                className={`nav-button ${archivedCount > 0 ? 'has-items' : ''}`}
+                className={`nav-button ${['insights', 'dashboard', 'analytics', 'digest', 'knowledge-graph'].includes(currentPage as string) ? 'active' : ''}`}
+                onClick={() => setCurrentPage('insights')}
+                title="Statistiken und Übersicht"
+              >
+                📊 Insights
+              </button>
+
+              {/* Haupt-Tab 4: Archiv */}
+              <button
+                type="button"
+                className={`nav-button ${(currentPage as Page) === 'archive' ? 'active' : ''} ${archivedCount > 0 ? 'has-items' : ''}`}
                 onClick={() => setCurrentPage('archive')}
-                title="Archiv"
+                title="Archivierte Gedanken"
               >
                 📥 Archiv {archivedCount > 0 && <span className="badge">{archivedCount}</span>}
               </button>
-              <NavDropdown
-                label="KI"
-                icon="🧠"
-                items={[
-                  { label: 'Inkubator', icon: '🧠', page: 'incubator' },
-                  { label: 'Lernen', icon: '🧬', page: 'learning' },
-                  { label: 'Lernziele', icon: '📚', page: 'learning-tasks' },
-                  { label: 'Proaktiv', icon: '✨', page: 'proactive' },
-                  { label: 'Evolution', icon: '🌱', page: 'evolution' },
-                  { label: 'Personalisierung', icon: '👤', page: 'personalization' },
-                ]}
-                currentPage={currentPage}
-                onNavigate={(page) => setCurrentPage(page as Page)}
-              />
-              <NavDropdown
-                label="Analyse"
-                icon="📊"
-                items={[
-                  { label: 'Übersicht', icon: '🏠', page: 'dashboard' },
-                  { label: 'Analytics', icon: '📈', page: 'analytics' },
-                  { label: 'Digest', icon: '📊', page: 'digest' },
-                  { label: 'Graph', icon: '🕸️', page: 'knowledge-graph' },
-                  { label: 'Profil', icon: '👤', page: 'profile' },
-                ]}
-                currentPage={currentPage}
-                onNavigate={(page) => setCurrentPage(page as Page)}
-              />
+
+              {/* Mehr-Dropdown: Alle sekundären Features */}
               <NavDropdown
                 label="Mehr"
                 icon="⚙️"
                 items={[
-                  // Inhalte Gruppe (3 Items)
+                  // KI-Features Gruppe
+                  { label: 'KI-Werkstatt', icon: '🧠', page: 'ai-workshop', group: 'KI-Features' },
+                  { label: 'Lernen', icon: '📚', page: 'learning', group: 'KI-Features' },
+                  { label: 'Sortieren', icon: '📋', page: 'triage', group: 'KI-Features' },
+                  { label: 'Personalisierung', icon: '🎨', page: 'personalization', group: 'KI-Features' },
+                  // Inhalte Gruppe
                   { label: 'Meetings', icon: '📅', page: 'meetings', group: 'Inhalte' },
                   { label: 'Medien', icon: '🖼️', page: 'media', group: 'Inhalte' },
                   { label: 'Stories', icon: '📖', page: 'stories', group: 'Inhalte' },
-                  // Workflows Gruppe (2 Items)
-                  { label: 'Automationen', icon: '⚡', page: 'automations', group: 'Workflows' },
-                  { label: 'Integrationen', icon: '🔗', page: 'integrations', group: 'Workflows' },
-                  // System Gruppe (3 Items)
-                  { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications', group: 'System' },
-                  { label: 'Export', icon: '📤', page: 'export', group: 'System' },
-                  { label: 'Sync', icon: '🔄', page: 'sync', group: 'System' },
+                  // Einstellungen Gruppe
+                  { label: 'Automationen', icon: '⚡', page: 'automations', group: 'Einstellungen' },
+                  { label: 'Integrationen', icon: '🔗', page: 'integrations', group: 'Einstellungen' },
+                  { label: 'Profil', icon: '👤', page: 'profile', group: 'Einstellungen' },
+                  { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications', group: 'Einstellungen' },
+                  { label: 'Export', icon: '📤', page: 'export', group: 'Einstellungen' },
+                  { label: 'Sync', icon: '🔄', page: 'sync', group: 'Einstellungen' },
                 ]}
                 currentPage={currentPage}
                 onNavigate={(page) => setCurrentPage(page as Page)}
@@ -1031,33 +1016,20 @@ function App() {
             <button type="button" className="refresh-button" onClick={() => loadIdeas()} title="Neu laden" aria-label="Neu laden">
               ↻
             </button>
-            {/* Mobile Navigation */}
+            {/* Mobile Navigation - Konsolidiert 2026 */}
             <MobileNav
               currentPage={currentPage}
               onNavigate={(page) => setCurrentPage(page as Page)}
               archivedCount={archivedCount}
               navGroups={[
                 {
-                  label: 'KI',
+                  label: 'KI-Features',
                   icon: '🧠',
                   items: [
-                    { label: 'Inkubator', icon: '🧠', page: 'incubator' },
-                    { label: 'Lernen', icon: '🧬', page: 'learning' },
-                    { label: 'Lernziele', icon: '📚', page: 'learning-tasks' },
-                    { label: 'Proaktiv', icon: '✨', page: 'proactive' },
-                    { label: 'Evolution', icon: '🌱', page: 'evolution' },
-                    { label: 'Personalisierung', icon: '👤', page: 'personalization' },
-                  ]
-                },
-                {
-                  label: 'Analyse',
-                  icon: '📊',
-                  items: [
-                    { label: 'Übersicht', icon: '🏠', page: 'dashboard' },
-                    { label: 'Analytics', icon: '📈', page: 'analytics' },
-                    { label: 'Digest', icon: '📊', page: 'digest' },
-                    { label: 'Graph', icon: '🕸️', page: 'knowledge-graph' },
-                    { label: 'Profil', icon: '👤', page: 'profile' },
+                    { label: 'KI-Werkstatt', icon: '🧠', page: 'ai-workshop' },
+                    { label: 'Lernen', icon: '📚', page: 'learning' },
+                    { label: 'Sortieren', icon: '📋', page: 'triage' },
+                    { label: 'Personalisierung', icon: '🎨', page: 'personalization' },
                   ]
                 },
                 {
@@ -1070,17 +1042,12 @@ function App() {
                   ]
                 },
                 {
-                  label: 'Workflows',
-                  icon: '⚡',
+                  label: 'Einstellungen',
+                  icon: '⚙️',
                   items: [
                     { label: 'Automationen', icon: '⚡', page: 'automations' },
                     { label: 'Integrationen', icon: '🔗', page: 'integrations' },
-                  ]
-                },
-                {
-                  label: 'System',
-                  icon: '⚙️',
-                  items: [
+                    { label: 'Profil', icon: '👤', page: 'profile' },
                     { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications' },
                     { label: 'Export', icon: '📤', page: 'export' },
                     { label: 'Sync', icon: '🔄', page: 'sync' },
@@ -1232,7 +1199,7 @@ function App() {
                 onClick={() => setViewMode('grid')}
                 title="Rasteransicht"
                 aria-label="Rasteransicht"
-                aria-selected={viewMode === 'grid' ? 'true' : 'false'}
+                aria-selected={viewMode === 'grid'}
                 tabIndex={viewMode === 'grid' ? 0 : -1}
               >
                 ⊞
@@ -1244,7 +1211,7 @@ function App() {
                 onClick={() => setViewMode('list')}
                 title="Listenansicht"
                 aria-label="Listenansicht"
-                aria-selected={viewMode === 'list' ? 'true' : 'false'}
+                aria-selected={viewMode === 'list'}
                 tabIndex={viewMode === 'list' ? 0 : -1}
               >
                 ☰
@@ -1309,52 +1276,23 @@ function App() {
         </section>
       </main>
 
+      {/* Vereinfachter Footer - Keine redundante Navigation */}
       <footer className="footer liquid-glass-nav" role="contentinfo">
-        <div className="footer-content">
-          {/* Quick Navigation */}
-          <nav className="footer-nav" aria-label="Footer-Navigation">
-            <div className="footer-nav-group">
-              <h4>Navigation</h4>
-              <button type="button" onClick={() => setCurrentPage('ideas')}>💭 Gedanken</button>
-              <button type="button" onClick={() => setCurrentPage('chat')}>💬 Gespräche</button>
-              <button type="button" onClick={() => setCurrentPage('dashboard')}>📊 Dashboard</button>
-            </div>
-            <div className="footer-nav-group">
-              <h4>KI-Features</h4>
-              <button type="button" onClick={() => setCurrentPage('incubator')}>🧠 Inkubator</button>
-              <button type="button" onClick={() => setCurrentPage('learning')}>📚 Lernen</button>
-              <button type="button" onClick={() => setCurrentPage('analytics')}>📈 Analytics</button>
-            </div>
-            <div className="footer-nav-group">
-              <h4>System</h4>
-              <button type="button" onClick={() => setCurrentPage('profile')}>👤 Profil</button>
-              <button type="button" onClick={() => setCurrentPage('export')}>📤 Export</button>
-              <button type="button" onClick={() => setCurrentPage('integrations')}>🔗 Integrationen</button>
-            </div>
-          </nav>
-
-          {/* Brand Section */}
-          <div className="footer-brand-section">
-            <div className="footer-brand-info">
-              <div className="footer-logo">
-                <span className="footer-logo-icon">🧠</span>
-                <span className="footer-logo-text">ZenAI</span>
-              </div>
-              <p className="footer-tagline">Dein intelligenter Gedanken-Assistent</p>
-            </div>
-            <div className="footer-links">
-              <a href="https://zensation.ai" target="_blank" rel="noopener noreferrer">zensation.ai</a>
-              <a href="https://zensation.app" target="_blank" rel="noopener noreferrer">zensation.app</a>
-              <a href="https://zensation.sh" target="_blank" rel="noopener noreferrer">zensation.sh</a>
-            </div>
+        <div className="footer-content footer-minimal">
+          <div className="footer-brand">
+            <span className="footer-logo-icon">🧠</span>
+            <span className="footer-logo-text">ZenAI</span>
+            <span className="footer-separator">•</span>
+            <span className="footer-tagline">Dein intelligenter Gedanken-Assistent</span>
           </div>
-
-          {/* Copyright */}
-          <div className="footer-bottom">
-            <p className="footer-copyright">
-              &copy; {new Date().getFullYear()} Alexander Bering / ZenSation Enterprise Solutions
-            </p>
-            <p className="footer-version">Phase 31 • v2026.1</p>
+          <div className="footer-links">
+            <a href="https://zensation.ai" target="_blank" rel="noopener noreferrer">zensation.ai</a>
+            <span className="footer-dot">·</span>
+            <a href="https://zensation.app" target="_blank" rel="noopener noreferrer">zensation.app</a>
+          </div>
+          <div className="footer-meta">
+            <span className="footer-copyright">© {new Date().getFullYear()} ZenSation</span>
+            <span className="footer-version">v2026.1</span>
           </div>
         </div>
       </footer>

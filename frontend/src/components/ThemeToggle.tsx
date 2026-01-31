@@ -49,7 +49,7 @@ export function ThemeToggle({ showLabel = false, className = '' }: ThemeTogglePr
 
   return (
     <button
-      className={`theme-toggle ${className}`}
+      className={`theme-toggle neuro-focus-ring ${className}`}
       onClick={cycleTheme}
       title={getTitle()}
       aria-label={getTitle()}
