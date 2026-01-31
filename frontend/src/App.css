@@ -1079,6 +1079,25 @@
   font-weight: 400;
 }
 
+.text-input:disabled {
+  background: var(--input-bg-disabled);
+  color: var(--input-text-disabled);
+  cursor: not-allowed;
+  border-color: rgba(20, 50, 70, 0.1);
+}
+
+.text-input.error,
+.text-input:invalid:not(:placeholder-shown) {
+  border-color: var(--color-error);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.text-input.error:focus,
+.text-input:invalid:not(:placeholder-shown):focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+}
+
 /* Primary Button - Sunset Orange with life */
 .submit-button {
   padding: 0.9rem 1.75rem;
@@ -2271,7 +2290,7 @@
   font-weight: 600;
   color: #4a5d6a; /* Dunkel für guten Kontrast */
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
 }
 
 /* Context-based theming - Work context (Apple blue) */

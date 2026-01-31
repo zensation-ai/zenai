@@ -103,7 +103,7 @@
   font-weight: 600;
   color: #9d9d9d;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
 }
 
 .code-section-actions {
@@ -252,7 +252,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
 }
 
 .output-section.success .output-section-title {

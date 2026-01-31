@@ -121,6 +121,25 @@
   --text-primary: #1a2e3d;
   --border-color: var(--border);
 
+  /* Code Block Colors */
+  --code-block-bg: #1e1e1e;
+  --code-block-text: #d4d4d4;
+  --code-inline-bg: rgba(0, 0, 0, 0.08);
+  --code-inline-text: #c7254e;
+
+  /* Additional Shadow Variants */
+  --shadow-glow-light: 0 4px 16px rgba(255, 107, 53, 0.25);
+  --shadow-glow-strong: 0 6px 24px rgba(255, 107, 53, 0.4);
+  --shadow-hover-glow: 0 24px 64px rgba(20, 50, 70, 0.15), 0 10px 28px rgba(20, 50, 70, 0.1);
+
+  /* Input State Colors */
+  --input-border-default: rgba(20, 50, 70, 0.18);
+  --input-border-hover: rgba(20, 50, 70, 0.28);
+  --input-border-focus: var(--primary);
+  --input-border-error: var(--color-error);
+  --input-bg-disabled: rgba(200, 210, 220, 0.4);
+  --input-text-disabled: #8a9aa8;
+
   /* Animation */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);

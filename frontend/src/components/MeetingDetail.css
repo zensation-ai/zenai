@@ -139,7 +139,7 @@
   color: var(--text-muted);
   margin: 0 0 12px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
 }
 
 .notes-section p {

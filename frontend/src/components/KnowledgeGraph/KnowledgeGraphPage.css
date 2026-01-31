@@ -240,7 +240,7 @@
   font-size: 12px;
   text-transform: uppercase;
   color: var(--text-muted, #8ba3b8);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03em;
 }
 
 .legend-items {
