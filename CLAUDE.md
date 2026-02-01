@@ -198,6 +198,17 @@ POST /api/project/structure                  - File structure scan
 GET  /api/project/health                     - Service availability
 ```
 
+### Sync API (Offline Sync)
+
+```
+POST /api/:context/sync/swipe-actions        - Sync offline swipe actions
+POST /api/:context/sync/batch                - Batch sync (voice memos, swipes, feedback)
+GET  /api/:context/sync/status               - Get sync status and counts
+GET  /api/:context/sync/pending              - Get pending changes (last hour)
+POST /api/:context/sync/trigger              - Trigger manual sync
+DELETE /api/sync/devices/:deviceId           - Remove sync device
+```
+
 ## Environment Variables (Backend)
 
 ```bash
@@ -253,13 +264,13 @@ cd backend && npm test -- --coverage
 cd frontend && npm test
 ```
 
-### Test-Status (2026-01-28)
+### Test-Status (2026-02-01)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Gesamt** | 1220 | 94 | 0 |
+| **Gesamt** | 1221 | 94 | 0 |
 | Unit Tests | ~800 | 0 | 0 |
-| Integration Tests | ~420 | 94 | 0 |
+| Integration Tests | ~421 | 94 | 0 |
 
 **Absichtlich übersprungene Tests:** Whisper-Transkription (erfordert lokale Whisper-Installation)
 
@@ -352,6 +363,40 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-02-01: Frontend-Backend Integration 100%
+
+**Problem:** 3 fehlende Backend-Routen + Response-Format-Mismatches
+
+**Analyse durchgeführt:**
+
+- Frontend API Calls: 87 Endpoints
+- Backend Routes: 250+ Endpoints
+- Mismatches identifiziert: 3 fehlende Routen + 2 Response-Format-Fehler
+
+**Neue Routen implementiert in `backend/src/routes/sync.ts`:**
+
+| Route | Method | Funktion |
+|-------|--------|----------|
+| `/api/:context/sync/pending` | GET | Pending Changes der letzten Stunde |
+| `/api/:context/sync/trigger` | POST | Manual Sync mit Summary |
+| `/api/sync/devices/:deviceId` | DELETE | Sync Device entfernen |
+
+**Response-Formate korrigiert:**
+
+| Endpoint | Problem | Fix |
+|----------|---------|-----|
+| `sync/status` | Falsche Felder (totalIdeas, recentIdeas) | Korrekte Felder (last_sync, pending_changes, sync_enabled, devices) |
+| `sync/pending` | Nicht in `data` gewrappt | Response in `data.changes` gewrappt |
+
+**Ergebnis:**
+
+- Frontend-Backend Match Rate: 97% → **100%**
+- SyncDashboard funktioniert jetzt vollständig
+- Alle Response-Formate matchen Frontend-Interfaces
+- Alle 1221 Tests bestehen
+
+---
 
 ### 2026-01-31: Production Ready - Database Reset & API Key Fix
 
