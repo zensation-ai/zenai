@@ -13,13 +13,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SearchFilterBar, type Filters } from '../SearchFilterBar';
+import { SearchFilterBar, type AdvancedFilters } from '../SearchFilterBar';
 
 describe('SearchFilterBar Component', () => {
-  const defaultFilters: Filters = {
-    type: null,
-    category: null,
-    priority: null,
+  const defaultFilters: AdvancedFilters = {
+    types: new Set(),
+    categories: new Set(),
+    priorities: new Set(),
   };
 
   const defaultCounts = {
@@ -145,10 +145,10 @@ describe('SearchFilterBar Component', () => {
 
   describe('Active Filters', () => {
     it('displays active filter indicators', () => {
-      const activeFilters: Filters = {
-        type: 'idea',
-        category: 'personal',
-        priority: 'high',
+      const activeFilters: AdvancedFilters = {
+        types: new Set(['idea']),
+        categories: new Set(['personal']),
+        priorities: new Set(['high']),
       };
 
       render(<SearchFilterBar {...defaultProps} filters={activeFilters} />);

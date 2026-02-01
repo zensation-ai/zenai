@@ -8,7 +8,8 @@ import { RECENT_CUTOFF_MS, SYNC_INTERVAL_MS, AI_PROCESSING_STEP_DELAY_MS, AI_PRO
 // Core components - always loaded
 import { SmartIdeaList } from './components/VirtualizedIdeaList';
 import { RecordButton } from './components/RecordButton';
-import { SearchFilterBar, type Filters } from './components/SearchFilterBar';
+import { SearchFilterBar, type AdvancedFilters } from './components/SearchFilterBar';
+import { ActiveFiltersBar } from './components/ActiveFiltersBar';
 import { QuickStats } from './components/QuickStats';
 import { IdeaDetail } from './components/IdeaDetail';
 import { AIBrain } from './components/AIBrain';
@@ -17,8 +18,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { useContextState } from './components/ContextSwitcher';
 import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
 import { ExportMenu } from './components/ExportMenu';
-import { NavDropdown } from './components/NavDropdown';
-import './components/NavDropdown.css';
 import { GeneralChat } from './components/GeneralChat';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
@@ -45,9 +44,9 @@ import './App.css';
 // === Neue konsolidierte Komponenten (2026) ===
 const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
 const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ default: m.AIWorkshop })));
+const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
 
 // === Haupt-Seiten ===
-const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
 
 // === Sekundäre Seiten (via Mehr-Dropdown) ===
@@ -85,7 +84,11 @@ function App() {
   const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
   const [textInput, setTextInput] = useState('');
   const [searchResults, setSearchResults] = useState<StructuredIdea[] | null>(null);
-  const [filters, setFilters] = useState<Filters>({ type: null, category: null, priority: null });
+  const [filters, setFilters] = useState<AdvancedFilters>({
+    types: new Set(),
+    categories: new Set(),
+    priorities: new Set(),
+  });
   const [selectedIdea, setSelectedIdea] = useState<StructuredIdea | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isSearching, setIsSearching] = useState(false);
@@ -448,18 +451,19 @@ function App() {
     return { types, categories, priorities };
   }, [ideas]);
 
-  // Apply filters
+  // Apply filters - Multi-Select mit Sets (2026 Best Practice)
   const filteredIdeas = useMemo(() => {
     let result = searchResults || ideas;
 
-    if (filters.type) {
-      result = result.filter((idea) => idea.type === filters.type);
+    // Multi-select filtering - wenn Set leer ist, alle durchlassen
+    if (filters.types.size > 0) {
+      result = result.filter((idea) => filters.types.has(idea.type));
     }
-    if (filters.category) {
-      result = result.filter((idea) => idea.category === filters.category);
+    if (filters.categories.size > 0) {
+      result = result.filter((idea) => filters.categories.has(idea.category));
     }
-    if (filters.priority) {
-      result = result.filter((idea) => idea.priority === filters.priority);
+    if (filters.priorities.size > 0) {
+      result = result.filter((idea) => filters.priorities.has(idea.priority));
     }
 
     return result;
@@ -484,20 +488,6 @@ function App() {
 
   // === HAUPT-TABS ===
 
-  // Chat - KI-Gespräche
-  if (currentPage === 'chat') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <ChatPage
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
 
   // Insights - Konsolidiertes Dashboard (Dashboard + Analytics + Digest + Graph)
   if (currentPage === 'insights') {
@@ -773,6 +763,23 @@ function App() {
     );
   }
 
+  // Settings Dashboard
+  if (currentPage === 'settings') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <SettingsDashboard
+            context={context}
+            currentPage={currentPage}
+            onBack={() => setCurrentPage('ideas')}
+            onNavigate={(page) => setCurrentPage(page as Page)}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   if (currentPage === 'archive') {
     return (
       <ErrorBoundary>
@@ -926,7 +933,7 @@ function App() {
             </div>
           </div>
           <div className="header-center">
-            {/* Konsolidierte Navigation 2026: 4 Haupt-Tabs + 1 Mehr-Dropdown */}
+            {/* Konsolidierte Navigation 2026: 4 Haupt-Tabs (Gedanken, Insights, Archiv, Einstellungen) */}
             <nav className="header-nav" aria-label="Hauptnavigation">
               {/* Haupt-Tab 1: Gedanken */}
               <button
@@ -940,19 +947,7 @@ function App() {
                 <span aria-hidden="true">💭</span> Gedanken
               </button>
 
-              {/* Haupt-Tab 2: Chat */}
-              <button
-                type="button"
-                className={`nav-button neuro-focus-ring ${(currentPage as Page) === 'chat' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('chat')}
-                title="KI-Gespräche"
-                aria-label="Chat: KI-Gespräche führen"
-                aria-current={(currentPage as Page) === 'chat' ? 'page' : undefined}
-              >
-                <span aria-hidden="true">💬</span> Chat
-              </button>
-
-              {/* Haupt-Tab 3: Insights (konsolidiert Dashboard/Analytics/Digest/Graph) */}
+              {/* Haupt-Tab 2: Insights (konsolidiert Dashboard/Analytics/Digest/Graph) */}
               <button
                 type="button"
                 className={`nav-button neuro-focus-ring ${['insights', 'dashboard', 'analytics', 'digest', 'knowledge-graph'].includes(currentPage as string) ? 'active' : ''}`}
@@ -964,7 +959,7 @@ function App() {
                 <span aria-hidden="true">📊</span> Insights
               </button>
 
-              {/* Haupt-Tab 4: Archiv */}
+              {/* Haupt-Tab 3: Archiv */}
               <button
                 type="button"
                 className={`nav-button neuro-focus-ring ${(currentPage as Page) === 'archive' ? 'active' : ''} ${archivedCount > 0 ? 'has-items' : ''}`}
@@ -976,31 +971,17 @@ function App() {
                 <span aria-hidden="true">📥</span> Archiv {archivedCount > 0 && <span className="badge" aria-hidden="true">{archivedCount}</span>}
               </button>
 
-              {/* Mehr-Dropdown: Alle sekundären Features */}
-              <NavDropdown
-                label="Mehr"
-                icon="⚙️"
-                items={[
-                  // KI-Features Gruppe
-                  { label: 'KI-Werkstatt', icon: '🧠', page: 'ai-workshop', group: 'KI-Features' },
-                  { label: 'Lernen', icon: '📚', page: 'learning', group: 'KI-Features' },
-                  { label: 'Sortieren', icon: '📋', page: 'triage', group: 'KI-Features' },
-                  { label: 'Personalisierung', icon: '🎨', page: 'personalization', group: 'KI-Features' },
-                  // Inhalte Gruppe
-                  { label: 'Meetings', icon: '📅', page: 'meetings', group: 'Inhalte' },
-                  { label: 'Medien', icon: '🖼️', page: 'media', group: 'Inhalte' },
-                  { label: 'Stories', icon: '📖', page: 'stories', group: 'Inhalte' },
-                  // Einstellungen Gruppe
-                  { label: 'Automationen', icon: '⚡', page: 'automations', group: 'Einstellungen' },
-                  { label: 'Integrationen', icon: '🔗', page: 'integrations', group: 'Einstellungen' },
-                  { label: 'Profil', icon: '👤', page: 'profile', group: 'Einstellungen' },
-                  { label: 'Benachrichtigungen', icon: '🔔', page: 'notifications', group: 'Einstellungen' },
-                  { label: 'Export', icon: '📤', page: 'export', group: 'Einstellungen' },
-                  { label: 'Sync', icon: '🔄', page: 'sync', group: 'Einstellungen' },
-                ]}
-                currentPage={currentPage}
-                onNavigate={(page) => setCurrentPage(page as Page)}
-              />
+              {/* Haupt-Tab 4: Einstellungen (ersetzt "Mehr"-Dropdown) */}
+              <button
+                type="button"
+                className={`nav-button neuro-focus-ring ${(currentPage as Page) === 'settings' ? 'active' : ''}`}
+                onClick={() => setCurrentPage('settings')}
+                title="Einstellungen und Tools"
+                aria-label="Einstellungen: App-Konfiguration und KI-Tools"
+                aria-current={(currentPage as Page) === 'settings' ? 'page' : undefined}
+              >
+                <span aria-hidden="true">⚙️</span> Einstellungen
+              </button>
               <ExportMenu context={context} ideasCount={ideas.length} />
             </nav>
           </div>
@@ -1174,10 +1155,22 @@ function App() {
         <QuickStats
           ideas={ideas}
           onFilterClick={(filterType, value) => {
-            setFilters(prev => ({
-              ...prev,
-              [filterType]: prev[filterType] === value ? null : value,
-            }));
+            // Multi-Select Toggle: Wert hinzufügen oder entfernen
+            const keyMap: Record<string, 'types' | 'categories' | 'priorities'> = {
+              type: 'types',
+              category: 'categories',
+              priority: 'priorities',
+            };
+            const key = keyMap[filterType];
+            if (key) {
+              const newSet = new Set(filters[key]);
+              if (newSet.has(value)) {
+                newSet.delete(value);
+              } else {
+                newSet.add(value);
+              }
+              setFilters(prev => ({ ...prev, [key]: newSet }));
+            }
           }}
         />
 
@@ -1190,6 +1183,21 @@ function App() {
           isSearching={isSearching}
           searchResults={searchResults ? searchResults.length : null}
           counts={filterCounts}
+        />
+
+        {/* Active Filters Bar - Linear-Style Chips (2026) */}
+        <ActiveFiltersBar
+          filters={filters}
+          onRemoveFilter={(key, value) => {
+            const newSet = new Set(filters[key]);
+            newSet.delete(value);
+            setFilters(prev => ({ ...prev, [key]: newSet }));
+          }}
+          onClearAll={() => setFilters({
+            types: new Set(),
+            categories: new Set(),
+            priorities: new Set(),
+          })}
         />
 
         {/* Ideas List */}
@@ -1233,7 +1241,7 @@ function App() {
             </div>
           ) : filteredIdeas.length === 0 ? (
             <div className="empty-state" role="status">
-              {filters.type || filters.category || filters.priority ? (
+              {filters.types.size > 0 || filters.categories.size > 0 || filters.priorities.size > 0 ? (
                 <>
                   <span className="empty-icon" aria-hidden="true">🔍</span>
                   <h3>{EMPTY_STATE_MESSAGES.search.title}</h3>
@@ -1243,7 +1251,11 @@ function App() {
                     <button
                       type="button"
                       className="empty-state-cta"
-                      onClick={() => setFilters({ type: null, category: null, priority: null })}
+                      onClick={() => setFilters({
+                        types: new Set(),
+                        categories: new Set(),
+                        priorities: new Set(),
+                      })}
                     >
                       Filter zurücksetzen
                     </button>

@@ -36,22 +36,22 @@ export interface ApiStatus {
  * Page Types - Konsolidierte Navigation 2026
  *
  * Haupt-Tabs (4):
- * - ideas: Gedanken-Sammlung mit integrierter Sortierung
- * - chat: KI-Gespräche
+ * - ideas: Gedanken-Sammlung mit integriertem Chat (GeneralChat)
  * - insights: Dashboard + Analytics + Digest + Graph kombiniert
  * - archive: Archivierte Gedanken
+ * - settings: KI-Tools + Inhalte + Einstellungen Dashboard (NEU)
  *
- * Sekundäre Seiten (via "Mehr"-Dropdown):
- * - ai-workshop: KI-Werkstatt (Inkubator + Proaktiv + Evolution kombiniert)
- * - learning: Lernen (mit Lernzielen als Tab)
- * - profile, integrations, automations, etc.
+ * Sekundäre Seiten (via Settings Dashboard):
+ * - Tab 1 (KI-Tools): ai-workshop, learning, triage, personalization
+ * - Tab 2 (Inhalte): meetings, media, stories
+ * - Tab 3 (Einstellungen): automations, integrations, profile, notifications, export, sync
  */
 export type Page =
   // Haupt-Navigation (4 Tabs)
   | 'ideas'
-  | 'chat'
   | 'insights'
   | 'archive'
+  | 'settings'
   // Sekundäre Seiten
   | 'ai-workshop'
   | 'learning'

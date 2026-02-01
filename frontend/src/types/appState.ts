@@ -6,7 +6,10 @@
  */
 
 import type { StructuredIdea, ApiStatus, Page } from './idea';
-import type { Filters } from '../components/SearchFilterBar';
+import type { AdvancedFilters } from '../components/SearchFilterBar';
+
+// Re-export for backwards compatibility
+export type Filters = AdvancedFilters;
 import type { InputMode } from '../components/CommandCenter';
 import type { ProcessType } from '../components/AIProcessingOverlay';
 
@@ -51,7 +54,7 @@ export interface AppState {
 
   // Search & Filter
   searchResults: StructuredIdea[] | null;
-  filters: Filters;
+  filters: AdvancedFilters;
 
   // UI state
   selectedIdea: StructuredIdea | null;
@@ -95,7 +98,7 @@ export const createInitialState = (
 
   // Search & Filter
   searchResults: null,
-  filters: { type: null, category: null, priority: null },
+  filters: { types: new Set(), categories: new Set(), priorities: new Set() },
 
   // UI state
   selectedIdea: null,
@@ -151,9 +154,9 @@ export type AppAction =
 
   // Search & Filter
   | { type: 'SET_SEARCH_RESULTS'; payload: StructuredIdea[] | null }
-  | { type: 'SET_FILTERS'; payload: Filters }
+  | { type: 'SET_FILTERS'; payload: AdvancedFilters }
   | { type: 'CLEAR_SEARCH' }
-  | { type: 'TOGGLE_FILTER'; payload: { filterType: keyof Filters; value: string | null } }
+  | { type: 'TOGGLE_FILTER'; payload: { filterType: keyof AdvancedFilters; value: string } }
 
   // UI State
   | { type: 'SET_SELECTED_IDEA'; payload: StructuredIdea | null }

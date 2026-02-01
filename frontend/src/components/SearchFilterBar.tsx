@@ -9,14 +9,18 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import '../neurodesign.css';
 import './SearchFilterBar.css';
 
-export interface Filters {
-  type: string | null;
-  category: string | null;
-  priority: string | null;
+// Multi-Select Filter Interface (2026 Best Practice)
+export interface AdvancedFilters {
+  types: Set<string>;
+  categories: Set<string>;
+  priorities: Set<string>;
 }
 
+// Backwards Compatibility Alias
+export type Filters = AdvancedFilters;
+
 interface SearchFilterBarProps {
-  filters: Filters;
+  filters: AdvancedFilters;
   onFilterChange: (filters: Filters) => void;
   onSearch: (query: string) => void;
   onClearSearch: () => void;
@@ -63,9 +67,9 @@ export function SearchFilterBar({
   const [showFilters, setShowFilters] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Berechne aktive Filter
+  // Berechne aktive Filter (Multi-Select)
   const activeFilterCount = useMemo(() => {
-    return [filters.type, filters.category, filters.priority].filter(Boolean).length;
+    return filters.types.size + filters.categories.size + filters.priorities.size;
   }, [filters]);
 
   // Cleanup timeouts
@@ -106,17 +110,29 @@ export function SearchFilterBar({
   }, [onClearSearch]);
 
   const toggleFilter = useCallback(
-    (key: keyof Filters, value: string) => {
+    (key: keyof AdvancedFilters, value: string) => {
+      const currentSet = new Set(filters[key]);
+
+      if (currentSet.has(value)) {
+        currentSet.delete(value);
+      } else {
+        currentSet.add(value);
+      }
+
       onFilterChange({
         ...filters,
-        [key]: filters[key] === value ? null : value,
+        [key]: currentSet,
       });
     },
     [filters, onFilterChange]
   );
 
   const clearAllFilters = useCallback(() => {
-    onFilterChange({ type: null, category: null, priority: null });
+    onFilterChange({
+      types: new Set(),
+      categories: new Set(),
+      priorities: new Set()
+    });
   }, [onFilterChange]);
 
   return (
@@ -203,10 +219,10 @@ export function SearchFilterBar({
                   key={opt.value}
                   type="button"
                   className={`sfb-pill neuro-press-effect neuro-focus-ring ${
-                    filters.type === opt.value ? 'active' : ''
+                    filters.types.has(opt.value) ? 'active' : ''
                   }`}
-                  onClick={() => toggleFilter('type', opt.value)}
-                  aria-pressed={filters.type === opt.value}
+                  onClick={() => toggleFilter('types', opt.value)}
+                  aria-pressed={filters.types.has(opt.value)}
                   aria-label={`${opt.label} filtern${counts.types[opt.value] > 0 ? `, ${counts.types[opt.value]} vorhanden` : ''}`}
                 >
                   <span className="sfb-pill-icon" aria-hidden="true">{opt.icon}</span>
@@ -228,10 +244,10 @@ export function SearchFilterBar({
                   key={opt.value}
                   type="button"
                   className={`sfb-pill sfb-pill-priority neuro-press-effect neuro-focus-ring ${
-                    filters.priority === opt.value ? 'active' : ''
+                    filters.priorities.has(opt.value) ? 'active' : ''
                   }`}
-                  onClick={() => toggleFilter('priority', opt.value)}
-                  aria-pressed={filters.priority === opt.value}
+                  onClick={() => toggleFilter('priorities', opt.value)}
+                  aria-pressed={filters.priorities.has(opt.value)}
                   aria-label={`Priorität ${opt.label} filtern`}
                   data-priority={opt.value}
                 >
@@ -254,10 +270,10 @@ export function SearchFilterBar({
                   key={opt.value}
                   type="button"
                   className={`sfb-pill sfb-pill-category neuro-press-effect neuro-focus-ring ${
-                    filters.category === opt.value ? 'active' : ''
+                    filters.categories.has(opt.value) ? 'active' : ''
                   }`}
-                  onClick={() => toggleFilter('category', opt.value)}
-                  aria-pressed={filters.category === opt.value}
+                  onClick={() => toggleFilter('categories', opt.value)}
+                  aria-pressed={filters.categories.has(opt.value)}
                   aria-label={`Kategorie ${opt.label} filtern`}
                   style={{ '--category-color': opt.color } as React.CSSProperties}
                   data-category={opt.value}

@@ -111,16 +111,16 @@ export function MobileNav({
   };
 
   // Calculate total items for cognitive load indicator
-  const totalItems = 5 + navGroups.reduce((sum, g) => sum + g.items.length, 0);
+  const totalItems = 4 + navGroups.reduce((sum, g) => sum + g.items.length, 0);
   const cognitiveLevel = totalItems <= 10 ? 'low' : totalItems <= 15 ? 'medium' : 'high';
 
   // Main navigation items - matching desktop nav for consistency
-  // Konsolidiert 2026: 4 Haupt-Tabs
+  // Konsolidiert 2026: 4 Haupt-Tabs (Gedanken, Insights, Archiv, Einstellungen)
   const mainNavItems: NavItem[] = [
     { label: 'Gedanken', icon: '💭', page: 'ideas' },
-    { label: 'Chat', icon: '💬', page: 'chat' },
     { label: 'Insights', icon: '📊', page: 'insights' },
     { label: 'Archiv', icon: '📥', page: 'archive' },
+    { label: 'Einstellungen', icon: '⚙️', page: 'settings' },
   ];
 
   let globalIndex = 0;
