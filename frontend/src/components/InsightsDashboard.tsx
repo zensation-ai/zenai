@@ -13,7 +13,7 @@
  * - Einheitliches Design für bessere Orientierung
  */
 
-import React, { useState, Suspense, lazy, memo } from 'react';
+import React, { useState, useEffect, Suspense, lazy, memo } from 'react';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
 import '../neurodesign.css';
@@ -57,7 +57,27 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<InsightsTab>(initialTab);
 
+  // Sync activeTab when initialTab prop changes (e.g., from legacy navigation)
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   const handleNavigate = (page: string) => {
+    // Mapping für interne Tab-Switches (falls jemand 'analytics' etc. aufruft)
+    const tabMapping: Record<string, InsightsTab> = {
+      'dashboard': 'overview',
+      'analytics': 'analytics',
+      'digest': 'digest',
+      'knowledge-graph': 'connections',
+    };
+
+    // Wenn es ein interner Tab ist, wechsle den Tab statt zu navigieren
+    if (tabMapping[page]) {
+      setActiveTab(tabMapping[page]);
+      return;
+    }
+
+    // Ansonsten normale Navigation zur App-Ebene
     if (onNavigate) {
       onNavigate(page);
     }

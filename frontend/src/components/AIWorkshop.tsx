@@ -12,7 +12,7 @@
  * - Einheitliches Interface für alle KI-Features
  */
 
-import React, { useState, Suspense, lazy, memo } from 'react';
+import React, { useState, useEffect, Suspense, lazy, memo } from 'react';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
 import '../neurodesign.css';
@@ -51,6 +51,11 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
   initialTab = 'incubator',
 }) => {
   const [activeTab, setActiveTab] = useState<WorkshopTab>(initialTab);
+
+  // Sync activeTab when initialTab prop changes (e.g., from legacy navigation)
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const handleIdeaCreated = (ideaId: string) => {
     if (onIdeaCreated) {

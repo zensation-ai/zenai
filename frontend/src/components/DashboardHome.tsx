@@ -191,11 +191,12 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
   };
 
   // Quick action items for navigation
+  // 2026: Konsistente Benennung, nur sinnvolle externe Seiten (keine redundanten Tabs)
   const quickActions = [
     { label: 'Neuer Gedanke', icon: '✨', page: 'ideas', primary: true },
-    { label: 'Chat starten', icon: '💬', page: 'chat' },
-    { label: 'Inkubator', icon: '🧠', page: 'incubator' },
-    { label: 'Analytics', icon: '📈', page: 'analytics' },
+    { label: 'KI-Werkstatt', icon: '🧠', page: 'ai-workshop' },
+    { label: 'Sortieren', icon: '📋', page: 'triage' },
+    { label: 'Lernen', icon: '📚', page: 'learning' },
   ];
 
   return (
