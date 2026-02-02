@@ -206,6 +206,12 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
   if (!profile) {
     return (
       <div className="profile-dashboard neuro-page-enter">
+        <div className="profile-header liquid-glass-nav">
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+            ← Zurück
+          </button>
+          <h1>Profil</h1>
+        </div>
         <div className="error-state neuro-empty-state">
           <p className="neuro-empty-description">{error || 'Profil konnte nicht geladen werden'}</p>
           <button type="button" className="neuro-button" onClick={handleReload}>Erneut versuchen</button>
@@ -222,7 +228,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
     <div className="profile-dashboard neuro-page-enter">
       <div className="profile-header liquid-glass-nav">
         <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zuruck
+          ← Zurück
         </button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Dein Profil</h1>
