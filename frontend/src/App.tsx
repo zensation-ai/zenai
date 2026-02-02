@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRef } from 'react';
 import axios from 'axios';
 
 // Types and constants
@@ -101,6 +101,11 @@ function App() {
 
   // Input mode state (voice memo or chat) - using CommandCenter's InputMode type
   const [inputMode, setInputMode] = useState<InputMode>('voice');
+
+  // Ref to prevent double-submit race condition
+  // State updates are async in React, so rapid clicks/keypresses can bypass !isProcessing checks
+  // Using a ref ensures the guard is checked synchronously
+  const isSubmittingRef = useRef(false);
 
   // AI Processing Overlay state for transparent status display
   const [aiOverlay, setAIOverlay] = useState<{
@@ -369,6 +374,14 @@ function App() {
   const submitText = useCallback(async () => {
     if (!textInput.trim()) return;
 
+    // Guard against double-submit: ref updates synchronously, unlike state
+    // This prevents race conditions when user rapidly clicks or uses keyboard shortcuts
+    if (isSubmittingRef.current) {
+      console.debug('[submitText] Blocked duplicate submission');
+      return;
+    }
+    isSubmittingRef.current = true;
+
     setProcessing(true);
     setError(null);
 
@@ -408,6 +421,7 @@ function App() {
     } finally {
       setProcessing(false);
       setAIOverlay(null);
+      isSubmittingRef.current = false;
     }
   }, [textInput, context, selectedPersona]);
 
