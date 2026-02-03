@@ -960,3 +960,79 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
     byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {} as Record<string, number>),
   });
 }));
+
+/**
+ * PUT /api/:context/ideas/:id/archive
+ * Archive an idea - context-aware version
+ */
+ideasContextRouter.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid idea ID format');
+  }
+
+  const result = await queryContext(
+    ctx,
+    'UPDATE ideas SET is_archived = true, archived_at = NOW(), updated_at = NOW() WHERE id = $1 RETURNING id',
+    [id]
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  // Track interaction for learning
+  trackInteraction({
+    idea_id: id,
+    interaction_type: 'archive',
+    metadata: { action: 'archive', context: ctx },
+  }).catch((err) => logger.debug('Background archive tracking skipped', { error: err.message }));
+
+  triggerWebhook('idea.archived', {
+    id,
+    context: ctx,
+  }).catch((err) => logger.debug('Background archive webhook skipped', { error: err.message }));
+
+  res.json({ success: true, archivedId: id });
+}));
+
+/**
+ * PUT /api/:context/ideas/:id/restore
+ * Restore an archived idea - context-aware version
+ */
+ideasContextRouter.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid idea ID format');
+  }
+
+  const result = await queryContext(
+    ctx,
+    'UPDATE ideas SET is_archived = false, archived_at = NULL, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
+    [id]
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Archived idea');
+  }
+
+  // Track interaction for learning (use 'edit' since 'restore' is not a valid type)
+  trackInteraction({
+    idea_id: id,
+    interaction_type: 'edit',
+    metadata: { action: 'restore', context: ctx },
+  }).catch((err) => logger.debug('Background restore tracking skipped', { error: err.message }));
+
+  // Use idea.updated webhook since idea.restored doesn't exist
+  triggerWebhook('idea.updated', {
+    id,
+    action: 'restored',
+    context: ctx,
+  }).catch((err) => logger.debug('Background restore webhook skipped', { error: err.message }));
+
+  res.json({ success: true, restoredId: id, idea: result.rows[0] });
+}));

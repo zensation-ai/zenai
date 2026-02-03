@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { QuickFeedback, DraftFeedbackForm, FeedbackPrompt } from './DraftFeedback';
+import { useContextState } from './ContextSwitcher';
 import '../neurodesign.css';
 import './IdeaDetail.css';
 
@@ -95,6 +96,7 @@ const draftTypeLabels: Record<string, { label: string; icon: string }> = {
 };
 
 export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenInChat, onMarkComplete }: IdeaDetailProps) {
+  const [context] = useContextState();
   const [relations, setRelations] = useState<Relation[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
@@ -221,7 +223,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
 
       // Phase 5: Record copy and show feedback prompt after delay
       try {
-        await axios.post(`/api/personal/drafts/${draft.id}/copied`);
+        await axios.post(`/api/${context}/drafts/${draft.id}/copied`);
         // Show feedback prompt after 3 seconds if not already given feedback
         if (!feedbackGiven) {
           setTimeout(() => {
