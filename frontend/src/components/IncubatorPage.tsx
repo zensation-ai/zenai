@@ -764,8 +764,9 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
           text-align: center;
           margin-top: 1.5rem;
           padding: 0.75rem;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 8px;
+          background: var(--surface-light, rgba(235, 242, 248, 0.65));
+          border-radius: var(--radius-sm, 8px);
+          border: 1px solid var(--border-light);
         }
 
         .greeting-emoji {

@@ -246,6 +246,23 @@ BRAVE_SEARCH_API_KEY=your-brave-api-key  # Falls nicht gesetzt: DuckDuckGo Fallb
 GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...     # Für github_* Tools
 ```
 
+## API Key Scopes
+
+Der konfigurierte API-Key (`VITE_API_KEY` im Frontend) benötigt folgende Scopes für vollständige Funktionalität:
+
+| Scope | Benötigt für |
+|-------|--------------|
+| `read` | Alle Lese-Operationen (Ideas, Profile Stats, Notifications, etc.) |
+| `write` | Schreib-Operationen (Ideas erstellen, Profile aktualisieren, Preferences ändern) |
+| `admin` | API-Key/Webhook-Verwaltung (IntegrationsPage), Memory Admin |
+
+**API-Key erstellen:**
+```bash
+cd backend && npm run create-web-key
+```
+
+Der generierte Key hat standardmäßig alle drei Scopes (`read`, `write`, `admin`).
+
 ## Testing
 
 ### Test Commands

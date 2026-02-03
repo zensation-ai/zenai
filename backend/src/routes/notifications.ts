@@ -501,17 +501,19 @@ notificationsRouter.delete(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const { deviceToken } = req.body;
+    // Accept both deviceToken (legacy) and deviceId (frontend)
+    const { deviceToken, deviceId } = req.body;
+    const token = deviceToken || deviceId;
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Must be "personal" or "work"');
     }
 
-    if (!deviceToken) {
-      throw new ValidationError('deviceToken is required');
+    if (!token) {
+      throw new ValidationError('deviceToken or deviceId is required');
     }
 
-    await unregisterDeviceToken(context as AIContext, deviceToken);
+    await unregisterDeviceToken(context as AIContext, token);
 
     res.json({
       success: true,
@@ -541,12 +543,14 @@ notificationsRouter.get(
       success: true,
       devices: devices.map((d) => ({
         id: d.id,
-        deviceId: d.deviceId,
-        deviceName: d.deviceName,
-        deviceModel: d.deviceModel,
-        osVersion: d.osVersion,
-        appVersion: d.appVersion,
-        lastUsedAt: d.lastUsedAt,
+        device_token: d.deviceToken || d.deviceId,
+        device_name: d.deviceName,
+        device_model: d.deviceModel,
+        os_version: d.osVersion,
+        app_version: d.appVersion,
+        is_active: d.isActive ?? true,
+        last_used_at: d.lastUsedAt,
+        created_at: d.createdAt,
       })),
       count: devices.length,
     });
@@ -571,29 +575,40 @@ notificationsRouter.get(
     const preferences = await getPrefs(context as AIContext, deviceId);
 
     if (!preferences) {
-      // Return default preferences
+      // Return default preferences in snake_case format for frontend compatibility
       res.json({
         success: true,
         preferences: {
-          draftReady: true,
-          draftFeedbackReminder: true,
-          ideaConnections: true,
-          learningSuggestions: true,
-          weeklySummary: false,
-          quietHoursEnabled: false,
-          quietHoursStart: null,
-          quietHoursEnd: null,
-          timezone: 'Europe/Berlin',
-          maxNotificationsPerHour: 10,
-          maxNotificationsPerDay: 50,
+          draft_ready: true,
+          feedback_reminder: true,
+          idea_connections: true,
+          learning_suggestions: true,
+          weekly_summary: false,
+          quiet_hours_start: null,
+          quiet_hours_end: null,
+          quiet_hours_timezone: 'Europe/Berlin',
+          max_per_hour: 10,
+          max_per_day: 50,
         },
       });
       return;
     }
 
+    // Convert preferences to snake_case for frontend compatibility
     res.json({
       success: true,
-      preferences,
+      preferences: {
+        draft_ready: preferences.draftReady ?? preferences.draft_ready ?? true,
+        feedback_reminder: preferences.draftFeedbackReminder ?? preferences.feedback_reminder ?? true,
+        idea_connections: preferences.ideaConnections ?? preferences.idea_connections ?? true,
+        learning_suggestions: preferences.learningSuggestions ?? preferences.learning_suggestions ?? true,
+        weekly_summary: preferences.weeklySummary ?? preferences.weekly_summary ?? false,
+        quiet_hours_start: preferences.quietHoursStart ?? preferences.quiet_hours_start ?? null,
+        quiet_hours_end: preferences.quietHoursEnd ?? preferences.quiet_hours_end ?? null,
+        quiet_hours_timezone: preferences.timezone ?? preferences.quiet_hours_timezone ?? 'Europe/Berlin',
+        max_per_hour: preferences.maxNotificationsPerHour ?? preferences.max_per_hour ?? 10,
+        max_per_day: preferences.maxNotificationsPerDay ?? preferences.max_per_day ?? 50,
+      },
     });
   })
 );
@@ -608,41 +623,38 @@ notificationsRouter.put(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, deviceId } = req.params;
-    const {
-      draftReady,
-      draftFeedbackReminder,
-      ideaConnections,
-      learningSuggestions,
-      weeklySummary,
-      quietHoursEnabled,
-      quietHoursStart,
-      quietHoursEnd,
-      timezone,
-    } = req.body;
+    const body = req.body;
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Must be "personal" or "work"');
     }
 
+    // Accept both snake_case (frontend) and camelCase (legacy) formats
+    const quietHoursStartValue = body.quiet_hours_start ?? body.quietHoursStart;
+    const quietHoursEndValue = body.quiet_hours_end ?? body.quietHoursEnd;
+
     // Validate quiet hours format if provided
-    if (quietHoursStart && !/^\d{2}:\d{2}$/.test(quietHoursStart)) {
-      throw new ValidationError('quietHoursStart must be in HH:MM format');
+    if (quietHoursStartValue && !/^\d{2}:\d{2}$/.test(quietHoursStartValue)) {
+      throw new ValidationError('quiet_hours_start must be in HH:MM format');
     }
-    if (quietHoursEnd && !/^\d{2}:\d{2}$/.test(quietHoursEnd)) {
-      throw new ValidationError('quietHoursEnd must be in HH:MM format');
+    if (quietHoursEndValue && !/^\d{2}:\d{2}$/.test(quietHoursEndValue)) {
+      throw new ValidationError('quiet_hours_end must be in HH:MM format');
     }
 
-    const success = await updatePrefs(context as AIContext, deviceId, {
-      draftReady,
-      draftFeedbackReminder,
-      ideaConnections,
-      learningSuggestions,
-      weeklySummary,
-      quietHoursEnabled,
-      quietHoursStart,
-      quietHoursEnd,
-      timezone,
-    });
+    // Map from both formats to internal format
+    const prefsToUpdate = {
+      draftReady: body.draft_ready ?? body.draftReady,
+      draftFeedbackReminder: body.feedback_reminder ?? body.draftFeedbackReminder,
+      ideaConnections: body.idea_connections ?? body.ideaConnections,
+      learningSuggestions: body.learning_suggestions ?? body.learningSuggestions,
+      weeklySummary: body.weekly_summary ?? body.weeklySummary,
+      quietHoursEnabled: body.quiet_hours_enabled ?? body.quietHoursEnabled,
+      quietHoursStart: quietHoursStartValue,
+      quietHoursEnd: quietHoursEndValue,
+      timezone: body.quiet_hours_timezone ?? body.timezone,
+    };
+
+    const success = await updatePrefs(context as AIContext, deviceId, prefsToUpdate);
 
     if (!success) {
       throw new Error('Failed to update preferences');
@@ -751,12 +763,18 @@ notificationsRouter.get(
 
     const stats = await getNotificationStats(context as AIContext, parseInt(days as string, 10));
 
+    // Return stats in snake_case format for frontend compatibility
     res.json({
       success: true,
-      stats,
+      total_sent: stats?.totalSent ?? stats?.total_sent ?? 0,
+      total_opened: stats?.totalOpened ?? stats?.total_opened ?? 0,
+      open_rate: stats?.openRate ?? stats?.open_rate ?? 0,
+      by_type: stats?.byType ?? stats?.by_type ?? {},
       period: {
         days: parseInt(days as string, 10),
       },
+      // Also include nested stats for backwards compatibility
+      stats,
     });
   })
 );
@@ -777,9 +795,16 @@ notificationsRouter.get(
     }
 
     const status = getPushNotificationsStatus();
+    // Get active device count for frontend compatibility
+    const devices = await getActiveDeviceTokens(context as AIContext);
 
     res.json({
       success: true,
+      // Frontend-expected fields (snake_case)
+      configured: status.configured,
+      provider: 'apns',
+      active_devices: devices.length,
+      // Legacy structure for backwards compatibility
       pushNotifications: {
         configured: status.configured,
         environment: status.environment,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import axios from 'axios';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import {
   AI_PERSONALITY,
@@ -139,37 +140,20 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
     }
   }, [isLoading]);
 
-  // Fetch ideas for triage
+  // Fetch ideas for triage using axios (global interceptor handles auth)
   const fetchTriageIdeas = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    // SECURITY: API key must be configured - no hardcoded fallbacks
-    const apiKey = import.meta.env.VITE_API_KEY;
-    if (!apiKey) {
-      setError('API-Key nicht konfiguriert. Bitte VITE_API_KEY setzen.');
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const excludeParam = processedIds.length > 0 ? '&exclude=' + processedIds.join(',') : '';
       // Neuro-UX: Miller's Law - Limitiere auf MAX_VISIBLE_ITEMS
-      const response = await fetch(
-        apiBase + '/' + context + '/ideas/triage?limit=' + MAX_VISIBLE_ITEMS + excludeParam,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-        }
+      // Auth is handled by the global axios interceptor in main.tsx
+      const response = await axios.get(
+        `${apiBase}/${context}/ideas/triage?limit=${MAX_VISIBLE_ITEMS}${excludeParam}`
       );
 
-      if (!response.ok) {
-        throw new Error('Fehler beim Laden der Gedanken');
-      }
-
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success && data.ideas) {
         const transformedIdeas: TriageIdea[] = data.ideas.map((idea: any) => ({
@@ -191,7 +175,10 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
         setIdeas([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error || 'Fehler beim Laden der Gedanken'
+        : 'Ein Fehler ist aufgetreten';
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -255,30 +242,12 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
       // Neuro-UX: Dopamin-Belohnung triggern
       showDopamineReward(action);
 
-      // SECURITY: API key must be configured
-      const apiKey = import.meta.env.VITE_API_KEY;
-      if (!apiKey) {
-        setError('API-Key nicht konfiguriert');
-        setIsAnimating(false);
-        return;
-      }
-
       try {
-        const response = await fetch(
-          apiBase + '/' + context + '/ideas/' + currentIdea.id + '/triage',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': apiKey,
-            },
-            body: JSON.stringify({ action }),
-          }
+        // Auth is handled by the global axios interceptor in main.tsx
+        await axios.post(
+          `${apiBase}/${context}/ideas/${currentIdea.id}/triage`,
+          { action }
         );
-
-        if (!response.ok) {
-          throw new Error('Fehler beim Speichern');
-        }
 
         // Update stats
         setStats((prev) => ({
