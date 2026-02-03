@@ -328,7 +328,7 @@
 
 .category-badge {
   background: var(--bg-secondary);
-  color: var(--petrol-light);
+  color: var(--text-secondary);
   padding: 0.2rem 0.6rem;
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
