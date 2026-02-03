@@ -196,7 +196,7 @@ export async function addLooseThought(
        (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, false, NOW())
        RETURNING *`,
-      [id, userId, rawInput, source, JSON.stringify(userTags), embedding.length > 0 ? JSON.stringify(embedding) : null]
+      [id, userId, rawInput, source, JSON.stringify(userTags), embedding.length > 0 ? formatForPgVector(embedding) : null]
     );
 
     const thought = result.rows[0];
