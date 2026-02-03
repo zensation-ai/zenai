@@ -598,16 +598,16 @@ notificationsRouter.get(
     res.json({
       success: true,
       preferences: {
-        draft_ready: preferences.draftReady ?? preferences.draft_ready ?? true,
-        feedback_reminder: preferences.draftFeedbackReminder ?? preferences.feedback_reminder ?? true,
-        idea_connections: preferences.ideaConnections ?? preferences.idea_connections ?? true,
-        learning_suggestions: preferences.learningSuggestions ?? preferences.learning_suggestions ?? true,
-        weekly_summary: preferences.weeklySummary ?? preferences.weekly_summary ?? false,
-        quiet_hours_start: preferences.quietHoursStart ?? preferences.quiet_hours_start ?? null,
-        quiet_hours_end: preferences.quietHoursEnd ?? preferences.quiet_hours_end ?? null,
-        quiet_hours_timezone: preferences.timezone ?? preferences.quiet_hours_timezone ?? 'Europe/Berlin',
-        max_per_hour: preferences.maxNotificationsPerHour ?? preferences.max_per_hour ?? 10,
-        max_per_day: preferences.maxNotificationsPerDay ?? preferences.max_per_day ?? 50,
+        draft_ready: preferences.draftReady ?? true,
+        feedback_reminder: preferences.draftFeedbackReminder ?? true,
+        idea_connections: preferences.ideaConnections ?? true,
+        learning_suggestions: preferences.learningSuggestions ?? true,
+        weekly_summary: preferences.weeklySummary ?? false,
+        quiet_hours_start: preferences.quietHoursStart ?? null,
+        quiet_hours_end: preferences.quietHoursEnd ?? null,
+        quiet_hours_timezone: preferences.timezone ?? 'Europe/Berlin',
+        max_per_hour: preferences.maxNotificationsPerHour ?? 10,
+        max_per_day: preferences.maxNotificationsPerDay ?? 50,
       },
     });
   })
@@ -766,10 +766,10 @@ notificationsRouter.get(
     // Return stats in snake_case format for frontend compatibility
     res.json({
       success: true,
-      total_sent: stats?.totalSent ?? stats?.total_sent ?? 0,
-      total_opened: stats?.totalOpened ?? stats?.total_opened ?? 0,
-      open_rate: stats?.openRate ?? stats?.open_rate ?? 0,
-      by_type: stats?.byType ?? stats?.by_type ?? {},
+      total_sent: stats?.totalSent ?? 0,
+      total_opened: stats?.opened ?? 0,
+      open_rate: stats?.openRate ?? 0,
+      by_type: stats?.byType ?? [],
       period: {
         days: parseInt(days as string, 10),
       },

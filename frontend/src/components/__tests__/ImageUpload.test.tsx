@@ -126,7 +126,7 @@ describe('ImageUpload Component', () => {
       uploadFiles(input, files);
 
       await waitFor(() => {
-        expect(screen.getByText(/Maximal 2 Bilder erlaubt/i)).toBeInTheDocument();
+        expect(screen.getByText(/maximal 2 Bilder/i)).toBeInTheDocument();
       });
     });
   });
@@ -198,7 +198,7 @@ describe('ImageUpload Component', () => {
       uploadFiles(input, file);
 
       await waitFor(() => {
-        expect(screen.getByText(/Ungültiges Format/i)).toBeInTheDocument();
+        expect(screen.getByText(/PDF funktioniert leider nicht/i)).toBeInTheDocument();
       });
     });
 
@@ -212,7 +212,7 @@ describe('ImageUpload Component', () => {
       uploadFiles(input, file);
 
       await waitFor(() => {
-        expect(screen.getByText(/Datei zu groß/i)).toBeInTheDocument();
+        expect(screen.getByText(/etwas zu groß/i)).toBeInTheDocument();
       });
     });
   });
@@ -490,7 +490,7 @@ describe('ImageUpload Component', () => {
       uploadFiles(input, largeFile);
 
       await waitFor(() => {
-        expect(screen.getByText(/Max: 2MB/i)).toBeInTheDocument();
+        expect(screen.getByText(/Maximal 2MB/i)).toBeInTheDocument();
       });
     });
   });

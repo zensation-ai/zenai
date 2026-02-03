@@ -34,6 +34,7 @@ export interface DeviceToken {
   context: AIContext;
   isActive: boolean;
   lastUsedAt?: Date;
+  createdAt?: Date;
 }
 
 export interface NotificationPreferences {
