@@ -148,8 +148,8 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
   return (
     <div className="export-dashboard neuro-page-enter">
       <div className="export-header liquid-glass-nav">
-        <button className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zuruck
+        <button className="back-button neuro-hover-lift" onClick={onBack} type="button">
+          ← Zurück
         </button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Export Center</h1>
@@ -184,7 +184,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
       {activeTab === 'export' && (
         <div className="export-content">
           <div className="export-section liquid-glass neuro-stagger-item">
-            <h3>Format auswahlen</h3>
+            <h3>Format auswählen</h3>
             <div className="format-options neuro-flow-list">
               {[
                 { id: 'json', label: 'JSON', icon: '📄', desc: 'Strukturierte Daten' },
@@ -207,7 +207,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
           </div>
 
           <div className="export-section liquid-glass neuro-stagger-item">
-            <h3>Inhalte auswahlen</h3>
+            <h3>Inhalte auswählen</h3>
             <div className="content-options neuro-flow-list">
               {[
                 { id: 'ideas', label: 'Ideen', icon: '💡' },
@@ -296,7 +296,12 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
                       {formatDate(item.created_at)} • {formatFileSize(item.size)}
                     </span>
                   </div>
-                  <button className="download-btn">
+                  <button
+                    className="download-btn"
+                    type="button"
+                    onClick={() => window.open(`/api/export/download/${item.id}`, '_blank')}
+                    title="Download"
+                  >
                     ⬇️
                   </button>
                 </div>
@@ -310,7 +315,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
         <div className="backup-content">
           <div className="backup-card liquid-glass neuro-stagger-item">
             <div className="backup-icon neuro-breathing">💾</div>
-            <h3>Vollstandiges Backup</h3>
+            <h3>Vollständiges Backup</h3>
             <p>
               Erstelle ein komplettes Backup aller deiner Daten inkl. Medien,
               Einstellungen und AI-Lernfortschritt.

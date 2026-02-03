@@ -268,7 +268,7 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
     <div className="learning-tasks-dashboard neuro-page-enter">
       <div className="learning-header liquid-glass-nav">
         <button className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zuruck
+          ← Zurück
         </button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Lernziele</h1>

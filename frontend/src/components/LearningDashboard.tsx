@@ -303,7 +303,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     return (
       <div className="learning-dashboard neuro-page-enter">
         <div className="learning-header liquid-glass-nav">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
           <h1>KI-Lernzentrum</h1>
         </div>
         <div className="loading-state neuro-loading-contextual">
@@ -319,7 +319,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     return (
       <div className="learning-dashboard">
         <div className="learning-header">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zurück</button>
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
           <h1>KI-Lernzentrum</h1>
         </div>
         <div className="error-state neuro-error-friendly">Dashboard konnte nicht geladen werden</div>
@@ -330,7 +330,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
   return (
     <div className="learning-dashboard neuro-page-enter">
       <div className="learning-header liquid-glass-nav">
-        <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
         <div className="header-greeting">
           <h1>{greeting.emoji} KI-Lernzentrum</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>

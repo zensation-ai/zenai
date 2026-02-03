@@ -219,7 +219,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
     return (
       <div className="automation-dashboard neuro-page-enter">
         <header className="automation-header liquid-glass-nav">
-          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
           <h1>Automationen</h1>
         </header>
         <div className="loading-state neuro-loading-contextual">
@@ -234,7 +234,7 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
   return (
     <div className="automation-dashboard neuro-page-enter">
       <header className="automation-header liquid-glass-nav">
-        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
+        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Automationen</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>

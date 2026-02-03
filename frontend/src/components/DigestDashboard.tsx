@@ -200,8 +200,8 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
   return (
     <div className="digest-dashboard neuro-page-enter">
       <div className="digest-header liquid-glass-nav">
-        <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">
-          ← Zuruck
+        <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">
+          ← Zurück
         </button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Zusammenfassungen</h1>

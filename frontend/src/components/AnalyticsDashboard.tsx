@@ -130,8 +130,8 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
     return (
       <div className="analytics-dashboard neuro-page-enter">
         <header className="header liquid-glass-nav">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">
-            ← Zuruck
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">
+            ← Zurück
           </button>
           <h1>Analytics Dashboard</h1>
         </header>
@@ -148,14 +148,14 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
     <div className="analytics-dashboard neuro-page-enter">
       <header className="header liquid-glass-nav">
         <div className="header-content">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">
-            ← Zuruck
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">
+            ← Zurück
           </button>
           <div className="header-greeting">
             <h1>{greeting.emoji} Analytics Dashboard</h1>
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
-          <span className="context-badge">{context === 'personal' ? 'Personlich' : 'Arbeit'}</span>
+          <span className="context-badge">{context === 'personal' ? 'Persönlich' : 'Arbeit'}</span>
         </div>
       </header>
 

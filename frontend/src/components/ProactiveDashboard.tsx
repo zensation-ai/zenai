@@ -189,14 +189,14 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
     <div className="proactive-dashboard neuro-page-enter">
       <div className="proactive-header liquid-glass-nav">
         <button className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zuruck
+          ← Zurück
         </button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Proaktive AI</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
         </div>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? 'Personlich' : 'Arbeit'}
+          {context === 'personal' ? 'Persönlich' : 'Arbeit'}
         </span>
       </div>
 

@@ -197,14 +197,14 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
     <div className="sync-dashboard neuro-page-enter">
       <div className="sync-header liquid-glass-nav">
         <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zuruck
+          ← Zurück
         </button>
         <div className="header-greeting">
           <h1>{greeting.emoji} Synchronisation</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
         </div>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? 'Personlich' : 'Arbeit'}
+          {context === 'personal' ? 'Persönlich' : 'Arbeit'}
         </span>
       </div>
 
@@ -221,7 +221,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
           className={`tab-btn neuro-hover-lift ${activeTab === 'devices' ? 'active' : ''}`}
           onClick={() => setActiveTab('devices')}
         >
-          Gerate
+          Geräte
           {syncStatus && syncStatus.devices.length > 0 && (
             <span className="badge">{syncStatus.devices.length}</span>
           )}
@@ -231,7 +231,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
           className={`tab-btn neuro-hover-lift ${activeTab === 'changes' ? 'active' : ''}`}
           onClick={() => setActiveTab('changes')}
         >
-          Anderungen
+          Änderungen
           {syncStatus && syncStatus.pending_changes > 0 && (
             <span className="badge warning">{syncStatus.pending_changes}</span>
           )}
@@ -271,12 +271,12 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
             <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
               <span className="stat-icon">📱</span>
               <span className="stat-value">{syncStatus.devices.length}</span>
-              <span className="stat-label">Verbundene Gerate</span>
+              <span className="stat-label">Verbundene Geräte</span>
             </div>
             <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
               <span className="stat-icon">📝</span>
               <span className="stat-value">{syncStatus.pending_changes}</span>
-              <span className="stat-label">Ausstehende Anderungen</span>
+              <span className="stat-label">Ausstehende Änderungen</span>
             </div>
             <div className="stat-card liquid-glass neuro-stagger-item neuro-hover-lift">
               <span className="stat-icon">⏱️</span>
@@ -288,9 +288,9 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
           <div className="sync-info liquid-glass neuro-stagger-item">
             <h4>So funktioniert die Synchronisation</h4>
             <ul>
-              <li>Anderungen werden automatisch alle 30 Sekunden synchronisiert</li>
+              <li>Änderungen werden automatisch alle 30 Sekunden synchronisiert</li>
               <li>Bei Konflikten gewinnt die neueste Anderung</li>
-              <li>Offline-Anderungen werden beim nachsten Online-Status synchronisiert</li>
+              <li>Offline-Änderungen werden beim nächsten Online-Status synchronisiert</li>
               <li>Push-Benachrichtigungen informieren uber wichtige Updates</li>
             </ul>
           </div>
@@ -302,8 +302,8 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
           {syncStatus.devices.length === 0 ? (
             <div className="empty-state neuro-empty-state neuro-stagger-item">
               <span className="empty-icon neuro-empty-icon neuro-breathing">📱</span>
-              <h3 className="neuro-empty-title">Keine Gerate verbunden</h3>
-              <p className="neuro-empty-description">Melde dich auf anderen Geraten an, um sie hier zu sehen.</p>
+              <h3 className="neuro-empty-title">Keine Geräte verbunden</h3>
+              <p className="neuro-empty-description">Melde dich auf anderen Geräten an, um sie hier zu sehen.</p>
               <p className="neuro-empty-encouragement">Deine Daten sind bereit zur Synchronisation!</p>
             </div>
           ) : (
@@ -342,7 +342,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
             <div className="empty-state neuro-empty-state neuro-stagger-item">
               <span className="empty-icon neuro-empty-icon neuro-breathing">✓</span>
               <h3 className="neuro-empty-title">Alles synchronisiert</h3>
-              <p className="neuro-empty-description">Keine ausstehenden Anderungen.</p>
+              <p className="neuro-empty-description">Keine ausstehenden Änderungen.</p>
               <p className="neuro-empty-encouragement">Perfekt - alles ist auf dem neuesten Stand!</p>
             </div>
           ) : (

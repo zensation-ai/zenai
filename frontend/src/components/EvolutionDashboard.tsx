@@ -154,7 +154,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
     return (
       <div className="evolution-dashboard neuro-page-enter">
         <header className="evolution-header liquid-glass-nav">
-          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
           <h1>KI-Evolution</h1>
         </header>
         <div className="loading-state neuro-loading-contextual">
@@ -170,7 +170,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
     return (
       <div className="evolution-dashboard">
         <header className="evolution-header">
-          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zurück</button>
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
           <h1>KI-Evolution</h1>
         </header>
         <div className="error-banner">
@@ -184,7 +184,7 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
   return (
     <div className="evolution-dashboard neuro-page-enter">
       <header className="evolution-header liquid-glass-nav">
-        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zuruck zur vorherigen Seite">← Zuruck</button>
+        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
         <div className="header-greeting">
           <h1>{greeting.emoji} KI-Evolution</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>

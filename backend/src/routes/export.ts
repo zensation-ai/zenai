@@ -829,6 +829,156 @@ exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
 // ============================================
 
 /**
+ * GET /api/export/data
+ * Unified export endpoint - exports data based on format and content type
+ * Query params: format (json|csv|markdown|pdf), content (ideas,meetings,...), context, from, to
+ */
+exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const format = (req.query.format as string) || 'json';
+  const contentParam = (req.query.content as string) || 'ideas';
+  const ctx = getContext(req);
+  const fromDate = req.query.from as string;
+  const toDate = req.query.to as string;
+
+  // Validate format
+  const validFormats = ['json', 'csv', 'markdown', 'pdf'];
+  if (!validFormats.includes(format)) {
+    throw new ValidationError(`Invalid format. Allowed: ${validFormats.join(', ')}`);
+  }
+
+  // Parse content types
+  const contentTypes = contentParam.split(',').map(c => c.trim());
+
+  // Build date filter
+  let dateFilter = '';
+  const dateParams: (string | Date)[] = [];
+  if (fromDate) {
+    dateParams.push(new Date(fromDate));
+    dateFilter += ` AND created_at >= $${dateParams.length}`;
+  }
+  if (toDate) {
+    dateParams.push(new Date(toDate));
+    dateFilter += ` AND created_at <= $${dateParams.length}`;
+  }
+
+  // Collect data based on content types
+  const exportData: Record<string, unknown[]> = {};
+
+  for (const contentType of contentTypes) {
+    switch (contentType) {
+      case 'ideas': {
+        const result = await queryContext(
+          ctx,
+          `SELECT id, title, summary, type, category, priority, tags, status, created_at, updated_at
+           FROM ideas WHERE status != 'archived'${dateFilter}
+           ORDER BY created_at DESC`,
+          dateParams
+        );
+        exportData.ideas = result.rows;
+        break;
+      }
+      case 'meetings': {
+        const result = await queryContext(
+          ctx,
+          `SELECT id, title, date, meeting_type, status, participants, notes, action_items, created_at
+           FROM meetings${dateFilter ? ' WHERE 1=1' + dateFilter : ''}
+           ORDER BY date DESC`,
+          dateParams
+        );
+        exportData.meetings = result.rows;
+        break;
+      }
+      case 'incubator': {
+        const result = await queryContext(
+          ctx,
+          `SELECT id, raw_input, is_processed, created_at FROM loose_thoughts${dateFilter ? ' WHERE 1=1' + dateFilter : ''}
+           ORDER BY created_at DESC`,
+          dateParams
+        );
+        exportData.incubator = result.rows;
+        break;
+      }
+      case 'learning-tasks': {
+        const result = await queryContext(
+          ctx,
+          `SELECT id, title, description, category, status, priority, target_hours, completed_hours, created_at
+           FROM learning_tasks${dateFilter ? ' WHERE 1=1' + dateFilter : ''}
+           ORDER BY created_at DESC`,
+          dateParams
+        );
+        exportData.learningTasks = result.rows;
+        break;
+      }
+      case 'automations': {
+        const result = await queryContext(
+          ctx,
+          `SELECT id, name, description, trigger_type, action_type, is_active, execution_count, created_at
+           FROM automations${dateFilter ? ' WHERE 1=1' + dateFilter : ''}
+           ORDER BY created_at DESC`,
+          dateParams
+        );
+        exportData.automations = result.rows;
+        break;
+      }
+    }
+  }
+
+  // Generate output based on format
+  const timestamp = new Date().toISOString().split('T')[0];
+
+  if (format === 'json') {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="export-${timestamp}.json"`);
+    res.json(exportData);
+  } else if (format === 'csv') {
+    // Simple CSV for ideas only (most common use case)
+    const ideas = (exportData.ideas || []) as IdeaRow[];
+    const csvHeader = 'ID,Title,Summary,Type,Category,Priority,Created\n';
+    const csvRows = ideas.map(idea =>
+      `${escapeCSV(idea.id)},${escapeCSV(idea.title)},${escapeCSV(idea.summary || '')},${escapeCSV(idea.type)},${escapeCSV(idea.category)},${escapeCSV(idea.priority)},${escapeCSV(formatDate(idea.created_at))}`
+    ).join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="export-${timestamp}.csv"`);
+    res.send(csvHeader + csvRows);
+  } else if (format === 'markdown') {
+    let markdown = `# AI Brain Export\n\nExported: ${timestamp}\nContext: ${ctx}\n\n`;
+    for (const [key, items] of Object.entries(exportData)) {
+      markdown += `## ${key.charAt(0).toUpperCase() + key.slice(1)}\n\n`;
+      for (const item of items as Record<string, unknown>[]) {
+        markdown += `### ${(item as Record<string, string>).title || (item as Record<string, string>).name || (item as Record<string, string>).id}\n\n`;
+        if ((item as Record<string, string>).summary) markdown += `${(item as Record<string, string>).summary}\n\n`;
+        if ((item as Record<string, string>).description) markdown += `${(item as Record<string, string>).description}\n\n`;
+        markdown += `---\n\n`;
+      }
+    }
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="export-${timestamp}.md"`);
+    res.send(markdown);
+  } else if (format === 'pdf') {
+    // For PDF, redirect to the existing PDF endpoint (ideas only)
+    const pdfDoc = new PDFDocument();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="export-${timestamp}.pdf"`);
+    pdfDoc.pipe(res);
+
+    pdfDoc.fontSize(20).text('AI Brain Export', { align: 'center' });
+    pdfDoc.fontSize(12).text(`Exported: ${timestamp} | Context: ${ctx}`, { align: 'center' });
+    pdfDoc.moveDown(2);
+
+    const ideas = (exportData.ideas || []) as IdeaRow[];
+    for (const idea of ideas) {
+      pdfDoc.fontSize(14).text(idea.title, { underline: true });
+      if (idea.summary) pdfDoc.fontSize(10).text(idea.summary);
+      pdfDoc.fontSize(9).text(`Type: ${idea.type} | Category: ${idea.category} | Priority: ${idea.priority}`);
+      pdfDoc.moveDown();
+    }
+
+    pdfDoc.end();
+    return; // Don't send res.json after piping PDF
+  }
+}));
+
+/**
  * GET /api/export/history
  * Get export history (recent exports)
  */
@@ -848,8 +998,17 @@ exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: 
     `SELECT COUNT(*) as total FROM export_history`
   );
 
+  // Map to frontend expected format
+  const exports = result.rows.map(row => ({
+    id: row.id,
+    format: row.export_type,
+    filename: row.filename,
+    size: row.file_size,
+    created_at: row.created_at,
+  }));
+
   res.json({
-    history: result.rows,
+    exports,
     pagination: {
       total: parseInt(countResult.rows[0]?.total || '0'),
       limit,

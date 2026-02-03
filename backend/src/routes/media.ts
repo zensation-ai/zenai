@@ -712,4 +712,93 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
   });
 }));
 
+/**
+ * POST /api/:context/media/analyze
+ * Analyze an existing media item by its ID (for re-analysis)
+ * Body: { mediaId: string }
+ */
+router.post('/:context/media/analyze-existing', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+  const { mediaId } = req.body;
+
+  if (!mediaId || !isValidUUID(mediaId)) {
+    throw new ValidationError('Valid mediaId is required');
+  }
+
+  // Fetch media item from database
+  const mediaResult = await query(
+    `SELECT * FROM media_items WHERE id = $1 AND context = $2`,
+    [mediaId, context]
+  );
+
+  if (mediaResult.rows.length === 0) {
+    throw new NotFoundError('Media item');
+  }
+
+  const mediaItem = mediaResult.rows[0];
+
+  // Ensure it's an image
+  if (mediaItem.media_type !== 'photo') {
+    throw new ValidationError('Only images can be analyzed');
+  }
+
+  // Get file path
+  const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+  const filePath = path.join(uploadDir, mediaItem.filename);
+
+  // Verify file exists
+  try {
+    await fs.access(filePath);
+  } catch {
+    throw new NotFoundError('Media file on disk');
+  }
+
+  logger.info('Re-analyzing existing image', { mediaId, filename: mediaItem.filename });
+
+  // Run analysis
+  const imageResult = await analyzeImage(filePath, 'general');
+  const ocrText = await extractTextFromImage(filePath);
+
+  // Generate embedding from description
+  let embedding: number[] | null = null;
+  const textForEmbedding = imageResult.description || ocrText;
+  if (textForEmbedding) {
+    try {
+      embedding = await generateEmbedding(textForEmbedding);
+    } catch {
+      logger.warn('Failed to generate embedding for re-analysis');
+    }
+  }
+
+  // Update database with analysis results
+  await query(
+    `UPDATE media_items SET
+       caption = $1,
+       ocr_text = $2,
+       analysis = $3,
+       embedding = $4,
+       updated_at = NOW()
+     WHERE id = $5`,
+    [
+      imageResult.description,
+      ocrText,
+      JSON.stringify(imageResult),
+      embedding ? `[${embedding.join(',')}]` : null,
+      mediaId
+    ]
+  );
+
+  logger.info('Image re-analyzed', { mediaId, filename: mediaItem.filename });
+
+  res.json({
+    success: true,
+    mediaId: mediaId,
+    analysis: imageResult,
+    ocrText: ocrText,
+    tags: imageResult.tags || [],
+    context: context,
+    message: 'Image analyzed successfully'
+  });
+}));
+
 export default router;

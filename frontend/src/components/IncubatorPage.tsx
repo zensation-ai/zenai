@@ -424,7 +424,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
               value={quickThought}
               onChange={(e) => setQuickThought(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.metaKey) {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   submitQuickThought();
                 }
               }}

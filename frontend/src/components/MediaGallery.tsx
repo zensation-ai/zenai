@@ -75,7 +75,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
   const handleAnalyze = async (mediaId: string) => {
     try {
       setAnalyzing(mediaId);
-      const res = await axios.post(`/api/${context}/media/analyze`, { mediaId });
+      const res = await axios.post(`/api/${context}/media/analyze-existing`, { mediaId });
       setMedia(prev => prev.map(m =>
         m.id === mediaId ? { ...m, analysis: res.data.analysis, tags: res.data.tags || m.tags } : m
       ));
