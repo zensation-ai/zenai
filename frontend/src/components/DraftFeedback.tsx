@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { useContextState } from './ContextSwitcher';
 import './DraftFeedback.css';
 
 // ===========================================
@@ -36,6 +37,7 @@ type EditCategory = 'tone' | 'length' | 'content' | 'structure' | 'formatting' |
 // ===========================================
 
 export function QuickFeedback({ draftId, onFeedbackSubmitted }: { draftId: string; onFeedbackSubmitted?: () => void }) {
+  const [context] = useContextState();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<'positive' | 'negative' | null>(null);
 
@@ -44,7 +46,7 @@ export function QuickFeedback({ draftId, onFeedbackSubmitted }: { draftId: strin
 
     setSubmitting(true);
     try {
-      await axios.post(`/api/personal/drafts/${draftId}/feedback/quick`, { isPositive });
+      await axios.post(`/api/${context}/drafts/${draftId}/feedback/quick`, { isPositive });
       setSubmitted(isPositive ? 'positive' : 'negative');
       showToast(isPositive ? 'Danke für das Feedback!' : 'Danke, wir verbessern uns!', 'success');
       onFeedbackSubmitted?.();
@@ -286,6 +288,7 @@ export function DraftFeedbackForm({
   void _draftType; // Suppress unused warning
   void _wordCount; // Suppress unused warning
 
+  const [context] = useContextState();
   const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -307,7 +310,7 @@ export function DraftFeedbackForm({
 
     setSubmitting(true);
     try {
-      await axios.post(`/api/personal/drafts/${draftId}/feedback/detailed`, {
+      await axios.post(`/api/${context}/drafts/${draftId}/feedback/detailed`, {
         rating,
         feedbackText: feedbackText || undefined,
         contentReusedPercent,
@@ -495,6 +498,7 @@ export function FeedbackPrompt({
   onDismiss: () => void;
   onFeedbackSubmitted?: () => void;
 }) {
+  const [context] = useContextState();
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -503,7 +507,7 @@ export function FeedbackPrompt({
 
     setSubmitting(true);
     try {
-      await axios.post(`/api/personal/drafts/${draftId}/feedback/detailed`, {
+      await axios.post(`/api/${context}/drafts/${draftId}/feedback/detailed`, {
         rating,
         feedbackSource: 'prompt',
       });
