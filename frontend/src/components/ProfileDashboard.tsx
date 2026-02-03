@@ -103,8 +103,8 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       if (axios.isCancel(err)) return;
 
       const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
-        : 'Laden fehlgeschlagen';
+        ? (err.response?.data as { error?: string })?.error || 'Dein Profil konnte gerade nicht geladen werden. Versuch es gleich noch mal.'
+        : 'Dein Profil konnte gerade nicht geladen werden. Versuch es gleich noch mal.';
       setError(message);
     } finally {
       setLoading(false);
@@ -149,8 +149,8 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       handleReload();
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Speichern fehlgeschlagen'
-        : 'Speichern fehlgeschlagen';
+        ? (err.response?.data as { error?: string })?.error || 'Das Profil konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es noch mal.'
+        : 'Das Profil konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es noch mal.';
       showToast(message, 'error');
     } finally {
       setSaving(false);
@@ -164,8 +164,8 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       handleReload();
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Neuberechnung fehlgeschlagen'
-        : 'Neuberechnung fehlgeschlagen';
+        ? (err.response?.data as { error?: string })?.error || 'Die Aktualisierung hat gerade nicht geklappt. Versuch es gleich noch mal.'
+        : 'Die Aktualisierung hat gerade nicht geklappt. Versuch es gleich noch mal.';
       setError(message);
     } finally {
       setRecalculating(false);
@@ -185,8 +185,8 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       });
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Einstellung fehlgeschlagen'
-        : 'Einstellung fehlgeschlagen';
+        ? (err.response?.data as { error?: string })?.error || 'Die Einstellung konnte nicht geändert werden. Versuch es gleich noch mal.'
+        : 'Die Einstellung konnte nicht geändert werden. Versuch es gleich noch mal.';
       setError(message);
     }
   };

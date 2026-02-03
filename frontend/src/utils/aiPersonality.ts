@@ -344,14 +344,17 @@ export function getMoodBasedResponse(mood: 'neutral' | 'positive' | 'stressed' |
  */
 export const DOPAMINE_REWARDS = {
   ideaCreated: [
-    { message: 'Toll eingefangen!', emoji: '✨', intensity: 'normal' },
+    { message: 'Faszinierend!', emoji: '✨', intensity: 'high' },
     { message: 'Das klingt spannend!', emoji: '🎯', intensity: 'normal' },
     { message: 'Wunderbar strukturiert!', emoji: '🌟', intensity: 'high' },
     { message: 'Interessanter Gedanke!', emoji: '💡', intensity: 'normal' },
     { message: 'Das merke ich mir!', emoji: '📝', intensity: 'low' },
-    { message: 'Großartige Idee!', emoji: '🚀', intensity: 'high' },
+    { message: 'Bemerkenswert!', emoji: '🚀', intensity: 'high' },
     { message: 'Gut festgehalten!', emoji: '✅', intensity: 'low' },
-    { message: 'Perfekt eingefangen!', emoji: '🎉', intensity: 'high' },
+    { message: 'Inspirierend!', emoji: '🎉', intensity: 'high' },
+    { message: 'Ausgezeichnet erfasst!', emoji: '🌈', intensity: 'normal' },
+    { message: 'Da ist was dran!', emoji: '🔥', intensity: 'normal' },
+    { message: 'Klasse Einfall!', emoji: '💫', intensity: 'normal' },
   ],
   streakReached: [
     { message: 'Du bist auf einem Roll!', emoji: '🔥', milestone: 3 },

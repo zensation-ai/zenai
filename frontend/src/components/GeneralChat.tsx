@@ -134,7 +134,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       }
       return null;
     } catch (err) {
-      showToast('Konnte keine neue Chat-Session erstellen', 'error');
+      showToast('Ups, ich konnte gerade keine neue Unterhaltung starten. Prüf deine Verbindung und versuch es noch mal.', 'error');
       return null;
     }
   };
@@ -308,7 +308,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         return;
       }
 
-      const errorMessage = getErrorMessage(err, 'Nachricht fehlgeschlagen');
+      const errorMessage = getErrorMessage(err, 'Deine Nachricht konnte nicht gesendet werden. Versuch es gleich noch mal.');
       showToast(errorMessage, 'error');
 
       // Remove optimistic message on error

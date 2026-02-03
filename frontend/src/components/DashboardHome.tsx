@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
+import axios from 'axios';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import { PageHeader } from './PageHeader';
 import { showToast } from './Toast';
@@ -78,45 +79,22 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
   const [recentIdeas, setRecentIdeas] = useState<RecentIdea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch dashboard data
+  // Fetch dashboard data using axios (global interceptor handles auth)
   const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
 
     try {
-      // SECURITY: API key must be configured - no hardcoded fallbacks
-      const apiKey = import.meta.env.VITE_API_KEY;
-      if (!apiKey) {
-        console.error('VITE_API_KEY is not configured. Dashboard data cannot be loaded.');
-        showToast('API-Key nicht konfiguriert', 'error');
-        setIsLoading(false);
-        return;
-      }
-
       // Fetch stats, activity, and recent ideas in parallel
+      // Auth is handled by the global axios interceptor in main.tsx
       const [statsRes, activityRes, ideasRes] = await Promise.all([
-        fetch(`${apiBase}/${context}/ideas/stats/summary`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-        }),
-        fetch(`${apiBase}/${context}/ai-activity?limit=5`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-        }).catch(() => null), // Activity endpoint might not exist yet
-        fetch(`${apiBase}/${context}/ideas?limit=6`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-        }),
+        axios.get(`${apiBase}/${context}/ideas/stats/summary`).catch(() => ({ data: null })),
+        axios.get(`${apiBase}/${context}/ai-activity?limit=5`).catch(() => ({ data: null })),
+        axios.get(`${apiBase}/${context}/ideas?limit=6`).catch(() => ({ data: null })),
       ]);
 
       // Process stats
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
+      if (statsRes.data) {
+        const statsData = statsRes.data;
         setStats({
           today: 0, // Would need additional endpoint for time-based stats
           thisWeek: statsData.total || 0,
@@ -125,34 +103,28 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
         });
       }
 
-      // Process activity
-      if (activityRes?.ok) {
-        const activityData = await activityRes.json();
-        if (activityData.success && activityData.activities) {
-          setAiActivity(activityData.activities);
-        }
+      // Process activity (axios returns data in .data)
+      if (activityRes.data?.success && activityRes.data?.activities) {
+        setAiActivity(activityRes.data.activities);
       }
 
-      // Process recent ideas
-      if (ideasRes.ok) {
-        const ideasData = await ideasRes.json();
-        if (ideasData.ideas) {
-          setRecentIdeas(
-            ideasData.ideas.map((idea: any) => ({
-              id: idea.id,
-              title: idea.title,
-              type: idea.type || 'note',
-              category: idea.category || 'general',
-              priority: idea.priority || 'medium',
-              summary: idea.summary || '',
-              createdAt: idea.createdAt || idea.created_at,
-            }))
-          );
-        }
+      // Process recent ideas (axios returns data in .data)
+      if (ideasRes.data?.ideas) {
+        setRecentIdeas(
+          ideasRes.data.ideas.map((idea: any) => ({
+            id: idea.id,
+            title: idea.title,
+            type: idea.type || 'note',
+            category: idea.category || 'general',
+            priority: idea.priority || 'medium',
+            summary: idea.summary || '',
+            createdAt: idea.createdAt || idea.created_at,
+          }))
+        );
       }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      showToast('Dashboard-Daten konnten nicht geladen werden', 'error');
+      showToast('Hmm, ich konnte die Daten gerade nicht laden. Versuch es gleich noch mal.', 'error');
     } finally {
       setIsLoading(false);
     }

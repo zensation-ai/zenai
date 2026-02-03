@@ -96,7 +96,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       setWebhooks(webhooksRes.data.webhooks);
       setError(null);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Daten konnten nicht geladen werden'));
+      setError(getErrorMessage(err, 'Die Integrationsdaten konnten gerade nicht geladen werden. Versuch es gleich noch mal.'));
     } finally {
       setLoading(false);
     }
@@ -135,7 +135,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
         setError(`Ungültige OAuth-URL für ${provider}`);
       }
     } catch (err: unknown) {
-      setError(getErrorMessage(err, `Verbindung zu ${provider} fehlgeschlagen`));
+      setError(getErrorMessage(err, `Die Verbindung zu ${provider} konnte nicht hergestellt werden. Prüf deine Netzwerkverbindung.`));
     }
   };
 
@@ -152,7 +152,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       showToast(`${provider} wurde getrennt`, 'success');
       loadData();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Trennung fehlgeschlagen'));
+      setError(getErrorMessage(err, 'Die Integration konnte nicht getrennt werden. Versuch es gleich noch mal.'));
     }
   };
 
@@ -165,7 +165,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       showToast('Synchronisation gestartet', 'success');
       loadData();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Synchronisation fehlgeschlagen'));
+      setError(getErrorMessage(err, 'Die Synchronisation konnte nicht gestartet werden. Versuch es gleich noch mal.'));
       loadData();
     }
   };
@@ -182,7 +182,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       showActionReward();
       loadData();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'API Key konnte nicht erstellt werden'));
+      setError(getErrorMessage(err, 'Der API Key konnte nicht erstellt werden. Prüf die Eingaben und versuch es noch mal.'));
     }
   };
 
@@ -199,7 +199,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       showToast('API Key gelöscht', 'success');
       loadData();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'API Key konnte nicht gelöscht werden'));
+      setError(getErrorMessage(err, 'Der API Key konnte nicht gelöscht werden. Versuch es gleich noch mal.'));
     }
   };
 
@@ -216,7 +216,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       showActionReward();
       loadData();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Webhook konnte nicht erstellt werden'));
+      setError(getErrorMessage(err, 'Der Webhook konnte nicht erstellt werden. Prüf die URL und versuch es noch mal.'));
     }
   };
 
@@ -233,7 +233,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       showToast('Webhook gelöscht', 'success');
       loadData();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Webhook konnte nicht gelöscht werden'));
+      setError(getErrorMessage(err, 'Der Webhook konnte nicht gelöscht werden. Versuch es gleich noch mal.'));
     }
   };
 
@@ -242,7 +242,7 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
       await axios.post(`/api/webhooks/${id}/test`);
       showToast('Test-Webhook gesendet!', 'success');
     } catch (err: unknown) {
-      showToast(getErrorMessage(err, 'Test fehlgeschlagen'), 'error');
+      showToast(getErrorMessage(err, 'Der Webhook-Test hat nicht geklappt. Prüf die URL und versuch es noch mal.'), 'error');
     }
   };
 

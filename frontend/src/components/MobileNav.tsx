@@ -35,9 +35,9 @@ interface MobileNavProps {
   navGroups: NavGroup[];
 }
 
-// Animation timing constants
-const STAGGER_DELAY = 40; // ms pro Item
-const GROUP_DELAY = 80; // Extra Delay zwischen Gruppen
+// Animation timing constants (optimiert für schnellere Interaktion)
+const STAGGER_DELAY = 25; // ms pro Item (vorher 40ms - jetzt 375ms statt 600ms für 15 Items)
+const GROUP_DELAY = 50; // Extra Delay zwischen Gruppen (vorher 80ms)
 
 /**
  * Mobile Navigation Component

@@ -107,7 +107,7 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
       setError(null);
     } catch (err: unknown) {
       if (isMountedRef.current) {
-        setError(getErrorMessage(err, 'Laden fehlgeschlagen'));
+        setError(getErrorMessage(err, 'Deine Meetings konnten gerade nicht geladen werden. Versuch es gleich noch mal.'));
       }
     } finally {
       if (isMountedRef.current) {
@@ -167,8 +167,8 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
       showCreationReward();
     } catch (err: unknown) {
       if (isMountedRef.current) {
-        setError(getErrorMessage(err, 'Meeting erstellen fehlgeschlagen'));
-        showToast('Meeting konnte nicht erstellt werden', 'error');
+        setError(getErrorMessage(err, 'Das Meeting konnte nicht erstellt werden.'));
+        showToast('Das Meeting konnte leider nicht erstellt werden. Prüf die Eingaben und versuch es noch mal.', 'error');
       }
     }
   };

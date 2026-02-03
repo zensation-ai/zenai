@@ -43,7 +43,7 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
       setStories(res.data.stories || []);
     } catch (err) {
       console.error('Failed to load stories:', err);
-      showToast('Stories konnten nicht geladen werden', 'error');
+      showToast('Hmm, deine Stories konnten gerade nicht geladen werden. Versuch es gleich noch mal.', 'error');
       setStories([]);
     } finally {
       setLoading(false);

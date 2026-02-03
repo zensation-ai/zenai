@@ -41,7 +41,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       setMedia(res.data.media || []);
     } catch (err) {
       console.error('Failed to load media:', err);
-      showToast('Medien konnten nicht geladen werden', 'error');
+      showToast('Hmm, deine Medien konnten nicht geladen werden. Prüf deine Verbindung und versuch es noch mal.', 'error');
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       setMedia(prev => [res.data.media, ...prev]);
       showToast('Datei hochgeladen!', 'success');
     } catch (err) {
-      showToast('Upload fehlgeschlagen', 'error');
+      showToast('Der Upload hat leider nicht geklappt. Ist die Datei vielleicht zu groß?', 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -84,7 +84,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       }
       showToast('Analyse abgeschlossen!', 'success');
     } catch (err) {
-      showToast('Analyse fehlgeschlagen', 'error');
+      showToast('Die KI-Analyse hat diesmal nicht geklappt. Versuch es gleich noch mal.', 'error');
     } finally {
       setAnalyzing(null);
     }

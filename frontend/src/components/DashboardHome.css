@@ -71,14 +71,14 @@
   border-radius: var(--radius-lg, 14px);
   border: 1px solid var(--glass-border, rgba(255, 107, 53, 0.1));
   cursor: pointer;
-  transition: all 0.2s ease;
+  /* transform/box-shadow handled by .neuro-hover-lift */
+  transition: border-color 0.15s ease;
   text-align: center;
 }
 
+/* Hover handled by .neuro-hover-lift - only set border color */
 .quick-action-btn:hover {
-  transform: translateY(-2px);
   border-color: var(--primary, #ff6b35);
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.15);
 }
 
 .quick-action-btn.primary {
@@ -128,7 +128,8 @@
   padding: 1.25rem;
   border: 1px solid var(--glass-border, rgba(255, 107, 53, 0.1));
   text-align: center;
-  transition: all 0.2s ease;
+  /* transform/box-shadow handled by .neuro-hover-lift */
+  transition: border-color 0.15s ease;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -136,9 +137,8 @@
   gap: 0.25rem;
 }
 
+/* Hover handled by .neuro-hover-lift - only set border color */
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md, 0 4px 15px rgba(0, 0, 0, 0.1));
   border-color: var(--primary, #ff6b35);
 }
 
@@ -270,16 +270,16 @@
   padding: 1rem;
   border: 1px solid var(--glass-border, rgba(255, 107, 53, 0.1));
   cursor: pointer;
-  transition: all 0.2s ease;
+  /* transform/box-shadow handled by .neuro-hover-lift */
+  transition: border-color 0.15s ease;
   text-align: left;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+/* Hover handled by .neuro-hover-lift - only set border color */
 .idea-card-mini:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md, 0 4px 15px rgba(0, 0, 0, 0.1));
   border-color: var(--primary, #ff6b35);
 }
 

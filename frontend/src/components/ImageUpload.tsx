@@ -63,10 +63,11 @@ export function ImageUpload({
    */
   const validateFile = (file: File): string | null => {
     if (!ACCEPTED_FORMATS.includes(file.type)) {
-      return `Ungültiges Format: ${file.type.split('/')[1]}. Erlaubt: JPEG, PNG, GIF, WebP`;
+      const format = file.type.split('/')[1] || 'unbekannt';
+      return `Oops! ${format.toUpperCase()} funktioniert leider nicht. Versuch JPEG, PNG, GIF oder WebP.`;
     }
     if (file.size > maxSizeMB * 1024 * 1024) {
-      return `Datei zu groß: ${(file.size / 1024 / 1024).toFixed(1)}MB. Max: ${maxSizeMB}MB`;
+      return `Das Bild ist etwas zu groß (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximal ${maxSizeMB}MB sind möglich.`;
     }
     return null;
   };
@@ -81,7 +82,7 @@ export function ImageUpload({
 
     // Check total count
     if (selectedImages.length + fileArray.length > maxImages) {
-      setError(`Maximal ${maxImages} Bilder erlaubt`);
+      setError(`Du kannst maximal ${maxImages} Bilder gleichzeitig hochladen.`);
       return;
     }
 

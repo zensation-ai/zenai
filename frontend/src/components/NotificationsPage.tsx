@@ -115,8 +115,8 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       setError(null);
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
-        : 'Laden fehlgeschlagen';
+        ? (err.response?.data as { error?: string })?.error || 'Hmm, das Laden hat gerade nicht geklappt. Versuch es gleich noch mal.'
+        : 'Hmm, das Laden hat gerade nicht geklappt. Versuch es gleich noch mal.';
       setError(message);
     } finally {
       setLoading(false);
@@ -158,7 +158,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
     } catch {
       // Revert on error
       setPreferences(preferences);
-      showToast('Speichern fehlgeschlagen', 'error');
+      showToast('Die Einstellung konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es noch mal.', 'error');
     } finally {
       setSavingPrefs(false);
     }
@@ -176,7 +176,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       showToast('Ruhezeiten gespeichert', 'success');
     } catch {
       setPreferences(preferences);
-      showToast('Speichern fehlgeschlagen', 'error');
+      showToast('Die Ruhezeiten konnten nicht gespeichert werden. Versuch es gleich noch mal.', 'error');
     } finally {
       setSavingPrefs(false);
     }
@@ -192,7 +192,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       setDevices(prev => prev.filter(d => d.id !== deviceId));
       showToast('Gerät entfernt', 'success');
     } catch {
-      showToast('Entfernen fehlgeschlagen', 'error');
+      showToast('Das Gerät konnte nicht entfernt werden. Ist deine Verbindung stabil?', 'error');
     }
   };
 

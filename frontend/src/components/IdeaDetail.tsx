@@ -121,6 +121,15 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
     };
   }, [onClose]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Data loading effect with AbortController
   useEffect(() => {
     // Create new AbortController for this effect
@@ -217,7 +226,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
         // Ignore tracking errors
       }
     } catch (error) {
-      showToast('Kopieren fehlgeschlagen', 'error');
+      showToast('Der Text konnte nicht kopiert werden. Versuch es noch mal.', 'error');
     }
   };
 
@@ -234,7 +243,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
     } catch (error) {
       if (!axios.isCancel(error)) {
         console.error('Failed to analyze relations:', error);
-        showToast('Analyse fehlgeschlagen', 'error');
+        showToast('Die Analyse hat gerade nicht geklappt. Versuch es gleich noch mal.', 'error');
       }
     } finally {
       if (!signal?.aborted) {

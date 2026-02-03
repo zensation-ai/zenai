@@ -91,8 +91,26 @@ function VirtualizedIdeaListComponent({
     [onIdeaClick]
   );
 
+  // Empty state with encouraging message (Neuro-UX)
   if (ideas.length === 0) {
-    return null;
+    return (
+      <div className="virtualized-empty-state neuro-empty-state">
+        <span className="neuro-empty-icon">💡</span>
+        <h3 className="neuro-empty-title">
+          {isArchived ? 'Dein Archiv ist leer' : 'Bereit für deinen ersten Gedanken'}
+        </h3>
+        <p className="neuro-empty-description">
+          {isArchived
+            ? 'Archivierte Gedanken erscheinen hier, sobald du welche hast.'
+            : 'Schreib einfach drauf los oder nutze das Mikrofon – ich kümmere mich um den Rest.'}
+        </p>
+        <p className="neuro-empty-encouragement">
+          {isArchived
+            ? 'Ein aufgeräumter Geist ist ein klarer Geist.'
+            : 'Jede große Idee beginnt mit einem ersten Gedanken.'}
+        </p>
+      </div>
+    );
   }
 
   return (

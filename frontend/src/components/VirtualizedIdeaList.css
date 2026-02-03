@@ -191,3 +191,14 @@
 .virtualized-row {
   transition: opacity 0.15s ease-out;
 }
+
+/* Empty state styling */
+.virtualized-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 3rem 2rem;
+  text-align: center;
+}

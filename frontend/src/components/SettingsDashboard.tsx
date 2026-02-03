@@ -26,7 +26,7 @@ interface SettingsDashboardProps {
 
 const TABS = [
   { id: 'tools' as const, label: 'KI-Tools', icon: '🧠', description: 'KI-Features und Werkzeuge' },
-  { id: 'content' as const, label: 'Inhalte', icon: '📁', description: 'Meetings, Medien und Stories' },
+  { id: 'content' as const, label: 'Medien & Notizen', icon: '📁', description: 'Meetings, Medien und Stories' },
   { id: 'preferences' as const, label: 'Einstellungen', icon: '⚙️', description: 'App-Konfiguration' },
 ];
 
