@@ -14,6 +14,7 @@
 
 import React, { useState, useEffect, Suspense, lazy, memo } from 'react';
 import { PageHeader } from './PageHeader';
+import { getBreadcrumbs } from './Breadcrumbs';
 import { SkeletonLoader } from './SkeletonLoader';
 import '../neurodesign.css';
 import './AIWorkshop.css';
@@ -28,6 +29,7 @@ type WorkshopTab = 'incubator' | 'proactive' | 'evolution';
 interface AIWorkshopProps {
   context: 'personal' | 'work';
   onBack: () => void;
+  onNavigate?: (page: string) => void;
   onIdeaCreated?: (ideaId: string) => void;
   initialTab?: WorkshopTab;
 }
@@ -47,6 +49,7 @@ const TabLoader = () => (
 const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
   context,
   onBack,
+  onNavigate,
   onIdeaCreated,
   initialTab = 'incubator',
 }) => {
@@ -114,6 +117,8 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
         subtitle="Lass deine Gedanken mit KI wachsen"
         onBack={onBack}
         backLabel="Zurück"
+        breadcrumbs={getBreadcrumbs('ai-workshop')}
+        onNavigate={onNavigate ? (page) => onNavigate(page) : undefined}
       />
 
       {/* Tab Navigation */}

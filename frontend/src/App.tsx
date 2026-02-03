@@ -22,6 +22,8 @@ import { GeneralChat } from './components/GeneralChat';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
 import { ThemeToggle } from './components/ThemeToggle';
+// Breadcrumbs are integrated via PageHeader in dashboard components
+import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { AIProcessingOverlay, type ProcessType } from './components/AIProcessingOverlay';
 import { CommandCenter, type InputMode } from './components/CommandCenter';
 import { safeLocalStorage } from './utils/storage';
@@ -119,6 +121,9 @@ function App() {
 
   // Persona state (per context)
   const [selectedPersona, setSelectedPersona] = usePersonaState(context);
+
+  // Keyboard shortcuts modal
+  const keyboardShortcuts = useKeyboardShortcutsModal();
 
   // Determine AI activity state
   const isAIActive = processing || isSearching || isRecording || loading;
@@ -564,6 +569,7 @@ function App() {
           <AIWorkshop
             context={context}
             onBack={() => setCurrentPage('ideas')}
+            onNavigate={(page) => setCurrentPage(page as Page)}
             onIdeaCreated={() => {
               loadIdeas();
               setCurrentPage('ideas');
@@ -583,6 +589,7 @@ function App() {
           <AIWorkshop
             context={context}
             onBack={() => setCurrentPage('ideas')}
+            onNavigate={(page) => setCurrentPage(page as Page)}
             onIdeaCreated={() => {
               loadIdeas();
               setCurrentPage('ideas');
@@ -1347,6 +1354,12 @@ function App() {
 
       {/* Global Toast Notifications */}
       <ToastContainer />
+
+      {/* Keyboard Shortcuts Help Modal */}
+      <KeyboardShortcutsModal
+        isOpen={keyboardShortcuts.isOpen}
+        onClose={keyboardShortcuts.close}
+      />
     </div>
     </NeuroFeedbackProvider>
     </ErrorBoundary>

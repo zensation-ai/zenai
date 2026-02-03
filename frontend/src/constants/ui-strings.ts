@@ -171,25 +171,42 @@ export const STATS_STRINGS = {
 // ============================================
 
 export const ERROR_STRINGS = {
+  // Base error types
   generic: 'Ein Fehler ist aufgetreten',
   network: 'Netzwerkfehler - Bitte überprüfe deine Verbindung',
-  timeout: 'Die Anfrage hat zu lange gedauert',
+  timeout: 'Die Anfrage hat zu lange gedauert - Versuch es erneut',
   notFound: 'Nicht gefunden',
-  unauthorized: 'Nicht autorisiert',
+  unauthorized: 'Nicht autorisiert - Bitte melde dich erneut an',
+  offline: 'Du bist offline - Änderungen werden lokal gespeichert',
+  quota: 'Zu viele Anfragen - Bitte warte einen Moment',
+  conflict: 'Konflikt - Lade die Seite neu für aktuelle Daten',
+  server: 'Serverfehler - Wir arbeiten daran',
+
+  // Contextual error messages with more detail
   chat: {
-    createSession: 'Konnte keine neue Chat-Session erstellen',
-    sendMessage: 'Nachricht fehlgeschlagen',
-    loadHistory: 'Chat-Verlauf konnte nicht geladen werden',
+    createSession: 'Konnte keine neue Chat-Session erstellen - Versuch es erneut',
+    sendMessage: 'Nachricht konnte nicht gesendet werden',
+    sendMessageNetwork: 'Nachricht konnte nicht gesendet werden - Überprüfe deine Internetverbindung',
+    sendMessageTimeout: 'Nachricht konnte nicht gesendet werden - Anfrage hat zu lange gedauert',
+    sendMessageOffline: 'Du bist offline - Nachricht wird gesendet, sobald du wieder online bist',
+    loadHistory: 'Chat-Verlauf konnte nicht geladen werden - Versuch es erneut',
   },
   idea: {
-    delete: 'Löschen fehlgeschlagen',
-    archive: 'Archivieren fehlgeschlagen',
-    restore: 'Wiederherstellen fehlgeschlagen',
-    save: 'Speichern fehlgeschlagen',
+    delete: 'Löschen fehlgeschlagen - Versuch es erneut',
+    archive: 'Archivieren fehlgeschlagen - Versuch es erneut',
+    restore: 'Wiederherstellen fehlgeschlagen - Versuch es erneut',
+    save: 'Speichern fehlgeschlagen - Versuch es erneut',
+    saveOffline: 'Du bist offline - Gedanke wird gespeichert, sobald du wieder online bist',
+    saveConflict: 'Konflikt erkannt - Jemand hat diesen Gedanken gerade bearbeitet',
   },
   search: {
-    failed: 'Suche fehlgeschlagen',
-    noResults: 'Keine Ergebnisse gefunden',
+    failed: 'Suche fehlgeschlagen - Versuch es erneut',
+    noResults: 'Keine Ergebnisse gefunden - Versuch andere Suchbegriffe',
+  },
+  sync: {
+    failed: 'Synchronisierung fehlgeschlagen',
+    pending: 'Änderungen warten auf Synchronisierung',
+    conflict: 'Sync-Konflikt - Lokale und Server-Daten unterscheiden sich',
   },
 } as const;
 

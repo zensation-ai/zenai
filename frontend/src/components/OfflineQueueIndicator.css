@@ -1,0 +1,119 @@
+/* Offline Queue Indicator */
+.offline-queue-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  animation: slideIn 0.2s ease-out;
+  transition: all 0.2s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* States */
+.offline-queue-indicator.offline {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.offline-queue-indicator.syncing {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+.offline-queue-indicator.pending {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+/* Icon */
+.queue-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.queue-icon.syncing {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Message */
+.queue-message {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.queue-count {
+  opacity: 0.8;
+}
+
+/* Sync Button */
+.queue-sync-btn {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.queue-sync-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.queue-sync-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .offline-queue-indicator {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .queue-icon {
+    font-size: 0.875rem;
+  }
+
+  .queue-sync-btn {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .offline-queue-indicator {
+    animation: none;
+  }
+
+  .queue-icon.syncing {
+    animation: none;
+  }
+}

@@ -15,6 +15,7 @@
 
 import React, { useState, useEffect, Suspense, lazy, memo } from 'react';
 import { PageHeader } from './PageHeader';
+import { getBreadcrumbs } from './Breadcrumbs';
 import { SkeletonLoader } from './SkeletonLoader';
 import '../neurodesign.css';
 import './InsightsDashboard.css';
@@ -155,6 +156,8 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
         subtitle="Deine Gedanken im Überblick"
         onBack={onBack}
         backLabel="Zurück"
+        breadcrumbs={getBreadcrumbs('insights')}
+        onNavigate={onNavigate ? (page) => onNavigate(page) : undefined}
       />
 
       {/* Tab Navigation */}

@@ -24,6 +24,10 @@ let toastListeners: ((toasts: Toast[]) => void)[] = [];
 let toasts: Toast[] = [];
 const dismissTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+// Deduplication: Track recent messages to prevent duplicates
+const recentMessages = new Map<string, number>();
+const DEDUPE_WINDOW_MS = 2000; // 2 seconds window for deduplication
+
 const notifyListeners = () => {
   toastListeners.forEach(listener => listener([...toasts]));
 };
@@ -59,13 +63,30 @@ const generateId = (): string => {
  * @param message - The message to display
  * @param typeOrOptions - Either a ToastType string or a ToastOptions object
  * @param duration - Duration in ms (default: 5000, use 0 for permanent)
- * @returns The toast ID for programmatic dismissal
+ * @returns The toast ID for programmatic dismissal, or null if deduplicated
  */
 export const showToast = (
   message: string,
   typeOrOptions: ToastType | ToastOptions = 'info',
   duration?: number
-): string => {
+): string | null => {
+  // Deduplication: Check if same message was shown recently
+  const now = Date.now();
+  const lastShown = recentMessages.get(message);
+  if (lastShown && (now - lastShown) < DEDUPE_WINDOW_MS) {
+    return null; // Skip duplicate message
+  }
+
+  // Track this message
+  recentMessages.set(message, now);
+
+  // Cleanup old entries (older than 2x dedupe window)
+  for (const [msg, time] of recentMessages) {
+    if (now - time > DEDUPE_WINDOW_MS * 2) {
+      recentMessages.delete(msg);
+    }
+  }
+
   const id = generateId();
 
   // Handle both old and new API for backwards compatibility
@@ -116,6 +137,8 @@ export const clearAllToasts = () => {
   dismissTimers.forEach((timer) => clearTimeout(timer));
   dismissTimers.clear();
   toasts = [];
+  // Also clear deduplication tracking
+  recentMessages.clear();
   notifyListeners();
 };
 

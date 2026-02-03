@@ -1,0 +1,107 @@
+/* Breadcrumbs Navigation */
+.breadcrumbs {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  background: var(--glass-bg, rgba(30, 30, 30, 0.6));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.breadcrumb-list {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  color: var(--text-primary, #fff);
+  background: var(--hover-bg, rgba(255, 255, 255, 0.1));
+}
+
+.breadcrumb-link:focus-visible {
+  outline: 2px solid var(--focus-color, #6366f1);
+  outline-offset: 2px;
+}
+
+.breadcrumb-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--text-primary, #fff);
+  font-weight: 500;
+}
+
+.breadcrumb-icon {
+  font-size: 0.9em;
+  line-height: 1;
+}
+
+.breadcrumb-label {
+  line-height: 1.4;
+}
+
+.breadcrumb-separator {
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  margin: 0 0.125rem;
+  font-size: 0.75em;
+  user-select: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .breadcrumbs {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .breadcrumb-link,
+  .breadcrumb-current {
+    padding: 0.2rem 0.375rem;
+  }
+
+  /* Hide middle breadcrumbs on very small screens */
+  .breadcrumb-list > .breadcrumb-item:not(:first-child):not(:last-child) {
+    display: none;
+  }
+
+  .breadcrumb-list > .breadcrumb-item:first-child:not(:last-child)::after {
+    content: '...';
+    color: var(--text-tertiary);
+    margin: 0 0.25rem;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .breadcrumb-link {
+    transition: none;
+  }
+}
