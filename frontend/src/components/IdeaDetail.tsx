@@ -50,6 +50,9 @@ interface IdeaDetailProps {
   idea: Idea;
   onClose: () => void;
   onNavigate?: (ideaId: string) => void;
+  onConvertToTask?: (idea: Idea) => void;
+  onOpenInChat?: (idea: Idea) => void;
+  onMarkComplete?: (idea: Idea) => void;
 }
 
 const typeLabels: Record<string, { label: string; icon: string }> = {
@@ -91,7 +94,7 @@ const draftTypeLabels: Record<string, { label: string; icon: string }> = {
   generic: { label: 'Text', icon: '📃' },
 };
 
-export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
+export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenInChat, onMarkComplete }: IdeaDetailProps) {
   const [relations, setRelations] = useState<Relation[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
@@ -107,6 +110,11 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
   // Phase 5: Draft Feedback
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
+
+  // Inline-Recherche
+  const [researchResult, setResearchResult] = useState<string | null>(null);
+  const [researchLoading, setResearchLoading] = useState(false);
+  const [researchType, setResearchType] = useState<string | null>(null);
 
   // ESC key handler for closing modal
   useEffect(() => {
@@ -263,12 +271,67 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
     });
   };
 
+  // Inline-Recherche basierend auf Typ
+  const performResearch = async (type: 'answer' | 'solve' | 'develop' | 'explore') => {
+    setResearchLoading(true);
+    setResearchType(type);
+    setResearchResult(null);
+
+    const signal = abortControllerRef.current?.signal;
+    const context = localStorage.getItem('ai-context') || 'personal';
+
+    // Typ-spezifische Prompts
+    const prompts: Record<string, string> = {
+      answer: `Beantworte diese Frage kurz und prägnant (max. 3-4 Sätze). Wenn nötig, gib 2-3 konkrete Tipps oder Links.
+
+Frage: "${idea.title}"
+Kontext: ${idea.summary}`,
+      solve: `Gib 3 konkrete Lösungsvorschläge für dieses Problem (je 1-2 Sätze). Priorisiere praktische, sofort umsetzbare Ansätze.
+
+Problem: "${idea.title}"
+Details: ${idea.summary}`,
+      develop: `Entwickle diese Idee weiter mit 3 konkreten nächsten Schritten und einem möglichen Ziel. Halte es kurz und actionable.
+
+Idee: "${idea.title}"
+Beschreibung: ${idea.summary}`,
+      explore: `Erkläre diese Erkenntnis genauer und zeige 2-3 mögliche Anwendungen oder Konsequenzen auf.
+
+Erkenntnis: "${idea.title}"
+Details: ${idea.summary}`,
+    };
+
+    try {
+      const response = await axios.post(
+        `/api/chat/quick`,
+        {
+          message: prompts[type],
+          context,
+        },
+        { signal }
+      );
+
+      if (!signal?.aborted && response.data?.response) {
+        setResearchResult(response.data.response);
+      }
+    } catch (error) {
+      if (!axios.isCancel(error)) {
+        console.error('Research failed:', error);
+        showToast('Die Recherche hat nicht geklappt. Versuch es noch mal.', 'error');
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setResearchLoading(false);
+      }
+    }
+  };
+
   const typeInfo = typeLabels[idea.type] || { label: idea.type, icon: '📝' };
 
   return (
     <div className="idea-detail-overlay" onClick={onClose}>
       <div className="idea-detail-modal liquid-glass neuro-human-fade-in" onClick={(e) => e.stopPropagation()}>
         <button
+          type="button"
           className="close-button neuro-press-effect neuro-focus-ring"
           onClick={onClose}
           aria-label="Detail-Ansicht schliessen"
@@ -288,6 +351,143 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
         </div>
 
         <h2 className="detail-title">{idea.title}</h2>
+
+        {/* Typ-spezifische Aktionen */}
+        <div className="detail-actions-bar">
+          {/* Aufgabe: Erledigen + Entwurf */}
+          {idea.type === 'task' && onMarkComplete && (
+            <button
+              type="button"
+              className="action-btn action-complete neuro-button neuro-focus-ring"
+              onClick={() => onMarkComplete(idea)}
+            >
+              ✓ Erledigt
+            </button>
+          )}
+
+          {/* Idee: Weiterentwickeln + In Aufgabe */}
+          {idea.type === 'idea' && (
+            <>
+              <button
+                type="button"
+                className="action-btn action-develop neuro-button neuro-focus-ring"
+                onClick={() => performResearch('develop')}
+                disabled={researchLoading}
+              >
+                {researchLoading && researchType === 'develop' ? '⏳ Denke nach...' : '🧠 Weiterentwickeln'}
+              </button>
+              {onConvertToTask && (
+                <button
+                  type="button"
+                  className="action-btn action-convert neuro-button neuro-focus-ring"
+                  onClick={() => onConvertToTask(idea)}
+                >
+                  ✅ In Aufgabe
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Frage: Antwort suchen */}
+          {idea.type === 'question' && (
+            <button
+              type="button"
+              className="action-btn action-answer neuro-button neuro-focus-ring"
+              onClick={() => performResearch('answer')}
+              disabled={researchLoading}
+            >
+              {researchLoading && researchType === 'answer' ? '⏳ Recherchiere...' : '🔍 Antwort suchen'}
+            </button>
+          )}
+
+          {/* Problem: Lösungen finden + In Aufgabe */}
+          {idea.type === 'problem' && (
+            <>
+              <button
+                type="button"
+                className="action-btn action-solve neuro-button neuro-focus-ring"
+                onClick={() => performResearch('solve')}
+                disabled={researchLoading}
+              >
+                {researchLoading && researchType === 'solve' ? '⏳ Analysiere...' : '💡 Lösungen finden'}
+              </button>
+              {onConvertToTask && (
+                <button
+                  type="button"
+                  className="action-btn action-convert neuro-button neuro-focus-ring"
+                  onClick={() => onConvertToTask(idea)}
+                >
+                  ✅ In Aufgabe
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Erkenntnis: Vertiefen */}
+          {idea.type === 'insight' && (
+            <button
+              type="button"
+              className="action-btn action-explore neuro-button neuro-focus-ring"
+              onClick={() => performResearch('explore')}
+              disabled={researchLoading}
+            >
+              {researchLoading && researchType === 'explore' ? '⏳ Erkunde...' : '🔎 Vertiefen'}
+            </button>
+          )}
+
+          {/* Alle Typen: Im Chat vertiefen (optional) */}
+          {onOpenInChat && (
+            <button
+              type="button"
+              className="action-btn action-chat neuro-button neuro-focus-ring"
+              onClick={() => onOpenInChat(idea)}
+            >
+              💬 Im Chat
+            </button>
+          )}
+        </div>
+
+        {/* Recherche-Ergebnis Anzeige */}
+        {(researchLoading || researchResult) && (
+          <div className="detail-section research-section">
+            <h3>
+              {researchLoading ? '⏳' : '✨'}{' '}
+              {researchType === 'answer' && 'Antwort'}
+              {researchType === 'solve' && 'Lösungsvorschläge'}
+              {researchType === 'develop' && 'Weiterentwicklung'}
+              {researchType === 'explore' && 'Vertiefung'}
+            </h3>
+            {researchLoading ? (
+              <div className="research-loading">
+                <div className="loading-spinner neuro-loading-spinner" />
+                <span>Denke nach...</span>
+              </div>
+            ) : researchResult && (
+              <div className="research-result">
+                <p className="research-text">{researchResult}</p>
+                <div className="research-actions">
+                  <button
+                    type="button"
+                    className="research-copy-btn neuro-button neuro-focus-ring"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(researchResult);
+                      showToast('Kopiert', 'success');
+                    }}
+                  >
+                    📋 Kopieren
+                  </button>
+                  <button
+                    type="button"
+                    className="research-clear-btn neuro-button neuro-focus-ring"
+                    onClick={() => setResearchResult(null)}
+                  >
+                    ✕ Schließen
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="detail-section">
           <h3>Zusammenfassung</h3>
@@ -324,7 +524,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
                       type="button"
                       className="expand-button neuro-press-effect neuro-focus-ring neuro-hover-lift"
                       onClick={() => setDraftExpanded(!draftExpanded)}
-                      aria-expanded={draftExpanded ? 'true' : 'false'}
+                      aria-expanded={draftExpanded}
                       aria-label={draftExpanded ? 'Entwurf einklappen' : 'Entwurf vollstaendig anzeigen'}
                     >
                       {draftExpanded ? 'Weniger anzeigen' : 'Mehr anzeigen'}
@@ -427,6 +627,7 @@ export function IdeaDetail({ idea, onClose, onNavigate }: IdeaDetailProps) {
           <div className="section-header">
             <h3>🔗 Verknüpfungen</h3>
             <button
+              type="button"
               className="analyze-button neuro-button neuro-focus-ring"
               onClick={analyzeRelations}
               disabled={analyzing}
