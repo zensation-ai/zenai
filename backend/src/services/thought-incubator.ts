@@ -271,11 +271,14 @@ async function analyzeAndAssignCluster(thoughtId: string, context: AIContext = '
       clusterId = uuidv4();
       similarity = 1.0;
 
+      // Generate cluster name from first thought (first 50 chars)
+      const clusterName = thought.raw_input.substring(0, 50).trim() + (thought.raw_input.length > 50 ? '...' : '');
+
       await client.query(
         `INSERT INTO thought_clusters
-         (id, user_id, centroid_embedding, thought_count, status, created_at)
-         VALUES ($1, $2, $3, 0, 'growing', NOW())`,
-        [clusterId, thought.user_id, thought.embedding]
+         (id, user_id, name, centroid_embedding, thought_count, status, created_at)
+         VALUES ($1, $2, $3, $4, 0, 'growing', NOW())`,
+        [clusterId, thought.user_id, clusterName, thought.embedding]
       );
     }
 
