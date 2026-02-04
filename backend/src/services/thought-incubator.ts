@@ -746,8 +746,18 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
     const clusterCountBefore = parseInt(beforeCountResult.rows[0].count);
 
     // Process all thoughts
+    const errors: string[] = [];
     for (const thought of unprocessed.rows) {
-      await analyzeAndAssignCluster(thought.id, context);
+      try {
+        await analyzeAndAssignCluster(thought.id, context);
+      } catch (error) {
+        const errMsg = `Thought ${thought.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        errors.push(errMsg);
+        logger.error(`Cluster analysis failed for thought`, error instanceof Error ? error : undefined);
+      }
+    }
+    if (errors.length > 0) {
+      throw new Error(`Batch analysis failed for ${errors.length} thoughts: ${errors.join('; ')}`);
     }
 
     // Get cluster count after processing

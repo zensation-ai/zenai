@@ -209,13 +209,23 @@ router.post('/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (r
   const userId = (req.body.userId as string) || 'default';
   const context = getContextFromRequest(req);
 
-  const result = await runBatchAnalysis(userId, context);
+  try {
+    const result = await runBatchAnalysis(userId, context);
 
-  res.json({
-    success: true,
-    ...result,
-    context,
-  });
+    res.json({
+      success: true,
+      ...result,
+      context,
+    });
+  } catch (error) {
+    // Return detailed error for debugging
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5) : undefined,
+      context,
+    });
+  }
 }));
 
 /**
