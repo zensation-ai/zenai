@@ -212,6 +212,20 @@ describe('Chat Mode Detection Service', () => {
         expect(result.mode).toBe('tool_assisted');
         expect(result.suggestedTools).toContain('execute_code');
       });
+
+      it('should detect execute_code for "führe python aus" (without code word)', () => {
+        const result = detectChatMode('Führe Python aus: print(42)');
+
+        expect(result.mode).toBe('tool_assisted');
+        expect(result.suggestedTools).toContain('execute_code');
+      });
+
+      it('should detect execute_code for "python ausführen"', () => {
+        const result = detectChatMode('Python code ausführen: print("test")');
+
+        expect(result.mode).toBe('tool_assisted');
+        expect(result.suggestedTools).toContain('execute_code');
+      });
     });
   });
 

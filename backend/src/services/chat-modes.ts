@@ -93,11 +93,12 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
 
   // Code execution patterns
   { pattern: /führ(e|en?)\s+.{0,30}code\s+aus/i, tools: ['execute_code'], weight: 0.95 },
+  { pattern: /führ(e|en?)\s+(diesen?\s+)?(python|javascript|nodejs|bash|script)\s+aus/i, tools: ['execute_code'], weight: 0.95 },
   { pattern: /execut(e|ier)\s+.{0,30}(code|python|javascript|bash)/i, tools: ['execute_code'], weight: 0.95 },
   { pattern: /run\s+(this\s+)?(code|python|script)/i, tools: ['execute_code'], weight: 0.9 },
   { pattern: /test(e|en?)?\s+(diesen?\s+)?code/i, tools: ['execute_code'], weight: 0.9 },
   { pattern: /```(python|javascript|nodejs|bash)/i, tools: ['execute_code'], weight: 0.85 },
-  { pattern: /python\s+code.*ausführen/i, tools: ['execute_code'], weight: 0.95 },
+  { pattern: /(python|javascript|nodejs|bash)\s+(code\s+)?ausführen/i, tools: ['execute_code'], weight: 0.95 },
 ];
 
 /**
