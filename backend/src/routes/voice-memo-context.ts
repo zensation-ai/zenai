@@ -424,12 +424,12 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     const thoughtId = uuidv4();
 
     try {
-      // Schema only has raw_input column (NOT NULL)
+      // Note: raw_text is legacy column, raw_input is new - set both for compatibility
       await queryContext(
         context as AIContext,
         `INSERT INTO loose_thoughts
-         (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
-         VALUES ($1, 'default', $2, 'voice', '[]'::jsonb, $3, false, NOW())`,
+         (id, user_id, raw_input, raw_text, source, user_tags, embedding, is_processed, created_at)
+         VALUES ($1, 'default', $2, $2, 'voice', '[]'::jsonb, $3, false, NOW())`,
         [
           thoughtId,
           transcript,

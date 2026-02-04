@@ -191,10 +191,11 @@ export async function addLooseThought(
     const embedding = await generateEmbedding(rawInput);
 
     // Store the thought
+    // Note: raw_text is legacy column name, raw_input is new - set both for compatibility
     const result = await client.query(
       `INSERT INTO loose_thoughts
-       (id, user_id, raw_input, source, user_tags, embedding, is_processed, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, false, NOW())
+       (id, user_id, raw_input, raw_text, source, user_tags, embedding, is_processed, created_at)
+       VALUES ($1, $2, $3, $3, $4, $5, $6, false, NOW())
        RETURNING *`,
       [id, userId, rawInput, source, JSON.stringify(userTags), embedding.length > 0 ? formatForPgVector(embedding) : null]
     );
