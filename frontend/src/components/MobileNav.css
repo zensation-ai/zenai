@@ -284,7 +284,7 @@
 .cognitive-text {
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.75);  /* Erhöht von 0.5 für bessere Lesbarkeit */
 }
 
 /* ===========================================
@@ -591,8 +591,8 @@
 .group-count {
   font-size: 0.65rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.65);  /* Erhöht von 0.4 für bessere Lesbarkeit */
+  background: rgba(255, 255, 255, 0.08);
   padding: 2px 6px;
   border-radius: 6px;
 }
@@ -600,7 +600,7 @@
 .group-chevron {
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);  /* Erhöht von 0.4 für bessere Sichtbarkeit */
   transition: transform 0.25s var(--mobile-nav-easing);
 }
 
@@ -639,7 +639,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.6);  /* Erhöht von 0.35 für bessere Lesbarkeit */
 }
 
 .hint-icon {

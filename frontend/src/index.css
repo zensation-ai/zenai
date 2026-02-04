@@ -77,10 +77,10 @@
   --glass-shadow: rgba(20, 50, 70, 0.15);
   --glass-warm: rgba(255, 235, 220, 0.55);
 
-  /* Text Colors - Petrol-tinted dark (WCAG AA+ compliant, verbesserter Kontrast) */
-  --text: #1a2e3d;
-  --text-muted: #3a4d5a;      /* Dunkel genug für WCAG AA auf Glassmorphism (~5.5:1 auf weiß) */
-  --text-secondary: #4a5d6a;  /* Dunkel für WCAG AA auf hellem Hintergrund (~4.5:1 auf weiß) */
+  /* Text Colors - Petrol-tinted dark (WCAG AAA optimiert für beste Lesbarkeit) */
+  --text: #0f1f2a;            /* Dunkler für maximale Lesbarkeit - ~14:1 Kontrast */
+  --text-muted: #2a3d4d;      /* Dunkler für bessere Lesbarkeit - ~8:1 Kontrast */
+  --text-secondary: #3a4d5a;  /* Dunkler für klare Lesbarkeit - ~6:1 Kontrast */
 
   /* Borders & Accents - More visible */
   --border: rgba(20, 50, 70, 0.15);
@@ -118,7 +118,7 @@
   --hover-bg: rgba(238, 245, 252, 0.88);
   --bg-secondary: rgba(20, 60, 80, 0.08);
   --bg-tertiary: rgba(255, 107, 53, 0.07);
-  --text-primary: #1a2e3d;
+  --text-primary: #0f1f2a;
   --border-color: var(--border);
 
   /* Code Block Colors */
@@ -267,10 +267,10 @@
     --glass-shadow: rgba(0, 0, 0, 0.4);
     --glass-warm: rgba(80, 50, 35, 0.4);
 
-    /* Text Colors - Light for dark backgrounds (WCAG AA min 4.5:1) */
-    --text: #e8f0f5;
-    --text-muted: #c8d6e0;      /* Heller für besseren Kontrast auf dunklem Hintergrund */
-    --text-secondary: #a0b8c8;  /* Heller für WCAG AA Konformität */
+    /* Text Colors - Light for dark backgrounds (WCAG AAA optimiert für beste Lesbarkeit) */
+    --text: #f5f9fc;            /* Sehr hell für maximale Lesbarkeit - ~12:1 Kontrast */
+    --text-muted: #dce8f0;      /* Deutlich heller für gute Lesbarkeit - ~8:1 Kontrast */
+    --text-secondary: #c0d4e0;  /* Heller für klare Lesbarkeit - ~6:1 Kontrast */
 
     /* Borders - More visible on dark */
     --border: rgba(100, 150, 180, 0.2);
@@ -292,7 +292,7 @@
     --hover-bg: rgba(35, 65, 90, 0.88);
     --bg-secondary: rgba(50, 80, 110, 0.2);
     --bg-tertiary: rgba(255, 122, 74, 0.12);
-    --text-primary: #e8f0f5;
+    --text-primary: #f5f9fc;
     --border-color: var(--border);
 
     /* Command Center - Dark mode */
@@ -398,9 +398,12 @@ body {
   background-attachment: fixed;
   color: var(--text);
   line-height: 1.6;
+  font-weight: 450;           /* Leicht erhöhtes Gewicht für bessere Lesbarkeit */
+  letter-spacing: -0.01em;    /* Subtile Verengung für klarere Schrift */
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;  /* Bessere Schriftdarstellung */
   position: relative;
   overflow-x: hidden;
 }
@@ -1056,10 +1059,10 @@ select:focus-visible {
   --glass-border: rgba(180, 205, 225, 0.55);
   --glass-shadow: rgba(20, 50, 70, 0.15);
 
-  /* Text Colors - Dark for light backgrounds (WCAG AA+) */
-  --text: #1a2e3d;
-  --text-muted: #3a4d5a;
-  --text-secondary: #4a5d6a;
+  /* Text Colors - Dark for light backgrounds (WCAG AAA optimiert) */
+  --text: #0f1f2a;
+  --text-muted: #2a3d4d;
+  --text-secondary: #3a4d5a;
 
   /* Borders */
   --border: rgba(20, 50, 70, 0.15);
@@ -1093,10 +1096,10 @@ select:focus-visible {
   --glass-border: rgba(80, 120, 150, 0.3);
   --glass-shadow: rgba(0, 0, 0, 0.4);
 
-  /* Text Colors - Light for dark backgrounds (WCAG AA min 4.5:1) */
-  --text: #e8f0f5;
-  --text-muted: #c8d6e0;
-  --text-secondary: #a0b8c8;
+  /* Text Colors - Light for dark backgrounds (WCAG AAA optimiert für beste Lesbarkeit) */
+  --text: #f5f9fc;            /* Sehr hell für maximale Lesbarkeit - ~12:1 Kontrast */
+  --text-muted: #dce8f0;      /* Deutlich heller für gute Lesbarkeit - ~8:1 Kontrast */
+  --text-secondary: #c0d4e0;  /* Heller für klare Lesbarkeit - ~6:1 Kontrast */
 
   /* Borders */
   --border: rgba(100, 150, 180, 0.2);

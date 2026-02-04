@@ -496,17 +496,17 @@
   }
 }
 
-/* Dark mode support */
+/* Dark mode support - Optimiert für bessere Lesbarkeit */
 @media (prefers-color-scheme: dark) {
   .general-chat {
     background: rgba(25, 40, 55, 0.85);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
   .chat-input {
     background: rgba(40, 55, 70, 0.8);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #f1f5f9;
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #f5f9fc;  /* Heller für bessere Lesbarkeit */
   }
 
   .chat-input:focus {
@@ -514,35 +514,47 @@
   }
 
   .chat-input::placeholder {
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.75);  /* Heller von 0.65 */
   }
 
   .chat-input-area {
     background: rgba(20, 35, 50, 0.5);
-    border-top-color: rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.12);
   }
 
   .chat-message.assistant .chat-message-text {
     background: rgba(45, 60, 75, 0.8);
-    color: #e8f0f5;
+    color: #f5f9fc;  /* Heller für bessere Lesbarkeit */
   }
 
   .code-block {
     background: #0d1117;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .chat-empty {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.85);  /* Heller von 0.7 */
   }
 
   .chat-empty-title {
-    color: #f1f5f9;
+    color: #f5f9fc;  /* Konsistent mit anderen Texten */
+  }
+
+  .chat-empty-description {
+    color: rgba(255, 255, 255, 0.8);  /* Explizit für Beschreibung */
   }
 
   .chat-send-btn:disabled {
     background: rgba(40, 55, 70, 0.6);
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.55);  /* Heller von 0.4 */
+  }
+
+  .chat-message-time {
+    color: rgba(255, 255, 255, 0.65);  /* Explizit für Zeitstempel */
+  }
+
+  .chat-hint {
+    color: rgba(255, 255, 255, 0.7);  /* Explizit für Hint */
   }
 }
 

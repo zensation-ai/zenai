@@ -311,13 +311,13 @@
   }
 
   .image-upload-text {
-    color: #e8f0f5;
+    color: #f5f9fc;  /* Heller für bessere Lesbarkeit */
   }
 
   .image-upload-button {
     background: rgba(40, 55, 70, 0.8);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.8);  /* Erhöht von 0.6 für bessere Lesbarkeit */
   }
 
   .image-upload-button:hover:not(:disabled) {
