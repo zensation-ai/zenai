@@ -254,6 +254,52 @@ router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHand
 }));
 
 /**
+ * GET /api/incubator/debug
+ * Debug endpoint to inspect thought state
+ */
+router.get('/debug', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const context = getContextFromRequest(req);
+  const { getPool } = await import('../utils/database-context');
+  const pool = getPool(context);
+  const client = await pool.connect();
+
+  try {
+    // Get thoughts with embedding status
+    const thoughtsResult = await client.query(
+      `SELECT id, raw_input, is_processed, cluster_id, similarity_to_cluster,
+              embedding IS NOT NULL as has_embedding,
+              CASE WHEN embedding IS NOT NULL THEN array_length(embedding::real[], 1) END as embedding_dims
+       FROM loose_thoughts
+       WHERE user_id = 'default'
+       ORDER BY created_at DESC
+       LIMIT 10`
+    );
+
+    // Get cluster count
+    const clustersResult = await client.query(
+      `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = 'default'`
+    );
+
+    res.json({
+      thoughts: thoughtsResult.rows.map(t => ({
+        id: t.id,
+        raw_input: t.raw_input?.substring(0, 50) + '...',
+        has_embedding: t.has_embedding,
+        embedding_dims: t.embedding_dims,
+        is_processed: t.is_processed,
+        cluster_id: t.cluster_id,
+        similarity: t.similarity_to_cluster,
+      })),
+      thought_count: thoughtsResult.rows.length,
+      cluster_count: parseInt(clustersResult.rows[0].count),
+      context,
+    });
+  } finally {
+    client.release();
+  }
+}));
+
+/**
  * GET /api/incubator/learning
  * Get learning status and insights
  */
