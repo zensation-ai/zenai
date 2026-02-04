@@ -266,8 +266,9 @@ router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHand
 /**
  * GET /api/incubator/debug
  * Debug endpoint to inspect thought state
+ * Requires admin scope - for debugging only
  */
-router.get('/debug', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const context = getContextFromRequest(req);
   const { getPool } = await import('../utils/database-context');
   const pool = getPool(context);

@@ -549,6 +549,33 @@ export const TOOL_LIST_PROJECT_FILES: ToolDefinition = {
   },
 };
 
+/**
+ * Execute code tool - run code in a sandboxed environment
+ */
+export const TOOL_EXECUTE_CODE: ToolDefinition = {
+  name: 'execute_code',
+  description: 'Führt Code in einer sicheren Sandbox-Umgebung aus. Unterstützt Python, Node.js und Bash. Nutze dies wenn der Nutzer Code ausführen oder testen möchte, Berechnungen durchführen will, oder Datenanalyse benötigt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      code: {
+        type: 'string',
+        description: 'Der auszuführende Code',
+      },
+      language: {
+        type: 'string',
+        enum: ['python', 'nodejs', 'bash'],
+        description: 'Programmiersprache: python, nodejs, oder bash',
+      },
+      input_data: {
+        type: 'string',
+        description: 'Optionale Eingabedaten für den Code (z.B. JSON, CSV)',
+      },
+    },
+    required: ['code', 'language'],
+  },
+};
+
 // ===========================================
 // Tool Registry
 // ===========================================

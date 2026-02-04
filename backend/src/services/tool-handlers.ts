@@ -26,6 +26,7 @@ import {
   TOOL_ANALYZE_PROJECT,
   TOOL_PROJECT_SUMMARY,
   TOOL_LIST_PROJECT_FILES,
+  TOOL_EXECUTE_CODE,
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
@@ -37,6 +38,7 @@ import { searchWeb, formatSearchResults } from './web-search';
 import { fetchUrl, formatForTool, isValidUrl } from './url-fetch';
 import * as github from './github';
 import * as projectContext from './project-context';
+import { executeCodeDirect, isCodeExecutionEnabled, isSupportedLanguage, SupportedLanguage } from './code-execution';
 
 // ===========================================
 // DEPRECATED: Legacy Context Management
@@ -940,6 +942,95 @@ function formatFileSize(bytes: number): string {
 }
 
 // ===========================================
+// Code Execution Handler
+// ===========================================
+
+/**
+ * Handle execute_code tool
+ * Executes code in a sandboxed environment
+ */
+async function handleExecuteCode(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const code = input.code as string;
+  const language = input.language as string;
+
+  // Check if code execution is enabled
+  if (!isCodeExecutionEnabled()) {
+    return '⚠️ Code-Ausführung ist in dieser Umgebung nicht aktiviert.';
+  }
+
+  // Validate input
+  if (!code || typeof code !== 'string') {
+    return 'Fehler: Kein Code angegeben.';
+  }
+
+  if (!language || !isSupportedLanguage(language)) {
+    return 'Fehler: Ungültige Sprache. Unterstützt: python, nodejs, bash';
+  }
+
+  logger.debug('Tool: execute_code', {
+    language,
+    codeLength: code.length,
+  });
+
+  try {
+    const result = await executeCodeDirect(
+      code,
+      language as SupportedLanguage,
+      false // do not skip validation
+    );
+
+    // Format output for AI
+    const parts: string[] = [];
+
+    if (result.success) {
+      parts.push('✅ **Code erfolgreich ausgeführt**');
+    } else {
+      parts.push('❌ **Code-Ausführung fehlgeschlagen**');
+    }
+
+    if (result.executionTimeMs) {
+      parts.push(`\n⏱️ Laufzeit: ${result.executionTimeMs}ms`);
+    }
+
+    if (result.output) {
+      parts.push('\n**Ausgabe (stdout):**');
+      parts.push('```');
+      parts.push(result.output.substring(0, 5000));
+      if (result.output.length > 5000) {
+        parts.push('... (gekürzt)');
+      }
+      parts.push('```');
+    }
+
+    if (result.errors) {
+      parts.push('\n**Fehlerausgabe (stderr):**');
+      parts.push('```');
+      parts.push(result.errors.substring(0, 2000));
+      if (result.errors.length > 2000) {
+        parts.push('... (gekürzt)');
+      }
+      parts.push('```');
+    }
+
+    if (result.error) {
+      parts.push(`\n**Fehler:** ${result.error}`);
+    }
+
+    if (result.errorDetails) {
+      parts.push(`\n**Details:** ${result.errorDetails}`);
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool execute_code failed', error instanceof Error ? error : undefined);
+    return `Fehler bei der Code-Ausführung: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -976,6 +1067,9 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_PROJECT_SUMMARY, handleProjectSummary);
   toolRegistry.register(TOOL_LIST_PROJECT_FILES, handleListProjectFiles);
 
+  // Code execution tools (sandboxed code runner)
+  toolRegistry.register(TOOL_EXECUTE_CODE, handleExecuteCode);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -994,6 +1088,7 @@ export function registerAllToolHandlers(): void {
       'analyze_project',
       'get_project_summary',
       'list_project_files',
+      'execute_code',
     ],
   });
 }
