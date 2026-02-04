@@ -1536,14 +1536,15 @@
   margin-top: 4px;
 }
 
-/* Placeholder Animation */
+/* Placeholder Animation - Erhöhte Opacity für bessere Lesbarkeit */
 @keyframes placeholderFade {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
 }
 
 .neuro-placeholder-animated::placeholder {
   animation: placeholderFade 2s ease-in-out infinite;
+  color: var(--text-muted);  /* Explizit setzen für Konsistenz */
 }
 
 /* Inspirational Quote Style */

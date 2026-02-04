@@ -68,7 +68,7 @@
 .sfb-search-icon {
   font-size: 1rem;
   margin-right: 0.75rem;
-  opacity: 0.6;
+  opacity: 0.8;  /* Erhöht von 0.6 für bessere Sichtbarkeit */
 }
 
 .sfb-search-input {
