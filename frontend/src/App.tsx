@@ -24,6 +24,7 @@ import { MobileNav } from './components/MobileNav';
 import { ThemeToggle } from './components/ThemeToggle';
 // Breadcrumbs are integrated via PageHeader in dashboard components
 import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
+import { CommandPalette, useCommandPalette } from './components/CommandPalette';
 import { AIProcessingOverlay, type ProcessType } from './components/AIProcessingOverlay';
 import { CommandCenter, type InputMode } from './components/CommandCenter';
 import { safeLocalStorage } from './utils/storage';
@@ -124,6 +125,18 @@ function App() {
 
   // Keyboard shortcuts modal
   const keyboardShortcuts = useKeyboardShortcutsModal();
+
+  // Command palette (Cmd+K) for quick navigation
+  const commandPalette = useCommandPalette({
+    onNavigate: setCurrentPage,
+    onAction: (action) => {
+      if (action === 'new-idea') {
+        setInputMode('voice');
+      } else if (action === 'voice-input') {
+        setInputMode('voice');
+      }
+    },
+  });
 
   // Determine AI activity state
   const isAIActive = processing || isSearching || isRecording || loading;
@@ -1007,6 +1020,16 @@ function App() {
             </nav>
           </div>
           <div className="header-right">
+            <button
+              type="button"
+              className="command-palette-trigger neuro-focus-ring"
+              onClick={commandPalette.open}
+              title="Schnellnavigation (⌘K)"
+              aria-label="Schnellnavigation öffnen"
+            >
+              <span className="command-palette-trigger-icon" aria-hidden="true">🔍</span>
+              <kbd className="command-palette-trigger-shortcut">⌘K</kbd>
+            </button>
             <ThemeToggle className="compact" />
             <PersonaSelector
               context={context}
@@ -1354,6 +1377,14 @@ function App() {
 
       {/* Global Toast Notifications */}
       <ToastContainer />
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette
+        isOpen={commandPalette.isOpen}
+        onClose={commandPalette.close}
+        commands={commandPalette.commands}
+        recentPages={commandPalette.recentPages}
+      />
 
       {/* Keyboard Shortcuts Help Modal */}
       <KeyboardShortcutsModal
