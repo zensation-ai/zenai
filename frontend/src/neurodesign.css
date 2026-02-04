@@ -1544,7 +1544,7 @@
 
 .neuro-placeholder-animated::placeholder {
   animation: placeholderFade 2s ease-in-out infinite;
-  color: var(--text-muted);  /* Explizit setzen für Konsistenz */
+  color: var(--text-placeholder, #1a2a38);  /* Dunkler für bessere Lesbarkeit */
 }
 
 /* Inspirational Quote Style */

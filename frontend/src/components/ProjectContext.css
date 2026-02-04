@@ -103,7 +103,7 @@
 }
 
 .project-path-input::placeholder {
-  color: var(--text-muted);
+  color: var(--text-placeholder, #1a2a38);
   opacity: 1;
 }
 

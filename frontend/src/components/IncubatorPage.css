@@ -140,7 +140,7 @@
 }
 
 .quick-input-container textarea::placeholder {
-  color: var(--text-secondary);
+  color: var(--text-placeholder, #1a2a38);
   opacity: 1;
 }
 

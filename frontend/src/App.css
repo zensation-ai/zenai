@@ -671,12 +671,12 @@
 .nav-button {
   padding: 8px 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 550;
   letter-spacing: 0.01em;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -684,7 +684,7 @@
   gap: 6px;
   position: relative;
   overflow: hidden;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* Subtle hover glow effect */
@@ -1074,7 +1074,7 @@
 }
 
 .text-input::placeholder {
-  color: #5a6d7a; /* Mittelgrau für Placeholder - lesbar aber dezent */
+  color: var(--text-placeholder, #1a2a38); /* Dunkler für bessere Lesbarkeit */
   opacity: 1;
   font-weight: 400;
 }

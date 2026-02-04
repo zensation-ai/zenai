@@ -970,7 +970,7 @@
 }
 
 .edit-profile-content input::placeholder {
-  color: var(--text-muted, #5a6d7a);
+  color: var(--text-placeholder, #1a2a38);
   opacity: 1;
 }
 

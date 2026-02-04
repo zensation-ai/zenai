@@ -81,6 +81,7 @@
   --text: #0f1f2a;            /* Dunkler für maximale Lesbarkeit - ~14:1 Kontrast */
   --text-muted: #2a3d4d;      /* Dunkler für bessere Lesbarkeit - ~8:1 Kontrast */
   --text-secondary: #3a4d5a;  /* Dunkler für klare Lesbarkeit - ~6:1 Kontrast */
+  --text-placeholder: #1a2a38; /* Deutlich sichtbar für Placeholder - ~10:1 Kontrast */
 
   /* Borders & Accents - More visible */
   --border: rgba(20, 50, 70, 0.15);
@@ -186,16 +187,16 @@
   --context-work-secondary: #60a5fa;
   --context-work-hover: #2563eb;
 
-  /* Dark Petrol Header Theme (WCAG AA compliant, min 4.5:1 contrast) */
+  /* Dark Petrol Header Theme (WCAG AAA compliant, max contrast) */
   --header-bg: linear-gradient(135deg, #0f1d2a 0%, #162736 50%, #1a2e3d 100%);
   --header-bg-solid: #142230;
-  --header-text: #f8fafc;
-  --header-text-muted: #d4dde5;      /* Heller für besseren Kontrast auf Header */
-  --header-text-secondary: #b8c8d4;  /* Heller für WCAG AA auf dunklem Header */
-  --header-border: rgba(255, 255, 255, 0.12);
+  --header-text: #ffffff;
+  --header-text-muted: #e8f0f5;      /* Sehr hell für maximale Lesbarkeit */
+  --header-text-secondary: #d0e0ea;  /* Hell für klare Lesbarkeit */
+  --header-border: rgba(255, 255, 255, 0.18);
   --header-glass: rgba(20, 34, 48, 0.85);
-  --header-hover: rgba(255, 255, 255, 0.12);
-  --header-active: rgba(255, 107, 53, 0.2);
+  --header-hover: rgba(255, 255, 255, 0.15);
+  --header-active: rgba(255, 107, 53, 0.25);
 
   /* ===== Command Center ===== */
   --command-bg: linear-gradient(
@@ -271,6 +272,7 @@
     --text: #f5f9fc;            /* Sehr hell für maximale Lesbarkeit - ~12:1 Kontrast */
     --text-muted: #dce8f0;      /* Deutlich heller für gute Lesbarkeit - ~8:1 Kontrast */
     --text-secondary: #c0d4e0;  /* Heller für klare Lesbarkeit - ~6:1 Kontrast */
+    --text-placeholder: #b0c4d0; /* Deutlich sichtbar für Placeholder im Dark Mode */
 
     /* Borders - More visible on dark */
     --border: rgba(100, 150, 180, 0.2);
@@ -1063,6 +1065,7 @@ select:focus-visible {
   --text: #0f1f2a;
   --text-muted: #2a3d4d;
   --text-secondary: #3a4d5a;
+  --text-placeholder: #1a2a38;
 
   /* Borders */
   --border: rgba(20, 50, 70, 0.15);
@@ -1100,6 +1103,7 @@ select:focus-visible {
   --text: #f5f9fc;            /* Sehr hell für maximale Lesbarkeit - ~12:1 Kontrast */
   --text-muted: #dce8f0;      /* Deutlich heller für gute Lesbarkeit - ~8:1 Kontrast */
   --text-secondary: #c0d4e0;  /* Heller für klare Lesbarkeit - ~6:1 Kontrast */
+  --text-placeholder: #b0c4d0; /* Deutlich sichtbar für Placeholder im Dark Mode */
 
   /* Borders */
   --border: rgba(100, 150, 180, 0.2);

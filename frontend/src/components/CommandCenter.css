@@ -87,7 +87,7 @@
 }
 
 .command-textarea::placeholder {
-  color: var(--text-muted);
+  color: var(--text-placeholder, #1a2a38);
   font-style: italic;
   opacity: 1;
 }

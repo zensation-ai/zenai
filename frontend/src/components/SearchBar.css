@@ -67,7 +67,7 @@
 }
 
 .search-input::placeholder {
-  color: #5a6d7a; /* Mittelgrau für Placeholder - lesbar aber dezent */
+  color: var(--text-placeholder, #1a2a38); /* Dunkler für bessere Lesbarkeit */
   opacity: 1;
 }
 
