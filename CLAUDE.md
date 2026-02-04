@@ -31,7 +31,7 @@
 **Chat Modes & Tool Use:**
 
 - Intelligent mode detection (tool_assisted, agent, rag_enhanced, conversation)
-- 16 integrated tools (see Tools section below)
+- 17 integrated tools (see Tools section below)
 
 **RAG Pipeline:**
 
@@ -60,12 +60,12 @@
 
 **Code Execution Sandbox:**
 
+- `execute_code`: Claude-Tool für sichere Code-Ausführung im Chat
 - Dual-Provider: Docker (local) oder Judge0 (production)
 - Unterstützt Python 3.11, Node.js 20, Bash
 - Safety-Validator mit 77 Sicherheitschecks
 - Resource Limits (CPU, Memory, PIDs, Network)
 - Automatische Provider-Auswahl basierend auf Umgebung
-- Claude-basierter Code-Generator
 
 **Web Tools:**
 
@@ -511,7 +511,7 @@ mockQueryContext
 - `frontend/src/components/ProjectContext.tsx`
 - `frontend/src/types/artifacts.ts`
 
-**Tool-Anzahl:** 6 → 16 Tools
+**Tool-Anzahl:** 6 → 17 Tools (inkl. execute_code)
 
 ---
 
