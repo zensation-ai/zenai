@@ -183,6 +183,36 @@ describe('Chat Mode Detection Service', () => {
         expect(result.suggestedTools).toContain('get_related_ideas');
       });
     });
+
+    describe('Code execution patterns', () => {
+      it('should detect execute_code for "führe code aus"', () => {
+        const result = detectChatMode('Führe diesen Python code aus: print("hello")');
+
+        expect(result.mode).toBe('tool_assisted');
+        expect(result.suggestedTools).toContain('execute_code');
+      });
+
+      it('should detect execute_code for "run python"', () => {
+        const result = detectChatMode('Run this python code for me');
+
+        expect(result.mode).toBe('tool_assisted');
+        expect(result.suggestedTools).toContain('execute_code');
+      });
+
+      it('should detect execute_code for code blocks', () => {
+        const result = detectChatMode('```python\nprint("hello")\n```');
+
+        expect(result.mode).toBe('tool_assisted');
+        expect(result.suggestedTools).toContain('execute_code');
+      });
+
+      it('should detect execute_code for "teste code"', () => {
+        const result = detectChatMode('Teste diesen Code bitte');
+
+        expect(result.mode).toBe('tool_assisted');
+        expect(result.suggestedTools).toContain('execute_code');
+      });
+    });
   });
 
   // ===========================================
@@ -376,6 +406,7 @@ describe('Chat Mode Detection Service', () => {
       expect(tools).toContain('calculate');
       expect(tools).toContain('remember');
       expect(tools).toContain('recall');
+      expect(tools).toContain('execute_code');
     });
 
     it('should return extended tools for agent mode', () => {
@@ -387,6 +418,7 @@ describe('Chat Mode Detection Service', () => {
       expect(tools).toContain('calculate');
       expect(tools).toContain('remember');
       expect(tools).toContain('recall');
+      expect(tools).toContain('execute_code');
     });
 
     it('should return limited tools for rag_enhanced mode', () => {
