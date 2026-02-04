@@ -497,6 +497,7 @@
 }
 
 /* Dark mode support - Optimiert für bessere Lesbarkeit */
+/* Supports both system preference AND manual .dark-mode class */
 @media (prefers-color-scheme: dark) {
   .general-chat {
     background: rgba(25, 40, 55, 0.85);
@@ -506,7 +507,7 @@
   .chat-input {
     background: rgba(40, 55, 70, 0.8);
     border-color: rgba(255, 255, 255, 0.18);
-    color: #f5f9fc;  /* Heller für bessere Lesbarkeit */
+    color: #f5f9fc;
   }
 
   .chat-input:focus {
@@ -514,7 +515,7 @@
   }
 
   .chat-input::placeholder {
-    color: rgba(255, 255, 255, 0.75);  /* Heller von 0.65 */
+    color: rgba(255, 255, 255, 0.75);
   }
 
   .chat-input-area {
@@ -522,9 +523,21 @@
     border-top-color: rgba(255, 255, 255, 0.12);
   }
 
+  .chat-message-text {
+    color: #f5f9fc;
+  }
+
   .chat-message.assistant .chat-message-text {
     background: rgba(45, 60, 75, 0.8);
-    color: #f5f9fc;  /* Heller für bessere Lesbarkeit */
+    color: #f5f9fc;
+  }
+
+  .chat-message-name {
+    color: #e8f0f5;
+  }
+
+  .chat-message.assistant .chat-message-name {
+    color: var(--primary-light, #ff9a70);
   }
 
   .code-block {
@@ -532,30 +545,165 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
+  .inline-code {
+    background: rgba(255, 255, 255, 0.15);
+    color: #f5f9fc;
+  }
+
   .chat-empty {
-    color: rgba(255, 255, 255, 0.85);  /* Heller von 0.7 */
+    color: rgba(255, 255, 255, 0.85);
   }
 
   .chat-empty-title {
-    color: #f5f9fc;  /* Konsistent mit anderen Texten */
+    color: #f5f9fc;
   }
 
   .chat-empty-description {
-    color: rgba(255, 255, 255, 0.8);  /* Explizit für Beschreibung */
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .chat-empty-hint {
+    color: rgba(255, 255, 255, 0.7);
   }
 
   .chat-send-btn:disabled {
     background: rgba(40, 55, 70, 0.6);
-    color: rgba(255, 255, 255, 0.55);  /* Heller von 0.4 */
+    color: rgba(255, 255, 255, 0.55);
   }
 
   .chat-message-time {
-    color: rgba(255, 255, 255, 0.65);  /* Explizit für Zeitstempel */
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .chat-message-status {
+    color: rgba(255, 255, 255, 0.7);
   }
 
   .chat-hint {
-    color: rgba(255, 255, 255, 0.7);  /* Explizit für Hint */
+    color: rgba(255, 255, 255, 0.7);
   }
+
+  .new-chat-btn {
+    color: var(--primary-light, #ff9a70);
+  }
+
+  .new-chat-btn:hover {
+    background: rgba(255, 122, 74, 0.15);
+  }
+}
+
+/* Manual dark mode class - same styles for .dark-mode on :root */
+:root.dark-mode .general-chat,
+.dark-mode .general-chat {
+  background: rgba(25, 40, 55, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root.dark-mode .chat-input,
+.dark-mode .chat-input {
+  background: rgba(40, 55, 70, 0.8);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f5f9fc;
+}
+
+:root.dark-mode .chat-input:focus,
+.dark-mode .chat-input:focus {
+  background: rgba(45, 60, 75, 0.9);
+}
+
+:root.dark-mode .chat-input::placeholder,
+.dark-mode .chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+:root.dark-mode .chat-input-area,
+.dark-mode .chat-input-area {
+  background: rgba(20, 35, 50, 0.5);
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+:root.dark-mode .chat-message-text,
+.dark-mode .chat-message-text {
+  color: #f5f9fc;
+}
+
+:root.dark-mode .chat-message.assistant .chat-message-text,
+.dark-mode .chat-message.assistant .chat-message-text {
+  background: rgba(45, 60, 75, 0.8);
+  color: #f5f9fc;
+}
+
+:root.dark-mode .chat-message-name,
+.dark-mode .chat-message-name {
+  color: #e8f0f5;
+}
+
+:root.dark-mode .chat-message.assistant .chat-message-name,
+.dark-mode .chat-message.assistant .chat-message-name {
+  color: var(--primary-light, #ff9a70);
+}
+
+:root.dark-mode .code-block,
+.dark-mode .code-block {
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:root.dark-mode .inline-code,
+.dark-mode .inline-code {
+  background: rgba(255, 255, 255, 0.15);
+  color: #f5f9fc;
+}
+
+:root.dark-mode .chat-empty,
+.dark-mode .chat-empty {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:root.dark-mode .chat-empty-title,
+.dark-mode .chat-empty-title {
+  color: #f5f9fc;
+}
+
+:root.dark-mode .chat-empty-description,
+.dark-mode .chat-empty-description {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:root.dark-mode .chat-empty-hint,
+.dark-mode .chat-empty-hint {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:root.dark-mode .chat-send-btn:disabled,
+.dark-mode .chat-send-btn:disabled {
+  background: rgba(40, 55, 70, 0.6);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+:root.dark-mode .chat-message-time,
+.dark-mode .chat-message-time {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+:root.dark-mode .chat-message-status,
+.dark-mode .chat-message-status {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:root.dark-mode .chat-hint,
+.dark-mode .chat-hint {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:root.dark-mode .new-chat-btn,
+.dark-mode .new-chat-btn {
+  color: var(--primary-light, #ff9a70);
+}
+
+:root.dark-mode .new-chat-btn:hover,
+.dark-mode .new-chat-btn:hover {
+  background: rgba(255, 122, 74, 0.15);
 }
 
 /* Reduced motion */
@@ -721,11 +869,42 @@
 @media (prefers-color-scheme: dark) {
   .chat-thinking-block {
     background: linear-gradient(135deg, rgba(255, 107, 53, 0.08), rgba(255, 107, 53, 0.15));
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .thinking-label {
+    color: var(--primary-light, #ff9a70);
+  }
+
+  .thinking-preview {
+    color: rgba(255, 255, 255, 0.75);
   }
 
   .streaming-cursor {
-    color: var(--primary-light);
+    color: var(--primary-light, #ff9a70);
   }
+}
+
+/* Manual dark mode class for streaming */
+:root.dark-mode .chat-thinking-block,
+.dark-mode .chat-thinking-block {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08), rgba(255, 107, 53, 0.15));
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:root.dark-mode .thinking-label,
+.dark-mode .thinking-label {
+  color: var(--primary-light, #ff9a70);
+}
+
+:root.dark-mode .thinking-preview,
+.dark-mode .thinking-preview {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+:root.dark-mode .streaming-cursor,
+.dark-mode .streaming-cursor {
+  color: var(--primary-light, #ff9a70);
 }
 
 /* Reduced motion for streaming */
