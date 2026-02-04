@@ -829,3 +829,61 @@ export async function getIncubatorStats(userId: string = 'default', context: AIC
     client.release();
   }
 }
+
+/**
+ * Backfill embeddings for thoughts that don't have them
+ * Useful after deploying new embedding providers
+ */
+export async function backfillEmbeddings(
+  userId: string = 'default',
+  context: AIContext = 'personal'
+): Promise<{ processed: number; failed: number; skipped: number }> {
+  const pool = getPool(context);
+  const client = await pool.connect();
+
+  try {
+    // Get thoughts without embeddings
+    const result = await client.query(
+      `SELECT id, raw_input FROM loose_thoughts
+       WHERE user_id = $1 AND embedding IS NULL
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    let processed = 0;
+    let failed = 0;
+    const skipped = 0;
+
+    for (const thought of result.rows) {
+      try {
+        const embedding = await generateEmbedding(thought.raw_input);
+
+        if (embedding.length > 0) {
+          await client.query(
+            `UPDATE loose_thoughts
+             SET embedding = $2
+             WHERE id = $1`,
+            [thought.id, formatForPgVector(embedding)]
+          );
+          processed++;
+
+          // Trigger cluster analysis for newly embedded thought
+          setImmediate(() => analyzeAndAssignCluster(thought.id, context).catch(err =>
+            logger.error('Cluster analysis failed during backfill', err instanceof Error ? err : undefined)
+          ));
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        logger.error(`Failed to generate embedding during backfill for thought ${thought.id}`, error instanceof Error ? error : undefined);
+        failed++;
+      }
+    }
+
+    logger.info('Embedding backfill completed', { processed, failed, skipped, context });
+    return { processed, failed, skipped };
+  } finally {
+    client.release();
+  }
+}

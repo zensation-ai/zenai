@@ -17,6 +17,7 @@ import {
   markClusterPresented,
   runBatchAnalysis,
   getIncubatorStats,
+  backfillEmbeddings,
 } from '../services/thought-incubator';
 import { runDailyLearning, getPersonalizedPromptContext } from '../services/learning-engine';
 import { getUserProfile, getRecommendations } from '../services/user-profile';
@@ -230,6 +231,25 @@ router.get('/stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response
   res.json({
     ...stats,
     context,
+  });
+}));
+
+/**
+ * POST /api/incubator/backfill-embeddings
+ * Backfill embeddings for thoughts that don't have them
+ * Useful after deploying new embedding providers
+ */
+router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req.body.userId as string) || 'default';
+  const context = getContextFromRequest(req);
+
+  const result = await backfillEmbeddings(userId, context);
+
+  res.json({
+    success: true,
+    ...result,
+    context,
+    message: `Backfill complete: ${result.processed} processed, ${result.failed} failed`,
   });
 }));
 
