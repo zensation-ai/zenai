@@ -12,7 +12,8 @@
  * - Einheitliches Interface für alle KI-Features
  */
 
-import React, { useState, useEffect, Suspense, lazy, memo } from 'react';
+import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 import { getBreadcrumbs } from './Breadcrumbs';
 import { SkeletonLoader } from './SkeletonLoader';
@@ -53,12 +54,20 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
   onIdeaCreated,
   initialTab = 'incubator',
 }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<WorkshopTab>(initialTab);
 
-  // Sync activeTab when initialTab prop changes (e.g., from legacy navigation)
+  // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
+
+  // Update URL when tab changes (for browser history support)
+  const handleTabChange = useCallback((tab: WorkshopTab) => {
+    setActiveTab(tab);
+    // Update URL to reflect current tab (e.g., /ai-workshop/proactive)
+    navigate(`/ai-workshop/${tab}`, { replace: true });
+  }, [navigate]);
 
   const handleIdeaCreated = (ideaId: string) => {
     if (onIdeaCreated) {
@@ -73,7 +82,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
           <Suspense fallback={<TabLoader />}>
             <div className="workshop-tab-content">
               <IncubatorPage
-                onBack={() => setActiveTab('incubator')}
+                onBack={() => handleTabChange('incubator')}
                 onIdeaCreated={handleIdeaCreated}
               />
             </div>
@@ -86,7 +95,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
             <div className="workshop-tab-content workshop-tab-fullwidth">
               <ProactiveDashboard
                 context={context}
-                onBack={() => setActiveTab('incubator')}
+                onBack={() => handleTabChange('incubator')}
               />
             </div>
           </Suspense>
@@ -98,7 +107,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
             <div className="workshop-tab-content workshop-tab-fullwidth">
               <EvolutionDashboard
                 context={context}
-                onBack={() => setActiveTab('incubator')}
+                onBack={() => handleTabChange('incubator')}
               />
             </div>
           </Suspense>
@@ -130,7 +139,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
             type="button"
             role="tab"
             className={`workshop-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
             aria-selected={activeTab === tab.id}
             aria-controls={`tabpanel-${tab.id}`}
             aria-label={`${tab.label}: ${tab.description}`}

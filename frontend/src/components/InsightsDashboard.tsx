@@ -13,7 +13,8 @@
  * - Einheitliches Design für bessere Orientierung
  */
 
-import React, { useState, useEffect, Suspense, lazy, memo } from 'react';
+import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 import { getBreadcrumbs } from './Breadcrumbs';
 import { SkeletonLoader } from './SkeletonLoader';
@@ -56,12 +57,20 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
   onSelectIdea,
   initialTab = 'overview',
 }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<InsightsTab>(initialTab);
 
-  // Sync activeTab when initialTab prop changes (e.g., from legacy navigation)
+  // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
+
+  // Update URL when tab changes (for browser history support)
+  const handleTabChange = useCallback((tab: InsightsTab) => {
+    setActiveTab(tab);
+    // Update URL to reflect current tab (e.g., /insights/analytics)
+    navigate(`/insights/${tab}`, { replace: true });
+  }, [navigate]);
 
   const handleNavigate = (page: string) => {
     // Mapping für interne Tab-Switches (falls jemand 'analytics' etc. aufruft)
@@ -74,7 +83,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 
     // Wenn es ein interner Tab ist, wechsle den Tab statt zu navigieren
     if (tabMapping[page]) {
-      setActiveTab(tabMapping[page]);
+      handleTabChange(tabMapping[page]);
       return;
     }
 
@@ -169,7 +178,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
             type="button"
             role="tab"
             className={`insights-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
             aria-selected={activeTab === tab.id}
             aria-controls={`tabpanel-${tab.id}`}
             aria-label={`${tab.label}: ${tab.description}`}

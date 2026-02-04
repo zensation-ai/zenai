@@ -134,7 +134,15 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       }
       return null;
     } catch (err) {
-      showToast('Ups, ich konnte gerade keine neue Unterhaltung starten. Prüf deine Verbindung und versuch es noch mal.', 'error');
+      showToast('Ups, ich konnte gerade keine neue Unterhaltung starten.', {
+        type: 'error',
+        duration: 8000,
+        onUndo: () => {
+          // Retry creating session
+          createNewSession();
+        },
+        undoLabel: 'Erneut versuchen',
+      });
       return null;
     }
   };
@@ -308,8 +316,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         return;
       }
 
-      const errorMessage = getErrorMessage(err, 'Deine Nachricht konnte nicht gesendet werden. Versuch es gleich noch mal.');
-      showToast(errorMessage, 'error');
+      const errorMessage = getErrorMessage(err, 'Deine Nachricht konnte nicht gesendet werden.');
 
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
@@ -318,6 +325,25 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       setIsStreaming(false);
       setStreamingContent('');
       setThinkingContent('');
+
+      // Show error toast with retry button
+      showToast(errorMessage, {
+        type: 'error',
+        duration: 8000, // Give more time to see the retry button
+        onUndo: () => {
+          // Focus input and trigger send after a tick (state needs to be restored first)
+          setTimeout(() => {
+            inputRef.current?.focus();
+            // Input value is already restored, just need to submit
+            // Using a custom event to trigger send without clearing input again
+            const form = inputRef.current?.closest('form');
+            if (form) {
+              form.requestSubmit();
+            }
+          }, 100);
+        },
+        undoLabel: 'Erneut senden',
+      });
     } finally {
       setSending(false);
       inputRef.current?.focus();

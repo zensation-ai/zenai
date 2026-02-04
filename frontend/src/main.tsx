@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
 import './index.css';
@@ -62,10 +63,12 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <ConfirmProvider>
-        <App />
-      </ConfirmProvider>
-    </ThemeProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <ConfirmProvider>
+          <App />
+        </ConfirmProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );

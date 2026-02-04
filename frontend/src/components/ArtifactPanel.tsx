@@ -14,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { showToast } from './Toast';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import type { Artifact } from '../types/artifacts';
 import { getArtifactFilename } from '../types/artifacts';
 import './ArtifactPanel.css';
@@ -37,6 +38,13 @@ export function ArtifactPanel({
 }: ArtifactPanelProps) {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Focus trap for accessibility - keeps Tab navigation within the panel
+  const panelRef = useFocusTrap<HTMLDivElement>({
+    isActive: true,
+    initialFocusSelector: '.artifact-close-btn',
+    restoreFocus: true,
+  });
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -221,6 +229,7 @@ export function ArtifactPanel({
       role="presentation"
     >
       <div
+        ref={panelRef}
         className={`artifact-panel ${isFullscreen ? 'fullscreen' : ''}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"

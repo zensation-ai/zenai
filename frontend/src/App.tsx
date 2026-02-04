@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRef } from 'react';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import axios from 'axios';
 
 // Types and constants
@@ -76,10 +77,134 @@ const PageLoader = () => (
   </div>
 );
 
+// ============================================
+// URL ROUTING CONFIGURATION
+// Maps pages to URLs and vice versa for URL-based navigation
+// ============================================
+
+// Page to URL path mapping
+const PAGE_PATHS: Record<Page, string> = {
+  // Main tabs
+  'ideas': '/',
+  'insights': '/insights',
+  'archive': '/archive',
+  'settings': '/settings',
+  // Secondary pages
+  'ai-workshop': '/ai-workshop',
+  'learning': '/learning',
+  'profile': '/profile',
+  'meetings': '/meetings',
+  'media': '/media',
+  'stories': '/stories',
+  'automations': '/automations',
+  'integrations': '/integrations',
+  'notifications': '/notifications',
+  'export': '/export',
+  'sync': '/sync',
+  'personalization': '/personalization',
+  'triage': '/triage',
+  // Legacy redirects (will redirect to parent with tab param)
+  'incubator': '/ai-workshop/incubator',
+  'proactive': '/ai-workshop/proactive',
+  'evolution': '/ai-workshop/evolution',
+  'dashboard': '/insights/overview',
+  'analytics': '/insights/analytics',
+  'digest': '/insights/digest',
+  'knowledge-graph': '/insights/connections',
+  'learning-tasks': '/learning',
+};
+
+// URL path to Page mapping (reverse of above)
+const PATH_PAGES: Record<string, Page> = {
+  '/': 'ideas',
+  '/insights': 'insights',
+  '/archive': 'archive',
+  '/settings': 'settings',
+  '/ai-workshop': 'ai-workshop',
+  '/learning': 'learning',
+  '/profile': 'profile',
+  '/meetings': 'meetings',
+  '/media': 'media',
+  '/stories': 'stories',
+  '/automations': 'automations',
+  '/integrations': 'integrations',
+  '/notifications': 'notifications',
+  '/export': 'export',
+  '/sync': 'sync',
+  '/personalization': 'personalization',
+  '/triage': 'triage',
+};
+
+// Custom hook for URL-based navigation
+function useUrlNavigation() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get current page from URL
+  const currentPage: Page = useMemo(() => {
+    const basePath = '/' + location.pathname.split('/').slice(1, 2).join('/') || '/';
+    const fullPath = location.pathname;
+
+    // Check for exact matches first
+    if (PATH_PAGES[fullPath]) {
+      return PATH_PAGES[fullPath];
+    }
+
+    // Check base path for tab-based routes
+    if (fullPath.startsWith('/insights/')) return 'insights';
+    if (fullPath.startsWith('/ai-workshop/')) return 'ai-workshop';
+
+    // Default to base path or ideas
+    return PATH_PAGES[basePath] || 'ideas';
+  }, [location.pathname]);
+
+  // Get tab param from URL (for insights and ai-workshop)
+  const tabParam = useMemo(() => {
+    const parts = location.pathname.split('/');
+    if (parts.length >= 3) {
+      return parts[2];
+    }
+    return undefined;
+  }, [location.pathname]);
+
+  // Navigate to page
+  const navigateToPage = useCallback((page: Page, options?: { tab?: string }) => {
+    let path = PAGE_PATHS[page] || '/';
+
+    // Handle tab params for insights and ai-workshop
+    if (options?.tab) {
+      if (page === 'insights' || page === 'ai-workshop') {
+        path = `${PAGE_PATHS[page]}/${options.tab}`;
+      }
+    }
+
+    navigate(path);
+  }, [navigate]);
+
+  // Go back in history
+  const goBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  return {
+    currentPage,
+    tabParam,
+    navigateToPage,
+    goBack,
+    navigate,
+  };
+}
+
 // Types imported from ./types - see types/idea.ts for definitions
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('ideas');
+  // URL-based navigation
+  const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
+
+  // Legacy compatibility: setCurrentPage wrapper
+  const setCurrentPage = useCallback((page: Page) => {
+    navigateToPage(page);
+  }, [navigateToPage]);
   const [ideas, setIdeas] = useState<StructuredIdea[]>([]);
   const [loading, setLoading] = useState(true); // Start true to prevent layout shift
   const [processing, setProcessing] = useState(false);
@@ -522,21 +647,23 @@ function App() {
 
 
   // Insights - Konsolidiertes Dashboard (Dashboard + Analytics + Digest + Graph)
+  // URL: /insights or /insights/:tab (overview, analytics, digest, connections)
   if (currentPage === 'insights') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <InsightsDashboard
             context={context}
-            onBack={() => setCurrentPage('ideas')}
-            onNavigate={(page) => setCurrentPage(page as Page)}
+            onBack={() => navigateToPage('ideas')}
+            onNavigate={(page) => navigateToPage(page as Page)}
             onSelectIdea={(ideaId) => {
               const idea = ideas.find(i => i.id === ideaId);
               if (idea) {
                 setSelectedIdea(idea);
-                setCurrentPage('ideas');
+                navigateToPage('ideas');
               }
             }}
+            initialTab={tabParam as 'overview' | 'analytics' | 'digest' | 'connections' || 'overview'}
           />
         </Suspense>
         <ToastContainer />
@@ -544,49 +671,30 @@ function App() {
     );
   }
 
-  // === LEGACY-WEITERLEITUNGEN zu Insights ===
+  // === LEGACY-WEITERLEITUNGEN zu Insights (URL-Redirects) ===
   if (currentPage === 'dashboard' || currentPage === 'analytics' || currentPage === 'digest' || currentPage === 'knowledge-graph') {
-    // Automatisch zu Insights weiterleiten mit passendem Tab
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <InsightsDashboard
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-            onNavigate={(page) => setCurrentPage(page as Page)}
-            onSelectIdea={(ideaId) => {
-              const idea = ideas.find(i => i.id === ideaId);
-              if (idea) {
-                setSelectedIdea(idea);
-                setCurrentPage('ideas');
-              }
-            }}
-            initialTab={
-              currentPage === 'analytics' ? 'analytics' :
-              currentPage === 'digest' ? 'digest' :
-              currentPage === 'knowledge-graph' ? 'connections' :
-              'overview'
-            }
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
+    // Redirect zu korrekter URL mit Tab-Param
+    const tab = currentPage === 'analytics' ? 'analytics' :
+                currentPage === 'digest' ? 'digest' :
+                currentPage === 'knowledge-graph' ? 'connections' : 'overview';
+    return <Navigate to={`/insights/${tab}`} replace />;
   }
 
   // === KI-WERKSTATT (Inkubator + Proaktiv + Evolution) ===
+  // URL: /ai-workshop or /ai-workshop/:tab (incubator, proactive, evolution)
   if (currentPage === 'ai-workshop') {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <AIWorkshop
             context={context}
-            onBack={() => setCurrentPage('ideas')}
-            onNavigate={(page) => setCurrentPage(page as Page)}
+            onBack={() => navigateToPage('ideas')}
+            onNavigate={(page) => navigateToPage(page as Page)}
             onIdeaCreated={() => {
               loadIdeas();
-              setCurrentPage('ideas');
+              navigateToPage('ideas');
             }}
+            initialTab={tabParam as 'incubator' | 'proactive' | 'evolution' || 'incubator'}
           />
         </Suspense>
         <ToastContainer />
@@ -594,29 +702,10 @@ function App() {
     );
   }
 
-  // Legacy-Weiterleitungen zu KI-Werkstatt
+  // Legacy-Weiterleitungen zu KI-Werkstatt (URL-Redirects)
   if (currentPage === 'incubator' || currentPage === 'proactive' || currentPage === 'evolution') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <AIWorkshop
-            context={context}
-            onBack={() => setCurrentPage('ideas')}
-            onNavigate={(page) => setCurrentPage(page as Page)}
-            onIdeaCreated={() => {
-              loadIdeas();
-              setCurrentPage('ideas');
-            }}
-            initialTab={
-              currentPage === 'proactive' ? 'proactive' :
-              currentPage === 'evolution' ? 'evolution' :
-              'incubator'
-            }
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
+    const tab = currentPage;
+    return <Navigate to={`/ai-workshop/${tab}`} replace />;
   }
 
   // === SEKUNDÄRE SEITEN (via Mehr-Dropdown) ===
@@ -628,7 +717,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <LearningDashboard
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -645,10 +734,10 @@ function App() {
             <InboxTriage
               context={context}
               apiBase="/api"
-              onBack={() => setCurrentPage('ideas')}
+              onBack={() => navigateToPage('ideas')}
               onComplete={() => {
                 loadIdeas();
-                setCurrentPage('ideas');
+                navigateToPage('ideas');
               }}
               showToast={showToast}
             />
@@ -664,7 +753,7 @@ function App() {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <MeetingsPage onBack={() => setCurrentPage('ideas')} />
+          <MeetingsPage onBack={() => navigateToPage('ideas')} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -675,7 +764,7 @@ function App() {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <ProfileDashboard onBack={() => setCurrentPage('ideas')} context={context} />
+          <ProfileDashboard onBack={() => navigateToPage('ideas')} context={context} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -686,7 +775,7 @@ function App() {
     return (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <IntegrationsPage onBack={() => setCurrentPage('ideas')} />
+          <IntegrationsPage onBack={() => navigateToPage('ideas')} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -699,7 +788,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <AutomationDashboard
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -714,7 +803,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <NotificationsPage
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -729,7 +818,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <PersonalizationChat
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -744,7 +833,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <MediaGallery
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -759,7 +848,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <StoriesPage
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -774,7 +863,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <ExportDashboard
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -789,7 +878,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <SyncDashboard
             context={context}
-            onBack={() => setCurrentPage('ideas')}
+            onBack={() => navigateToPage('ideas')}
           />
         </Suspense>
         <ToastContainer />
@@ -805,8 +894,8 @@ function App() {
           <SettingsDashboard
             context={context}
             currentPage={currentPage}
-            onBack={() => setCurrentPage('ideas')}
-            onNavigate={(page) => setCurrentPage(page as Page)}
+            onBack={() => navigateToPage('ideas')}
+            onNavigate={(page) => navigateToPage(page as Page)}
           />
         </Suspense>
         <ToastContainer />
@@ -822,7 +911,7 @@ function App() {
           <header className="header">
             <div className="header-content">
               <div className="header-left">
-                <button type="button" className="back-button" onClick={() => setCurrentPage('ideas')}>
+                <button type="button" className="back-button" onClick={() => navigateToPage('ideas')}>
                   ← Zurück
                 </button>
                 <h1>📥 Archiv</h1>
@@ -848,7 +937,7 @@ function App() {
                     <button
                       type="button"
                       className="empty-state-cta"
-                      onClick={() => setCurrentPage('ideas')}
+                      onClick={() => navigateToPage('ideas')}
                     >
                       ← Zu deinen Gedanken
                     </button>
@@ -973,7 +1062,7 @@ function App() {
               <button
                 type="button"
                 className={`nav-button neuro-focus-ring ${currentPage === 'ideas' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('ideas')}
+                onClick={() => navigateToPage('ideas')}
                 title="Deine Gedanken"
                 aria-label="Gedanken: Deine Ideen und Notizen anzeigen"
                 aria-current={currentPage === 'ideas' ? 'page' : undefined}
@@ -985,7 +1074,7 @@ function App() {
               <button
                 type="button"
                 className={`nav-button neuro-focus-ring ${['insights', 'dashboard', 'analytics', 'digest', 'knowledge-graph'].includes(currentPage as string) ? 'active' : ''}`}
-                onClick={() => setCurrentPage('insights')}
+                onClick={() => navigateToPage('insights')}
                 title="Statistiken und Übersicht"
                 aria-label="Insights: Statistiken, Analytics und Wissensübersicht"
                 aria-current={['insights', 'dashboard', 'analytics', 'digest', 'knowledge-graph'].includes(currentPage as string) ? 'page' : undefined}
@@ -997,7 +1086,7 @@ function App() {
               <button
                 type="button"
                 className={`nav-button neuro-focus-ring ${(currentPage as Page) === 'archive' ? 'active' : ''} ${archivedCount > 0 ? 'has-items' : ''}`}
-                onClick={() => setCurrentPage('archive')}
+                onClick={() => navigateToPage('archive')}
                 title="Archivierte Gedanken"
                 aria-label={`Archiv: Archivierte Gedanken${archivedCount > 0 ? ` (${archivedCount} Einträge)` : ''}`}
                 aria-current={(currentPage as Page) === 'archive' ? 'page' : undefined}
@@ -1009,7 +1098,7 @@ function App() {
               <button
                 type="button"
                 className={`nav-button neuro-focus-ring ${(currentPage as Page) === 'settings' ? 'active' : ''}`}
-                onClick={() => setCurrentPage('settings')}
+                onClick={() => navigateToPage('settings')}
                 title="Einstellungen und Tools"
                 aria-label="Einstellungen: App-Konfiguration und KI-Tools"
                 aria-current={(currentPage as Page) === 'settings' ? 'page' : undefined}
@@ -1052,7 +1141,7 @@ function App() {
             {/* Mobile Navigation - Konsolidiert 2026 */}
             <MobileNav
               currentPage={currentPage}
-              onNavigate={(page) => setCurrentPage(page as Page)}
+              onNavigate={(page) => navigateToPage(page as Page)}
               archivedCount={archivedCount}
               navGroups={[
                 {
