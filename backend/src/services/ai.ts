@@ -6,7 +6,9 @@
  * 2. Ollama (if available locally) - Local fallback
  * 3. Basic fallback (no AI)
  *
- * Note: Embeddings use Ollama only (nomic-embed-text, 768 dimensions)
+ * Embeddings priority:
+ * 1. Ollama (nomic-embed-text, 768 dimensions) - Local, fast
+ * 2. OpenAI (text-embedding-3-small, 768 dimensions) - Cloud fallback
  *
  * @module services/ai
  */
@@ -15,6 +17,7 @@ import { logger } from '../utils/logger';
 import { isClaudeAvailable, structureWithClaude, structureWithClaudePersonalized, generateClaudeResponse } from './claude';
 import { structureWithOllama, generateEmbedding as generateOllamaEmbedding, StructuredIdea } from '../utils/ollama';
 import { AIContext } from '../utils/database-context';
+import OpenAI from 'openai';
 
 // ===========================================
 // Configuration Constants
@@ -34,7 +37,59 @@ const AI_CONFIG = {
   defaultPriority: 'medium' as const,
   /** Minimum word length for keyword extraction */
   minKeywordLength: 3,
+  /** OpenAI embedding model */
+  openaiEmbeddingModel: 'text-embedding-3-small' as const,
+  /** Embedding dimensions (matches Ollama nomic-embed-text) */
+  embeddingDimensions: 768,
 } as const;
+
+// ===========================================
+// OpenAI Client (lazy initialization)
+// ===========================================
+
+let openaiClient: OpenAI | null = null;
+
+/**
+ * Get or create OpenAI client instance
+ * Only initializes if OPENAI_API_KEY is configured
+ */
+function getOpenAIClient(): OpenAI | null {
+  if (openaiClient) return openaiClient;
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  openaiClient = new OpenAI({ apiKey });
+  return openaiClient;
+}
+
+/**
+ * Check if OpenAI is available
+ */
+function isOpenAIAvailable(): boolean {
+  return !!process.env.OPENAI_API_KEY;
+}
+
+/**
+ * Generate embedding using OpenAI text-embedding-3-small
+ * Returns 768-dimensional vector to match Ollama format
+ */
+async function generateOpenAIEmbedding(text: string): Promise<number[]> {
+  const client = getOpenAIClient();
+  if (!client) {
+    throw new Error('OpenAI client not available');
+  }
+
+  const response = await client.embeddings.create({
+    model: AI_CONFIG.openaiEmbeddingModel,
+    input: text,
+    dimensions: AI_CONFIG.embeddingDimensions,
+  });
+
+  return response.data[0].embedding;
+}
 
 // ===========================================
 // Helper Functions
@@ -198,8 +253,8 @@ export async function structureIdeaPersonalized(
 }
 
 /**
- * Generate embedding for text using Ollama (nomic-embed-text)
- * Returns 768-dimensional vector for pgvector storage
+ * Generate embedding for text
+ * Falls back through: Ollama → OpenAI → empty array
  *
  * @param text - The text to generate embedding for
  * @returns 768-dimensional embedding vector, or empty array on failure
@@ -210,17 +265,37 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     return [];
   }
 
+  // Try Ollama first (local, fast)
   try {
     logger.debug('Generating embedding with Ollama', { operation: 'generateEmbedding' });
     return await generateOllamaEmbedding(text);
   } catch (error: unknown) {
-    logger.warn('Ollama embedding failed, returning empty', {
+    logger.debug('Ollama embedding failed, trying OpenAI fallback', {
       error: getErrorMessage(error),
       operation: 'generateEmbedding'
     });
   }
 
+  // Try OpenAI as fallback (cloud)
+  if (isOpenAIAvailable()) {
+    try {
+      logger.debug('Generating embedding with OpenAI', { operation: 'generateEmbedding' });
+      const embedding = await generateOpenAIEmbedding(text);
+      logger.info('OpenAI embedding generated successfully', {
+        operation: 'generateEmbedding',
+        dimensions: embedding.length
+      });
+      return embedding;
+    } catch (error: unknown) {
+      logger.warn('OpenAI embedding failed', {
+        error: getErrorMessage(error),
+        operation: 'generateEmbedding'
+      });
+    }
+  }
+
   // Return empty embedding as final fallback
+  logger.warn('All embedding providers failed', { operation: 'generateEmbedding' });
   return [];
 }
 
