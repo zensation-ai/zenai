@@ -1,0 +1,226 @@
+/* ============================================
+   QUICK NAV - Kompakte Schnellzugriff-Leiste
+   Immer sichtbar unter dem Header
+   ============================================ */
+
+.quick-nav {
+  position: sticky;
+  top: 0;
+  z-index: 95;
+  padding: 8px 2rem;
+  padding-left: max(2rem, env(safe-area-inset-left, 0px) + 80px);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(248, 250, 252, 0.88) 100%
+  );
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(20, 50, 70, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.quick-nav-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.quick-nav-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================
+   Kacheln / Tiles
+   ============================================ */
+
+.quick-nav-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(20, 50, 70, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  color: #3a4d5a;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.quick-nav-tile:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(20, 50, 70, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.quick-nav-tile:active {
+  transform: translateY(0);
+  transition-duration: 0.08s;
+}
+
+.quick-nav-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.quick-nav-label {
+  letter-spacing: -0.01em;
+}
+
+.quick-nav-badge {
+  background: var(--primary, #ff6b35);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ============================================
+   Aktiver Zustand
+   ============================================ */
+
+.quick-nav-tile.active {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 140, 90, 0.12) 100%);
+  border-color: rgba(255, 107, 53, 0.35);
+  color: #1a2a38;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+}
+
+.quick-nav-tile.active:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.22) 0%, rgba(255, 140, 90, 0.18) 100%);
+  border-color: rgba(255, 107, 53, 0.45);
+}
+
+/* ============================================
+   Farb-Varianten
+   ============================================ */
+
+.quick-nav-tile.color-primary.active {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 140, 90, 0.12) 100%);
+  border-color: rgba(255, 107, 53, 0.4);
+}
+
+.quick-nav-tile.color-blue.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.12) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.quick-nav-tile.color-purple.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(167, 139, 250, 0.12) 100%);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.quick-nav-tile.color-gray.active {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.15) 0%, rgba(148, 163, 184, 0.12) 100%);
+  border-color: rgba(100, 116, 139, 0.4);
+}
+
+.quick-nav-tile.color-green.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(52, 211, 153, 0.12) 100%);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.quick-nav-tile.color-cyan.active {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(34, 211, 238, 0.12) 100%);
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.quick-nav-tile.color-coral.active {
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.15) 0%, rgba(251, 146, 194, 0.12) 100%);
+  border-color: rgba(244, 114, 182, 0.4);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .quick-nav {
+    top: 52px;
+    padding: 6px 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  }
+
+  .quick-nav-tile {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .quick-nav-icon {
+    font-size: 0.9rem;
+  }
+
+  .quick-nav-label {
+    display: none;
+  }
+
+  /* Auf Mobile nur Icons zeigen, aber Labels für aktive */
+  .quick-nav-tile.active .quick-nav-label {
+    display: inline;
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-nav-content {
+    gap: 6px;
+  }
+
+  .quick-nav-tile {
+    padding: 4px 8px;
+  }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-nav-tile {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .quick-nav {
+    background: linear-gradient(
+      180deg,
+      rgba(20, 34, 48, 0.95) 0%,
+      rgba(15, 29, 42, 0.92) 100%
+    );
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .quick-nav-tile {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #d0e0ea;
+  }
+
+  .quick-nav-tile:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .quick-nav-tile.active {
+    color: #ffffff;
+  }
+}

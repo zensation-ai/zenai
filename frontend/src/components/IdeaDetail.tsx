@@ -331,7 +331,10 @@ Details: ${idea.summary}`,
 
   return (
     <div className="idea-detail-overlay" onClick={onClose}>
-      <div className="idea-detail-modal liquid-glass neuro-human-fade-in" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="idea-detail-modal liquid-glass neuro-human-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           className="close-button neuro-press-effect neuro-focus-ring"
@@ -341,6 +344,7 @@ Details: ${idea.summary}`,
           ×
         </button>
 
+        <div className="idea-detail-content">
         <div className="detail-header">
           <span className="detail-type-icon">{typeInfo.icon}</span>
           <div className="detail-type-info">
@@ -699,6 +703,7 @@ Details: ${idea.summary}`,
             <span className="detail-date">Aktualisiert: {formatDate(idea.updated_at)}</span>
           )}
         </div>
+        </div>{/* End of idea-detail-content */}
       </div>
     </div>
   );

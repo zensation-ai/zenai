@@ -23,6 +23,7 @@ import { GeneralChat } from './components/GeneralChat';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { MobileNav } from './components/MobileNav';
 import { ThemeToggle } from './components/ThemeToggle';
+import { QuickNav } from './components/QuickNav';
 // Breadcrumbs are integrated via PageHeader in dashboard components
 import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { CommandPalette, useCommandPalette } from './components/CommandPalette';
@@ -651,6 +652,7 @@ function App() {
   if (currentPage === 'insights') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <InsightsDashboard
             context={context}
@@ -685,6 +687,7 @@ function App() {
   if (currentPage === 'ai-workshop') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <AIWorkshop
             context={context}
@@ -714,6 +717,7 @@ function App() {
   if (currentPage === 'learning' || currentPage === 'learning-tasks') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <LearningDashboard
             context={context}
@@ -752,6 +756,7 @@ function App() {
   if (currentPage === 'meetings') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <MeetingsPage onBack={() => navigateToPage('ideas')} />
         </Suspense>
@@ -763,6 +768,7 @@ function App() {
   if (currentPage === 'profile') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <ProfileDashboard onBack={() => navigateToPage('ideas')} context={context} />
         </Suspense>
@@ -815,6 +821,7 @@ function App() {
   if (currentPage === 'personalization') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <PersonalizationChat
             context={context}
@@ -890,6 +897,7 @@ function App() {
   if (currentPage === 'settings') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <SettingsDashboard
             context={context}
@@ -907,6 +915,7 @@ function App() {
     return (
       <ErrorBoundary>
         <NeuroFeedbackProvider>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <div className="app archive-page">
           <header className="header">
             <div className="header-content">
@@ -997,7 +1006,7 @@ function App() {
         <div className="particle particle-5" />
       </div>
 
-      <header className="header liquid-glass-nav" role="banner">
+      <header className="header" role="banner">
         <div className="header-content">
           <div className="header-left">
             <div className="header-logo-container">
@@ -1180,6 +1189,13 @@ function App() {
           </div>
         </div>
       </header>
+
+      {/* QuickNav - Schnellzugriff-Kacheln unter dem Header */}
+      <QuickNav
+        currentPage={currentPage}
+        onNavigate={(page) => navigateToPage(page as Page)}
+        archivedCount={archivedCount}
+      />
 
       {/* Hero Section with Prominent AI Brain - Neuro-optimiert 2026 */}
       {/* CLS-Fix: Während des Ladens compact zeigen, um Layout-Shift zu vermeiden */}

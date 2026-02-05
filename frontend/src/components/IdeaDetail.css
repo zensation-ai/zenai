@@ -48,12 +48,22 @@
   border-radius: var(--radius-xl);
   max-width: 700px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
   position: relative;
   box-shadow: var(--shadow-glass), 0 25px 50px rgba(20, 50, 70, 0.15);
   padding: 32px;
+  padding-right: 16px; /* Less padding on right for scrollbar */
   animation: modalSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden; /* Hide overflow on modal itself */
+}
+
+.idea-detail-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 16px; /* Space for scrollbar */
+  min-height: 0; /* Important for flex scroll */
 }
 
 /* Modal slide-in animation */
