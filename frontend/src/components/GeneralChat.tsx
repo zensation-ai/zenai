@@ -22,6 +22,7 @@ import { VoiceInput } from './VoiceInput';
 import { ArtifactPanel, ArtifactButton } from './ArtifactPanel';
 import { extractArtifacts, type Artifact } from '../types/artifacts';
 import './GeneralChat.css';
+import { logError } from '../utils/errors';
 
 interface ChatMessage {
   id: string;
@@ -120,7 +121,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
-      console.error('Failed to load session:', err);
+      logError('GeneralChat:loadSession', err);
     }
   };
 

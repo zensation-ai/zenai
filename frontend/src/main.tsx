@@ -8,6 +8,7 @@ import { safeLocalStorage } from './utils/storage';
 import { ConfirmProvider } from './components/ConfirmDialog';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeNative } from './utils/native';
+import { logError } from './utils/errors';
 
 // API configuration from environment
 const ENV_API_KEY = import.meta.env.VITE_API_KEY;
@@ -40,7 +41,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('[PWA] Service Worker registered:', registration.scope);
+        
 
         // Check for updates
         registration.addEventListener('updatefound', () => {
@@ -49,14 +50,14 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // New content available, show update notification
-                console.log('[PWA] New content available, refresh to update');
+                
               }
             });
           }
         });
       })
       .catch((error) => {
-        console.error('[PWA] Service Worker registration failed:', error);
+        logError('PWA:serviceWorkerRegistration', error);
       });
   });
 }

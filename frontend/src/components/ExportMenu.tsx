@@ -3,6 +3,7 @@ import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { useDropdownClose } from '../hooks/useClickOutside';
+import { logError } from '../utils/errors';
 
 interface ExportMenuProps {
   context: AIContext;
@@ -161,7 +162,7 @@ export function ExportMenu({ context, ideasCount }: ExportMenuProps) {
       showToast(`Export als ${option.label} erfolgreich!`, 'success');
       setIsOpen(false);
     } catch (error) {
-      console.error('Export failed:', error);
+      logError('ExportMenu:exportData', error);
       showToast('Export fehlgeschlagen', 'error');
     } finally {
       setIsExporting(false);

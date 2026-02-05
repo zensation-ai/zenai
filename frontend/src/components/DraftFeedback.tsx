@@ -10,6 +10,7 @@ import axios from 'axios';
 import { showToast } from './Toast';
 import { useContextState } from './ContextSwitcher';
 import './DraftFeedback.css';
+import { logError } from '../utils/errors';
 
 // ===========================================
 // Types
@@ -51,7 +52,7 @@ export function QuickFeedback({ draftId, onFeedbackSubmitted }: { draftId: strin
       showToast(isPositive ? 'Danke für das Feedback!' : 'Danke, wir verbessern uns!', 'success');
       onFeedbackSubmitted?.();
     } catch (error) {
-      console.error('Failed to submit quick feedback:', error);
+      logError('DraftFeedback:submitQuickFeedback', error);
       showToast('Feedback konnte nicht gesendet werden', 'error');
     } finally {
       setSubmitting(false);
@@ -325,7 +326,7 @@ export function DraftFeedbackForm({
       showToast('Vielen Dank für dein Feedback!', 'success');
       onFeedbackSubmitted?.();
     } catch (error) {
-      console.error('Failed to submit feedback:', error);
+      logError('DraftFeedback:submitFeedback', error);
       showToast('Feedback konnte nicht gesendet werden', 'error');
     } finally {
       setSubmitting(false);
@@ -515,7 +516,7 @@ export function FeedbackPrompt({
       onFeedbackSubmitted?.();
       onDismiss();
     } catch (error) {
-      console.error('Failed to submit rating:', error);
+      logError('DraftFeedback:submitRating', error);
       showToast('Feedback konnte nicht gesendet werden', 'error');
     } finally {
       setSubmitting(false);

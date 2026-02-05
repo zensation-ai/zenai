@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './ProactiveDashboard.css';
+import { logError } from '../utils/errors';
 
 interface Suggestion {
   id: string;
@@ -68,7 +69,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
 
-      console.error('Failed to load proactive data:', err);
+      logError('ProactiveDashboard:loadData', err);
       // Set defaults
       setSuggestions([]);
       setRoutines([]);
@@ -105,7 +106,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       );
       showToast('Vorschlag angenommen!', 'success');
     } catch (err) {
-      console.error('Failed to accept suggestion:', err);
+      logError('ProactiveDashboard:acceptSuggestion', err);
       showToast('Fehler beim Annehmen', 'error');
     }
   };
@@ -118,7 +119,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       );
       showToast('Vorschlag abgelehnt', 'info');
     } catch (err) {
-      console.error('Failed to dismiss suggestion:', err);
+      logError('ProactiveDashboard:dismissSuggestion', err);
       showToast('Fehler beim Ablehnen', 'error');
     }
   };
@@ -131,7 +132,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       );
       showToast(enabled ? 'Routine aktiviert' : 'Routine deaktiviert', 'success');
     } catch (err) {
-      console.error('Failed to toggle routine:', err);
+      logError('ProactiveDashboard:toggleRoutine', err);
       showToast('Fehler beim Aktualisieren', 'error');
     }
   };
@@ -141,7 +142,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       await axios.put(`/api/settings?context=${context}`, settings);
       showToast('Einstellungen gespeichert!', 'success');
     } catch (err) {
-      console.error('Failed to save settings:', err);
+      logError('ProactiveDashboard:saveSettings', err);
       showToast('Fehler beim Speichern', 'error');
     }
   };

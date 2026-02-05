@@ -3,6 +3,7 @@ import axios from 'axios';
 import { showToast } from './Toast';
 import './MediaGallery.css';
 import '../neurodesign.css';
+import { logError } from '../utils/errors';
 
 interface MediaItem {
   id: string;
@@ -40,7 +41,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       const res = await axios.get('/api/all-media');
       setMedia(res.data.media || []);
     } catch (err) {
-      console.error('Failed to load media:', err);
+      logError('MediaGallery:loadMedia', err);
       showToast('Hmm, deine Medien konnten nicht geladen werden. Prüf deine Verbindung und versuch es noch mal.', 'error');
     } finally {
       setLoading(false);

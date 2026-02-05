@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './LearningTasksDashboard.css';
+import { logError } from '../utils/errors';
 
 interface LearningTask {
   id: string;
@@ -115,7 +116,7 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
-      console.error('Failed to load learning data:', err);
+      logError('LearningTasksDashboard:loadData', err);
       showToast('Lernziele konnten nicht geladen werden', 'error');
     } finally {
       setLoading(false);
@@ -230,7 +231,7 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
       await axios.post(`/api/${context}/learning-insights/${insightId}/acknowledge`);
       setInsights(prev => prev.filter(i => i.id !== insightId));
     } catch (err) {
-      console.error('Failed to acknowledge insight:', err);
+      logError('LearningTasksDashboard:acknowledgeInsight', err);
       showToast('Einsicht konnte nicht bestätigt werden', 'error');
     }
   };

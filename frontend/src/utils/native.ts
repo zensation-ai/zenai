@@ -8,6 +8,7 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { Keyboard } from '@capacitor/keyboard';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { logError } from './errors';
 
 /**
  * Check if running on native platform (iOS/Android)
@@ -200,6 +201,6 @@ export const initializeNative = async () => {
 
     console.log(`Running on ${Capacitor.getPlatform()} platform`);
   } catch (error) {
-    console.error('Failed to initialize native features:', error);
+    logError('native:initializeNativeFeatures', error);
   }
 };

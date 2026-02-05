@@ -5,6 +5,7 @@ import { useConfirm } from './ConfirmDialog';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './LearningDashboard.css';
+import { logError } from '../utils/errors';
 
 interface LearningDashboardProps {
   context: string;
@@ -137,7 +138,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
     } catch (error) {
       // Don't update state if request was aborted
       if (axios.isCancel(error)) return;
-      console.error('Failed to load learning dashboard:', error);
+      logError('LearningDashboard:loadData', error);
       showToast('Dashboard konnte nicht geladen werden', 'error');
     } finally {
       setLoading(false);
@@ -230,7 +231,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
       await axios.put(`/api/${context}/research/${id}/viewed`);
       handleReload();
     } catch (error) {
-      console.error('Failed to mark as viewed:', error);
+      logError('LearningDashboard:markAsViewed', error);
       showToast('Aktion fehlgeschlagen', 'error');
     }
   };

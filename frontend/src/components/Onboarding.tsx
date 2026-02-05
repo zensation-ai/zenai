@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { AI_PERSONALITY, AI_AVATAR, getTimeBasedGreeting } from '../utils/aiPersonality';
 import './Onboarding.css';
 import '../neurodesign.css';
+import { logError } from '../utils/errors';
 
 interface OnboardingProps {
   context: string;
@@ -115,7 +116,7 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
       onComplete();
     } catch (error) {
       // Even if everything fails, complete onboarding
-      console.error('Onboarding error:', error);
+      logError('Onboarding:handleError', error);
       onComplete();
     } finally {
       setSaving(false);

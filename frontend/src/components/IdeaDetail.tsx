@@ -253,7 +253,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
       }
     } catch (error) {
       if (!axios.isCancel(error)) {
-        console.error('Failed to analyze relations:', error);
+        logError('IdeaDetail:analyzeRelations', error);
         showToast('Die Analyse hat gerade nicht geklappt. Versuch es gleich noch mal.', 'error');
       }
     } finally {
@@ -318,7 +318,7 @@ Details: ${idea.summary}`,
       }
     } catch (error) {
       if (!axios.isCancel(error)) {
-        console.error('Research failed:', error);
+        logError('IdeaDetail:research', error);
         showToast('Die Recherche hat nicht geklappt. Versuch es noch mal.', 'error');
       }
     } finally {

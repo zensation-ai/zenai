@@ -64,7 +64,7 @@
 }
 
 .recording-icon {
-  color: var(--error-color, #ef4444);
+  color: var(--danger);
   animation: pulse-recording 1s ease-in-out infinite;
 }
 
@@ -82,7 +82,7 @@
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--error-color, #ef4444);
+  color: var(--danger);
   min-width: 2.5rem;
   text-align: center;
 }
@@ -158,7 +158,7 @@
 
 /* Accessibility: Focus styles */
 .voice-input-btn:focus-visible {
-  outline: 2px solid var(--focus-color, #3b82f6);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 

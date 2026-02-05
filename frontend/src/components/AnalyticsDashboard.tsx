@@ -3,6 +3,7 @@ import { useParallelAsyncData } from '../hooks/useAsyncData';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './AnalyticsDashboard.css';
+import { logError } from '../utils/errors';
 
 interface AnalyticsDashboardProps {
   context: string;
@@ -105,7 +106,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
 
   // Log any errors (optional - for debugging)
   if (errors.some(e => e !== null)) {
-    console.error('Failed to load some analytics:', errors.filter(e => e !== null));
+    logError('AnalyticsDashboard:loadAnalytics', new Error(`Failed to load some analytics: ${errors.filter(e => e !== null).length} errors`));
   }
 
   const getScoreColor = (score: number) => {

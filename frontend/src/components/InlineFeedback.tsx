@@ -11,6 +11,7 @@ import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './InlineFeedback.css';
+import { logError } from '../utils/errors';
 
 interface InlineFeedbackProps {
   ideaId: string;
@@ -84,7 +85,7 @@ export function InlineFeedback({
         isPositive ? 'success' : 'info'
       );
     } catch (error) {
-      console.error('Failed to submit feedback:', error);
+      logError('InlineFeedback:submitFeedback', error);
       showToast('Feedback konnte nicht gesendet werden', 'error');
     }
   }, [context, ideaId]);
@@ -118,7 +119,7 @@ export function InlineFeedback({
       }
     } catch (error) {
       showToast('Korrektur fehlgeschlagen', 'error');
-      console.error('Failed to submit correction:', error);
+      logError('InlineFeedback:submitCorrection', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -320,7 +321,7 @@ export function FeedbackIndicator({
       setGiven(isPositive);
       onFeedback?.(isPositive);
     } catch (error) {
-      console.error('Feedback failed:', error);
+      logError('InlineFeedback:feedbackFailed', error);
       showToast('Feedback konnte nicht gesendet werden', 'error');
     }
   };

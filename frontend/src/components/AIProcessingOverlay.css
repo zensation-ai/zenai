@@ -212,11 +212,11 @@
   }
 
   .ai-overlay-message {
-    color: #f1f5f9;
+    color: var(--text);
   }
 
   .ai-overlay-progress-text {
-    color: #f1f5f9;
+    color: var(--text);
   }
 
   .ai-overlay-step {
@@ -224,7 +224,7 @@
   }
 
   .ai-overlay-step.completed {
-    color: #34d399;
+    color: var(--success);
   }
 
   .ai-overlay-name {

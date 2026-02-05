@@ -27,6 +27,7 @@ import {
 } from '../utils/aiPersonality';
 import './IncubatorPage.css';
 import '../neurodesign.css';
+import { logError } from '../utils/errors';
 
 interface LooseThought {
   id: string;
@@ -145,7 +146,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         setStats(statsRes.data);
       }
     } catch (error) {
-      console.error('Failed to load incubator data:', error);
+      logError('IncubatorPage:loadData', error);
       if (isMountedRef.current) {
         showToast('Inkubator konnte nicht geladen werden', 'error');
       }
@@ -219,7 +220,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         }, 500);
       }
     } catch (error) {
-      console.error('Failed to submit thought:', error);
+      logError('IncubatorPage:submitThought', error);
       if (isMountedRef.current) {
         showToast('Gedanke konnte nicht gespeichert werden', 'error');
       }
@@ -245,7 +246,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         showToast('Zusammenfassung erstellt', 'success');
       }
     } catch (error) {
-      console.error('Failed to generate summary:', error);
+      logError('IncubatorPage:generateSummary', error);
       if (isMountedRef.current) {
         showToast('Zusammenfassung fehlgeschlagen', 'error');
       }
@@ -273,7 +274,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         }
       }
     } catch (error) {
-      console.error('Failed to consolidate cluster:', error);
+      logError('IncubatorPage:consolidateCluster', error);
       if (isMountedRef.current) {
         showToast('Konsolidierung fehlgeschlagen', 'error');
       }
@@ -292,7 +293,7 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         loadData();
       }
     } catch (error) {
-      console.error('Failed to dismiss cluster:', error);
+      logError('IncubatorPage:dismissCluster', error);
       if (isMountedRef.current) {
         showToast('Verwerfen fehlgeschlagen', 'error');
       }

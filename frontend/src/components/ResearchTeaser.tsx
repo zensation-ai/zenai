@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './ResearchTeaser.css';
+import { logError } from '../utils/errors';
 
 interface ResearchTeaserProps {
   research: {
@@ -38,7 +39,7 @@ export function ResearchTeaser({ research, context, onDismiss }: ResearchTeaserP
         // Mark as viewed
         await axios.put(`/api/${context}/research/${research.id}/viewed`);
       } catch (error) {
-        console.error('Failed to load research:', error);
+        logError('ResearchTeaser:loadResearch', error);
         showToast('Recherche konnte nicht geladen werden', 'error');
       } finally {
         setLoading(false);
@@ -53,7 +54,7 @@ export function ResearchTeaser({ research, context, onDismiss }: ResearchTeaserP
       await axios.put(`/api/${context}/research/${research.id}/dismiss`);
       onDismiss?.();
     } catch (error) {
-      console.error('Failed to dismiss research:', error);
+      logError('ResearchTeaser:dismissResearch', error);
       showToast('Recherche konnte nicht verworfen werden', 'error');
     }
   };

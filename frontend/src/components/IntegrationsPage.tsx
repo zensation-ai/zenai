@@ -9,6 +9,7 @@ import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
 import { getRandomReward } from '../utils/aiPersonality';
 import '../neurodesign.css';
+import { logError } from '../utils/errors';
 
 // Type-safe error extraction
 interface ApiError {
@@ -124,14 +125,14 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
         );
 
         if (!isAllowedDomain) {
-          console.error('OAuth URL domain not in whitelist:', url.hostname);
+          logError('IntegrationsPage:oauthDomainCheck', new Error(`OAuth URL domain not in whitelist: ${url.hostname}`));
           setError(`Sicherheitsfehler: Ungültige OAuth-URL für ${provider}`);
           return;
         }
 
         window.location.href = authUrl;
       } catch {
-        console.error('Invalid OAuth URL received:', authUrl);
+        logError('IntegrationsPage:invalidOAuthUrl', new Error(`Invalid OAuth URL received: ${authUrl}`));
         setError(`Ungültige OAuth-URL für ${provider}`);
       }
     } catch (err: unknown) {

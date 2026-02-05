@@ -5,6 +5,7 @@ import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
 import '../neurodesign.css';
 import './RecordButton.css';
+import { logError } from '../utils/errors';
 
 interface RecordButtonProps {
   onTranscript: (transcript: string) => void;
@@ -107,7 +108,7 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
         setDuration((d) => d + 1);
       }, 1000);
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      logError('RecordButton:startRecording', error);
       showToast('Mikrofon-Zugriff verweigert. Bitte erlaube den Zugriff in den Einstellungen.', 'error');
     }
   };
@@ -161,7 +162,7 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
         });
       }
     } catch (error: unknown) {
-      console.error('Processing error:', error);
+      logError('RecordButton:processRecording', error);
       const errorMessage = getErrorMessage(error, 'Unbekannter Fehler');
       if (isMountedRef.current) {
         showToast(`Verarbeitung fehlgeschlagen: ${errorMessage}`, 'error');

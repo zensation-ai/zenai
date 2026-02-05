@@ -10,6 +10,7 @@ import {
 } from '../utils/aiPersonality';
 import './PersonalizationChat.css';
 import '../neurodesign.css';
+import { logError } from '../utils/errors';
 
 interface ChatMessage {
   id: string;
@@ -99,7 +100,7 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
-      console.error('Failed to load personalization data:', err);
+      logError('PersonalizationChat:loadData', err);
     } finally {
       setLoading(false);
     }

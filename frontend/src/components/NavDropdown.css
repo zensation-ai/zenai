@@ -55,7 +55,7 @@
 
 .nav-dropdown-trigger:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  color: var(--header-text);
   transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.15);
 }
@@ -79,13 +79,13 @@
 
 .nav-dropdown-trigger.has-active {
   background: rgba(255, 107, 53, 0.2);
-  color: #ffb08a;
+  color: var(--primary-lighter);
   border-color: rgba(255, 107, 53, 0.4);
 }
 
 [data-context="work"] .nav-dropdown-trigger.has-active {
   background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  color: var(--info);
   border-color: rgba(59, 130, 246, 0.3);
 }
 
@@ -281,21 +281,21 @@
 .cognitive-bar:nth-child(5) { height: 14px; }
 
 .cognitive-bar.active {
-  background: #f59e0b;
+  background: var(--warning);
 }
 
 .cognitive-low .cognitive-bar.active {
-  background: #10b981;
+  background: var(--success);
 }
 
 .cognitive-high .cognitive-bar.active {
-  background: #ef4444;
+  background: var(--danger);
 }
 
 .cognitive-label {
   font-size: 0.65rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 /* ===========================================
@@ -318,7 +318,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* ===========================================
@@ -335,7 +335,7 @@
   border: none;
   border-radius: 10px;
   background: transparent;
-  color: #4a6577;
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.85rem;
   text-align: left;
@@ -362,7 +362,7 @@
 
 .nav-dropdown-item:hover {
   background: rgba(255, 107, 53, 0.08);
-  color: #1a2e3d;
+  color: var(--text);
   transform: translateX(2px);
 }
 
@@ -376,13 +376,13 @@
 
 .nav-dropdown-item.active {
   background: rgba(255, 107, 53, 0.12);
-  color: #ff6b35;
+  color: var(--primary);
   font-weight: 600;
 }
 
 [data-context="work"] .nav-dropdown-item.active {
   background: rgba(59, 130, 246, 0.12);
-  color: #3b82f6;
+  color: var(--info);
 }
 
 /* Item Icon */
@@ -415,7 +415,7 @@
 
 .item-description {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin-top: 2px;
   animation: descriptionFadeIn 0.2s ease;
 }
@@ -436,12 +436,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff6b35;
+  color: var(--primary);
   animation: checkmarkPop 0.3s var(--dropdown-easing-bounce);
 }
 
 [data-context="work"] .item-active-indicator {
-  color: #3b82f6;
+  color: var(--info);
 }
 
 @keyframes checkmarkPop {
@@ -549,11 +549,11 @@
   }
 
   .nav-dropdown-item {
-    color: #c8d4de;
+    color: var(--text-muted);
   }
 
   .nav-dropdown-item:hover {
-    color: #f8fafc;
+    color: var(--text);
   }
 
   .menu-cognitive-indicator {
@@ -565,7 +565,7 @@
   }
 
   .cognitive-label {
-    color: #94a3b8;
+    color: var(--text-muted);
   }
 
   .menu-group + .menu-group {
@@ -573,6 +573,6 @@
   }
 
   .menu-group-title {
-    color: #64748b;
+    color: var(--text-secondary);
   }
 }

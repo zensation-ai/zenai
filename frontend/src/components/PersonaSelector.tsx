@@ -3,6 +3,7 @@ import axios from 'axios';
 import type { AIContext } from './ContextSwitcher';
 import { safeLocalStorage } from '../utils/storage';
 import { showToast } from './Toast';
+import { logError } from '../utils/errors';
 
 export interface Persona {
   id: string;
@@ -57,7 +58,7 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
         if (axios.isCancel(error)) return;
         if (!isMounted) return;
 
-        console.error('Failed to load personas:', error);
+        logError('PersonaSelector:loadPersonas', error);
         showToast('Personas konnten nicht geladen werden', 'error');
         setPersonas([]);
       } finally {

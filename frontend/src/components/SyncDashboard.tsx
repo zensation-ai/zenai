@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './SyncDashboard.css';
+import { logError } from '../utils/errors';
 
 interface Device {
   id: string;
@@ -53,7 +54,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
-      console.error('Failed to load sync status:', err);
+      logError('SyncDashboard:fetchSyncStatus', err);
       // Set default status if API not available
       setSyncStatus({
         last_sync: new Date().toISOString(),
@@ -73,7 +74,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
-      console.error('Failed to load pending changes:', err);
+      logError('SyncDashboard:fetchPendingChanges', err);
       setPendingChanges([]);
     }
   }, [context]);
@@ -125,7 +126,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
       handleReloadStatus();
       handleReloadChanges();
     } catch (err) {
-      console.error('Sync failed:', err);
+      logError('SyncDashboard:triggerSync', err);
       showToast('Sync fehlgeschlagen', 'error');
     } finally {
       setSyncing(false);
@@ -138,7 +139,7 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
       showToast('Gerät entfernt', 'success');
       handleReloadStatus();
     } catch (err) {
-      console.error('Failed to remove device:', err);
+      logError('SyncDashboard:removeDevice', err);
       showToast('Fehler beim Entfernen', 'error');
     }
   };

@@ -26,6 +26,23 @@ interface TriageIdea {
   rawTranscript?: string;
 }
 
+/** API response idea structure (snake_case from backend) */
+interface ApiIdea {
+  id: string;
+  title: string;
+  type?: string;
+  category?: string;
+  priority?: 'low' | 'medium' | 'high';
+  summary?: string;
+  nextSteps?: string[];
+  next_steps?: string[];
+  keywords?: string[];
+  createdAt?: string;
+  created_at?: string;
+  rawTranscript?: string;
+  raw_transcript?: string;
+}
+
 interface InboxTriageProps {
   context: AIContext;
   apiBase: string;
@@ -157,7 +174,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
       const data = response.data;
 
       if (data.success && data.ideas) {
-        const transformedIdeas: TriageIdea[] = data.ideas.map((idea: any) => ({
+        const transformedIdeas: TriageIdea[] = data.ideas.map((idea: ApiIdea) => ({
           id: idea.id,
           title: idea.title,
           type: idea.type || 'note',

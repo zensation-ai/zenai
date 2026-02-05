@@ -22,6 +22,7 @@ import {
 } from '../utils/aiPersonality';
 import { PageHeader } from './PageHeader';
 import './ChatPage.css';
+import { logError } from '../utils/errors';
 
 interface ChatMessage {
   id: string;
@@ -132,7 +133,7 @@ export function ChatPage({ context, onBack }: ChatPageProps) {
       }
     } catch (err) {
       if (axios.isCancel(err)) return;
-      console.error('Failed to load sessions:', err);
+      logError('ChatPage:loadSessions', err);
       showToast('Chat-Sitzungen konnten nicht geladen werden', 'error');
     } finally {
       setLoadingSessions(false);

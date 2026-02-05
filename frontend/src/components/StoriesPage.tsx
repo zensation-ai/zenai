@@ -3,6 +3,7 @@ import axios from 'axios';
 import { showToast } from './Toast';
 import './StoriesPage.css';
 import '../neurodesign.css';
+import { logError } from '../utils/errors';
 
 interface StoryItem {
   id: string;
@@ -42,7 +43,7 @@ export function StoriesPage({ onBack, context }: StoriesPageProps) {
       const res = await axios.get(`/api/${context}/stories`);
       setStories(res.data.stories || []);
     } catch (err) {
-      console.error('Failed to load stories:', err);
+      logError('StoriesPage:loadStories', err);
       showToast('Hmm, deine Stories konnten gerade nicht geladen werden. Versuch es gleich noch mal.', 'error');
       setStories([]);
     } finally {

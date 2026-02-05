@@ -5,6 +5,7 @@ import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import { PageHeader } from './PageHeader';
 import '../neurodesign.css';
 import './DashboardHome.css';
+import { logError } from '../utils/errors';
 
 interface DashboardStats {
   today: number;
@@ -29,6 +30,18 @@ interface RecentIdea {
   priority: string;
   summary: string;
   createdAt: string;
+}
+
+/** API response idea structure (snake_case from backend) */
+interface ApiIdea {
+  id: string;
+  title: string;
+  type?: string;
+  category?: string;
+  priority?: string;
+  summary?: string;
+  createdAt?: string;
+  created_at?: string;
 }
 
 interface DashboardHomeProps {
@@ -111,7 +124,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
       // Process recent ideas (axios returns data in .data)
       if (ideasRes.data?.ideas) {
         setRecentIdeas(
-          ideasRes.data.ideas.map((idea: any) => ({
+          ideasRes.data.ideas.map((idea: ApiIdea) => ({
             id: idea.id,
             title: idea.title,
             type: idea.type || 'note',
@@ -123,7 +136,7 @@ const DashboardHomeComponent: React.FC<DashboardHomeProps> = ({
         );
       }
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+      logError('DashboardHome:fetchDashboardData', err);
       showToast('Hmm, ich konnte die Daten gerade nicht laden. Versuch es gleich noch mal.', 'error');
     } finally {
       setIsLoading(false);

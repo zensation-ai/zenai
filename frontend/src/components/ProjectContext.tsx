@@ -10,6 +10,7 @@
 import { useState, useCallback } from 'react';
 import { showToast } from './Toast';
 import './ProjectContext.css';
+import { logError } from '../utils/errors';
 
 interface ProjectInfo {
   name: string;
@@ -102,7 +103,7 @@ export function ProjectContext({
         return;
       }
 
-      console.error('Project analysis failed:', error);
+      logError('ProjectContext:analyzeProject', error);
       showToast(
         `Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
         'error'
