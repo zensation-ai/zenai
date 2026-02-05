@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, memo, ReactNode } from 'react';
+import { AIContext } from './ContextSwitcher';
 import { TEXT_PROCESSING_STEPS } from '../utils/aiSteps';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import { MAX_TEXT_INPUT_CHARS, CHAR_WARNING_THRESHOLD } from '../constants';
@@ -8,7 +9,7 @@ import './CommandCenter.css';
 export type InputMode = 'voice' | 'chat';
 
 interface CommandCenterProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   isAIActive: boolean;
   currentStepIndex: number | null;
   textValue: string;

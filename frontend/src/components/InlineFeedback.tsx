@@ -7,13 +7,14 @@
  */
 
 import { useState, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import './InlineFeedback.css';
 
 interface InlineFeedbackProps {
   ideaId: string;
-  context: 'personal' | 'work';
+  context: AIContext;
   currentValues: {
     type?: string;
     category?: string;
@@ -302,7 +303,7 @@ export function FeedbackIndicator({
   onFeedback,
 }: {
   ideaId: string;
-  context: 'personal' | 'work';
+  context: AIContext;
   onFeedback?: (isPositive: boolean) => void;
 }) {
   const [given, setGiven] = useState<boolean | null>(null);

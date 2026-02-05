@@ -443,10 +443,10 @@
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 10px;
-  animation: badgePulse 2s ease-in-out infinite;
+  animation: badgeFade 2s ease-in-out infinite;
 }
 
-@keyframes badgePulse {
+@keyframes badgeFade {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }

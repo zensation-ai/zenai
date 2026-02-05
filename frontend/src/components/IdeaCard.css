@@ -306,23 +306,23 @@
 }
 
 .category-business {
-  background: rgba(52, 199, 89, 0.12);
-  color: #248a3d;
+  background: var(--success-glow);
+  color: var(--success);
 }
 
 .category-technical {
-  background: rgba(0, 122, 255, 0.12);
-  color: #0055d4;
+  background: var(--info-glow);
+  color: var(--info);
 }
 
 .category-personal {
-  background: rgba(175, 82, 222, 0.12);
-  color: #8944ab;
+  background: var(--accent-glow);
+  color: var(--accent);
 }
 
 .category-learning {
-  background: rgba(255, 149, 0, 0.12);
-  color: #c77700;
+  background: var(--warning-glow);
+  color: var(--warning);
 }
 
 /* Priority colors - Apple style */
@@ -332,17 +332,17 @@
 
 .priority-low {
   background: rgba(142, 142, 147, 0.12);
-  color: #636366;
+  color: var(--text-secondary);
 }
 
 .priority-medium {
-  background: rgba(255, 149, 0, 0.12);
-  color: #c77700;
+  background: var(--warning-glow);
+  color: var(--warning);
 }
 
 .priority-high {
-  background: rgba(255, 59, 48, 0.12);
-  color: #d70015;
+  background: var(--danger-glow);
+  color: var(--danger);
 }
 
 /* Deleting state */

@@ -16,7 +16,7 @@ import { IdeaDetail } from './components/IdeaDetail';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { useContextState } from './components/ContextSwitcher';
+import { useContextState, ContextSwitcher } from './components/ContextSwitcher';
 import { PersonaSelector, usePersonaState } from './components/PersonaSelector';
 import { ExportMenu } from './components/ExportMenu';
 import { GeneralChat } from './components/GeneralChat';
@@ -243,8 +243,8 @@ function App() {
     step: number;
   } | null>(null);
 
-  // Context state (personal/work) - setContext unused since context switching was removed
-  const [context] = useContextState();
+  // Context state (personal/work/learning/creative) with localStorage persistence
+  const [context, setContext] = useContextState();
 
   // Persona state (per context)
   const [selectedPersona, setSelectedPersona] = usePersonaState(context);
@@ -1137,6 +1137,10 @@ function App() {
               <kbd className="command-palette-trigger-shortcut">⌘K</kbd>
             </button>
             <ThemeToggle className="compact" />
+            <ContextSwitcher
+              context={context}
+              onContextChange={setContext}
+            />
             <PersonaSelector
               context={context}
               selectedPersona={selectedPersona}
@@ -1472,11 +1476,18 @@ function App() {
 
       {/* Detail Modal */}
       {selectedIdea && (
-        <IdeaDetail
-          idea={selectedIdea}
-          onClose={() => setSelectedIdea(null)}
-          onNavigate={navigateToIdea}
-        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="idea-detail-title"
+          aria-describedby="idea-detail-summary"
+        >
+          <IdeaDetail
+            idea={selectedIdea}
+            onClose={() => setSelectedIdea(null)}
+            onNavigate={navigateToIdea}
+          />
+        </div>
       )}
 
       {/* AI Processing Overlay - Shows transparent AI status */}

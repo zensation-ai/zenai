@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
@@ -40,7 +41,7 @@ export interface ChatSession {
 }
 
 interface GeneralChatProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   isCompact?: boolean;
 }
 

@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
@@ -40,7 +41,7 @@ interface ChatSession {
 }
 
 interface ChatPageProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   onBack: () => void;
 }
 

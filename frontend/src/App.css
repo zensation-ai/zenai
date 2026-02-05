@@ -2129,6 +2129,39 @@
   color: #60a5fa;
 }
 
+/* Learning context (amber accent) */
+[data-context="learning"] .context-option.active {
+  background: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+/* Creative context (purple accent) */
+[data-context="creative"] .context-option.active {
+  background: rgba(168, 85, 247, 0.3);
+  color: #a855f7;
+}
+
+/* Per-button context colors */
+.context-option.active[data-context="personal"] {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.context-option.active[data-context="work"] {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.context-option.active[data-context="learning"] {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.context-option.active[data-context="creative"] {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
 .context-icon {
   font-size: 1rem;
 }
@@ -2351,10 +2384,7 @@
   animation: badgePulse 2s ease-in-out infinite;
 }
 
-@keyframes badgePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
+/* badgePulse animation is defined in index.css */
 
 .nav-button.has-items {
   background: rgba(255, 107, 53, 0.15);

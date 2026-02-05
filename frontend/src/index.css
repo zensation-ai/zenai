@@ -44,8 +44,14 @@
   /* Semantic Colors */
   --success: #10b981;
   --success-glow: rgba(16, 185, 129, 0.25);
+  --info: #3b82f6;
+  --info-glow: rgba(59, 130, 246, 0.25);
   --warning: #f59e0b;
+  --warning-glow: rgba(245, 158, 11, 0.25);
   --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.25);
+  --accent: #a855f7;
+  --accent-glow: rgba(168, 85, 247, 0.25);
 
   /* Richer Background - Less white, more warmth and petrol tones */
   --background: #dce5eb;
@@ -921,6 +927,31 @@ select:focus-visible {
 
 .skip-link:focus {
   top: 0;
+}
+
+/* ============================================
+   Global Keyframe Animations
+   Centralized to avoid duplication across components
+   ============================================ */
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* Touch-friendly tap targets for mobile */

@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 import { getBreadcrumbs } from './Breadcrumbs';
@@ -28,7 +29,7 @@ const EvolutionDashboard = lazy(() => import('./EvolutionDashboard').then(m => (
 type WorkshopTab = 'incubator' | 'proactive' | 'evolution';
 
 interface AIWorkshopProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   onBack: () => void;
   onNavigate?: (page: string) => void;
   onIdeaCreated?: (ideaId: string) => void;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import { PageHeader } from './PageHeader';
@@ -31,7 +32,7 @@ interface RecentIdea {
 }
 
 interface DashboardHomeProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   apiBase: string;
   onNavigate: (page: string) => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;

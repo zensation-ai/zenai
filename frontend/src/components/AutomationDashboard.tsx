@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
@@ -6,7 +7,7 @@ import '../neurodesign.css';
 import './AutomationDashboard.css';
 
 interface AutomationDashboardProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   onBack: () => void;
 }
 

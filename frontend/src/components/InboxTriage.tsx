@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import {
@@ -26,7 +27,7 @@ interface TriageIdea {
 }
 
 interface InboxTriageProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   apiBase: string;
   onBack: () => void;
   onComplete: () => void;

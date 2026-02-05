@@ -202,10 +202,7 @@
   animation: badgePop var(--transition-base) ease-out, badgePulse 2.5s ease-in-out 0.3s infinite;
 }
 
-@keyframes badgePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
+/* badgePulse animation is defined in index.css */
 
 /* ============================================
    Active State

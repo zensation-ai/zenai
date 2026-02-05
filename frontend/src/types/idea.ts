@@ -76,4 +76,4 @@ export type Page =
   | 'learning-tasks'
   | 'triage';
 
-export type Context = 'personal' | 'work';
+export type Context = 'personal' | 'work' | 'learning' | 'creative';

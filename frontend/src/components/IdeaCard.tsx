@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
@@ -31,7 +32,7 @@ interface IdeaCardProps {
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
   isArchived?: boolean;
-  context?: 'personal' | 'work';
+  context?: AIContext;
 }
 
 function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = false, context = 'personal' }: IdeaCardProps) {

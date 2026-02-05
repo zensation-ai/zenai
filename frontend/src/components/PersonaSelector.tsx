@@ -142,6 +142,8 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
 const VALID_PERSONAS: Record<AIContext, string[]> = {
   personal: ['companion', 'coach', 'creative'],
   work: ['coordinator', 'analyst', 'strategist'],
+  learning: ['tutor', 'mentor', 'researcher'],
+  creative: ['muse', 'critic', 'collaborator'],
 };
 
 // Hook for managing persona state per context

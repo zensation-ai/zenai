@@ -12,6 +12,7 @@
  */
 
 import { useRef, memo, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { IdeaCard } from './IdeaCard';
 import type { StructuredIdea } from '../types/idea';
@@ -25,7 +26,7 @@ interface VirtualizedIdeaListProps {
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
   isArchived?: boolean;
-  context: 'personal' | 'work';
+  context: AIContext;
 }
 
 // Estimated row heights for virtualization

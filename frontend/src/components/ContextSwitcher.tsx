@@ -1,7 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import '../neurodesign.css';
 
-export type AIContext = 'personal' | 'work';
+export type AIContext = 'personal' | 'work' | 'learning' | 'creative';
+
+const CONTEXT_CONFIG: Record<AIContext, { icon: string; label: string; color: string }> = {
+  personal: { icon: '🏠', label: 'Privat', color: 'var(--success)' },
+  work: { icon: '💼', label: 'Arbeit', color: 'var(--info)' },
+  learning: { icon: '📚', label: 'Lernen', color: 'var(--warning)' },
+  creative: { icon: '🎨', label: 'Kreativ', color: 'var(--accent)' },
+};
+
+const STORAGE_KEY = 'zenai-context';
 
 interface ContextSwitcherProps {
   context: AIContext;
@@ -21,10 +30,16 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
 
       const isWeekday = day >= 1 && day <= 5;
       const isWorkHours = hour >= 8 && hour < 18;
+      const isEveningLearning = hour >= 19 && hour < 22;
 
       // Suggest work during work hours on weekdays
       if (isWeekday && isWorkHours && context === 'personal') {
         setSuggestedContext('work');
+        setShowSuggestion(true);
+      }
+      // Suggest learning in the evening
+      else if (isEveningLearning && (context === 'work' || context === 'personal')) {
+        setSuggestedContext('learning');
         setShowSuggestion(true);
       }
       // Suggest personal outside work hours
@@ -38,7 +53,7 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
     };
 
     checkContextSuggestion();
-    const interval = setInterval(checkContextSuggestion, 60000); // Check every minute
+    const interval = setInterval(checkContextSuggestion, 60000);
 
     return () => clearInterval(interval);
   }, [context]);
@@ -57,39 +72,46 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
   return (
     <div className="context-switcher liquid-glass-nav" role="region" aria-label="Kontext-Auswahl">
       <div className="context-toggle" role="group" aria-label="Kontext wählen">
-        <button
-          type="button"
-          className={`context-option neuro-press-effect neuro-focus-ring ${context === 'personal' ? 'active' : ''}`}
-          onClick={() => onContextChange('personal')}
-          title="Persönlicher Kontext"
-          aria-pressed={context === 'personal'}
-          aria-label="Zum privaten Kontext wechseln"
-        >
-          <span className="context-icon" aria-hidden="true">🏠</span>
-          <span className="context-label">Privat</span>
-        </button>
-        <button
-          type="button"
-          className={`context-option neuro-press-effect neuro-focus-ring ${context === 'work' ? 'active' : ''}`}
-          onClick={() => onContextChange('work')}
-          title="Arbeits-Kontext"
-          aria-pressed={context === 'work'}
-          aria-label="Zum Arbeits-Kontext wechseln"
-        >
-          <span className="context-icon" aria-hidden="true">💼</span>
-          <span className="context-label">Arbeit</span>
-        </button>
+        {(Object.keys(CONTEXT_CONFIG) as AIContext[]).map((ctx) => {
+          const config = CONTEXT_CONFIG[ctx];
+          const isActive = context === ctx;
+          return (
+            <button
+              key={ctx}
+              type="button"
+              className={`context-option neuro-press-effect neuro-focus-ring ${isActive ? 'active' : ''}`}
+              onClick={() => onContextChange(ctx)}
+              title={`${config.label}-Kontext`}
+              aria-pressed={isActive ? 'true' : 'false'}
+              aria-label={`Zum ${config.label}-Kontext wechseln`}
+              data-context={ctx}
+            >
+              <span className="context-icon" aria-hidden="true">{config.icon}</span>
+              <span className="context-label">{config.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {showSuggestion && suggestedContext && (
         <div className="context-suggestion neuro-tooltip-enhanced" role="alert" aria-live="polite">
           <span className="suggestion-text">
-            Wechsel zu {suggestedContext === 'personal' ? '🏠 Privat' : '💼 Arbeit'}?
+            Wechsel zu {CONTEXT_CONFIG[suggestedContext].icon} {CONTEXT_CONFIG[suggestedContext].label}?
           </span>
-          <button type="button" className="suggestion-accept neuro-press-effect neuro-focus-ring" onClick={handleSuggestionAccept} aria-label="Kontextwechsel akzeptieren">
+          <button
+            type="button"
+            className="suggestion-accept neuro-press-effect neuro-focus-ring"
+            onClick={handleSuggestionAccept}
+            aria-label="Kontextwechsel akzeptieren"
+          >
             Ja
           </button>
-          <button type="button" className="suggestion-dismiss neuro-press-effect neuro-focus-ring" onClick={handleSuggestionDismiss} aria-label="Kontextwechsel ablehnen">
+          <button
+            type="button"
+            className="suggestion-dismiss neuro-press-effect neuro-focus-ring"
+            onClick={handleSuggestionDismiss}
+            aria-label="Kontextwechsel ablehnen"
+          >
             Nein
           </button>
         </div>
@@ -98,23 +120,51 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
   );
 }
 
-// Utility hook for context state management
-// SIMPLIFIED: Always returns 'personal' - context switching disabled
+/**
+ * Hook for context state management with localStorage persistence
+ */
 export function useContextState() {
-  const context: AIContext = 'personal';
+  const [context, setContextInternal] = useState<AIContext>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved && ['personal', 'work', 'learning', 'creative'].includes(saved)) {
+        return saved as AIContext;
+      }
+    } catch {
+      // localStorage not available
+    }
+    return 'personal';
+  });
 
-  useEffect(() => {
-    // Always set to personal
-    document.documentElement.setAttribute('data-context', 'personal');
+  const setContext = useCallback((newContext: AIContext) => {
+    setContextInternal(newContext);
+    try {
+      localStorage.setItem(STORAGE_KEY, newContext);
+    } catch {
+      // localStorage not available
+    }
+    // Update document attribute for CSS theming
+    document.documentElement.setAttribute('data-context', newContext);
   }, []);
 
-  // setContext is a no-op since we always use 'personal'
-  const setContext = () => {};
+  // Initialize document attribute on mount
+  useEffect(() => {
+    document.documentElement.setAttribute('data-context', context);
+  }, [context]);
 
   return [context, setContext] as const;
 }
 
-// Context-aware API base path
+/**
+ * Context-aware API base path
+ */
 export function getApiPath(context: AIContext, endpoint: string) {
   return `/api/${context}${endpoint}`;
+}
+
+/**
+ * Get context configuration
+ */
+export function getContextConfig(context: AIContext) {
+  return CONTEXT_CONFIG[context];
 }

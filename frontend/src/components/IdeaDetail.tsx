@@ -3,6 +3,7 @@ import axios from 'axios';
 import { showToast } from './Toast';
 import { QuickFeedback, DraftFeedbackForm, FeedbackPrompt } from './DraftFeedback';
 import { useContextState } from './ContextSwitcher';
+import { logError } from '../utils/errors';
 import '../neurodesign.css';
 import './IdeaDetail.css';
 
@@ -168,7 +169,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
       }
     } catch (error) {
       if (!axios.isCancel(error)) {
-        console.error('Failed to load relations:', error);
+        logError('IdeaDetail:loadRelations', error);
       }
       // Silent fail for relations - they're optional
     } finally {
@@ -186,7 +187,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
       }
     } catch (error) {
       if (!axios.isCancel(error)) {
-        console.error('Failed to load suggestions:', error);
+        logError('IdeaDetail:loadSuggestions', error);
       }
       // Silent fail for suggestions - they're optional
     }
@@ -203,7 +204,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
       }
     } catch (error) {
       if (!axios.isCancel(error)) {
-        console.error('Failed to load draft:', error);
+        logError('IdeaDetail:loadDraft', error);
       }
       // Silent fail - draft is optional
     } finally {
@@ -356,7 +357,7 @@ Details: ${idea.summary}`,
           </span>
         </div>
 
-        <h2 className="detail-title">{idea.title}</h2>
+        <h2 id="idea-detail-title" className="detail-title">{idea.title}</h2>
 
         {/* Typ-spezifische Aktionen */}
         <div className="detail-actions-bar">
@@ -497,7 +498,7 @@ Details: ${idea.summary}`,
 
         <div className="detail-section">
           <h3>Zusammenfassung</h3>
-          <p className="detail-summary">{idea.summary}</p>
+          <p id="idea-detail-summary" className="detail-summary">{idea.summary}</p>
         </div>
 
         {/* Phase 25: Draft Section for Tasks */}

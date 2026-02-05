@@ -7,13 +7,14 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './EvolutionDashboard.css';
 
 interface EvolutionDashboardProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   onBack: () => void;
 }
 

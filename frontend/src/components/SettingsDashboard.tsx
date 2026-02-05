@@ -10,6 +10,7 @@
  */
 
 import { useState, memo } from 'react';
+import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
 import { getBreadcrumbs } from './Breadcrumbs';
 import '../neurodesign.css';
@@ -18,7 +19,7 @@ import './SettingsDashboard.css';
 type SettingsTab = 'tools' | 'content' | 'preferences';
 
 interface SettingsDashboardProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   currentPage: string;
   onBack: () => void;
   onNavigate: (page: string) => void;

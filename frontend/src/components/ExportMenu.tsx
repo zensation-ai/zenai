@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { useDropdownClose } from '../hooks/useClickOutside';
 
 interface ExportMenuProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   ideasCount: number;
 }
 

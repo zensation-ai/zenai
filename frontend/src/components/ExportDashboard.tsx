@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
+import { logError } from '../utils/errors';
 import '../neurodesign.css';
 import './ExportDashboard.css';
 
@@ -37,7 +38,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
-      console.error('Failed to load export history:', err);
+      logError('ExportDashboard:loadHistory', err);
     }
   }, []);
 
@@ -90,7 +91,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
       showToast('Export erfolgreich!', 'success');
       loadExportHistory();
     } catch (err) {
-      console.error('Export failed:', err);
+      logError('ExportDashboard:export', err);
       showToast('Export fehlgeschlagen', 'error');
     } finally {
       setLoading(false);
@@ -114,7 +115,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
 
       showToast('Backup erstellt!', 'success');
     } catch (err) {
-      console.error('Backup failed:', err);
+      logError('ExportDashboard:backup', err);
       showToast('Backup fehlgeschlagen', 'error');
     } finally {
       setLoading(false);

@@ -14,6 +14,7 @@
  */
 
 import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 import { getBreadcrumbs } from './Breadcrumbs';
@@ -30,7 +31,7 @@ const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPag
 type InsightsTab = 'overview' | 'analytics' | 'digest' | 'connections';
 
 interface InsightsDashboardProps {
-  context: 'personal' | 'work';
+  context: AIContext;
   onBack: () => void;
   onNavigate?: (page: string) => void;
   onSelectIdea?: (ideaId: string) => void;

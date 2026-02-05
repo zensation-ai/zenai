@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
@@ -10,7 +11,7 @@ interface RecordButtonProps {
   onProcessed?: (result: ProcessedResult) => void;
   onRecordingChange?: (isRecording: boolean) => void;
   disabled?: boolean;
-  context?: 'personal' | 'work';
+  context?: AIContext;
   persona?: string | null;
 }
 

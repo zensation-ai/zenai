@@ -8,9 +8,10 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
-import { getErrorMessage } from '../utils/errors';
+import { getErrorMessage, logError } from '../utils/errors';
 import './VoiceInput.css';
 
 interface VoiceInputProps {
@@ -21,7 +22,7 @@ interface VoiceInputProps {
   /** Disable the button */
   disabled?: boolean;
   /** Context for transcription API */
-  context?: 'personal' | 'work';
+  context?: AIContext;
   /** Compact mode (icon only) */
   compact?: boolean;
 }
@@ -110,7 +111,7 @@ export function VoiceInput({
         }
       }, 1000);
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      logError('VoiceInput:startRecording', error);
       showToast('Mikrofon-Zugriff verweigert', 'error');
     }
   }, []);
@@ -166,7 +167,7 @@ export function VoiceInput({
     } catch (error) {
       if (!isMountedRef.current) return;
 
-      console.error('Transcription failed:', error);
+      logError('VoiceInput:transcription', error);
       showToast(getErrorMessage(error, 'Transkription fehlgeschlagen'), 'error');
     } finally {
       if (isMountedRef.current) {
