@@ -13,7 +13,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { queryContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
-import { routineDetectionService, DetectedRoutine, UserAction } from './routine-detection';
+import { routineDetectionService, UserAction } from './routine-detection';
 
 // ===========================================
 // Types & Interfaces
@@ -28,7 +28,7 @@ export interface ProactiveSuggestion {
   confidence: number;
   relevanceScore: number;
   expiresAt: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   source: SuggestionSource;
   priority: 'high' | 'medium' | 'low';
   createdAt: Date;
@@ -40,7 +40,7 @@ export type SuggestionSource = 'routine_detection' | 'knowledge_graph' | 'time_t
 
 export interface SuggestedAction {
   actionType: ActionType;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
   quickActionLabel: string;
   endpoint?: string;
 }
@@ -60,7 +60,7 @@ export interface SuggestionFeedback {
   suggestionId: string;
   accepted: boolean;
   dismissReason?: string;
-  actionTaken?: Record<string, any>;
+  actionTaken?: Record<string, unknown>;
 }
 
 export interface ProactiveSettings {
@@ -417,7 +417,7 @@ export class ProactiveSuggestionEngine {
   /**
    * Generate draft suggestions based on recent tasks
    */
-  private async generateDraftSuggestions(context: AIContext): Promise<ProactiveSuggestion[]> {
+  private async generateDraftSuggestions(_context: AIContext): Promise<ProactiveSuggestion[]> {
     // This is handled in generateFollowUpSuggestions for now
     // Could be expanded for more sophisticated draft suggestions
     return [];
@@ -500,7 +500,7 @@ export class ProactiveSuggestionEngine {
     suggestionId: string,
     accepted: boolean,
     context: AIContext,
-    additionalData?: { dismissReason?: string; actionTaken?: Record<string, any> }
+    additionalData?: { dismissReason?: string; actionTaken?: Record<string, unknown> }
   ): Promise<void> {
     try {
       await queryContext(
@@ -613,7 +613,7 @@ export class ProactiveSuggestionEngine {
   async updateSettings(context: AIContext, settings: Partial<ProactiveSettings>): Promise<void> {
     try {
       const updateParts: string[] = [];
-      const params: any[] = [context];
+      const params: (string | number | string[])[] = [context];
       let paramIndex = 2;
 
       if (settings.proactivityLevel !== undefined) {

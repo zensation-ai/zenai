@@ -15,12 +15,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateOpenAIResponse, isOpenAIAvailable } from '../services/openai';
 import axios from 'axios';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 
 export const personalizationChatRouter = Router();
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const USE_AI = isOpenAIAvailable() || process.env.OLLAMA_URL; // Use AI if OpenAI or Ollama available
 
 // ===========================================
 // Types
@@ -31,18 +30,6 @@ interface PersonalFact {
   factKey: string;
   factValue: string;
   confidence: number;
-}
-
-interface ConversationMessage {
-  role: 'ai' | 'user';
-  message: string;
-  timestamp: string;
-}
-
-interface TopicInfo {
-  topic: string;
-  questionsAsked: number;
-  completionLevel: number;
 }
 
 // Question templates for different topics
@@ -259,9 +246,9 @@ personalizationChatRouter.get('/facts', apiKeyAuth, asyncHandler(async (req: Req
     SELECT id, category, fact_key, fact_value, confidence, source, created_at
     FROM personal_facts
   `;
-  const params: any[] = [];
+  const params: string[] = [];
 
-  if (category) {
+  if (category && typeof category === 'string') {
     queryStr += ` WHERE category = $1`;
     params.push(category);
   }
@@ -271,7 +258,15 @@ personalizationChatRouter.get('/facts', apiKeyAuth, asyncHandler(async (req: Req
   const result = await query(queryStr, params);
 
   // Group by category
-  const factsByCategory: Record<string, any[]> = {};
+  interface FactItem {
+    id: string;
+    key: string;
+    value: string;
+    confidence: number;
+    source: string;
+    createdAt: Date;
+  }
+  const factsByCategory: Record<string, FactItem[]> = {};
   for (const row of result.rows) {
     if (!factsByCategory[row.category]) {
       factsByCategory[row.category] = [];
@@ -473,7 +468,7 @@ Benutzer-Antwort: "${message}"`;
       const response = await generateOpenAIResponse(systemPrompt, userPrompt);
       const parsed = JSON.parse(response);
       const facts = parsed.facts || [];
-      return facts.filter((f: any) =>
+      return facts.filter((f: Partial<PersonalFact>) =>
         f.category && f.factKey && f.factValue && f.confidence
       );
     } catch (error) {
@@ -501,7 +496,7 @@ Benutzer-Antwort: "${message}"`;
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const facts = parsed.facts || [];
-      return facts.filter((f: any) =>
+      return facts.filter((f: Partial<PersonalFact>) =>
         f.category && f.factKey && f.factValue && f.confidence
       );
     }
@@ -656,7 +651,7 @@ ${factsText}`;
     );
 
     return response.data.response.trim();
-  } catch (error) {
+  } catch {
     return 'Ich lerne dich gerade kennen und freue mich auf unsere Gespräche!';
   }
 }

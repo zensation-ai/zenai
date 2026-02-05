@@ -14,7 +14,7 @@
  */
 
 import { logger } from '../utils/logger';
-import { generateClaudeResponse, queryClaudeJSON } from './claude';
+import { queryClaudeJSON } from './claude';
 import { RetrievalResult } from './agentic-rag';
 
 // ===========================================
@@ -192,7 +192,7 @@ class CrossEncoderReranker {
     config: RerankConfig
   ): Promise<RerankedResult[]> {
     const documentsText = results
-      .map((r, i) => `[${r.id}] Titel: ${r.title}\nZusammenfassung: ${r.summary || 'Keine'}`)
+      .map((r) => `[${r.id}] Titel: ${r.title}\nZusammenfassung: ${r.summary || 'Keine'}`)
       .join('\n\n');
 
     const prompt = BATCH_RERANK_PROMPT

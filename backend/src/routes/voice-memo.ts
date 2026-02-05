@@ -176,7 +176,6 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
   });
 
   // 1. Structure with Ollama/Mistral
-  const structureStart = Date.now();
   const structured = await structureWithOllama(transcript);
   // Apply learned suggestions if confidence is high enough
   let appliedLearning = false;
@@ -204,7 +203,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
   try {
     await invalidateCacheForContext('personal', 'ideas');
     logger.debug('Ideas cache invalidated after voice-memo', { ideaId });
-  } catch (cacheError) {
+  } catch {
     logger.warn('Failed to invalidate ideas cache', { ideaId });
   }
 
@@ -301,7 +300,7 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
   try {
     await invalidateCacheForContext('personal', 'ideas');
     logger.debug('Ideas cache invalidated after text input', { ideaId });
-  } catch (cacheError) {
+  } catch {
     logger.warn('Failed to invalidate ideas cache', { ideaId });
   }
 

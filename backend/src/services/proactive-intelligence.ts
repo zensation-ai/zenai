@@ -14,7 +14,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { queryContext, AIContext } from '../utils/database-context';
-import { queryOllamaJSON, generateEmbedding } from '../utils/ollama';
+import { queryOllamaJSON } from '../utils/ollama';
 import { logger } from '../utils/logger';
 
 // ===========================================
@@ -239,7 +239,7 @@ function extractTopicFromText(text: string, trigger: string): string {
 
   // Nimm bis zum nächsten Satzende oder max 150 Zeichen
   const endMatch = afterTrigger.match(/[.!?]/);
-  const endIndex = endMatch ? endMatch.index! : Math.min(150, afterTrigger.length);
+  const endIndex = endMatch?.index ?? Math.min(150, afterTrigger.length);
 
   let topic = afterTrigger.substring(0, endIndex).trim();
 
@@ -276,7 +276,7 @@ function generateSearchQuery(topic: string, pattern: ResearchPattern): string {
  */
 async function detectWithLLM(
   text: string,
-  context: AIContext
+  _context: AIContext
 ): Promise<DetectedResearchNeed> {
   try {
     const prompt = `Analysiere diesen Text und erkenne, ob eine Recherche-Aufgabe enthalten ist.
@@ -314,7 +314,7 @@ Wenn keine Recherche nötig ist, setze needs_research auf false.`;
         search_sources: ['web'],
       };
     }
-  } catch (error) {
+  } catch {
     logger.debug('LLM research detection failed');
   }
 
@@ -424,7 +424,7 @@ export async function executeProactiveResearch(
         `UPDATE proactive_research SET status = 'failed' WHERE id = $1`,
         [researchId]
       );
-    } catch (updateError) {
+    } catch {
       // Ignore update error
     }
 
@@ -525,7 +525,7 @@ async function searchDuckDuckGo(query: string): Promise<ResearchResult[]> {
 async function generateResearchSummary(
   query: string,
   results: ResearchResult[],
-  context: AIContext
+  _context: AIContext
 ): Promise<{
   summary: string;
   keyInsights: string[];
@@ -576,7 +576,7 @@ Schreibe auf Deutsch und sei konkret und hilfreich.`;
       teaserTitle: result?.teaser_title || `Recherche: ${query}`,
       teaserText: result?.teaser_text || results[0]?.snippet?.substring(0, 100) || '',
     };
-  } catch (error) {
+  } catch {
     logger.warn('Summary generation failed');
 
     // Fallback: Erste Ergebnisse verwenden
@@ -625,7 +625,7 @@ async function updatePatternStats(query: string, context: AIContext): Promise<vo
        )`,
       [context, query]
     );
-  } catch (error) {
+  } catch {
     // Nicht kritisch
   }
 }

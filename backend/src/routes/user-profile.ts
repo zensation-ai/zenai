@@ -11,7 +11,6 @@ import {
 } from '../services/user-profile';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
 import { isValidContext } from '../utils/database-context';
 
 export const userProfileRouter = Router();

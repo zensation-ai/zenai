@@ -139,7 +139,7 @@ export async function refreshAccessToken(
 export async function storeTokens(
   tokens: OAuthTokens,
   userId: string,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ): Promise<string> {
   const id = uuidv4();
 
@@ -250,7 +250,24 @@ export async function fetchCalendarEvents(
 
   const response = await client.get(`/me/calendar/calendarView?${params.toString()}`);
 
-  return response.data.value.map((event: any) => ({
+  interface MSGraphEvent {
+    id: string;
+    subject?: string;
+    body?: { content?: string };
+    start: { dateTime: string };
+    end: { dateTime: string };
+    location?: { displayName?: string };
+    attendees?: Array<{
+      emailAddress?: { address?: string; name?: string };
+      status?: { response?: string };
+    }>;
+    isOnlineMeeting?: boolean;
+    onlineMeetingUrl?: string;
+    organizer?: { emailAddress?: { address: string; name?: string } };
+    showAs?: string;
+  }
+
+  return (response.data.value as MSGraphEvent[]).map((event) => ({
     id: uuidv4(),
     externalId: event.id,
     provider: 'microsoft' as const,
@@ -259,11 +276,15 @@ export async function fetchCalendarEvents(
     startTime: new Date(event.start.dateTime + 'Z'),
     endTime: new Date(event.end.dateTime + 'Z'),
     location: event.location?.displayName || null,
-    attendees: (event.attendees || []).map((a: any) => ({
-      email: a.emailAddress?.address,
-      name: a.emailAddress?.name,
-      status: a.status?.response
-    })),
+    attendees: (event.attendees || [])
+      .filter((a): a is typeof a & { emailAddress: { address: string } } =>
+        Boolean(a.emailAddress?.address)
+      )
+      .map((a) => ({
+        email: a.emailAddress.address,
+        name: a.emailAddress?.name,
+        status: a.status?.response
+      })),
     isOnline: event.isOnlineMeeting || false,
     onlineMeetingUrl: event.onlineMeetingUrl || null,
     organizer: event.organizer?.emailAddress ? {

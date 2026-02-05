@@ -97,7 +97,7 @@ function validateMediaId(id: string): void {
 }
 
 function validateContext(context: string): void {
-  if (!VALID_CONTEXTS.includes(context as any)) {
+  if (!VALID_CONTEXTS.includes(context as typeof VALID_CONTEXTS[number])) {
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 }
@@ -259,16 +259,16 @@ router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Resp
   const { context, type, limit = '50' } = req.query;
 
   let queryStr = 'SELECT id, media_type, filename, caption, context, created_at FROM media_items WHERE 1=1';
-  const params: any[] = [];
+  const params: (string | number | boolean | Date | null)[] = [];
   let paramCount = 1;
 
-  if (context) {
+  if (context && typeof context === 'string') {
     queryStr += ` AND context = $${paramCount}`;
     params.push(context);
     paramCount++;
   }
 
-  if (type) {
+  if (type && typeof type === 'string') {
     queryStr += ` AND media_type = $${paramCount}`;
     params.push(type);
     paramCount++;
@@ -346,7 +346,7 @@ router.post('/:context/media/analyze', apiKeyAuth, requireScope('write'), upload
   logger.info('Analyzing image', { filename: file.filename, analysisType });
 
   // Run analysis based on type
-  let analysisResult: any;
+  let analysisResult: Awaited<ReturnType<typeof analyzeImage>> | Awaited<ReturnType<typeof analyzeDocument>>;
   let ocrText: string | null = null;
   let captionText = '';
 

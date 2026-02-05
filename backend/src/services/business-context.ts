@@ -11,7 +11,7 @@
 
 import { logger } from '../utils/logger';
 import { AIContext, queryContext } from '../utils/database-context';
-import { getOrCreateProfile, getPersonalizedContext as getProfileContext, BusinessProfile } from './business-profile-learning';
+import { getOrCreateProfile, BusinessProfile } from './business-profile-learning';
 
 // ===========================================
 // Types
@@ -67,7 +67,7 @@ export async function getUnifiedContext(context: AIContext): Promise<UnifiedBusi
       recentTopics,
       contextDepthScore,
     };
-  } catch (error) {
+  } catch {
     logger.warn('Failed to get unified context, returning empty', { context });
     return {
       profile: null,
@@ -167,7 +167,7 @@ export async function trackContextUsage(
       profile_used: !!contextUsed.profile,
       topics_used: contextUsed.recentTopics?.length || 0,
     });
-  } catch (error) {
+  } catch {
     logger.warn('Failed to track context usage', { ideaId });
   }
 }
@@ -188,7 +188,7 @@ export async function recordContextSignal(
        ON CONFLICT DO NOTHING`,
       [context, signalType, JSON.stringify(signalData)]
     );
-  } catch (error) {
+  } catch {
     // Table might not exist yet, ignore
     logger.debug('Could not record context signal (table may not exist)');
   }
@@ -211,7 +211,7 @@ export async function getUnprocessedSignals(
       [context, limit]
     );
     return result.rows as ContextSignal[];
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -274,7 +274,7 @@ async function getLearningInsights(context: AIContext): Promise<LearningInsights
       peakProductiveHours,
       topKeywords,
     };
-  } catch (error) {
+  } catch {
     return {
       preferredCategories: [],
       preferredTypes: [],
@@ -316,7 +316,7 @@ async function getRecentTopics(context: AIContext, days: number = 7): Promise<st
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
       .map(([kw]) => kw);
-  } catch (error) {
+  } catch {
     return [];
   }
 }

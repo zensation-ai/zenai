@@ -191,10 +191,10 @@ export function validateRequest<T extends ZodSchema>(schema: T) {
         req.body = validatedData.body;
       }
       if (validatedData.query !== undefined) {
-        req.query = validatedData.query as any;
+        req.query = validatedData.query as typeof req.query;
       }
       if (validatedData.params !== undefined) {
-        req.params = validatedData.params as any;
+        req.params = validatedData.params as typeof req.params;
       }
 
       next();
@@ -298,7 +298,8 @@ export function validatePagination(req: Request, res: Response, next: NextFuncti
   }
 
   // Replace query with validated/defaulted values
-  req.query = { ...req.query, ...result.data } as any;
+  // Using unknown as intermediate cast since the types don't directly overlap
+  req.query = { ...req.query, ...result.data } as unknown as typeof req.query;
   next();
 }
 

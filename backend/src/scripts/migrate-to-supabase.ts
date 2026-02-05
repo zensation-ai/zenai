@@ -7,7 +7,6 @@
 
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
-import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
@@ -137,7 +136,7 @@ async function migrateTable(
             try {
               await supabasePool.query(singleQuery);
               inserted++;
-            } catch (e) {
+            } catch {
               console.error(`   ⚠️  Failed to insert row:`, row.id || row);
             }
           }

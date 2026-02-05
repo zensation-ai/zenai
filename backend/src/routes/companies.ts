@@ -66,8 +66,8 @@ companiesRouter.post('/', apiKeyAuth, requireScope('write'), asyncHandler(async 
     );
 
     res.status(201).json({ success: true, company: formatCompany(result.rows[0]) });
-  } catch (error: any) {
-    if (error.code === '23505') {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && error.code === '23505') {
       throw new ConflictError('Company with this ID already exists');
     }
     throw error;

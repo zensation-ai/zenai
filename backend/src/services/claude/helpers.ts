@@ -80,7 +80,9 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
       // Fix single quotes to double quotes - but only for property keys and simple values
       // This avoids breaking strings that contain apostrophes like "it's"
       // Pattern: Replace 'key': with "key": and ': 'value' with ": "value"
+      // eslint-disable-next-line security/detect-unsafe-regex -- Processes bounded API responses, not arbitrary user input
       jsonStr = jsonStr.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'\s*:/g, '"$1":');
+      // eslint-disable-next-line security/detect-unsafe-regex -- Processes bounded API responses, not arbitrary user input
       jsonStr = jsonStr.replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g, ': "$1"');
 
       // Remove trailing text after closing brace
@@ -99,6 +101,7 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
 
       for (const line of lines) {
         // Match "key": "value" or "key": value patterns
+        // eslint-disable-next-line security/detect-unsafe-regex -- Processes bounded API responses line by line
         const kvMatch = line.match(/"?(\w+)"?\s*:\s*(?:"([^"]*)"|\[([^\]]*)\]|(\d+(?:\.\d+)?)|(\w+))/);
         if (kvMatch) {
           const key = kvMatch[1];

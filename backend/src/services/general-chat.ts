@@ -775,12 +775,13 @@ export async function sendMessageWithVision(
         aiResponse = await claudeVision.describe(images[0], { language: 'de' });
         break;
 
-      case 'extract_text':
+      case 'extract_text': {
         const textResult = await claudeVision.extractText(images[0], { language: 'de' });
         aiResponse = `**Extrahierter Text:**\n\n${textResult.text}\n\n*Konfidenz: ${Math.round(textResult.confidence * 100)}%*`;
         break;
+      }
 
-      case 'extract_ideas':
+      case 'extract_ideas': {
         const ideas = await claudeVision.extractIdeas(images[0], contextType, { language: 'de' });
         if (ideas.length > 0) {
           const ideaList = ideas.map((idea, i) =>
@@ -791,6 +792,7 @@ export async function sendMessageWithVision(
           aiResponse = 'Ich konnte keine konkreten Ideen aus dem Bild extrahieren.';
         }
         break;
+      }
 
       case 'analyze':
         visionResult = await claudeVision.analyze(images[0], 'analyze', { language: 'de' });

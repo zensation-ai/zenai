@@ -15,16 +15,15 @@ import {
   isValidPersonaForContext,
   shouldImmediatelyStructure,
   SubPersonaId,
-  SubPersonaConfig,
 } from '../config/personas';
 import { normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
-import { generateEmbedding } from '../services/ai'; // Unified AI - Ollama embeddings
+import { generateEmbedding } from '../services/ai';
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 // Phase 23: Proactive Research Integration
 import { processIdeaForResearch } from '../services/proactive-intelligence';
 // Phase 24: Cache Invalidation
@@ -257,7 +256,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     try {
       await invalidateCacheForContext(context as AIContext, 'ideas');
       logger.debug('Ideas cache invalidated after new idea', { context, ideaId });
-    } catch (cacheError) {
+    } catch {
       // Don't fail if cache invalidation fails
       logger.warn('Failed to invalidate ideas cache', { context, ideaId });
     }
@@ -303,7 +302,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         structured.keywords || [],
         context as AIContext
       );
-    } catch (error) {
+    } catch {
       // Don't fail if learning fails
       logger.debug('Profile learning failed', { ideaId });
     }

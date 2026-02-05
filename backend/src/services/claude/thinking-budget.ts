@@ -9,7 +9,6 @@
  * Goal: Use optimal budget - not too little (poor quality), not too much (waste)
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
@@ -235,7 +234,7 @@ export function classifyTaskType(input: string, hint?: string): TaskType {
 /**
  * Analyze complexity of input for budget calculation
  */
-export function analyzeComplexity(input: string, context?: AIContext): ComplexityScore {
+export function analyzeComplexity(input: string, _context?: AIContext): ComplexityScore {
   const inputLower = input.toLowerCase();
 
   // Document count (markers for multiple documents/sources)
@@ -501,8 +500,8 @@ export async function findSimilarSuccessfulChains(
     );
 
     return result.rows
-      .filter((row: any) => row.similarity >= CONFIG.MIN_CHAIN_SIMILARITY)
-      .map((row: any) => rowToThinkingChain(row));
+      .filter((row: ThinkingChainRow) => (row.similarity ?? 0) >= CONFIG.MIN_CHAIN_SIMILARITY)
+      .map((row: ThinkingChainRow) => rowToThinkingChain(row));
   } catch (error) {
     logger.debug('Failed to find similar chains', {
       error: error instanceof Error ? error.message : 'Unknown',
@@ -741,10 +740,28 @@ export async function getThinkingStats(context: AIContext): Promise<{
 // Helper Functions
 // ===========================================
 
+/** Database row type for thinking chains */
+interface ThinkingChainRow {
+  id: string;
+  session_id: string;
+  context: AIContext;
+  task_type: TaskType;
+  input_hash: string;
+  input_preview: string;
+  thinking_content: string;
+  thinking_tokens_used: number;
+  response_quality: string | null;
+  feedback_text: string | null;
+  feedback_at: string | null;
+  embedding: string | number[] | null;
+  created_at: string;
+  similarity?: number;
+}
+
 /**
  * Convert database row to ThinkingChain
  */
-function rowToThinkingChain(row: any): ThinkingChain {
+function rowToThinkingChain(row: ThinkingChainRow): ThinkingChain {
   return {
     id: row.id,
     sessionId: row.session_id,
@@ -765,10 +782,10 @@ function rowToThinkingChain(row: any): ThinkingChain {
 /**
  * Parse embedding from database format
  */
-function parseEmbedding(embedding: any): number[] {
+function parseEmbedding(embedding: string | number[]): number[] {
   if (Array.isArray(embedding)) {return embedding;}
   if (typeof embedding === 'string') {
-    const cleaned = embedding.replace(/[\[\]]/g, '');
+    const cleaned = embedding.replace(/[[\]]/g, '');
     return cleaned.split(',').map(Number);
   }
   return [];

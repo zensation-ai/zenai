@@ -11,7 +11,6 @@ import { pool } from '../utils/database';
 import { isValidUUID } from '../utils/database-context';
 import { testWebhook, getWebhookDeliveries, WebhookEventType } from '../services/webhooks';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 
 // Validation constants

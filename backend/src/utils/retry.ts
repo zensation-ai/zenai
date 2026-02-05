@@ -21,7 +21,7 @@ export interface RetryOptions {
   /** Timeout for each attempt in ms (default: 30000) */
   timeout?: number;
   /** Function to determine if error is retryable (default: all errors) */
-  isRetryable?: (error: any) => boolean;
+  isRetryable?: (error: unknown) => boolean;
   /** Context for logging */
   context?: string;
   /** Use debug level for retry logs (reduces noise for expected failures) */
@@ -115,8 +115,9 @@ export async function withRetry<T>(
       }
 
       return result;
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const errorMessage = lastError.message;
 
       // Check if we should retry
       const isRetryable = opts.isRetryable(error);
@@ -124,12 +125,12 @@ export async function withRetry<T>(
 
       if (!isRetryable || !hasRetriesLeft) {
         // Use debug level in quiet mode (for expected failures like Ollama not running)
-        const logFn = opts.quietMode ? logger.debug.bind(logger) : logger.error.bind(logger);
-        logFn(`${opts.context}: Failed after ${attempt + 1} attempts`, error, {
-          isRetryable,
-          hasRetriesLeft,
-          errorMessage: error.message,
-        });
+        const logContext = { isRetryable, hasRetriesLeft, errorMessage };
+        if (opts.quietMode) {
+          logger.debug(`${opts.context}: Failed after ${attempt + 1} attempts`, logContext);
+        } else {
+          logger.error(`${opts.context}: Failed after ${attempt + 1} attempts`, lastError, logContext);
+        }
         break;
       }
 
@@ -145,7 +146,7 @@ export async function withRetry<T>(
       // Use debug level in quiet mode
       const retryLogFn = opts.quietMode ? logger.debug.bind(logger) : logger.warn.bind(logger);
       retryLogFn(`${opts.context}: Attempt ${attempt + 1} failed, retrying in ${delay}ms`, {
-        error: error.message,
+        error: errorMessage,
         nextAttempt: attempt + 2,
         delay,
       });
@@ -158,42 +159,62 @@ export async function withRetry<T>(
   throw lastError || new Error(`${opts.context}: All retry attempts failed`);
 }
 
+/** Type guard for errors with code property */
+function hasCode(err: unknown): err is { code: string } {
+  return typeof err === 'object' && err !== null && 'code' in err;
+}
+
+/** Type guard for errors with status property */
+function hasStatus(err: unknown): err is { status: number } {
+  return typeof err === 'object' && err !== null && 'status' in err && typeof (err as { status: unknown }).status === 'number';
+}
+
+/** Type guard for errors with message property */
+function hasMessage(err: unknown): err is { message: string } {
+  return typeof err === 'object' && err !== null && 'message' in err && typeof (err as { message: unknown }).message === 'string';
+}
+
+/** Type guard for Anthropic API error with error.type */
+function hasErrorType(err: unknown): err is { error: { type: string } } {
+  return typeof err === 'object' && err !== null && 'error' in err && typeof (err as { error: unknown }).error === 'object' && (err as { error: { type: unknown } }).error !== null && 'type' in ((err as { error: { type: unknown } }).error);
+}
+
 /**
  * Determines if an Anthropic API error is retryable
  */
-export function isAnthropicRetryable(error: any): boolean {
+export function isAnthropicRetryable(error: unknown): boolean {
   // Network errors are retryable
-  if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND') {
+  if (hasCode(error) && (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND')) {
     return true;
   }
 
   // Rate limit errors (429) are retryable
-  if (error.status === 429) {
+  if (hasStatus(error) && error.status === 429) {
     return true;
   }
 
   // Server errors (5xx) are retryable
-  if (error.status >= 500 && error.status < 600) {
+  if (hasStatus(error) && error.status >= 500 && error.status < 600) {
     return true;
   }
 
   // Timeout errors are retryable
-  if (error.message?.includes('timed out') || error.message?.includes('timeout')) {
+  if (hasMessage(error) && (error.message.includes('timed out') || error.message.includes('timeout'))) {
     return true;
   }
 
   // Connection errors are retryable
-  if (error.message?.includes('ECONNREFUSED') || error.message?.includes('socket hang up')) {
+  if (hasMessage(error) && (error.message.includes('ECONNREFUSED') || error.message.includes('socket hang up'))) {
     return true;
   }
 
   // API overloaded errors are retryable
-  if (error.error?.type === 'overloaded_error') {
+  if (hasErrorType(error) && error.error.type === 'overloaded_error') {
     return true;
   }
 
   // Don't retry client errors (4xx except 429)
-  if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+  if (hasStatus(error) && error.status >= 400 && error.status < 500 && error.status !== 429) {
     return false;
   }
 
@@ -204,9 +225,9 @@ export function isAnthropicRetryable(error: any): boolean {
 /**
  * Determines if a database error is retryable
  */
-export function isDatabaseRetryable(error: any): boolean {
+export function isDatabaseRetryable(error: unknown): boolean {
   // Connection errors
-  if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND') {
+  if (hasCode(error) && (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND')) {
     return true;
   }
 
@@ -224,13 +245,12 @@ export function isDatabaseRetryable(error: any): boolean {
     '40P01', // deadlock_detected
   ];
 
-  if (retryableCodes.includes(error.code)) {
+  if (hasCode(error) && retryableCodes.includes(error.code)) {
     return true;
   }
 
   // Connection pool errors
-  if (error.message?.includes('Connection terminated') ||
-      error.message?.includes('Connection pool')) {
+  if (hasMessage(error) && (error.message.includes('Connection terminated') || error.message.includes('Connection pool'))) {
     return true;
   }
 

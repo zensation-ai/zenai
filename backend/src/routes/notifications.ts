@@ -22,7 +22,6 @@ import {
   sendNotification,
   getNotificationStats,
   recordNotificationOpened,
-  isPushNotificationsConfigured,
   getPushNotificationsStatus,
   NotificationPayload as APNsPayload,
 } from '../services/push-notifications';
@@ -218,7 +217,7 @@ interface NotificationPayload {
   type: NotificationType;
   title: string;
   body: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -371,8 +370,8 @@ export async function checkAndNotifyReadyClusters(context: AIContext): Promise<n
     });
 
     return clusters.rows.length;
-  } catch (error: any) {
-    logger.error('Failed to check/notify clusters', error);
+  } catch (error) {
+    logger.error('Failed to check/notify clusters', error instanceof Error ? error : undefined);
     return 0;
   }
 }
@@ -436,8 +435,8 @@ export async function generateDailyDigest(context: AIContext): Promise<void> {
     );
 
     logger.info('Daily digest generated', { context });
-  } catch (error: any) {
-    logger.error('Failed to generate daily digest', error);
+  } catch (error) {
+    logger.error('Failed to generate daily digest', error instanceof Error ? error : undefined);
   }
 }
 

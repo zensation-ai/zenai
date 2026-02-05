@@ -7,9 +7,7 @@
  * @module services/claude/extended-thinking
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../../utils/logger';
-import { StructuredIdea } from '../../utils/ollama';
 import { AIContext } from '../../utils/database-context';
 import { getUnifiedContext, trackContextUsage } from '../business-context';
 import {
@@ -19,8 +17,8 @@ import {
   SYSTEM_PROMPT_WITH_CONFIDENCE,
 } from './client';
 import {
-  extractJSONOrThrow,
   extractThinkingContent,
+  extractJSONOrThrow,
   validateAndNormalizeIdea,
 } from './helpers';
 import {
@@ -32,7 +30,6 @@ import {
   calculateDynamicBudget,
   classifyTaskType,
   storeThinkingChain,
-  findSimilarSuccessfulChains,
   generatePrimingPrompt,
   TaskType,
   BudgetRecommendation,

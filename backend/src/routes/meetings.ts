@@ -99,7 +99,7 @@ meetingsRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
 
   const result = await getMeetings({
     company_id: company_id as string,
-    status: status as any,
+    status: status as 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | undefined,
     from_date: from_date as string,
     to_date: to_date as string,
     limit: limit ? parseInt(limit as string) : undefined,

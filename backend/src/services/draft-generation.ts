@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { queryContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { isClaudeAvailable, generateClaudeResponse } from './claude';
-import { getOrCreateProfile } from './business-profile-learning';
+import { getOrCreateProfile, BusinessProfile } from './business-profile-learning';
 import { notifyDraftReady } from './push-notifications';
 
 // ===========================================
@@ -62,6 +62,88 @@ interface DetectedDraftNeed {
   matchedPattern: string;
   extractedTopic?: string;
   extractedRecipient?: string;
+}
+
+// Database row types for type-safe queries
+interface RelatedIdeaRow {
+  id: string;
+  title: string;
+  summary: string;
+  keywords?: string[];
+  similarity?: number;
+}
+
+interface DraftRow {
+  id: string;
+  idea_id: string;
+  draft_type: DraftType;
+  trigger_pattern: string | null;
+  content: string;
+  word_count: number;
+  status: string;
+  generation_time_ms: number;
+  related_idea_ids: string[] | null;
+  idea_title?: string;
+}
+
+interface FeedbackAnalyticsRow {
+  draft_type: string;
+  total_drafts: string;
+  total_feedback: string;
+  avg_rating: string;
+  avg_content_reused: string;
+  helpful_percent: string;
+  conversion_rate: string;
+}
+
+interface PatternEffectivenessRow {
+  pattern_id: string;
+  pattern_text: string;
+  draft_type: string;
+  is_active: boolean;
+  times_triggered: string;
+  times_used: string;
+  avg_rating: string | null;
+  quality_score: string | null;
+  success_rate: string | null;
+  performance_tier: 'excellent' | 'good' | 'average' | 'needs_improvement' | 'new';
+  consecutive_low_ratings: string;
+}
+
+interface DraftsNeedingFeedbackRow {
+  id: string;
+  idea_id: string;
+  idea_title: string;
+  draft_type: string;
+  status: string;
+  word_count: number;
+  created_at: string;
+  viewed_at: string | null;
+  used_at: string | null;
+  copy_count: string;
+}
+
+interface FeedbackHistoryRow {
+  id: string;
+  rating: number;
+  feedback_text: string | null;
+  content_reused_percent: number | null;
+  was_helpful: boolean | null;
+  feedback_sentiment: string | null;
+  created_at: string;
+}
+
+interface LearningSuggestionRow {
+  id: string;
+  draft_type: string;
+  suggestion_type: string;
+  suggestion_text: string;
+  rationale: string | null;
+  based_on_feedback_count: number;
+  avg_rating_before: string | null;
+  common_issues: string[] | null;
+  priority: string;
+  created_at: string;
 }
 
 // ===========================================
@@ -154,7 +236,7 @@ function detectWithHeuristics(text: string): DetectedDraftNeed {
 /**
  * Extrahiert das Thema aus dem Text
  */
-function extractTopic(text: string, draftType: DraftType): string {
+function extractTopic(text: string, _draftType: DraftType): string {
   // Suche nach "über X", "zu X", "wegen X"
   const topicPatterns = [
     /(?:über|zu|wegen|bezüglich|betreffend)\s+(.+?)(?:\.|$|,)/i,
@@ -176,10 +258,12 @@ function extractTopic(text: string, draftType: DraftType): string {
  * Extrahiert den Empfänger (für E-Mails)
  */
 function extractRecipient(text: string): string | undefined {
+  /* eslint-disable security/detect-unsafe-regex -- Simple name extraction from bounded user input */
   const recipientPatterns = [
     /(?:an|für|to)\s+([A-ZÄÖÜa-zäöüß]+(?:\s+[A-ZÄÖÜa-zäöüß]+)?)/i,
     /(?:mail|email|nachricht)\s+(?:an|für)\s+([A-ZÄÖÜa-zäöüß]+)/i,
   ];
+  /* eslint-enable security/detect-unsafe-regex */
 
   for (const pattern of recipientPatterns) {
     const match = text.match(pattern);
@@ -226,7 +310,7 @@ async function getActivePatterns(context: AIContext): Promise<TriggerPattern[]> 
   }
 }
 
-function getDefaultPatterns(context: AIContext): TriggerPattern[] {
+function getDefaultPatterns(_context: AIContext): TriggerPattern[] {
   return [
     { id: '1', draftType: 'email', patternText: 'e-mail schreiben', patternType: 'phrase', isActive: true },
     { id: '2', draftType: 'email', patternText: 'mail an', patternType: 'phrase', isActive: true },
@@ -365,7 +449,7 @@ export async function generateProactiveDraft(
       generationTimeMs,
       relatedIdeaIds: contextData.relatedIdeaIds,
     };
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Draft generation failed', error instanceof Error ? error : undefined, { ideaId: trigger.ideaId });
     return null;
   }
@@ -376,7 +460,7 @@ export async function generateProactiveDraft(
 // ===========================================
 
 interface DraftContext {
-  profile: Record<string, any> | null;
+  profile: BusinessProfile | null;
   relatedIdeas: Array<{
     id: string;
     title: string;
@@ -434,14 +518,14 @@ async function gatherContext(trigger: DraftTrigger): Promise<DraftContext> {
       [trigger.context, trigger.ideaId]
     );
 
-    context.relatedIdeas = relatedResult.rows.map((r: any) => ({
+    context.relatedIdeas = relatedResult.rows.map((r: RelatedIdeaRow) => ({
       id: r.id,
       title: r.title,
       summary: r.summary,
       keywords: r.keywords,
       similarity: r.similarity,
     }));
-    context.relatedIdeaIds = relatedResult.rows.map((r: any) => r.id);
+    context.relatedIdeaIds = relatedResult.rows.map((r: RelatedIdeaRow) => r.id);
 
     logger.debug('Gathered related ideas via semantic similarity', {
       count: context.relatedIdeas.length,
@@ -468,7 +552,7 @@ async function gatherContext(trigger: DraftTrigger): Promise<DraftContext> {
       LIMIT 10`,
       [trigger.context]
     );
-    context.recentTopics = topicsResult.rows.map((r: any) => r.topic);
+    context.recentTopics = topicsResult.rows.map((r: { topic: string; freq: number }) => r.topic);
 
   } catch (error) {
     logger.warn('Failed to gather full context for draft', { error });
@@ -484,8 +568,8 @@ async function gatherContext(trigger: DraftTrigger): Promise<DraftContext> {
          LIMIT 5`,
         [trigger.context, trigger.ideaId]
       );
-      context.relatedIdeas = fallbackResult.rows;
-      context.relatedIdeaIds = fallbackResult.rows.map((r: any) => r.id);
+      context.relatedIdeas = fallbackResult.rows as DraftContext['relatedIdeas'];
+      context.relatedIdeaIds = fallbackResult.rows.map((r: { id: string }) => r.id);
     } catch (fallbackError) {
       logger.error('Fallback context gathering also failed', fallbackError instanceof Error ? fallbackError : undefined);
     }
@@ -515,7 +599,7 @@ async function generateDraftContent(
   try {
     const content = await generateClaudeResponse(systemPrompt, userPrompt);
     return content;
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Claude draft generation failed', error instanceof Error ? error : undefined);
     return null;
   }
@@ -640,7 +724,7 @@ interface SaveDraftParams {
   wordCount: number;
   generationTimeMs: number;
   relatedIdeaIds: string[];
-  profileSnapshot: Record<string, any> | null;
+  profileSnapshot: BusinessProfile | null;
 }
 
 async function saveDraft(params: SaveDraftParams): Promise<void> {
@@ -838,7 +922,7 @@ export async function listDrafts(
     JOIN ideas i ON d.idea_id = i.id
     WHERE d.context = $1
   `;
-  const params: any[] = [context];
+  const params: (string | number)[] = [context];
 
   if (status) {
     query += ` AND d.status = $2`;
@@ -850,14 +934,14 @@ export async function listDrafts(
 
   const result = await queryContext(context, query, params);
 
-  return result.rows.map((row: any) => ({
+  return result.rows.map((row: DraftRow) => ({
     id: row.id,
     ideaId: row.idea_id,
     draftType: row.draft_type,
     triggerPattern: row.trigger_pattern || '',
     content: row.content,
     wordCount: row.word_count,
-    status: row.status,
+    status: row.status as GeneratedDraft['status'],
     generationTimeMs: row.generation_time_ms,
     relatedIdeaIds: row.related_idea_ids || [],
   }));
@@ -1179,13 +1263,21 @@ async function updatePatternFromFeedback(
   }
 }
 
+interface PatternRow {
+  id: string;
+  consecutive_low_ratings: number;
+  avg_rating: number | null;
+  times_triggered: number;
+  pattern_text?: string;
+}
+
 /**
  * Creates an improvement suggestion for a struggling pattern
  */
 async function createImprovementSuggestion(
   context: AIContext,
   draftType: string,
-  pattern: any,
+  pattern: PatternRow,
   feedback: DetailedFeedback
 ): Promise<void> {
   try {
@@ -1286,7 +1378,7 @@ export async function getFeedbackAnalytics(
       [context, days]
     );
 
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: FeedbackAnalyticsRow) => ({
       draftType: row.draft_type,
       totalDrafts: parseInt(row.total_drafts, 10),
       totalFeedback: parseInt(row.total_feedback, 10),
@@ -1303,7 +1395,7 @@ export async function getFeedbackAnalytics(
   }
 }
 
-function calculateSatisfactionScore(row: any): number {
+function calculateSatisfactionScore(row: FeedbackAnalyticsRow): number {
   const rating = parseFloat(row.avg_rating) || 3;
   const helpful = parseFloat(row.helpful_percent) || 50;
   const conversion = parseFloat(row.conversion_rate) || 50;
@@ -1346,7 +1438,7 @@ export async function getPatternEffectiveness(
       [context]
     );
 
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: PatternEffectivenessRow) => ({
       patternId: row.pattern_id,
       patternText: row.pattern_text,
       draftType: row.draft_type,
@@ -1408,7 +1500,7 @@ export async function getDraftsNeedingFeedback(
       [context, limit]
     );
 
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: DraftsNeedingFeedbackRow) => ({
       id: row.id,
       ideaId: row.idea_id,
       ideaTitle: row.idea_title,
@@ -1453,7 +1545,7 @@ export async function getDraftFeedbackHistory(
       [draftId, context]
     );
 
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: FeedbackHistoryRow) => ({
       id: row.id,
       rating: row.rating,
       feedbackText: row.feedback_text,
@@ -1500,7 +1592,7 @@ export async function getLearningSuggestions(
       [context, status]
     );
 
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: LearningSuggestionRow) => ({
       id: row.id,
       draftType: row.draft_type,
       suggestionType: row.suggestion_type,

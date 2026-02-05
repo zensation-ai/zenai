@@ -10,7 +10,7 @@ export interface UserProfile {
   preferred_types: Record<string, number>;
   topic_interests: Record<string, number>;
   active_hours: Record<string, number>;
-  productivity_patterns: Record<string, any>;
+  productivity_patterns: Record<string, unknown>;
   total_ideas: number;
   total_meetings: number;
   avg_ideas_per_day: number;
@@ -49,7 +49,7 @@ export interface InteractionEvent {
   idea_id?: string;
   meeting_id?: string;
   interaction_type: 'view' | 'edit' | 'archive' | 'prioritize' | 'share' | 'search' | 'relate';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -147,8 +147,9 @@ async function updateProfileFromInteraction(event: InteractionEvent): Promise<vo
       await incrementPreference(profileId, 'active_hours', hour.toString());
 
       // Learn priority keywords
-      if (event.interaction_type === 'prioritize' && event.metadata?.new_priority) {
-        await learnPriorityKeywords(profileId, keywords, event.metadata.new_priority);
+      const newPriority = event.metadata?.new_priority;
+      if (event.interaction_type === 'prioritize' && newPriority && (newPriority === 'high' || newPriority === 'medium' || newPriority === 'low')) {
+        await learnPriorityKeywords(profileId, keywords, newPriority);
       }
     }
   }
@@ -178,7 +179,7 @@ async function incrementPreference(
 /**
  * Increment topic interest (single topic)
  */
-async function incrementTopicInterest(profileId: string, topic: string): Promise<void> {
+async function _incrementTopicInterest(profileId: string, topic: string): Promise<void> {
   const normalizedTopic = topic.toLowerCase().trim();
   await query(
     `UPDATE user_profile
@@ -198,11 +199,15 @@ async function incrementTopicInterest(profileId: string, topic: string): Promise
  * PERFORMANCE FIX: Single query instead of N queries for N keywords
  */
 async function batchIncrementTopicInterests(profileId: string, topics: string[]): Promise<void> {
-  if (topics.length === 0) return;
+  if (topics.length === 0) {
+    return;
+  }
 
   // Normalize all topics
   const normalizedTopics = topics.map(t => t.toLowerCase().trim()).filter(t => t.length > 0);
-  if (normalizedTopics.length === 0) return;
+  if (normalizedTopics.length === 0) {
+    return;
+  }
 
   // Build a single UPDATE query that increments all topics at once
   // Using jsonb_object_agg to merge all increments in one operation
@@ -388,10 +393,28 @@ export async function updateInterestEmbedding(profileId: string = 'default'): Pr
 /**
  * Get ideas that match user interests
  */
+/** Personalized idea from database */
+interface PersonalizedIdea {
+  id: string;
+  title: string;
+  summary: string | null;
+  type: string;
+  category: string;
+  priority: string;
+  keywords: string[] | string;
+  raw_transcript: string | null;
+  embedding: string | null;
+  context: string;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  distance?: number;
+}
+
 export async function getPersonalizedIdeas(
   limit: number = 10,
   profileId: string = 'default'
-): Promise<any[]> {
+): Promise<PersonalizedIdea[]> {
   const profileResult = await query(
     'SELECT interest_embedding FROM user_profile WHERE id = $1',
     [profileId]

@@ -74,7 +74,9 @@ export function formatDate(date: Date | string): string {
  * Escape CSV field (handle commas, quotes, newlines)
  */
 export function escapeCSV(field: unknown): string {
-  if (field === null || field === undefined) return '';
+  if (field === null || field === undefined) {
+    return '';
+  }
   const str = String(field);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
@@ -86,8 +88,12 @@ export function escapeCSV(field: unknown): string {
  * Parse JSON fields safely - returns string array for export formatting
  */
 export function parseJSON(field: unknown): string[] {
-  if (!field) return [];
-  if (Array.isArray(field)) return field.map(item => String(item));
+  if (!field) {
+    return [];
+  }
+  if (Array.isArray(field)) {
+    return field.map(item => String(item));
+  }
   if (typeof field === 'string') {
     try {
       const parsed = JSON.parse(field);

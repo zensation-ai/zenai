@@ -245,6 +245,7 @@ export async function detectProjectType(projectPath: string): Promise<ProjectTyp
       for (const pattern of patterns) {
         if (pattern.includes('*')) {
           // Glob pattern - check with regex
+          // eslint-disable-next-line security/detect-non-literal-regexp -- Pattern comes from internal config, not user input
           const regex = new RegExp(pattern.replace('*', '.*'));
           if (files.some((f) => regex.test(f))) {
             return type as ProjectType;
@@ -482,7 +483,7 @@ export async function scanProjectStructure(
           });
         }
       }
-    } catch (error) {
+    } catch {
       // Skip directories we can't read
     }
   }
@@ -536,7 +537,7 @@ export async function getGitInfo(
     }
 
     return result;
-  } catch (error) {
+  } catch {
     return undefined;
   }
 }
@@ -646,7 +647,7 @@ export function detectPatterns(structure: ProjectStructure, dependencies: Projec
 /**
  * Identify key files for context
  */
-export function identifyKeyFiles(structure: ProjectStructure, projectType: ProjectType): string[] {
+export function identifyKeyFiles(structure: ProjectStructure, _projectType: ProjectType): string[] {
   const keyFiles: string[] = [];
 
   const priorityFiles = [

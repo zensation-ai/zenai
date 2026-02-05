@@ -10,7 +10,6 @@ import {
   formatDate,
   escapeCSV,
   parseJSON,
-  PRIORITY_EMOJIS,
   IdeaRow,
 } from '../utils/export-helpers';
 
@@ -62,7 +61,7 @@ exportRouter.get('/ideas/pdf', apiKeyAuth, asyncHandler(async (req: Request, res
 
   // Build query
   let whereClause = includeArchived ? '' : 'WHERE is_archived = false';
-  const params: any[] = [];
+  const params: (string | number)[] = [];
   let paramIndex = 1;
 
   if (type) {
@@ -660,8 +659,8 @@ exportRouter.get('/meetings/pdf', apiKeyAuth, asyncHandler(async (req: Request, 
       doc.moveDown(0.5);
       doc.fontSize(10).fillColor('#333').text('Action Items:', { underline: true });
       doc.fontSize(9).fillColor('#444');
-      actionItems.forEach((item: any, i: number) => {
-        const text = typeof item === 'string' ? item : item.task || item.description || JSON.stringify(item);
+      actionItems.forEach((item: unknown, i: number) => {
+        const text = typeof item === 'string' ? item : (item as Record<string, unknown>)?.task || (item as Record<string, unknown>)?.description || JSON.stringify(item);
         doc.text(`${i + 1}. ${text}`);
       });
     }
@@ -696,7 +695,7 @@ exportRouter.get('/meetings/csv', apiKeyAuth, asyncHandler(async (req: Request, 
   for (const meeting of result.rows) {
     const participants = parseJSON(meeting.participants).join('; ');
     const actionItems = parseJSON(meeting.action_items)
-      .map((item: any) => (typeof item === 'string' ? item : item.task || ''))
+      .map((item: unknown) => (typeof item === 'string' ? item : (item as Record<string, unknown>)?.task || ''))
       .join('; ');
 
     const row = [
@@ -946,8 +945,8 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
       markdown += `## ${key.charAt(0).toUpperCase() + key.slice(1)}\n\n`;
       for (const item of items as Record<string, unknown>[]) {
         markdown += `### ${(item as Record<string, string>).title || (item as Record<string, string>).name || (item as Record<string, string>).id}\n\n`;
-        if ((item as Record<string, string>).summary) markdown += `${(item as Record<string, string>).summary}\n\n`;
-        if ((item as Record<string, string>).description) markdown += `${(item as Record<string, string>).description}\n\n`;
+        if ((item as Record<string, string>).summary) {markdown += `${(item as Record<string, string>).summary}\n\n`;}
+        if ((item as Record<string, string>).description) {markdown += `${(item as Record<string, string>).description}\n\n`;}
         markdown += `---\n\n`;
       }
     }
@@ -968,7 +967,7 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
     const ideas = (exportData.ideas || []) as IdeaRow[];
     for (const idea of ideas) {
       pdfDoc.fontSize(14).text(idea.title, { underline: true });
-      if (idea.summary) pdfDoc.fontSize(10).text(idea.summary);
+      if (idea.summary) {pdfDoc.fontSize(10).text(idea.summary);}
       pdfDoc.fontSize(9).text(`Type: ${idea.type} | Category: ${idea.category} | Priority: ${idea.priority}`);
       pdfDoc.moveDown();
     }

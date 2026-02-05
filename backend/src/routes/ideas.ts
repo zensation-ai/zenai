@@ -19,7 +19,6 @@ import {
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
-import { getFirstRowOrThrow, getFirstRowOrNull, parseDbInt } from '../types/database-rows';
 
 // ===========================================
 // Type-safe row interfaces for aggregate queries
@@ -97,7 +96,7 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
   if (!limitResult.success) {
     throw new ValidationError('Invalid limit');
   }
-  const limit = limitResult.data!;
+  const limit = limitResult.data ?? 20;
 
   // Get excluded IDs (already processed in this session)
   const excludeIds = req.query.exclude ? (req.query.exclude as string).split(',').filter(id => isValidUUID(id)) : [];
@@ -274,11 +273,11 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
 
   // Validate pagination
-  const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
+  const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
   if (!paginationResult.success) {
     throw new ValidationError('Invalid pagination');
   }
-  const { limit, offset } = paginationResult.data!;
+  const { limit, offset } = paginationResult.data ?? { limit: 20, offset: 0 };
 
   // Validate filter params
   const typeResult = validateIdeaType(req.query.type);
@@ -356,7 +355,7 @@ ideasRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, res) =>
   if (!limitResult.success) {
     throw new ValidationError('Invalid limit');
   }
-  const limit = limitResult.data!;
+  const limit = limitResult.data ?? 10;
 
   // Use Supabase function to get recommendations
   const result = await queryContext(
@@ -422,18 +421,18 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
   if (!queryResult.success) {
     throw new ValidationError('Invalid search query');
   }
-  const searchQuery = queryResult.data!;
+  const searchQuery = queryResult.data ?? '';
 
   // Validate limit
   const limitResult = parseIntSafe(req.body.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
   if (!limitResult.success) {
     throw new ValidationError('Invalid limit');
   }
-  const limit = limitResult.data!;
+  const limit = limitResult.data ?? 10;
 
   // Validate threshold
   const thresholdResult = parseIntSafe(req.body.threshold?.toString(), { default: 0.5, min: 0, max: 1, fieldName: 'threshold' });
-  const threshold = thresholdResult.success ? thresholdResult.data! : 0.5;
+  const threshold = thresholdResult.success ? (thresholdResult.data ?? 0.5) : 0.5;
 
   // Generate embedding for search query
   const embeddingStart = Date.now();
@@ -498,7 +497,7 @@ ideasRouter.get('/:id/similar', apiKeyAuth, validateUUID, asyncHandler(async (re
   if (!limitResult.success) {
     throw new ValidationError('Invalid limit');
   }
-  const limit = limitResult.data!;
+  const limit = limitResult.data ?? 5;
 
   // Check if idea exists
   const ideaCheck = await queryContext(ctx, 'SELECT id FROM ideas WHERE id = $1', [ideaId]);
@@ -599,7 +598,7 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
   }
 
   // Track edit and priority changes for interaction tracking
-  const metadata: Record<string, any> = { action: 'update' };
+  const metadata: Record<string, unknown> = { action: 'update' };
   if (hasPriorityChange) {
     metadata.new_priority = priority;
     metadata.old_priority = old.priority;
@@ -780,11 +779,11 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
 
   // Validate pagination
-  const paginationResult = validatePagination(req.query as any, { maxLimit: 100, defaultLimit: 20 });
+  const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
   if (!paginationResult.success) {
     throw new ValidationError('Invalid pagination');
   }
-  const { limit, offset } = paginationResult.data!;
+  const pagination = paginationResult.data ?? { limit: 20, offset: 0 };
 
   const result = await queryContext(
     ctx,
@@ -794,7 +793,7 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
      WHERE is_archived = true
      ORDER BY updated_at DESC
      LIMIT $1 OFFSET $2`,
-    [limit, offset]
+    [pagination.limit, pagination.offset]
   );
 
   const countResult = await queryContext(
@@ -806,9 +805,9 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
       total: parseInt(countResult.rows[0].total),
-      limit,
-      offset,
-      hasMore: offset + limit < parseInt(countResult.rows[0].total),
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.offset + pagination.limit < parseInt(countResult.rows[0].total),
     },
   });
 }));

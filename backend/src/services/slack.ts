@@ -149,9 +149,9 @@ async function getAccessToken(userId: string = 'default'): Promise<string | null
 async function slackApi(
   method: string,
   endpoint: string,
-  data?: any,
+  data?: Record<string, unknown>,
   token?: string
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const accessToken = token || await getAccessToken();
 
   if (!accessToken) {
@@ -188,7 +188,8 @@ export async function getChannels(): Promise<SlackChannel[]> {
     exclude_archived: true
   });
 
-  return data.channels.map((ch: any) => ({
+  const channels = data.channels as Array<{ id: string; name: string; is_private: boolean; is_member: boolean }>;
+  return channels.map((ch) => ({
     id: ch.id,
     name: ch.name,
     isPrivate: ch.is_private,
@@ -201,20 +202,29 @@ export async function getChannels(): Promise<SlackChannel[]> {
  */
 async function getUserInfo(userId: string): Promise<{ name: string; realName: string }> {
   const data = await slackApi('GET', 'users.info', { user: userId });
+  const user = data.user as { name: string; real_name: string };
 
   return {
-    name: data.user.name,
-    realName: data.user.real_name
+    name: user.name,
+    realName: user.real_name
   };
 }
 
 /**
  * Send message to channel
  */
+/** Slack Block Kit block element */
+interface SlackBlock {
+  type: string;
+  text?: { type: string; text: string };
+  fields?: Array<{ type: string; text: string }>;
+  [key: string]: unknown;
+}
+
 export async function sendMessage(
   channelId: string,
   text: string,
-  options: { threadTs?: string; blocks?: any[] } = {}
+  options: { threadTs?: string; blocks?: SlackBlock[] } = {}
 ): Promise<string> {
   const data = await slackApi('POST', 'chat.postMessage', {
     channel: channelId,
@@ -223,13 +233,27 @@ export async function sendMessage(
     blocks: options.blocks
   });
 
-  return data.ts;
+  return data.ts as string;
+}
+
+/** Slack event payload */
+interface SlackEvent {
+  type: string;
+  subtype?: string;
+  bot_id?: string;
+  channel?: string;
+  user?: string;
+  text?: string;
+  ts?: string;
+  thread_ts?: string;
+  reaction?: string;
+  item?: { type: string; channel: string; ts: string };
 }
 
 /**
  * Handle Slack event
  */
-export async function handleSlackEvent(event: any): Promise<void> {
+export async function handleSlackEvent(event: SlackEvent): Promise<void> {
   logger.info('Slack event received', { eventType: event.type });
 
   switch (event.type) {
@@ -253,8 +277,14 @@ export async function handleSlackEvent(event: any): Promise<void> {
 /**
  * Process a Slack message
  */
-async function processSlackMessage(event: any): Promise<void> {
+async function processSlackMessage(event: SlackEvent): Promise<void> {
   const { channel, user, text, ts, thread_ts } = event;
+
+  // Ensure required fields are present
+  if (!channel || !user || !text || !ts) {
+    logger.warn('Incomplete Slack message event', { channel, user, hasText: !!text, ts });
+    return;
+  }
 
   // Store message
   const id = uuidv4();
@@ -351,10 +381,10 @@ async function convertMessageToIdea(
 /**
  * Convert reaction to idea
  */
-async function convertReactionToIdea(event: any): Promise<void> {
-  const { item, user: _user } = event;
+async function convertReactionToIdea(event: SlackEvent): Promise<void> {
+  const { item } = event;
 
-  if (item.type !== 'message') {return;}
+  if (!item || item.type !== 'message') {return;}
 
   // Get message content
   const data = await slackApi('GET', 'conversations.history', {
@@ -364,9 +394,10 @@ async function convertReactionToIdea(event: any): Promise<void> {
     limit: 1
   });
 
-  if (!data.messages || data.messages.length === 0) {return;}
+  const messages = data.messages as Array<{ user: string; text: string }> | undefined;
+  if (!messages || messages.length === 0) {return;}
 
-  const message = data.messages[0];
+  const message = messages[0];
 
   // Check if already processed
   const existing = await pool.query(
@@ -391,13 +422,20 @@ async function convertReactionToIdea(event: any): Promise<void> {
 /**
  * Handle slash command
  */
+/** Slack slash command response */
+interface SlashCommandResponse {
+  response_type: 'ephemeral' | 'in_channel';
+  text?: string;
+  blocks?: SlackBlock[];
+}
+
 export async function handleSlashCommand(
   command: string,
   text: string,
   userId: string,
   channelId: string,
   _responseUrl: string
-): Promise<any> {
+): Promise<SlashCommandResponse> {
   switch (command) {
     case '/idea':
       return await createIdeaFromCommand(text, userId, channelId);
@@ -423,7 +461,7 @@ async function createIdeaFromCommand(
   text: string,
   userId: string,
   channelId: string
-): Promise<any> {
+): Promise<SlashCommandResponse> {
   if (!text.trim()) {
     return {
       response_type: 'ephemeral',
@@ -436,7 +474,9 @@ async function createIdeaFromCommand(
     try {
       const userInfo = await getUserInfo(userId);
       userName = userInfo.realName || userInfo.name;
-    } catch {}
+    } catch {
+      // Silently fall back to default userName if user lookup fails
+    }
 
     const messageId = uuidv4();
     await pool.query(
@@ -494,7 +534,7 @@ async function createIdeaFromCommand(
 /**
  * Search ideas from slash command
  */
-async function searchIdeasFromCommand(query: string): Promise<any> {
+async function searchIdeasFromCommand(query: string): Promise<SlashCommandResponse> {
   if (!query.trim()) {
     return {
       response_type: 'ephemeral',
@@ -522,7 +562,7 @@ async function searchIdeasFromCommand(query: string): Promise<any> {
       };
     }
 
-    const blocks: any[] = [
+    const blocks: SlackBlock[] = [
       {
         type: 'section',
         text: {
@@ -559,7 +599,7 @@ async function searchIdeasFromCommand(query: string): Promise<any> {
 /**
  * Get recent ideas
  */
-async function getRecentIdeas(): Promise<any> {
+async function getRecentIdeas(): Promise<SlashCommandResponse> {
   const result = await pool.query(
     `SELECT id, title, type, category, priority, created_at
      FROM ideas
@@ -574,7 +614,7 @@ async function getRecentIdeas(): Promise<any> {
     };
   }
 
-  const blocks: any[] = [
+  const blocks: SlackBlock[] = [
     {
       type: 'section',
       text: {

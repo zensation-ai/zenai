@@ -14,9 +14,9 @@ import crypto from 'crypto';
 import { pool } from '../utils/database';
 import * as microsoft from '../services/microsoft';
 import * as slack from '../services/slack';
-import { apiKeyAuth, requireScope, optionalAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toInt } from '../utils/validation';
 
 // ===========================================
@@ -336,8 +336,11 @@ integrationsRouter.get('/microsoft/callback', asyncHandler(async (req: Request, 
     return res.redirect('/settings/integrations?error=invalid_state');
   }
 
-  const clientId = process.env.MICROSOFT_CLIENT_ID!;
-  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
+  const clientId = process.env.MICROSOFT_CLIENT_ID ?? '';
+  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET ?? '';
+  if (!clientId || !clientSecret) {
+    throw new ValidationError('Microsoft OAuth not configured. Missing client credentials.');
+  }
   const redirectUri = getRedirectUri('microsoft');
 
   // Exchange code for tokens
@@ -375,8 +378,11 @@ integrationsRouter.get('/microsoft/callback', asyncHandler(async (req: Request, 
 integrationsRouter.post('/microsoft/sync', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { startDate, endDate, createMeetings = true } = req.body;
 
-  const clientId = process.env.MICROSOFT_CLIENT_ID!;
-  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET!;
+  const clientId = process.env.MICROSOFT_CLIENT_ID ?? '';
+  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET ?? '';
+  if (!clientId || !clientSecret) {
+    throw new ValidationError('Microsoft OAuth not configured. Missing client credentials.');
+  }
 
   const accessToken = await microsoft.getValidAccessToken(clientId, clientSecret);
 
@@ -497,8 +503,11 @@ integrationsRouter.get('/slack/callback', asyncHandler(async (req: Request, res:
     return res.redirect('/settings/integrations?error=invalid_state');
   }
 
-  const clientId = process.env.SLACK_CLIENT_ID!;
-  const clientSecret = process.env.SLACK_CLIENT_SECRET!;
+  const clientId = process.env.SLACK_CLIENT_ID ?? '';
+  const clientSecret = process.env.SLACK_CLIENT_SECRET ?? '';
+  if (!clientId || !clientSecret) {
+    throw new ValidationError('Slack OAuth not configured. Missing client credentials.');
+  }
   const redirectUri = getRedirectUri('slack');
 
   const tokens = await slack.exchangeCodeForTokens(

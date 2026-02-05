@@ -10,7 +10,7 @@
  * WICHTIG: Lernt mit JEDER Handlung, nicht nur täglich!
  */
 
-import { pool, query, PoolClient } from '../utils/database';
+import { pool, PoolClient } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
@@ -41,6 +41,17 @@ interface LanguageStyle {
   vocabulary_complexity: number;
   common_phrases: string[];
   [key: string]: unknown;
+}
+
+// Interface for idea data from database queries
+interface IdeaData {
+  type: string;
+  category: string;
+  priority: string;
+  keywords: unknown;
+  summary?: string;
+  raw_transcript?: string;
+  created_at: string | Date;
 }
 
 // Ollama URL - no default to prevent silent failures in production
@@ -137,7 +148,7 @@ export async function suggestFromLearning(
     if (isOllamaConfigured()) {
       try {
         inputEmbedding = await generateEmbedding(text);
-      } catch (err) {
+      } catch {
         logger.debug('Learning: Embedding generation failed, using keyword-only mode');
       }
     }
@@ -707,7 +718,7 @@ async function learnPriorityKeywords(
 async function updateThinkingPatterns(
   client: PoolClient,
   userId: string,
-  idea: any
+  idea: IdeaData
 ): Promise<void> {
   try {
     const result = await client.query(
@@ -1068,7 +1079,7 @@ export async function runDailyLearning(userId: string = 'default'): Promise<{
 async function updateInterestEmbedding(
   client: PoolClient,
   userId: string,
-  ideas: any[]
+  ideas: IdeaData[]
 ): Promise<void> {
   if (ideas.length === 0) {return;}
 
@@ -1243,7 +1254,8 @@ export function extractFeatures(text: string): ExtractedFeatures {
   // Semantic features - Entity extraction
   const entities: string[] = [];
   // Names (capitalized words not at sentence start)
-  const namePattern = /(?<=[a-z][\.\?\!]\s+|\n)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g;
+  // eslint-disable-next-line security/detect-unsafe-regex -- Simple name extraction, bounded input
+  const namePattern = /(?<=[a-z][.?!]\s+|\n)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g;
   const nameMatches = text.match(namePattern);
   if (nameMatches) {entities.push(...nameMatches.slice(0, 5));}
 
@@ -1279,7 +1291,7 @@ export function extractFeatures(text: string): ExtractedFeatures {
     /\b(morgen|tomorrow)\b/gi,
     /\b(diese woche|this week)\b/gi,
     /\b(nächste woche|next week)\b/gi,
-    /\b(bis|until|by)\s+\d{1,2}[\./]\d{1,2}/gi,
+    /\b(bis|until|by)\s+\d{1,2}[./]\d{1,2}/gi,
     /\b(in \d+ (tagen|wochen|monaten)|in \d+ (days|weeks|months))\b/gi,
   ];
   for (const pattern of timePatterns) {
@@ -1297,12 +1309,12 @@ export function extractFeatures(text: string): ExtractedFeatures {
     urgencyLevel = 'low';
   }
 
-  const hasDeadline = /\b(bis|deadline|until|by)\s+(\d{1,2}[\./]\d{1,2}|\d{4}|montag|dienstag|mittwoch|donnerstag|freitag|monday|tuesday|wednesday|thursday|friday)/i.test(text);
+  const hasDeadline = /\b(bis|deadline|until|by)\s+(\d{1,2}[./]\d{1,2}|\d{4}|montag|dienstag|mittwoch|donnerstag|freitag|monday|tuesday|wednesday|thursday|friday)/i.test(text);
 
   // Structural features
-  const hasList = /^[\s]*[-*•]\s|^\s*\d+[\.\)]/m.test(text);
+  const hasList = /^[\s]*[-*•]\s|^\s*\d+[.)]/m.test(text);
   const hasNumbers = /\d+/.test(text);
-  const hasCode = /```|`[^`]+`|function\s*\(|const\s+\w+|let\s+\w+|var\s+\w+|\=\>|import\s+\{/.test(text);
+  const hasCode = /```|`[^`]+`|function\s*\(|const\s+\w+|let\s+\w+|var\s+\w+|=>|import\s+\{/.test(text);
 
   let contentLength: 'short' | 'medium' | 'long' = 'short';
   if (words.length > 100) {contentLength = 'long';}
@@ -1350,7 +1362,7 @@ export interface BiasReport {
  * Detect potential biases in learning data
  */
 export async function detectLearningBias(
-  userId: string = 'default'
+  _userId: string = 'default'
 ): Promise<BiasReport> {
   const client = await pool.connect();
 

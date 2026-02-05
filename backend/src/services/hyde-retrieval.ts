@@ -191,7 +191,7 @@ class HyDEService {
 
       // Generate embeddings in parallel
       const results = await Promise.all(
-        documents.map(async (doc, i) => {
+        documents.map(async (doc) => {
           const embedding = await generateEmbedding(doc);
           return {
             originalQuery: query,
@@ -373,7 +373,7 @@ class HyDEService {
       [context, `[${queryEmbedding.join(',')}]`, maxResults]
     );
 
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: { id: string; title: string; summary?: string; raw_transcript?: string; similarity: string }) => ({
       id: row.id,
       title: row.title,
       summary: row.summary || '',

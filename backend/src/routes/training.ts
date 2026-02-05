@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getPool, AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 
 const router = Router();
 
@@ -20,7 +20,7 @@ interface TrainingRequest {
   feedback?: string;
 }
 
-interface TrainingItem {
+interface _TrainingItem {
   id: string;
   idea_id: string;
   context: string;
@@ -275,10 +275,15 @@ router.delete('/:context/training/:id', apiKeyAuth, requireScope('write'), async
   });
 }));
 
+// Define a minimal pool interface for the query method
+interface DatabasePool {
+  query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }>;
+}
+
 /**
  * Helper function to update tone preferences in user profile
  */
-async function updateTonePreference(pool: any, toneFeedback: string, weight: number): Promise<void> {
+async function updateTonePreference(pool: DatabasePool, toneFeedback: string, weight: number): Promise<void> {
   try {
     // Check if user_profile exists
     const profileResult = await pool.query('SELECT id, preferences FROM user_profile LIMIT 1');
@@ -295,8 +300,12 @@ async function updateTonePreference(pool: any, toneFeedback: string, weight: num
     } else {
       // Update existing profile
       const profile = profileResult.rows[0];
-      const preferences = profile.preferences || {};
-      const tonePreferences = preferences.tonePreferences || {};
+      interface ProfilePreferences {
+        tonePreferences?: Record<string, number>;
+        [key: string]: unknown;
+      }
+      const preferences: ProfilePreferences = (profile.preferences || {}) as ProfilePreferences;
+      const tonePreferences: Record<string, number> = preferences.tonePreferences || {};
 
       // Add weight to existing preference or create new
       tonePreferences[toneFeedback] = (tonePreferences[toneFeedback] || 0) + weight;

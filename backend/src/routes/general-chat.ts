@@ -25,7 +25,7 @@ import {
   sendMessageWithVision,
   addMessage,
 } from '../services/general-chat';
-import { isValidUUID, toInt, toIntBounded } from '../utils/validation';
+import { isValidUUID, toIntBounded } from '../utils/validation';
 import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
 import { detectChatMode } from '../services/chat-modes';
 import { query } from '../utils/database';

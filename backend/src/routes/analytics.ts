@@ -298,9 +298,19 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
 // Helper Functions
 // ===========================================
 
+interface HourlyDataRow {
+  hour: string;
+  count: string;
+}
+
+interface DowDataRow {
+  dow: string;
+  count: string;
+}
+
 function generateInsights(
-  hourlyData: any[],
-  dowData: any[],
+  hourlyData: HourlyDataRow[],
+  dowData: DowDataRow[],
   dayNames: string[]
 ): string[] {
   const insights: string[] = [];

@@ -555,7 +555,9 @@ export async function getSubgraph(
   const nodeIds: string[] = [];
 
   while (queue.length > 0) {
-    const { id, currentDepth } = queue.shift()!;
+    const item = queue.shift();
+    if (!item) { break; }
+    const { id, currentDepth } = item;
 
     if (visitedIds.has(id)) {continue;}
     visitedIds.add(id);
@@ -962,7 +964,7 @@ export async function graphEnhancedRetrieval(
       [context, seedIdeaIds, minStrength]
     );
 
-    const results: GraphRetrievalResult[] = directResult.rows.map((r: any) => ({
+    const results: GraphRetrievalResult[] = directResult.rows.map((r: { id: string; title: string; summary?: string; connection_strength: string; path?: string[] }) => ({
       id: r.id,
       title: r.title,
       summary: r.summary || '',
@@ -1028,7 +1030,7 @@ export async function graphEnhancedRetrieval(
 
       const centralityMap = new Map<string, number>();
       const maxCentrality = Math.max(
-        ...centralityResult.rows.map((r: any) => parseInt(r.degree_centrality) || 0),
+        ...centralityResult.rows.map((r: { id: string; degree_centrality: string }) => parseInt(r.degree_centrality) || 0),
         1
       );
 

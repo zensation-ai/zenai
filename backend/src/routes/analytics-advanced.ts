@@ -446,8 +446,8 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncH
   const ctx = context as AIContext;
 
   // Validate period to prevent SQL injection - only allow known values
-  const validPeriods = ['week', 'month'] as const;
-  const safePeriod = validPeriods.includes(period as any) ? period : 'week';
+  const validPeriods: readonly string[] = ['week', 'month'];
+  const safePeriod = validPeriods.includes(period as string) ? period : 'week';
   const intervalDays = safePeriod === 'month' ? 30 : 7;
 
     const [currentPeriod, previousPeriod] = await Promise.all([

@@ -610,13 +610,27 @@ export class WorkingMemoryService {
 
       if (result.rows.length === 0) {return null;}
 
-      const row = result.rows[0];
-      let slots: any[] = [];
+      const row = result.rows[0] as Record<string, unknown>;
+
+      /** Serialized slot structure from database */
+      interface SerializedSlot {
+        id: string;
+        type: SlotType;
+        content: string;
+        priority: number;
+        activation: number;
+        addedAt: string;
+        lastAccessed: string;
+      }
+
+      let slots: SerializedSlot[] = [];
       try {
-        slots = JSON.parse(row.slots || '[]');
-        if (!Array.isArray(slots)) {
+        const parsed = JSON.parse((row.slots as string) || '[]') as unknown;
+        if (!Array.isArray(parsed)) {
           logger.warn('Working memory slots is not an array, resetting', { sessionId });
           slots = [];
+        } else {
+          slots = parsed as SerializedSlot[];
         }
       } catch (parseError) {
         logger.warn('Failed to parse working memory slots, resetting', {
@@ -627,12 +641,12 @@ export class WorkingMemoryService {
       }
 
       const state: WorkingMemoryState = {
-        sessionId: row.session_id,
-        context: row.context,
-        currentGoal: row.current_goal,
-        subGoals: row.sub_goals || [],
-        capacity: row.capacity || CONFIG.DEFAULT_CAPACITY,
-        slots: slots.map((s: any) => ({
+        sessionId: row.session_id as string,
+        context: row.context as AIContext,
+        currentGoal: row.current_goal as string,
+        subGoals: (row.sub_goals as string[]) || [],
+        capacity: (row.capacity as number) || CONFIG.DEFAULT_CAPACITY,
+        slots: slots.map((s: SerializedSlot) => ({
           id: s.id,
           type: s.type,
           content: s.content,
@@ -641,8 +655,8 @@ export class WorkingMemoryService {
           addedAt: new Date(s.addedAt),
           lastAccessed: new Date(s.lastAccessed),
         })),
-        createdAt: new Date(row.created_at),
-        lastActivity: new Date(row.last_activity),
+        createdAt: new Date(row.created_at as string),
+        lastActivity: new Date(row.last_activity as string),
       };
 
       this.states.set(sessionId, state);

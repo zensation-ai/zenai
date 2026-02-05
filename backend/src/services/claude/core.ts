@@ -9,12 +9,11 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../../utils/logger';
-import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority } from '../../utils/ollama';
+import { StructuredIdea } from '../../utils/ollama';
 import { AIContext } from '../../utils/database-context';
-import { buildSystemPrompt, trackContextUsage, getUnifiedContext } from '../business-context';
+import { trackContextUsage, getUnifiedContext } from '../business-context';
 import {
   getClaudeClient,
-  isClaudeAvailable,
   executeWithProtection,
   CLAUDE_MODEL,
   SYSTEM_PROMPT,

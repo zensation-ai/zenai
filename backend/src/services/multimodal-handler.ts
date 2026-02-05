@@ -52,7 +52,7 @@ export interface MultimodalResult {
   success: boolean;
   task: ProcessingTask;
   text?: string;
-  structured?: Record<string, any>;
+  structured?: Record<string, unknown>;
   modalities: {
     hasText: boolean;
     hasImages: boolean;
@@ -288,7 +288,7 @@ class MultimodalHandler {
 
       // Parse JSON response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      let structured: Record<string, any> = {};
+      let structured: Record<string, unknown> = {};
 
       if (jsonMatch) {
         try {

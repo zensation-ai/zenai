@@ -138,7 +138,11 @@ class ConversationMemoryService {
 
     // Create new session
     const newSessionId = await this.createSession(context, metadata);
-    return this.sessions.get(newSessionId)!;
+    const session = this.sessions.get(newSessionId);
+    if (!session) {
+      throw new Error(`Session ${newSessionId} not found after creation`);
+    }
+    return session;
   }
 
   /**
@@ -386,19 +390,20 @@ ${conversationText}`;
   /**
    * Parse messages from database JSONB
    */
-  private parseMessages(messages: any): ConversationMessage[] {
+  private parseMessages(messages: unknown): ConversationMessage[] {
     if (!messages) {return [];}
-    if (typeof messages === 'string') {
+    let parsedMessages: unknown = messages;
+    if (typeof parsedMessages === 'string') {
       try {
-        messages = JSON.parse(messages);
+        parsedMessages = JSON.parse(parsedMessages);
       } catch {
         return [];
       }
     }
-    if (!Array.isArray(messages)) {return [];}
+    if (!Array.isArray(parsedMessages)) {return [];}
 
-    return messages.map((msg: any) => ({
-      role: msg.role || 'user',
+    return parsedMessages.map((msg: { role?: string; content?: string; timestamp?: string }) => ({
+      role: (msg.role || 'user') as 'user' | 'assistant',
       content: msg.content || '',
       timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
     }));

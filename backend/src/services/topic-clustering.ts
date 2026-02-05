@@ -74,9 +74,15 @@ export async function generateTopics(
     LIMIT 500
   `);
 
-  const ideas: IdeaEmbedding[] = ideasResult.rows
-    .filter((row: any) => row.embedding)
-    .map((row: any) => ({
+  interface IdeaRow {
+    id: string;
+    title: string;
+    summary: string;
+    embedding: unknown;
+  }
+  const ideas: IdeaEmbedding[] = (ideasResult.rows as IdeaRow[])
+    .filter((row) => row.embedding)
+    .map((row) => ({
       id: row.id,
       title: row.title,
       summary: row.summary,
@@ -175,7 +181,7 @@ export async function generateTopics(
 
         for (const ideaId of cluster.ideaIds) {
           const idea = ideasMap.get(ideaId);
-          if (!idea) continue;
+          if (!idea) {continue;}
 
           const membershipScore = calculateMembershipScore(idea.embedding, centroid);
           membershipValues.push(`($${paramIdx}, $${paramIdx + 1}, $${paramIdx + 2}, TRUE)`);
@@ -265,19 +271,22 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
         }
       }
 
-      clusters.get(nearestCluster)!.push(idea.id);
+      const cluster = clusters.get(nearestCluster);
+      if (cluster) { cluster.push(idea.id); }
     }
 
     // Update centroids
     let converged = true;
     for (let i = 0; i < k; i++) {
-      const clusterIdeas = clusters.get(i)!;
+      const clusterIdeas = clusters.get(i) ?? [];
       if (clusterIdeas.length === 0) {continue;}
 
       const newCentroid = new Array(dim).fill(0);
       for (const ideaId of clusterIdeas) {
         // O(1) lookup via Map instead of O(n) find()
-        const embedding = ideasMap.get(ideaId)!.embedding;
+        const ideaData = ideasMap.get(ideaId);
+        if (!ideaData) { continue; }
+        const embedding = ideaData.embedding;
         for (let d = 0; d < dim; d++) {
           newCentroid[d] += embedding[d];
         }
@@ -301,13 +310,15 @@ function kMeansClustering(ideas: IdeaEmbedding[], k: number, maxIterations: numb
   // Calculate cluster coherence (average similarity to centroid)
   const result: Cluster[] = [];
   for (let i = 0; i < k; i++) {
-    const clusterIdeas = clusters.get(i)!;
+    const clusterIdeas = clusters.get(i) ?? [];
     if (clusterIdeas.length === 0) {continue;}
 
     let coherence = 0;
     for (const ideaId of clusterIdeas) {
       // O(1) lookup via Map instead of O(n) find()
-      const embedding = ideasMap.get(ideaId)!.embedding;
+      const ideaData = ideasMap.get(ideaId);
+      if (!ideaData) { continue; }
+      const embedding = ideaData.embedding;
       coherence += cosineSimilarity(embedding, centroids[i]);
     }
     coherence /= clusterIdeas.length;
@@ -494,13 +505,24 @@ export async function getTopics(context: AIContext): Promise<Topic[]> {
   }));
 }
 
+/** Idea with topic membership info */
+export interface TopicIdea {
+  id: string;
+  title: string;
+  type: string;
+  category: string;
+  priority: string;
+  summary: string;
+  membership_score: number;
+}
+
 /**
  * Get a single topic with its ideas
  */
 export async function getTopicWithIdeas(
   context: AIContext,
   topicId: string
-): Promise<{ topic: Topic; ideas: any[] } | null> {
+): Promise<{ topic: Topic; ideas: TopicIdea[] } | null> {
   const topicResult = await queryContext(context, `
     SELECT id, name, description, color, icon, idea_count, confidence_score
     FROM idea_topics
@@ -634,11 +656,13 @@ export async function mergeTopics(
 // Utility Functions
 // ============================================
 
-function parseEmbedding(embedding: any): number[] {
-  if (Array.isArray(embedding)) {return embedding;}
+function parseEmbedding(embedding: unknown): number[] {
+  if (Array.isArray(embedding)) {
+    return embedding as number[];
+  }
   if (typeof embedding === 'string') {
     // Handle PostgreSQL vector format: [0.1,0.2,...]
-    const cleaned = embedding.replace(/[\[\]]/g, '');
+    const cleaned = embedding.replace(/[[\]]/g, '');
     return cleaned.split(',').map(Number);
   }
   return [];

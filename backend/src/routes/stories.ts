@@ -51,8 +51,8 @@ router.get('/:context/stories', apiKeyAuth, asyncHandler(async (req: Request, re
   if (searchQuery && typeof searchQuery === 'string') {
     const stories = await findStoriesByQuery(
       searchQuery,
-      minItemsResult.data!,
-      thresholdResult.data!,
+      minItemsResult.data ?? 3,
+      thresholdResult.data ?? 0.7,
       context as AIContext
     );
 
@@ -73,6 +73,38 @@ router.get('/:context/stories', apiKeyAuth, asyncHandler(async (req: Request, re
   });
 }));
 
+// Type definitions for stories
+interface StoryItem {
+  id: string;
+  type: string;
+  content: string;
+  timestamp: string;
+}
+
+interface Story {
+  id: string;
+  title: string;
+  description: string;
+  items: StoryItem[];
+  created_at: Date;
+  updated_at: Date;
+  item_count: number;
+}
+
+interface SimilarItemRow {
+  id: string;
+  item_type: string;
+  content: string;
+  context: string;
+  embedding: unknown;
+  created_at: string;
+  similarity: number;
+}
+
+interface ClusterRow extends SimilarItemRow {
+  similar_items: Array<{ target_id: string; similarity: number }>;
+}
+
 /**
  * Find stories by semantic search query
  */
@@ -81,7 +113,7 @@ async function findStoriesByQuery(
   minItems: number,
   similarityThreshold: number,
   context: AIContext
-): Promise<any[]> {
+): Promise<Story[]> {
   logger.info('Finding stories', { searchQuery, context });
 
   // 1. Generate embedding for search query
@@ -122,14 +154,15 @@ async function findStoriesByQuery(
   }
 
   // 3. Group into a story
-  const story = {
+  const rows = similarItems.rows as SimilarItemRow[];
+  const story: Story = {
     id: crypto.randomUUID(),
     title: searchQuery,
     description: `Automatisch gruppierte Inhalte zu "${searchQuery}"`,
-    items: similarItems.rows.map(formatStoryItem),
-    created_at: new Date(Math.min(...similarItems.rows.map((r: any) => new Date(r.created_at).getTime()))),
-    updated_at: new Date(Math.max(...similarItems.rows.map((r: any) => new Date(r.created_at).getTime()))),
-    item_count: similarItems.rows.length
+    items: rows.map(formatStoryItem),
+    created_at: new Date(Math.min(...rows.map((r) => new Date(r.created_at).getTime()))),
+    updated_at: new Date(Math.max(...rows.map((r) => new Date(r.created_at).getTime()))),
+    item_count: rows.length
   };
 
   return [story];
@@ -140,7 +173,7 @@ async function findStoriesByQuery(
  *
  * OPTIMIZED: Uses a single SQL query with cross-join similarity instead of N+1 queries
  */
-async function getAllStories(context: AIContext): Promise<any[]> {
+async function getAllStories(context: AIContext): Promise<Story[]> {
   // Get all ideas with embeddings and pre-compute similarities in SQL
   // This avoids N+1 query problem by using a single batch query
   const clusterResult = await queryContext(
@@ -189,17 +222,17 @@ async function getAllStories(context: AIContext): Promise<any[]> {
   }
 
   // Build clusters from pre-computed similarities (thread-safe in-memory)
-  const itemMap = new Map<string, any>();
+  const itemMap = new Map<string, ClusterRow>();
   const processed = new Set<string>();
-  const clusters: Map<string, any[]> = new Map();
+  const clusters: Map<string, StoryItem[]> = new Map();
 
   // First pass: build item map
-  for (const item of clusterResult.rows) {
+  for (const item of clusterResult.rows as ClusterRow[]) {
     itemMap.set(item.id, item);
   }
 
   // Second pass: build clusters
-  for (const item of clusterResult.rows) {
+  for (const item of clusterResult.rows as ClusterRow[]) {
     if (processed.has(item.id)) {continue;}
 
     const similarItemIds: string[] = [];
@@ -243,13 +276,13 @@ async function getAllStories(context: AIContext): Promise<any[]> {
   }
 
   // Convert clusters to stories
-  const stories = Array.from(clusters.entries()).map(([_id, items]) => ({
+  const stories: Story[] = Array.from(clusters.entries()).map(([_id, items]) => ({
     id: crypto.randomUUID(),
     title: generateTitleFromItems(items),
     description: `${items.length} verwandte Inhalte`,
     items,
-    created_at: new Date(Math.min(...items.map((item: any) => new Date(item.timestamp).getTime()))),
-    updated_at: new Date(Math.max(...items.map((item: any) => new Date(item.timestamp).getTime()))),
+    created_at: new Date(Math.min(...items.map((item) => new Date(item.timestamp).getTime()))),
+    updated_at: new Date(Math.max(...items.map((item) => new Date(item.timestamp).getTime()))),
     item_count: items.length
   }));
 
@@ -259,7 +292,7 @@ async function getAllStories(context: AIContext): Promise<any[]> {
 /**
  * Format story item for response
  */
-function formatStoryItem(row: any): any {
+function formatStoryItem(row: SimilarItemRow): StoryItem {
   return {
     id: row.id,
     type: row.item_type,
@@ -271,15 +304,15 @@ function formatStoryItem(row: any): any {
 /**
  * Generate a title from story items
  */
-function generateTitleFromItems(items: any[]): string {
+function generateTitleFromItems(items: StoryItem[]): string {
   if (items.length === 0) {return 'Unbekannte Story';}
 
   // Extract keywords from content
-  const allContent = items.map((i: any) => i.content).join(' ');
+  const allContent = items.map((i) => i.content).join(' ');
   const words = allContent
     .toLowerCase()
     .split(/\s+/)
-    .filter((w: string) => w.length > 4)
+    .filter((w) => w.length > 4)
     .reduce((acc: Map<string, number>, word: string) => {
       acc.set(word, (acc.get(word) || 0) + 1);
       return acc;

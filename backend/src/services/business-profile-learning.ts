@@ -10,7 +10,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { queryContext, AIContext } from '../utils/database-context';
-import { queryOllamaJSON, generateEmbedding } from '../utils/ollama';
+import { queryOllamaJSON } from '../utils/ollama';
 import { logger } from '../utils/logger';
 
 // ===========================================
@@ -310,7 +310,7 @@ export async function learnFromIdea(
       insightsFound: result.new_insights.length,
     });
 
-  } catch (error) {
+  } catch {
     logger.warn('Could not learn from idea', { ideaId });
   }
 
@@ -391,7 +391,7 @@ Regeln:
       painPoints: result?.pain_points || [],
       goals: result?.goals || [],
     };
-  } catch (error) {
+  } catch {
     return { painPoints: [], goals: [] };
   }
 }
@@ -595,7 +595,7 @@ export async function getPersonalizedContext(
     }
 
     return `\n\n[Nutzer-Kontext]\n${parts.join('\n')}`;
-  } catch (error) {
+  } catch {
     return '';
   }
 }
@@ -649,7 +649,7 @@ export async function getProfileStats(
       insights_count: insightsCount,
       last_updated: profile.updated_at,
     };
-  } catch (error) {
+  } catch {
     return {
       profile_completeness: 0,
       topics_tracked: 0,

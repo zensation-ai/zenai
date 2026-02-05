@@ -52,7 +52,7 @@ function validateScopes(scopes: unknown): string[] {
     throw new ValidationError('Scopes must be an array.');
   }
   for (const scope of scopes) {
-    if (typeof scope !== 'string' || !VALID_SCOPES.includes(scope as any)) {
+    if (typeof scope !== 'string' || !VALID_SCOPES.includes(scope as typeof VALID_SCOPES[number])) {
       throw new ValidationError(`Invalid scope: ${scope}. Valid scopes: ${VALID_SCOPES.join(', ')}`);
     }
   }
@@ -379,15 +379,20 @@ apiKeysRouter.post('/:id/regenerate', apiKeyAuth, requireScope('admin'), asyncHa
  * Phase Security Sprint 3: Now includes expiry info
  */
 apiKeysRouter.post('/verify', apiKeyAuth, (req: Request, res: Response) => {
+  const apiKey = req.apiKey;
+  if (!apiKey) {
+    res.status(401).json({ success: false, error: 'API key not found' });
+    return;
+  }
   res.json({
     success: true,
     valid: true,
     apiKey: {
-      id: req.apiKey!.id,
-      name: req.apiKey!.name,
-      scopes: req.apiKey!.scopes,
-      rateLimit: req.apiKey!.rateLimit,
-      expiryInfo: req.apiKey!.expiryInfo,
+      id: apiKey.id,
+      name: apiKey.name,
+      scopes: apiKey.scopes,
+      rateLimit: apiKey.rateLimit,
+      expiryInfo: apiKey.expiryInfo,
     }
   });
 });
@@ -491,7 +496,7 @@ apiKeysRouter.post('/:id/extend', apiKeyAuth, requireScope('admin'), asyncHandle
     keyId: id,
     additionalDays,
     newExpiresAt: result.newExpiresAt,
-    extendedBy: req.apiKey!.id,
+    extendedBy: req.apiKey?.id ?? 'unknown',
   });
 
   res.json({

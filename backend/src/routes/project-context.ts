@@ -12,7 +12,6 @@ import { logger } from '../utils/logger';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import {
-  analyzeProject,
   generateProjectContext,
   getQuickProjectSummary,
   scanProjectStructure,
@@ -26,7 +25,7 @@ const router = Router();
  * Analyze a project and return comprehensive context
  */
 router.post('/analyze', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const { projectPath, includeReadme = true } = req.body;
+  const { projectPath } = req.body;
 
   if (!projectPath || typeof projectPath !== 'string') {
     throw new ValidationError('projectPath is required');

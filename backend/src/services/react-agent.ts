@@ -21,7 +21,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { getClaudeClient, executeWithProtection, CLAUDE_MODEL } from './claude/client';
-import { toolRegistry, ToolDefinition, ToolCall } from './claude/tool-use';
+import { toolRegistry } from './claude/tool-use';
 import { AIContext } from '../utils/database-context';
 
 // ===========================================

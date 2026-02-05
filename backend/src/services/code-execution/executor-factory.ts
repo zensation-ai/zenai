@@ -13,8 +13,8 @@ import {
   ExecutorProviderType,
   getPreferredProvider,
 } from './executor-provider';
-import { SandboxExecutor, getSandboxExecutor } from './sandbox-executor';
-import { Judge0Executor, getJudge0Executor } from './judge0-executor';
+import { getSandboxExecutor } from './sandbox-executor';
+import { getJudge0Executor } from './judge0-executor';
 
 // ===========================================
 // Executor Factory

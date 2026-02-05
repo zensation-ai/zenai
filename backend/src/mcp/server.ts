@@ -41,12 +41,18 @@ interface MCPServerConfig {
   defaultContext: AIContext;
 }
 
+interface MCPToolProperty {
+  type: string;
+  description?: string;
+  enum?: string[];
+}
+
 interface MCPTool {
   name: string;
   description: string;
   inputSchema: {
     type: string;
-    properties: Record<string, any>;
+    properties: Record<string, MCPToolProperty>;
     required?: string[];
   };
 }
@@ -60,7 +66,11 @@ interface MCPResource {
 
 interface MCPRequest {
   method: string;
-  params?: Record<string, any>;
+  params?: {
+    name?: string;
+    arguments?: Record<string, unknown>;
+    uri?: string;
+  };
 }
 
 interface MCPResponse {
@@ -239,15 +249,15 @@ export class KIABMCPServer {
 
         case 'tools/call':
           return await this.handleToolCall(
-            request.params?.name,
-            request.params?.arguments || {}
+            request.params?.name ?? '',
+            request.params?.arguments ?? {}
           );
 
         case 'resources/list':
           return { resources: await this.listResources() };
 
         case 'resources/read':
-          return await this.handleResourceRead(request.params?.uri);
+          return await this.handleResourceRead(request.params?.uri ?? '');
 
         default:
           return {
@@ -271,8 +281,8 @@ export class KIABMCPServer {
   // Tool Handlers
   // ===========================================
 
-  private async handleToolCall(name: string, args: Record<string, any>): Promise<MCPResponse> {
-    let result: any;
+  private async handleToolCall(name: string, args: Record<string, unknown>): Promise<MCPResponse> {
+    let result: unknown;
 
     switch (name) {
       case 'create_idea':
@@ -311,19 +321,20 @@ export class KIABMCPServer {
     };
   }
 
-  private async handleCreateIdea(args: Record<string, any>): Promise<any> {
-    const { transcript, context = this.config.defaultContext } = args;
+  private async handleCreateIdea(args: Record<string, unknown>): Promise<unknown> {
+    const transcript = args.transcript as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
 
     if (!transcript) {
       throw new Error('Transkript ist erforderlich');
     }
 
     // Structure the idea using Claude
-    const structured = await structureWithClaudePersonalized(transcript, context as AIContext);
+    const structured = await structureWithClaudePersonalized(transcript, context);
 
     // Save to database
     const result = await queryContext(
-      context as AIContext,
+      context,
       `INSERT INTO ideas (context, type, category, title, summary, raw_transcript, priority, is_archived, keywords)
        VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8)
        RETURNING id, type, category, title, summary, priority, created_at`,
@@ -346,8 +357,10 @@ export class KIABMCPServer {
     };
   }
 
-  private async handleSearchIdeas(args: Record<string, any>): Promise<any> {
-    const { query, context, limit = 10 } = args;
+  private async handleSearchIdeas(args: Record<string, unknown>): Promise<unknown> {
+    const query = args.query as string | undefined;
+    const context = args.context as AIContext | undefined;
+    const limit = (args.limit as number | undefined) ?? 10;
 
     if (!query) {
       throw new Error('Suchanfrage ist erforderlich');
@@ -362,7 +375,7 @@ export class KIABMCPServer {
         AND to_tsvector('german', title || ' ' || COALESCE(summary, ''))
             @@ plainto_tsquery('german', $1)
     `;
-    const params: any[] = [query];
+    const params: (string | number)[] = [query];
 
     if (context) {
       sql += ` AND context = $${params.length + 1}`;
@@ -373,7 +386,7 @@ export class KIABMCPServer {
     params.push(limit);
 
     const result = await queryContext(
-      (context as AIContext) || this.config.defaultContext,
+      context ?? this.config.defaultContext,
       sql,
       params
     );
@@ -385,10 +398,11 @@ export class KIABMCPServer {
     };
   }
 
-  private async handleGetSuggestions(args: Record<string, any>): Promise<any> {
-    const { context = this.config.defaultContext, limit = 5 } = args;
+  private async handleGetSuggestions(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const limit = (args.limit as number | undefined) ?? 5;
 
-    const suggestions = await proactiveSuggestionEngine.getSuggestions(context as AIContext);
+    const suggestions = await proactiveSuggestionEngine.getSuggestions(context);
 
     return {
       suggestions: suggestions.slice(0, limit),
@@ -396,8 +410,9 @@ export class KIABMCPServer {
     };
   }
 
-  private async handleChat(args: Record<string, any>): Promise<any> {
-    const { message, context = this.config.defaultContext } = args;
+  private async handleChat(args: Record<string, unknown>): Promise<unknown> {
+    const message = args.message as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
 
     if (!message) {
       throw new Error('Nachricht ist erforderlich');
@@ -405,7 +420,7 @@ export class KIABMCPServer {
 
     // Get some recent ideas for context
     const recentIdeas = await queryContext(
-      context as AIContext,
+      context,
       `SELECT title, summary, type FROM ideas
        WHERE context = $1 AND is_archived = false
        ORDER BY created_at DESC LIMIT 5`,
@@ -427,8 +442,9 @@ export class KIABMCPServer {
     };
   }
 
-  private async handleGetRelatedIdeas(args: Record<string, any>): Promise<any> {
-    const { ideaId, depth = 2 } = args;
+  private async handleGetRelatedIdeas(args: Record<string, unknown>): Promise<unknown> {
+    const ideaId = args.ideaId as string | undefined;
+    const depth = (args.depth as number | undefined) ?? 2;
 
     if (!ideaId) {
       throw new Error('Idea-ID ist erforderlich');
@@ -438,7 +454,7 @@ export class KIABMCPServer {
     const suggestions = await getSuggestedConnections(ideaId);
 
     // Use multiHopSearch for deeper connections if depth > 1
-    let deepConnections: any[] = [];
+    let deepConnections: unknown[] = [];
     if (depth > 1) {
       // Get the idea title for multi-hop search
       const idea = await queryContext(
@@ -460,11 +476,11 @@ export class KIABMCPServer {
     };
   }
 
-  private async handleGetStats(args: Record<string, any>): Promise<any> {
-    const { context } = args;
+  private async handleGetStats(args: Record<string, unknown>): Promise<unknown> {
+    const context = args.context as AIContext | undefined;
 
     let whereClause = 'WHERE is_archived = false';
-    const params: any[] = [];
+    const params: string[] = [];
 
     if (context) {
       whereClause += ` AND context = $1`;
@@ -472,7 +488,7 @@ export class KIABMCPServer {
     }
 
     const statsResult = await queryContext(
-      (context as AIContext) || this.config.defaultContext,
+      context ?? this.config.defaultContext,
       `SELECT
          COUNT(*) as total_ideas,
          COUNT(DISTINCT category) as categories,
@@ -485,7 +501,7 @@ export class KIABMCPServer {
     );
 
     const typeDistribution = await queryContext(
-      (context as AIContext) || this.config.defaultContext,
+      context ?? this.config.defaultContext,
       `SELECT type, COUNT(*) as count
        FROM ideas
        ${whereClause}
@@ -497,7 +513,7 @@ export class KIABMCPServer {
     return {
       stats: statsResult.rows[0],
       typeDistribution: typeDistribution.rows,
-      context: context || 'all',
+      context: context ?? 'all',
     };
   }
 
@@ -548,7 +564,7 @@ export class KIABMCPServer {
       throw new Error('URI ist erforderlich');
     }
 
-    let content: any;
+    let content: unknown;
 
     if (uri === 'zenai://ideas') {
       // List all ideas

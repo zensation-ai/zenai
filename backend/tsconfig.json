@@ -12,7 +12,9 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "noFallthroughCasesInSwitch": true,
+    "useUnknownInCatchVariables": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/__tests__", "**/*.test.ts", "**/*.spec.ts"]

@@ -114,7 +114,7 @@ export async function getMeetings(filters?: {
   offset?: number;
 }): Promise<{ meetings: Meeting[]; total: number }> {
   let whereClause = 'WHERE 1=1';
-  const params: any[] = [];
+  const params: (string | number)[] = [];
   let paramIndex = 1;
 
   if (filters?.company_id) {
@@ -196,9 +196,17 @@ ${transcript}
 
 STRUKTURIERTE NOTIZEN:`;
 
-  let structured: any;
+  interface StructuredMeetingNotes {
+    structured_summary?: string;
+    key_decisions?: string[];
+    action_items?: Array<{ task: string; assignee?: string; priority?: 'low' | 'medium' | 'high' }>;
+    topics_discussed?: string[];
+    follow_ups?: Array<{ topic: string; responsible?: string }>;
+    sentiment?: 'mixed' | 'positive' | 'neutral' | 'negative';
+  }
+  let structured: StructuredMeetingNotes;
   try {
-    structured = await structureWithOllama(prompt);
+    structured = await structureWithOllama(prompt) as StructuredMeetingNotes;
   } catch (error) {
     logger.error('Failed to structure meeting notes', error instanceof Error ? error : undefined);
     structured = {
@@ -244,8 +252,10 @@ STRUKTURIERTE NOTIZEN:`;
     raw_transcript: transcript,
     structured_summary: structured.structured_summary || '',
     key_decisions: structured.key_decisions || [],
-    action_items: (structured.action_items || []).map((item: any) => ({
-      ...item,
+    action_items: (structured.action_items || []).map((item) => ({
+      task: item.task,
+      assignee: item.assignee,
+      priority: item.priority || 'medium',
       completed: false,
     })),
     topics_discussed: structured.topics_discussed || [],
@@ -351,7 +361,7 @@ export async function getAllActionItems(filters?: {
   company_id?: string;
 }): Promise<{ meeting: Meeting; action_item: ActionItem; notes_id: string }[]> {
   let whereClause = 'WHERE 1=1';
-  const params: any[] = [];
+  const params: string[] = [];
   let paramIndex = 1;
 
   if (filters?.company_id) {
@@ -391,7 +401,21 @@ export async function getAllActionItems(filters?: {
 }
 
 // Helper functions
-function formatMeeting(row: any): Meeting {
+interface MeetingRow {
+  id: string;
+  company_id: string;
+  title: string;
+  date: string;
+  duration_minutes?: number;
+  participants: unknown;
+  location?: string;
+  meeting_type: Meeting['meeting_type'];
+  status: Meeting['status'];
+  created_at: string;
+  updated_at: string;
+}
+
+function formatMeeting(row: MeetingRow): Meeting {
   return {
     id: row.id,
     company_id: row.company_id,

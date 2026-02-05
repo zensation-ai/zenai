@@ -26,7 +26,7 @@ const results: BenchmarkResult[] = [];
 
 async function measureOperation(
   name: string,
-  operation: () => Promise<any>,
+  operation: () => Promise<unknown>,
   runs: number = 3,
   targetMs: number
 ): Promise<BenchmarkResult> {
@@ -41,8 +41,8 @@ async function measureOperation(
       const elapsed = Date.now() - start;
       times.push(elapsed);
       process.stdout.write(`  Run ${i + 1}: ${elapsed}ms\n`);
-    } catch (error: any) {
-      console.log(`  Run ${i + 1}: ERROR - ${error.message}`);
+    } catch (error: unknown) {
+      console.log(`  Run ${i + 1}: ERROR - ${error instanceof Error ? error.message : String(error)}`);
       times.push(-1);
     }
   }
@@ -198,7 +198,7 @@ async function runBenchmarks() {
   }
 
   if (searchResult && searchResult.avgMs > 0) {
-    const target = 75; // 75ms target for pure search
+    const _target = 75; // 75ms target for pure search
     console.log(`Semantic Search: ${searchResult.avgMs}ms (Target includes embedding: ~1-2s)`);
   }
 

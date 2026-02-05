@@ -25,7 +25,7 @@ export interface Interaction {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PreRetrievedDocument {
@@ -362,7 +362,7 @@ Zusammenfassung:`;
   private async preRetrieveRelevantDocs(
     memory: ShortTermMemory,
     userMessage: string,
-    topics: string[]
+    _topics: string[]
   ): Promise<void> {
     try {
       // Generate embedding for current query

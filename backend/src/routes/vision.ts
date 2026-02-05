@@ -17,7 +17,7 @@
 
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import {

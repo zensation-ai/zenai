@@ -11,12 +11,10 @@
  * - Multi-iteration retrieval for complex queries
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import { AIContext, queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { generateClaudeResponse, queryClaudeJSON } from './claude';
 import { generateEmbedding } from './ai';
-import { cosineSimilarity } from '../utils/semantic-cache';
 
 // ===========================================
 // Types & Interfaces
@@ -31,7 +29,7 @@ export interface RetrievalResult {
   content?: string;
   score: number;
   strategy: RetrievalStrategy;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface EvaluationResult {
@@ -222,7 +220,6 @@ class AgenticRAGService {
     usedStrategies: RetrievalStrategy[]
   ): Promise<RetrievalStrategy> {
     // Quick heuristic checks first
-    const queryLower = query.toLowerCase();
 
     // Temporal indicators
     if (/\b(letzte|kürzlich|vor \d|gestern|heute|diese woche|letzten|recent|last)\b/i.test(query)) {
@@ -332,7 +329,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
         [context, `[${queryEmbedding.join(',')}]`, maxResults]
       );
 
-      return result.rows.map((r: any) => ({
+      return result.rows.map((r: { id: string; title: string; summary?: string; raw_transcript?: string; similarity: string }) => ({
         id: r.id,
         title: r.title,
         summary: r.summary || '',
@@ -381,7 +378,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
         [context, query, maxResults]
       );
 
-      return result.rows.map((r: any) => ({
+      return result.rows.map((r: { id: string; title: string; summary?: string; raw_transcript?: string; rank: string }) => ({
         id: r.id,
         title: r.title,
         summary: r.summary || '',
@@ -436,7 +433,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
         [context, seedIds, maxResults]
       );
 
-      return result.rows.map((r: any) => ({
+      return result.rows.map((r: { id: string; title: string; summary?: string; raw_transcript?: string; score: string }) => ({
         id: r.id,
         title: r.title,
         summary: r.summary || '',
@@ -484,7 +481,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
         [context, interval, maxResults]
       );
 
-      return result.rows.map((r: any) => ({
+      return result.rows.map((r: { id: string; title: string; summary?: string; raw_transcript?: string; recency_score: string; created_at: string }) => ({
         id: r.id,
         title: r.title,
         summary: r.summary || '',
@@ -624,7 +621,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
       }
 
       // Factor 4: Multi-strategy confirmation
-      const strategyCount = result.metadata?.strategyCount || 1;
+      const strategyCount = (result.metadata?.strategyCount as number | undefined) || 1;
       if (strategyCount > 1) {
         reRankScore += (strategyCount - 1) * 0.03;
       }

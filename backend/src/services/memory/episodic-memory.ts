@@ -16,7 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
-import { formatForPgVector, cosineSimilarity } from '../../utils/embedding';
+import { formatForPgVector } from '../../utils/embedding';
 
 // ===========================================
 // Types & Interfaces
@@ -317,7 +317,7 @@ export class EpisodicMemoryService {
           AND embedding IS NOT NULL
       `;
 
-      const params: any[] = [
+      const params: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [
         context,
         formatForPgVector(queryEmbedding),
         limit,
@@ -371,11 +371,11 @@ export class EpisodicMemoryService {
 
       // Update retrieval stats for retrieved episodes
       if (result.rows.length > 0) {
-        const episodeIds = result.rows.map((r: any) => r.id);
+        const episodeIds = result.rows.map((r: Record<string, unknown>) => r.id as string);
         await this.updateRetrievalStats(episodeIds, context);
       }
 
-      return result.rows.map((row: any) => this.rowToEpisode(row));
+      return result.rows.map((row: Record<string, unknown>) => this.rowToEpisode(row));
     } catch (error) {
       logger.error('Failed to retrieve episodes', error instanceof Error ? error : undefined, {
         context,
@@ -403,7 +403,7 @@ export class EpisodicMemoryService {
       [context, `%${query}%`, limit]
     );
 
-    return result.rows.map((row: any) => this.rowToEpisode(row));
+    return result.rows.map((row: Record<string, unknown>) => this.rowToEpisode(row));
   }
 
   /**
@@ -426,9 +426,9 @@ export class EpisodicMemoryService {
         [context, formatForPgVector(embedding), limit]
       );
 
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        similarity: parseFloat(row.similarity),
+      return result.rows.map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        similarity: parseFloat(row.similarity as string),
       }));
     } catch (error) {
       logger.debug('Failed to find similar episodes', { error });
@@ -450,7 +450,7 @@ export class EpisodicMemoryService {
         `SELECT update_episodic_retrieval_stats($1)`,
         [episodeIds]
       );
-    } catch (error) {
+    } catch {
       // Fallback to manual update if function doesn't exist
       await queryContext(
         context,
@@ -579,7 +579,7 @@ export class EpisodicMemoryService {
       });
 
       return affectedCount;
-    } catch (error) {
+    } catch {
       // Fallback if function doesn't exist
       const result = await queryContext(
         context,
@@ -629,7 +629,7 @@ export class EpisodicMemoryService {
       [sessionId, context, limit]
     );
 
-    return result.rows.map((row: any) => this.rowToEpisode(row));
+    return result.rows.map((row: Record<string, unknown>) => this.rowToEpisode(row));
   }
 
   /**
@@ -698,26 +698,26 @@ export class EpisodicMemoryService {
   /**
    * Convert database row to Episode interface
    */
-  private rowToEpisode(row: any): Episode {
+  private rowToEpisode(row: Record<string, unknown>): Episode {
     return {
-      id: row.id,
-      context: row.context,
-      sessionId: row.session_id,
-      timestamp: new Date(row.created_at),
-      trigger: row.trigger,
-      response: row.response,
-      emotionalValence: parseFloat(row.emotional_valence) || 0,
-      emotionalArousal: parseFloat(row.emotional_arousal) || 0.5,
+      id: row.id as string,
+      context: row.context as AIContext,
+      sessionId: row.session_id as string,
+      timestamp: new Date(row.created_at as string),
+      trigger: row.trigger as string,
+      response: row.response as string,
+      emotionalValence: parseFloat(row.emotional_valence as string) || 0,
+      emotionalArousal: parseFloat(row.emotional_arousal as string) || 0.5,
       temporalContext: {
-        timeOfDay: row.time_of_day || 'afternoon',
-        dayOfWeek: row.day_of_week || 'Unknown',
-        isWeekend: row.is_weekend || false,
+        timeOfDay: (row.time_of_day as Episode['temporalContext']['timeOfDay']) || 'afternoon',
+        dayOfWeek: (row.day_of_week as string) || 'Unknown',
+        isWeekend: (row.is_weekend as boolean) || false,
       },
-      linkedEpisodes: row.linked_episodes || [],
-      linkedFacts: row.linked_facts || [],
-      retrievalCount: row.retrieval_count || 0,
-      lastRetrieved: row.last_retrieved ? new Date(row.last_retrieved) : null,
-      retrievalStrength: parseFloat(row.retrieval_strength) || 1.0,
+      linkedEpisodes: (row.linked_episodes as string[]) || [],
+      linkedFacts: (row.linked_facts as string[]) || [],
+      retrievalCount: (row.retrieval_count as number) || 0,
+      lastRetrieved: row.last_retrieved ? new Date(row.last_retrieved as string) : null,
+      retrievalStrength: parseFloat(row.retrieval_strength as string) || 1.0,
       embedding: row.embedding ? this.parseEmbedding(row.embedding) : undefined,
     };
   }
@@ -725,10 +725,10 @@ export class EpisodicMemoryService {
   /**
    * Parse embedding from database format
    */
-  private parseEmbedding(embedding: any): number[] {
-    if (Array.isArray(embedding)) {return embedding;}
+  private parseEmbedding(embedding: unknown): number[] {
+    if (Array.isArray(embedding)) {return embedding as number[];}
     if (typeof embedding === 'string') {
-      const cleaned = embedding.replace(/[\[\]]/g, '');
+      const cleaned = embedding.replace(/[[\]]/g, '');
       return cleaned.split(',').map(Number);
     }
     return [];

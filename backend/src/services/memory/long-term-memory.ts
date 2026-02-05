@@ -12,9 +12,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
-import { generateClaudeResponse, queryClaudeJSON } from '../claude';
+import { queryClaudeJSON } from '../claude';
 import { generateEmbedding } from '../ai';
-import { cosineSimilarity } from '../../utils/semantic-cache';
 
 // ===========================================
 // Utility Functions
@@ -222,15 +221,15 @@ class LongTermMemoryService {
         [context, CONFIG.MAX_FACTS]
       );
 
-      facts = factsResult.rows.map((r: any) => ({
-        id: r.id,
-        factType: r.fact_type,
-        content: r.content,
-        confidence: parseFloat(r.confidence),
-        source: r.source,
-        firstSeen: new Date(r.first_seen),
-        lastConfirmed: new Date(r.last_confirmed),
-        occurrences: r.occurrences,
+      facts = factsResult.rows.map((r: Record<string, unknown>) => ({
+        id: r.id as string,
+        factType: r.fact_type as PersonalizationFact['factType'],
+        content: r.content as string,
+        confidence: parseFloat(r.confidence as string),
+        source: r.source as PersonalizationFact['source'],
+        firstSeen: new Date(r.first_seen as string),
+        lastConfirmed: new Date(r.last_confirmed as string),
+        occurrences: r.occurrences as number,
       }));
     } catch (hiMeSError) {
       // Fall back to legacy schema
@@ -248,14 +247,14 @@ class LongTermMemoryService {
           [CONFIG.MAX_FACTS]
         );
 
-        facts = legacyResult.rows.map((r: any) => ({
-          id: r.id,
-          factType: (r.category || 'knowledge') as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
-          content: r.fact_value || r.fact_key || '',
-          confidence: parseFloat(r.confidence) || 0.7,
-          source: (r.source || 'inferred') as 'explicit' | 'inferred' | 'consolidated',
-          firstSeen: new Date(r.created_at || Date.now()),
-          lastConfirmed: new Date(r.updated_at || Date.now()),
+        facts = legacyResult.rows.map((r: Record<string, unknown>) => ({
+          id: r.id as string,
+          factType: ((r.category as string) || 'knowledge') as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
+          content: (r.fact_value as string) || (r.fact_key as string) || '',
+          confidence: parseFloat(r.confidence as string) || 0.7,
+          source: ((r.source as string) || 'inferred') as 'explicit' | 'inferred' | 'consolidated',
+          firstSeen: new Date((r.created_at as string) || Date.now()),
+          lastConfirmed: new Date((r.updated_at as string) || Date.now()),
           occurrences: 1,
         }));
 
@@ -286,14 +285,14 @@ class LongTermMemoryService {
         [context, CONFIG.MAX_PATTERNS]
       );
 
-      patterns = patternsResult.rows.map((r: any) => ({
-        id: r.id,
-        patternType: r.pattern_type === 'time_based' ? 'time' : r.pattern_type === 'context_based' ? 'topic' : 'action',
-        pattern: r.pattern,
-        frequency: r.occurrences,
-        lastUsed: r.last_triggered ? new Date(r.last_triggered) : new Date(),
-        associatedTopics: safeJsonParse<string[]>(r.associated_topics, []),
-        confidence: parseFloat(r.confidence),
+      patterns = patternsResult.rows.map((r: Record<string, unknown>) => ({
+        id: r.id as string,
+        patternType: r.pattern_type === 'time_based' ? 'time' as const : r.pattern_type === 'context_based' ? 'topic' as const : 'action' as const,
+        pattern: r.pattern as string,
+        frequency: r.occurrences as number,
+        lastUsed: r.last_triggered ? new Date(r.last_triggered as string) : new Date(),
+        associatedTopics: safeJsonParse<string[]>(r.associated_topics as string, []),
+        confidence: parseFloat(r.confidence as string),
       }));
     } catch (patternError) {
       logger.debug('routine_patterns table not available', {
@@ -316,17 +315,17 @@ class LongTermMemoryService {
       );
 
       interactions = interactionsResult.rows
-        .filter((r: any) => r.summary)
-        .map((r: any) => {
+        .filter((r: Record<string, unknown>) => r.summary)
+        .map((r: Record<string, unknown>) => {
           const metadata = typeof r.metadata === 'string'
             ? safeJsonParse<Record<string, unknown>>(r.metadata, {})
-            : r.metadata || {};
+            : (r.metadata as Record<string, unknown>) || {};
           return {
-            id: r.id,
-            summary: r.summary,
+            id: r.id as string,
+            summary: r.summary as string,
             topics: (metadata.tags as string[]) || [],
             outcome: (metadata.outcome as string) || '',
-            timestamp: new Date(r.last_activity),
+            timestamp: new Date(r.last_activity as string),
             significance: (metadata.significance as number) || 0.5,
           };
         });
@@ -456,7 +455,7 @@ class LongTermMemoryService {
    */
   private async extractPatterns(
     sessions: SessionWithMessages[],
-    context: AIContext
+    _context: AIContext
   ): Promise<FrequentPattern[]> {
     // Combine all messages for analysis
     const allMessages = sessions.flatMap(s => s.messages);
@@ -518,7 +517,7 @@ Antworte als JSON:
    */
   private async extractFacts(
     sessions: SessionWithMessages[],
-    context: AIContext
+    _context: AIContext
   ): Promise<PersonalizationFact[]> {
     const allMessages = sessions.flatMap(s => s.messages);
     const userMessages = allMessages
@@ -783,7 +782,7 @@ Antworte als JSON:
     }
 
     try {
-      const queryEmbedding = await generateEmbedding(query);
+      const _queryEmbedding = await generateEmbedding(query);
       const queryLower = query.toLowerCase();
 
       // Find relevant facts

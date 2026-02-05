@@ -459,7 +459,7 @@ export async function createPresetFocusAreas(
   for (const preset of presets) {
     try {
       await createDomainFocus(preset, context);
-    } catch (error) {
+    } catch {
       // Ignore if already exists
     }
   }

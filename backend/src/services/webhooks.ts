@@ -199,7 +199,7 @@ async function retryWebhook(
  * Trigger webhooks for an event
  * This is the main function to call from other services
  */
-export async function triggerWebhook(event: WebhookEventType, data: any): Promise<void> {
+export async function triggerWebhook(event: WebhookEventType, data: WebhookEventData): Promise<void> {
   try {
     const webhooks = await getWebhooksForEvent(event);
 
@@ -250,10 +250,24 @@ export async function createWebhook(
 /**
  * Get webhook delivery history
  */
+/** Webhook delivery record */
+interface WebhookDelivery {
+  id: string;
+  event_type: WebhookEventType;
+  payload: WebhookPayload;
+  response_status: number | null;
+  response_body: string | null;
+  attempt: number;
+  status: 'success' | 'failed';
+  error_message: string | null;
+  delivered_at: Date | null;
+  created_at: Date;
+}
+
 export async function getWebhookDeliveries(
   webhookId: string,
   limit: number = 50
-): Promise<any[]> {
+): Promise<WebhookDelivery[]> {
   const result = await pool.query(
     `SELECT id, event_type, payload, response_status, response_body,
             attempt, status, error_message, delivered_at, created_at

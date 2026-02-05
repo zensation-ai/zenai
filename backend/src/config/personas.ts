@@ -384,7 +384,11 @@ export function getSubPersona(context: AIContext, personaId?: SubPersonaId): Sub
 
   if (!persona) {
     // Fallback to default if invalid persona ID
-    return contextConfig.personas.find(p => p.id === contextConfig.default)!;
+    const defaultPersona = contextConfig.personas.find(p => p.id === contextConfig.default);
+    if (!defaultPersona) {
+      throw new Error(`Default persona '${contextConfig.default}' not found in configuration`);
+    }
+    return defaultPersona;
   }
 
   return persona;

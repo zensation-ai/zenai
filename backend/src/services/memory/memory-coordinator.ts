@@ -25,20 +25,16 @@ import { generateEmbedding } from '../ai';
 import { cosineSimilarity, semanticCache } from '../../utils/semantic-cache';
 import {
   shortTermMemory,
-  Interaction,
   EnrichedContext,
   PreRetrievedDocument,
 } from './short-term-memory';
 import {
   longTermMemory,
-  PersonalizationFact,
-  FrequentPattern,
   LongTermRetrievalResult,
 } from './long-term-memory';
 import {
   episodicMemory,
   Episode,
-  EpisodicRetrievalOptions,
 } from './episodic-memory';
 import {
   workingMemory,
@@ -207,7 +203,7 @@ export class MemoryCoordinator {
   /**
    * Start a new memory session
    */
-  async startSession(context: AIContext, metadata?: Record<string, any>): Promise<string> {
+  async startSession(context: AIContext, _metadata?: Record<string, unknown>): Promise<string> {
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
     // Initialize short-term memory
@@ -228,7 +224,7 @@ export class MemoryCoordinator {
     sessionId: string,
     role: 'user' | 'assistant',
     content: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     await shortTermMemory.addInteraction(sessionId, {
       role,
@@ -376,7 +372,7 @@ export class MemoryCoordinator {
       includePreRetrieved = true,
       includeEpisodic = true,
       includeWorking = true,
-      maxContextParts = CONFIG.DEFAULT_MAX_CONTEXT_PARTS,
+      maxContextParts: _maxContextParts = CONFIG.DEFAULT_MAX_CONTEXT_PARTS,
       minRelevance = CONFIG.DEFAULT_MIN_RELEVANCE,
       maxContextTokens = CONFIG.DEFAULT_MAX_CONTEXT_TOKENS,
       emotionalPriming = false,
@@ -533,15 +529,15 @@ export class MemoryCoordinator {
       priority: number;
     }> = [];
 
-    const queryLower = query.toLowerCase();
-
     // Detect constraints
+    /* eslint-disable security/detect-unsafe-regex -- Patterns are bounded by sentence endings, no catastrophic backtracking */
     const constraintPatterns = [
       { pattern: /muss\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
       { pattern: /sollte?\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
       { pattern: /darf\s+nicht\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
       { pattern: /wichtig(?:\s+ist)?[:\s]+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
     ];
+    /* eslint-enable security/detect-unsafe-regex */
 
     for (const { pattern, type } of constraintPatterns) {
       let match;
@@ -837,7 +833,7 @@ export class MemoryCoordinator {
   private combineContextParts(
     shortTerm: EnrichedContext,
     longTerm: LongTermRetrievalResult | null,
-    query: string
+    _query: string
   ): ContextPart[] {
     const parts: ContextPart[] = [];
 
@@ -1084,7 +1080,7 @@ export class MemoryCoordinator {
    */
   private buildSystemEnhancement(
     parts: ContextPart[],
-    shortTerm: EnrichedContext
+    _shortTerm: EnrichedContext
   ): string {
     if (parts.length === 0) {return '';}
 
@@ -1134,7 +1130,7 @@ export class MemoryCoordinator {
   /**
    * Get memory statistics for a session
    */
-  getSessionStats(sessionId: string): {
+  getSessionStats(_sessionId: string): {
     shortTerm: ReturnType<typeof shortTermMemory.getStats>;
   } {
     return {

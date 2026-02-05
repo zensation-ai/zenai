@@ -322,7 +322,7 @@ export async function getIdeaCorrectionHistory(
     );
 
     return result.rows.map(mapRowToCorrection);
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -402,7 +402,7 @@ export async function getActivePatterns(
 
     const result = await queryContext(context, query, params);
     return result.rows.map(mapRowToPattern);
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -656,7 +656,7 @@ export async function getCorrectionStatsByField(
       count: parseInt(row.count),
       avgWeight: parseFloat(row.avg_weight) || 1,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 }

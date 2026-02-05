@@ -295,7 +295,7 @@ export async function getLatestSnapshot(context: AIContext): Promise<EvolutionSn
 
     if (result.rows.length === 0) {return null;}
     return mapRowToSnapshot(result.rows[0]);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -369,7 +369,7 @@ export async function getLearningTimeline(
     `, [context, limit, offset]);
 
     return result.rows.map(mapRowToEvent);
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -391,7 +391,7 @@ export async function getEventsByType(
     `, [context, eventType, limit]);
 
     return result.rows.map(mapRowToEvent);
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -482,7 +482,7 @@ export async function getAccuracyTrends(
       trend: row.trend as AccuracyTrend['trend'],
       trend_delta: parseFloat(row.trend_delta as string) || 0,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -576,7 +576,7 @@ export async function getMilestones(context: AIContext): Promise<{
       .sort((a, b) => b.progress_percent - a.progress_percent);
 
     return { achieved, upcoming, all };
-  } catch (error) {
+  } catch {
     return { achieved: [], upcoming: [], all: [] };
   }
 }
@@ -727,7 +727,7 @@ async function calculateStreak(context: AIContext): Promise<number> {
     `, [context]);
 
     return parseInt(result.rows[0]?.streak || '0');
-  } catch (error) {
+  } catch {
     return 0;
   }
 }
@@ -740,7 +740,7 @@ async function getTotalAutomationExecutions(context: AIContext): Promise<number>
       WHERE ad.context = $1
     `, [context]);
     return parseInt(result.rows[0]?.count || '0');
-  } catch (error) {
+  } catch {
     return 0;
   }
 }
@@ -752,7 +752,7 @@ async function getTotalPatternsLearned(context: AIContext): Promise<number> {
       WHERE context = $1 AND is_active = true
     `, [context]);
     return parseInt(result.rows[0]?.count || '0');
-  } catch (error) {
+  } catch {
     return 0;
   }
 }
@@ -765,7 +765,7 @@ async function getTotalActiveDays(context: AIContext): Promise<number> {
       WHERE context = $1
     `, [context]);
     return parseInt(result.rows[0]?.count || '0');
-  } catch (error) {
+  } catch {
     return 0;
   }
 }

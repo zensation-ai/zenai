@@ -165,7 +165,6 @@ knowledgeGraphRouter.get('/subgraph/:ideaId', apiKeyAuth, asyncHandler(async (re
  * Discover relationships for all ideas in a context
  */
 knowledgeGraphRouter.post('/discover', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const startTime = Date.now();
   const { context = 'personal', force = false } = req.body;
 
   if (!isValidContext(context)) {
@@ -255,7 +254,6 @@ knowledgeGraphRouter.get('/topics/:topicId', apiKeyAuth, asyncHandler(async (req
  * Generate topics automatically using clustering
  */
 knowledgeGraphRouter.post('/topics/generate', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const startTime = Date.now();
   const { context = 'personal', minClusterSize = 2, maxClusters = 10 } = req.body;
 
   if (!isValidContext(context)) {

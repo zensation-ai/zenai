@@ -126,8 +126,12 @@ router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), async
     throw new ValidationError('Invalid priority. Valid options: low, medium, high');
   }
 
+  const sanitizedTopic = sanitizeString(topic, MAX_TOPIC_LENGTH);
+  if (!sanitizedTopic) {
+    throw new ValidationError('Topic is required and cannot be empty');
+  }
   const task = await createLearningTask(
-    sanitizeString(topic, MAX_TOPIC_LENGTH)!,
+    sanitizedTopic,
     {
       description: sanitizeString(description, MAX_DESCRIPTION_LENGTH),
       category,

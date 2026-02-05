@@ -254,17 +254,30 @@ export async function getActiveDeviceTokens(
 
     const result = await queryContext(context, query, params);
 
-    return result.rows.map((row: any) => ({
+    interface DeviceTokenRow {
+      id: string;
+      device_token: string;
+      device_id: string;
+      device_name: string | null;
+      device_model: string | null;
+      os_version: string | null;
+      app_version: string | null;
+      context: AIContext;
+      is_active: boolean;
+      last_used_at: Date | null;
+    }
+
+    return result.rows.map((row: DeviceTokenRow) => ({
       id: row.id,
       deviceToken: row.device_token,
       deviceId: row.device_id,
-      deviceName: row.device_name,
-      deviceModel: row.device_model,
-      osVersion: row.os_version,
-      appVersion: row.app_version,
+      deviceName: row.device_name ?? undefined,
+      deviceModel: row.device_model ?? undefined,
+      osVersion: row.os_version ?? undefined,
+      appVersion: row.app_version ?? undefined,
       context: row.context,
       isActive: row.is_active,
-      lastUsedAt: row.last_used_at,
+      lastUsedAt: row.last_used_at ?? undefined,
     }));
   } catch (error) {
     logger.error('Failed to get active device tokens', error instanceof Error ? error : undefined);
@@ -742,7 +755,15 @@ export async function getNotificationStats(
       [context, days]
     );
 
-    const overall = result.rows.find((r: any) => r.notification_type === null) || {
+    interface NotificationStatsRow {
+      total_sent: string;
+      delivered: string;
+      opened: string;
+      failed: string;
+      notification_type: string | null;
+    }
+
+    const overall = result.rows.find((r: NotificationStatsRow) => r.notification_type === null) || {
       total_sent: '0',
       delivered: '0',
       opened: '0',
@@ -750,11 +771,11 @@ export async function getNotificationStats(
     };
 
     const byType = result.rows
-      .filter((r: any) => r.notification_type !== null)
-      .map((r: any) => ({
+      .filter((r: NotificationStatsRow): r is NotificationStatsRow & { notification_type: string } => r.notification_type !== null)
+      .map((r) => ({
         type: r.notification_type,
         count: parseInt(r.total_sent, 10),
-        openRate: r.delivered > 0 ? (r.opened / r.delivered) * 100 : 0,
+        openRate: parseInt(r.delivered, 10) > 0 ? (parseInt(r.opened, 10) / parseInt(r.delivered, 10)) * 100 : 0,
       }));
 
     const delivered = parseInt(overall.delivered, 10);
@@ -796,7 +817,7 @@ export async function recordNotificationOpened(
       [notificationId, context]
     );
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

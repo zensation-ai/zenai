@@ -54,7 +54,7 @@ let openaiClient: OpenAI | null = null;
  * Only initializes if OPENAI_API_KEY is configured
  */
 function getOpenAIClient(): OpenAI | null {
-  if (openaiClient) return openaiClient;
+  if (openaiClient) {return openaiClient;}
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {

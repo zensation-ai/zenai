@@ -215,7 +215,7 @@ async function getUnprocessedFeedback(context: AIContext): Promise<Array<{
       [context]
     );
     return result.rows;
-  } catch (error) {
+  } catch {
     // Tabelle existiert möglicherweise noch nicht
     return [];
   }
@@ -226,7 +226,7 @@ async function getUnprocessedFeedback(context: AIContext): Promise<Array<{
  */
 async function analyzePatterns(
   ideas: Array<{ type: string; category: string; priority: string; created_at: string }>,
-  context: AIContext
+  _context: AIContext
 ): Promise<Pattern[]> {
   const patterns: Pattern[] = [];
 
@@ -330,7 +330,7 @@ async function processCorrections(
           reason: fb.feedback_text || 'Nutzer-Korrektur',
         });
       }
-    } catch (error) {
+    } catch {
       logger.warn('Could not process feedback', { feedbackId: fb.id });
     }
   }
@@ -366,8 +366,8 @@ function extractNewKeywords(
 async function generateDailySummary(
   ideas: Array<{ title: string; type: string; category: string; summary: string }>,
   patterns: Pattern[],
-  updates: PreferenceUpdate[],
-  context: AIContext
+  _updates: PreferenceUpdate[],
+  _context: AIContext
 ): Promise<{
   summary: string;
   keyLearnings: string[];
@@ -417,7 +417,7 @@ Sei positiv, konkret und hilfreich. Schreibe auf Deutsch.`;
       keyLearnings: result?.key_learnings || [],
       suggestions: result?.suggestions || [],
     };
-  } catch (error) {
+  } catch {
     logger.warn('Summary generation failed');
 
     return {
@@ -477,7 +477,7 @@ async function saveDailyLearningLog(
         data.suggestions_for_tomorrow,
       ]
     );
-  } catch (error) {
+  } catch {
     logger.warn('Could not save daily learning log');
   }
 }
@@ -548,7 +548,7 @@ async function generateSuggestionsForTomorrow(
           new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // Morgen früh
         ]
       );
-    } catch (error) {
+    } catch {
       // Tabelle existiert möglicherweise noch nicht
     }
   }
@@ -587,7 +587,7 @@ export async function getDailyLearningHistory(
       suggestions_for_tomorrow: row.suggestions_for_tomorrow || [],
       automation_suggestions: row.automation_suggestions || 0,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -613,7 +613,7 @@ export async function getActiveSuggestions(
     );
 
     return result.rows;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -695,7 +695,7 @@ export async function getDailyLearningLogs(
     );
 
     return result.rows;
-  } catch (error) {
+  } catch {
     logger.warn('Could not get daily learning logs');
     return [];
   }
@@ -743,7 +743,7 @@ export async function getSuggestionStats(
         : 0,
       avg_priority: parseFloat(row.avg_priority) || 5,
     };
-  } catch (error) {
+  } catch {
     logger.warn('Could not get suggestion stats');
     return {
       total_suggestions: 0,

@@ -428,6 +428,7 @@ function checkConditions(
         return stringValue.toLowerCase().endsWith(conditionValue.toLowerCase());
       case 'regex':
         try {
+          // eslint-disable-next-line security/detect-non-literal-regexp -- User-defined regex patterns for automation conditions
           return new RegExp(conditionValue, 'i').test(stringValue);
         } catch {
           return false;
@@ -451,7 +452,7 @@ async function executeAction(
   triggerData: Record<string, unknown>
 ): Promise<void> {
   switch (action.type) {
-    case 'webhook_call':
+    case 'webhook_call': {
       const webhookUrl = action.config.url as string;
       if (webhookUrl) {
         const axios = (await import('axios')).default;
@@ -465,6 +466,7 @@ async function executeAction(
         }, { timeout: 10000 });
       }
       break;
+    }
 
     case 'notification':
       // Speichere Notification für späteren Abruf
@@ -481,7 +483,7 @@ async function executeAction(
       ).catch(err => logger.warn('Failed to save automation notification', { context, error: err instanceof Error ? err.message : String(err) }));
       break;
 
-    case 'tag_idea':
+    case 'tag_idea': {
       const ideaId = triggerData.idea_id || triggerData.id;
       const tags = action.config.tags as string[];
       if (ideaId && tags) {
@@ -494,8 +496,9 @@ async function executeAction(
         ).catch(err => logger.warn('Failed to tag idea via automation', { ideaId, tags, error: err instanceof Error ? err.message : String(err) }));
       }
       break;
+    }
 
-    case 'set_priority':
+    case 'set_priority': {
       const targetIdeaId = triggerData.idea_id || triggerData.id;
       const newPriority = action.config.priority as string;
       if (targetIdeaId && newPriority) {
@@ -506,6 +509,7 @@ async function executeAction(
         ).catch(err => logger.warn('Failed to set idea priority via automation', { targetIdeaId, newPriority, error: err instanceof Error ? err.message : String(err) }));
       }
       break;
+    }
 
     case 'create_task':
       await queryContext(
@@ -562,7 +566,7 @@ async function saveExecution(
         execution.executed_at,
       ]
     );
-  } catch (error) {
+  } catch {
     logger.warn('Could not save automation execution', { executionId: execution.id });
   }
 }
@@ -797,7 +801,7 @@ async function saveAutomationSuggestion(
         suggestion.created_at,
       ]
     );
-  } catch (error) {
+  } catch {
     // Table might not exist
     logger.debug('Could not save automation suggestion');
   }
@@ -1002,7 +1006,7 @@ export async function getAutomationStats(
       })),
       pending_suggestions: parseInt(suggestionsResult.rows[0]?.pending) || 0,
     };
-  } catch (error) {
+  } catch {
     logger.warn('Could not get automation stats');
     return {
       total_automations: 0,
@@ -1085,6 +1089,7 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 }
 
 function interpolateTemplate(template: string, data: Record<string, unknown>): string {
+  // eslint-disable-next-line security/detect-unsafe-regex -- Simple mustache-style interpolation, bounded template input
   return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
     const value = getNestedValue(data, path);
     return value !== undefined ? String(value) : match;

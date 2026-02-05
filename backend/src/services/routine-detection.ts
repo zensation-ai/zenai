@@ -25,7 +25,7 @@ export interface RoutinePattern {
   patternType: PatternType;
   triggerConfig: RoutineTrigger;
   actionType: string;
-  actionConfig: Record<string, any>;
+  actionConfig: Record<string, unknown>;
   confidence: number;
   occurrences: number;
   lastTriggered: Date | null;
@@ -58,7 +58,7 @@ export interface RoutineTrigger {
 
 export interface UserAction {
   actionType: string;
-  actionData: Record<string, any>;
+  actionData: Record<string, unknown>;
   timestamp?: Date;
 }
 
@@ -81,8 +81,24 @@ export interface SuggestedAction {
   quickAction?: {
     label: string;
     endpoint: string;
-    params: Record<string, any>;
+    params: Record<string, unknown>;
   };
+}
+
+/** Database row for routine pattern */
+interface RoutinePatternRow {
+  id: string;
+  context: AIContext;
+  pattern_type: PatternType;
+  trigger_config: string | RoutineTrigger;
+  action_type: string;
+  action_config: string | Record<string, unknown> | null;
+  confidence: string | number;
+  occurrences: string | number;
+  last_triggered: string | Date | null;
+  is_active: boolean;
+  created_at: string | Date;
+  updated_at: string | Date;
 }
 
 // ===========================================
@@ -625,7 +641,6 @@ class RoutineDetectionService {
     timestamp: Date
   ): Promise<void> {
     const dayOfWeek = timestamp.getDay();
-    const hourOfDay = timestamp.getHours();
 
     try {
       // Find time-based patterns that match current action + time
@@ -661,7 +676,7 @@ class RoutineDetectionService {
       patternType: PatternType;
       triggerConfig: RoutineTrigger;
       actionType: string;
-      actionConfig: Record<string, any>;
+      actionConfig: Record<string, unknown>;
       confidence: number;
       occurrences: number;
     }
@@ -716,7 +731,7 @@ class RoutineDetectionService {
     patternType: PatternType,
     actionType: string,
     dayOfWeek?: number,
-    hourOfDay?: number
+    _hourOfDay?: number
   ): Promise<RoutinePattern | null> {
     try {
       let query = `
@@ -727,7 +742,7 @@ class RoutineDetectionService {
           AND pattern_type = $2
           AND action_type = $3
       `;
-      const params: any[] = [context, patternType, actionType];
+      const params: (AIContext | PatternType | string)[] = [context, patternType, actionType];
 
       if (dayOfWeek !== undefined && patternType === 'time_based') {
         query += ` AND (trigger_config->>'dayOfWeek')::jsonb ? $4::text`;
@@ -815,7 +830,7 @@ class RoutineDetectionService {
         WHERE context = $1
           AND confidence >= $2
       `;
-      const params: any[] = [context, minConfidence];
+      const params: (AIContext | number)[] = [context, minConfidence];
 
       if (activeOnly) {
         query += ` AND is_active = true`;
@@ -839,7 +854,7 @@ class RoutineDetectionService {
   /**
    * Converts a database row to a RoutinePattern
    */
-  private rowToPattern(row: any): RoutinePattern {
+  private rowToPattern(row: RoutinePatternRow): RoutinePattern {
     return {
       id: row.id,
       context: row.context,
@@ -851,8 +866,8 @@ class RoutineDetectionService {
       actionConfig: typeof row.action_config === 'string'
         ? JSON.parse(row.action_config)
         : row.action_config || {},
-      confidence: parseFloat(row.confidence),
-      occurrences: parseInt(row.occurrences, 10),
+      confidence: typeof row.confidence === 'string' ? parseFloat(row.confidence) : row.confidence,
+      occurrences: typeof row.occurrences === 'string' ? parseInt(row.occurrences, 10) : row.occurrences,
       lastTriggered: row.last_triggered ? new Date(row.last_triggered) : null,
       isActive: row.is_active,
       createdAt: new Date(row.created_at),

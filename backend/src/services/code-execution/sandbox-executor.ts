@@ -11,7 +11,7 @@
  * @module services/code-execution/sandbox-executor
  */
 
-import { spawn, ChildProcess } from 'child_process';
+import { spawn } from 'child_process';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -292,7 +292,7 @@ export class SandboxExecutor implements ExecutorProvider {
 
       // Helper to prevent double resolution/rejection
       const settleOnce = <T>(fn: () => T): T | undefined => {
-        if (settled) return undefined;
+        if (settled) {return undefined;}
         settled = true;
         return fn();
       };

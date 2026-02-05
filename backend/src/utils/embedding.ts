@@ -85,6 +85,6 @@ export function formatForPgVector(embedding: number[]): string {
  * Parse PostgreSQL vector string back to array
  */
 export function parseFromPgVector(vectorStr: string): number[] {
-  const cleaned = vectorStr.replace(/[\[\]]/g, '');
+  const cleaned = vectorStr.replace(/[[\]]/g, '');
   return cleaned.split(',').map(Number);
 }

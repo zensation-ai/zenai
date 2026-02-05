@@ -14,7 +14,7 @@ import { testConnections, getPoolStats, getHealthCheckStatus } from '../utils/da
 import { checkOllamaHealth } from '../utils/ollama';
 import { getCacheStats } from '../utils/cache';
 import { getAvailableServices } from '../services/ai';
-import { asyncHandler, ValidationError, NotFoundError, ConflictError } from '../middleware/errorHandler';
+import { asyncHandler } from '../middleware/errorHandler';
 import { getCircuitBreakerStatus } from '../utils/retry';
 import { isClaudeAvailable, generateClaudeResponse } from '../services/claude';
 import { logger } from '../utils/logger';
@@ -55,12 +55,13 @@ async function checkClaudeHealth(): Promise<{
     const latencyMs = Date.now() - start;
     logger.debug('Claude health check passed', { latencyMs });
     return { available: true, configured: true, latencyMs };
-  } catch (error: any) {
-    logger.warn('Claude health check failed', { error: error.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.warn('Claude health check failed', { error: errorMessage });
     return {
       available: false,
       configured: true,
-      error: error.message?.substring(0, 100), // Truncate long errors
+      error: errorMessage.substring(0, 100), // Truncate long errors
     };
   }
 }

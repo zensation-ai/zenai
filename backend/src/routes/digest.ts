@@ -302,17 +302,17 @@ digestRouter.get('/:context/digest/history', apiKeyAuth, asyncHandler(async (req
     SELECT * FROM digests
     WHERE 1=1
   `;
-  const params: any[] = [];
+  const historyParams: (string | number)[] = [];
 
   if (type === 'daily' || type === 'weekly') {
-    params.push(type);
-    query += ` AND type = $${params.length}`;
+    historyParams.push(type);
+    query += ` AND type = $${historyParams.length}`;
   }
 
-  query += ` ORDER BY created_at DESC LIMIT $${params.length + 1}`;
-  params.push(parseInt(limit as string));
+  query += ` ORDER BY created_at DESC LIMIT $${historyParams.length + 1}`;
+  historyParams.push(parseInt(limit as string));
 
-  const result = await queryContext(ctx, query, params);
+  const result = await queryContext(ctx, query, historyParams);
 
   res.json({
     success: true,
@@ -342,16 +342,16 @@ digestRouter.get('/:context/digest/latest', apiKeyAuth, asyncHandler(async (req:
     SELECT * FROM digests
     WHERE 1=1
   `;
-  const params: any[] = [];
+  const latestParams: string[] = [];
 
   if (type === 'daily' || type === 'weekly') {
-    params.push(type);
-    query += ` AND type = $${params.length}`;
+    latestParams.push(type);
+    query += ` AND type = $${latestParams.length}`;
   }
 
   query += ` ORDER BY created_at DESC LIMIT 1`;
 
-  const result = await queryContext(ctx, query, params);
+  const result = await queryContext(ctx, query, latestParams);
 
   if (result.rows.length === 0) {
     return res.json({
@@ -453,7 +453,35 @@ digestRouter.put('/:context/digest/goals', apiKeyAuth, requireScope('write'), as
 // Helper Functions
 // ===========================================
 
-function calculateStats(ideas: any[]): DigestStats & { topCategories: string[], topTypes: string[] } {
+interface IdeaRow {
+  id: string;
+  title: string;
+  type: string;
+  category: string;
+  priority: string;
+  summary?: string;
+  created_at: string;
+}
+
+interface DigestRow {
+  id: string;
+  type: 'daily' | 'weekly';
+  period_start: string;
+  period_end: string;
+  title: string;
+  summary: string;
+  highlights?: DigestHighlight[];
+  statistics?: DigestStats;
+  ai_insights?: string[];
+  recommendations?: string[];
+  ideas_count: number;
+  top_categories?: string[];
+  top_types?: string[];
+  productivity_score: string | number;
+  created_at: string;
+}
+
+function calculateStats(ideas: IdeaRow[]): DigestStats & { topCategories: string[], topTypes: string[] } {
   const byType: Record<string, number> = {};
   const byCategory: Record<string, number> = {};
   const byPriority: Record<string, number> = {};
@@ -490,7 +518,7 @@ function calculateStats(ideas: any[]): DigestStats & { topCategories: string[], 
   };
 }
 
-function selectWeeklyHighlights(ideas: any[]): DigestHighlight[] {
+function selectWeeklyHighlights(ideas: IdeaRow[]): DigestHighlight[] {
   const highlights: DigestHighlight[] = [];
 
   // High priority items
@@ -523,7 +551,7 @@ function selectWeeklyHighlights(ideas: any[]): DigestHighlight[] {
 }
 
 async function generateAIInsights(
-  ideas: any[],
+  ideas: IdeaRow[],
   type: 'daily' | 'weekly',
   _context: AIContext
 ): Promise<{ summary: string; insights: string[]; recommendations: string[] }> {
@@ -602,7 +630,7 @@ Antworte auf Deutsch im JSON Format:
   };
 }
 
-function calculateProductivityScore(ideas: any[], type: 'daily' | 'weekly'): number {
+function calculateProductivityScore(ideas: IdeaRow[], type: 'daily' | 'weekly'): number {
   const target = type === 'daily' ? 3 : 15;
   const baseScore = Math.min(100, (ideas.length / target) * 100);
 
@@ -616,7 +644,14 @@ function calculateProductivityScore(ideas: any[], type: 'daily' | 'weekly'): num
   return Math.min(100, Math.round(baseScore + highPriorityBonus + varietyBonus));
 }
 
-function formatDigestResponse(row: any): DigestData {
+function formatDigestResponse(row: DigestRow): DigestData {
+  const defaultStats: DigestStats = {
+    totalIdeas: 0,
+    byType: {},
+    byCategory: {},
+    byPriority: {},
+    avgPerDay: 0
+  };
   return {
     id: row.id,
     type: row.type,
@@ -625,13 +660,13 @@ function formatDigestResponse(row: any): DigestData {
     title: row.title,
     summary: row.summary,
     highlights: row.highlights || [],
-    statistics: row.statistics || {},
+    statistics: row.statistics || defaultStats,
     aiInsights: row.ai_insights || [],
     recommendations: row.recommendations || [],
     ideasCount: row.ideas_count,
     topCategories: row.top_categories || [],
     topTypes: row.top_types || [],
-    productivityScore: parseFloat(row.productivity_score) || 0,
+    productivityScore: typeof row.productivity_score === 'string' ? parseFloat(row.productivity_score) || 0 : row.productivity_score || 0,
     createdAt: row.created_at
   };
 }

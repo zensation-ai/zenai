@@ -159,7 +159,7 @@ export async function streamToSSE(
     // Build request parameters
     const params: Anthropic.MessageCreateParams = {
       model: CLAUDE_MODEL,
-      max_tokens: opts.maxTokens!,
+      max_tokens: opts.maxTokens ?? 16000,
       messages,
       stream: true,
     };
@@ -168,7 +168,7 @@ export async function streamToSSE(
     if (opts.enableThinking) {
       params.thinking = {
         type: 'enabled',
-        budget_tokens: opts.thinkingBudget!,
+        budget_tokens: opts.thinkingBudget ?? 10000,
       };
       // Extended Thinking requires temperature = 1
       params.temperature = 1;
@@ -211,7 +211,7 @@ export async function streamToSSE(
             sendSSE(res, { type: 'thinking_start', data: {} });
             isInThinking = true;
           }
-          thinkingContent = (block as any).thinking || '';
+          thinkingContent = (block as { thinking: string }).thinking || '';
           sendSSE(res, { type: 'thinking_delta', data: { thinking: thinkingContent } });
           sendSSE(res, { type: 'thinking_end', data: { thinking: thinkingContent } });
           isInThinking = false;
@@ -285,7 +285,7 @@ export async function streamAndCollect(
   // Build request parameters
   const params: Anthropic.MessageCreateParams = {
     model: CLAUDE_MODEL,
-    max_tokens: opts.maxTokens!,
+    max_tokens: opts.maxTokens ?? 16000,
     messages,
     stream: true,
   };
@@ -293,7 +293,7 @@ export async function streamAndCollect(
   if (opts.enableThinking) {
     params.thinking = {
       type: 'enabled',
-      budget_tokens: opts.thinkingBudget!,
+      budget_tokens: opts.thinkingBudget ?? 10000,
     };
     params.temperature = 1;
   } else if (opts.temperature !== undefined) {
@@ -324,7 +324,7 @@ export async function streamAndCollect(
   stream.on('message', (message: Anthropic.Message) => {
     for (const block of message.content) {
       if (block.type === 'thinking' && 'thinking' in block) {
-        thinking = (block as any).thinking || '';
+        thinking = (block as { thinking: string }).thinking || '';
       }
     }
   });

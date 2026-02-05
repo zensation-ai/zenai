@@ -13,8 +13,8 @@
 
 import { logger } from '../utils/logger';
 import { AIContext } from '../utils/database-context';
-import { agenticRAG, RetrievalResult, RAGResult, RAGAgentConfig } from './agentic-rag';
-import { crossEncoderReranker, hybridRerank, RerankedResult } from './cross-encoder-rerank';
+import { agenticRAG, RetrievalResult, RAGAgentConfig } from './agentic-rag';
+import { hybridRerank, RerankedResult } from './cross-encoder-rerank';
 import { hydeService, shouldUseHyDE, HyDERetrievalResult } from './hyde-retrieval';
 
 // ===========================================
@@ -280,7 +280,7 @@ class EnhancedRAGService {
   private mergeAllResults(
     hydeResults: HyDERetrievalResult[],
     agenticResults: RetrievalResult[],
-    config: EnhancedRAGConfig
+    _config: EnhancedRAGConfig
   ): EnhancedResult[] {
     const merged = new Map<string, EnhancedResult>();
 
