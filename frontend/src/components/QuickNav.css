@@ -1,23 +1,52 @@
 /* ============================================
    QUICK NAV - Kompakte Schnellzugriff-Leiste
-   Immer sichtbar unter dem Header
+
+   Design System Aligned:
+   - CSS Variables from index.css & neurodesign.css
+   - Glass Effects 2026
+   - Neuro-optimized Transitions
    ============================================ */
 
+/* ============================================
+   Component-specific Variables
+   ============================================ */
+.quick-nav {
+  --quicknav-height: 48px;
+  --quicknav-tile-gap: 6px;
+  --quicknav-padding-x: 2rem;
+  --quicknav-padding-y: 8px;
+}
+
+/* ============================================
+   Container
+   ============================================ */
 .quick-nav {
   position: sticky;
   top: 0;
   z-index: 95;
-  padding: 8px 2rem;
-  padding-left: max(2rem, env(safe-area-inset-left, 0px) + 80px);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(248, 250, 252, 0.88) 100%
-  );
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(20, 50, 70, 0.08);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  padding: var(--quicknav-padding-y) var(--quicknav-padding-x);
+  padding-left: max(var(--quicknav-padding-x), env(safe-area-inset-left, 0px) + 80px);
+
+  /* Glass Effects 2026 */
+  background: var(--glass-2026-bg, rgba(255, 255, 255, 0.72));
+  -webkit-backdrop-filter: blur(var(--glass-2026-blur, 24px)) saturate(var(--glass-2026-saturation, 180%));
+  backdrop-filter: blur(var(--glass-2026-blur, 24px)) saturate(var(--glass-2026-saturation, 180%));
+  border-bottom: 1px solid var(--glass-2026-border, rgba(255, 255, 255, 0.5));
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(20, 50, 70, 0.08));
+
+  /* Animation */
+  animation: quickNavSlideIn var(--transition-base, 0.25s) var(--ease-out-expo, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+@keyframes quickNavSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .quick-nav-content {
@@ -25,172 +54,322 @@
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--quicknav-tile-gap);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  padding: 2px 0;
 }
 
 .quick-nav-content::-webkit-scrollbar {
   display: none;
 }
 
-/* ============================================
-   Kacheln / Tiles
-   ============================================ */
+/* Scroll fade indicator */
+.quick-nav-content::after {
+  content: '';
+  position: sticky;
+  right: 0;
+  flex-shrink: 0;
+  width: 32px;
+  height: 100%;
+  background: linear-gradient(to right, transparent, var(--glass-2026-bg, rgba(255, 255, 255, 0.72)));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast, 0.15s) ease;
+}
 
+.quick-nav-content:hover::after {
+  opacity: 1;
+}
+
+/* ============================================
+   Tiles
+   ============================================ */
 .quick-nav-tile {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(20, 50, 70, 0.1);
-  background: rgba(255, 255, 255, 0.7);
-  color: #3a4d5a;
-  font-size: 0.8rem;
+  gap: var(--spacing-xs, 4px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary, #3a4d5a);
+  font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
   white-space: nowrap;
   flex-shrink: 0;
+  position: relative;
+
+  /* Transitions - using design system */
+  transition:
+    transform var(--transition-fast, 0.15s) var(--ease-in-out, cubic-bezier(0.4, 0, 0.2, 1)),
+    box-shadow var(--transition-fast, 0.15s) var(--ease-in-out),
+    background-color var(--transition-fast, 0.15s) var(--ease-in-out),
+    border-color var(--transition-fast, 0.15s) var(--ease-in-out);
+
+  /* Performance hint */
+  will-change: transform;
 }
 
+/* Radial glow effect on hover */
+.quick-nav-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition-fast, 0.15s) ease;
+  pointer-events: none;
+}
+
+/* Hover State */
 .quick-nav-tile:hover {
   background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(20, 50, 70, 0.15);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: var(--border, rgba(20, 50, 70, 0.15));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(20, 50, 70, 0.1));
 }
 
+.quick-nav-tile:hover::before {
+  opacity: 1;
+}
+
+/* Active/Press State */
 .quick-nav-tile:active {
-  transform: translateY(0);
-  transition-duration: 0.08s;
+  transform: translateY(0) scale(0.97);
+  transition-duration: 80ms;
 }
 
+/* Focus State (neuro-focus-ring from neurodesign.css) */
+.quick-nav-tile:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--glass-2026-bg, rgba(255, 255, 255, 0.9)),
+    0 0 0 5px var(--primary, #ff6b35);
+  border-color: var(--primary, #ff6b35);
+}
+
+/* ============================================
+   Tile Elements
+   ============================================ */
 .quick-nav-icon {
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1;
+  transition: transform var(--transition-fast, 0.15s) var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+.quick-nav-tile:hover .quick-nav-icon {
+  transform: scale(1.12) rotate(-3deg);
 }
 
 .quick-nav-label {
   letter-spacing: -0.01em;
 }
 
+/* Badge */
 .quick-nav-badge {
   background: var(--primary, #ff6b35);
   color: white;
-  font-size: 0.65rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 18px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: var(--radius-sm, 8px);
+  min-width: 16px;
   text-align: center;
+  animation: badgePop var(--transition-base, 0.25s) var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Badge pulse animation */
+.quick-nav-badge {
+  animation: badgePop var(--transition-base) ease-out, badgePulse 2.5s ease-in-out 0.3s infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
 /* ============================================
-   Aktiver Zustand
+   Active State
    ============================================ */
-
 .quick-nav-tile.active {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 140, 90, 0.12) 100%);
-  border-color: rgba(255, 107, 53, 0.35);
-  color: #1a2a38;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.12) 0%, rgba(255, 140, 90, 0.08) 100%);
+  border-color: rgba(255, 107, 53, 0.28);
+  color: var(--text, #0f1f2a);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+  box-shadow:
+    var(--shadow-sm, 0 2px 8px rgba(255, 107, 53, 0.12)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .quick-nav-tile.active:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.22) 0%, rgba(255, 140, 90, 0.18) 100%);
-  border-color: rgba(255, 107, 53, 0.45);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 140, 90, 0.12) 100%);
+  border-color: rgba(255, 107, 53, 0.38);
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(255, 107, 53, 0.18));
+}
+
+.quick-nav-tile.active .quick-nav-icon {
+  transform: scale(1.05);
 }
 
 /* ============================================
-   Farb-Varianten
+   Color Variants - Hover States
    ============================================ */
+.quick-nav-tile.color-primary:hover { border-color: rgba(255, 107, 53, 0.25); }
+.quick-nav-tile.color-blue:hover { border-color: rgba(59, 130, 246, 0.25); }
+.quick-nav-tile.color-purple:hover { border-color: rgba(139, 92, 246, 0.25); }
+.quick-nav-tile.color-gray:hover { border-color: rgba(100, 116, 139, 0.25); }
+.quick-nav-tile.color-green:hover { border-color: rgba(16, 185, 129, 0.25); }
+.quick-nav-tile.color-cyan:hover { border-color: rgba(6, 182, 212, 0.25); }
+.quick-nav-tile.color-coral:hover { border-color: rgba(244, 114, 182, 0.25); }
+.quick-nav-tile.color-slate:hover { border-color: rgba(71, 85, 105, 0.25); }
 
+/* ============================================
+   Color Variants - Active States
+   ============================================ */
 .quick-nav-tile.color-primary.active {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 140, 90, 0.12) 100%);
-  border-color: rgba(255, 107, 53, 0.4);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.14) 0%, rgba(255, 140, 90, 0.08) 100%);
+  border-color: rgba(255, 107, 53, 0.32);
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.12);
 }
 
 .quick-nav-tile.color-blue.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.12) 100%);
-  border-color: rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(96, 165, 250, 0.06) 100%);
+  border-color: rgba(59, 130, 246, 0.32);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
 }
 
 .quick-nav-tile.color-purple.active {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(167, 139, 250, 0.12) 100%);
-  border-color: rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(167, 139, 250, 0.06) 100%);
+  border-color: rgba(139, 92, 246, 0.32);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.12);
 }
 
 .quick-nav-tile.color-gray.active {
-  background: linear-gradient(135deg, rgba(100, 116, 139, 0.15) 0%, rgba(148, 163, 184, 0.12) 100%);
-  border-color: rgba(100, 116, 139, 0.4);
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.12) 0%, rgba(148, 163, 184, 0.06) 100%);
+  border-color: rgba(100, 116, 139, 0.32);
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.1);
 }
 
 .quick-nav-tile.color-green.active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(52, 211, 153, 0.12) 100%);
-  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(52, 211, 153, 0.06) 100%);
+  border-color: rgba(16, 185, 129, 0.32);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
 }
 
 .quick-nav-tile.color-cyan.active {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(34, 211, 238, 0.12) 100%);
-  border-color: rgba(6, 182, 212, 0.4);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(34, 211, 238, 0.06) 100%);
+  border-color: rgba(6, 182, 212, 0.32);
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.12);
 }
 
 .quick-nav-tile.color-coral.active {
-  background: linear-gradient(135deg, rgba(244, 114, 182, 0.15) 0%, rgba(251, 146, 194, 0.12) 100%);
-  border-color: rgba(244, 114, 182, 0.4);
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.12) 0%, rgba(251, 146, 194, 0.06) 100%);
+  border-color: rgba(244, 114, 182, 0.32);
+  box-shadow: 0 2px 8px rgba(244, 114, 182, 0.12);
 }
 
-/* ============================================
-   Responsive
-   ============================================ */
+.quick-nav-tile.color-slate.active {
+  background: linear-gradient(135deg, rgba(71, 85, 105, 0.12) 0%, rgba(100, 116, 139, 0.06) 100%);
+  border-color: rgba(71, 85, 105, 0.32);
+  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.1);
+}
 
+/* Active hover states */
+.quick-nav-tile.color-blue.active:hover { box-shadow: 0 4px 16px rgba(59, 130, 246, 0.18); }
+.quick-nav-tile.color-purple.active:hover { box-shadow: 0 4px 16px rgba(139, 92, 246, 0.18); }
+.quick-nav-tile.color-green.active:hover { box-shadow: 0 4px 16px rgba(16, 185, 129, 0.18); }
+.quick-nav-tile.color-cyan.active:hover { box-shadow: 0 4px 16px rgba(6, 182, 212, 0.18); }
+.quick-nav-tile.color-coral.active:hover { box-shadow: 0 4px 16px rgba(244, 114, 182, 0.18); }
+.quick-nav-tile.color-slate.active:hover { box-shadow: 0 4px 16px rgba(71, 85, 105, 0.15); }
+
+/* ============================================
+   Responsive - Tablet
+   ============================================ */
 @media (max-width: 768px) {
   .quick-nav {
-    top: 52px;
     padding: 6px 1rem;
     padding-left: max(1rem, env(safe-area-inset-left, 0px));
   }
 
   .quick-nav-tile {
-    padding: 5px 10px;
-    font-size: 0.75rem;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    min-height: 40px;
+    min-width: 40px;
   }
 
   .quick-nav-icon {
     font-size: 0.9rem;
   }
 
+  /* Hide labels on mobile, show only for active */
   .quick-nav-label {
     display: none;
   }
 
-  /* Auf Mobile nur Icons zeigen, aber Labels für aktive */
   .quick-nav-tile.active .quick-nav-label {
     display: inline;
   }
 }
 
+/* ============================================
+   Responsive - Mobile
+   ============================================ */
 @media (max-width: 480px) {
   .quick-nav-content {
-    gap: 6px;
+    gap: 4px;
   }
 
   .quick-nav-tile {
-    padding: 4px 8px;
+    padding: 5px 8px;
+    border-radius: var(--radius-md, 12px);
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .quick-nav-icon {
+    font-size: 1rem;
+  }
+
+  .quick-nav-badge {
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    min-width: 14px;
   }
 }
 
 /* ============================================
    Reduced Motion
    ============================================ */
-
 @media (prefers-reduced-motion: reduce) {
-  .quick-nav-tile {
+  .quick-nav {
+    animation: none;
+  }
+
+  .quick-nav-tile,
+  .quick-nav-icon,
+  .quick-nav-badge,
+  .quick-nav-tile::before {
+    animation: none !important;
     transition-duration: 0.01ms !important;
   }
 }
@@ -198,29 +377,93 @@
 /* ============================================
    Dark Mode
    ============================================ */
-
 @media (prefers-color-scheme: dark) {
   .quick-nav {
-    background: linear-gradient(
-      180deg,
-      rgba(20, 34, 48, 0.95) 0%,
-      rgba(15, 29, 42, 0.92) 100%
-    );
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--glass-2026-bg, rgba(30, 30, 35, 0.8));
+    border-bottom-color: var(--glass-2026-border, rgba(255, 255, 255, 0.1));
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .quick-nav-content::after {
+    background: linear-gradient(to right, transparent, var(--glass-2026-bg, rgba(30, 30, 35, 0.8)));
   }
 
   .quick-nav-tile {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #d0e0ea;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary, #c8d8e4);
+  }
+
+  .quick-nav-tile::before {
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
   }
 
   .quick-nav-tile:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  .quick-nav-tile:focus-visible {
+    box-shadow:
+      0 0 0 3px rgba(30, 30, 35, 0.9),
+      0 0 0 5px var(--primary, #ff7a4a);
   }
 
   .quick-nav-tile.active {
+    background: rgba(255, 107, 53, 0.15);
+    border-color: rgba(255, 107, 53, 0.35);
     color: #ffffff;
+  }
+
+  /* Dark mode color variants */
+  .quick-nav-tile.color-blue.active {
+    background: rgba(59, 130, 246, 0.18);
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+
+  .quick-nav-tile.color-purple.active {
+    background: rgba(139, 92, 246, 0.18);
+    border-color: rgba(139, 92, 246, 0.4);
+  }
+
+  .quick-nav-tile.color-gray.active {
+    background: rgba(100, 116, 139, 0.18);
+    border-color: rgba(100, 116, 139, 0.4);
+  }
+
+  .quick-nav-tile.color-green.active {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+
+  .quick-nav-tile.color-cyan.active {
+    background: rgba(6, 182, 212, 0.18);
+    border-color: rgba(6, 182, 212, 0.4);
+  }
+
+  .quick-nav-tile.color-coral.active {
+    background: rgba(244, 114, 182, 0.18);
+    border-color: rgba(244, 114, 182, 0.4);
+  }
+
+  .quick-nav-tile.color-slate.active {
+    background: rgba(148, 163, 184, 0.18);
+    border-color: rgba(148, 163, 184, 0.4);
+  }
+
+  /* Dark mode badge */
+  .quick-nav-badge {
+    background: var(--primary-light, #ff9a70);
+    color: var(--header-bg-solid, #142230);
+  }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+@media print {
+  .quick-nav {
+    display: none;
   }
 }

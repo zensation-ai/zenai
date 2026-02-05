@@ -734,6 +734,7 @@ function App() {
     return (
       <ErrorBoundary>
         <NeuroFeedbackProvider>
+          <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
           <Suspense fallback={<PageLoader />}>
             <InboxTriage
               context={context}
@@ -780,6 +781,7 @@ function App() {
   if (currentPage === 'integrations') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <IntegrationsPage onBack={() => navigateToPage('ideas')} />
         </Suspense>
@@ -791,6 +793,7 @@ function App() {
   if (currentPage === 'automations') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <AutomationDashboard
             context={context}
@@ -806,6 +809,7 @@ function App() {
   if (currentPage === 'notifications') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <NotificationsPage
             context={context}
@@ -837,6 +841,7 @@ function App() {
   if (currentPage === 'media') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <MediaGallery
             context={context}
@@ -852,6 +857,7 @@ function App() {
   if (currentPage === 'stories') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <StoriesPage
             context={context}
@@ -867,6 +873,7 @@ function App() {
   if (currentPage === 'export') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <ExportDashboard
             context={context}
@@ -882,6 +889,7 @@ function App() {
   if (currentPage === 'sync') {
     return (
       <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <SyncDashboard
             context={context}
