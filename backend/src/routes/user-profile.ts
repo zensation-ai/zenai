@@ -1,17 +1,21 @@
 import { Router } from 'express';
 import {
   getUserProfile,
+  getUserProfileWithContext,
   trackInteraction,
   getRecommendations,
+  getRecommendationsWithContext,
   getPersonalizedIdeas,
   recalculateStats,
+  recalculateStatsWithContext,
   setAutoPriority,
+  setAutoPriorityWithContext,
   updateInterestEmbedding,
   suggestPriority,
 } from '../services/user-profile';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { isValidContext } from '../utils/database-context';
+import { isValidContext, AIContext } from '../utils/database-context';
 
 export const userProfileRouter = Router();
 export const userProfileContextRouter = Router();
@@ -157,6 +161,7 @@ userProfileRouter.get('/stats', apiKeyAuth, asyncHandler(async (req, res) => {
 
 // ==================== Context-Aware Profile Routes ====================
 // These routes support /api/:context/profile/... paths for proper context switching
+// CRITICAL: These routes use queryContext for proper schema isolation (personal/work)
 
 /**
  * GET /api/:context/profile/stats
@@ -169,8 +174,8 @@ userProfileContextRouter.get('/:context/profile/stats', apiKeyAuth, asyncHandler
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const profileId = `${context}_default`;
-  const profile = await getUserProfile(profileId);
+  // Use context-aware function that queries the correct schema
+  const profile = await getUserProfileWithContext(context as AIContext, 'default');
 
   // Get top categories
   const topCategories = Object.entries(profile.preferred_categories)
@@ -209,8 +214,8 @@ userProfileContextRouter.get('/:context/profile/recommendations', apiKeyAuth, as
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const profileId = `${context}_default`;
-  const recommendations = await getRecommendations(profileId);
+  // Use context-aware function that queries the correct schema
+  const recommendations = await getRecommendationsWithContext(context as AIContext, 'default');
 
   res.json({ recommendations });
 }));
@@ -226,12 +231,11 @@ userProfileContextRouter.post('/:context/profile/recalculate', apiKeyAuth, requi
     throw new ValidationError('Invalid context. Use "personal" or "work".');
   }
 
-  const profileId = `${context}_default`;
+  // Use context-aware functions that query the correct schema
+  await recalculateStatsWithContext(context as AIContext, 'default');
+  await updateInterestEmbedding('default'); // TODO: Make this context-aware if needed
 
-  await recalculateStats(profileId);
-  await updateInterestEmbedding(profileId);
-
-  const profile = await getUserProfile(profileId);
+  const profile = await getUserProfileWithContext(context as AIContext, 'default');
 
   res.json({ success: true, profile });
 }));
@@ -252,9 +256,8 @@ userProfileContextRouter.put('/:context/profile/auto-priority', apiKeyAuth, requ
     throw new ValidationError('enabled must be a boolean', { enabled: 'must be boolean' });
   }
 
-  const profileId = `${context}_default`;
-
-  await setAutoPriority(enabled, profileId);
+  // Use context-aware function that queries the correct schema
+  await setAutoPriorityWithContext(context as AIContext, enabled, 'default');
 
   res.json({ success: true, auto_priority_enabled: enabled });
 }));

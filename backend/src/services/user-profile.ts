@@ -1,4 +1,5 @@
 import { query } from '../utils/database';
+import { queryContext, AIContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
@@ -53,7 +54,7 @@ export interface InteractionEvent {
 }
 
 /**
- * Get the user profile
+ * Get the user profile (uses default/public schema)
  */
 export async function getUserProfile(profileId: string = 'default'): Promise<UserProfile> {
   // SECURITY: Explicit column selection instead of SELECT *
@@ -95,6 +96,167 @@ export async function getUserProfile(profileId: string = 'default'): Promise<Use
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+}
+
+/**
+ * Get the user profile with context-aware schema (for /api/:context/profile routes)
+ * Uses queryContext to query the correct schema (personal/work)
+ */
+export async function getUserProfileWithContext(
+  context: AIContext,
+  profileId: string = 'default'
+): Promise<UserProfile> {
+  // SECURITY: Explicit column selection instead of SELECT *
+  const result = await queryContext(
+    context,
+    `SELECT id, preferred_categories, preferred_types, topic_interests, active_hours,
+            productivity_patterns, total_ideas, total_meetings, avg_ideas_per_day,
+            priority_keywords, auto_priority_enabled, thinking_patterns, language_style,
+            created_at, updated_at
+     FROM user_profile WHERE id = $1`,
+    [profileId]
+  );
+
+  if (result.rows.length === 0) {
+    // Create default profile if it doesn't exist
+    await queryContext(
+      context,
+      `INSERT INTO user_profile (id) VALUES ($1) ON CONFLICT (id) DO NOTHING`,
+      [profileId]
+    );
+    return getDefaultProfile(profileId);
+  }
+
+  const row = result.rows[0];
+  const productivityPatterns = parseJsonbWithDefault<Record<string, unknown>>(row.productivity_patterns, {});
+  return {
+    id: row.id,
+    preferred_categories: parseJsonbWithDefault<Record<string, number>>(row.preferred_categories, {}),
+    preferred_types: parseJsonbWithDefault<Record<string, number>>(row.preferred_types, {}),
+    topic_interests: parseJsonbWithDefault<Record<string, number>>(row.topic_interests, {}),
+    active_hours: parseJsonbWithDefault<Record<string, number>>(row.active_hours, {}),
+    productivity_patterns: productivityPatterns as Record<string, unknown>,
+    total_ideas: row.total_ideas,
+    total_meetings: row.total_meetings,
+    avg_ideas_per_day: row.avg_ideas_per_day,
+    priority_keywords: parseJsonbWithDefault<{ high: string[]; medium: string[]; low: string[] }>(row.priority_keywords, { high: [], medium: [], low: [] }),
+    auto_priority_enabled: row.auto_priority_enabled,
+    thinking_patterns: parseJsonb<ThinkingPatterns>(row.thinking_patterns) ?? undefined,
+    language_style: parseJsonb<LanguageStyle>(row.language_style) ?? undefined,
+    learning_confidence: (productivityPatterns as { learning_confidence?: number })?.learning_confidence || 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+/**
+ * Get personalized recommendations with context-aware schema
+ */
+export async function getRecommendationsWithContext(
+  context: AIContext,
+  profileId: string = 'default'
+): Promise<{
+  suggested_topics: string[];
+  optimal_hours: number[];
+  focus_categories: string[];
+  insights: string[];
+}> {
+  const profile = await getUserProfileWithContext(context, profileId);
+
+  // Get top topics
+  const topTopics = Object.entries(profile.topic_interests)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([topic]) => topic);
+
+  // Get most active hours
+  const activeHours = Object.entries(profile.active_hours)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([hour]) => parseInt(hour));
+
+  // Get focus categories
+  const focusCategories = Object.entries(profile.preferred_categories)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([cat]) => cat);
+
+  // Generate insights
+  const insights: string[] = [];
+
+  if (profile.avg_ideas_per_day > 5) {
+    insights.push('Du bist sehr produktiv! Durchschnittlich ' + profile.avg_ideas_per_day.toFixed(1) + ' Ideen pro Tag.');
+  }
+
+  if (activeHours.length > 0) {
+    const hourStr = activeHours.map((h) => `${h}:00`).join(', ');
+    insights.push(`Deine produktivsten Stunden sind: ${hourStr}`);
+  }
+
+  if (focusCategories.length > 0) {
+    insights.push(`Dein Fokus liegt auf: ${focusCategories.join(', ')}`);
+  }
+
+  return {
+    suggested_topics: topTopics,
+    optimal_hours: activeHours,
+    focus_categories: focusCategories,
+    insights,
+  };
+}
+
+/**
+ * Recalculate profile statistics with context-aware schema
+ */
+export async function recalculateStatsWithContext(
+  context: AIContext,
+  profileId: string = 'default'
+): Promise<void> {
+  // Count total ideas (excluding archived)
+  const ideasCount = await queryContext(context, 'SELECT COUNT(*) FROM ideas WHERE is_archived = false');
+
+  // Count total meetings
+  const meetingsCount = await queryContext(context, 'SELECT COUNT(*) FROM meetings');
+
+  // Calculate average ideas per day
+  const avgResult = await queryContext(context, `
+    SELECT AVG(daily_count) as avg_per_day FROM (
+      SELECT DATE(created_at) as day, COUNT(*) as daily_count
+      FROM ideas
+      GROUP BY DATE(created_at)
+    ) daily
+  `);
+
+  await queryContext(
+    context,
+    `UPDATE user_profile
+     SET total_ideas = $2,
+         total_meetings = $3,
+         avg_ideas_per_day = $4,
+         updated_at = NOW()
+     WHERE id = $1`,
+    [
+      profileId,
+      parseInt(ideasCount.rows[0].count),
+      parseInt(meetingsCount.rows[0].count),
+      parseFloat(avgResult.rows[0].avg_per_day) || 0,
+    ]
+  );
+}
+
+/**
+ * Toggle auto-priority feature with context-aware schema
+ */
+export async function setAutoPriorityWithContext(
+  context: AIContext,
+  enabled: boolean,
+  profileId: string = 'default'
+): Promise<void> {
+  await queryContext(
+    context,
+    `UPDATE user_profile SET auto_priority_enabled = $2, updated_at = NOW() WHERE id = $1`,
+    [profileId, enabled]
+  );
 }
 
 /**
