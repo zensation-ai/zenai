@@ -15,6 +15,7 @@ import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode, ChatMode 
 import { executeWithTools, ToolExecutionContext } from './claude/tool-use';
 import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
 import { claudeVision, VisionImage } from './claude-vision';
+import { CHAT } from '../config/constants';
 
 // ===========================================
 // Types
@@ -337,7 +338,7 @@ export async function generateEnhancedResponse(
     FROM general_chat_messages
     WHERE session_id = $1
     ORDER BY created_at ASC
-    LIMIT 50
+    LIMIT ${CHAT.MAX_HISTORY_MESSAGES}
   `, [sessionId]);
 
   // Convert to ConversationMessage format

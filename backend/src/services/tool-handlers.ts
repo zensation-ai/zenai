@@ -310,6 +310,96 @@ async function handleGetRelated(
   }
 }
 
+// ===========================================
+// Safe Math Evaluator (Recursive Descent Parser)
+// ===========================================
+
+/**
+ * Safe math expression evaluator using recursive descent parsing.
+ * Replaces Function()/eval() to eliminate code injection risks.
+ * Supports: +, -, *, /, %, parentheses, unary minus, decimal numbers.
+ */
+function safeEvaluate(expr: string): number {
+  // Only allow digits, operators, parentheses, decimal points, whitespace
+  const sanitized = expr.replace(/\s/g, '');
+  if (!/^[0-9+\-*/().%]+$/.test(sanitized)) {
+    throw new Error('Ungültige Zeichen im Ausdruck. Nur Zahlen und +, -, *, /, (), % erlaubt.');
+  }
+  if (sanitized.length === 0 || !/\d/.test(sanitized)) {
+    throw new Error('Ungültiger mathematischer Ausdruck.');
+  }
+
+  let pos = 0;
+
+  function parseExpression(): number {
+    let result = parseTerm();
+    while (pos < sanitized.length && (sanitized[pos] === '+' || sanitized[pos] === '-')) {
+      const op = sanitized[pos++];
+      const right = parseTerm();
+      result = op === '+' ? result + right : result - right;
+    }
+    return result;
+  }
+
+  function parseTerm(): number {
+    let result = parseFactor();
+    while (pos < sanitized.length && (sanitized[pos] === '*' || sanitized[pos] === '/' || sanitized[pos] === '%')) {
+      const op = sanitized[pos++];
+      const right = parseFactor();
+      if ((op === '/' || op === '%') && right === 0) {
+        throw new Error('Division durch Null ist nicht erlaubt.');
+      }
+      if (op === '*') result *= right;
+      else if (op === '/') result /= right;
+      else result %= right;
+    }
+    return result;
+  }
+
+  function parseFactor(): number {
+    // Unary minus
+    if (pos < sanitized.length && sanitized[pos] === '-') {
+      pos++;
+      return -parseFactor();
+    }
+    // Unary plus
+    if (pos < sanitized.length && sanitized[pos] === '+') {
+      pos++;
+      return parseFactor();
+    }
+    // Parenthesized expression
+    if (pos < sanitized.length && sanitized[pos] === '(') {
+      pos++; // skip '('
+      const result = parseExpression();
+      if (pos >= sanitized.length || sanitized[pos] !== ')') {
+        throw new Error('Unbalancierte Klammern im Ausdruck.');
+      }
+      pos++; // skip ')'
+      return result;
+    }
+    // Number (integer or decimal)
+    const start = pos;
+    while (pos < sanitized.length && (sanitized[pos] >= '0' && sanitized[pos] <= '9' || sanitized[pos] === '.')) {
+      pos++;
+    }
+    if (pos === start) {
+      throw new Error('Ungültiger mathematischer Ausdruck.');
+    }
+    const numStr = sanitized.slice(start, pos);
+    const num = parseFloat(numStr);
+    if (isNaN(num)) {
+      throw new Error(`Ungültige Zahl: "${numStr}"`);
+    }
+    return num;
+  }
+
+  const result = parseExpression();
+  if (pos !== sanitized.length) {
+    throw new Error('Ungültiger mathematischer Ausdruck - unerwartete Zeichen am Ende.');
+  }
+  return result;
+}
+
 /**
  * Calculate handler (safe math evaluation)
  * Context not used but included for consistent handler signature
@@ -327,41 +417,18 @@ async function handleCalculate(
   logger.debug('Tool: calculate', { expression });
 
   try {
-    // Safe math evaluation - only allow numbers and basic operators
-    const sanitized = expression.replace(/[^0-9+\-*/().%\s,]/g, '');
-
-    if (sanitized !== expression.replace(/\s/g, '')) {
-      return 'Fehler: Ungültige Zeichen im Ausdruck. Nur Zahlen und +, -, *, /, (), % erlaubt.';
-    }
-
-    // Check for valid expression structure
-    if (!sanitized.trim() || !/\d/.test(sanitized)) {
-      return 'Fehler: Ungültiger mathematischer Ausdruck.';
-    }
-
-    // Check for balanced parentheses
-    let parenCount = 0;
-    for (const char of sanitized) {
-      if (char === '(') {parenCount++;}
-      if (char === ')') {parenCount--;}
-      if (parenCount < 0) {
-        return 'Fehler: Unbalancierte Klammern im Ausdruck.';
-      }
-    }
-    if (parenCount !== 0) {
-      return 'Fehler: Unbalancierte Klammern im Ausdruck.';
-    }
-
-    // Use Function constructor for evaluation (safer than eval but still limited)
-    const result = Function(`"use strict"; return (${sanitized})`)();
+    // SECURITY: Safe math evaluation using recursive descent parser
+    // Avoids Function()/eval() which are code injection vectors
+    const result = safeEvaluate(expression);
 
     if (typeof result !== 'number' || !Number.isFinite(result)) {
       return 'Fehler: Das Ergebnis ist keine gültige Zahl.';
     }
 
     return `${expression} = **${result}**`;
-  } catch {
-    return `Fehler: Ungültiger mathematischer Ausdruck "${expression}"`;
+  } catch (evalError) {
+    const msg = evalError instanceof Error ? evalError.message : 'Ungültiger Ausdruck';
+    return `Fehler: ${msg}`;
   }
 }
 

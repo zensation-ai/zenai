@@ -35,6 +35,7 @@ import {
   isValidImageFormat,
   ImageMediaType,
 } from '../services/claude-vision';
+import { CHAT } from '../config/constants';
 
 export const generalChatRouter = Router();
 
@@ -188,9 +189,8 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, asyncHandler(async 
     throw new ValidationError('Message is required and must be a string');
   }
 
-  const MAX_MESSAGE_LENGTH = 10000;
-  if (message.length > MAX_MESSAGE_LENGTH) {
-    throw new ValidationError(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+  if (message.length > CHAT.MAX_MESSAGE_LENGTH) {
+    throw new ValidationError(`Message too long. Maximum ${CHAT.MAX_MESSAGE_LENGTH} characters allowed.`);
   }
 
   const trimmedMessage = message.trim();
@@ -308,9 +308,8 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
     throw new ValidationError('Message is required and must be a string');
   }
 
-  const MAX_MESSAGE_LENGTH = 10000;
-  if (message.length > MAX_MESSAGE_LENGTH) {
-    throw new ValidationError(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+  if (message.length > CHAT.MAX_MESSAGE_LENGTH) {
+    throw new ValidationError(`Message too long. Maximum ${CHAT.MAX_MESSAGE_LENGTH} characters allowed.`);
   }
 
   const trimmedMessage = message.trim();
@@ -485,70 +484,61 @@ generalChatRouter.post(
  * - done: Stream complete with metadata
  * - error: Error occurred
  */
-generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, async (req: Request, res: Response) => {
+generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
+  const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
 
-  try {
-    // Parse parameters inside try block to catch any parsing errors
-    const enableThinking = req.query.enable_thinking !== 'false';
-    const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
+  // Validate UUID format
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
+  }
 
-    // Validate UUID format
-    if (!isValidUUID(id)) {
-      res.status(400).json({ success: false, error: 'Invalid session ID format' });
-      return;
-    }
+  // Validate message
+  if (!message || typeof message !== 'string') {
+    throw new ValidationError('Message is required and must be a string');
+  }
 
-    // Validate message
-    if (!message || typeof message !== 'string') {
-      res.status(400).json({ success: false, error: 'Message is required' });
-      return;
-    }
+  const trimmedMessage = message.trim();
+  if (trimmedMessage.length === 0 || trimmedMessage.length > CHAT.MAX_MESSAGE_LENGTH) {
+    throw new ValidationError(`Invalid message length (1-${CHAT.MAX_MESSAGE_LENGTH} characters)`);
+  }
 
-    const trimmedMessage = message.trim();
-    if (trimmedMessage.length === 0 || trimmedMessage.length > 10000) {
-      res.status(400).json({ success: false, error: 'Invalid message length' });
-      return;
-    }
+  // Check session exists
+  const session = await getSession(id);
+  if (!session) {
+    throw new NotFoundError('Chat session');
+  }
 
-    // Check session exists
-    const session = await getSession(id);
-    if (!session) {
-      res.status(404).json({ success: false, error: 'Chat session not found' });
-      return;
-    }
+  logger.info('Starting streaming chat', {
+    sessionId: id,
+    messageLength: trimmedMessage.length,
+    thinkingBudget,
+  });
 
-    logger.info('Starting streaming chat', {
-      sessionId: id,
-      messageLength: trimmedMessage.length,
-      enableThinking,
-      thinkingBudget,
-    });
+  // Store user message first
+  await addMessage(id, 'user', trimmedMessage);
 
-    // Store user message first
-    await addMessage(id, 'user', trimmedMessage);
+  // Get conversation history
+  const historyResult = await query(`
+    SELECT role, content
+    FROM general_chat_messages
+    WHERE session_id = $1
+    ORDER BY created_at ASC
+    LIMIT 50
+  `, [id]);
 
-    // Get conversation history
-    const historyResult = await query(`
-      SELECT role, content
-      FROM general_chat_messages
-      WHERE session_id = $1
-      ORDER BY created_at ASC
-      LIMIT 50
-    `, [id]);
+  // Build messages array
+  const messages = historyResult.rows.map((row: { role: string; content: string }) => ({
+    role: row.role as 'user' | 'assistant',
+    content: row.content,
+  }));
 
-    // Build messages array
-    const messages = historyResult.rows.map((row: { role: string; content: string }) => ({
-      role: row.role as 'user' | 'assistant',
-      content: row.content,
-    }));
+  // Detect mode for system prompt enhancement
+  const modeResult = detectChatMode(trimmedMessage);
 
-    // Detect mode for system prompt enhancement
-    const modeResult = detectChatMode(trimmedMessage);
-
-    // Build system prompt
-    let systemPrompt = `Du bist ein hilfreicher, intelligenter KI-Assistent.
+  // Build system prompt (reference the shared constant from general-chat service)
+  let systemPrompt = `Du bist ein hilfreicher, intelligenter KI-Assistent.
 
 Deine Eigenschaften:
 - Du antwortest auf Deutsch, es sei denn der Benutzer schreibt in einer anderen Sprache
@@ -559,45 +549,41 @@ Deine Eigenschaften:
 
 Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Problemlösung, Texte verfassen, Code, und vieles mehr.`;
 
-    if (modeResult.mode === 'agent' || modeResult.mode === 'rag_enhanced') {
-      systemPrompt += `\n\n[MODUS: ${modeResult.mode}]\nDiese Anfrage erfordert tieferes Nachdenken. Nutze Extended Thinking um deine Gedanken zu strukturieren.`;
-    }
+  if (modeResult.mode === 'agent' || modeResult.mode === 'rag_enhanced') {
+    systemPrompt += `\n\n[MODUS: ${modeResult.mode}]\nDiese Anfrage erfordert tieferes Nachdenken. Nutze Extended Thinking um deine Gedanken zu strukturieren.`;
+  }
 
-    // Setup SSE and stream response
-    setupSSEHeaders(res);
+  // Setup SSE and stream response
+  setupSSEHeaders(res);
 
-    // Collect response for storage
-    let fullResponse = '';
-    let thinkingContent = '';
-    let sseBuffer = ''; // Buffer for partial SSE events
+  // Use a PassThrough approach: intercept SSE events using a content collector
+  // instead of monkey-patching res.write (which was fragile and error-prone)
+  let fullResponse = '';
+  let thinkingContent = '';
 
-    // Create custom event handler to collect content with proper SSE parsing
-    const originalWrite = res.write.bind(res);
-    res.write = function(
-      chunk: string | Uint8Array,
-      encodingOrCallback?: BufferEncoding | ((error: Error | null | undefined) => void),
-      callback?: (error: Error | null | undefined) => void
-    ): boolean {
-      // Accumulate chunks in buffer for proper SSE parsing
-      sseBuffer += chunk.toString();
+  // Install a listener that captures SSE data as it flows through
+  const originalWrite = res.write.bind(res) as typeof res.write;
+  let sseBuffer = '';
 
-      // Process complete SSE events (terminated by \n\n)
+  const interceptWrite: typeof res.write = function(
+    chunk: unknown,
+    encodingOrCallback?: BufferEncoding | ((error: Error | null | undefined) => void),
+    callback?: (error: Error | null | undefined) => void
+  ): boolean {
+    // Parse SSE events from chunk to collect content for DB storage
+    try {
+      sseBuffer += String(chunk);
       let eventEnd: number;
       while ((eventEnd = sseBuffer.indexOf('\n\n')) !== -1) {
         const eventBlock = sseBuffer.slice(0, eventEnd);
         sseBuffer = sseBuffer.slice(eventEnd + 2);
 
-        // Parse the event block (format: "event: type\ndata: json")
         const lines = eventBlock.split('\n');
         let eventType = '';
         let dataStr = '';
-
         for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            eventType = line.slice(7).trim();
-          } else if (line.startsWith('data: ')) {
-            dataStr = line.slice(6);
-          }
+          if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+          else if (line.startsWith('data: ')) dataStr = line.slice(6);
         }
 
         if (eventType && dataStr) {
@@ -608,22 +594,23 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
             } else if (eventType === 'thinking_delta' && data.thinking) {
               thinkingContent += data.thinking;
             }
-          } catch {
-            // Ignore parse errors for malformed JSON
-          }
+          } catch { /* skip malformed JSON */ }
         }
       }
+    } catch { /* never let interception errors break the stream */ }
 
-      // Call originalWrite with proper overload handling
-      if (typeof encodingOrCallback === 'function') {
-        return originalWrite(chunk, encodingOrCallback);
-      } else if (encodingOrCallback !== undefined) {
-        return originalWrite(chunk, encodingOrCallback, callback);
-      } else {
-        return originalWrite(chunk);
-      }
-    };
+    // Forward to original write with proper overload handling
+    if (typeof encodingOrCallback === 'function') {
+      return originalWrite(chunk as string, encodingOrCallback);
+    } else if (encodingOrCallback !== undefined) {
+      return originalWrite(chunk as string, encodingOrCallback, callback);
+    }
+    return originalWrite(chunk as string);
+  };
 
+  res.write = interceptWrite;
+
+  try {
     // Stream the response
     await thinkingStream(
       res,
@@ -644,32 +631,27 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
 
-    // SECURITY: Don't expose error details in production
-    const isProduction = process.env.NODE_ENV === 'production';
-    const safeErrorMessage = isProduction
-      ? 'An error occurred while processing your request'
-      : (error instanceof Error ? error.message : 'Streaming failed');
-
-    // If headers not sent, send error response
-    if (!res.headersSent) {
-      res.status(500).json({
-        success: false,
-        error: safeErrorMessage,
-      });
-    } else {
-      // Headers sent, try to send SSE error
+    // If headers already sent (SSE started), send error via SSE
+    if (res.headersSent) {
       try {
         const errorEvent = `event: error\ndata: ${JSON.stringify({ error: 'Stream failed' })}\n\n`;
-        res.write(errorEvent);
+        originalWrite(errorEvent);
         res.end();
-      } catch (writeError) {
-        // Log the write failure for debugging
-        logger.debug('Failed to write SSE error event', {
-          sessionId: id,
-          originalError: error instanceof Error ? error.message : 'Unknown',
-          writeError: writeError instanceof Error ? writeError.message : 'Unknown',
-        });
+      } catch {
+        // Stream already broken, nothing more we can do
       }
+    } else {
+      // Headers not sent yet, respond with JSON error
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.status(500).json({
+        success: false,
+        error: isProduction
+          ? 'An error occurred while processing your request'
+          : (error instanceof Error ? error.message : 'Streaming failed'),
+      });
     }
+  } finally {
+    // Restore original write to prevent leaks
+    res.write = originalWrite;
   }
-});
+}));

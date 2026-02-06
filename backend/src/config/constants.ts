@@ -172,6 +172,22 @@ export const CLAUDE = {
 } as const;
 
 // ===========================================
+// Chat Configuration
+// ===========================================
+export const CHAT = {
+  /** Maximum message length in characters */
+  MAX_MESSAGE_LENGTH: 10000,
+  /** Maximum conversation history messages to include */
+  MAX_HISTORY_MESSAGES: 50,
+  /** Default thinking budget for Extended Thinking */
+  DEFAULT_THINKING_BUDGET: 10000,
+  /** Maximum images per vision message */
+  MAX_VISION_IMAGES: 5,
+  /** Maximum image size in bytes (10MB) */
+  MAX_IMAGE_SIZE: 10 * 1024 * 1024,
+} as const;
+
+// ===========================================
 // Valid Context Types
 // ===========================================
 export const VALID_CONTEXTS = ['personal', 'work'] as const;
