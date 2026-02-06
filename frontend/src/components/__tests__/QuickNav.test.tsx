@@ -2,12 +2,15 @@
  * Unit Tests for QuickNav Component
  *
  * Tests quick navigation functionality including:
- * - Tile rendering
+ * - Tile rendering (KI-Werkstatt, Lernen, Meetings, Sortieren)
  * - Active state highlighting
  * - Page navigation
  * - Keyboard navigation (Arrow keys)
- * - Badge display
  * - Accessibility
+ *
+ * Note: QuickNav only shows items NOT in main header navigation.
+ * Main nav has: Gedanken, Insights, Archiv, Einstellungen
+ * QuickNav shows: KI-Werkstatt, Lernen, Meetings, Sortieren
  *
  * @module tests/components/QuickNav
  */
@@ -23,7 +26,6 @@ describe('QuickNav Component', () => {
   const defaultProps = {
     currentPage: 'ideas' as const,
     onNavigate: mockOnNavigate,
-    archivedCount: 0,
   };
 
   beforeEach(() => {
@@ -40,17 +42,17 @@ describe('QuickNav Component', () => {
     it('renders all navigation tiles', () => {
       render(<QuickNav {...defaultProps} />);
       const buttons = screen.getAllByRole('button');
-      // Should have 7 tiles: Gedanken, Insights, KI-Werkstatt, Archiv, Lernen, Meetings, Einstellungen
-      expect(buttons).toHaveLength(7);
+      // Should have 4 tiles: KI-Werkstatt, Lernen, Meetings, Sortieren
+      expect(buttons).toHaveLength(4);
     });
 
     it('displays correct labels', () => {
       render(<QuickNav {...defaultProps} />);
-      expect(screen.getByText('Gedanken')).toBeInTheDocument();
-      expect(screen.getByText('Insights')).toBeInTheDocument();
-      expect(screen.getByText('Archiv')).toBeInTheDocument();
+      // KI is the shortLabel for KI-Werkstatt
+      expect(screen.getByText('KI')).toBeInTheDocument();
       expect(screen.getByText('Lernen')).toBeInTheDocument();
       expect(screen.getByText('Meetings')).toBeInTheDocument();
+      expect(screen.getByText('Sortieren')).toBeInTheDocument();
     });
 
     it('has correct aria-label on nav element', () => {
@@ -61,35 +63,49 @@ describe('QuickNav Component', () => {
   });
 
   describe('Active State', () => {
-    it('highlights active tile for ideas page', () => {
-      render(<QuickNav {...defaultProps} currentPage="ideas" />);
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      expect(ideaButton).toHaveClass('active');
-      expect(ideaButton).toHaveAttribute('aria-current', 'page');
+    it('highlights active tile for ai-workshop page', () => {
+      render(<QuickNav {...defaultProps} currentPage="ai-workshop" />);
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      expect(workshopButton).toHaveClass('active');
+      expect(workshopButton).toHaveAttribute('aria-current', 'page');
     });
 
-    it('highlights active tile for insights page', () => {
-      render(<QuickNav {...defaultProps} currentPage="insights" />);
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      expect(insightsButton).toHaveClass('active');
+    it('highlights active tile for learning page', () => {
+      render(<QuickNav {...defaultProps} currentPage="learning" />);
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      expect(learningButton).toHaveClass('active');
     });
 
-    it('highlights insights tile for sub-pages (analytics)', () => {
-      render(<QuickNav {...defaultProps} currentPage="analytics" />);
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      expect(insightsButton).toHaveClass('active');
+    it('highlights active tile for meetings page', () => {
+      render(<QuickNav {...defaultProps} currentPage="meetings" />);
+      const meetingsButton = screen.getByRole('button', { name: /Meetings/i });
+      expect(meetingsButton).toHaveClass('active');
+    });
+
+    it('highlights active tile for triage page', () => {
+      render(<QuickNav {...defaultProps} currentPage="triage" />);
+      const triageButton = screen.getByRole('button', { name: /Sortieren/i });
+      expect(triageButton).toHaveClass('active');
     });
 
     it('highlights ai-workshop tile for sub-pages (incubator)', () => {
       render(<QuickNav {...defaultProps} currentPage="incubator" />);
-      const workshopButton = screen.getByRole('button', { name: /KI/i });
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
       expect(workshopButton).toHaveClass('active');
     });
 
-    it('highlights settings tile for sub-pages (profile)', () => {
-      render(<QuickNav {...defaultProps} currentPage="profile" />);
-      const settingsButton = screen.getByRole('button', { name: /Einstellungen|Mehr/i });
-      expect(settingsButton).toHaveClass('active');
+    it('highlights learning tile for sub-pages (learning-tasks)', () => {
+      render(<QuickNav {...defaultProps} currentPage="learning-tasks" />);
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      expect(learningButton).toHaveClass('active');
+    });
+
+    it('has no active tile when on main nav pages', () => {
+      render(<QuickNav {...defaultProps} currentPage="ideas" />);
+      const buttons = screen.getAllByRole('button');
+      buttons.forEach((button) => {
+        expect(button).not.toHaveClass('active');
+      });
     });
   });
 
@@ -98,20 +114,30 @@ describe('QuickNav Component', () => {
       const user = userEvent.setup();
       render(<QuickNav {...defaultProps} />);
 
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      await user.click(insightsButton);
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      await user.click(learningButton);
 
-      expect(mockOnNavigate).toHaveBeenCalledWith('insights');
+      expect(mockOnNavigate).toHaveBeenCalledWith('learning');
     });
 
     it('calls onNavigate with correct page for each tile', async () => {
       const user = userEvent.setup();
       render(<QuickNav {...defaultProps} />);
 
-      const archiveButton = screen.getByRole('button', { name: /Archiv/i });
-      await user.click(archiveButton);
+      const meetingsButton = screen.getByRole('button', { name: /Meetings/i });
+      await user.click(meetingsButton);
 
-      expect(mockOnNavigate).toHaveBeenCalledWith('archive');
+      expect(mockOnNavigate).toHaveBeenCalledWith('meetings');
+    });
+
+    it('navigates to triage on click', async () => {
+      const user = userEvent.setup();
+      render(<QuickNav {...defaultProps} />);
+
+      const triageButton = screen.getByRole('button', { name: /Sortieren/i });
+      await user.click(triageButton);
+
+      expect(mockOnNavigate).toHaveBeenCalledWith('triage');
     });
   });
 
@@ -120,130 +146,115 @@ describe('QuickNav Component', () => {
       const user = userEvent.setup();
       render(<QuickNav {...defaultProps} />);
 
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      ideaButton.focus();
+      // First tile (KI-Werkstatt) should have tabIndex 0 when no tile is active
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      workshopButton.focus();
 
       await user.keyboard('{ArrowRight}');
 
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      expect(document.activeElement).toBe(insightsButton);
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      expect(document.activeElement).toBe(learningButton);
     });
 
     it('navigates to previous tile with ArrowLeft', async () => {
       const user = userEvent.setup();
-      render(<QuickNav {...defaultProps} currentPage="insights" />);
+      render(<QuickNav {...defaultProps} currentPage="learning" />);
 
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      insightsButton.focus();
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      learningButton.focus();
 
       await user.keyboard('{ArrowLeft}');
 
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      expect(document.activeElement).toBe(ideaButton);
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      expect(document.activeElement).toBe(workshopButton);
     });
 
     it('wraps around with ArrowRight on last tile', async () => {
       const user = userEvent.setup();
-      render(<QuickNav {...defaultProps} currentPage="settings" />);
+      render(<QuickNav {...defaultProps} currentPage="triage" />);
 
-      const settingsButton = screen.getByRole('button', { name: /Einstellungen|Mehr/i });
-      settingsButton.focus();
+      const triageButton = screen.getByRole('button', { name: /Sortieren/i });
+      triageButton.focus();
 
       await user.keyboard('{ArrowRight}');
 
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      expect(document.activeElement).toBe(ideaButton);
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      expect(document.activeElement).toBe(workshopButton);
     });
 
     it('navigates on Enter key', async () => {
       const user = userEvent.setup();
       render(<QuickNav {...defaultProps} />);
 
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      insightsButton.focus();
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      learningButton.focus();
 
       await user.keyboard('{Enter}');
 
-      expect(mockOnNavigate).toHaveBeenCalledWith('insights');
+      expect(mockOnNavigate).toHaveBeenCalledWith('learning');
     });
 
     it('navigates on Space key', async () => {
       const user = userEvent.setup();
       render(<QuickNav {...defaultProps} />);
 
-      const archiveButton = screen.getByRole('button', { name: /Archiv/i });
-      archiveButton.focus();
+      const meetingsButton = screen.getByRole('button', { name: /Meetings/i });
+      meetingsButton.focus();
 
       await user.keyboard(' ');
 
-      expect(mockOnNavigate).toHaveBeenCalledWith('archive');
+      expect(mockOnNavigate).toHaveBeenCalledWith('meetings');
     });
 
     it('navigates to first tile with Home key', async () => {
       const user = userEvent.setup();
-      render(<QuickNav {...defaultProps} currentPage="archive" />);
+      render(<QuickNav {...defaultProps} currentPage="triage" />);
 
-      const archiveButton = screen.getByRole('button', { name: /Archiv/i });
-      archiveButton.focus();
+      const triageButton = screen.getByRole('button', { name: /Sortieren/i });
+      triageButton.focus();
 
       await user.keyboard('{Home}');
 
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      expect(document.activeElement).toBe(ideaButton);
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      expect(document.activeElement).toBe(workshopButton);
     });
 
     it('navigates to last tile with End key', async () => {
       const user = userEvent.setup();
       render(<QuickNav {...defaultProps} />);
 
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      ideaButton.focus();
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      workshopButton.focus();
 
       await user.keyboard('{End}');
 
-      const settingsButton = screen.getByRole('button', { name: /Einstellungen|Mehr/i });
-      expect(document.activeElement).toBe(settingsButton);
-    });
-  });
-
-  describe('Badge Display', () => {
-    it('does not show badge when archivedCount is 0', () => {
-      render(<QuickNav {...defaultProps} archivedCount={0} />);
-      const badge = screen.queryByText('0');
-      expect(badge).not.toBeInTheDocument();
-    });
-
-    it('shows badge when archivedCount is greater than 0', () => {
-      render(<QuickNav {...defaultProps} archivedCount={5} />);
-      const badge = screen.getByText('5');
-      expect(badge).toBeInTheDocument();
-      expect(badge).toHaveClass('quick-nav-badge');
-    });
-
-    it('shows 99+ when archivedCount exceeds 99', () => {
-      render(<QuickNav {...defaultProps} archivedCount={150} />);
-      const badge = screen.getByText('99+');
-      expect(badge).toBeInTheDocument();
-    });
-
-    it('includes archive count in aria-label', () => {
-      render(<QuickNav {...defaultProps} archivedCount={5} />);
-      const archiveButton = screen.getByRole('button', { name: /Archiv.*5 archiviert/i });
-      expect(archiveButton).toBeInTheDocument();
+      const triageButton = screen.getByRole('button', { name: /Sortieren/i });
+      expect(document.activeElement).toBe(triageButton);
     });
   });
 
   describe('Accessibility', () => {
     it('has proper tab index for keyboard navigation', () => {
-      render(<QuickNav {...defaultProps} currentPage="ideas" />);
+      render(<QuickNav {...defaultProps} currentPage="learning" />);
 
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      const meetingsButton = screen.getByRole('button', { name: /Meetings/i });
 
       // Active tile should have tabIndex 0
-      expect(ideaButton).toHaveAttribute('tabIndex', '0');
+      expect(learningButton).toHaveAttribute('tabIndex', '0');
       // Other tiles should have tabIndex -1
-      expect(insightsButton).toHaveAttribute('tabIndex', '-1');
+      expect(meetingsButton).toHaveAttribute('tabIndex', '-1');
+    });
+
+    it('first tile has tabIndex 0 when no tile is active', () => {
+      render(<QuickNav {...defaultProps} currentPage="ideas" />);
+
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+
+      // First tile should have tabIndex 0 when no tile is active
+      expect(workshopButton).toHaveAttribute('tabIndex', '0');
+      expect(learningButton).toHaveAttribute('tabIndex', '-1');
     });
 
     it('applies neuro-focus-ring class to all tiles', () => {
@@ -256,13 +267,13 @@ describe('QuickNav Component', () => {
     });
 
     it('has aria-current on active tile only', () => {
-      render(<QuickNav {...defaultProps} currentPage="insights" />);
+      render(<QuickNav {...defaultProps} currentPage="learning" />);
 
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      const meetingsButton = screen.getByRole('button', { name: /Meetings/i });
 
-      expect(insightsButton).toHaveAttribute('aria-current', 'page');
-      expect(ideaButton).not.toHaveAttribute('aria-current');
+      expect(learningButton).toHaveAttribute('aria-current', 'page');
+      expect(meetingsButton).not.toHaveAttribute('aria-current');
     });
   });
 
@@ -270,13 +281,15 @@ describe('QuickNav Component', () => {
     it('applies correct color class to each tile', () => {
       render(<QuickNav {...defaultProps} />);
 
-      const ideaButton = screen.getByRole('button', { name: /Gedanken/i });
-      const insightsButton = screen.getByRole('button', { name: /Insights/i });
-      const archiveButton = screen.getByRole('button', { name: /Archiv/i });
+      const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
+      const learningButton = screen.getByRole('button', { name: /Lernen/i });
+      const meetingsButton = screen.getByRole('button', { name: /Meetings/i });
+      const triageButton = screen.getByRole('button', { name: /Sortieren/i });
 
-      expect(ideaButton).toHaveClass('color-primary');
-      expect(insightsButton).toHaveClass('color-blue');
-      expect(archiveButton).toHaveClass('color-gray');
+      expect(workshopButton).toHaveClass('color-purple');
+      expect(learningButton).toHaveClass('color-green');
+      expect(meetingsButton).toHaveClass('color-cyan');
+      expect(triageButton).toHaveClass('color-coral');
     });
   });
 });

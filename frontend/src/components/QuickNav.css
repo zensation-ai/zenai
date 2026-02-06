@@ -27,18 +27,18 @@
   padding: var(--quicknav-padding-y) var(--quicknav-padding-x);
   padding-left: max(var(--quicknav-padding-x), env(safe-area-inset-left, 0px) + 80px);
 
-  /* Subtle Background - harmoniert mit Header */
+  /* Midnight Dark Petrol - nahtloser Header-Übergang */
   background: linear-gradient(
     180deg,
-    rgba(20, 34, 48, 0.04) 0%,
-    rgba(248, 250, 252, 0.65) 100%
+    rgba(15, 29, 42, 0.98) 0%,
+    rgba(22, 39, 54, 0.95) 100%
   );
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  backdrop-filter: blur(16px) saturate(150%);
-  border-bottom: 1px solid rgba(20, 50, 70, 0.08);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 1px 3px rgba(20, 50, 70, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 8px rgba(0, 0, 0, 0.3);
 
   /* Animation */
   animation: quickNavSlideIn var(--transition-base, 0.25s) var(--ease-out-expo, cubic-bezier(0.22, 1, 0.36, 1));
@@ -80,7 +80,7 @@
   flex-shrink: 0;
   width: 32px;
   height: 100%;
-  background: linear-gradient(to right, transparent, var(--glass-2026-bg, rgba(255, 255, 255, 0.72)));
+  background: linear-gradient(to right, transparent, rgba(22, 39, 54, 0.95));
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--transition-fast, 0.15s) ease;
@@ -99,9 +99,9 @@
   gap: var(--spacing-xs, 4px);
   padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
   border-radius: var(--radius-lg, 16px);
-  border: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--text-secondary, #3a4d5a);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
@@ -126,7 +126,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
   opacity: 0;
   transition: opacity var(--transition-fast, 0.15s) ease;
   pointer-events: none;
@@ -134,10 +134,10 @@
 
 /* Hover State */
 .quick-nav-tile:hover {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: var(--border, rgba(20, 50, 70, 0.15));
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(20, 50, 70, 0.1));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .quick-nav-tile:hover::before {
@@ -154,7 +154,7 @@
 .quick-nav-tile:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 3px var(--glass-2026-bg, rgba(255, 255, 255, 0.9)),
+    0 0 0 3px rgba(22, 39, 54, 0.9),
     0 0 0 5px var(--primary, #ff6b35);
   border-color: var(--primary, #ff6b35);
 }
@@ -214,19 +214,19 @@
    Active State
    ============================================ */
 .quick-nav-tile.active {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.12) 0%, rgba(255, 140, 90, 0.08) 100%);
-  border-color: rgba(255, 107, 53, 0.28);
-  color: var(--text, #0f1f2a);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.2) 0%, rgba(255, 140, 90, 0.12) 100%);
+  border-color: rgba(255, 107, 53, 0.4);
+  color: #ffffff;
   font-weight: 600;
   box-shadow:
-    var(--shadow-sm, 0 2px 8px rgba(255, 107, 53, 0.12)),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 2px 8px rgba(255, 107, 53, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .quick-nav-tile.active:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 140, 90, 0.12) 100%);
-  border-color: rgba(255, 107, 53, 0.38);
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(255, 107, 53, 0.18));
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.28) 0%, rgba(255, 140, 90, 0.18) 100%);
+  border-color: rgba(255, 107, 53, 0.5);
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.25);
 }
 
 .quick-nav-tile.active .quick-nav-icon {
@@ -236,73 +236,73 @@
 /* ============================================
    Color Variants - Hover States
    ============================================ */
-.quick-nav-tile.color-primary:hover { border-color: rgba(255, 107, 53, 0.25); }
-.quick-nav-tile.color-blue:hover { border-color: rgba(59, 130, 246, 0.25); }
-.quick-nav-tile.color-purple:hover { border-color: rgba(139, 92, 246, 0.25); }
-.quick-nav-tile.color-gray:hover { border-color: rgba(100, 116, 139, 0.25); }
-.quick-nav-tile.color-green:hover { border-color: rgba(16, 185, 129, 0.25); }
-.quick-nav-tile.color-cyan:hover { border-color: rgba(6, 182, 212, 0.25); }
-.quick-nav-tile.color-coral:hover { border-color: rgba(244, 114, 182, 0.25); }
-.quick-nav-tile.color-slate:hover { border-color: rgba(71, 85, 105, 0.25); }
+.quick-nav-tile.color-primary:hover { border-color: rgba(255, 107, 53, 0.4); }
+.quick-nav-tile.color-blue:hover { border-color: rgba(59, 130, 246, 0.4); }
+.quick-nav-tile.color-purple:hover { border-color: rgba(139, 92, 246, 0.4); }
+.quick-nav-tile.color-gray:hover { border-color: rgba(100, 116, 139, 0.4); }
+.quick-nav-tile.color-green:hover { border-color: rgba(16, 185, 129, 0.4); }
+.quick-nav-tile.color-cyan:hover { border-color: rgba(6, 182, 212, 0.4); }
+.quick-nav-tile.color-coral:hover { border-color: rgba(244, 114, 182, 0.4); }
+.quick-nav-tile.color-slate:hover { border-color: rgba(148, 163, 184, 0.4); }
 
 /* ============================================
    Color Variants - Active States
    ============================================ */
 .quick-nav-tile.color-primary.active {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.14) 0%, rgba(255, 140, 90, 0.08) 100%);
-  border-color: rgba(255, 107, 53, 0.32);
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.12);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.22) 0%, rgba(255, 140, 90, 0.12) 100%);
+  border-color: rgba(255, 107, 53, 0.5);
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
 }
 
 .quick-nav-tile.color-blue.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(96, 165, 250, 0.06) 100%);
-  border-color: rgba(59, 130, 246, 0.32);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(96, 165, 250, 0.12) 100%);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
 .quick-nav-tile.color-purple.active {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(167, 139, 250, 0.06) 100%);
-  border-color: rgba(139, 92, 246, 0.32);
-  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.12);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22) 0%, rgba(167, 139, 250, 0.12) 100%);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
 }
 
 .quick-nav-tile.color-gray.active {
-  background: linear-gradient(135deg, rgba(100, 116, 139, 0.12) 0%, rgba(148, 163, 184, 0.06) 100%);
-  border-color: rgba(100, 116, 139, 0.32);
-  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.1);
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.22) 0%, rgba(148, 163, 184, 0.12) 100%);
+  border-color: rgba(100, 116, 139, 0.5);
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 }
 
 .quick-nav-tile.color-green.active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(52, 211, 153, 0.06) 100%);
-  border-color: rgba(16, 185, 129, 0.32);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(52, 211, 153, 0.12) 100%);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .quick-nav-tile.color-cyan.active {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(34, 211, 238, 0.06) 100%);
-  border-color: rgba(6, 182, 212, 0.32);
-  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.12);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(34, 211, 238, 0.12) 100%);
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.2);
 }
 
 .quick-nav-tile.color-coral.active {
-  background: linear-gradient(135deg, rgba(244, 114, 182, 0.12) 0%, rgba(251, 146, 194, 0.06) 100%);
-  border-color: rgba(244, 114, 182, 0.32);
-  box-shadow: 0 2px 8px rgba(244, 114, 182, 0.12);
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.22) 0%, rgba(251, 146, 194, 0.12) 100%);
+  border-color: rgba(244, 114, 182, 0.5);
+  box-shadow: 0 2px 8px rgba(244, 114, 182, 0.2);
 }
 
 .quick-nav-tile.color-slate.active {
-  background: linear-gradient(135deg, rgba(71, 85, 105, 0.12) 0%, rgba(100, 116, 139, 0.06) 100%);
-  border-color: rgba(71, 85, 105, 0.32);
-  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.1);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.22) 0%, rgba(148, 163, 184, 0.12) 100%);
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow: 0 2px 8px rgba(148, 163, 184, 0.2);
 }
 
 /* Active hover states */
-.quick-nav-tile.color-blue.active:hover { box-shadow: 0 4px 16px rgba(59, 130, 246, 0.18); }
-.quick-nav-tile.color-purple.active:hover { box-shadow: 0 4px 16px rgba(139, 92, 246, 0.18); }
-.quick-nav-tile.color-green.active:hover { box-shadow: 0 4px 16px rgba(16, 185, 129, 0.18); }
-.quick-nav-tile.color-cyan.active:hover { box-shadow: 0 4px 16px rgba(6, 182, 212, 0.18); }
-.quick-nav-tile.color-coral.active:hover { box-shadow: 0 4px 16px rgba(244, 114, 182, 0.18); }
-.quick-nav-tile.color-slate.active:hover { box-shadow: 0 4px 16px rgba(71, 85, 105, 0.15); }
+.quick-nav-tile.color-blue.active:hover { box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3); }
+.quick-nav-tile.color-purple.active:hover { box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3); }
+.quick-nav-tile.color-green.active:hover { box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3); }
+.quick-nav-tile.color-cyan.active:hover { box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3); }
+.quick-nav-tile.color-coral.active:hover { box-shadow: 0 4px 16px rgba(244, 114, 182, 0.3); }
+.quick-nav-tile.color-slate.active:hover { box-shadow: 0 4px 16px rgba(148, 163, 184, 0.25); }
 
 /* ============================================
    Responsive - Tablet
@@ -378,87 +378,19 @@
 }
 
 /* ============================================
-   Dark Mode
+   Dark Mode - Already dark, minimal adjustments
    ============================================ */
 @media (prefers-color-scheme: dark) {
   .quick-nav {
-    background: var(--glass-2026-bg, rgba(30, 30, 35, 0.8));
-    border-bottom-color: var(--glass-2026-border, rgba(255, 255, 255, 0.1));
-    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(
+      180deg,
+      rgba(10, 20, 30, 0.98) 0%,
+      rgba(15, 28, 40, 0.95) 100%
+    );
   }
 
   .quick-nav-content::after {
-    background: linear-gradient(to right, transparent, var(--glass-2026-bg, rgba(30, 30, 35, 0.8)));
-  }
-
-  .quick-nav-tile {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary, #c8d8e4);
-  }
-
-  .quick-nav-tile::before {
-    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
-  }
-
-  .quick-nav-tile:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  }
-
-  .quick-nav-tile:focus-visible {
-    box-shadow:
-      0 0 0 3px rgba(30, 30, 35, 0.9),
-      0 0 0 5px var(--primary, #ff7a4a);
-  }
-
-  .quick-nav-tile.active {
-    background: rgba(255, 107, 53, 0.15);
-    border-color: rgba(255, 107, 53, 0.35);
-    color: #ffffff;
-  }
-
-  /* Dark mode color variants */
-  .quick-nav-tile.color-blue.active {
-    background: rgba(59, 130, 246, 0.18);
-    border-color: rgba(59, 130, 246, 0.4);
-  }
-
-  .quick-nav-tile.color-purple.active {
-    background: rgba(139, 92, 246, 0.18);
-    border-color: rgba(139, 92, 246, 0.4);
-  }
-
-  .quick-nav-tile.color-gray.active {
-    background: rgba(100, 116, 139, 0.18);
-    border-color: rgba(100, 116, 139, 0.4);
-  }
-
-  .quick-nav-tile.color-green.active {
-    background: rgba(16, 185, 129, 0.18);
-    border-color: rgba(16, 185, 129, 0.4);
-  }
-
-  .quick-nav-tile.color-cyan.active {
-    background: rgba(6, 182, 212, 0.18);
-    border-color: rgba(6, 182, 212, 0.4);
-  }
-
-  .quick-nav-tile.color-coral.active {
-    background: rgba(244, 114, 182, 0.18);
-    border-color: rgba(244, 114, 182, 0.4);
-  }
-
-  .quick-nav-tile.color-slate.active {
-    background: rgba(148, 163, 184, 0.18);
-    border-color: rgba(148, 163, 184, 0.4);
-  }
-
-  /* Dark mode badge */
-  .quick-nav-badge {
-    background: var(--primary-light, #ff9a70);
-    color: var(--header-bg-solid, #142230);
+    background: linear-gradient(to right, transparent, rgba(15, 28, 40, 0.95));
   }
 }
 

@@ -21,20 +21,12 @@ interface QuickNavTile {
   subPages?: Page[];
 }
 
+/**
+ * QuickNav tiles - Only items NOT in main header navigation
+ * Main nav has: Gedanken, Insights, Archiv, Einstellungen
+ * QuickNav shows: KI-Werkstatt, Lernen, Meetings, Triage
+ */
 const QUICK_NAV_TILES: QuickNavTile[] = [
-  {
-    page: 'ideas',
-    icon: '💭',
-    label: 'Gedanken',
-    color: 'primary'
-  },
-  {
-    page: 'insights',
-    icon: '📊',
-    label: 'Insights',
-    color: 'blue',
-    subPages: ['dashboard', 'analytics', 'digest', 'knowledge-graph'] as Page[]
-  },
   {
     page: 'ai-workshop',
     icon: '🧠',
@@ -42,12 +34,6 @@ const QUICK_NAV_TILES: QuickNavTile[] = [
     shortLabel: 'KI',
     color: 'purple',
     subPages: ['incubator', 'proactive', 'evolution'] as Page[]
-  },
-  {
-    page: 'archive',
-    icon: '📥',
-    label: 'Archiv',
-    color: 'gray'
   },
   {
     page: 'learning',
@@ -63,25 +49,23 @@ const QUICK_NAV_TILES: QuickNavTile[] = [
     color: 'cyan'
   },
   {
-    page: 'settings',
-    icon: '⚙️',
-    label: 'Einstellungen',
-    shortLabel: 'Mehr',
-    color: 'slate',
-    subPages: ['profile', 'automations', 'integrations', 'notifications', 'export', 'sync', 'triage', 'media', 'stories', 'personalization'] as Page[]
+    page: 'triage',
+    icon: '📋',
+    label: 'Sortieren',
+    color: 'coral'
   },
 ];
 
 interface QuickNavProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
+  /** @deprecated No longer used - archive is in main nav */
   archivedCount?: number;
 }
 
 export const QuickNav = memo(function QuickNav({
   currentPage,
   onNavigate,
-  archivedCount = 0
 }: QuickNavProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -148,16 +132,11 @@ export const QuickNav = memo(function QuickNav({
               onClick={() => onNavigate(tile.page)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={`${tile.label}${tile.page === 'archive' && archivedCount > 0 ? ` (${archivedCount} archiviert)` : ''}`}
+              aria-label={tile.label}
               tabIndex={shouldFocus ? 0 : -1}
             >
               <span className="quick-nav-icon" aria-hidden="true">{tile.icon}</span>
               <span className="quick-nav-label">{tile.shortLabel || tile.label}</span>
-              {tile.page === 'archive' && archivedCount > 0 && (
-                <span className="quick-nav-badge" aria-hidden="true">
-                  {archivedCount > 99 ? '99+' : archivedCount}
-                </span>
-              )}
             </button>
           );
         })}
