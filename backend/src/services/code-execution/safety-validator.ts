@@ -153,6 +153,44 @@ const PYTHON_FORBIDDEN_PATTERNS: SecurityPattern[] = [
     severity: 'critical',
   },
 
+  // Import Bypass Prevention (importlib, builtins, submodule imports)
+  {
+    pattern: /\bimportlib\b/,
+    type: 'forbidden_import',
+    message: 'importlib is forbidden (dynamic import bypass)',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bfrom\s+os\./,
+    type: 'forbidden_import',
+    message: 'Import from os submodules (os.path, etc.) is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bfrom\s+subprocess\b/,
+    type: 'process_spawn',
+    message: 'Import from subprocess is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bfrom\s+shutil\b/,
+    type: 'file_system_access',
+    message: 'Import from shutil is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /__builtins__/,
+    type: 'code_injection',
+    message: '__builtins__ access is forbidden (import bypass)',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bbreakpoint\s*\(/,
+    type: 'code_injection',
+    message: 'breakpoint() is forbidden (debugger access)',
+    severity: 'high',
+  },
+
   // Code Injection
   {
     pattern: /\bexec\s*\(/,
@@ -298,7 +336,7 @@ const PYTHON_WARNING_PATTERNS: WarningPattern[] = [
 // ===========================================
 
 const NODEJS_FORBIDDEN_PATTERNS: SecurityPattern[] = [
-  // Process Spawning
+  // Process Spawning (CJS require)
   {
     pattern: /require\s*\(\s*['"]child_process['"]\s*\)/,
     type: 'process_spawn',
@@ -316,6 +354,52 @@ const NODEJS_FORBIDDEN_PATTERNS: SecurityPattern[] = [
     type: 'process_spawn',
     message: 'worker_threads module is forbidden',
     severity: 'high',
+  },
+
+  // ESM import statements (import ... from '...')
+  {
+    pattern: /\bimport\s+.*\bfrom\s+['"]child_process['"]/,
+    type: 'process_spawn',
+    message: 'ESM import of child_process is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bimport\s+.*\bfrom\s+['"]fs['"]/,
+    type: 'file_system_access',
+    message: 'ESM import of fs is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bimport\s+.*\bfrom\s+['"]net['"]/,
+    type: 'network_access',
+    message: 'ESM import of net is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bimport\s+.*\bfrom\s+['"]http['"]/,
+    type: 'network_access',
+    message: 'ESM import of http/https is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bimport\s+.*\bfrom\s+['"]https['"]/,
+    type: 'network_access',
+    message: 'ESM import of https is forbidden',
+    severity: 'critical',
+  },
+  {
+    pattern: /\bimport\s+.*\bfrom\s+['"]os['"]/,
+    type: 'forbidden_import',
+    message: 'ESM import of os is forbidden',
+    severity: 'critical',
+  },
+
+  // Dynamic import() expressions
+  {
+    pattern: /\bimport\s*\(\s*['"]/,
+    type: 'code_injection',
+    message: 'Dynamic import() is forbidden',
+    severity: 'critical',
   },
 
   // Network Access
