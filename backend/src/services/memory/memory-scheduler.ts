@@ -388,35 +388,58 @@ class MemorySchedulerService {
     };
 
     for (const context of CONFIG.CONTEXTS) {
+      // Small delay between contexts to prevent connection pool exhaustion
+      if (context !== CONFIG.CONTEXTS[0]) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Long-Term Memory Consolidation (separate try-catch for isolation)
+      let ltResult = { patternsAdded: 0, factsAdded: 0, factsUpdated: 0, interactionsStored: 0 };
       try {
-        // Long-Term Memory Consolidation
-        const ltResult = await longTermMemory.consolidate(context);
+        ltResult = await longTermMemory.consolidate(context);
         results.longTerm.patternsAdded += ltResult.patternsAdded;
         results.longTerm.factsAdded += ltResult.factsAdded;
         results.longTerm.factsUpdated += ltResult.factsUpdated;
         results.longTerm.interactionsStored += ltResult.interactionsStored;
+      } catch (error) {
+        const pgError = error as { code?: string; detail?: string; table?: string };
+        logger.error(`Long-term consolidation failed for context: ${context}`, error instanceof Error ? error : undefined, {
+          context,
+          operation: 'longTermConsolidationError',
+          pgCode: pgError.code,
+          pgDetail: pgError.detail,
+          pgTable: pgError.table,
+        });
+        this.stats.lastError = error instanceof Error ? error.message : String(error);
+        // Continue with episodic consolidation even if long-term fails
+      }
 
-        // Episodic Memory Consolidation (episodic -> semantic)
-        const epResult = await episodicMemory.consolidate(context);
+      // Episodic Memory Consolidation (separate try-catch for isolation)
+      let epResult = { episodesProcessed: 0, factsExtracted: 0, strongEpisodes: 0 };
+      try {
+        epResult = await episodicMemory.consolidate(context);
         results.episodic.episodesProcessed += epResult.episodesProcessed;
         results.episodic.factsExtracted += epResult.factsExtracted;
         results.episodic.strongEpisodes += epResult.strongEpisodes;
-
-        logger.info(`Consolidation complete for context: ${context}`, {
-          context,
-          longTerm: ltResult,
-          episodic: epResult,
-          operation: 'consolidationContext',
-        });
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.stats.lastError = errorMsg;
-
-        logger.error(`Consolidation failed for context: ${context}`, error instanceof Error ? error : undefined, {
+        const pgError = error as { code?: string; detail?: string; table?: string };
+        logger.error(`Episodic consolidation failed for context: ${context}`, error instanceof Error ? error : undefined, {
           context,
-          operation: 'consolidationError',
+          operation: 'episodicConsolidationError',
+          pgCode: pgError.code,
+          pgDetail: pgError.detail,
+          pgTable: pgError.table,
         });
+        this.stats.lastError = error instanceof Error ? error.message : String(error);
+        // Continue with next context even if this one fails
       }
+
+      logger.info(`Consolidation complete for context: ${context}`, {
+        context,
+        longTerm: ltResult,
+        episodic: epResult,
+        operation: 'consolidationContext',
+      });
     }
 
     results.duration = Date.now() - start;

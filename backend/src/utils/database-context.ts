@@ -110,10 +110,10 @@ const baseConfig = useConnectionString && databaseUrl
 
 const POOL_CONFIG = {
   ...baseConfig,
-  // Connection pool settings - Phase 24 Optimized for Production
-  // Increased pool size for better concurrency and performance
-  max: parseInt(process.env.DB_POOL_SIZE || '20'), // Increased from 5 to 20
-  min: parseInt(process.env.DB_POOL_MIN || '5'),   // Increased from 1 to 5
+  // Connection pool settings - Phase 31 Optimized for Memory Consolidation
+  // Increased pool size for parallel context consolidation (personal + work)
+  max: parseInt(process.env.DB_POOL_SIZE || '30'), // Increased from 20 to 30
+  min: parseInt(process.env.DB_POOL_MIN || '5'),   // Maintain warm connections
   idleTimeoutMillis: 60000, // 60s to reduce reconnections
   connectionTimeoutMillis: 10000, // 10s for Supabase latency
   // Statement timeout to prevent long-running queries
@@ -177,10 +177,21 @@ const poolStats: Record<AIContext, { queries: number; errors: number; slowQuerie
   work: { queries: 0, errors: 0, slowQueries: 0 },
 };
 
-// Log pool errors
+// Log pool errors with detailed PostgreSQL diagnostics
 (['personal', 'work'] as const).forEach((ctx) => {
   pools[ctx].on('error', (err) => {
-    logger.error(`Pool error [${ctx}]`, err, { context: ctx, operation: 'poolError' });
+    const pgError = err as { code?: string; detail?: string; hint?: string; severity?: string; constraint?: string };
+    logger.error(`Pool error [${ctx}]`, err, {
+      context: ctx,
+      operation: 'poolError',
+      pgCode: pgError.code,
+      pgDetail: pgError.detail,
+      pgHint: pgError.hint,
+      pgSeverity: pgError.severity,
+      pgConstraint: pgError.constraint,
+      poolSize: POOL_CONFIG.max,
+      errorMessage: err.message,
+    });
     poolStats[ctx].errors++;
   });
 });
@@ -289,17 +300,21 @@ export async function queryContext(
       poolStats[effectiveContext].errors++;
 
       // Extract PostgreSQL-specific error details for better debugging
-      const pgError = error as { code?: string; detail?: string; hint?: string; message?: string };
+      const pgError = error as { code?: string; detail?: string; hint?: string; message?: string; severity?: string; constraint?: string; table?: string; column?: string };
       logger.error(`Query error [${effectiveContext}]${attempt > 0 ? ` after ${attempt + 1} attempts` : ''}`, lastError, {
         context: effectiveContext,
-        query: text.substring(0, 100),
+        query: text.substring(0, 500), // Increased from 100 for better debugging
         attempts: attempt + 1,
         operation: 'queryError',
         // PostgreSQL-specific error details
         pgCode: pgError.code,
         pgDetail: pgError.detail,
         pgHint: pgError.hint,
-        pgMessage: pgError.message?.substring(0, 200),
+        pgSeverity: pgError.severity,
+        pgConstraint: pgError.constraint,
+        pgTable: pgError.table,
+        pgColumn: pgError.column,
+        pgMessage: pgError.message?.substring(0, 500),
       });
       throw error;
     }

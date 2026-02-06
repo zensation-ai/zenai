@@ -469,6 +469,22 @@ export class EpisodicMemoryService {
   // ===========================================
 
   /**
+   * Check if metadata column exists in personalization_facts table
+   */
+  private async hasMetadataColumn(context: AIContext): Promise<boolean> {
+    try {
+      const result = await queryContext(
+        context,
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_name = 'personalization_facts' AND column_name = 'metadata'`
+      );
+      return result.rows.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Consolidate strong episodes to long-term semantic memory
    * Should be called by daily cron job
    */
@@ -480,19 +496,32 @@ export class EpisodicMemoryService {
     };
 
     try {
+      // Check if metadata column exists for the optimized query
+      const hasMetadata = await this.hasMetadataColumn(context);
+
       // Find strong, frequently retrieved episodes not yet consolidated
+      // Use different query depending on schema version
+      const query = hasMetadata
+        ? `SELECT * FROM episodic_memories
+           WHERE context = $1
+             AND retrieval_count >= $2
+             AND retrieval_strength >= $3
+             AND NOT EXISTS (
+               SELECT 1 FROM personalization_facts f
+               WHERE f.metadata->>'source_episode_id' = episodic_memories.id::text
+             )
+           ORDER BY retrieval_strength DESC
+           LIMIT 20`
+        : `SELECT * FROM episodic_memories
+           WHERE context = $1
+             AND retrieval_count >= $2
+             AND retrieval_strength >= $3
+           ORDER BY retrieval_strength DESC
+           LIMIT 20`;
+
       const strongEpisodes = await queryContext(
         context,
-        `SELECT * FROM episodic_memories
-         WHERE context = $1
-           AND retrieval_count >= $2
-           AND retrieval_strength >= $3
-           AND NOT EXISTS (
-             SELECT 1 FROM personalization_facts f
-             WHERE f.metadata->>'source_episode_id' = episodic_memories.id::text
-           )
-         ORDER BY retrieval_strength DESC
-         LIMIT 20`,
+        query,
         [context, CONFIG.MIN_RETRIEVAL_FOR_CONSOLIDATION, CONFIG.MIN_STRENGTH_FOR_CONSOLIDATION]
       );
 
@@ -513,21 +542,22 @@ export class EpisodicMemoryService {
         const factContent = `Frühere Interaktion: "${episode.trigger.substring(0, 100)}..." -> ${episode.response.substring(0, 150)}...`;
 
         try {
-          await queryContext(
-            context,
-            `INSERT INTO personalization_facts
-             (id, context, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences, is_active, metadata)
-             VALUES ($1, $2, 'context', $3, $4, 'consolidated', $5, $5, 1, true, $6)
-             ON CONFLICT (id) DO NOTHING`,
-            [
-              uuidv4(),
-              context,
-              factContent,
-              episode.retrievalStrength,
-              new Date(),
-              JSON.stringify({ source_episode_id: episode.id }),
-            ]
-          );
+          // Use appropriate INSERT query based on schema version
+          const insertQuery = hasMetadata
+            ? `INSERT INTO personalization_facts
+               (id, context, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences, is_active, metadata)
+               VALUES ($1, $2, 'context', $3, $4, 'consolidated', $5, $5, 1, true, $6)
+               ON CONFLICT (id) DO NOTHING`
+            : `INSERT INTO personalization_facts
+               (id, context, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences, is_active)
+               VALUES ($1, $2, 'context', $3, $4, 'consolidated', $5, $5, 1, true)
+               ON CONFLICT (id) DO NOTHING`;
+
+          const insertParams = hasMetadata
+            ? [uuidv4(), context, factContent, episode.retrievalStrength, new Date(), JSON.stringify({ source_episode_id: episode.id })]
+            : [uuidv4(), context, factContent, episode.retrievalStrength, new Date()];
+
+          await queryContext(context, insertQuery, insertParams);
 
           result.factsExtracted++;
 
@@ -554,8 +584,14 @@ export class EpisodicMemoryService {
 
       return result;
     } catch (error) {
+      const pgError = error as { code?: string; detail?: string; table?: string; column?: string };
       logger.error('Episodic consolidation failed', error instanceof Error ? error : undefined, {
         context,
+        pgCode: pgError.code,
+        pgDetail: pgError.detail,
+        pgTable: pgError.table,
+        pgColumn: pgError.column,
+        errorMessage: error instanceof Error ? error.message : String(error),
       });
       return result;
     }

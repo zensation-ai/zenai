@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS personalization_facts (
     fact_key VARCHAR(100),
     fact_value TEXT,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    metadata JSONB DEFAULT '{}',
 
     CONSTRAINT valid_fact_context CHECK (context IN ('personal', 'work', 'learning', 'creative')),
     CONSTRAINT valid_fact_type CHECK (fact_type IN ('preference', 'behavior', 'knowledge', 'goal', 'context')),
@@ -79,6 +80,17 @@ BEGIN
             ADD COLUMN context VARCHAR(20) DEFAULT 'personal';
         RAISE NOTICE 'Added context column';
     END IF;
+
+    -- Add metadata column if missing (required for episodic consolidation)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'personalization_facts'
+        AND column_name = 'metadata'
+    ) THEN
+        ALTER TABLE personalization_facts
+            ADD COLUMN metadata JSONB DEFAULT '{}';
+        RAISE NOTICE 'Added metadata column for episodic consolidation';
+    END IF;
 END $$;
 
 -- Create indexes for performance
@@ -95,6 +107,10 @@ CREATE INDEX IF NOT EXISTS idx_personalization_facts_active
 CREATE INDEX IF NOT EXISTS idx_personalization_facts_context_active
     ON personalization_facts(context, is_active)
     WHERE is_active = true;
+
+-- GIN index for metadata JSONB queries (episodic consolidation)
+CREATE INDEX IF NOT EXISTS idx_personalization_facts_metadata
+    ON personalization_facts USING GIN (metadata);
 
 -- Add documentation
 COMMENT ON TABLE personalization_facts IS 'HiMeS Long-Term Memory: Stores personalization facts about users per context';
