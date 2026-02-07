@@ -4,12 +4,15 @@
  * Tests for the document analysis feature:
  * - Service: Excel/CSV parsing, file validation
  * - Routes: Upload, template listing, status endpoint
+ * - Phase 2: History, follow-up, compare, streaming, cache
  */
 
 import {
   isValidDocumentType,
   validateFileMagicNumber,
   getDocumentTypeLabel,
+  documentAnalysis,
+  ANALYSIS_TEMPLATES,
 } from '../services/document-analysis';
 
 // ===========================================
@@ -111,6 +114,167 @@ describe('Document Analysis - Validation', () => {
 });
 
 // ===========================================
+// Phase 2: Templates Export Test
+// ===========================================
+
+describe('Document Analysis - Templates', () => {
+  it('should export all 5 analysis templates', () => {
+    expect(Object.keys(ANALYSIS_TEMPLATES)).toHaveLength(5);
+    expect(ANALYSIS_TEMPLATES).toHaveProperty('general');
+    expect(ANALYSIS_TEMPLATES).toHaveProperty('financial');
+    expect(ANALYSIS_TEMPLATES).toHaveProperty('contract');
+    expect(ANALYSIS_TEMPLATES).toHaveProperty('data');
+    expect(ANALYSIS_TEMPLATES).toHaveProperty('summary');
+  });
+
+  it('each template should have system and instruction', () => {
+    for (const [key, template] of Object.entries(ANALYSIS_TEMPLATES)) {
+      expect(template.system).toBeTruthy();
+      expect(template.instruction).toBeTruthy();
+      expect(typeof template.system).toBe('string');
+      expect(typeof template.instruction).toBe('string');
+      expect(template.system.length).toBeGreaterThan(10);
+      expect(template.instruction.length).toBeGreaterThan(10);
+    }
+  });
+});
+
+// ===========================================
+// Phase 2: Cache Management Tests
+// ===========================================
+
+describe('Document Analysis - Prompt Cache', () => {
+  it('should compute consistent cache keys for same content', () => {
+    const buffer = Buffer.from('test document content');
+    const key1 = documentAnalysis.computeCacheKey(buffer);
+    const key2 = documentAnalysis.computeCacheKey(buffer);
+
+    expect(key1).toBe(key2);
+    expect(key1).toHaveLength(16);
+  });
+
+  it('should compute different cache keys for different content', () => {
+    const buffer1 = Buffer.from('document A');
+    const buffer2 = Buffer.from('document B');
+
+    const key1 = documentAnalysis.computeCacheKey(buffer1);
+    const key2 = documentAnalysis.computeCacheKey(buffer2);
+
+    expect(key1).not.toBe(key2);
+  });
+
+  it('should report false for non-cached documents', () => {
+    expect(documentAnalysis.isCached('non-existent-key')).toBe(false);
+  });
+
+  it('should return cache size', () => {
+    const size = documentAnalysis.getCacheSize();
+    expect(typeof size).toBe('number');
+    expect(size).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should clean expired cache entries', () => {
+    const cleaned = documentAnalysis.cleanCache();
+    expect(typeof cleaned).toBe('number');
+    expect(cleaned).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// ===========================================
+// Phase 2: Section Parsing Tests
+// ===========================================
+
+describe('Document Analysis - Section Parsing', () => {
+  it('should parse sections from markdown text', () => {
+    const markdown = `## Zusammenfassung
+Das ist eine Zusammenfassung.
+
+## Kennzahlen
+| Metrik | Wert |
+| --- | --- |
+| Umsatz | 100.000 € |
+
+## Details
+- Punkt 1
+- Punkt 2
+- Punkt 3`;
+
+    const sections = documentAnalysis.parseSections(markdown);
+    expect(sections.length).toBe(3);
+    expect(sections[0].title).toBe('Zusammenfassung');
+    expect(sections[0].type).toBe('text');
+    expect(sections[1].title).toBe('Kennzahlen');
+    expect(sections[1].type).toBe('table');
+    expect(sections[2].title).toBe('Details');
+    expect(sections[2].type).toBe('list');
+  });
+
+  it('should handle empty text', () => {
+    const sections = documentAnalysis.parseSections('');
+    expect(sections).toHaveLength(0);
+  });
+
+  it('should handle text without sections', () => {
+    const sections = documentAnalysis.parseSections('Just some plain text without headers.');
+    expect(sections).toHaveLength(0);
+  });
+});
+
+// ===========================================
+// Phase 2: Key Findings Extraction Tests
+// ===========================================
+
+describe('Document Analysis - Key Findings Extraction', () => {
+  it('should extract emphasized bullet points', () => {
+    const text = `
+- **Umsatzsteigerung** um 15%
+- **Kosten** blieben stabil
+- Normaler Punkt ohne Emphasis
+- **Gewinn** verdoppelt
+`;
+    const findings = documentAnalysis.extractKeyFindings(text);
+    expect(findings.length).toBe(3);
+    expect(findings[0]).toBe('Umsatzsteigerung');
+    expect(findings[1]).toBe('Kosten');
+    expect(findings[2]).toBe('Gewinn');
+  });
+
+  it('should fallback to regular bullets when no emphasis found', () => {
+    const text = `
+- First regular point
+- Second regular point
+- Third regular point
+`;
+    const findings = documentAnalysis.extractKeyFindings(text);
+    expect(findings.length).toBe(3);
+    expect(findings[0]).toBe('First regular point');
+  });
+
+  it('should limit findings to 10', () => {
+    const items = Array.from({ length: 15 }, (_, i) => `- **Finding ${i + 1}** details`);
+    const text = items.join('\n');
+    const findings = documentAnalysis.extractKeyFindings(text);
+    expect(findings.length).toBeLessThanOrEqual(10);
+  });
+
+  it('should return empty array for text without bullets', () => {
+    const findings = documentAnalysis.extractKeyFindings('Just a paragraph of text.');
+    expect(findings).toHaveLength(0);
+  });
+});
+
+// ===========================================
+// Phase 2: Service Availability
+// ===========================================
+
+describe('Document Analysis - Service', () => {
+  it('should expose isAvailable method', () => {
+    const available = documentAnalysis.isAvailable();
+    expect(typeof available).toBe('boolean');
+  });
+});
+
+// ===========================================
 // Route Tests (Integration)
 // ===========================================
 
@@ -139,7 +303,7 @@ describe('Document Analysis - Routes', () => {
   });
 
   describe('GET /api/documents/status', () => {
-    it('should return service status', async () => {
+    it('should return service status with Phase 2 features', async () => {
       const supertest = await import('supertest');
       const res = await supertest.default(app).get('/api/documents/status');
 
@@ -149,7 +313,15 @@ describe('Document Analysis - Routes', () => {
         expect(res.body.data).toHaveProperty('available');
         expect(res.body.data).toHaveProperty('supportedFormats');
         expect(res.body.data).toHaveProperty('templates');
+        expect(res.body.data).toHaveProperty('features');
         expect(res.body.data.supportedFormats).toHaveLength(4);
+        // Phase 2 features
+        expect(res.body.data.features).toEqual({
+          streaming: true,
+          comparison: true,
+          followUp: true,
+          history: true,
+        });
       }
     });
   });
@@ -191,6 +363,78 @@ describe('Document Analysis - Routes', () => {
         });
 
       expect([400, 422]).toContain(res.status);
+    });
+  });
+
+  describe('POST /api/documents/followup', () => {
+    it('should reject request without cacheKey', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/followup')
+        .send({ question: 'test' });
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should reject request without question', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/followup')
+        .send({ cacheKey: 'abc123' });
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should reject overly long questions', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/followup')
+        .send({ cacheKey: 'abc123', question: 'x'.repeat(5001) });
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should return 410 for expired/non-existent cache', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/followup')
+        .send({ cacheKey: 'non-existent-key', question: 'What is the summary?' });
+
+      expect([400, 410]).toContain(res.status);
+      if (res.status === 410) {
+        expect(res.body.error.code).toBe('CACHE_EXPIRED');
+      }
+    });
+  });
+
+  describe('POST /api/documents/compare', () => {
+    it('should reject request with less than 2 files', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/compare')
+        .attach('documents', Buffer.from('col1,col2\na,b'), {
+          filename: 'test.csv',
+          contentType: 'text/csv',
+        });
+
+      expect([400, 422]).toContain(res.status);
+    });
+  });
+
+  describe('GET /api/documents/cache/status', () => {
+    it('should return cache status', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app).get('/api/documents/cache/status');
+
+      expect([200, 401]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body.success).toBe(true);
+        expect(res.body.data).toHaveProperty('cachedDocuments');
+        expect(res.body.data).toHaveProperty('maxCacheSize');
+        expect(res.body.data).toHaveProperty('ttlMinutes');
+        expect(res.body.data.maxCacheSize).toBe(20);
+        expect(res.body.data.ttlMinutes).toBe(5);
+      }
     });
   });
 });
