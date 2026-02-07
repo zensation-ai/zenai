@@ -2,17 +2,22 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Smoke tests for critical user flows.
- * Designed to run without a backend (all API errors are tolerated).
+ * All API calls are intercepted so no backend is needed.
  */
+
+test.beforeEach(async ({ page }) => {
+  // Mock all API calls to prevent Vite proxy errors (no backend in CI)
+  await page.route('**/api/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{"data":[]}' }),
+  );
+});
 
 test.describe('Smoke: Chat', () => {
   test('chat area exists and input works', async ({ page }) => {
     await page.goto('/');
-    // At least one chat-related element in the DOM
     const chatEls = await page.locator('[class*="chat"], [class*="Chat"]').count();
     expect(chatEls).toBeGreaterThan(0);
 
-    // Can type in the first textarea
     const ta = page.locator('textarea').first();
     await ta.fill('Test Nachricht');
     await expect(ta).toHaveValue('Test Nachricht');
@@ -36,7 +41,6 @@ test.describe('Smoke: Context Switch', () => {
       await page.waitForTimeout(300);
       await btns.nth(0).click();
     }
-    // App still renders after context switch
     await expect(page.locator('h1').first()).toBeVisible();
   });
 });
@@ -48,7 +52,6 @@ test.describe('Smoke: Theme', () => {
     const visible = await toggle.isVisible().catch(() => false);
     if (visible) {
       await toggle.click();
-      // no crash = pass
     }
     expect(true).toBe(true);
   });
