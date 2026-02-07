@@ -73,6 +73,8 @@ import { topicEnhancementRouter } from './routes/topic-enhancement';
 import { codeExecutionRouter } from './routes/code-execution';
 // Phase 31: Project Context - Codebase Analysis
 import projectContextRouter from './routes/project-context';
+// Phase 32: Document Analysis - PDF/Excel/CSV Analysis
+import { documentAnalysisRouter } from './routes/document-analysis';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Phase 9: Cache-Control & ETag Support
@@ -260,6 +262,9 @@ setupSwagger(app);
 // Phase 31: Code Execution - Must be before context-aware routes
 // to avoid /:context pattern conflicts with routes like /api/:context/...
 app.use('/api/code', codeExecutionRouter);
+
+// Phase 32: Document Analysis - Must be before context-aware routes
+app.use('/api/documents', documentAnalysisRouter);
 
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);
@@ -525,6 +530,11 @@ Phase 31 APIs (Vision Integration):
   - Ask About Image:   POST /api/vision/ask
   - Compare Images:    POST /api/vision/compare
   - Process Document:  POST /api/vision/document
+
+Phase 32 APIs (Document Analysis):
+  - Service Status:  GET /api/documents/status
+  - Templates:       GET /api/documents/templates
+  - Analyze Document:POST /api/documents/analyze
 
 Phase 30 APIs (Memory Scheduler):
   - Scheduler Status:  GET /api/memory/status
