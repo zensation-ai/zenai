@@ -238,3 +238,209 @@ export const SyncStatusResponseSchema = z.object({
     name: z.string().optional(),
   }).passthrough()).optional(),
 }).passthrough();
+
+export const SyncPendingResponseSchema = z.object({
+  changes: z.array(z.object({
+    id: z.string(),
+    type: z.string().optional(),
+    action: z.string().optional(),
+    timestamp: z.string().optional(),
+    synced: z.boolean().optional(),
+  }).passthrough()).default([]),
+}).passthrough();
+
+export type SyncPendingResponse = z.infer<typeof SyncPendingResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Phase 8.5: Expanded Schemas for remaining API responses
+// ---------------------------------------------------------------------------
+
+// Automations API
+// ---------------------------------------------------------------------------
+
+const AutomationSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  trigger: z.object({
+    type: z.string(),
+  }).passthrough().optional(),
+  actions: z.array(z.object({
+    type: z.string(),
+    order: z.number().optional(),
+  }).passthrough()).optional(),
+  is_active: z.boolean().optional(),
+  run_count: z.number().optional(),
+  success_count: z.number().optional(),
+  failure_count: z.number().optional(),
+  last_run_at: z.string().nullable().optional(),
+  created_at: z.string().optional(),
+}).passthrough();
+
+export const AutomationsResponseSchema = z.object({
+  automations: z.array(AutomationSchema).default([]),
+}).passthrough();
+
+export const AutomationSuggestionsResponseSchema = z.object({
+  suggestions: z.array(z.object({
+    id: z.string(),
+    name: z.string().optional(),
+    description: z.string().optional(),
+    reasoning: z.string().optional(),
+    confidence: z.number().optional(),
+  }).passthrough()).default([]),
+}).passthrough();
+
+export const AutomationStatsResponseSchema = z.object({
+  total_automations: z.number().optional(),
+  active_automations: z.number().optional(),
+  total_executions: z.number().optional(),
+  successful_executions: z.number().optional(),
+  failed_executions: z.number().optional(),
+  success_rate: z.number().optional(),
+}).passthrough();
+
+export type AutomationsResponse = z.infer<typeof AutomationsResponseSchema>;
+export type AutomationSuggestionsResponse = z.infer<typeof AutomationSuggestionsResponseSchema>;
+export type AutomationStatsResponse = z.infer<typeof AutomationStatsResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Profile API
+// ---------------------------------------------------------------------------
+
+export const ProfileStatsResponseSchema = z.object({
+  total_ideas: z.number().optional(),
+  total_meetings: z.number().optional(),
+  avg_ideas_per_day: z.number().optional(),
+  top_categories: z.array(z.unknown()).optional(),
+  top_types: z.array(z.unknown()).optional(),
+  top_topics: z.array(z.unknown()).optional(),
+}).passthrough();
+
+export const ProfileRecommendationsResponseSchema = z.object({
+  recommendations: z.object({
+    suggested_topics: z.array(z.string()).optional(),
+    optimal_hours: z.array(z.number()).optional(),
+    focus_categories: z.array(z.string()).optional(),
+    insights: z.array(z.string()).optional(),
+  }).passthrough().optional(),
+}).passthrough();
+
+export const BusinessProfileResponseSchema = z.object({
+  profile: z.object({
+    id: z.string().optional(),
+    company_name: z.string().nullable().optional(),
+    industry: z.string().nullable().optional(),
+    role: z.string().nullable().optional(),
+  }).passthrough().optional(),
+}).passthrough();
+
+export type ProfileStatsResponse = z.infer<typeof ProfileStatsResponseSchema>;
+export type ProfileRecommendationsResponse = z.infer<typeof ProfileRecommendationsResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Notifications API
+// ---------------------------------------------------------------------------
+
+export const NotificationStatusResponseSchema = z.object({
+  configured: z.boolean().optional(),
+  provider: z.string().optional(),
+  active_devices: z.number().optional(),
+}).passthrough();
+
+export const NotificationDevicesResponseSchema = z.object({
+  devices: z.array(z.object({
+    id: z.string(),
+    device_name: z.string().optional(),
+    is_active: z.boolean().optional(),
+    last_used_at: z.string().optional(),
+  }).passthrough()).default([]),
+}).passthrough();
+
+export const NotificationHistoryResponseSchema = z.object({
+  notifications: z.array(z.object({
+    id: z.string(),
+    type: z.string().optional(),
+    title: z.string().optional(),
+    body: z.string().optional(),
+    status: z.string().optional(),
+    sent_at: z.string().optional(),
+  }).passthrough()).default([]),
+}).passthrough();
+
+export const NotificationStatsResponseSchema = z.object({
+  total_sent: z.number().optional(),
+  total_opened: z.number().optional(),
+  open_rate: z.number().optional(),
+}).passthrough();
+
+export type NotificationStatusResponse = z.infer<typeof NotificationStatusResponseSchema>;
+export type NotificationHistoryResponse = z.infer<typeof NotificationHistoryResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Analytics API
+// ---------------------------------------------------------------------------
+
+export const AnalyticsDashboardResponseSchema = z.object({
+  data: z.object({
+    summary: z.object({
+      total: z.number().optional(),
+      today: z.number().optional(),
+      thisWeek: z.number().optional(),
+      thisMonth: z.number().optional(),
+    }).passthrough().optional(),
+    goals: z.object({
+      daily: z.object({ target: z.number(), current: z.number(), progress: z.number() }).passthrough().optional(),
+      weekly: z.object({ target: z.number(), current: z.number(), progress: z.number() }).passthrough().optional(),
+    }).passthrough().optional(),
+    streaks: z.object({
+      current: z.number().optional(),
+      longest: z.number().optional(),
+    }).passthrough().optional(),
+  }).passthrough().optional(),
+}).passthrough();
+
+export const ProductivityScoreResponseSchema = z.object({
+  data: z.object({
+    overall: z.number().optional(),
+    trend: z.string().optional(),
+  }).passthrough().optional(),
+}).passthrough();
+
+export type AnalyticsDashboardResponse = z.infer<typeof AnalyticsDashboardResponseSchema>;
+export type ProductivityScoreResponse = z.infer<typeof ProductivityScoreResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Export API
+// ---------------------------------------------------------------------------
+
+export const ExportHistoryResponseSchema = z.object({
+  exports: z.array(z.object({
+    id: z.string(),
+    format: z.string().optional(),
+    filename: z.string().optional(),
+    size: z.number().optional(),
+    created_at: z.string().optional(),
+  }).passthrough()).default([]),
+}).passthrough();
+
+export type ExportHistoryResponse = z.infer<typeof ExportHistoryResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Stories API
+// ---------------------------------------------------------------------------
+
+export const StoriesResponseSchema = z.object({
+  stories: z.array(z.object({
+    id: z.string(),
+    title: z.string().optional(),
+    date: z.string().optional(),
+    items: z.array(z.object({
+      id: z.string(),
+      type: z.string().optional(),
+      title: z.string().optional(),
+    }).passthrough()).optional(),
+  }).passthrough()).default([]),
+}).passthrough();
+
+export type StoriesResponse = z.infer<typeof StoriesResponseSchema>;
