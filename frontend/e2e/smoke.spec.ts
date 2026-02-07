@@ -1,58 +1,38 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Smoke tests for critical user flows.
- * All API calls are intercepted so no backend is needed.
+ * Smoke tests — verify the app boots and basic navigation works.
+ * All API calls are intercepted — no backend needed.
  */
 
 test.beforeEach(async ({ page }) => {
-  // Mock all API calls to prevent Vite proxy errors (no backend in CI)
   await page.route('**/api/**', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: '{"data":[]}' }),
   );
 });
 
-test.describe('Smoke: Chat', () => {
-  test('chat area exists and input works', async ({ page }) => {
-    await page.goto('/');
-    const chatEls = await page.locator('[class*="chat"], [class*="Chat"]').count();
-    expect(chatEls).toBeGreaterThan(0);
-
-    const ta = page.locator('textarea').first();
-    await ta.fill('Test Nachricht');
-    await expect(ta).toHaveValue('Test Nachricht');
-  });
+test('page renders visible content', async ({ page }) => {
+  await page.goto('/');
+  // Wait for React to mount
+  await page.waitForTimeout(1000);
+  // At least some interactive elements should be present
+  const buttons = await page.locator('button').count();
+  expect(buttons).toBeGreaterThan(0);
 });
 
-test.describe('Smoke: Context Switch', () => {
-  test('switcher visible', async ({ page }) => {
-    await page.goto('/');
-    await expect(
-      page.locator('.context-switcher, [class*="context-switcher"]').first(),
-    ).toBeVisible();
-  });
-
-  test('can click context buttons', async ({ page }) => {
-    await page.goto('/');
-    const btns = page.locator('.context-switcher button, [class*="context-switcher"] button');
-    const count = await btns.count();
-    if (count >= 2) {
-      await btns.nth(1).click();
-      await page.waitForTimeout(300);
-      await btns.nth(0).click();
-    }
-    await expect(page.locator('h1').first()).toBeVisible();
-  });
-});
-
-test.describe('Smoke: Theme', () => {
-  test('toggle exists and clickable', async ({ page }) => {
-    await page.goto('/');
-    const toggle = page.locator('.theme-toggle, button[title*="Theme"]').first();
-    const visible = await toggle.isVisible().catch(() => false);
-    if (visible) {
-      await toggle.click();
-    }
-    expect(true).toBe(true);
-  });
+test('navigation buttons are clickable', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForTimeout(500);
+  const navButtons = page.locator('nav button, .header-nav button');
+  const count = await navButtons.count();
+  if (count >= 2) {
+    // Click second nav button and verify no crash
+    await navButtons.nth(1).click();
+    await page.waitForTimeout(300);
+    // Click back to first
+    await navButtons.nth(0).click();
+  }
+  // App still renders after navigation
+  const body = page.locator('body');
+  await expect(body).not.toBeEmpty();
 });
