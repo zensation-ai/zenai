@@ -24,17 +24,41 @@ export default defineConfig({
     },
   },
   build: {
+    // Target modern browsers for smaller output (drops legacy polyfills)
+    target: 'es2020',
     // vendor-syntax (react-syntax-highlighter) is ~619KB but lazy-loaded only on artifact open
     chunkSizeWarningLimit: 650,
+    // Disable sourcemaps in production for smaller bundles
+    sourcemap: false,
+    // Enable CSS code splitting - only load CSS for active chunks
+    cssCodeSplit: true,
+    // Minification settings for optimal compression
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,   // Remove console.log/debug in production
+        drop_debugger: true,  // Remove debugger statements
+        pure_funcs: ['console.debug', 'console.log'],
+        passes: 2,            // Multiple optimization passes
+      },
+      mangle: {
+        safari10: true,       // Workaround for Safari 10 bugs
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: {
           // Vendor chunks - separate large libraries
           'vendor-react': ['react', 'react-dom'],
+          'vendor-router': ['react-router-dom'],
           'vendor-axios': ['axios'],
           // Heavy rendering libs - lazy-loaded with ArtifactPanel
           'vendor-syntax': ['react-syntax-highlighter'],
           'vendor-markdown': ['react-markdown', 'remark-gfm'],
+          // ReactFlow - heavy (~200KB), only used on Insights/Connections tab
+          'vendor-reactflow': ['reactflow'],
+          // Validation lib - used across components
+          'vendor-zod': ['zod'],
 
           // Feature-based chunks for lazy-loaded pages
           'feature-insights': [

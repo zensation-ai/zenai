@@ -7,7 +7,7 @@
  * - Cognitive Chunking: Visuelle Gruppierung
  */
 
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import '../neurodesign.css';
 import './QuickStats.css';
 
@@ -36,7 +36,7 @@ const PRIORITY_CONFIG: Record<string, { icon: string; label: string; color: stri
   low: { icon: '🟢', label: 'Niedrig', color: '#22c55e' },
 };
 
-export function QuickStats({ ideas, onFilterClick }: QuickStatsProps) {
+export const QuickStats = memo(function QuickStats({ ideas, onFilterClick }: QuickStatsProps) {
   const stats = useMemo(() => {
     const types: Record<string, number> = {};
     const priorities: Record<string, number> = {};
@@ -149,4 +149,4 @@ export function QuickStats({ ideas, onFilterClick }: QuickStatsProps) {
       )}
     </div>
   );
-}
+});

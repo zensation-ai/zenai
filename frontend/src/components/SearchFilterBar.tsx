@@ -5,7 +5,7 @@
  * Neuro-UX optimiert für schnelle Interaktion.
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import '../neurodesign.css';
 import './SearchFilterBar.css';
 
@@ -54,7 +54,7 @@ const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Niedrig', icon: '🟢' },
 ];
 
-export function SearchFilterBar({
+export const SearchFilterBar = memo(function SearchFilterBar({
   filters,
   onFilterChange,
   onSearch,
@@ -302,4 +302,4 @@ export function SearchFilterBar({
       )}
     </div>
   );
-}
+});

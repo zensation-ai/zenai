@@ -7,6 +7,7 @@
  * - Mobile-friendly
  */
 
+import { memo } from 'react';
 import './ActiveFiltersBar.css';
 
 interface ActiveFiltersBarProps {
@@ -40,7 +41,7 @@ const LABELS = {
   },
 };
 
-export function ActiveFiltersBar({ filters, onRemoveFilter, onClearAll }: ActiveFiltersBarProps) {
+export const ActiveFiltersBar = memo(function ActiveFiltersBar({ filters, onRemoveFilter, onClearAll }: ActiveFiltersBarProps) {
   const totalActive = filters.types.size + filters.categories.size + filters.priorities.size;
 
   if (totalActive === 0) return null;
@@ -95,4 +96,4 @@ export function ActiveFiltersBar({ filters, onRemoveFilter, onClearAll }: Active
       </button>
     </div>
   );
-}
+});
