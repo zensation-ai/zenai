@@ -24,8 +24,8 @@ export default defineConfig({
     },
   },
   build: {
-    // Increase chunk size warning limit slightly
-    chunkSizeWarningLimit: 600,
+    // vendor-syntax (react-syntax-highlighter) is ~619KB but lazy-loaded only on artifact open
+    chunkSizeWarningLimit: 650,
     rollupOptions: {
       output: {
         manualChunks: {
