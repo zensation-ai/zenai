@@ -71,6 +71,7 @@ const MediaGallery = lazy(() => import('./components/MediaGallery').then(m => ({
 const StoriesPage = lazy(() => import('./components/StoriesPage').then(m => ({ default: m.StoriesPage })));
 const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m => ({ default: m.ExportDashboard })));
 const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
+const DocumentAnalysis = lazy(() => import('./components/DocumentAnalysis').then(m => ({ default: m.DocumentAnalysis })));
 
 // === Triage (bleibt als separate Seite) ===
 const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ default: m.InboxTriage })));
@@ -108,6 +109,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'export': '/export',
   'sync': '/sync',
   'personalization': '/personalization',
+  'documents': '/documents',
   'triage': '/triage',
   // Legacy redirects (will redirect to parent with tab param)
   'incubator': '/ai-workshop/incubator',
@@ -138,6 +140,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/export': 'export',
   '/sync': 'sync',
   '/personalization': 'personalization',
+  '/documents': 'documents',
   '/triage': 'triage',
 };
 
@@ -743,6 +746,22 @@ function App() {
     );
   }
 
+  // Dokument-Analyse - KI-gestützte Dokumentanalyse
+  if (currentPage === 'documents') {
+    return (
+      <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
+        <Suspense fallback={<PageLoader />}>
+          <DocumentAnalysis
+            context={context}
+            onBack={() => navigateToPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   // Triage - Gedanken sortieren
   if (currentPage === 'triage') {
     return (
@@ -1186,6 +1205,7 @@ function App() {
                     { label: 'KI-Werkstatt', icon: '🧠', page: 'ai-workshop' },
                     { label: 'Lernen', icon: '📚', page: 'learning' },
                     { label: 'Sortieren', icon: '📋', page: 'triage' },
+                    { label: 'Dokument-Analyse', icon: '📑', page: 'documents' },
                     { label: 'Personalisierung', icon: '🎨', page: 'personalization' },
                   ]
                 },

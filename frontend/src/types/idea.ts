@@ -65,6 +65,7 @@ export type Page =
   | 'export'
   | 'sync'
   | 'personalization'
+  | 'documents'
   // Legacy-Seiten (intern weitergeleitet)
   | 'incubator'
   | 'proactive'
