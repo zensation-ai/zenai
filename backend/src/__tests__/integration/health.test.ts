@@ -13,6 +13,7 @@ import { healthRouter } from '../../routes/health';
 // Mock dependencies
 jest.mock('../../utils/database-context', () => ({
   testConnections: jest.fn(),
+  queryContext: jest.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
   getPoolStats: jest.fn().mockReturnValue({
     personal: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 100, avgQueryTime: 5 },
     work: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 50, avgQueryTime: 6 },
@@ -44,6 +45,16 @@ jest.mock('../../services/ai', () => ({
 jest.mock('../../services/claude', () => ({
   isClaudeAvailable: jest.fn().mockReturnValue(true),
   generateClaudeResponse: jest.fn().mockResolvedValue('OK'),
+}));
+
+jest.mock('../../services/code-execution/executor-factory', () => ({
+  getExecutorFactory: jest.fn().mockReturnValue({
+    getProviderInfo: jest.fn().mockReturnValue({
+      available: true,
+      type: 'judge0',
+      name: 'Judge0 Code Executor',
+    }),
+  }),
 }));
 
 jest.mock('../../utils/logger', () => ({
@@ -303,6 +314,59 @@ describe('Health API Integration Tests', () => {
         .expect(503);
 
       expect(response.body.status).toBe('not_ready');
+    });
+  });
+
+  // ===========================================
+  // Phase 7.3: Expanded Health Check Features
+  // ===========================================
+
+  describe('Phase 7.3: DB Latency & Dependency Status', () => {
+    it('should include database latency in detailed response', async () => {
+      mockTestConnections.mockResolvedValue({ personal: true, work: true });
+      mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
+
+      const response = await request(app)
+        .get('/health/detailed')
+        .expect(200);
+
+      // Phase 7.3: DB latency should be present
+      expect(response.body.services.databases.personal.latencyMs).toBeDefined();
+      expect(typeof response.body.services.databases.personal.latencyMs).toBe('number');
+      expect(response.body.services.databases.work.latencyMs).toBeDefined();
+    });
+
+    it('should include dependency status in detailed response', async () => {
+      mockTestConnections.mockResolvedValue({ personal: true, work: true });
+      mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
+
+      const response = await request(app)
+        .get('/health/detailed')
+        .expect(200);
+
+      // Phase 7.3: Dependencies section
+      expect(response.body.services.dependencies).toBeDefined();
+      expect(response.body.services.dependencies.webSearch).toBeDefined();
+      expect(response.body.services.dependencies.webSearch.provider).toBeDefined();
+      expect(response.body.services.dependencies.codeExecution).toBeDefined();
+      expect(response.body.services.dependencies.codeExecution.available).toBe(true);
+      expect(response.body.services.dependencies.codeExecution.provider).toBe('judge0');
+      expect(response.body.services.dependencies.github).toBeDefined();
+    });
+
+    it('should report code execution provider info', async () => {
+      mockTestConnections.mockResolvedValue({ personal: true, work: true });
+      mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
+
+      const response = await request(app)
+        .get('/health/detailed')
+        .expect(200);
+
+      const codeDep = response.body.services.dependencies.codeExecution;
+      expect(codeDep).toEqual(expect.objectContaining({
+        available: true,
+        provider: 'judge0',
+      }));
     });
   });
 

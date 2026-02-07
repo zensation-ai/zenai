@@ -17,8 +17,10 @@ import { getAvailableServices } from '../services/ai';
 import { asyncHandler } from '../middleware/errorHandler';
 import { getCircuitBreakerStatus } from '../utils/retry';
 import { isClaudeAvailable, generateClaudeResponse } from '../services/claude';
+import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { getPrometheusMetrics } from '../utils/metrics';
+import { getExecutorFactory } from '../services/code-execution/executor-factory';
 
 // Version from package.json - read at startup
 const packageJson = require('../../package.json');
@@ -74,6 +76,59 @@ async function checkClaudeHealth(): Promise<{
       error: errorMessage.substring(0, 100), // Truncate long errors
     };
   }
+}
+
+/**
+ * Phase 7.3: Measure database query latency per context.
+ * Runs a simple SELECT 1 and reports the round-trip time.
+ */
+async function measureDbLatency(context: 'personal' | 'work'): Promise<{
+  connected: boolean;
+  latencyMs?: number;
+  error?: string;
+}> {
+  try {
+    const start = Date.now();
+    await queryContext(context, 'SELECT 1');
+    return { connected: true, latencyMs: Date.now() - start };
+  } catch (error: unknown) {
+    return {
+      connected: false,
+      error: error instanceof Error ? error.message.substring(0, 100) : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Phase 7.3: Check Brave Search API availability.
+ * Only tests if the API key is configured (doesn't consume quota).
+ */
+function checkBraveSearchStatus(): {
+  configured: boolean;
+  provider: string;
+} {
+  const hasApiKey = !!process.env.BRAVE_SEARCH_API_KEY;
+  return {
+    configured: hasApiKey,
+    provider: hasApiKey ? 'brave' : 'duckduckgo-fallback',
+  };
+}
+
+/**
+ * Phase 7.3: Check code execution provider status.
+ */
+function checkCodeExecutionStatus(): {
+  available: boolean;
+  provider: string | null;
+  enabled: boolean;
+} {
+  const factory = getExecutorFactory();
+  const info = factory.getProviderInfo();
+  return {
+    available: info.available,
+    provider: info.type,
+    enabled: process.env.ENABLE_CODE_EXECUTION !== 'false',
+  };
 }
 
 /**
@@ -134,13 +189,17 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
   const hasApiKey = req.headers.authorization?.startsWith('Bearer ab_') ||
                     (req.headers['x-api-key'] as string)?.startsWith('ab_');
 
-  // Gather all health checks in parallel
-  const [dbHealth, ollamaHealth, cacheStats, claudeHealth] = await Promise.all([
+  // Gather all health checks in parallel (Phase 7.3: expanded with latency + dependencies)
+  const [dbHealth, ollamaHealth, cacheStats, claudeHealth, personalLatency, workLatency] = await Promise.all([
     testConnections().catch(() => ({ personal: false, work: false })),
     checkOllamaHealth(),
     getCacheStats(),
     checkClaudeHealth().catch(() => ({ available: false, configured: false, error: 'Health check failed', latencyMs: undefined })),
+    measureDbLatency('personal'),
+    measureDbLatency('work'),
   ]);
+  const braveSearchStatus = checkBraveSearchStatus();
+  const codeExecutionStatus = checkCodeExecutionStatus();
 
   const poolStats = getPoolStats();
   const aiServices = getAvailableServices();
@@ -172,8 +231,8 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
       responseTime: Date.now() - startTime,
       services: {
         databases: {
-          personal: { status: dbHealth.personal ? 'connected' : 'disconnected' },
-          work: { status: dbHealth.work ? 'connected' : 'disconnected' },
+          personal: { status: dbHealth.personal ? 'connected' : 'disconnected', latencyMs: personalLatency.latencyMs },
+          work: { status: dbHealth.work ? 'connected' : 'disconnected', latencyMs: workLatency.latencyMs },
           healthCheck: dbHealthCheckStatus,
         },
         ai: {
@@ -184,6 +243,10 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
         cache: {
           status: cacheStats.connected ? 'connected' : 'disconnected',
           type: 'redis',
+        },
+        dependencies: {
+          webSearch: braveSearchStatus,
+          codeExecution: codeExecutionStatus,
         },
       },
     };
@@ -206,10 +269,12 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
       databases: {
         personal: {
           status: dbHealth.personal ? 'connected' : 'disconnected',
+          latencyMs: personalLatency.latencyMs,
           pool: poolStats.personal,
         },
         work: {
           status: dbHealth.work ? 'connected' : 'disconnected',
+          latencyMs: workLatency.latencyMs,
           pool: poolStats.work,
         },
         healthCheck: dbHealthCheckStatus,
@@ -242,6 +307,13 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
         type: 'redis',
         keys: cacheStats.keys,
         memory: cacheStats.memory,
+      },
+      dependencies: {
+        webSearch: braveSearchStatus,
+        codeExecution: codeExecutionStatus,
+        github: {
+          configured: !!process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
+        },
       },
     },
     // SECURITY: Only include system info in development

@@ -10,6 +10,8 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeNative } from './utils/native';
 import { logError } from './utils/errors';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { installResilienceInterceptors } from './utils/apiResilience';
+import { initWebVitals } from './utils/webVitals';
 
 // API configuration from environment
 const ENV_API_KEY = import.meta.env.VITE_API_KEY;
@@ -72,6 +74,9 @@ axios.interceptors.response.use(
   }
 );
 
+// Phase 7.1: Install resilience interceptors (retry + timeout + rate limit tracking)
+installResilienceInterceptors();
+
 // Global error listeners — catch unhandled errors and promise rejections
 window.addEventListener('error', (event) => {
   logError('GlobalErrorListener', event.error ?? new Error(event.message));
@@ -83,6 +88,9 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // Initialize native features (Capacitor)
 initializeNative();
+
+// Phase 7.5: Initialize Web Vitals monitoring (LCP, FID, CLS, INP, TTFB)
+initWebVitals();
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
