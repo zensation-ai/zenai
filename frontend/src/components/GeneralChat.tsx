@@ -6,7 +6,7 @@
  * Features humanized AI personality with consistent branding.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
@@ -19,11 +19,14 @@ import {
 } from '../utils/aiPersonality';
 import { ImageUpload } from './ImageUpload';
 import { VoiceInput } from './VoiceInput';
-import { ArtifactPanel, ArtifactButton } from './ArtifactPanel';
+import { ArtifactButton } from './ArtifactButton';
 import { ErrorBoundary } from './ErrorBoundary';
 import { extractArtifacts, type Artifact } from '../types/artifacts';
 import './GeneralChat.css';
 import { logError } from '../utils/errors';
+
+// Lazy-load ArtifactPanel (pulls in react-syntax-highlighter ~200KB + react-markdown)
+const ArtifactPanel = lazy(() => import('./ArtifactPanel').then(m => ({ default: m.ArtifactPanel })));
 
 interface ChatMessage {
   id: string;
@@ -677,17 +680,19 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         </div>
       </div>
 
-      {/* Artifact Panel - wrapped in ErrorBoundary since it uses portal rendering */}
+      {/* Artifact Panel - lazy-loaded to reduce initial bundle (~200KB saved) */}
       {activeArtifact && (
         <ErrorBoundary fallback={<div className="artifact-error">Artifact konnte nicht angezeigt werden.</div>}>
-          <ArtifactPanel
-            artifact={activeArtifact.artifact}
-            onClose={() => setActiveArtifact(null)}
-            onPrevious={() => navigateArtifact('prev')}
-            onNext={() => navigateArtifact('next')}
-            hasPrevious={activeArtifact.index > 0}
-            hasNext={activeArtifact.index >= 0 && activeArtifact.index < (artifacts.get(activeArtifact.messageId)?.length || 0) - 1}
-          />
+          <Suspense fallback={<div className="artifact-loading">Lade Artifact...</div>}>
+            <ArtifactPanel
+              artifact={activeArtifact.artifact}
+              onClose={() => setActiveArtifact(null)}
+              onPrevious={() => navigateArtifact('prev')}
+              onNext={() => navigateArtifact('next')}
+              hasPrevious={activeArtifact.index > 0}
+              hasNext={activeArtifact.index >= 0 && activeArtifact.index < (artifacts.get(activeArtifact.messageId)?.length || 0) - 1}
+            />
+          </Suspense>
         </ErrorBoundary>
       )}
     </div>

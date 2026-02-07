@@ -32,6 +32,9 @@ export default defineConfig({
           // Vendor chunks - separate large libraries
           'vendor-react': ['react', 'react-dom'],
           'vendor-axios': ['axios'],
+          // Heavy rendering libs - lazy-loaded with ArtifactPanel
+          'vendor-syntax': ['react-syntax-highlighter'],
+          'vendor-markdown': ['react-markdown', 'remark-gfm'],
 
           // Feature-based chunks for lazy-loaded pages
           'feature-insights': [

@@ -355,34 +355,5 @@ function CsvPreview({ content }: { content: string }) {
   );
 }
 
-// Inline Artifact Button for embedding in chat
-interface ArtifactButtonProps {
-  artifact: Artifact;
-  onClick: () => void;
-}
-
-export function ArtifactButton({ artifact, onClick }: ArtifactButtonProps) {
-  const getTypeIcon = (type: string): string => {
-    const icons: Record<string, string> = {
-      code: '💻',
-      markdown: '📝',
-      html: '🌐',
-      mermaid: '📊',
-      csv: '📊',
-      json: '📋',
-    };
-    return icons[type] || '📄';
-  };
-
-  return (
-    <button
-      className="artifact-inline-btn"
-      onClick={onClick}
-      aria-label={`${artifact.type} öffnen: ${artifact.title}`}
-    >
-      <span className="artifact-inline-icon">{getTypeIcon(artifact.type)}</span>
-      <span className="artifact-inline-title">{artifact.title}</span>
-      <span className="artifact-inline-action">Öffnen →</span>
-    </button>
-  );
-}
+// Re-export ArtifactButton from its own file for backwards compatibility
+export { ArtifactButton } from './ArtifactButton';

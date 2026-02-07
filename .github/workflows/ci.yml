@@ -52,12 +52,21 @@ jobs:
         working-directory: backend
         run: npm run build
 
-      - name: Run unit tests only
+      - name: Run unit tests
         working-directory: backend
         run: npm test -- --testPathPatterns="unit" --forceExit --detectOpenHandles
         timeout-minutes: 5
         env:
           NODE_ENV: test
+          SKIP_EXTERNAL_SERVICES: true
+
+      - name: Run integration tests (mocked DB)
+        working-directory: backend
+        run: npm test -- --testPathPatterns="(integration|github|project-context)" --forceExit --detectOpenHandles
+        timeout-minutes: 5
+        env:
+          NODE_ENV: test
+          CI: true
           SKIP_EXTERNAL_SERVICES: true
 
   build-frontend:
