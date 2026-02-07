@@ -551,7 +551,7 @@ integrationsRouter.post('/slack/events', asyncHandler(async (req: Request, res: 
       hasSignature: !!req.headers['x-slack-signature'],
       hasTimestamp: !!req.headers['x-slack-request-timestamp'],
     });
-    return res.status(401).json({ error: 'Invalid signature' });
+    return res.status(401).json({ success: false, error: 'Invalid signature', code: 'UNAUTHORIZED' });
   }
 
   // Handle events
@@ -574,7 +574,7 @@ integrationsRouter.post('/slack/commands', asyncHandler(async (req: Request, res
       command: req.body.command,
       hasSignature: !!req.headers['x-slack-signature'],
     });
-    return res.status(401).json({ error: 'Invalid signature' });
+    return res.status(401).json({ success: false, error: 'Invalid signature', code: 'UNAUTHORIZED' });
   }
 
   const { command, text, user_id, channel_id, response_url } = req.body;

@@ -640,6 +640,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, asyncHandler
         error: isProduction
           ? 'An error occurred while processing your request'
           : (error instanceof Error ? error.message : 'Streaming failed'),
+        code: 'INTERNAL_ERROR',
       });
     }
   } finally {

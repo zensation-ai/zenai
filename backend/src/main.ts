@@ -223,6 +223,22 @@ app.use(ensureCookieParser);
 // Phase Security Sprint 3: CSRF Token endpoint for SPA clients
 app.get('/api/csrf-token', getCsrfTokenHandler);
 
+// Phase Security Sprint 3: CSP violation reporting endpoint
+app.post('/api/csp-report', express.json({ type: 'application/csp-report' }), (req, res) => {
+  const report = req.body?.['csp-report'] || req.body;
+  if (report) {
+    logger.warn('CSP Violation', undefined, {
+      blockedUri: report['blocked-uri'],
+      violatedDirective: report['violated-directive'],
+      documentUri: report['document-uri'],
+      sourceFile: report['source-file'],
+      lineNumber: report['line-number'],
+      operation: 'csp-report',
+    });
+  }
+  res.status(204).end();
+});
+
 // Phase Security Sprint 3: CSRF Protection for state-changing requests
 // Applied after body parsing so we can read _csrf from body
 app.use(csrfProtection);

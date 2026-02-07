@@ -22,8 +22,21 @@ const BCRYPT_SALT_ROUNDS = 12;
 // ===========================================
 
 /**
- * In-memory rate limiter used as fallback when database is unavailable
- * This ensures rate limiting continues even during DB outages
+ * In-memory rate limiter used as fallback when database is unavailable.
+ * This ensures rate limiting continues even during DB outages.
+ *
+ * ARCHITECTURE NOTES:
+ * - Uses fixed-window counters (not sliding window). This means a burst of
+ *   requests at the boundary of two windows can temporarily allow up to 2x
+ *   the configured limit. This is an acceptable trade-off for simplicity.
+ * - For multi-instance deployments (e.g., Railway scaled horizontally), the
+ *   in-memory fallback does NOT share state across instances. Each instance
+ *   tracks limits independently, which means effective limits are multiplied
+ *   by the number of instances. The primary DB-backed limiter shares state
+ *   via PostgreSQL and is not affected.
+ * - The fallback activates only after MAX_CONSECUTIVE_ERRORS (3) database
+ *   failures and automatically recovers on the next successful DB operation.
+ * - Bounded to MAX_RATE_LIMIT_ENTRIES (10,000) with LRU-style eviction.
  */
 interface MemoryRateLimitEntry {
   count: number;
@@ -184,8 +197,9 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
   if (!apiKey) {
     return res.status(401).json({
-      error: 'Authentication required',
-      message: 'Provide API key via Authorization: Bearer ab_xxx or x-api-key header'
+      success: false,
+      error: 'Authentication required. Provide API key via Authorization: Bearer ab_xxx or x-api-key header',
+      code: 'UNAUTHORIZED',
     });
   }
 
@@ -229,8 +243,9 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
         keyPrefix: apiKey.substring(0, 10)
       });
       return res.status(401).json({
-        error: 'Invalid API key',
-        message: 'The provided API key is not valid'
+        success: false,
+        error: 'The provided API key is not valid',
+        code: 'INVALID_API_KEY',
       });
     }
 
@@ -261,8 +276,9 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
             securityNote: 'UUID auth requires x-api-key-secret header or migrate to ab_live_xxx format'
           });
           return res.status(401).json({
-            error: 'UUID auth requires secret',
-            message: 'UUID-based authentication is deprecated. Provide x-api-key-secret header or migrate to ab_live_xxx format keys.'
+            success: false,
+            error: 'UUID-based authentication is deprecated. Provide x-api-key-secret header or migrate to ab_live_xxx format keys.',
+            code: 'UNAUTHORIZED',
           });
         }
         // Verify the secret against stored hash
@@ -286,22 +302,25 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
     if (!keyData) {
       return res.status(401).json({
-        error: 'Invalid API key',
-        message: 'The provided API key is not valid'
+        success: false,
+        error: 'The provided API key is not valid',
+        code: 'INVALID_API_KEY',
       });
     }
 
     if (!keyData.is_active) {
       return res.status(401).json({
-        error: 'API key disabled',
-        message: 'This API key has been disabled'
+        success: false,
+        error: 'This API key has been disabled',
+        code: 'INVALID_API_KEY',
       });
     }
 
     if (keyData.expires_at && new Date(keyData.expires_at) < new Date()) {
       return res.status(401).json({
-        error: 'API key expired',
-        message: 'This API key has expired'
+        success: false,
+        error: 'This API key has expired',
+        code: 'INVALID_API_KEY',
       });
     }
 
@@ -355,8 +374,9 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
   } catch (error) {
     logger.error('API key auth error', error instanceof Error ? error : undefined, { operation: 'apiKeyAuth' });
     return res.status(500).json({
-      error: 'Authentication error',
-      message: 'Failed to validate API key'
+      success: false,
+      error: 'Failed to validate API key',
+      code: 'INTERNAL_ERROR',
     });
   }
 }
@@ -369,8 +389,9 @@ export function requireScope(scope: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.apiKey) {
       return res.status(401).json({
-        error: 'Authentication required',
-        message: 'No API key found in request'
+        success: false,
+        error: 'No API key found in request',
+        code: 'UNAUTHORIZED',
       });
     }
 
@@ -379,8 +400,9 @@ export function requireScope(scope: string) {
 
     if (!hasScope) {
       return res.status(403).json({
-        error: 'Insufficient permissions',
-        message: `This action requires the '${scope}' scope`
+        success: false,
+        error: `Insufficient permissions. This action requires the '${scope}' scope`,
+        code: 'FORBIDDEN',
       });
     }
 
@@ -389,11 +411,12 @@ export function requireScope(scope: string) {
 }
 
 /**
- * Rate limiting middleware
- * Uses sliding window algorithm with database tracking
- */
-/**
- * Endpoint-specific rate limits for critical operations
+ * Endpoint-specific rate limits for critical operations.
+ *
+ * Rate limiting uses a fixed-window counter stored in PostgreSQL with an
+ * in-memory fallback. The DB implementation uses UPSERT (ON CONFLICT) for
+ * atomic increment, keyed by (identifier, window_start). The window_start
+ * is computed as `floor(now / windowMs) * windowMs`.
  *
  * SECURITY Sprint 2: Added stricter limits for:
  * - Authentication endpoints (brute-force protection)
@@ -551,9 +574,10 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
 
     if (currentCount > limit) {
       return res.status(429).json({
-        error: 'Rate limit exceeded',
-        message: `Too many requests. Limit: ${limit}/minute`,
-        retryAfter: Math.ceil((windowStart.getTime() + windowMs - Date.now()) / 1000)
+        success: false,
+        error: `Too many requests. Limit: ${limit}/minute`,
+        code: 'RATE_LIMIT_EXCEEDED',
+        retryAfter: Math.ceil((windowStart.getTime() + windowMs - Date.now()) / 1000),
       });
     }
 
@@ -585,8 +609,9 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
 
     if (!memResult.allowed) {
       return res.status(429).json({
-        error: 'Rate limit exceeded',
-        message: `Too many requests. Limit: ${limit}/minute`,
+        success: false,
+        error: `Too many requests. Limit: ${limit}/minute`,
+        code: 'RATE_LIMIT_EXCEEDED',
         retryAfter: Math.ceil((memResult.resetAt - Date.now()) / 1000),
       });
     }

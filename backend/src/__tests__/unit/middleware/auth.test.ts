@@ -172,7 +172,7 @@ describe('Authentication Middleware', () => {
 
       expect(statusMock).toHaveBeenCalledWith(401);
       expect(jsonMock).toHaveBeenCalledWith(
-        expect.objectContaining({ error: 'Authentication required' })
+        expect.objectContaining({ error: 'No API key found in request', code: 'UNAUTHORIZED' })
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -192,7 +192,7 @@ describe('Authentication Middleware', () => {
 
       expect(statusMock).toHaveBeenCalledWith(403);
       expect(jsonMock).toHaveBeenCalledWith(
-        expect.objectContaining({ error: 'Insufficient permissions' })
+        expect.objectContaining({ code: 'FORBIDDEN' })
       );
       expect(mockNext).not.toHaveBeenCalled();
     });

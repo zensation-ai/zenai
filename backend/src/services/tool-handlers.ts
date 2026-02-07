@@ -39,6 +39,28 @@ import { fetchUrl, formatForTool, isValidUrl } from './url-fetch';
 import * as github from './github';
 import * as projectContext from './project-context';
 import { executeCodeDirect, isCodeExecutionEnabled, isSupportedLanguage, SupportedLanguage } from './code-execution';
+import path from 'path';
+
+/**
+ * Validate a project path from tool input to prevent path traversal.
+ * Returns the resolved path or throws an error string for the tool response.
+ */
+function validateToolProjectPath(inputPath: string): string {
+  if (inputPath.includes('\0')) {
+    throw new Error('Ungültiger Pfad: Null-Bytes nicht erlaubt.');
+  }
+  if (!path.isAbsolute(inputPath)) {
+    throw new Error('Projektpfad muss ein absoluter Pfad sein.');
+  }
+  const resolved = path.resolve(inputPath);
+  const blockedPrefixes = ['/etc', '/proc', '/sys', '/dev', '/var/run'];
+  for (const blocked of blockedPrefixes) {
+    if (resolved.startsWith(blocked)) {
+      throw new Error(`Zugriff verweigert: ${blocked} ist ein eingeschränkter Pfad.`);
+    }
+  }
+  return resolved;
+}
 
 // ===========================================
 // Tool Handler Implementations
@@ -775,10 +797,17 @@ async function handleAnalyzeProject(
     return 'Fehler: Kein Projektpfad angegeben.';
   }
 
-  logger.debug('Tool: analyze_project', { projectPath, includeReadme });
+  let safePath: string;
+  try {
+    safePath = validateToolProjectPath(projectPath);
+  } catch (e) {
+    return `Fehler: ${e instanceof Error ? e.message : 'Ungültiger Pfad'}`;
+  }
+
+  logger.debug('Tool: analyze_project', { projectPath: safePath, includeReadme });
 
   try {
-    const context = await projectContext.generateProjectContext(projectPath);
+    const context = await projectContext.generateProjectContext(safePath);
 
     // Build response
     const parts: string[] = [context.summary];
@@ -818,10 +847,17 @@ async function handleProjectSummary(
     return 'Fehler: Kein Projektpfad angegeben.';
   }
 
-  logger.debug('Tool: get_project_summary', { projectPath });
+  let safePath: string;
+  try {
+    safePath = validateToolProjectPath(projectPath);
+  } catch (e) {
+    return `Fehler: ${e instanceof Error ? e.message : 'Ungültiger Pfad'}`;
+  }
+
+  logger.debug('Tool: get_project_summary', { projectPath: safePath });
 
   try {
-    const summary = await projectContext.getQuickProjectSummary(projectPath);
+    const summary = await projectContext.getQuickProjectSummary(safePath);
     return summary;
   } catch (error) {
     logger.error('Tool get_project_summary failed', error instanceof Error ? error : undefined);
@@ -837,17 +873,24 @@ async function handleListProjectFiles(
   _execContext: ToolExecutionContext
 ): Promise<string> {
   const projectPath = input.project_path as string;
-  const maxDepth = (input.max_depth as number) || 3;
+  const maxDepth = Math.min(Math.max(1, (input.max_depth as number) || 3), 10);
   const filterExtension = input.filter_extension as string | undefined;
 
   if (!projectPath || typeof projectPath !== 'string') {
     return 'Fehler: Kein Projektpfad angegeben.';
   }
 
-  logger.debug('Tool: list_project_files', { projectPath, maxDepth, filterExtension });
+  let safePath: string;
+  try {
+    safePath = validateToolProjectPath(projectPath);
+  } catch (e) {
+    return `Fehler: ${e instanceof Error ? e.message : 'Ungültiger Pfad'}`;
+  }
+
+  logger.debug('Tool: list_project_files', { projectPath: safePath, maxDepth, filterExtension });
 
   try {
-    const structure = await projectContext.scanProjectStructure(projectPath, maxDepth);
+    const structure = await projectContext.scanProjectStructure(safePath, maxDepth);
 
     let files = structure.files.filter((f) => f.type === 'file');
 
