@@ -1,91 +1,124 @@
 /**
- * DocumentUpload Component
+ * Document Upload Component
  *
- * Drag-and-drop document upload supporting PDF, Excel, and CSV files.
- * Based on the existing ImageUpload component pattern.
- *
- * Features:
- * - Drag & drop support
- * - Click to upload
- * - File type icon display
- * - File size and type validation
- * - Single file per upload
- *
- * @module components/DocumentUpload
+ * Drag-and-drop file upload for the Document Vault.
+ * Supports multiple files, progress tracking, and validation.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import {
+  DocumentUploadResult,
+  formatFileSize,
+  getFileTypeLabel,
+} from '../types/document';
+import './DocumentUpload.css';
 
 interface DocumentUploadProps {
-  /** Called when a file is selected */
-  onFileSelect: (file: File | null) => void;
-  /** Maximum file size in MB (default: 32) */
+  onUploadComplete: (result: DocumentUploadResult) => void;
+  context: 'personal' | 'work';
+  folderPath?: string;
+  tags?: string[];
+  maxFiles?: number;
   maxSizeMB?: number;
-  /** Currently selected file */
-  selectedFile?: File | null;
-  /** Disabled state */
   disabled?: boolean;
+  compact?: boolean;
 }
 
-const ACCEPTED_FORMATS: Record<string, string> = {
-  'application/pdf': 'PDF',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel (XLSX)',
-  'application/vnd.ms-excel': 'Excel (XLS)',
-  'text/csv': 'CSV',
-};
-
-const ACCEPT_STRING = Object.keys(ACCEPTED_FORMATS).join(',') + ',.pdf,.xlsx,.xls,.csv';
-
-function getFileIcon(mimeType: string): string {
-  if (mimeType === 'application/pdf') return 'pdf';
-  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'excel';
-  if (mimeType === 'text/csv') return 'csv';
-  return 'file';
+interface SelectedFile {
+  id: string;
+  file: File;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  progress: number;
+  error?: string;
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+// Supported MIME types
+const ACCEPTED_TYPES = [
+  // Documents
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  // Spreadsheets
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+  // Presentations
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Text
+  'text/plain',
+  'text/markdown',
+  'text/html',
+  // Code
+  'application/json',
+  'application/javascript',
+  'text/javascript',
+  // Images
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  // E-Books
+  'application/epub+zip',
+];
 
 export function DocumentUpload({
-  onFileSelect,
-  maxSizeMB = 32,
-  selectedFile = null,
+  onUploadComplete,
+  context,
+  folderPath = '/inbox',
+  tags = [],
+  maxFiles = 10,
+  maxSizeMB = 100,
   disabled = false,
+  compact = false,
 }: DocumentUploadProps) {
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = (file: File): string | null => {
-    const isAccepted = Object.keys(ACCEPTED_FORMATS).includes(file.type) ||
-      /\.(pdf|xlsx|xls|csv)$/i.test(file.name);
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
-    if (!isAccepted) {
-      return `Nicht unterstütztes Format. Bitte PDF, Excel oder CSV verwenden.`;
+  // Validate file
+  const validateFile = useCallback((file: File): string | null => {
+    if (!ACCEPTED_TYPES.includes(file.type) && !file.type.startsWith('text/')) {
+      return `Dateityp nicht unterstützt: ${file.type || 'unbekannt'}`;
     }
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      return `Datei zu groß (${formatFileSize(file.size)}). Maximum: ${maxSizeMB}MB.`;
+
+    if (file.size > maxSizeBytes) {
+      return `Datei zu groß (max. ${maxSizeMB} MB)`;
     }
+
     return null;
-  };
+  }, [maxSizeBytes, maxSizeMB]);
 
-  const processFile = useCallback((file: File) => {
-    setError(null);
-    const validationError = validateFile(file);
-    if (validationError) {
-      setError(validationError);
-      return;
+  // Process selected files
+  const processFiles = useCallback((files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const newFiles: SelectedFile[] = [];
+
+    for (const file of fileArray.slice(0, maxFiles - selectedFiles.length)) {
+      const error = validateFile(file);
+
+      newFiles.push({
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        file,
+        status: error ? 'error' : 'pending',
+        progress: 0,
+        error: error || undefined,
+      });
     }
-    onFileSelect(file);
-  }, [onFileSelect, maxSizeMB]);
 
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+  }, [maxFiles, selectedFiles.length, validateFile]);
+
+  // Handle drag events
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!disabled) setIsDragging(true);
+    if (!disabled) {
+      setIsDragging(true);
+    }
   }, [disabled]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -103,142 +136,265 @@ export function DocumentUpload({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+
     if (disabled) return;
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      processFile(files[0]);
+      processFiles(files);
     }
-  }, [disabled, processFile]);
+  }, [disabled, processFiles]);
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file input change
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      processFile(files[0]);
+      processFiles(files);
     }
-    e.target.value = '';
-  }, [processFile]);
-
-  const removeFile = useCallback(() => {
-    onFileSelect(null);
-    setError(null);
-  }, [onFileSelect]);
-
-  const openFilePicker = () => {
-    if (!disabled && fileInputRef.current) {
-      fileInputRef.current.click();
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
-  };
+  }, [processFiles]);
 
-  // File selected state
-  if (selectedFile) {
-    const icon = getFileIcon(selectedFile.type);
+  // Remove file from selection
+  const removeFile = useCallback((id: string) => {
+    setSelectedFiles(prev => prev.filter(f => f.id !== id));
+  }, []);
 
+  // Clear all files
+  const clearFiles = useCallback(() => {
+    setSelectedFiles([]);
+  }, []);
+
+  // Upload files
+  const uploadFiles = useCallback(async () => {
+    const pendingFiles = selectedFiles.filter(f => f.status === 'pending');
+    if (pendingFiles.length === 0) return;
+
+    setIsUploading(true);
+
+    const formData = new FormData();
+    pendingFiles.forEach(f => {
+      formData.append('files', f.file);
+    });
+    formData.append('folderPath', folderPath);
+    formData.append('tags', JSON.stringify(tags));
+
+    // Mark files as uploading
+    setSelectedFiles(prev =>
+      prev.map(f =>
+        f.status === 'pending' ? { ...f, status: 'uploading' as const, progress: 0 } : f
+      )
+    );
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/${context}/documents`,
+        {
+          method: 'POST',
+          headers: {
+            'X-API-Key': import.meta.env.VITE_API_KEY || '',
+          },
+          body: formData,
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Mark files as success or error
+        setSelectedFiles(prev =>
+          prev.map(f => {
+            if (f.status === 'uploading') {
+              const failed = result.data.failed.find(
+                (err: { filename: string }) => err.filename === f.file.name
+              );
+              if (failed) {
+                return { ...f, status: 'error' as const, error: failed.error, progress: 100 };
+              }
+              return { ...f, status: 'success' as const, progress: 100 };
+            }
+            return f;
+          })
+        );
+
+        onUploadComplete(result.data);
+      } else {
+        throw new Error(result.error?.message || 'Upload fehlgeschlagen');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+
+      setSelectedFiles(prev =>
+        prev.map(f =>
+          f.status === 'uploading'
+            ? { ...f, status: 'error' as const, error: errorMessage, progress: 0 }
+            : f
+        )
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }, [selectedFiles, context, folderPath, tags, onUploadComplete]);
+
+  // Render compact mode
+  if (compact) {
     return (
-      <div className="doc-upload-selected">
-        <div className="doc-upload-file-info">
-          <div className={`doc-upload-file-icon doc-icon-${icon}`}>
-            {icon === 'pdf' && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <path d="M9 15h6" />
-                <path d="M9 11h6" />
-              </svg>
-            )}
-            {(icon === 'excel' || icon === 'csv') && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <rect x="8" y="12" width="8" height="6" rx="1" />
-                <line x1="12" y1="12" x2="12" y2="18" />
-                <line x1="8" y1="15" x2="16" y2="15" />
-              </svg>
-            )}
-            {icon === 'file' && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
+      <div className="document-upload-compact">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept={ACCEPTED_TYPES.join(',')}
+          onChange={handleFileInputChange}
+          disabled={disabled}
+          style={{ display: 'none' }}
+        />
+
+        <button
+          type="button"
+          className="document-upload-button neuro-hover-lift"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
+        >
+          <span className="icon">📄</span>
+          <span>Dokumente hochladen</span>
+        </button>
+
+        {selectedFiles.length > 0 && (
+          <div className="document-upload-compact-list">
+            {selectedFiles.map(f => (
+              <div key={f.id} className={`compact-file-item status-${f.status}`}>
+                <span className="file-name">{f.file.name}</span>
+                <span className="file-status">
+                  {f.status === 'uploading' && '⏳'}
+                  {f.status === 'success' && '✅'}
+                  {f.status === 'error' && '❌'}
+                </span>
+              </div>
+            ))}
+
+            {selectedFiles.some(f => f.status === 'pending') && (
+              <button
+                type="button"
+                className="upload-action-button"
+                onClick={uploadFiles}
+                disabled={isUploading}
+              >
+                Hochladen
+              </button>
             )}
           </div>
-          <div className="doc-upload-file-meta">
-            <span className="doc-upload-filename">
-              {selectedFile.name.length > 40
-                ? selectedFile.name.substring(0, 37) + '...'
-                : selectedFile.name}
-            </span>
-            <span className="doc-upload-filesize">
-              {formatFileSize(selectedFile.size)} &middot; {ACCEPTED_FORMATS[selectedFile.type] || 'Dokument'}
-            </span>
-          </div>
-          <button
-            type="button"
-            className="doc-upload-remove"
-            onClick={removeFile}
-            aria-label="Datei entfernen"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
+        )}
       </div>
     );
   }
 
-  // Drop zone state
+  // Render full mode
   return (
-    <div className="doc-upload">
+    <div className="document-upload">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept={ACCEPTED_TYPES.join(',')}
+        onChange={handleFileInputChange}
+        disabled={disabled}
+        style={{ display: 'none' }}
+      />
+
+      {/* Dropzone */}
       <div
-        className={`doc-upload-dropzone ${isDragging ? 'dragging' : ''} ${disabled ? 'disabled' : ''}`}
+        className={`document-dropzone ${isDragging ? 'dragging' : ''} ${disabled ? 'disabled' : ''}`}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        onClick={openFilePicker}
+        onClick={() => !disabled && fileInputRef.current?.click()}
         role="button"
-        tabIndex={disabled ? -1 : 0}
-        aria-label="Dokument hochladen - Klicken oder ziehen"
+        tabIndex={0}
         onKeyDown={(e) => {
           if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
-            e.preventDefault();
-            openFilePicker();
+            fileInputRef.current?.click();
           }
         }}
+        aria-label="Dokumente hochladen per Drag & Drop oder Klick"
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPT_STRING}
-          onChange={handleFileChange}
-          className="doc-upload-input-hidden"
-          aria-hidden="true"
-        />
-
-        <div className="doc-upload-content">
-          <div className="doc-upload-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="17,8 12,3 7,8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
+        <div className="dropzone-content">
+          <div className="dropzone-icon">📁</div>
+          <div className="dropzone-text">
+            <p className="primary">Dateien hierher ziehen</p>
+            <p className="secondary">oder klicken zum Auswählen</p>
           </div>
-          <p className="doc-upload-text">
-            {isDragging
-              ? 'Hier ablegen...'
-              : 'Dokument hier ablegen oder klicken'}
-          </p>
-          <span className="doc-upload-hint">
-            PDF, Excel (XLSX/XLS), CSV &middot; max {maxSizeMB}MB
-          </span>
+          <div className="dropzone-info">
+            <span>Max. {maxFiles} Dateien</span>
+            <span>•</span>
+            <span>Max. {maxSizeMB} MB pro Datei</span>
+          </div>
         </div>
       </div>
 
-      {error && (
-        <div className="doc-upload-error" role="alert">
-          {error}
+      {/* File List */}
+      {selectedFiles.length > 0 && (
+        <div className="document-file-list">
+          <div className="file-list-header">
+            <span>{selectedFiles.length} Datei(en) ausgewählt</span>
+            <button type="button" className="clear-button" onClick={clearFiles}>
+              Alle entfernen
+            </button>
+          </div>
+
+          <div className="file-list-items">
+            {selectedFiles.map(f => (
+              <div key={f.id} className={`file-item status-${f.status}`}>
+                <div className="file-icon">
+                  {f.status === 'uploading' && <span className="spinner" />}
+                  {f.status === 'success' && <span className="success-icon">✓</span>}
+                  {f.status === 'error' && <span className="error-icon">✕</span>}
+                  {f.status === 'pending' && <span>📄</span>}
+                </div>
+
+                <div className="file-info">
+                  <span className="file-name">{f.file.name}</span>
+                  <span className="file-meta">
+                    {getFileTypeLabel(f.file.type)} • {formatFileSize(f.file.size)}
+                  </span>
+                  {f.error && <span className="file-error">{f.error}</span>}
+                </div>
+
+                {f.status === 'uploading' && (
+                  <div className="file-progress">
+                    <div className="progress-bar" style={{ width: `${f.progress}%` }} />
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="remove-button"
+                  onClick={() => removeFile(f.id)}
+                  disabled={f.status === 'uploading'}
+                  aria-label={`${f.file.name} entfernen`}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Upload Button */}
+          {selectedFiles.some(f => f.status === 'pending') && (
+            <div className="file-list-actions">
+              <button
+                type="button"
+                className="upload-button neuro-hover-lift"
+                onClick={uploadFiles}
+                disabled={isUploading}
+              >
+                {isUploading ? 'Wird hochgeladen...' : `${selectedFiles.filter(f => f.status === 'pending').length} Datei(en) hochladen`}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

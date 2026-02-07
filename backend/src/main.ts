@@ -75,6 +75,8 @@ import { codeExecutionRouter } from './routes/code-execution';
 import projectContextRouter from './routes/project-context';
 // Phase 32: Document Analysis - PDF/Excel/CSV Analysis
 import { documentAnalysisRouter } from './routes/document-analysis';
+// Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
+import documentsRouter from './routes/documents';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Phase 9: Cache-Control & ETag Support
@@ -354,6 +356,9 @@ app.use('/api/topics', topicEnhancementRouter);  // /api/topics/enhanced, /api/t
 // Phase 31: Project Context - Codebase Analysis
 app.use('/api/project', projectContextRouter);  // /api/project/analyze, /api/project/summary, /api/project/structure
 app.use('/api/:context/project', projectContextRouter);  // Context-aware: /api/personal/project/analyze, etc.
+
+// Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
+app.use('/api', documentsRouter);  // /api/:context/documents, /api/documents/file/:id, etc.
 
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 

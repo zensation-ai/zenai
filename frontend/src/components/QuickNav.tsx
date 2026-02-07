@@ -49,6 +49,13 @@ const QUICK_NAV_TILES: QuickNavTile[] = [
     color: 'cyan'
   },
   {
+    page: 'documents',
+    icon: '📄',
+    label: 'Dokumente',
+    shortLabel: 'Docs',
+    color: 'blue'
+  },
+  {
     page: 'triage',
     icon: '📋',
     label: 'Sortieren',

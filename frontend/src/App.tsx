@@ -72,6 +72,7 @@ const StoriesPage = lazy(() => import('./components/StoriesPage').then(m => ({ d
 const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m => ({ default: m.ExportDashboard })));
 const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
 const DocumentAnalysis = lazy(() => import('./components/DocumentAnalysis').then(m => ({ default: m.DocumentAnalysis })));
+const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
 
 // === Triage (bleibt als separate Seite) ===
 const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ default: m.InboxTriage })));
@@ -111,6 +112,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'personalization': '/personalization',
   'documents': '/documents',
   'triage': '/triage',
+  'documents': '/documents',
   // Legacy redirects (will redirect to parent with tab param)
   'incubator': '/ai-workshop/incubator',
   'proactive': '/ai-workshop/proactive',
@@ -142,6 +144,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/personalization': 'personalization',
   '/documents': 'documents',
   '/triage': 'triage',
+  '/documents': 'documents',
 };
 
 // Custom hook for URL-based navigation
@@ -934,6 +937,24 @@ function App() {
     );
   }
 
+  // Document Vault
+  if (currentPage === 'documents') {
+    // Documents only support personal/work contexts
+    const docContext = context === 'work' ? 'work' : 'personal';
+    return (
+      <ErrorBoundary>
+        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
+        <Suspense fallback={<PageLoader />}>
+          <DocumentVaultPage
+            context={docContext}
+            onBack={() => navigateToPage('ideas')}
+          />
+        </Suspense>
+        <ToastContainer />
+      </ErrorBoundary>
+    );
+  }
+
   // Settings Dashboard
   if (currentPage === 'settings') {
     return (
@@ -1213,6 +1234,7 @@ function App() {
                   label: 'Inhalte',
                   icon: '📁',
                   items: [
+                    { label: 'Dokumente', icon: '📄', page: 'documents' },
                     { label: 'Meetings', icon: '📅', page: 'meetings' },
                     { label: 'Medien', icon: '🖼️', page: 'media' },
                     { label: 'Stories', icon: '📖', page: 'stories' },

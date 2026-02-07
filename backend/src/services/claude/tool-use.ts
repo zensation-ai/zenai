@@ -604,6 +604,34 @@ export const TOOL_ANALYZE_DOCUMENT: ToolDefinition = {
   },
 };
 
+/**
+ * Document search tool
+ * Phase 32: Document Vault
+ */
+export const TOOL_SEARCH_DOCUMENTS: ToolDefinition = {
+  name: 'search_documents',
+  description: 'Durchsucht die hochgeladenen Dokumente des Nutzers semantisch. Nutze dies wenn der Nutzer nach Inhalten in seinen Dokumenten, PDFs, oder Dateien fragt. Liefert relevante Textauszüge mit Quellenangabe.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Die Suchanfrage - was im Dokument gesucht werden soll',
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximale Anzahl Ergebnisse (Standard: 5)',
+      },
+      file_types: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Optional: Nur bestimmte Dateitypen durchsuchen (z.B. ["pdf", "docx"])',
+      },
+    },
+    required: ['query'],
+  },
+};
+
 // ===========================================
 // Tool Registry
 // ===========================================

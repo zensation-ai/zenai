@@ -28,6 +28,7 @@ import {
   TOOL_LIST_PROJECT_FILES,
   TOOL_EXECUTE_CODE,
   TOOL_ANALYZE_DOCUMENT,
+  TOOL_SEARCH_DOCUMENTS,
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
@@ -41,6 +42,8 @@ import * as github from './github';
 import * as projectContext from './project-context';
 import { executeCodeDirect, isCodeExecutionEnabled, isSupportedLanguage, SupportedLanguage } from './code-execution';
 import { documentAnalysis, type AnalysisTemplate } from './document-analysis';
+import { documentRAGService } from './document-rag';
+import { documentService } from './document-service';
 import path from 'path';
 
 /**
@@ -1046,6 +1049,65 @@ async function handleExecuteCode(
   }
 }
 
+/**
+ * Search documents handler
+ * Phase 32: Document Vault
+ */
+async function handleSearchDocuments(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const context = execContext.aiContext;
+
+  try {
+    const query = input.query as string;
+    const limit = (input.limit as number) || 5;
+
+    if (!query || query.trim().length === 0) {
+      return 'Bitte gib eine Suchanfrage an.';
+    }
+
+    logger.info('Tool search_documents called', { query, limit, context });
+
+    // Search documents
+    const results = await documentService.searchDocuments(query, context, {
+      limit,
+      includeChunks: true,
+    });
+
+    if (results.length === 0) {
+      return `Keine Dokumente gefunden für: "${query}"\n\nTipp: Lade Dokumente in den Document Vault hoch, um sie durchsuchbar zu machen.`;
+    }
+
+    // Format results
+    const parts: string[] = [
+      `**${results.length} relevante Dokumente gefunden für "${query}":**\n`,
+    ];
+
+    for (const doc of results) {
+      const similarity = Math.round(doc.similarity * 100);
+      parts.push(`### ${doc.title} (${similarity}% Relevanz)`);
+
+      if (doc.summary) {
+        parts.push(doc.summary);
+      }
+
+      if (doc.matchedChunk) {
+        const pageInfo = doc.pageNumber ? ` (Seite ${doc.pageNumber})` : '';
+        parts.push(`\n**Gefundene Textstelle${pageInfo}:**`);
+        parts.push(`> ${doc.matchedChunk.substring(0, 500)}${doc.matchedChunk.length > 500 ? '...' : ''}`);
+      }
+
+      parts.push(`\n*Dateityp: ${doc.mimeType} | Ordner: ${doc.folderPath}*\n`);
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool search_documents failed', error instanceof Error ? error : undefined);
+    return `Fehler bei der Dokumentensuche: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
 // ===========================================
 // Document Analysis Handler
 // ===========================================
@@ -1135,8 +1197,11 @@ export function registerAllToolHandlers(): void {
   // Code execution tools (sandboxed code runner)
   toolRegistry.register(TOOL_EXECUTE_CODE, handleExecuteCode);
 
-  // Document analysis tool (Phase 3)
+  // Document analysis tool (Phase 32)
   toolRegistry.register(TOOL_ANALYZE_DOCUMENT, handleAnalyzeDocument);
+
+  // Document Vault tools (Phase 32)
+  toolRegistry.register(TOOL_SEARCH_DOCUMENTS, handleSearchDocuments);
 
   logger.info('Tool handlers registered', {
     tools: [
@@ -1158,6 +1223,7 @@ export function registerAllToolHandlers(): void {
       'list_project_files',
       'execute_code',
       'analyze_document',
+      'search_documents',
     ],
   });
 }

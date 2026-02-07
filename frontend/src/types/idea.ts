@@ -59,6 +59,7 @@ export type Page =
   | 'meetings'
   | 'media'
   | 'stories'
+  | 'documents'
   | 'automations'
   | 'integrations'
   | 'notifications'

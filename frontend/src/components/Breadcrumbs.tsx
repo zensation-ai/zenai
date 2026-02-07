@@ -188,6 +188,10 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Gedanken', page: 'ideas', icon: '💭' },
     { label: 'Stories', page: 'stories', icon: '📖' },
   ],
+  'documents': [
+    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    { label: 'Dokumente', page: 'documents', icon: '📄' },
+  ],
   'archive': [
     { label: 'Gedanken', page: 'ideas', icon: '💭' },
     { label: 'Archiv', page: 'archive', icon: '📥' },
