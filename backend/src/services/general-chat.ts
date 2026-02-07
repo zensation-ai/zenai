@@ -271,9 +271,10 @@ export async function addMessage(
 // ===========================================
 
 /**
- * System prompt for general chat
+ * System prompt for general chat.
+ * Exported so routes can reuse instead of duplicating.
  */
-const GENERAL_CHAT_SYSTEM_PROMPT = `Du bist ein hilfreicher, intelligenter KI-Assistent.
+export const GENERAL_CHAT_SYSTEM_PROMPT = `Du bist ein hilfreicher, intelligenter KI-Assistent.
 
 Deine Eigenschaften:
 - Du antwortest auf Deutsch, es sei denn der Benutzer schreibt in einer anderen Sprache
@@ -315,8 +316,7 @@ export async function generateEnhancedResponse(
     throw new Error('Claude API ist nicht verfügbar');
   }
 
-  // Create request-scoped execution context for tools
-  // This replaces the deprecated global setToolContext() to prevent race conditions
+  // Create request-scoped execution context for tools (race-condition safe)
   const executionContext: ToolExecutionContext = {
     aiContext: contextType,
     sessionId,

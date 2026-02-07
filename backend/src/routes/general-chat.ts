@@ -24,6 +24,7 @@ import {
   sendMessage,
   sendMessageWithVision,
   addMessage,
+  GENERAL_CHAT_SYSTEM_PROMPT,
 } from '../services/general-chat';
 import { isValidUUID, toIntBounded } from '../utils/validation';
 import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
@@ -537,17 +538,8 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, asyncHandler
   // Detect mode for system prompt enhancement
   const modeResult = detectChatMode(trimmedMessage);
 
-  // Build system prompt (reference the shared constant from general-chat service)
-  let systemPrompt = `Du bist ein hilfreicher, intelligenter KI-Assistent.
-
-Deine Eigenschaften:
-- Du antwortest auf Deutsch, es sei denn der Benutzer schreibt in einer anderen Sprache
-- Du bist freundlich, präzise und hilfreich
-- Du gibst strukturierte, gut lesbare Antworten
-- Du verwendest Markdown-Formatierung wenn sinnvoll
-- Du bist ehrlich und sagst wenn du etwas nicht weißt
-
-Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Problemlösung, Texte verfassen, Code, und vieles mehr.`;
+  // Build system prompt from the shared constant (single source of truth)
+  let systemPrompt = GENERAL_CHAT_SYSTEM_PROMPT;
 
   if (modeResult.mode === 'agent' || modeResult.mode === 'rag_enhanced') {
     systemPrompt += `\n\n[MODUS: ${modeResult.mode}]\nDiese Anfrage erfordert tieferes Nachdenken. Nutze Extended Thinking um deine Gedanken zu strukturieren.`;

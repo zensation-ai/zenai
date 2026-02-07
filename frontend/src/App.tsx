@@ -1293,7 +1293,9 @@ function App() {
             />
           )}
           renderChat={() => (
-            <GeneralChat context={context} isCompact={ideas.length > 0} />
+            <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfügbar. <button type="button" onClick={() => window.location.reload()}>Neu laden</button></div>}>
+              <GeneralChat context={context} isCompact={ideas.length > 0} />
+            </ErrorBoundary>
           )}
         />
       </section>

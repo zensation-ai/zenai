@@ -19,18 +19,57 @@ if (ENV_API_URL) {
   axios.defaults.baseURL = ENV_API_URL;
 }
 
-// Configure axios to use API key from environment or localStorage
-axios.interceptors.request.use((config) => {
-  const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
+// CSRF token management (defense-in-depth alongside API key auth)
+let csrfToken: string | null = null;
 
+async function fetchCsrfToken(): Promise<void> {
+  try {
+    const { data } = await axios.get('/api/csrf-token');
+    csrfToken = data.csrfToken;
+  } catch {
+    // CSRF is optional when API key auth is present; log only in dev
+    if (import.meta.env.DEV) {
+      console.warn('Could not fetch CSRF token (non-critical when using API key auth)');
+    }
+  }
+}
+
+// Fetch initial CSRF token
+fetchCsrfToken();
+
+// Configure axios interceptors
+axios.interceptors.request.use((config) => {
+  // API key authentication
+  const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
   if (apiKey) {
     config.headers.Authorization = `Bearer ${apiKey}`;
   } else if (import.meta.env.DEV) {
     console.warn('No API key configured. Set VITE_API_KEY in .env or localStorage.apiKey');
   }
 
+  // Attach CSRF token to mutating requests (defense-in-depth)
+  if (csrfToken && config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
+    config.headers['X-CSRF-Token'] = csrfToken;
+  }
+
   return config;
 });
+
+// Refresh CSRF token on 403 CSRF errors
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 403 && error.response?.data?.error === 'CSRF_TOKEN_INVALID') {
+      await fetchCsrfToken();
+      // Retry the original request with the new token
+      if (csrfToken) {
+        error.config.headers['X-CSRF-Token'] = csrfToken;
+        return axios(error.config);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Initialize native features (Capacitor)
 initializeNative();

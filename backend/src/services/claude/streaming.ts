@@ -192,7 +192,7 @@ export async function streamToSSE(
     let thinkingContent = '';
     let responseContent = '';
 
-    // Handle stream events
+    // Handle text content deltas
     stream.on('text', (text: string) => {
       if (!isInContent) {
         sendSSE(res, { type: 'content_start', data: {} });
@@ -202,29 +202,27 @@ export async function streamToSSE(
       sendSSE(res, { type: 'content_delta', data: { content: text } });
     });
 
-    // Handle thinking blocks using message event
-    stream.on('message', (message: Anthropic.Message) => {
-      // Process content blocks to find thinking
-      for (const block of message.content) {
-        if (block.type === 'thinking' && 'thinking' in block) {
-          if (!isInThinking) {
-            sendSSE(res, { type: 'thinking_start', data: {} });
-            isInThinking = true;
-          }
-          thinkingContent = (block as { thinking: string }).thinking || '';
-          sendSSE(res, { type: 'thinking_delta', data: { thinking: thinkingContent } });
-          sendSSE(res, { type: 'thinking_end', data: { thinking: thinkingContent } });
-          isInThinking = false;
-        } else if (block.type === 'tool_use') {
+    // Handle thinking deltas incrementally (streams each chunk as it arrives)
+    stream.on('thinking', (thinkingDelta: string) => {
+      thinkingContent += thinkingDelta;
+      sendSSE(res, { type: 'thinking_delta', data: { thinking: thinkingDelta } });
+    });
+
+    // Handle block-level events for start/end markers and tool use
+    stream.on('streamEvent', (event: Anthropic.MessageStreamEvent) => {
+      if (event.type === 'content_block_start') {
+        if (event.content_block.type === 'thinking') {
+          sendSSE(res, { type: 'thinking_start', data: {} });
+          isInThinking = true;
+        } else if (event.content_block.type === 'tool_use') {
           sendSSE(res, {
             type: 'tool_use_start',
-            data: {
-              tool: {
-                name: block.name,
-              },
-            },
+            data: { tool: { name: event.content_block.name } },
           });
         }
+      } else if (event.type === 'content_block_stop' && isInThinking) {
+        sendSSE(res, { type: 'thinking_end', data: { thinking: thinkingContent } });
+        isInThinking = false;
       }
     });
 
@@ -315,18 +313,14 @@ export async function streamAndCollect(
   let content = '';
   const toolCalls: StreamingResult['toolCalls'] = [];
 
-  // Collect text
+  // Collect text deltas
   stream.on('text', (text: string) => {
     content += text;
   });
 
-  // Collect thinking from final message
-  stream.on('message', (message: Anthropic.Message) => {
-    for (const block of message.content) {
-      if (block.type === 'thinking' && 'thinking' in block) {
-        thinking = (block as { thinking: string }).thinking || '';
-      }
-    }
+  // Collect thinking deltas incrementally
+  stream.on('thinking', (thinkingDelta: string) => {
+    thinking += thinkingDelta;
   });
 
   // Wait for completion
