@@ -1270,6 +1270,44 @@
   opacity: 1;
 }
 
+/* Phase 7.4: Rate Limit Banner */
+.rate-limit-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rate-limit-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--warning, #f59e0b);
+}
+
+.rate-limit-blocked {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--danger, #ef4444);
+}
+
+.rate-limit-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.rate-limit-message strong {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Ideas Section */
 .ideas-section {
   margin-bottom: 2rem;

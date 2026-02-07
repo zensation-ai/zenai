@@ -30,6 +30,8 @@ import { AIProcessingOverlay, type ProcessType } from './components/AIProcessing
 import { CommandCenter, type InputMode } from './components/CommandCenter';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
+import { safeParseResponse, HealthResponseSchema, IdeasResponseSchema, IdeaCreationResponseSchema, SearchResponseSchema } from './utils/apiSchemas';
+import { RateLimitBanner } from './components/RateLimitBanner';
 import {
   AI_PERSONALITY,
   AI_AVATAR,
@@ -405,22 +407,24 @@ function App() {
   const checkHealth = async (signal?: AbortSignal) => {
     try {
       const response = await axios.get('/api/health', { signal });
+      const healthData = safeParseResponse(HealthResponseSchema, response.data, 'checkHealth');
+
       // Support both old (database) and new (databases) format
-      const databases = response.data.services.databases;
+      const databases = healthData.services?.databases;
       const dbConnected = databases
         ? (databases.personal?.status === 'connected' || databases.work?.status === 'connected')
-        : response.data.services.database?.status === 'connected';
+        : healthData.services?.database?.status === 'connected';
 
       // AI services are under services.ai (not services.ollama directly)
-      const aiServices = response.data.services.ai;
+      const aiServices = healthData.services?.ai;
       const claudeAvailable = aiServices?.claude?.status === 'healthy' || aiServices?.claude?.available;
       const ollamaConnected = aiServices?.ollama?.status === 'connected';
       const openaiConfigured = aiServices?.openai?.status === 'configured';
       const ollamaModels = aiServices?.ollama?.models || [];
 
       setApiStatus({
-        database: dbConnected,
-        ollama: claudeAvailable || ollamaConnected || openaiConfigured,
+        database: !!dbConnected,
+        ollama: !!(claudeAvailable || ollamaConnected || openaiConfigured),
         models: ollamaModels,
       });
     } catch (err) {
@@ -434,7 +438,8 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.get(`/api/${context}/ideas?limit=100`, { signal });
-      const serverIdeas: StructuredIdea[] = response.data.ideas || [];
+      const parsed = safeParseResponse(IdeasResponseSchema, response.data, 'loadIdeas');
+      const serverIdeas = (parsed.ideas || []) as unknown as StructuredIdea[];
 
       // FIX: Smart merge to preserve recently-created local ideas
       // This handles the case where server cache hasn't been invalidated yet
@@ -459,7 +464,8 @@ function App() {
       // Fallback to general endpoint if context-specific fails
       try {
         const fallbackResponse = await axios.get('/api/ideas?limit=100', { signal });
-        setIdeas(fallbackResponse.data.ideas);
+        const fallbackParsed = safeParseResponse(IdeasResponseSchema, fallbackResponse.data, 'loadIdeas:fallback');
+        setIdeas(fallbackParsed.ideas as unknown as StructuredIdea[]);
         setError(null);
       } catch (fallbackErr: unknown) {
         if (signal?.aborted) return;
@@ -477,8 +483,9 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.get(`/api/${context}/ideas/archived?limit=100`, { signal });
-      setArchivedIdeas(response.data.ideas);
-      setArchivedCount(response.data.pagination.total);
+      const parsed = safeParseResponse(IdeasResponseSchema, response.data, 'loadArchivedIdeas');
+      setArchivedIdeas(parsed.ideas as unknown as StructuredIdea[]);
+      setArchivedCount(parsed.pagination?.total ?? 0);
     } catch (err) {
       if (signal?.aborted) return;
       logError('loadArchivedIdeas', err);
@@ -493,7 +500,8 @@ function App() {
   const loadArchivedCount = async (signal?: AbortSignal) => {
     try {
       const response = await axios.get(`/api/${context}/ideas/archived?limit=1`, { signal });
-      setArchivedCount(response.data.pagination.total);
+      const parsed = safeParseResponse(IdeasResponseSchema, response.data, 'loadArchivedCount');
+      setArchivedCount(parsed.pagination?.total ?? 0);
     } catch (err) {
       if (!signal?.aborted) {
         setArchivedCount(0);
@@ -546,17 +554,19 @@ function App() {
         persona: selectedPersona,
       });
 
+      const creationData = safeParseResponse(IdeaCreationResponseSchema, response.data, 'submitText');
+
       // Step 2: Classifying -> Step 3: Extracting
       setAIOverlay({ visible: true, type: 'text', step: 2 });
       await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_STEP_DELAY_MS));
       setAIOverlay({ visible: true, type: 'text', step: 3 });
       await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_STEP_DELAY_MS));
 
-      const newIdea: StructuredIdea = {
-        id: response.data.ideaId,
-        ...response.data.structured,
+      const newIdea = {
+        id: creationData.ideaId,
+        ...creationData.structured,
         created_at: new Date().toISOString(),
-      };
+      } as unknown as StructuredIdea;
 
       setIdeas(prev => [newIdea, ...prev]);
       setTextInput('');
@@ -582,7 +592,8 @@ function App() {
     try {
       // Search within current context
       const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 });
-      setSearchResults(response.data.ideas);
+      const parsed = safeParseResponse(SearchResponseSchema, response.data, 'handleSearch');
+      setSearchResults(parsed.ideas as unknown as StructuredIdea[]);
       // No toast for empty results - UI shows this clearly
     } catch (err: unknown) {
       const errorMessage = getErrorMessage(err, 'Suche fehlgeschlagen');
@@ -1304,6 +1315,9 @@ function App() {
       </section>
 
       <main id="main-content" className="main" role="main">
+
+        {/* Phase 7.4: Rate Limit Feedback Banner */}
+        <RateLimitBanner />
 
         {/* Error Display */}
         {error && (
