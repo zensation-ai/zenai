@@ -381,7 +381,7 @@ apiKeysRouter.post('/:id/regenerate', apiKeyAuth, requireScope('admin'), asyncHa
 apiKeysRouter.post('/verify', apiKeyAuth, (req: Request, res: Response) => {
   const apiKey = req.apiKey;
   if (!apiKey) {
-    res.status(401).json({ success: false, error: 'API key not found' });
+    res.status(401).json({ success: false, error: 'API key not found', code: 'UNAUTHORIZED' });
     return;
   }
   res.json({

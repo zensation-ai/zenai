@@ -24,6 +24,7 @@ import { getUserProfile, getRecommendations } from '../services/user-profile';
 import { AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -218,12 +219,13 @@ router.post('/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (r
       context,
     });
   } catch (error) {
-    // Return detailed error for debugging
+    logger.error('Batch analysis failed', error instanceof Error ? error : undefined, { context });
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5) : undefined,
-      context,
+      error: process.env.NODE_ENV === 'production'
+        ? 'Batch analysis failed'
+        : (error instanceof Error ? error.message : 'Unknown error'),
+      code: 'INTERNAL_ERROR',
     });
   }
 }));

@@ -112,8 +112,8 @@ export function getSecurityHeadersConfig(options: {
     // Block all mixed content
     blockAllMixedContent: [],
 
-    // Report violations (configure endpoint if needed)
-    // reportUri: '/api/csp-report',
+    // Report violations to logging endpoint
+    reportUri: ['/api/csp-report'],
   };
 
   return helmet({

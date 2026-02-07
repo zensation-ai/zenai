@@ -17,8 +17,41 @@ import {
   scanProjectStructure,
   formatProjectContext,
 } from '../services/project-context';
+import path from 'path';
 
 const router = Router();
+
+/**
+ * Validate and sanitize a project path to prevent path traversal attacks.
+ * - Must be an absolute path
+ * - Must not contain null bytes
+ * - Must not traverse outside the resolved root
+ * - Must not access sensitive system directories
+ */
+function validateProjectPath(inputPath: string): string {
+  // Reject null bytes (can bypass checks in some systems)
+  if (inputPath.includes('\0')) {
+    throw new ValidationError('Invalid path: null bytes not allowed');
+  }
+
+  // Must be an absolute path
+  if (!path.isAbsolute(inputPath)) {
+    throw new ValidationError('projectPath must be an absolute path');
+  }
+
+  // Resolve to canonical form (eliminates .., ., symlinks in path string)
+  const resolved = path.resolve(inputPath);
+
+  // Block sensitive system directories
+  const blockedPrefixes = ['/etc', '/proc', '/sys', '/dev', '/var/run', '/root/.ssh', '/root/.gnupg'];
+  for (const blocked of blockedPrefixes) {
+    if (resolved.startsWith(blocked)) {
+      throw new ValidationError(`Access denied: ${blocked} is a restricted path`);
+    }
+  }
+
+  return resolved;
+}
 
 /**
  * POST /analyze
@@ -31,9 +64,11 @@ router.post('/analyze', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
     throw new ValidationError('projectPath is required');
   }
 
-  logger.info('Analyzing project', { path: projectPath });
+  const safePath = validateProjectPath(projectPath);
 
-  const context = await generateProjectContext(projectPath);
+  logger.info('Analyzing project', { path: safePath });
+
+  const context = await generateProjectContext(safePath);
 
   return res.json({
     success: true,
@@ -57,7 +92,9 @@ router.post('/summary', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
     throw new ValidationError('projectPath is required');
   }
 
-  const summary = await getQuickProjectSummary(projectPath);
+  const safePath = validateProjectPath(projectPath);
+
+  const summary = await getQuickProjectSummary(safePath);
 
   return res.json({
     success: true,
@@ -76,7 +113,12 @@ router.post('/structure', apiKeyAuth, asyncHandler(async (req: Request, res: Res
     throw new ValidationError('projectPath is required');
   }
 
-  const structure = await scanProjectStructure(projectPath, maxDepth);
+  const safePath = validateProjectPath(projectPath);
+
+  // Validate maxDepth to prevent excessive recursion
+  const safeMaxDepth = Math.min(Math.max(1, Number(maxDepth) || 3), 10);
+
+  const structure = await scanProjectStructure(safePath, safeMaxDepth);
 
   return res.json({
     success: true,

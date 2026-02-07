@@ -213,8 +213,8 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
       return res.status(409).json({
         success: false,
-        error: 'duplicate_detected',
-        message: 'Ein sehr ähnlicher Gedanke existiert bereits.',
+        error: 'Ein sehr ähnlicher Gedanke existiert bereits.',
+        code: 'DUPLICATE_ENTRY',
         existingIdeas: duplicates.suggestions.map(d => ({
           id: d.id,
           title: d.title,
@@ -632,7 +632,9 @@ voiceMemoContextRouter.get('/:context/personas', apiKeyAuth, (req: Request, res:
 
   if (!isValidContext(context)) {
     return res.status(400).json({
-      error: 'Invalid context. Use "personal" or "work".'
+      success: false,
+      error: 'Invalid context. Use "personal" or "work".',
+      code: 'VALIDATION_ERROR',
     });
   }
 
