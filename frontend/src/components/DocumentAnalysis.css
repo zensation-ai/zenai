@@ -1046,3 +1046,180 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===========================================
+   Phase 3: Custom Template Card
+   =========================================== */
+
+.doc-template-custom {
+  border-color: #4a90d9 !important;
+  position: relative;
+}
+
+.doc-template-custom.selected {
+  border-color: #2563eb !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+
+.doc-template-custom-label {
+  color: #4a90d9 !important;
+  font-style: italic;
+}
+
+/* ===========================================
+   Phase 3: Template Editor
+   =========================================== */
+
+.doc-analysis-templates-editor {
+  padding: 20px 0;
+}
+
+.doc-templates-hint {
+  color: var(--text-secondary, #666);
+  margin-bottom: 16px;
+  font-size: 0.88rem;
+}
+
+.doc-template-editor {
+  background: var(--bg-secondary, #f8f9fa);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.doc-template-editor h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+}
+
+.doc-template-editor-field {
+  margin-bottom: 14px;
+}
+
+.doc-template-editor-field label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary, #333);
+}
+
+.doc-template-editor-field input,
+.doc-template-editor-field select,
+.doc-template-editor-field textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #333);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.doc-template-editor-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.doc-template-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ===========================================
+   Phase 3: Mermaid Diagrams
+   =========================================== */
+
+.doc-analysis-diagrams {
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--bg-secondary, #f8f9fa);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 10px;
+}
+
+.doc-analysis-diagrams h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+}
+
+.doc-diagrams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.doc-diagram-card {
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.doc-diagram-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.doc-diagram-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.doc-diagram-preview {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #666);
+  background: var(--bg-secondary, #f0f0f0);
+  padding: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  max-height: 80px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}
+
+/* ===========================================
+   Phase 3: Dark Mode Additions
+   =========================================== */
+
+[data-theme="dark"] .doc-template-editor,
+.dark .doc-template-editor {
+  background: var(--bg-secondary, #1e1e2e);
+  border-color: var(--border-color, #333);
+}
+
+[data-theme="dark"] .doc-template-editor-field input,
+[data-theme="dark"] .doc-template-editor-field select,
+[data-theme="dark"] .doc-template-editor-field textarea,
+.dark .doc-template-editor-field input,
+.dark .doc-template-editor-field select,
+.dark .doc-template-editor-field textarea {
+  background: var(--bg-primary, #151525);
+  border-color: var(--border-color, #444);
+  color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme="dark"] .doc-analysis-diagrams,
+.dark .doc-analysis-diagrams {
+  background: var(--bg-secondary, #1e1e2e);
+  border-color: var(--border-color, #333);
+}
+
+[data-theme="dark"] .doc-diagram-card,
+.dark .doc-diagram-card {
+  background: var(--bg-primary, #151525);
+  border-color: var(--border-color, #444);
+}
+
+[data-theme="dark"] .doc-diagram-preview,
+.dark .doc-diagram-preview {
+  background: var(--bg-secondary, #1a1a2e);
+}

@@ -75,7 +75,21 @@ interface FollowUpMessage {
   tokenUsage?: { input: number; output: number };
 }
 
-type ViewMode = 'upload' | 'compare' | 'history';
+interface CustomTemplate {
+  id: string;
+  name: string;
+  system_prompt: string;
+  instruction: string;
+  icon: string;
+  context: string;
+}
+
+interface MermaidDiagram {
+  title: string;
+  content: string;
+}
+
+type ViewMode = 'upload' | 'compare' | 'history' | 'templates';
 
 const TEMPLATE_ICONS: Record<string, string> = {
   'search': '\uD83D\uDD0D',
@@ -83,6 +97,11 @@ const TEMPLATE_ICONS: Record<string, string> = {
   'file-text': '\uD83D\uDCC4',
   'bar-chart': '\uD83D\uDCCA',
   'zap': '\u26A1',
+  'star': '\u2B50',
+  'settings': '\u2699\uFE0F',
+  'brain': '\uD83E\uDDE0',
+  'target': '\uD83C\uDFAF',
+  'clipboard': '\uD83D\uDCCB',
 };
 
 export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
@@ -113,6 +132,18 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Custom templates state (Phase 3)
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+  const [isLoadingCustomTemplates, setIsLoadingCustomTemplates] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Partial<CustomTemplate> | null>(null);
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
+  // Mermaid diagrams state (Phase 3)
+  const [mermaidDiagrams, setMermaidDiagrams] = useState<MermaidDiagram[]>([]);
+
+  // PDF export state (Phase 3)
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const followUpRef = useRef<HTMLDivElement>(null);
 
@@ -391,6 +422,158 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
   }, [viewMode, loadHistory]);
 
   // ===========================================
+  // Phase 3: Custom Templates
+  // ===========================================
+
+  const loadCustomTemplates = useCallback(async () => {
+    setIsLoadingCustomTemplates(true);
+    try {
+      const response = await axios.get('/api/documents/templates/custom');
+      if (response.data.success) {
+        setCustomTemplates(response.data.data.templates);
+      }
+    } catch {
+      showToast('Custom Templates konnten nicht geladen werden', 'error');
+    } finally {
+      setIsLoadingCustomTemplates(false);
+    }
+  }, []);
+
+  const handleSaveTemplate = useCallback(async () => {
+    if (!editingTemplate?.name || !editingTemplate?.system_prompt || !editingTemplate?.instruction) {
+      showToast('Bitte alle Pflichtfelder ausfüllen', 'error');
+      return;
+    }
+
+    setIsSavingTemplate(true);
+    try {
+      if (editingTemplate.id) {
+        // Update existing
+        const response = await axios.put(`/api/documents/templates/custom/${editingTemplate.id}`, {
+          name: editingTemplate.name,
+          system_prompt: editingTemplate.system_prompt,
+          instruction: editingTemplate.instruction,
+          icon: editingTemplate.icon || 'file-text',
+        });
+        if (response.data.success) {
+          setCustomTemplates((prev) =>
+            prev.map((t) => (t.id === editingTemplate.id ? response.data.data.template : t))
+          );
+          showToast('Template aktualisiert', 'success');
+        }
+      } else {
+        // Create new
+        const response = await axios.post('/api/documents/templates/custom', {
+          name: editingTemplate.name,
+          system_prompt: editingTemplate.system_prompt,
+          instruction: editingTemplate.instruction,
+          icon: editingTemplate.icon || 'file-text',
+        });
+        if (response.data.success) {
+          setCustomTemplates((prev) => [response.data.data.template, ...prev]);
+          showToast('Template erstellt', 'success');
+        }
+      }
+      setEditingTemplate(null);
+    } catch {
+      showToast('Speichern fehlgeschlagen', 'error');
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  }, [editingTemplate]);
+
+  const handleDeleteTemplate = useCallback(async (id: string) => {
+    try {
+      await axios.delete(`/api/documents/templates/custom/${id}`);
+      setCustomTemplates((prev) => prev.filter((t) => t.id !== id));
+      showToast('Template gelöscht', 'success');
+    } catch {
+      showToast('Löschen fehlgeschlagen', 'error');
+    }
+  }, []);
+
+  // Load custom templates on mount and when templates view is active
+  useEffect(() => {
+    loadCustomTemplates();
+  }, [loadCustomTemplates]);
+
+  useEffect(() => {
+    if (viewMode === 'templates') {
+      loadCustomTemplates();
+    }
+  }, [viewMode, loadCustomTemplates]);
+
+  // ===========================================
+  // Phase 3: Mermaid Extraction
+  // ===========================================
+
+  const extractMermaidDiagrams = useCallback((text: string): MermaidDiagram[] => {
+    const diagrams: MermaidDiagram[] = [];
+    const pattern = /```mermaid\s*\n([\s\S]*?)```/g;
+    let match;
+    let idx = 0;
+
+    while ((match = pattern.exec(text)) !== null) {
+      idx++;
+      const content = match[1].trim();
+      let title = `Diagramm ${idx}`;
+      if (content.startsWith('pie')) title = `Kreisdiagramm ${idx}`;
+      else if (content.startsWith('graph') || content.startsWith('flowchart')) title = `Flussdiagramm ${idx}`;
+      else if (content.startsWith('sequenceDiagram')) title = `Sequenzdiagramm ${idx}`;
+      else if (content.startsWith('gantt')) title = `Gantt-Diagramm ${idx}`;
+      else if (content.startsWith('xychart-beta')) title = `Balkendiagramm ${idx}`;
+      diagrams.push({ title, content });
+    }
+
+    return diagrams;
+  }, []);
+
+  // Extract Mermaid diagrams when result changes
+  useEffect(() => {
+    if (result?.analysis) {
+      const diagrams = extractMermaidDiagrams(result.analysis);
+      setMermaidDiagrams(diagrams);
+    } else {
+      setMermaidDiagrams([]);
+    }
+  }, [result, extractMermaidDiagrams]);
+
+  // ===========================================
+  // Phase 3: PDF Export
+  // ===========================================
+
+  const handleExportPdf = useCallback(async () => {
+    if (!result?.id) {
+      showToast('Analyse muss zuerst gespeichert sein', 'error');
+      return;
+    }
+
+    setIsExportingPdf(true);
+    try {
+      const response = await axios.post(
+        '/api/documents/export/pdf',
+        { analysisId: result.id },
+        { responseType: 'blob' }
+      );
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analyse-${result.filename.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('PDF-Report heruntergeladen', 'success');
+    } catch {
+      showToast('PDF-Export fehlgeschlagen', 'error');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }, [result]);
+
+  // ===========================================
   // Reset & Helpers
   // ===========================================
 
@@ -402,6 +585,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
     setFollowUpQuestion('');
     setCompareFiles([]);
     setStreamingContent('');
+    setMermaidDiagrams([]);
   }, []);
 
   const openAsArtifact = useCallback((type: 'markdown' | 'csv', title: string, content: string) => {
@@ -459,7 +643,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
             \u2190 Zur\u00fcck
           </button>
           <h1>Dokument-Analyse</h1>
-          <span className="doc-analysis-badge">Phase 2</span>
+          <span className="doc-analysis-badge">Phase 3</span>
         </div>
         <div className="doc-analysis-header-right">
           <button
@@ -482,6 +666,13 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
             onClick={() => setViewMode('history')}
           >
             Historie
+          </button>
+          <button
+            type="button"
+            className={`doc-mode-btn ${viewMode === 'templates' ? 'active' : ''}`}
+            onClick={() => setViewMode('templates')}
+          >
+            Templates
           </button>
         </div>
       </header>
@@ -507,7 +698,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
 
             {selectedFile && (
               <div className="doc-analysis-options">
-                <h3>Analyse-Typ w\u00e4hlen</h3>
+                <h3>Analyse-Typ w&auml;hlen</h3>
                 <div className="doc-analysis-templates">
                   {templates.map((tmpl) => (
                     <button
@@ -522,6 +713,21 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
                       </span>
                       <span className="doc-template-name">{tmpl.name}</span>
                       <span className="doc-template-desc">{tmpl.description}</span>
+                    </button>
+                  ))}
+                  {customTemplates.map((tmpl) => (
+                    <button
+                      key={`custom-${tmpl.id}`}
+                      type="button"
+                      className={`doc-template-card doc-template-custom ${selectedTemplate === `custom:${tmpl.id}` ? 'selected' : ''}`}
+                      onClick={() => setSelectedTemplate(`custom:${tmpl.id}`)}
+                      disabled={isAnalyzing}
+                    >
+                      <span className="doc-template-icon">
+                        {TEMPLATE_ICONS[tmpl.icon] || '\u2B50'}
+                      </span>
+                      <span className="doc-template-name">{tmpl.name}</span>
+                      <span className="doc-template-desc doc-template-custom-label">Eigenes Template</span>
                     </button>
                   ))}
                 </div>
@@ -710,6 +916,141 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
         )}
 
         {/* ===========================================
+            Templates Editor Mode (Phase 3)
+            =========================================== */}
+        {viewMode === 'templates' && (
+          <section className="doc-analysis-templates-editor">
+            <h2>Eigene Analyse-Templates</h2>
+            <p className="doc-templates-hint">
+              Erstelle und verwalte eigene Analyse-Vorlagen mit benutzerdefinierten Prompts.
+            </p>
+
+            {/* Template Editor Form */}
+            {editingTemplate !== null && (
+              <div className="doc-template-editor">
+                <h3>{editingTemplate.id ? 'Template bearbeiten' : 'Neues Template'}</h3>
+                <div className="doc-template-editor-field">
+                  <label htmlFor="tpl-name">Name *</label>
+                  <input
+                    id="tpl-name"
+                    type="text"
+                    value={editingTemplate.name || ''}
+                    onChange={(e) => setEditingTemplate((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="z.B. Marketing-Analyse"
+                    maxLength={100}
+                  />
+                </div>
+                <div className="doc-template-editor-field">
+                  <label htmlFor="tpl-icon">Icon</label>
+                  <select
+                    id="tpl-icon"
+                    value={editingTemplate.icon || 'file-text'}
+                    onChange={(e) => setEditingTemplate((prev) => ({ ...prev, icon: e.target.value }))}
+                  >
+                    {Object.entries(TEMPLATE_ICONS).map(([key, emoji]) => (
+                      <option key={key} value={key}>{emoji} {key}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="doc-template-editor-field">
+                  <label htmlFor="tpl-system">System-Prompt * (Rolle des AI)</label>
+                  <textarea
+                    id="tpl-system"
+                    value={editingTemplate.system_prompt || ''}
+                    onChange={(e) => setEditingTemplate((prev) => ({ ...prev, system_prompt: e.target.value }))}
+                    placeholder="Du bist ein professioneller Analyst f&uuml;r..."
+                    rows={3}
+                  />
+                </div>
+                <div className="doc-template-editor-field">
+                  <label htmlFor="tpl-instruction">Anweisung * (Was soll analysiert werden)</label>
+                  <textarea
+                    id="tpl-instruction"
+                    value={editingTemplate.instruction || ''}
+                    onChange={(e) => setEditingTemplate((prev) => ({ ...prev, instruction: e.target.value }))}
+                    placeholder="Analysiere dieses Dokument mit Fokus auf..."
+                    rows={5}
+                  />
+                </div>
+                <div className="doc-template-editor-actions">
+                  <button
+                    type="button"
+                    className="doc-action-btn"
+                    onClick={handleSaveTemplate}
+                    disabled={isSavingTemplate || !editingTemplate.name || !editingTemplate.system_prompt || !editingTemplate.instruction}
+                  >
+                    {isSavingTemplate ? 'Speichern...' : 'Speichern'}
+                  </button>
+                  <button
+                    type="button"
+                    className="doc-action-btn secondary"
+                    onClick={() => setEditingTemplate(null)}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Create button */}
+            {editingTemplate === null && (
+              <button
+                type="button"
+                className="doc-analysis-submit"
+                onClick={() => setEditingTemplate({ name: '', system_prompt: '', instruction: '', icon: 'file-text' })}
+              >
+                + Neues Template erstellen
+              </button>
+            )}
+
+            {/* Template List */}
+            {isLoadingCustomTemplates ? (
+              <div className="doc-analysis-progress">
+                <div className="doc-analysis-progress-inner">
+                  <span className="doc-analysis-spinner large" />
+                  <p>Templates werden geladen...</p>
+                </div>
+              </div>
+            ) : customTemplates.length === 0 ? (
+              <div className="doc-history-empty">
+                <p>Keine eigenen Templates vorhanden. Erstelle dein erstes Template!</p>
+              </div>
+            ) : (
+              <div className="doc-history-list">
+                {customTemplates.map((tmpl) => (
+                  <div key={tmpl.id} className="doc-history-item">
+                    <div className="doc-history-item-info">
+                      <span className="doc-history-filename">
+                        {TEMPLATE_ICONS[tmpl.icon] || '\u2B50'} {tmpl.name}
+                      </span>
+                      <div className="doc-history-meta">
+                        <span className="doc-result-tag secondary">System: {tmpl.system_prompt.substring(0, 60)}...</span>
+                      </div>
+                    </div>
+                    <div className="doc-history-item-actions">
+                      <button
+                        type="button"
+                        className="doc-action-btn"
+                        onClick={() => setEditingTemplate(tmpl)}
+                      >
+                        Bearbeiten
+                      </button>
+                      <button
+                        type="button"
+                        className="doc-action-btn doc-action-delete"
+                        onClick={() => handleDeleteTemplate(tmpl.id)}
+                      >
+                        L&ouml;schen
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ===========================================
             Streaming Progress
             =========================================== */}
         {isAnalyzing && useStreaming && streamingContent && (
@@ -801,10 +1142,21 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
                   type="button"
                   className="doc-action-btn"
                   onClick={() => openAsArtifact('markdown', `Analyse: ${result.filename}`, result.analysis)}
-                  title="Als Artifact \u00f6ffnen"
+                  title="Als Artifact öffnen"
                 >
                   Artifact
                 </button>
+                {result.id && (
+                  <button
+                    type="button"
+                    className="doc-action-btn"
+                    onClick={handleExportPdf}
+                    disabled={isExportingPdf}
+                    title="Als PDF exportieren"
+                  >
+                    {isExportingPdf ? 'Export...' : 'PDF'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="doc-action-btn secondary"
@@ -824,6 +1176,35 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
                     <li key={i}>{finding}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Mermaid Diagrams (Phase 3) */}
+            {mermaidDiagrams.length > 0 && (
+              <div className="doc-analysis-diagrams">
+                <h3>Visualisierungen</h3>
+                <div className="doc-diagrams-grid">
+                  {mermaidDiagrams.map((diagram, i) => (
+                    <div key={i} className="doc-diagram-card">
+                      <div className="doc-diagram-header">
+                        <span className="doc-diagram-title">{diagram.title}</span>
+                        <button
+                          type="button"
+                          className="doc-action-btn"
+                          onClick={() => setSelectedArtifact({
+                            id: `mermaid-${Date.now()}-${i}`,
+                            title: diagram.title,
+                            type: 'mermaid',
+                            content: diagram.content,
+                          })}
+                        >
+                          Öffnen
+                        </button>
+                      </div>
+                      <pre className="doc-diagram-preview">{diagram.content.substring(0, 200)}{diagram.content.length > 200 ? '...' : ''}</pre>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
