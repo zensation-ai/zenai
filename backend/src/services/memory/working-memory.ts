@@ -686,9 +686,10 @@ export class WorkingMemoryService {
   }
 
   /**
-   * Start cleanup interval
+   * Start cleanup interval (skip in test env to prevent Jest handle leaks)
    */
   private startCleanupInterval(): void {
+    if (process.env.NODE_ENV === 'test') return;
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredSessions();
     }, 5 * 60 * 1000); // Every 5 minutes

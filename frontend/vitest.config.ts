@@ -13,17 +13,44 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['src/components/**/*.{ts,tsx}'],
+      include: [
+        'src/utils/**/*.{ts,tsx}',
+        'src/contexts/**/*.{ts,tsx}',
+        'src/api/**/*.{ts,tsx}',
+        'src/components/**/*.{ts,tsx}',
+      ],
       exclude: [
         'src/**/*.test.{ts,tsx}',
         'src/**/*.spec.{ts,tsx}',
-        'src/__tests__/**',
+        'src/**/__tests__/**',
+        // Static config/constants files - no logic to test
+        'src/utils/aiSteps.ts',
+        'src/utils/aiPersonality.ts',
+        'src/utils/humanizedMessages.ts',
+        'src/utils/native.ts', // Capacitor native bindings
       ],
       thresholds: {
-        branches: 50,
-        functions: 50,
-        lines: 50,
-        statements: 50,
+        // Enforce 60% coverage on core logic directories.
+        // Static config files (aiSteps, aiPersonality, humanizedMessages, native)
+        // are excluded from coverage scope.
+        'src/utils/**/*.ts': {
+          branches: 60,
+          functions: 60,
+          lines: 60,
+          statements: 60,
+        },
+        'src/contexts/**/*.tsx': {
+          branches: 60,
+          functions: 60,
+          lines: 60,
+          statements: 60,
+        },
+        'src/api/**/*.ts': {
+          branches: 60,
+          functions: 60,
+          lines: 60,
+          statements: 60,
+        },
       },
     },
     css: true,

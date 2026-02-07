@@ -18,12 +18,22 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { getCircuitBreakerStatus } from '../utils/retry';
 import { isClaudeAvailable, generateClaudeResponse } from '../services/claude';
 import { logger } from '../utils/logger';
+import { getPrometheusMetrics } from '../utils/metrics';
 
 // Version from package.json - read at startup
 const packageJson = require('../../package.json');
 const version = packageJson.version || '2.0.0';
 
 export const healthRouter = Router();
+
+/**
+ * Prometheus-compatible metrics endpoint
+ * Returns application metrics in text format for monitoring.
+ */
+healthRouter.get('/metrics', (_req, res) => {
+  res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+  res.send(getPrometheusMetrics());
+});
 
 // Track server start time for uptime calculation
 const serverStartTime = Date.now();

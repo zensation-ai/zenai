@@ -388,7 +388,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
     operation: 'http_request',
   });
 
-  // Log response on finish
+  // Log response on finish and record metrics
   res.on('finish', () => {
     const duration = Date.now() - startTime;
     const level: LogLevel = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
@@ -398,6 +398,15 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
       operation: 'http_response',
       duration,
     });
+
+    // Record metrics for Prometheus endpoint
+    try {
+      // Lazy import to avoid circular dependencies
+      const { recordHttpRequest } = require('./metrics');
+      recordHttpRequest(req.method, res.statusCode, duration);
+    } catch {
+      // metrics module not loaded yet, skip
+    }
   });
 
   next();
