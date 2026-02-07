@@ -136,15 +136,24 @@ export async function generateTopics(
       DELETE FROM idea_topics WHERE context = $1 AND is_auto_generated = TRUE
     `, [context]);
 
-    // PERFORMANCE FIX: Create Set for O(1) membership checks instead of O(n) includes()
-    // Create new topics with LLM-generated names
+    // PERFORMANCE FIX: Parallelize LLM labeling for all clusters, then insert sequentially
+    const clusterDataList = validClusters.map(cluster => {
+      const clusterIdeaIds = new Set(cluster.ideaIds);
+      return {
+        cluster,
+        clusterIdeas: ideas.filter(idea => clusterIdeaIds.has(idea.id)),
+      };
+    });
+
+    // Run all LLM label calls in parallel (independent operations)
+    const topicInfos = await Promise.all(
+      clusterDataList.map(({ clusterIdeas }) => labelCluster(clusterIdeas))
+    );
+
+    // Insert topics sequentially (DB transactional order matters)
     for (let i = 0; i < validClusters.length; i++) {
       const cluster = validClusters[i];
-      const clusterIdeaIds = new Set(cluster.ideaIds);
-      const clusterIdeas = ideas.filter(idea => clusterIdeaIds.has(idea.id));
-
-      // Generate topic name and description using LLM
-      const topicInfo = await labelCluster(clusterIdeas);
+      const topicInfo = topicInfos[i];
 
       // Calculate centroid embedding
       const centroid = cluster.centroid;

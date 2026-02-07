@@ -78,8 +78,8 @@ export function getSecurityHeadersConfig(options: {
       ? ["'self'", "'unsafe-inline'"] // Allow unsafe-inline for Swagger in dev
       : ["'self'", ((_req: Request, res: Response) => `'nonce-${res.locals.cspNonce || ''}'`)],
 
-    // Styles: self + unsafe-inline (many UI frameworks need this)
-    // In strict mode, would use nonces for styles too
+    // Styles: self + unsafe-inline (required by React inline styles and many UI libraries)
+    // Note: nonce-based styles would require all style injections to pass nonces
     styleSrc: ["'self'", "'unsafe-inline'"],
 
     // Images: self + data URIs + HTTPS sources (for external images)
@@ -88,11 +88,19 @@ export function getSecurityHeadersConfig(options: {
     // Fonts: self + data URIs + Google Fonts
     fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
 
-    // Connections: self + API endpoints
-    connectSrc: ["'self'", 'https:', 'wss:'],
+    // Connections: self + API endpoints + specific trusted origins
+    connectSrc: isDevelopment
+      ? ["'self'", 'https:', 'wss:', 'ws:'] // Dev: allow all for HMR
+      : ["'self'", 'https://ki-ab-production.up.railway.app', 'https://zensation.ai', 'https://zensation.app', 'https://*.supabase.co', 'wss:'],
 
     // Object/embed/applet: none (prevent Flash, Java, etc.)
     objectSrc: ["'none'"],
+
+    // Workers: self only (restrict service workers/web workers)
+    workerSrc: ["'self'", 'blob:'],
+
+    // Child frames: none (no iframes allowed)
+    childSrc: ["'none'"],
 
     // Media: self + data URIs
     mediaSrc: ["'self'", 'data:', 'blob:'],

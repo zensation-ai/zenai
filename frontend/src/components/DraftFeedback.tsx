@@ -524,8 +524,8 @@ export function FeedbackPrompt({
   };
 
   return (
-    <div className="feedback-prompt-overlay" onClick={onDismiss}>
-      <div className="feedback-prompt-card" onClick={(e) => e.stopPropagation()}>
+    <div className="feedback-prompt-overlay" onClick={onDismiss} role="presentation">
+      <div className="feedback-prompt-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Entwurf bewerten">
         <button type="button" className="prompt-close" onClick={onDismiss} aria-label="Schließen">×</button>
         <h4>Wie war der Entwurf?</h4>
         <StarRating value={rating} onChange={setRating} size="large" />

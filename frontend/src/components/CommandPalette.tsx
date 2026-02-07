@@ -314,7 +314,7 @@ export const CommandPalette = memo(function CommandPalette({
   let currentIndex = -1;
 
   return createPortal(
-    <div className="command-palette-overlay" onClick={onClose}>
+    <div className="command-palette-overlay" onClick={onClose} role="presentation">
       <div
         className="command-palette"
         onClick={e => e.stopPropagation()}

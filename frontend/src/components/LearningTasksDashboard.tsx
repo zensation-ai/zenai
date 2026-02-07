@@ -505,8 +505,9 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
 
             <div className="modal-body">
               <div className="form-group">
-                <label>Titel *</label>
+                <label htmlFor="task-title">Titel *</label>
                 <input
+                  id="task-title"
                   type="text"
                   value={taskForm.title}
                   onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
@@ -515,8 +516,9 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
               </div>
 
               <div className="form-group">
-                <label>Beschreibung</label>
+                <label htmlFor="task-description">Beschreibung</label>
                 <textarea
+                  id="task-description"
                   value={taskForm.description}
                   onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
                   placeholder="Was möchtest du lernen?"
@@ -526,8 +528,9 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Kategorie</label>
+                  <label htmlFor="task-category">Kategorie</label>
                   <select
+                    id="task-category"
                     value={taskForm.category}
                     onChange={(e) => setTaskForm({ ...taskForm, category: e.target.value })}
                   >
@@ -540,8 +543,9 @@ export function LearningTasksDashboard({ onBack, context }: LearningTasksDashboa
                 </div>
 
                 <div className="form-group">
-                  <label>Priorität</label>
+                  <label htmlFor="task-priority">Priorität</label>
                   <select
+                    id="task-priority"
                     value={taskForm.priority}
                     onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value as 'low' | 'medium' | 'high' })}
                   >

@@ -15,6 +15,8 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { validateUUID } from '../utils/validation';
+import { validateBody } from '../utils/schemas';
+import { CreateMeetingSchema, MeetingSearchSchema } from '../utils/schemas';
 
 export const meetingsRouter = Router();
 
@@ -30,15 +32,11 @@ const upload = multer({
  * Search meetings by semantic similarity
  * NOTE: Must be defined BEFORE /:id route
  */
-meetingsRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
+meetingsRouter.post('/search', apiKeyAuth, validateBody(MeetingSearchSchema), asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const { query, limit } = req.body;
 
-  if (!query) {
-    throw new ValidationError('Search query required');
-  }
-
-  const results = await searchMeetings(query, limit || 10);
+  const results = await searchMeetings(query, limit);
 
   res.json({
     results,
@@ -70,12 +68,8 @@ meetingsRouter.get('/action-items/all', apiKeyAuth, asyncHandler(async (req, res
  * POST /api/meetings
  * Create a new meeting
  */
-meetingsRouter.post('/', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+meetingsRouter.post('/', apiKeyAuth, requireScope('write'), validateBody(CreateMeetingSchema), asyncHandler(async (req, res) => {
   const { title, date, company_id, duration_minutes, participants, location, meeting_type } = req.body;
-
-  if (!title || !date) {
-    throw new ValidationError('Title and date are required');
-  }
 
   const meeting = await createMeeting({
     title,

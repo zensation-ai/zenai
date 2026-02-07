@@ -65,7 +65,7 @@ export function ResearchTeaser({ research, context, onDismiss }: ResearchTeaserP
 
   return (
     <div className={`research-teaser ${expanded ? 'expanded' : ''}`}>
-      <div className="teaser-header" onClick={handleExpand}>
+      <div className="teaser-header" onClick={handleExpand} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExpand(); } }} role="button" tabIndex={0} aria-expanded={expanded}>
         <span className="teaser-icon">🔍</span>
         <div className="teaser-content">
           <span className="teaser-label">Recherche vorbereitet</span>

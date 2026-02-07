@@ -225,8 +225,8 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
 
       {/* Detail Modal */}
       {selectedMedia && (
-        <div className="modal-overlay neuro-focus-mode active" onClick={() => setSelectedMedia(null)}>
-          <div className="media-modal liquid-glass neuro-human-fade-in" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay neuro-focus-mode active" onClick={() => setSelectedMedia(null)} role="presentation">
+          <div className="media-modal liquid-glass neuro-human-fade-in" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Medien-Detail">
             <button type="button" className="close-btn neuro-press-effect" onClick={() => setSelectedMedia(null)} aria-label="Modal schließen">✕</button>
 
             <div className="modal-media">

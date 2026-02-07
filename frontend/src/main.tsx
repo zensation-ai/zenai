@@ -9,6 +9,7 @@ import { ConfirmProvider } from './components/ConfirmDialog';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { initializeNative } from './utils/native';
 import { logError } from './utils/errors';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // API configuration from environment
 const ENV_API_KEY = import.meta.env.VITE_API_KEY;
@@ -71,6 +72,15 @@ axios.interceptors.response.use(
   }
 );
 
+// Global error listeners — catch unhandled errors and promise rejections
+window.addEventListener('error', (event) => {
+  logError('GlobalErrorListener', event.error ?? new Error(event.message));
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  logError('UnhandledRejection', event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+});
+
 // Initialize native features (Capacitor)
 initializeNative();
 
@@ -103,12 +113,14 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <ThemeProvider>
-        <ConfirmProvider>
-          <App />
-        </ConfirmProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ThemeProvider>
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );
