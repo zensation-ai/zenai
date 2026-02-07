@@ -20,6 +20,7 @@ import {
 import { ImageUpload } from './ImageUpload';
 import { VoiceInput } from './VoiceInput';
 import { ArtifactPanel, ArtifactButton } from './ArtifactPanel';
+import { ErrorBoundary } from './ErrorBoundary';
 import { extractArtifacts, type Artifact } from '../types/artifacts';
 import './GeneralChat.css';
 import { logError } from '../utils/errors';
@@ -271,7 +272,8 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
                       setStreamingContent(accumulatedContent);
                     }
                     if (data.thinking !== undefined) {
-                      setThinkingContent(data.thinking);
+                      // Accumulate thinking deltas (backend now streams chunks)
+                      setThinkingContent(prev => prev + data.thinking);
                     }
                     if (data.error) {
                       throw new Error(data.error);
@@ -675,16 +677,18 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
         </div>
       </div>
 
-      {/* Artifact Panel */}
+      {/* Artifact Panel - wrapped in ErrorBoundary since it uses portal rendering */}
       {activeArtifact && (
-        <ArtifactPanel
-          artifact={activeArtifact.artifact}
-          onClose={() => setActiveArtifact(null)}
-          onPrevious={() => navigateArtifact('prev')}
-          onNext={() => navigateArtifact('next')}
-          hasPrevious={activeArtifact.index > 0}
-          hasNext={activeArtifact.index >= 0 && activeArtifact.index < (artifacts.get(activeArtifact.messageId)?.length || 0) - 1}
-        />
+        <ErrorBoundary fallback={<div className="artifact-error">Artifact konnte nicht angezeigt werden.</div>}>
+          <ArtifactPanel
+            artifact={activeArtifact.artifact}
+            onClose={() => setActiveArtifact(null)}
+            onPrevious={() => navigateArtifact('prev')}
+            onNext={() => navigateArtifact('next')}
+            hasPrevious={activeArtifact.index > 0}
+            hasNext={activeArtifact.index >= 0 && activeArtifact.index < (artifacts.get(activeArtifact.messageId)?.length || 0) - 1}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );

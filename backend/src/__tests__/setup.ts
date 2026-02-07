@@ -22,8 +22,17 @@ beforeAll(() => {
 // Global afterAll - runs once after all tests
 afterAll(async () => {
   // Cleanup any open handles
-  // Clear all timers to prevent leaks
+  // Clear all mocked/fake timers to prevent leaks
   jest.clearAllTimers();
+  // Explicitly stop service cleanup intervals that might have started
+  try {
+    const { stopCleanupInterval } = await import('../middleware/csrf');
+    stopCleanupInterval();
+  } catch { /* module may not be loaded */ }
+  try {
+    const { stopRateLimitCleanup } = await import('../middleware/auth');
+    stopRateLimitCleanup();
+  } catch { /* module may not be loaded */ }
   // Small delay to allow pending microtasks to complete
   await new Promise(resolve => setImmediate(resolve));
 });

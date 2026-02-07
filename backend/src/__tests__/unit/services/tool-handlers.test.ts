@@ -6,22 +6,22 @@
  * - Create idea handler
  * - Remember/Recall handlers
  * - Calculate handler
- * - Context management
+ *
+ * NOTE: Legacy context management (setToolContext/getToolContext) has been removed.
+ * All tool handlers now use ToolExecutionContext passed as a parameter.
  *
  * TODO: These tests are outdated and need to be rewritten to match the current API:
  * - ToolRegistry.getHandler() method removed
  * - LongTermMemory.store() API changed
- * - Context management approach changed (request-scoped vs global)
+ * - Handlers now receive ToolExecutionContext instead of using global state
  *
  * @module tests/services/tool-handlers
  */
 
 import {
-  setToolContext,
-  getToolContext,
   registerAllToolHandlers,
 } from '../../../services/tool-handlers';
- 
+
 const toolRegistry: any = {}; // Stubbed - original API changed
 
 // Mock dependencies
@@ -70,12 +70,13 @@ jest.mock('../../../utils/logger', () => ({
 import { enhancedRAG } from '../../../services/enhanced-rag';
 import { queryContext } from '../../../utils/database-context';
 // Original memory imports removed - API has changed
- 
+
 const longTermMemory: any = { store: jest.fn() };
- 
+
 const episodicMemory: any = { recordEpisode: jest.fn() };
 
 // TODO: Re-enable and update tests when API is stabilized
+// Tests need to be rewritten to pass ToolExecutionContext to handlers
 describe.skip('Tool Handlers', () => {
   beforeAll(() => {
     // Register all handlers before tests
@@ -84,27 +85,6 @@ describe.skip('Tool Handlers', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset context to default
-    setToolContext('personal');
-  });
-
-  // ===========================================
-  // Context Management Tests
-  // ===========================================
-
-  describe('Context Management', () => {
-    it('should set and get tool context', () => {
-      setToolContext('work');
-      expect(getToolContext()).toBe('work');
-
-      setToolContext('personal');
-      expect(getToolContext()).toBe('personal');
-    });
-
-    it('should default to personal context', () => {
-      // Context is set to personal in beforeEach
-      expect(getToolContext()).toBe('personal');
-    });
   });
 
   // ===========================================
@@ -133,18 +113,6 @@ describe.skip('Tool Handlers', () => {
         'test',
         'personal',
         3
-      );
-    });
-
-    it('should use current context', async () => {
-      setToolContext('work');
-      const handler = getHandler();
-      await handler!({ query: 'test' });
-
-      expect(enhancedRAG.quickRetrieve).toHaveBeenCalledWith(
-        'test',
-        'work',
-        expect.any(Number)
       );
     });
 
@@ -201,23 +169,6 @@ describe.skip('Tool Handlers', () => {
       expect(result).toContain('task');
       expect(result).toContain('development');
       expect(result).toContain('high');
-    });
-
-    it('should insert into correct database context', async () => {
-      setToolContext('work');
-      const handler = getHandler();
-
-      await handler!({
-        title: 'Work Idea',
-        type: 'project',
-        summary: 'Work project idea',
-      });
-
-      expect(queryContext).toHaveBeenCalledWith(
-        'work',
-        expect.any(String),
-        expect.arrayContaining(['work'])
-      );
     });
 
     it('should handle missing required fields', async () => {

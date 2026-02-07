@@ -37,15 +37,26 @@ const MAX_CONSECUTIVE_ERRORS = 3;
 const MEMORY_CLEANUP_INTERVAL = 60 * 1000; // 1 minute
 const MAX_RATE_LIMIT_ENTRIES = 10000; // Prevent unbounded growth
 
-// Clean up old entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of memoryRateLimits.entries()) {
-    if (now - entry.windowStart > 120000) { // 2 minutes old
-      memoryRateLimits.delete(key);
+// Clean up old entries periodically (skip in test env to prevent Jest handle leaks)
+let rateLimitCleanupInterval: ReturnType<typeof setInterval> | null = null;
+if (process.env.NODE_ENV !== 'test') {
+  rateLimitCleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of memoryRateLimits.entries()) {
+      if (now - entry.windowStart > 120000) { // 2 minutes old
+        memoryRateLimits.delete(key);
+      }
     }
+  }, MEMORY_CLEANUP_INTERVAL);
+}
+
+/** Stop the rate-limit cleanup interval (call during shutdown or in tests). */
+export function stopRateLimitCleanup(): void {
+  if (rateLimitCleanupInterval) {
+    clearInterval(rateLimitCleanupInterval);
+    rateLimitCleanupInterval = null;
   }
-}, MEMORY_CLEANUP_INTERVAL);
+}
 
 /**
  * Check rate limit using in-memory storage
