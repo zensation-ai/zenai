@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "ZenSation - Enterprise AI Platform",
+    "description": "Intelligente KI-Loesungen fuer Ihr Unternehmen. ZenSation verbindet modernste AI-Technologie mit praktischer Anwendbarkeit."
+  },
+  "nav": {
+    "home": "Startseite",
+    "features": "Funktionen",
+    "pricing": "Preise",
+    "contact": "Kontakt"
+  },
+  "hero": {
+    "title": "Ihr digitales Gehirn fuer das Unternehmen",
+    "subtitle": "ZenAI erfasst, strukturiert und vernetzt Ihre Ideen - intelligent und sicher.",
+    "cta": "Jetzt starten",
+    "secondary_cta": "Mehr erfahren"
+  },
+  "features": {
+    "title": "Funktionen",
+    "ai_chat": {
+      "title": "KI-Chat mit Tools",
+      "description": "17 integrierte Tools fuer Web-Suche, Code-Ausfuehrung, GitHub-Integration und mehr."
+    },
+    "memory": {
+      "title": "Hierarchisches Gedaechtnis",
+      "description": "4-Schicht-Architektur: Working, Episodic, Short-Term und Long-Term Memory."
+    },
+    "rag": {
+      "title": "RAG Pipeline",
+      "description": "HyDE, Cross-Encoder Re-ranking und Confidence Scoring fuer praezise Antworten."
+    },
+    "vision": {
+      "title": "Vision Integration",
+      "description": "Bildanalyse, OCR, Ideenextraktion und Chat mit Bildern."
+    }
+  },
+  "footer": {
+    "copyright": "Alexander Bering / ZenSation Enterprise Solutions",
+    "privacy": "Datenschutz",
+    "imprint": "Impressum"
+  }
+}
