@@ -12,9 +12,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('App - Core', () => {
-  test('loads with heading and input', async ({ page }) => {
+  test('loads with logo and input', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('h1')).toContainText('Personal AI Brain');
+    await expect(page.locator('.header-logo-text')).toContainText('My Brain');
     await expect(page.locator('textarea').first()).toBeVisible();
   });
 
