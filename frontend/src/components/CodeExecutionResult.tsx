@@ -135,7 +135,14 @@ export function CodeExecutionResult({
           <code>{code}</code>
         </pre>
         {!isCodeExpanded && shouldCollapse && (
-          <div className="code-fade-overlay" onClick={() => setIsCodeExpanded(true)} />
+          <div
+            className="code-fade-overlay"
+            onClick={() => setIsCodeExpanded(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsCodeExpanded(true); } }}
+            role="button"
+            tabIndex={0}
+            aria-label="Code vollständig anzeigen"
+          />
         )}
       </div>
 

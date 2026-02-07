@@ -391,11 +391,9 @@ export async function learnFromThought(
     const hour = new Date(idea.created_at).getHours().toString();
     await incrementPreference(client, userId, 'active_hours', hour, 1);
 
-    // 4. Update Topic-Interessen aus Keywords (nur bei User-Korrektur stark)
+    // 4. Update Topic-Interessen aus Keywords (nur bei User-Korrektur stark) — batched
     const keywords = parseJsonbWithDefault<string[]>(idea.keywords, []);
-    for (const keyword of keywords) {
-      await incrementTopicInterest(client, userId, keyword, isUserCorrected ? 3 : 1);
-    }
+    await batchIncrementTopicInterests(client, userId, keywords, isUserCorrected ? 3 : 1);
 
     // 5. Update Thinking Patterns (nur Beobachtung, kein starkes Lernen)
     await updateThinkingPatterns(client, userId, idea);
@@ -626,7 +624,56 @@ async function decrementPreference(
 }
 
 /**
- * Increment topic interest with optional weight
+ * Batch increment topic interests — single query instead of N queries per keyword
+ * Reduces N+1 pattern: with 10 keywords, this is 1 query instead of 10
+ */
+async function batchIncrementTopicInterests(
+  client: PoolClient,
+  userId: string,
+  topics: string[],
+  weight: number = 1
+): Promise<void> {
+  // Filter and normalize
+  const validTopics = topics
+    .map(t => t.toLowerCase().trim())
+    .filter(t => t.length >= 2);
+
+  if (validTopics.length === 0) return;
+
+  try {
+    // Build a JSONB object with weights, then merge with existing using SUM
+    // This is a single query instead of N queries per keyword
+    const topicObj: Record<string, number> = {};
+    for (const topic of validTopics) {
+      topicObj[topic] = (topicObj[topic] || 0) + weight;
+    }
+
+    await client.query(
+      `UPDATE user_profile
+       SET topic_interests = (
+         SELECT COALESCE(jsonb_object_agg(key, total), '{}'::jsonb)
+         FROM (
+           SELECT key, SUM(value::int) as total
+           FROM (
+             SELECT key, value FROM jsonb_each_text(COALESCE(topic_interests, '{}'))
+             UNION ALL
+             SELECT key, value FROM jsonb_each_text($2::jsonb)
+           ) combined
+           GROUP BY key
+         ) merged
+       ),
+       updated_at = NOW()
+       WHERE id = $1`,
+      [userId, JSON.stringify(topicObj)]
+    );
+  } catch (error) {
+    logger.error('Error batch incrementing topics', error instanceof Error ? error : undefined, { count: validTopics.length });
+  }
+}
+
+/**
+ * Increment topic interest with optional weight (single topic)
+ * @deprecated Use batchIncrementTopicInterests for multiple topics
  */
 async function incrementTopicInterest(
   client: PoolClient,
@@ -635,7 +682,7 @@ async function incrementTopicInterest(
   weight: number = 1
 ): Promise<void> {
   const normalizedTopic = topic.toLowerCase().trim();
-  if (normalizedTopic.length < 2) {return;} // Ignoriere zu kurze Keywords
+  if (normalizedTopic.length < 2) {return;}
 
   try {
     await client.query(

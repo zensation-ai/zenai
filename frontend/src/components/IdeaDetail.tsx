@@ -331,10 +331,13 @@ Details: ${idea.summary}`,
   const typeInfo = typeLabels[idea.type] || { label: idea.type, icon: '📝' };
 
   return (
-    <div className="idea-detail-overlay" onClick={onClose}>
+    <div className="idea-detail-overlay" onClick={onClose} role="presentation">
       <div
         className="idea-detail-modal liquid-glass neuro-human-fade-in"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Idee Detail-Ansicht"
       >
         <button
           type="button"

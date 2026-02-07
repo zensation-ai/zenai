@@ -351,6 +351,70 @@ export function validateParams<T>(schema: ZodSchema<T>) {
 }
 
 // ===========================================
+// Chat Schemas
+// ===========================================
+
+/**
+ * Chat session creation schema
+ */
+export const CreateChatSessionSchema = z.object({
+  context: ContextSchema.default('personal'),
+});
+
+/**
+ * Chat message schema
+ */
+export const ChatMessageSchema = z.object({
+  message: z.string()
+    .min(1, 'Message is required')
+    .max(100000, 'Message must be at most 100000 characters')
+    .transform((s: string) => s.trim()),
+  include_metadata: z.boolean().optional(),
+});
+
+// ===========================================
+// Meeting Schemas
+// ===========================================
+
+/**
+ * Meeting type enum
+ */
+export const MeetingTypeSchema = z.enum(
+  ['internal', 'external', 'one_on_one', 'team', 'client', 'other'],
+  { message: 'Invalid meeting type' }
+);
+
+/**
+ * Create meeting schema
+ */
+export const CreateMeetingSchema = z.object({
+  title: z.string()
+    .min(1, 'Title is required')
+    .max(500, 'Title must be at most 500 characters')
+    .transform((s: string) => s.trim()),
+  date: z.string().min(1, 'Date is required'),
+  company_id: z.string().max(200).optional(),
+  duration_minutes: z.coerce.number().int().min(1).max(1440).default(60),
+  participants: z.union([
+    z.string().max(2000),
+    z.array(z.string().max(200)),
+  ]).optional(),
+  location: z.string().max(500).optional(),
+  meeting_type: MeetingTypeSchema.default('internal'),
+});
+
+/**
+ * Meeting search schema
+ */
+export const MeetingSearchSchema = z.object({
+  query: z.string()
+    .min(1, 'Search query is required')
+    .max(500)
+    .transform((s: string) => s.trim()),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+// ===========================================
 // Type Exports
 // ===========================================
 

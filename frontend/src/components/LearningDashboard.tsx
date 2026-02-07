@@ -543,18 +543,24 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
 
             {showAddFocus && (
               <div className="add-focus-form liquid-glass neuro-stagger-item">
+                <label htmlFor="focus-name" className="sr-only">Fokus-Thema Name</label>
                 <input
+                  id="focus-name"
                   type="text"
                   placeholder="Name des Fokus-Themas"
                   value={newFocus.name}
                   onChange={(e) => setNewFocus({ ...newFocus, name: e.target.value })}
                 />
+                <label htmlFor="focus-description" className="sr-only">Beschreibung</label>
                 <textarea
+                  id="focus-description"
                   placeholder="Beschreibung (optional)"
                   value={newFocus.description}
                   onChange={(e) => setNewFocus({ ...newFocus, description: e.target.value })}
                 />
+                <label htmlFor="focus-keywords" className="sr-only">Keywords</label>
                 <input
+                  id="focus-keywords"
                   type="text"
                   placeholder="Keywords (kommagetrennt)"
                   value={newFocus.keywords}

@@ -307,8 +307,9 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
             <h2 id="new-meeting-title">Neues Meeting</h2>
 
             <div className="form-group">
-              <label>Titel *</label>
+              <label htmlFor="meeting-title">Titel *</label>
               <input
+                id="meeting-title"
                 type="text"
                 value={newMeeting.title}
                 onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
@@ -317,8 +318,9 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
             </div>
 
             <div className="form-group">
-              <label>Datum & Uhrzeit *</label>
+              <label htmlFor="meeting-date">Datum & Uhrzeit *</label>
               <input
+                id="meeting-date"
                 type="datetime-local"
                 value={newMeeting.date}
                 onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
@@ -327,8 +329,9 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
 
             <div className="form-row">
               <div className="form-group">
-                <label>Typ</label>
+                <label htmlFor="meeting-type">Typ</label>
                 <select
+                  id="meeting-type"
                   value={newMeeting.meeting_type}
                   onChange={(e) =>
                     setNewMeeting({ ...newMeeting, meeting_type: e.target.value as Meeting['meeting_type'] })
@@ -344,8 +347,9 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
               </div>
 
               <div className="form-group">
-                <label>Dauer (Min)</label>
+                <label htmlFor="meeting-duration">Dauer (Min)</label>
                 <input
+                  id="meeting-duration"
                   type="number"
                   value={newMeeting.duration_minutes}
                   onChange={(e) =>
@@ -356,8 +360,9 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
             </div>
 
             <div className="form-group">
-              <label>Teilnehmer (kommasepariert)</label>
+              <label htmlFor="meeting-participants">Teilnehmer (kommasepariert)</label>
               <input
+                id="meeting-participants"
                 type="text"
                 value={newMeeting.participants}
                 onChange={(e) => setNewMeeting({ ...newMeeting, participants: e.target.value })}
@@ -366,8 +371,9 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
             </div>
 
             <div className="form-group">
-              <label>Ort</label>
+              <label htmlFor="meeting-location">Ort</label>
               <input
+                id="meeting-location"
                 type="text"
                 value={newMeeting.location}
                 onChange={(e) => setNewMeeting({ ...newMeeting, location: e.target.value })}

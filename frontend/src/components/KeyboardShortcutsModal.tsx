@@ -113,7 +113,7 @@ export const KeyboardShortcutsModal = memo(function KeyboardShortcutsModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="keyboard-shortcuts-overlay" onClick={onClose}>
+    <div className="keyboard-shortcuts-overlay" onClick={onClose} role="presentation">
       <div
         className="keyboard-shortcuts-modal"
         onClick={(e) => e.stopPropagation()}

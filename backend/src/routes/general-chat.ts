@@ -27,6 +27,8 @@ import {
   GENERAL_CHAT_SYSTEM_PROMPT,
 } from '../services/general-chat';
 import { isValidUUID, toIntBounded } from '../utils/validation';
+import { validateBody } from '../utils/schemas';
+import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
 import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
 import { detectChatMode } from '../services/chat-modes';
 import { query } from '../utils/database';
@@ -86,13 +88,8 @@ const visionUpload = multer({
  * POST /api/chat/sessions
  * Create a new chat session
  */
-generalChatRouter.post('/sessions', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const { context = 'personal' } = req.body;
-
-  // Validate context
-  if (context !== 'personal' && context !== 'work') {
-    throw new ValidationError('Context must be "personal" or "work"');
-  }
+generalChatRouter.post('/sessions', apiKeyAuth, validateBody(CreateChatSessionSchema), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.body;
 
   const session = await createSession(context);
 
@@ -175,28 +172,14 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
  * Query params:
  * - include_metadata: boolean - Include processing metadata in response
  */
-generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { message } = req.body;
-  const includeMetadata = req.query.include_metadata === 'true' || req.body.include_metadata === true;
+  const { message, include_metadata } = req.body;
+  const includeMetadata = req.query.include_metadata === 'true' || include_metadata === true;
 
   // Validate UUID format
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
-  }
-
-  // Validate message
-  if (!message || typeof message !== 'string') {
-    throw new ValidationError('Message is required and must be a string');
-  }
-
-  if (message.length > CHAT.MAX_MESSAGE_LENGTH) {
-    throw new ValidationError(`Message too long. Maximum ${CHAT.MAX_MESSAGE_LENGTH} characters allowed.`);
-  }
-
-  const trimmedMessage = message.trim();
-  if (trimmedMessage.length === 0) {
-    throw new ValidationError('Message cannot be empty');
   }
 
   // Check session exists and get context
@@ -207,14 +190,14 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, asyncHandler(async 
 
   logger.info('Processing chat message', {
     sessionId: id,
-    messageLength: trimmedMessage.length,
+    messageLength: message.length,
     includeMetadata,
   });
 
-  // Send message and get response
+  // Send message and get response (message already trimmed by Zod schema)
   const result = await sendMessage(
     id,
-    trimmedMessage,
+    message,
     session.context as 'personal' | 'work',
     includeMetadata
   );
@@ -485,7 +468,7 @@ generalChatRouter.post(
  * - done: Stream complete with metadata
  * - error: Error occurred
  */
-generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
   const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
@@ -493,16 +476,6 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, asyncHandler
   // Validate UUID format
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
-  }
-
-  // Validate message
-  if (!message || typeof message !== 'string') {
-    throw new ValidationError('Message is required and must be a string');
-  }
-
-  const trimmedMessage = message.trim();
-  if (trimmedMessage.length === 0 || trimmedMessage.length > CHAT.MAX_MESSAGE_LENGTH) {
-    throw new ValidationError(`Invalid message length (1-${CHAT.MAX_MESSAGE_LENGTH} characters)`);
   }
 
   // Check session exists
@@ -513,12 +486,12 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, asyncHandler
 
   logger.info('Starting streaming chat', {
     sessionId: id,
-    messageLength: trimmedMessage.length,
+    messageLength: message.length,
     thinkingBudget,
   });
 
-  // Store user message first
-  await addMessage(id, 'user', trimmedMessage);
+  // Store user message first (already trimmed by Zod schema)
+  await addMessage(id, 'user', message);
 
   // Get conversation history
   const historyResult = await query(`
@@ -535,8 +508,8 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, asyncHandler
     content: row.content,
   }));
 
-  // Detect mode for system prompt enhancement
-  const modeResult = detectChatMode(trimmedMessage);
+  // Detect mode for system prompt enhancement (message already trimmed by Zod)
+  const modeResult = detectChatMode(message);
 
   // Build system prompt from the shared constant (single source of truth)
   let systemPrompt = GENERAL_CHAT_SYSTEM_PROMPT;
