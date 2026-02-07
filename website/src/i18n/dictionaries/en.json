@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "ZenSation - Enterprise AI Platform",
+    "description": "Intelligent AI solutions for your enterprise. ZenSation combines cutting-edge AI technology with practical applicability."
+  },
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "pricing": "Pricing",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "Your Digital Brain for the Enterprise",
+    "subtitle": "ZenAI captures, structures, and connects your ideas - intelligently and securely.",
+    "cta": "Get Started",
+    "secondary_cta": "Learn More"
+  },
+  "features": {
+    "title": "Features",
+    "ai_chat": {
+      "title": "AI Chat with Tools",
+      "description": "17 integrated tools for web search, code execution, GitHub integration and more."
+    },
+    "memory": {
+      "title": "Hierarchical Memory",
+      "description": "4-layer architecture: Working, Episodic, Short-Term and Long-Term Memory."
+    },
+    "rag": {
+      "title": "RAG Pipeline",
+      "description": "HyDE, Cross-Encoder re-ranking and confidence scoring for precise answers."
+    },
+    "vision": {
+      "title": "Vision Integration",
+      "description": "Image analysis, OCR, idea extraction and chat with images."
+    }
+  },
+  "footer": {
+    "copyright": "Alexander Bering / ZenSation Enterprise Solutions",
+    "privacy": "Privacy Policy",
+    "imprint": "Legal Notice"
+  }
+}
