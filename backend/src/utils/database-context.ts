@@ -235,6 +235,20 @@ export async function queryContext(
 
   poolStats[effectiveContext].queries++;
 
+  // Pool exhaustion warning: alert when waiting queue exceeds 50% of max pool size
+  const waitingCount = pool.waitingCount;
+  const maxPool = POOL_CONFIG.max;
+  if (waitingCount > maxPool * 0.5) {
+    logger.warn(`Pool near exhaustion [${effectiveContext}]`, {
+      context: effectiveContext,
+      waitingCount,
+      totalCount: pool.totalCount,
+      idleCount: pool.idleCount,
+      maxPool,
+      operation: 'poolExhaustionWarning',
+    });
+  }
+
   // Retry loop for transient errors
   for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
     // CRITICAL: Get a dedicated client for schema isolation

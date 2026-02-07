@@ -364,38 +364,37 @@ export const logger = {
 // ===========================================
 
 import { Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-
-declare global {
-  namespace Express {
-    interface Request {
-      requestId: string;
-      startTime: number;
-    }
-  }
-}
 
 /**
- * Middleware to add request ID and log requests
+ * HTTP request/response logging middleware
+ *
+ * Uses the request ID already set by requestIdMiddleware (res.locals.requestId).
+ * Logs request start and response completion with timing.
+ * Must be mounted AFTER requestIdMiddleware.
  */
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
-  // Generate unique request ID
-  req.requestId = req.headers['x-request-id'] as string || uuidv4();
-  req.startTime = Date.now();
+  const startTime = Date.now();
+  const requestId = res.locals?.requestId || 'unknown';
 
-  // Log request start
-  logger.info(`${req.method} ${req.path}`, {
-    requestId: req.requestId,
+  // Skip health check noise in production
+  if (req.path === '/api/health' || req.path === '/api/csrf-token') {
+    next();
+    return;
+  }
+
+  // Log request start at debug level to avoid excessive noise
+  logger.debug(`→ ${req.method} ${req.path}`, {
+    requestId,
     operation: 'http_request',
   });
 
   // Log response on finish
   res.on('finish', () => {
-    const duration = Date.now() - req.startTime;
+    const duration = Date.now() - startTime;
     const level: LogLevel = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
 
-    log(level, `${req.method} ${req.path} ${res.statusCode}`, {
-      requestId: req.requestId,
+    log(level, `← ${req.method} ${req.path} ${res.statusCode} ${duration}ms`, {
+      requestId,
       operation: 'http_response',
       duration,
     });

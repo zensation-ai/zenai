@@ -77,7 +77,7 @@ import projectContextRouter from './routes/project-context';
 import { setupSwagger } from './utils/swagger';
 // Error Handling
 import { errorHandler } from './middleware/errorHandler';
-import { logger } from './utils/logger';
+import { logger, requestLogger } from './utils/logger';
 // Phase 30: Memory Scheduler (HiMeS Consolidation & Decay)
 import { startMemoryScheduler, stopMemoryScheduler } from './services/memory';
 // Phase 31: AI Capabilities Enhancement
@@ -208,6 +208,7 @@ app.use(cors({
 
 // Request tracking & compression
 app.use(requestIdMiddleware); // Phase 12: Request ID tracking
+app.use(requestLogger); // Phase 4 Review: HTTP request/response logging with timing
 app.use(compression()); // Phase 11: gzip compression for responses
 
 // Global rate limiter for all requests

@@ -36,6 +36,9 @@ npm-debug.log*
 # Testing
 coverage/
 
+# Bundle analysis
+stats.html
+
 # Misc
 .claude/
 *.bak
