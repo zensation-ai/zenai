@@ -227,7 +227,7 @@ app.get('/api/csrf-token', getCsrfTokenHandler);
 app.post('/api/csp-report', express.json({ type: 'application/csp-report' }), (req, res) => {
   const report = req.body?.['csp-report'] || req.body;
   if (report) {
-    logger.warn('CSP Violation', undefined, {
+    logger.warn('CSP Violation', {
       blockedUri: report['blocked-uri'],
       violatedDirective: report['violated-directive'],
       documentUri: report['document-uri'],
