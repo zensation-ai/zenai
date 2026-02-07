@@ -576,6 +576,34 @@ export const TOOL_EXECUTE_CODE: ToolDefinition = {
   },
 };
 
+/**
+ * Analyze document tool - analyze uploaded documents in chat
+ */
+export const TOOL_ANALYZE_DOCUMENT: ToolDefinition = {
+  name: 'analyze_document',
+  description: 'Analysiert ein hochgeladenes Dokument (PDF, Excel, CSV) mit einer gewählten Analyse-Vorlage. Nutze dies wenn der Nutzer ein Dokument hochgeladen hat und eine Analyse wünscht, z.B. "Analysiere das als Finanzanalyse" oder "Fasse dieses Dokument zusammen".',
+  input_schema: {
+    type: 'object',
+    properties: {
+      template: {
+        type: 'string',
+        description: 'Analyse-Vorlage: general (Allgemein), financial (Finanzen), contract (Vertrag), data (Daten), summary (Zusammenfassung)',
+        enum: ['general', 'financial', 'contract', 'data', 'summary'],
+      },
+      custom_prompt: {
+        type: 'string',
+        description: 'Optionale eigene Anweisung für die Analyse (überschreibt die Vorlage)',
+      },
+      language: {
+        type: 'string',
+        description: 'Sprache der Analyse (de oder en, Standard: de)',
+        enum: ['de', 'en'],
+      },
+    },
+    required: ['template'],
+  },
+};
+
 // ===========================================
 // Tool Registry
 // ===========================================

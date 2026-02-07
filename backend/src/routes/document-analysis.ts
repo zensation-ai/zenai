@@ -31,7 +31,9 @@ import {
   getDocumentTypeLabel,
   type DocumentMediaType,
   type AnalysisTemplate,
+  type CustomAnalysisTemplate,
 } from '../services/document-analysis';
+import PDFDocument from 'pdfkit';
 
 export const documentAnalysisRouter = Router();
 
@@ -149,6 +151,9 @@ documentAnalysisRouter.get(
           comparison: true,
           followUp: true,
           history: true,
+          customTemplates: true,
+          pdfExport: true,
+          mermaidVisualization: true,
         },
       },
     });
@@ -546,6 +551,385 @@ documentAnalysisRouter.get(
         maxCacheSize: 20,
         ttlMinutes: 5,
       },
+    });
+  })
+);
+
+// ===========================================
+// Phase 3: Custom Analysis Templates (CRUD)
+// ===========================================
+
+/**
+ * GET /api/documents/templates/custom
+ * Get all custom templates
+ */
+documentAnalysisRouter.get(
+  '/templates/custom',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = typeof req.query.context === 'string' ? req.query.context : 'work';
+    const templates = await documentAnalysis.getCustomTemplates(context);
+
+    res.json({
+      success: true,
+      data: { templates },
+    });
+  })
+);
+
+/**
+ * POST /api/documents/templates/custom
+ * Create a new custom template
+ */
+documentAnalysisRouter.post(
+  '/templates/custom',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { name, system_prompt, instruction, icon, context } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      throw new ValidationError('Name ist erforderlich.');
+    }
+    if (!system_prompt || typeof system_prompt !== 'string' || system_prompt.trim().length === 0) {
+      throw new ValidationError('System-Prompt ist erforderlich.');
+    }
+    if (!instruction || typeof instruction !== 'string' || instruction.trim().length === 0) {
+      throw new ValidationError('Anweisung ist erforderlich.');
+    }
+    if (name.length > 100) {
+      throw new ValidationError('Name darf maximal 100 Zeichen lang sein.');
+    }
+
+    const template = await documentAnalysis.createCustomTemplate({
+      name: name.trim(),
+      system_prompt: system_prompt.trim(),
+      instruction: instruction.trim(),
+      icon: typeof icon === 'string' ? icon.trim() : undefined,
+      context: typeof context === 'string' ? context : undefined,
+    });
+
+    if (!template) {
+      throw new Error('Template konnte nicht erstellt werden.');
+    }
+
+    res.status(201).json({
+      success: true,
+      data: { template },
+    });
+  })
+);
+
+/**
+ * PUT /api/documents/templates/custom/:id
+ * Update a custom template
+ */
+documentAnalysisRouter.put(
+  '/templates/custom/:id',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { name, system_prompt, instruction, icon } = req.body;
+
+    const updates: Record<string, string> = {};
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        throw new ValidationError('Name darf nicht leer sein.');
+      }
+      if (name.length > 100) {
+        throw new ValidationError('Name darf maximal 100 Zeichen lang sein.');
+      }
+      updates.name = name.trim();
+    }
+    if (system_prompt !== undefined) {
+      if (typeof system_prompt !== 'string' || system_prompt.trim().length === 0) {
+        throw new ValidationError('System-Prompt darf nicht leer sein.');
+      }
+      updates.system_prompt = system_prompt.trim();
+    }
+    if (instruction !== undefined) {
+      if (typeof instruction !== 'string' || instruction.trim().length === 0) {
+        throw new ValidationError('Anweisung darf nicht leer sein.');
+      }
+      updates.instruction = instruction.trim();
+    }
+    if (icon !== undefined && typeof icon === 'string') {
+      updates.icon = icon.trim();
+    }
+
+    const template = await documentAnalysis.updateCustomTemplate(req.params.id, updates);
+
+    if (!template) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Template nicht gefunden.' },
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: { template },
+    });
+  })
+);
+
+/**
+ * DELETE /api/documents/templates/custom/:id
+ * Delete a custom template
+ */
+documentAnalysisRouter.delete(
+  '/templates/custom/:id',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const deleted = await documentAnalysis.deleteCustomTemplate(req.params.id);
+
+    if (!deleted) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Template nicht gefunden.' },
+      });
+      return;
+    }
+
+    res.json({ success: true, data: { deleted: true } });
+  })
+);
+
+// ===========================================
+// Phase 3: PDF Report Export
+// ===========================================
+
+/**
+ * POST /api/documents/export/pdf
+ * Export an analysis result as a professional PDF report
+ */
+documentAnalysisRouter.post(
+  '/export/pdf',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { analysisId } = req.body;
+
+    if (!analysisId || typeof analysisId !== 'string') {
+      throw new ValidationError('analysisId ist erforderlich.');
+    }
+
+    // Load analysis from history
+    const entry = await documentAnalysis.getAnalysisById(analysisId);
+    if (!entry) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Analyse nicht gefunden.' },
+      });
+      return;
+    }
+
+    const analysisResult = entry.analysis_result;
+
+    // Generate PDF
+    const doc = new PDFDocument({
+      margin: 50,
+      size: 'A4',
+      info: {
+        Title: `Analyse: ${analysisResult.filename}`,
+        Author: 'ZenSation AI - Dokument-Analyse',
+        Subject: 'AI-gestützte Dokumentanalyse',
+      },
+    });
+
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    doc.on('end', () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="analyse-${analysisResult.filename.replace(/[^a-zA-Z0-9.-]/g, '_')}-${Date.now()}.pdf"`
+      );
+      res.send(pdfBuffer);
+    });
+
+    // --- Header with ZenSation Branding ---
+    doc.fontSize(24).fillColor('#1a1a2e').text('ZenSation AI', { align: 'center' });
+    doc.fontSize(10).fillColor('#666').text('Enterprise Document Analysis', { align: 'center' });
+    doc.moveDown(0.5);
+
+    // Divider line
+    doc.strokeColor('#4a90d9').lineWidth(2)
+      .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(1);
+
+    // --- Document Info ---
+    doc.fontSize(18).fillColor('#1a1a2e').text(`Analyse: ${analysisResult.filename}`);
+    doc.moveDown(0.5);
+
+    const metaLines = [
+      `Dokumenttyp: ${analysisResult.documentType}`,
+      `Dateigröße: ${(analysisResult.metadata.fileSize / 1024).toFixed(0)} KB`,
+      `Analysedauer: ${(analysisResult.metadata.processingTimeMs / 1000).toFixed(1)}s`,
+      `Analyse-Typ: ${entry.analysis_type}`,
+      `Erstellt: ${new Date(entry.created_at).toLocaleDateString('de-DE', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })}`,
+    ];
+    if (analysisResult.metadata.tokenUsage) {
+      metaLines.push(
+        `Tokens: ${analysisResult.metadata.tokenUsage.input + analysisResult.metadata.tokenUsage.output}`
+      );
+    }
+
+    doc.fontSize(10).fillColor('#555');
+    for (const line of metaLines) {
+      doc.text(line);
+    }
+    doc.moveDown(1);
+
+    // --- Key Findings Box ---
+    if (analysisResult.keyFindings && analysisResult.keyFindings.length > 0) {
+      // Box background
+      const boxTop = doc.y;
+      const boxHeight = 20 + analysisResult.keyFindings.length * 16;
+      doc.rect(50, boxTop, 495, boxHeight).fill('#f0f7ff');
+
+      doc.fontSize(12).fillColor('#1a1a2e')
+        .text('Schlüssel-Erkenntnisse', 60, boxTop + 8);
+
+      doc.fontSize(10).fillColor('#333');
+      let findingY = boxTop + 24;
+      for (const finding of analysisResult.keyFindings.slice(0, 8)) {
+        doc.text(`• ${finding}`, 65, findingY, { width: 470 });
+        findingY += 16;
+      }
+
+      doc.y = boxTop + boxHeight + 15;
+      doc.moveDown(0.5);
+    }
+
+    // --- Table of Contents (sections) ---
+    if (analysisResult.sections && analysisResult.sections.length > 0) {
+      doc.fontSize(14).fillColor('#1a1a2e').text('Inhaltsverzeichnis');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#4a90d9');
+      for (let i = 0; i < analysisResult.sections.length; i++) {
+        doc.text(`${i + 1}. ${analysisResult.sections[i].title}`);
+      }
+      doc.moveDown(1);
+    }
+
+    // --- Main Analysis Sections ---
+    doc.fontSize(14).fillColor('#1a1a2e').text('Analyse');
+    doc.moveDown(0.5);
+
+    // Simple Markdown-to-PDF rendering
+    const analysisLines = analysisResult.analysis.split('\n');
+    for (const line of analysisLines) {
+      // Page break check
+      if (doc.y > 720) {
+        doc.addPage();
+      }
+
+      // Skip mermaid code blocks in PDF
+      if (line.trim() === '```mermaid' || line.trim() === '```') {
+        continue;
+      }
+
+      // Headers
+      const h2Match = line.match(/^##\s+(.+)/);
+      const h3Match = line.match(/^###\s+(.+)/);
+      if (h2Match) {
+        doc.moveDown(0.5);
+        doc.fontSize(13).fillColor('#1a1a2e').text(h2Match[1].replace(/\*\*/g, ''));
+        doc.moveDown(0.3);
+        continue;
+      }
+      if (h3Match) {
+        doc.moveDown(0.3);
+        doc.fontSize(11).fillColor('#333').text(h3Match[1].replace(/\*\*/g, ''), { underline: true });
+        doc.moveDown(0.2);
+        continue;
+      }
+
+      // Bullet points
+      if (line.match(/^\s*[-*]\s/)) {
+        doc.fontSize(10).fillColor('#333').text(
+          '  • ' + line.replace(/^\s*[-*]\s+/, '').replace(/\*\*/g, ''),
+          { indent: 10 }
+        );
+        continue;
+      }
+
+      // Table rows (simplified - just text)
+      if (line.includes('|') && !line.match(/^\|?\s*---/)) {
+        const cells = line.split('|').filter(c => c.trim()).map(c => c.trim().replace(/\*\*/g, ''));
+        if (cells.length > 0) {
+          doc.fontSize(9).fillColor('#444').text(cells.join('  |  '), { indent: 5 });
+        }
+        continue;
+      }
+
+      // Table separator - skip
+      if (line.match(/^\|?\s*---/)) continue;
+
+      // Regular text
+      if (line.trim()) {
+        doc.fontSize(10).fillColor('#333').text(line.replace(/\*\*/g, '').replace(/\*/g, ''));
+      } else {
+        doc.moveDown(0.3);
+      }
+    }
+
+    // --- Footer ---
+    doc.moveDown(2);
+    if (doc.y > 720) doc.addPage();
+    doc.strokeColor('#ccc').lineWidth(0.5)
+      .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.5);
+    doc.fontSize(8).fillColor('#999')
+      .text(
+        `Generiert von ZenSation AI | ${new Date().toLocaleDateString('de-DE')} | © ZenSation Enterprise Solutions`,
+        { align: 'center' }
+      );
+
+    doc.end();
+  })
+);
+
+// ===========================================
+// Phase 3: Mermaid Diagram Extraction
+// ===========================================
+
+/**
+ * POST /api/documents/extract-diagrams
+ * Extract Mermaid diagrams from an analysis result
+ */
+documentAnalysisRouter.post(
+  '/extract-diagrams',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { analysisId, analysisText } = req.body;
+
+    let text: string;
+
+    if (analysisId && typeof analysisId === 'string') {
+      const entry = await documentAnalysis.getAnalysisById(analysisId);
+      if (!entry) {
+        res.status(404).json({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Analyse nicht gefunden.' },
+        });
+        return;
+      }
+      text = entry.analysis_result.analysis;
+    } else if (analysisText && typeof analysisText === 'string') {
+      text = analysisText;
+    } else {
+      throw new ValidationError('analysisId oder analysisText ist erforderlich.');
+    }
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+
+    res.json({
+      success: true,
+      data: { diagrams, count: diagrams.length },
     });
   })
 );

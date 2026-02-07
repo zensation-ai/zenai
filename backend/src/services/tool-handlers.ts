@@ -27,6 +27,7 @@ import {
   TOOL_PROJECT_SUMMARY,
   TOOL_LIST_PROJECT_FILES,
   TOOL_EXECUTE_CODE,
+  TOOL_ANALYZE_DOCUMENT,
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
@@ -39,6 +40,7 @@ import { fetchUrl, formatForTool, isValidUrl } from './url-fetch';
 import * as github from './github';
 import * as projectContext from './project-context';
 import { executeCodeDirect, isCodeExecutionEnabled, isSupportedLanguage, SupportedLanguage } from './code-execution';
+import { documentAnalysis, type AnalysisTemplate } from './document-analysis';
 import path from 'path';
 
 /**
@@ -1045,6 +1047,55 @@ async function handleExecuteCode(
 }
 
 // ===========================================
+// Document Analysis Handler
+// ===========================================
+
+/**
+ * Analyze document handler - triggers document analysis from chat
+ * Note: This tool works with documents that have been uploaded in the current session.
+ * The actual document buffer must be available in the execution context.
+ */
+async function handleAnalyzeDocument(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const template = (input.template as string) || 'general';
+  const customPrompt = input.custom_prompt as string | undefined;
+  const language = (input.language as string) === 'en' ? 'en' : 'de';
+
+  const validTemplates: AnalysisTemplate[] = ['general', 'financial', 'contract', 'data', 'summary'];
+  if (!validTemplates.includes(template as AnalysisTemplate)) {
+    return `Fehler: Ungültiges Template "${template}". Verfügbar: ${validTemplates.join(', ')}`;
+  }
+
+  if (!documentAnalysis.isAvailable()) {
+    return 'Dokument-Analyse ist derzeit nicht verfügbar (Claude API nicht konfiguriert).';
+  }
+
+  logger.debug('Tool: analyze_document', { template, language, hasCustomPrompt: !!customPrompt });
+
+  // This tool provides guidance since the actual document upload happens via the API
+  const parts: string[] = [
+    '📄 **Dokument-Analyse bereit**\n',
+    `Gewähltes Template: **${template}**`,
+    language === 'en' ? 'Sprache: English' : 'Sprache: Deutsch',
+  ];
+
+  if (customPrompt) {
+    parts.push(`Eigene Anweisung: "${customPrompt.substring(0, 100)}${customPrompt.length > 100 ? '...' : ''}"`);
+  }
+
+  parts.push('\nUm ein Dokument zu analysieren, lade es bitte über die Dokument-Analyse Oberfläche hoch.');
+  parts.push(`API-Endpoint: POST /api/documents/analyze mit template="${template}"`);
+
+  if (customPrompt) {
+    parts.push(`Parameter customPrompt: "${customPrompt}"`);
+  }
+
+  return parts.join('\n');
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -1084,6 +1135,9 @@ export function registerAllToolHandlers(): void {
   // Code execution tools (sandboxed code runner)
   toolRegistry.register(TOOL_EXECUTE_CODE, handleExecuteCode);
 
+  // Document analysis tool (Phase 3)
+  toolRegistry.register(TOOL_ANALYZE_DOCUMENT, handleAnalyzeDocument);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1103,6 +1157,7 @@ export function registerAllToolHandlers(): void {
       'get_project_summary',
       'list_project_files',
       'execute_code',
+      'analyze_document',
     ],
   });
 }
@@ -1114,5 +1169,6 @@ export function areToolsRegistered(): boolean {
   return toolRegistry.has('search_ideas') &&
          toolRegistry.has('web_search') &&
          toolRegistry.has('fetch_url') &&
-         toolRegistry.has('analyze_project');
+         toolRegistry.has('analyze_project') &&
+         toolRegistry.has('analyze_document');
 }

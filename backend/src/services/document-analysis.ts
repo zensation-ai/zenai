@@ -43,6 +43,18 @@ export type AnalysisTemplate =
   | 'data'
   | 'summary';
 
+/** Custom analysis template stored in database */
+export interface CustomAnalysisTemplate {
+  id: string;
+  name: string;
+  system_prompt: string;
+  instruction: string;
+  icon: string;
+  context: string;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Document analysis request options */
 export interface DocumentAnalysisOptions {
   /** Analysis template to use */
@@ -308,9 +320,21 @@ class DocumentAnalysisService {
       );
 
       const templateConfig = ANALYSIS_TEMPLATES[template];
-      let systemPrompt = templateConfig.system;
+      // Support custom system prompt from custom templates
+      const customSystemPrompt = (options as DocumentAnalysisOptions & { _customSystemPrompt?: string })._customSystemPrompt;
+      let systemPrompt = customSystemPrompt || templateConfig.system;
       if (language === 'en') {
         systemPrompt += '\n\nRespond in English.';
+      }
+
+      // For financial and data templates, add Mermaid visualization instruction
+      if ((template === 'financial' || template === 'data') && !customSystemPrompt) {
+        systemPrompt += `\n\nWenn die Daten es erlauben, erstelle am Ende der Analyse passende Mermaid-Diagramme zur Visualisierung.
+Nutze \`\`\`mermaid Code-Blöcke. Beispiele:
+- pie title Verteilung für Anteile
+- xychart-beta für Zeitreihen/Balken
+- flowchart für Prozesse
+Erstelle nur Diagramme wenn die Daten sinnvolle Visualisierungen ermöglichen.`;
       }
 
       // Call Claude API
@@ -1128,6 +1152,212 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
     }
 
     return findings.slice(0, 10);
+  }
+
+  // ===========================================
+  // Custom Analysis Templates (CRUD)
+  // ===========================================
+
+  /**
+   * Get all custom templates for a context
+   */
+  async getCustomTemplates(context: string = 'work'): Promise<CustomAnalysisTemplate[]> {
+    try {
+      const res = await query(
+        `SELECT id, name, system_prompt, instruction, icon, context, created_at, updated_at
+         FROM custom_analysis_templates
+         WHERE context = $1
+         ORDER BY created_at DESC`,
+        [context]
+      );
+      return res.rows;
+    } catch (error) {
+      logger.error('Failed to get custom templates', error instanceof Error ? error : undefined);
+      return [];
+    }
+  }
+
+  /**
+   * Get a single custom template by ID
+   */
+  async getCustomTemplateById(id: string): Promise<CustomAnalysisTemplate | null> {
+    try {
+      const res = await query(
+        `SELECT id, name, system_prompt, instruction, icon, context, created_at, updated_at
+         FROM custom_analysis_templates WHERE id = $1`,
+        [id]
+      );
+      return res.rows[0] || null;
+    } catch (error) {
+      logger.error('Failed to get custom template', error instanceof Error ? error : undefined);
+      return null;
+    }
+  }
+
+  /**
+   * Create a new custom template
+   */
+  async createCustomTemplate(template: {
+    name: string;
+    system_prompt: string;
+    instruction: string;
+    icon?: string;
+    context?: string;
+  }): Promise<CustomAnalysisTemplate | null> {
+    try {
+      const res = await query(
+        `INSERT INTO custom_analysis_templates (name, system_prompt, instruction, icon, context)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, name, system_prompt, instruction, icon, context, created_at, updated_at`,
+        [
+          template.name,
+          template.system_prompt,
+          template.instruction,
+          template.icon || 'file-text',
+          template.context || 'work',
+        ]
+      );
+      logger.info('Custom template created', { id: res.rows[0]?.id, name: template.name });
+      return res.rows[0] || null;
+    } catch (error) {
+      logger.error('Failed to create custom template', error instanceof Error ? error : undefined);
+      return null;
+    }
+  }
+
+  /**
+   * Update an existing custom template
+   */
+  async updateCustomTemplate(
+    id: string,
+    updates: {
+      name?: string;
+      system_prompt?: string;
+      instruction?: string;
+      icon?: string;
+    }
+  ): Promise<CustomAnalysisTemplate | null> {
+    try {
+      const fields: string[] = [];
+      const values: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [];
+      let paramIndex = 1;
+
+      if (updates.name !== undefined) {
+        fields.push(`name = $${paramIndex++}`);
+        values.push(updates.name);
+      }
+      if (updates.system_prompt !== undefined) {
+        fields.push(`system_prompt = $${paramIndex++}`);
+        values.push(updates.system_prompt);
+      }
+      if (updates.instruction !== undefined) {
+        fields.push(`instruction = $${paramIndex++}`);
+        values.push(updates.instruction);
+      }
+      if (updates.icon !== undefined) {
+        fields.push(`icon = $${paramIndex++}`);
+        values.push(updates.icon);
+      }
+
+      if (fields.length === 0) return this.getCustomTemplateById(id);
+
+      fields.push(`updated_at = NOW()`);
+      values.push(id);
+
+      const res = await query(
+        `UPDATE custom_analysis_templates
+         SET ${fields.join(', ')}
+         WHERE id = $${paramIndex}
+         RETURNING id, name, system_prompt, instruction, icon, context, created_at, updated_at`,
+        values
+      );
+
+      if (res.rows.length === 0) return null;
+      logger.info('Custom template updated', { id });
+      return res.rows[0];
+    } catch (error) {
+      logger.error('Failed to update custom template', error instanceof Error ? error : undefined);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a custom template
+   */
+  async deleteCustomTemplate(id: string): Promise<boolean> {
+    try {
+      const res = await query('DELETE FROM custom_analysis_templates WHERE id = $1', [id]);
+      return (res.rowCount ?? 0) > 0;
+    } catch (error) {
+      logger.error('Failed to delete custom template', error instanceof Error ? error : undefined);
+      return false;
+    }
+  }
+
+  /**
+   * Run analysis using a custom template (by template ID)
+   */
+  async analyzeWithCustomTemplate(
+    buffer: Buffer,
+    filename: string,
+    mimeType: DocumentMediaType,
+    templateId: string,
+    options: { customPrompt?: string; language?: 'de' | 'en'; maxTokens?: number; context?: string } = {}
+  ): Promise<DocumentAnalysisResult> {
+    const template = await this.getCustomTemplateById(templateId);
+    if (!template) {
+      return {
+        success: false,
+        filename,
+        documentType: MIME_TYPE_LABELS[mimeType],
+        analysis: '',
+        sections: [],
+        keyFindings: [],
+        metadata: { fileSize: buffer.length, mimeType, processingTimeMs: 0 },
+      };
+    }
+
+    // Override the template used in buildMessageContent by using customPrompt
+    return this.analyze(buffer, filename, mimeType, {
+      template: 'general', // base template - system prompt overridden below
+      customPrompt: options.customPrompt || template.instruction,
+      language: options.language,
+      maxTokens: options.maxTokens,
+      context: options.context,
+      _customSystemPrompt: template.system_prompt,
+    } as DocumentAnalysisOptions & { _customSystemPrompt?: string });
+  }
+
+  // ===========================================
+  // Mermaid Diagram Extraction
+  // ===========================================
+
+  /**
+   * Extract Mermaid diagram code blocks from analysis text.
+   * Returns array of { title, content } for each mermaid block found.
+   */
+  extractMermaidDiagrams(text: string): Array<{ title: string; content: string }> {
+    const diagrams: Array<{ title: string; content: string }> = [];
+    const mermaidPattern = /```mermaid\s*\n([\s\S]*?)```/g;
+    let match;
+    let index = 0;
+
+    while ((match = mermaidPattern.exec(text)) !== null) {
+      index++;
+      const content = match[1].trim();
+      // Try to detect diagram type for title
+      let title = `Diagramm ${index}`;
+      if (content.startsWith('pie')) title = `Kreisdiagramm ${index}`;
+      else if (content.startsWith('graph') || content.startsWith('flowchart')) title = `Flussdiagramm ${index}`;
+      else if (content.startsWith('sequenceDiagram')) title = `Sequenzdiagramm ${index}`;
+      else if (content.startsWith('gantt')) title = `Gantt-Diagramm ${index}`;
+      else if (content.startsWith('classDiagram')) title = `Klassendiagramm ${index}`;
+      else if (content.startsWith('xychart-beta') || content.startsWith('bar')) title = `Balkendiagramm ${index}`;
+
+      diagrams.push({ title, content });
+    }
+
+    return diagrams;
   }
 
   // ===========================================

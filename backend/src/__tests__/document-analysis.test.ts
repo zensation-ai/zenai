@@ -315,12 +315,15 @@ describe('Document Analysis - Routes', () => {
         expect(res.body.data).toHaveProperty('templates');
         expect(res.body.data).toHaveProperty('features');
         expect(res.body.data.supportedFormats).toHaveLength(4);
-        // Phase 2 features
+        // Phase 2 + 3 features
         expect(res.body.data.features).toEqual({
           streaming: true,
           comparison: true,
           followUp: true,
           history: true,
+          customTemplates: true,
+          pdfExport: true,
+          mermaidVisualization: true,
         });
       }
     });
@@ -567,5 +570,323 @@ describe('Document Analysis - CSV Parsing', () => {
     const field = '"Hello, World"';
     const cleaned = field.replace(/^"|"$/g, '');
     expect(cleaned).toBe('Hello, World');
+  });
+});
+
+// ===========================================
+// Phase 3: Mermaid Diagram Extraction Tests
+// ===========================================
+
+describe('Document Analysis - Mermaid Extraction', () => {
+  it('should extract single mermaid diagram', () => {
+    const text = `## Analyse
+
+Hier ist eine Auswertung.
+
+\`\`\`mermaid
+pie title Umsatzverteilung
+  "Q1" : 25
+  "Q2" : 35
+  "Q3" : 20
+  "Q4" : 20
+\`\`\`
+
+Weitere Details...`;
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(1);
+    expect(diagrams[0].title).toBe('Kreisdiagramm 1');
+    expect(diagrams[0].content).toContain('pie title');
+  });
+
+  it('should extract multiple mermaid diagrams', () => {
+    const text = `
+\`\`\`mermaid
+pie title Verteilung
+  "A" : 50
+  "B" : 50
+\`\`\`
+
+Zwischentext.
+
+\`\`\`mermaid
+flowchart TD
+  A --> B
+  B --> C
+\`\`\`
+`;
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(2);
+    expect(diagrams[0].title).toBe('Kreisdiagramm 1');
+    expect(diagrams[1].title).toBe('Flussdiagramm 2');
+  });
+
+  it('should detect flowchart diagrams', () => {
+    const text = `\`\`\`mermaid
+flowchart LR
+  Start --> End
+\`\`\``;
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(1);
+    expect(diagrams[0].title).toContain('Flussdiagramm');
+  });
+
+  it('should detect graph diagrams as flowcharts', () => {
+    const text = `\`\`\`mermaid
+graph TD
+  A --> B
+\`\`\``;
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(1);
+    expect(diagrams[0].title).toContain('Flussdiagramm');
+  });
+
+  it('should detect sequence diagrams', () => {
+    const text = `\`\`\`mermaid
+sequenceDiagram
+  Alice->>Bob: Hello
+  Bob->>Alice: Hi
+\`\`\``;
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(1);
+    expect(diagrams[0].title).toContain('Sequenzdiagramm');
+  });
+
+  it('should detect gantt diagrams', () => {
+    const text = `\`\`\`mermaid
+gantt
+  title Projektplan
+  section Phase 1
+  Task 1: 2024-01-01, 30d
+\`\`\``;
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(1);
+    expect(diagrams[0].title).toContain('Gantt-Diagramm');
+  });
+
+  it('should return empty array for text without mermaid blocks', () => {
+    const text = 'Just regular markdown text with ## headings and **bold**.';
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(0);
+  });
+
+  it('should not extract non-mermaid code blocks', () => {
+    const text = `\`\`\`python
+print("hello")
+\`\`\`
+
+\`\`\`javascript
+console.log("world");
+\`\`\``;
+
+    const diagrams = documentAnalysis.extractMermaidDiagrams(text);
+    expect(diagrams).toHaveLength(0);
+  });
+});
+
+// ===========================================
+// Phase 3: Custom Template CRUD Tests
+// ===========================================
+
+describe('Document Analysis - Custom Templates', () => {
+  it('should have getCustomTemplates method', () => {
+    expect(typeof documentAnalysis.getCustomTemplates).toBe('function');
+  });
+
+  it('should have createCustomTemplate method', () => {
+    expect(typeof documentAnalysis.createCustomTemplate).toBe('function');
+  });
+
+  it('should have updateCustomTemplate method', () => {
+    expect(typeof documentAnalysis.updateCustomTemplate).toBe('function');
+  });
+
+  it('should have deleteCustomTemplate method', () => {
+    expect(typeof documentAnalysis.deleteCustomTemplate).toBe('function');
+  });
+
+  it('should have getCustomTemplateById method', () => {
+    expect(typeof documentAnalysis.getCustomTemplateById).toBe('function');
+  });
+
+  it('should have analyzeWithCustomTemplate method', () => {
+    expect(typeof documentAnalysis.analyzeWithCustomTemplate).toBe('function');
+  });
+});
+
+// ===========================================
+// Phase 3: Route Tests (Custom Templates, PDF Export, Diagrams)
+// ===========================================
+
+describe('Document Analysis - Phase 3 Routes', () => {
+  let app: import('express').Express;
+
+  beforeAll(async () => {
+    const express = await import('express');
+    const { documentAnalysisRouter } = await import('../routes/document-analysis');
+    const { errorHandler } = await import('../middleware/errorHandler');
+
+    jest.mock('../middleware/auth', () => ({
+      apiKeyAuth: (_req: unknown, _res: unknown, next: Function) => next(),
+    }));
+
+    app = express.default();
+    app.use(express.default.json());
+    app.use('/api/documents', documentAnalysisRouter);
+    app.use(errorHandler);
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('GET /api/documents/status (Phase 3 features)', () => {
+    it('should include Phase 3 features in status', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app).get('/api/documents/status');
+
+      expect([200, 401]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body.data.features).toHaveProperty('customTemplates', true);
+        expect(res.body.data.features).toHaveProperty('pdfExport', true);
+        expect(res.body.data.features).toHaveProperty('mermaidVisualization', true);
+      }
+    });
+  });
+
+  describe('GET /api/documents/templates/custom', () => {
+    it('should return custom templates list', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app).get('/api/documents/templates/custom');
+
+      expect([200, 401]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body.success).toBe(true);
+        expect(res.body.data).toHaveProperty('templates');
+        expect(Array.isArray(res.body.data.templates)).toBe(true);
+      }
+    });
+  });
+
+  describe('POST /api/documents/templates/custom', () => {
+    it('should reject template without name', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/templates/custom')
+        .send({ system_prompt: 'test', instruction: 'test' });
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should reject template without system_prompt', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/templates/custom')
+        .send({ name: 'Test', instruction: 'test' });
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should reject template without instruction', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/templates/custom')
+        .send({ name: 'Test', system_prompt: 'test' });
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should reject overly long name', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/templates/custom')
+        .send({
+          name: 'x'.repeat(101),
+          system_prompt: 'test',
+          instruction: 'test',
+        });
+
+      expect([400, 422]).toContain(res.status);
+    });
+  });
+
+  describe('POST /api/documents/export/pdf', () => {
+    it('should reject request without analysisId', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/export/pdf')
+        .send({});
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should return 404 for non-existent analysis', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/export/pdf')
+        .send({ analysisId: '00000000-0000-0000-0000-000000000000' });
+
+      expect([404, 500]).toContain(res.status);
+    });
+  });
+
+  describe('POST /api/documents/extract-diagrams', () => {
+    it('should reject request without analysisId or analysisText', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/extract-diagrams')
+        .send({});
+
+      expect([400, 422]).toContain(res.status);
+    });
+
+    it('should extract diagrams from provided text', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/extract-diagrams')
+        .send({
+          analysisText: '# Analyse\n\n```mermaid\npie title Test\n  "A" : 50\n  "B" : 50\n```\n\nText.',
+        });
+
+      expect([200, 401]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.count).toBe(1);
+        expect(res.body.data.diagrams[0].title).toContain('Kreisdiagramm');
+      }
+    });
+
+    it('should return empty for text without diagrams', async () => {
+      const supertest = await import('supertest');
+      const res = await supertest.default(app)
+        .post('/api/documents/extract-diagrams')
+        .send({ analysisText: 'No diagrams here.' });
+
+      expect([200, 401]).toContain(res.status);
+      if (res.status === 200) {
+        expect(res.body.data.count).toBe(0);
+        expect(res.body.data.diagrams).toHaveLength(0);
+      }
+    });
+  });
+});
+
+// ===========================================
+// Phase 3: analyze_document Tool Definition Test
+// ===========================================
+
+describe('Document Analysis - Tool Definition', () => {
+  it('should export TOOL_ANALYZE_DOCUMENT definition', async () => {
+    const toolUse = await import('../services/claude/tool-use');
+    expect(toolUse.TOOL_ANALYZE_DOCUMENT).toBeDefined();
+    expect(toolUse.TOOL_ANALYZE_DOCUMENT.name).toBe('analyze_document');
+    expect(toolUse.TOOL_ANALYZE_DOCUMENT.input_schema.properties).toHaveProperty('template');
+    expect(toolUse.TOOL_ANALYZE_DOCUMENT.input_schema.properties).toHaveProperty('custom_prompt');
+    expect(toolUse.TOOL_ANALYZE_DOCUMENT.input_schema.required).toContain('template');
   });
 });
