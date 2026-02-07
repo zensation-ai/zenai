@@ -12,7 +12,6 @@ import { RecordButton } from './components/RecordButton';
 import { SearchFilterBar, type AdvancedFilters } from './components/SearchFilterBar';
 import { ActiveFiltersBar } from './components/ActiveFiltersBar';
 import { QuickStats } from './components/QuickStats';
-import { IdeaDetail } from './components/IdeaDetail';
 import { AIBrain } from './components/AIBrain';
 import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -26,7 +25,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { QuickNav } from './components/QuickNav';
 // Breadcrumbs are integrated via PageHeader in dashboard components
 import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
-import { CommandPalette, useCommandPalette } from './components/CommandPalette';
+import { useCommandPalette } from './components/CommandPalette';
 import { AIProcessingOverlay, type ProcessType } from './components/AIProcessingOverlay';
 import { CommandCenter, type InputMode } from './components/CommandCenter';
 import { safeLocalStorage } from './utils/storage';
@@ -44,6 +43,10 @@ import { NeuroFeedbackProvider } from './components/NeuroFeedback';
 import { ScrollProgress } from './components/AnticipatoryUI';
 
 import './App.css';
+
+// Lazy-loaded modal/on-demand components (reduce initial bundle by ~45KB)
+const IdeaDetail = lazy(() => import('./components/IdeaDetail').then(m => ({ default: m.IdeaDetail })));
+const CommandPalette = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
 // Lazy-loaded page components for code-splitting
 // === Neue konsolidierte Komponenten (2026) ===
@@ -1476,20 +1479,22 @@ function App() {
         </div>
       </footer>
 
-      {/* Detail Modal */}
+      {/* Detail Modal (lazy-loaded) */}
       {selectedIdea && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="idea-detail-title"
-          aria-describedby="idea-detail-summary"
-        >
-          <IdeaDetail
-            idea={selectedIdea}
-            onClose={() => setSelectedIdea(null)}
-            onNavigate={navigateToIdea}
-          />
-        </div>
+        <Suspense fallback={null}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="idea-detail-title"
+            aria-describedby="idea-detail-summary"
+          >
+            <IdeaDetail
+              idea={selectedIdea}
+              onClose={() => setSelectedIdea(null)}
+              onNavigate={navigateToIdea}
+            />
+          </div>
+        </Suspense>
       )}
 
       {/* AI Processing Overlay - Shows transparent AI status */}
@@ -1504,13 +1509,17 @@ function App() {
       {/* Global Toast Notifications */}
       <ToastContainer />
 
-      {/* Command Palette (Cmd+K) */}
-      <CommandPalette
-        isOpen={commandPalette.isOpen}
-        onClose={commandPalette.close}
-        commands={commandPalette.commands}
-        recentPages={commandPalette.recentPages}
-      />
+      {/* Command Palette (Cmd+K, lazy-loaded) */}
+      {commandPalette.isOpen && (
+        <Suspense fallback={null}>
+          <CommandPalette
+            isOpen={commandPalette.isOpen}
+            onClose={commandPalette.close}
+            commands={commandPalette.commands}
+            recentPages={commandPalette.recentPages}
+          />
+        </Suspense>
+      )}
 
       {/* Keyboard Shortcuts Help Modal */}
       <KeyboardShortcutsModal

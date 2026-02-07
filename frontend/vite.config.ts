@@ -1,8 +1,19 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Bundle analyzer: generates stats.html after build
+    // Run `npm run build` then open stats.html to inspect bundle composition
+    visualizer({
+      filename: 'stats.html',
+      gzipSize: true,
+      brotliSize: true,
+      open: false, // Don't auto-open in CI
+    }),
+  ],
   server: {
     port: 5173,
     proxy: {
