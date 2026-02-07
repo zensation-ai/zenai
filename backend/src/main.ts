@@ -26,7 +26,7 @@ import { securityHeaders } from './middleware/security-headers';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
-import { testConnections, setupGracefulShutdown, startConnectionHealthCheck, validateRequiredExtensions } from './utils/database-context';
+import { testConnections, setupGracefulShutdown, startConnectionHealthCheck, validateRequiredExtensions, ensurePerformanceIndexes } from './utils/database-context';
 import { voiceMemoContextRouter } from './routes/voice-memo-context';
 import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
@@ -75,6 +75,8 @@ import { codeExecutionRouter } from './routes/code-execution';
 import projectContextRouter from './routes/project-context';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
+// Phase 9: Cache-Control & ETag Support
+import { cacheControlMiddleware } from './middleware/cache-control';
 // Error Handling
 import { errorHandler } from './middleware/errorHandler';
 import { logger, requestLogger } from './utils/logger';
@@ -209,7 +211,15 @@ app.use(cors({
 // Request tracking & compression
 app.use(requestIdMiddleware); // Phase 12: Request ID tracking
 app.use(requestLogger); // Phase 4 Review: HTTP request/response logging with timing
-app.use(compression()); // Phase 11: gzip compression for responses
+// Phase 9: Tuned compression - skip small payloads, balanced level for CPU vs ratio
+app.use(compression({
+  level: 6,            // Balanced compression (1=fast, 9=best ratio, 6=good default)
+  threshold: 1024,     // Don't compress responses < 1KB (overhead > benefit)
+  memLevel: 8,         // Memory usage for compression (default 8, max 9)
+}));
+
+// Phase 9: Cache-Control headers & ETag support for GET responses
+app.use(cacheControlMiddleware);
 
 // Global rate limiter for all requests
 app.use(rateLimiter);
@@ -648,20 +658,21 @@ Phase 4 APIs:
   // This keeps connections alive and detects issues early
   startConnectionHealthCheck(5 * 60 * 1000);
 
-  // Phase 30: Start Memory Scheduler (HiMeS Consolidation & Decay)
-  // Runs daily cron jobs for:
-  // - Long-Term Memory Consolidation (2:00 AM)
-  // - Episodic Memory Decay (3:00 AM)
-  // - Memory Stats Logging (hourly)
-  try {
-    await startMemoryScheduler();
-    logger.info('Memory Scheduler started successfully', { operation: 'startup' });
-  } catch (error) {
-    logger.error('Memory Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
-    // Non-critical - system can operate without scheduled memory maintenance
-  }
+  // Phase 9: Ensure performance-critical composite indexes exist (deferred)
+  // Non-blocking: runs after DB is confirmed connected, uses IF NOT EXISTS
+  setImmediate(async () => {
+    try {
+      const indexResult = await ensurePerformanceIndexes();
+      logger.info('Performance indexes verified (deferred)', { ...indexResult, operation: 'startup' });
+    } catch (error) {
+      logger.warn('Performance index creation skipped (non-critical)', {
+        error: error instanceof Error ? error.message : String(error),
+        operation: 'startup',
+      });
+    }
+  });
 
-  // Phase 31: Register AI Tool Handlers
+  // Phase 31: Register AI Tool Handlers (synchronous, fast - do before scheduler)
   // Enables Claude Tool Use for structured actions
   try {
     registerAllToolHandlers();
@@ -669,6 +680,20 @@ Phase 4 APIs:
   } catch (error) {
     logger.error('AI Tool Handlers registration failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
   }
+
+  // Phase 9: Deferred non-critical initialization
+  // Memory Scheduler and index creation run in background to speed up cold starts.
+  // Server is already accepting requests at this point.
+  setImmediate(async () => {
+    // Phase 30: Start Memory Scheduler (HiMeS Consolidation & Decay)
+    // Runs daily cron jobs for consolidation (2 AM), decay (3 AM), and stats (hourly)
+    try {
+      await startMemoryScheduler();
+      logger.info('Memory Scheduler started successfully (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Memory Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+  });
   });
 }
 

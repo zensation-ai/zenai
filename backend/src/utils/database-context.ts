@@ -654,3 +654,65 @@ export type { QueryParam };
 // The local query() and pool exports (pointing to personal_ai) provide backward compatibility
 // For context-aware queries, use queryContext() with explicit context parameter
 // Import { testConnection, getClient } from './database' if those functions are needed
+
+// ===========================================
+// Phase 9: Performance Indexes
+// ===========================================
+
+/**
+ * Composite indexes for high-traffic query patterns.
+ * Uses CREATE INDEX IF NOT EXISTS to be safe for repeated runs.
+ * These indexes cover the most common WHERE + ORDER BY combinations
+ * across the ideas, chat_sessions, and chat_messages tables.
+ */
+const PERFORMANCE_INDEXES = [
+  // ideas: Most queries filter by is_archived and sort by created_at
+  'CREATE INDEX IF NOT EXISTS idx_ideas_archived_created ON ideas (is_archived, created_at DESC)',
+  // ideas: Stats queries group by type/category/priority on non-archived
+  'CREATE INDEX IF NOT EXISTS idx_ideas_archived_type ON ideas (is_archived, type)',
+  'CREATE INDEX IF NOT EXISTS idx_ideas_archived_category ON ideas (is_archived, category)',
+  'CREATE INDEX IF NOT EXISTS idx_ideas_archived_priority ON ideas (is_archived, priority)',
+  // ideas: Priority + created_at for sorted exports and triage
+  'CREATE INDEX IF NOT EXISTS idx_ideas_priority_created ON ideas (priority, created_at DESC)',
+  // ideas: Updated timestamp for sync queries
+  'CREATE INDEX IF NOT EXISTS idx_ideas_updated_at ON ideas (updated_at DESC)',
+  // ideas: Company ID for enterprise queries
+  'CREATE INDEX IF NOT EXISTS idx_ideas_company_archived ON ideas (company_id, is_archived) WHERE company_id IS NOT NULL',
+  // chat: Session lookup by context + recency
+  'CREATE INDEX IF NOT EXISTS idx_chat_sessions_context_updated ON general_chat_sessions (context, updated_at DESC)',
+  // chat: Message lookup by session + order
+  'CREATE INDEX IF NOT EXISTS idx_chat_messages_session_created ON general_chat_messages (session_id, created_at ASC)',
+];
+
+/**
+ * Ensure performance-critical composite indexes exist.
+ * Called at server startup; uses IF NOT EXISTS so it's safe to run repeatedly.
+ * Non-blocking: failures are logged but don't prevent startup.
+ */
+export async function ensurePerformanceIndexes(): Promise<{ created: number; errors: number }> {
+  let created = 0;
+  let errors = 0;
+
+  for (const context of ['personal', 'work'] as AIContext[]) {
+    for (const sql of PERFORMANCE_INDEXES) {
+      try {
+        await queryContext(context, sql);
+        created++;
+      } catch (err) {
+        // Index creation may fail if table doesn't exist yet - that's OK
+        errors++;
+        logger.debug('Index creation skipped', {
+          context,
+          sql: sql.substring(0, 60),
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  }
+
+  if (created > 0) {
+    logger.info('Performance indexes ensured', { created, errors, operation: 'startup' });
+  }
+
+  return { created, errors };
+}
