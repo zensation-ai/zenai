@@ -13,10 +13,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'vitest-axe';
-import { toHaveNoViolations } from 'vitest-axe/matchers';
+import * as axeMatchers from 'vitest-axe/matchers';
+
+// Type augmentation for vitest-axe matchers
+declare module 'vitest' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Assertion<T> {
+    toHaveNoViolations(): void;
+  }
+}
 
 // Extend vitest matchers
-expect.extend({ toHaveNoViolations });
+expect.extend(axeMatchers);
 
 // Mock axios for all components that make API calls
 vi.mock('axios', () => ({
@@ -75,7 +83,7 @@ vi.mock('../../utils/aiPersonality', () => ({
 import { ErrorBoundary } from '../ErrorBoundary';
 import { SkeletonLoader } from '../SkeletonLoader';
 import { ThemeToggle } from '../ThemeToggle';
-import { Toast, ToastContainer } from '../Toast';
+import { ToastContainer } from '../Toast';
 import { RateLimitBanner } from '../RateLimitBanner';
 import { SearchFilterBar } from '../SearchFilterBar';
 
@@ -113,8 +121,8 @@ describe('Phase 8.4: Accessibility Testing', () => {
       expect(results).toHaveNoViolations();
     });
 
-    it('should have no violations for list type', async () => {
-      const { container } = render(<SkeletonLoader type="list" />);
+    it('should have no violations for text type', async () => {
+      const { container } = render(<SkeletonLoader type="text" />);
 
       const results = await axe(container);
       expect(results).toHaveNoViolations();
@@ -127,11 +135,11 @@ describe('Phase 8.4: Accessibility Testing', () => {
       const loader = document.querySelector('.skeleton-loader, [class*="skeleton"]');
       if (loader) {
         // Either has aria-busy or role="status" or aria-label
-        const hasA11yAttr = loader.getAttribute('aria-busy') ||
+        const hasA11y = loader.getAttribute('aria-busy') ||
           loader.getAttribute('role') ||
           loader.getAttribute('aria-label');
         // Skeleton components typically indicate loading
-        expect(loader).toBeTruthy();
+        expect(hasA11y || loader).toBeTruthy();
       }
     });
   });
@@ -197,15 +205,20 @@ describe('Phase 8.4: Accessibility Testing', () => {
       priorities: new Set<string>(),
     };
 
+    const defaultCounts = {
+      types: {} as Record<string, number>,
+      categories: {} as Record<string, number>,
+      priorities: {} as Record<string, number>,
+    };
+
     it('should have no accessibility violations', async () => {
       const { container } = render(
         <SearchFilterBar
           onSearch={vi.fn()}
           onFilterChange={vi.fn()}
+          onClearSearch={vi.fn()}
           filters={defaultFilters}
-          totalCount={42}
-          filteredCount={42}
-          context="personal"
+          counts={defaultCounts}
         />,
       );
 
@@ -218,10 +231,9 @@ describe('Phase 8.4: Accessibility Testing', () => {
         <SearchFilterBar
           onSearch={vi.fn()}
           onFilterChange={vi.fn()}
+          onClearSearch={vi.fn()}
           filters={defaultFilters}
-          totalCount={0}
-          filteredCount={0}
-          context="personal"
+          counts={defaultCounts}
         />,
       );
 

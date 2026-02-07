@@ -9,11 +9,10 @@
  * - Timeout handling per endpoint category
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getRateLimitInfo,
   onRateLimitUpdate,
-  type RateLimitInfo,
 } from '../apiResilience';
 
 describe('Phase 8.3: Error Recovery Testing', () => {
