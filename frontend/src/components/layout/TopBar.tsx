@@ -24,6 +24,8 @@ interface TopBarProps {
   onOpenSearch: () => void;
   onOpenMobileSidebar: () => void;
   onRefresh: () => void;
+  isFavorited?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 export const TopBar = memo(function TopBar({
@@ -34,13 +36,15 @@ export const TopBar = memo(function TopBar({
   onOpenSearch,
   onOpenMobileSidebar,
   onRefresh,
+  isFavorited,
+  onToggleFavorite,
 }: TopBarProps) {
   const pageLabel = getPageLabel(currentPage);
 
   return (
     <header className="topbar" role="banner">
       <div className="topbar-content">
-        {/* Left: Mobile menu + Page title */}
+        {/* Left: Mobile menu + Page title + Favorite */}
         <div className="topbar-left">
           <button
             type="button"
@@ -53,6 +57,18 @@ export const TopBar = memo(function TopBar({
             </svg>
           </button>
           <h1 className="topbar-title">{pageLabel}</h1>
+          {onToggleFavorite && currentPage !== 'home' && (
+            <button
+              type="button"
+              className={`topbar-favorite neuro-focus-ring ${isFavorited ? 'active' : ''}`}
+              onClick={onToggleFavorite}
+              title={isFavorited ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+              aria-label={isFavorited ? 'Seite aus Favoriten entfernen' : 'Seite zu Favoriten hinzufügen'}
+              aria-pressed={isFavorited}
+            >
+              <span aria-hidden="true">{isFavorited ? '★' : '☆'}</span>
+            </button>
+          )}
         </div>
 
         {/* Center: Search trigger */}

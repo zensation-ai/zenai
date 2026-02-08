@@ -117,3 +117,17 @@ export function getPageLabel(page: Page): string {
 
   return 'My Brain';
 }
+
+/**
+ * Find NavItem by page identifier (searches sections + footer)
+ */
+export function getNavItemByPage(page: Page): NavItem | undefined {
+  if (page === 'home') return { page: 'home', icon: '🏠', label: 'Dashboard' };
+
+  for (const section of NAV_SECTIONS) {
+    const item = section.items.find(i => i.page === page || i.subPages?.includes(page));
+    if (item) return item;
+  }
+
+  return NAV_FOOTER_ITEMS.find(i => i.page === page);
+}

@@ -329,6 +329,55 @@
   right: 6px;
 }
 
+/* ============================================
+   Item Wrapper (for hover favorite toggle)
+   ============================================ */
+
+.sidebar-item-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-item-wrapper .sidebar-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-favorite-btn {
+  position: absolute;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  font-size: 0.7rem;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  z-index: 1;
+}
+
+.sidebar-item-wrapper:hover .sidebar-favorite-btn,
+.sidebar-favorite-btn:focus-visible {
+  opacity: 1;
+}
+
+.sidebar-favorite-btn.favorited {
+  color: var(--primary, #ff6b35);
+  opacity: 1;
+}
+
+.sidebar-favorite-btn:hover {
+  color: var(--primary, #ff6b35);
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* Collapsed State - Center icons */
 .sidebar.collapsed .sidebar-item {
   justify-content: center;
@@ -462,7 +511,13 @@
   .sidebar:not(:hover) .sidebar-item-badge,
   .sidebar:not(:hover) .sidebar-section-header,
   .sidebar:not(:hover) .sidebar-footer-label,
-  .sidebar:not(:hover) .sidebar-status-text {
+  .sidebar:not(:hover) .sidebar-status-text,
+  .sidebar:not(:hover) .sidebar-favorite-btn {
+    display: none;
+  }
+
+  .sidebar:not(:hover) .sidebar-favorites,
+  .sidebar:not(:hover) .sidebar-recents {
     display: none;
   }
 

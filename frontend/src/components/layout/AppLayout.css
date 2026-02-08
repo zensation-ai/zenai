@@ -26,6 +26,10 @@
   margin-left: var(--sidebar-collapsed-width, 64px);
 }
 
+.layout-breadcrumbs {
+  flex-shrink: 0;
+}
+
 .layout-content {
   flex: 1;
   overflow-y: auto;
@@ -58,6 +62,10 @@
 
   .layout-main.sidebar-collapsed {
     margin-left: 0;
+  }
+
+  .layout-breadcrumbs {
+    display: none;
   }
 
   /* Mobile Chat Overlay */

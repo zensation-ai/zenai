@@ -152,6 +152,31 @@
   background: #64748b;
 }
 
+.topbar-favorite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.topbar-favorite:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--primary, #ff6b35);
+}
+
+.topbar-favorite.active {
+  color: var(--primary, #ff6b35);
+}
+
 .topbar-refresh {
   width: 32px;
   height: 32px;
@@ -210,6 +235,10 @@
   }
 
   .topbar-status {
+    display: none;
+  }
+
+  .topbar-favorite {
     display: none;
   }
 

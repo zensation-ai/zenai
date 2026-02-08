@@ -8,6 +8,7 @@
 import { useState, useCallback, type ReactNode } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
+import { Breadcrumbs, getBreadcrumbs } from '../Breadcrumbs';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { MobileBottomBar } from './MobileBottomBar';
@@ -26,6 +27,10 @@ interface AppLayoutProps {
   archivedCount: number;
   onOpenSearch: () => void;
   onRefresh: () => void;
+  recentPages?: Page[];
+  favoritePages?: Page[];
+  toggleFavorite?: (page: Page) => void;
+  isFavorited?: (page: Page) => boolean;
   /** Render prop for chat overlay (mobile bottom bar) */
   renderChat?: () => ReactNode;
 }
@@ -41,6 +46,10 @@ export function AppLayout({
   archivedCount,
   onOpenSearch,
   onRefresh,
+  recentPages,
+  favoritePages,
+  toggleFavorite,
+  isFavorited,
   renderChat,
 }: AppLayoutProps) {
   // Sidebar collapsed state - persisted to localStorage
@@ -95,6 +104,10 @@ export function AppLayout({
         apiStatus={apiStatus}
         isAIActive={isAIActive}
         archivedCount={archivedCount}
+        recentPages={recentPages}
+        favoritePages={favoritePages}
+        toggleFavorite={toggleFavorite}
+        isFavorited={isFavorited}
       />
 
       {/* Main Content Area */}
@@ -107,7 +120,16 @@ export function AppLayout({
           onOpenSearch={onOpenSearch}
           onOpenMobileSidebar={handleOpenMobileSidebar}
           onRefresh={onRefresh}
+          isFavorited={isFavorited?.(currentPage)}
+          onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
         />
+
+        <div className="layout-breadcrumbs">
+          <Breadcrumbs
+            items={getBreadcrumbs(currentPage)}
+            onNavigate={onNavigate}
+          />
+        </div>
 
         <main className="layout-content" id="main-content" role="main">
           {children}
@@ -132,6 +154,10 @@ export function AppLayout({
         onContextChange={onContextChange}
         archivedCount={archivedCount}
         isAIActive={isAIActive}
+        recentPages={recentPages}
+        favoritePages={favoritePages}
+        toggleFavorite={toggleFavorite}
+        isFavorited={isFavorited}
       />
 
       {/* Mobile Chat Overlay */}

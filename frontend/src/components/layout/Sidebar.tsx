@@ -12,7 +12,7 @@
 
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
-import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, type NavItem, type NavSection } from '../../navigation';
+import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { safeLocalStorage } from '../../utils/storage';
 import './Sidebar.css';
 
@@ -24,6 +24,10 @@ interface SidebarProps {
   apiStatus: ApiStatus | null;
   isAIActive: boolean;
   archivedCount: number;
+  recentPages?: Page[];
+  favoritePages?: Page[];
+  toggleFavorite?: (page: Page) => void;
+  isFavorited?: (page: Page) => boolean;
 }
 
 export const Sidebar = memo(function Sidebar({
@@ -34,14 +38,18 @@ export const Sidebar = memo(function Sidebar({
   apiStatus,
   isAIActive,
   archivedCount,
+  recentPages,
+  favoritePages,
+  toggleFavorite,
+  isFavorited,
 }: SidebarProps) {
   // Track which sections are expanded (all expanded by default)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
     try {
       const stored = safeLocalStorage('get', 'sidebar-expanded');
-      return stored ? new Set(JSON.parse(stored)) : new Set(NAV_SECTIONS.map(s => s.id));
+      return stored ? new Set(JSON.parse(stored)) : new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents']);
     } catch {
-      return new Set(NAV_SECTIONS.map(s => s.id));
+      return new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents']);
     }
   });
 
@@ -150,6 +158,96 @@ export const Sidebar = memo(function Sidebar({
 
       {/* Scrollable Navigation Sections */}
       <div className="sidebar-nav">
+        {/* Favorites Section */}
+        {!collapsed && favoritePages && favoritePages.length > 0 && (
+          <div className="sidebar-section sidebar-favorites">
+            <button
+              type="button"
+              className="sidebar-section-header neuro-focus-ring"
+              onClick={() => toggleSection('favorites')}
+              aria-expanded={expandedSections.has('favorites')}
+            >
+              <span className="sidebar-section-label">Favoriten</span>
+              <svg
+                className={`sidebar-section-chevron ${expandedSections.has('favorites') ? 'expanded' : ''}`}
+                width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
+              >
+                <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <div className={`sidebar-section-items ${expandedSections.has('favorites') ? 'expanded' : ''}`}>
+              {favoritePages.map(page => {
+                const navItem = getNavItemByPage(page);
+                if (!navItem) return null;
+                const isActive = currentPage === page;
+                return (
+                  <div key={`fav-${page}`} className="sidebar-item-wrapper">
+                    <button
+                      type="button"
+                      className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
+                      onClick={() => handleNavigate(page)}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      <span className="sidebar-item-icon" aria-hidden="true">{navItem.icon}</span>
+                      <span className="sidebar-item-label">{navItem.label}</span>
+                    </button>
+                    {toggleFavorite && (
+                      <button
+                        type="button"
+                        className="sidebar-favorite-btn favorited neuro-focus-ring"
+                        onClick={() => toggleFavorite(page)}
+                        aria-label={`${navItem.label} aus Favoriten entfernen`}
+                        title="Aus Favoriten entfernen"
+                      >
+                        <span aria-hidden="true">★</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recents Section */}
+        {!collapsed && recentPages && recentPages.length > 0 && (
+          <div className="sidebar-section sidebar-recents">
+            <button
+              type="button"
+              className="sidebar-section-header neuro-focus-ring"
+              onClick={() => toggleSection('recents')}
+              aria-expanded={expandedSections.has('recents')}
+            >
+              <span className="sidebar-section-label">Zuletzt besucht</span>
+              <svg
+                className={`sidebar-section-chevron ${expandedSections.has('recents') ? 'expanded' : ''}`}
+                width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
+              >
+                <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <div className={`sidebar-section-items ${expandedSections.has('recents') ? 'expanded' : ''}`}>
+              {recentPages.map(page => {
+                const navItem = getNavItemByPage(page);
+                if (!navItem) return null;
+                const isActive = currentPage === page;
+                return (
+                  <button
+                    key={`recent-${page}`}
+                    type="button"
+                    className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
+                    onClick={() => handleNavigate(page)}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span className="sidebar-item-icon" aria-hidden="true">{navItem.icon}</span>
+                    <span className="sidebar-item-label">{navItem.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {NAV_SECTIONS.map((section) => {
           const isExpanded = expandedSections.has(section.id);
           const hasActive = isSectionActive(section);
@@ -190,28 +288,40 @@ export const Sidebar = memo(function Sidebar({
                   const badge = getBadgeValue(item);
 
                   return (
-                    <button
-                      key={item.page}
-                      type="button"
-                      className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
-                      onClick={() => handleNavigate(item.page)}
-                      title={collapsed ? `${item.label}${item.description ? ': ' + item.description : ''}` : undefined}
-                      aria-current={isActive ? 'page' : undefined}
-                      aria-label={item.label}
-                    >
-                      <span className="sidebar-item-icon" aria-hidden="true">{item.icon}</span>
-                      {!collapsed && (
-                        <>
-                          <span className="sidebar-item-label">{item.label}</span>
-                          {badge !== undefined && (
-                            <span className="sidebar-item-badge" aria-label={`${badge} Einträge`}>{badge}</span>
-                          )}
-                        </>
+                    <div key={item.page} className="sidebar-item-wrapper">
+                      <button
+                        type="button"
+                        className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
+                        onClick={() => handleNavigate(item.page)}
+                        title={collapsed ? `${item.label}${item.description ? ': ' + item.description : ''}` : undefined}
+                        aria-current={isActive ? 'page' : undefined}
+                        aria-label={item.label}
+                      >
+                        <span className="sidebar-item-icon" aria-hidden="true">{item.icon}</span>
+                        {!collapsed && (
+                          <>
+                            <span className="sidebar-item-label">{item.label}</span>
+                            {badge !== undefined && (
+                              <span className="sidebar-item-badge" aria-label={`${badge} Einträge`}>{badge}</span>
+                            )}
+                          </>
+                        )}
+                        {collapsed && badge !== undefined && (
+                          <span className="sidebar-item-badge-dot" aria-hidden="true" />
+                        )}
+                      </button>
+                      {!collapsed && toggleFavorite && (
+                        <button
+                          type="button"
+                          className={`sidebar-favorite-btn neuro-focus-ring ${isFavorited?.(item.page) ? 'favorited' : ''}`}
+                          onClick={() => toggleFavorite(item.page)}
+                          aria-label={isFavorited?.(item.page) ? `${item.label} aus Favoriten entfernen` : `${item.label} zu Favoriten hinzufügen`}
+                          title={isFavorited?.(item.page) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                        >
+                          <span aria-hidden="true">{isFavorited?.(item.page) ? '★' : '☆'}</span>
+                        </button>
                       )}
-                      {collapsed && badge !== undefined && (
-                        <span className="sidebar-item-badge-dot" aria-hidden="true" />
-                      )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>

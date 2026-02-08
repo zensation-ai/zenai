@@ -11,7 +11,7 @@ import type { Page } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { ContextSwitcher } from '../ContextSwitcher';
 import { ThemeToggle } from '../ThemeToggle';
-import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, type NavItem } from '../../navigation';
+import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, getNavItemByPage, type NavItem } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
 import './MobileSidebarDrawer.css';
 
@@ -24,6 +24,10 @@ interface MobileSidebarDrawerProps {
   onContextChange: (ctx: AIContext) => void;
   archivedCount: number;
   isAIActive: boolean;
+  recentPages?: Page[];
+  favoritePages?: Page[];
+  toggleFavorite?: (page: Page) => void;
+  isFavorited?: (page: Page) => boolean;
 }
 
 const STAGGER_DELAY = 25;
@@ -37,10 +41,12 @@ export function MobileSidebarDrawer({
   onContextChange,
   archivedCount,
   isAIActive,
+  recentPages,
+  favoritePages,
 }: MobileSidebarDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    () => new Set(NAV_SECTIONS.map(s => s.id))
+    () => new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents'])
   );
 
   // Close on Escape
@@ -166,6 +172,90 @@ export function MobileSidebarDrawer({
 
         {/* Navigation Content */}
         <div className="msd-content">
+          {/* Favorites */}
+          {favoritePages && favoritePages.length > 0 && (
+            <div className={`msd-section ${expandedSections.has('favorites') ? 'expanded' : ''}`}>
+              <button
+                type="button"
+                className="msd-section-header neuro-focus-ring"
+                onClick={() => toggleSection('favorites')}
+                aria-expanded={expandedSections.has('favorites')}
+              >
+                <span className="msd-section-icon">⭐</span>
+                <span className="msd-section-label">Favoriten</span>
+                <span className="msd-section-count">{favoritePages.length}</span>
+                <svg
+                  className={`msd-section-chevron ${expandedSections.has('favorites') ? 'rotated' : ''}`}
+                  width="12" height="12" viewBox="0 0 12 12" fill="currentColor"
+                >
+                  <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <div className={`msd-section-items ${expandedSections.has('favorites') ? 'visible' : ''}`}>
+                {favoritePages.map(page => {
+                  const navItem = getNavItemByPage(page);
+                  if (!navItem) return null;
+                  const isActive = currentPage === page;
+                  return (
+                    <button
+                      key={`fav-${page}`}
+                      type="button"
+                      className={`msd-item nested neuro-focus-ring ${isActive ? 'active' : ''}`}
+                      onClick={() => handleNavigate(page)}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      <span className="msd-item-icon">{navItem.icon}</span>
+                      <span className="msd-item-label">{navItem.label}</span>
+                      {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Recents */}
+          {recentPages && recentPages.length > 0 && (
+            <div className={`msd-section ${expandedSections.has('recents') ? 'expanded' : ''}`}>
+              <button
+                type="button"
+                className="msd-section-header neuro-focus-ring"
+                onClick={() => toggleSection('recents')}
+                aria-expanded={expandedSections.has('recents')}
+              >
+                <span className="msd-section-icon">🕐</span>
+                <span className="msd-section-label">Zuletzt besucht</span>
+                <span className="msd-section-count">{recentPages.length}</span>
+                <svg
+                  className={`msd-section-chevron ${expandedSections.has('recents') ? 'rotated' : ''}`}
+                  width="12" height="12" viewBox="0 0 12 12" fill="currentColor"
+                >
+                  <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <div className={`msd-section-items ${expandedSections.has('recents') ? 'visible' : ''}`}>
+                {recentPages.map(page => {
+                  const navItem = getNavItemByPage(page);
+                  if (!navItem) return null;
+                  const isActive = currentPage === page;
+                  return (
+                    <button
+                      key={`recent-${page}`}
+                      type="button"
+                      className={`msd-item nested neuro-focus-ring ${isActive ? 'active' : ''}`}
+                      onClick={() => handleNavigate(page)}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      <span className="msd-item-icon">{navItem.icon}</span>
+                      <span className="msd-item-label">{navItem.label}</span>
+                      {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {NAV_SECTIONS.map((section) => {
             const isExpanded = expandedSections.has(section.id);
 

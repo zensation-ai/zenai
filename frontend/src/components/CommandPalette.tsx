@@ -432,38 +432,20 @@ export const CommandPalette = memo(function CommandPalette({
 interface UseCommandPaletteOptions {
   onNavigate: (page: Page) => void;
   onAction?: (action: string) => void;
+  /** External recent pages from usePageHistory (shared state) */
+  externalRecentPages?: string[];
 }
 
-export function useCommandPalette({ onNavigate, onAction }: UseCommandPaletteOptions) {
+export function useCommandPalette({ onNavigate, onAction, externalRecentPages }: UseCommandPaletteOptions) {
   const [isOpen, setIsOpen] = useState(false);
-  const [recentPages, setRecentPages] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('zenai-recent-pages');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
 
-  // Save recent pages
-  const addRecentPage = useCallback((pageId: string) => {
-    setRecentPages(prev => {
-      const filtered = prev.filter(p => p !== pageId);
-      const updated = [pageId, ...filtered].slice(0, 5);
-      try {
-        localStorage.setItem('zenai-recent-pages', JSON.stringify(updated));
-      } catch {
-        // Ignore storage errors
-      }
-      return updated;
-    });
-  }, []);
+  // Use external recent pages if provided, otherwise empty
+  const recentPages = externalRecentPages ?? [];
 
-  // Navigate and track
+  // Navigate directly (tracking is handled by usePageHistory in App.tsx)
   const navigateTo = useCallback((page: Page) => {
-    addRecentPage(page);
     onNavigate(page);
-  }, [addRecentPage, onNavigate]);
+  }, [onNavigate]);
 
   // Build commands
   const commands: Command[] = useMemo(() => [
@@ -709,6 +691,5 @@ export function useCommandPalette({ onNavigate, onAction }: UseCommandPaletteOpt
     close: () => setIsOpen(false),
     commands,
     recentPages,
-    addRecentPage,
   };
 }

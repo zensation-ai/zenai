@@ -29,6 +29,7 @@ import { ScrollProgress } from './components/AnticipatoryUI';
 
 // Layout System
 import { AppLayout } from './components/layout/AppLayout';
+import { usePageHistory } from './hooks/usePageHistory';
 
 import './App.css';
 
@@ -202,8 +203,17 @@ function App() {
   const [selectedPersona] = usePersonaState(context);
   const keyboardShortcuts = useKeyboardShortcutsModal();
 
+  const pageHistory = usePageHistory();
+
+  // Track page visits for recents
+  useEffect(() => {
+    pageHistory.addRecentPage(currentPage);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
   const commandPalette = useCommandPalette({
     onNavigate: navigateToPage,
+    externalRecentPages: pageHistory.recentPages,
     onAction: (action) => {
       if (action === 'new-idea') {
         navigateToPage('ideas');
@@ -826,6 +836,10 @@ function App() {
         archivedCount={archivedCount}
         onOpenSearch={commandPalette.open}
         onRefresh={() => loadIdeas()}
+        recentPages={pageHistory.recentPages}
+        favoritePages={pageHistory.favoritePages}
+        toggleFavorite={pageHistory.toggleFavorite}
+        isFavorited={pageHistory.isFavorited}
         renderChat={() => (
           <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfügbar.</div>}>
             <GeneralChat context={context} isCompact={true} />
@@ -843,7 +857,7 @@ function App() {
             isOpen={commandPalette.isOpen}
             onClose={commandPalette.close}
             commands={commandPalette.commands}
-            recentPages={commandPalette.recentPages}
+            recentPages={pageHistory.recentPages}
           />
         </Suspense>
       )}
