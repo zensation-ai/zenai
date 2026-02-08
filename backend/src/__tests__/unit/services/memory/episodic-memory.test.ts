@@ -4,26 +4,14 @@
  * Tests concrete experience storage with emotional context.
  * Biological inspiration: Hippocampus episodic memory system.
  *
- * TODO: These tests are outdated and need to be rewritten to match the current
- * EpisodicMemoryService API. The service interface has changed significantly:
- * - recordEpisode → store
- * - retrieveBySession, getEmotionalHistory, getRecentEpisodes removed
- * - Episode type structure changed
- * - Stats structure changed
+ * Updated to match current EpisodicMemoryService API (Phase 31).
  *
- * @see services/memory/episodic-memory.ts for current API
+ * @module tests/unit/services/memory/episodic-memory
  */
 
-// Skip entire test suite until tests are updated
-// Original imports removed - API has changed significantly
- 
-const EpisodicMemoryService: any = class {};
- 
-const episodicMemory: any = {};
- 
-type EpisodeType = any;
- 
-type EmotionalContext = any;
+import { EpisodicMemoryService, Episode } from '../../../../services/memory/episodic-memory';
+import { queryContext, AIContext } from '../../../../utils/database-context';
+import { generateEmbedding } from '../../../../services/ai';
 
 // Mock dependencies
 jest.mock('../../../../utils/database-context', () => ({
@@ -47,471 +35,428 @@ jest.mock('../../../../utils/logger', () => ({
   },
 }));
 
-import { queryContext } from '../../../../utils/database-context';
-import { generateEmbedding } from '../../../../services/ai';
-
 const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
 
-// TODO: Re-enable and update tests when API is stabilized
-describe.skip('Episodic Memory Service', () => {
-   
-  let memory: any;
+describe('Episodic Memory Service', () => {
+  let service: EpisodicMemoryService;
+  const testContext: AIContext = 'personal';
 
   beforeEach(() => {
-    memory = new EpisodicMemoryService();
+    service = new EpisodicMemoryService();
     jest.clearAllMocks();
+    mockGenerateEmbedding.mockResolvedValue([0.1, 0.2, 0.3, 0.4, 0.5]);
   });
 
   // ===========================================
-  // Episode Recording Tests
+  // store() Tests
   // ===========================================
 
-  describe('recordEpisode', () => {
-    it('should record a new episode with all fields', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [{ id: 'episode-1' }],
-        rowCount: 1,
-      } as any);
-
-      const episodeId = await memory.recordEpisode({
-        context: 'work',
-        trigger: 'User asked about project deadline',
-        response: 'The deadline is next Friday',
-        episodeType: 'conversation',
-        emotional: {
-          valence: 0.3,
-          arousal: 0.5,
-        },
-        sessionId: 'session-123',
-        ideaId: 'idea-456',
-      });
-
-      expect(episodeId).toBe('episode-1');
-      expect(mockQueryContext).toHaveBeenCalled();
-      expect(mockGenerateEmbedding).toHaveBeenCalled();
-    });
-
-    it('should handle different episode types', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [{ id: 'episode-1' }],
-        rowCount: 1,
-      } as any);
-
-      const episodeTypes: EpisodeType[] = [
-        'conversation',
-        'discovery',
-        'problem_solving',
-        'decision',
-        'learning',
-        'error_recovery',
-      ];
-
-      for (const type of episodeTypes) {
-        await memory.recordEpisode({
-          context: 'personal',
-          trigger: `Trigger for ${type}`,
-          response: `Response for ${type}`,
-          episodeType: type,
-        });
-      }
-
-      expect(mockQueryContext).toHaveBeenCalledTimes(episodeTypes.length);
-    });
-
-    it('should generate embedding from trigger + response', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [{ id: 'episode-1' }],
-        rowCount: 1,
-      } as any);
-
-      await memory.recordEpisode({
-        context: 'work',
-        trigger: 'Hello',
-        response: 'World',
-        episodeType: 'conversation',
-      });
-
-      expect(mockGenerateEmbedding).toHaveBeenCalledWith('Hello World');
-    });
-
-    it('should throw error on database failure', async () => {
-      mockQueryContext.mockRejectedValue(new Error('Database error'));
-
-      await expect(
-        memory.recordEpisode({
-          context: 'work',
-          trigger: 'Test',
-          response: 'Test',
-          episodeType: 'conversation',
-        })
-      ).rejects.toThrow('Database error');
-    });
-  });
-
-  // ===========================================
-  // Episode Retrieval Tests
-  // ===========================================
-
-  describe('retrieve', () => {
-    const mockEpisodeRow = {
-      id: 'episode-1',
-      context: 'work',
-      trigger: 'Original question',
-      response: 'Original answer',
-      episode_type: 'conversation',
+  describe('store', () => {
+    const mockDbRow = {
+      id: 'test-id-123',
+      context: 'personal',
+      session_id: 'session-123',
+      trigger: 'User question',
+      response: 'AI response',
       emotional_valence: 0.5,
       emotional_arousal: 0.3,
       time_of_day: 'morning',
       day_of_week: 'Monday',
-      week_of_year: 4,
-      retrieval_strength: 0.8,
-      retrieval_count: 3,
-      session_id: 'session-1',
-      idea_id: null,
+      is_weekend: false,
+      linked_episodes: [],
+      linked_facts: [],
+      retrieval_count: 0,
+      last_retrieved: null,
+      retrieval_strength: 1.0,
       created_at: new Date(),
-      last_retrieved: new Date(),
+      updated_at: new Date(),
     };
 
-    it('should retrieve similar episodes', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [mockEpisodeRow],
-        rowCount: 1,
-      } as any);
-
-      const episodes = await memory.retrieve('Similar question', 'work');
-
-      expect(episodes).toHaveLength(1);
-      expect(episodes[0].trigger).toBe('Original question');
-      expect(episodes[0].response).toBe('Original answer');
+    beforeEach(() => {
+      // Mock finding similar episodes (empty for simplicity)
+      mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
+      // Mock insert
+      mockQueryContext.mockResolvedValueOnce({ rows: [mockDbRow] } as any);
     });
 
-    it('should apply limit option', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [mockEpisodeRow, { ...mockEpisodeRow, id: 'episode-2' }],
-        rowCount: 2,
-      } as any);
+    it('should store an episode successfully', async () => {
+      const result = await service.store(
+        'User question',
+        'AI response',
+        'session-123',
+        testContext
+      );
 
-      await memory.retrieve('Query', 'work', { limit: 5 });
-
-      // Check that limit was passed to query
-      expect(mockQueryContext).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(result.id).toBe('test-id-123');
+      expect(result.trigger).toBe('User question');
+      expect(result.response).toBe('AI response');
     });
 
-    it('should apply emotional filter when provided', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [],
-        rowCount: 0,
-      } as any);
+    it('should generate embedding for the episode', async () => {
+      await service.store('User question', 'AI response', 'session-123', testContext);
 
-      await memory.retrieve('Query', 'work', {
-        emotionalFilter: { minValence: 0.3 },
-      });
-
-      expect(mockQueryContext).toHaveBeenCalled();
-      // Verify the query includes emotional filtering
-      const callArgs = mockQueryContext.mock.calls[0];
-      expect(callArgs[1]).toContain('emotional_valence');
+      expect(mockGenerateEmbedding).toHaveBeenCalledWith('User question AI response');
     });
 
-    it('should include decayed episodes when requested', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [mockEpisodeRow],
-        rowCount: 1,
-      } as any);
+    it('should analyze emotional content', async () => {
+      const positiveRow = {
+        ...mockDbRow,
+        trigger: 'Danke, das ist super!',
+        response: 'Gerne geschehen!',
+      };
+      mockQueryContext.mockReset();
+      mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [positiveRow] } as any);
 
-      await memory.retrieve('Query', 'work', { includeDecayed: true });
+      const result = await service.store(
+        'Danke, das ist super!',
+        'Gerne geschehen!',
+        'session-123',
+        testContext
+      );
 
-      expect(mockQueryContext).toHaveBeenCalled();
-    });
-
-    it('should update retrieval count for retrieved episodes', async () => {
-      mockQueryContext
-        .mockResolvedValueOnce({
-          rows: [mockEpisodeRow],
-          rowCount: 1,
-        } as any)
-        .mockResolvedValueOnce({
-          rows: [],
-          rowCount: 0,
-        } as any);
-
-      await memory.retrieve('Query', 'work');
-
-      // Second call should be the update query
+      expect(result).toBeDefined();
+      // Verify the insert was called with emotional values
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
     });
-  });
 
-  // ===========================================
-  // Retrieval by Session Tests
-  // ===========================================
+    it('should handle embedding generation failure gracefully', async () => {
+      mockGenerateEmbedding.mockResolvedValueOnce([]);
+      mockQueryContext.mockReset();
+      mockQueryContext.mockResolvedValueOnce({ rows: [mockDbRow] } as any);
 
-  describe('retrieveBySession', () => {
-    it('should retrieve episodes for a specific session', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [
-          {
-            id: 'ep-1',
-            context: 'work',
-            trigger: 'Q1',
-            response: 'A1',
-            episode_type: 'conversation',
-            emotional_valence: 0,
-            emotional_arousal: 0.5,
-            time_of_day: 'afternoon',
-            day_of_week: 'Tuesday',
-            week_of_year: 4,
-            retrieval_strength: 1,
-            retrieval_count: 0,
-            session_id: 'session-1',
-            idea_id: null,
-            created_at: new Date(),
-            last_retrieved: null,
-          },
-        ],
-        rowCount: 1,
-      } as any);
-
-      const episodes = await memory.retrieveBySession('session-1', 'work');
-
-      expect(episodes).toHaveLength(1);
-      expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
-        expect.stringContaining('session_id'),
-        expect.arrayContaining(['session-1'])
+      const result = await service.store(
+        'User question',
+        'AI response',
+        'session-123',
+        testContext
       );
+
+      // Should still succeed without embedding
+      expect(result).toBeDefined();
     });
   });
 
   // ===========================================
-  // Emotional Analysis Tests
+  // retrieve() Tests
   // ===========================================
 
-  describe('getEmotionalHistory', () => {
-    it('should retrieve emotional history', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [
-          {
-            date: '2026-01-20',
-            avg_valence: 0.5,
-            avg_arousal: 0.4,
-            episode_count: 10,
-          },
-          {
-            date: '2026-01-21',
-            avg_valence: 0.6,
-            avg_arousal: 0.5,
-            episode_count: 8,
-          },
-        ],
-        rowCount: 2,
-      } as any);
+  describe('retrieve', () => {
+    const mockEpisodes = [
+      {
+        id: 'ep-1',
+        context: 'personal',
+        session_id: 'session-1',
+        trigger: 'First question',
+        response: 'First response',
+        emotional_valence: 0.5,
+        emotional_arousal: 0.3,
+        time_of_day: 'morning',
+        day_of_week: 'Monday',
+        is_weekend: false,
+        linked_episodes: [],
+        linked_facts: [],
+        retrieval_count: 2,
+        last_retrieved: new Date(),
+        retrieval_strength: 0.8,
+        created_at: new Date(),
+        semantic_similarity: 0.9,
+        decayed_strength: 0.75,
+      },
+    ];
 
-      const history = await memory.getEmotionalHistory('work', 7);
-
-      expect(history).toHaveLength(2);
-      expect(history[0].avgValence).toBe(0.5);
-      expect(history[0].episodeCount).toBe(10);
+    beforeEach(() => {
+      // Mock semantic retrieval
+      mockQueryContext.mockResolvedValueOnce({ rows: mockEpisodes } as any);
+      // Mock update retrieval stats
+      mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     });
 
-    it('should handle empty history', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [],
-        rowCount: 0,
-      } as any);
+    it('should retrieve relevant episodes', async () => {
+      const results = await service.retrieve('search query', testContext);
 
-      const history = await memory.getEmotionalHistory('work', 7);
-
-      expect(history).toEqual([]);
-    });
-  });
-
-  // ===========================================
-  // Emotional Tone Calculation Tests
-  // ===========================================
-
-  describe('calculateEmotionalTone', () => {
-    it('should calculate average emotional tone from episodes', () => {
-      const episodes = [
-        {
-          id: '1',
-          context: 'work' as const,
-          trigger: 'T1',
-          response: 'R1',
-          episodeType: 'conversation' as const,
-          emotional: { valence: 0.5, arousal: 0.3 },
-          temporalContext: { timeOfDay: 'morning' as const, dayOfWeek: 'Monday', weekOfYear: 4 },
-          retrievalStrength: 1,
-          retrievalCount: 0,
-          timestamp: new Date(),
-        },
-        {
-          id: '2',
-          context: 'work' as const,
-          trigger: 'T2',
-          response: 'R2',
-          episodeType: 'conversation' as const,
-          emotional: { valence: 0.7, arousal: 0.5 },
-          temporalContext: { timeOfDay: 'afternoon' as const, dayOfWeek: 'Monday', weekOfYear: 4 },
-          retrievalStrength: 1,
-          retrievalCount: 0,
-          timestamp: new Date(),
-        },
-      ];
-
-      const tone = memory.calculateEmotionalTone(episodes);
-
-      expect(tone.avgValence).toBe(0.6); // (0.5 + 0.7) / 2
-      expect(tone.avgArousal).toBe(0.4); // (0.3 + 0.5) / 2
-      expect(tone.dominantMood).toBe('positive'); // valence > 0.2
+      expect(results).toHaveLength(1);
+      expect(results[0].id).toBe('ep-1');
+      expect(mockGenerateEmbedding).toHaveBeenCalledWith('search query');
     });
 
-    it('should return neutral for empty episodes', () => {
-      const tone = memory.calculateEmotionalTone([]);
+    it('should respect limit option', async () => {
+      mockQueryContext.mockReset();
+      mockQueryContext.mockResolvedValueOnce({ rows: mockEpisodes } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      expect(tone.avgValence).toBe(0);
-      expect(tone.avgArousal).toBe(0.5);
-      expect(tone.dominantMood).toBe('neutral');
+      await service.retrieve('search query', testContext, { limit: 10 });
+
+      // Verify limit was passed in query params
+      const queryCall = mockQueryContext.mock.calls[0];
+      expect(queryCall[2]).toContain(10); // params should include limit
     });
 
-    it('should detect negative mood', () => {
-      const episodes = [
-        {
-          id: '1',
-          context: 'work' as const,
-          trigger: 'T1',
-          response: 'R1',
-          episodeType: 'error_recovery' as const,
-          emotional: { valence: -0.5, arousal: 0.7 },
-          temporalContext: { timeOfDay: 'evening' as const, dayOfWeek: 'Friday', weekOfYear: 4 },
-          retrievalStrength: 1,
-          retrievalCount: 0,
-          timestamp: new Date(),
-        },
-      ];
+    it('should update retrieval stats for retrieved episodes', async () => {
+      await service.retrieve('search query', testContext);
 
-      const tone = memory.calculateEmotionalTone(episodes);
+      // Second query should be the stats update
+      expect(mockQueryContext).toHaveBeenCalledTimes(2);
+    });
 
-      expect(tone.dominantMood).toBe('negative');
+    it('should fallback to text search if embedding fails', async () => {
+      mockGenerateEmbedding.mockResolvedValueOnce([]);
+      mockQueryContext.mockReset();
+      mockQueryContext.mockResolvedValueOnce({ rows: mockEpisodes } as any);
+
+      const results = await service.retrieve('search query', testContext);
+
+      expect(results).toBeDefined();
+    });
+
+    it('should return empty array on error', async () => {
+      mockQueryContext.mockReset();
+      mockQueryContext.mockRejectedValueOnce(new Error('Database error'));
+
+      const results = await service.retrieve('search query', testContext);
+
+      expect(results).toEqual([]);
     });
   });
 
   // ===========================================
-  // Memory Decay Tests
+  // getById() Tests
   // ===========================================
 
-  describe('applyDecay', () => {
-    it('should apply decay to old memories', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [],
-        rowCount: 5, // 5 rows updated
-      } as any);
+  describe('getById', () => {
+    it('should return episode when found', async () => {
+      const mockRow = {
+        id: 'ep-123',
+        context: 'personal',
+        session_id: 'session-1',
+        trigger: 'Question',
+        response: 'Answer',
+        emotional_valence: 0,
+        emotional_arousal: 0.3,
+        time_of_day: 'afternoon',
+        day_of_week: 'Tuesday',
+        is_weekend: false,
+        linked_episodes: [],
+        linked_facts: [],
+        retrieval_count: 0,
+        last_retrieved: null,
+        retrieval_strength: 1.0,
+        created_at: new Date(),
+      };
 
-      const decayed = await memory.applyDecay('work');
+      mockQueryContext.mockResolvedValueOnce({ rows: [mockRow] } as any);
 
-      expect(decayed).toBe(5);
-      expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
-        expect.stringContaining('UPDATE'),
-        expect.any(Array)
-      );
+      const result = await service.getById('ep-123', testContext);
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe('ep-123');
+    });
+
+    it('should return null when not found', async () => {
+      mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
+
+      const result = await service.getById('nonexistent', testContext);
+
+      expect(result).toBeNull();
     });
   });
 
   // ===========================================
-  // Statistics Tests
+  // getStats() Tests
   // ===========================================
 
   describe('getStats', () => {
-    it('should return memory statistics', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [
-          {
-            total_episodes: '100',
-            avg_retrieval_strength: '0.75',
-            avg_valence: '0.3',
-            avg_arousal: '0.5',
-            most_common_type: 'conversation',
-          },
-        ],
-        rowCount: 1,
+    it('should return statistics', async () => {
+      mockQueryContext.mockResolvedValueOnce({
+        rows: [{
+          total: '100',
+          avg_strength: '0.75',
+          strong: '10',
+          recent: '25',
+        }],
       } as any);
 
-      const stats = await memory.getStats('work');
+      const stats = await service.getStats(testContext);
 
       expect(stats.totalEpisodes).toBe(100);
       expect(stats.avgRetrievalStrength).toBe(0.75);
-      expect(stats.avgValence).toBe(0.3);
-      expect(stats.mostCommonType).toBe('conversation');
+      expect(stats.recentEpisodes).toBe(25);
     });
 
-    it('should handle empty stats', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [
-          {
-            total_episodes: '0',
-            avg_retrieval_strength: null,
-            avg_valence: null,
-            avg_arousal: null,
-            most_common_type: null,
-          },
-        ],
-        rowCount: 1,
-      } as any);
+    it('should throw on database error', async () => {
+      mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const stats = await memory.getStats('work');
-
-      expect(stats.totalEpisodes).toBe(0);
-      expect(stats.avgRetrievalStrength).toBe(0);
+      await expect(service.getStats(testContext)).rejects.toThrow('DB error');
     });
   });
 
   // ===========================================
-  // Recent Episodes Tests
+  // applyDecay() Tests
   // ===========================================
 
-  describe('getRecentEpisodes', () => {
-    it('should retrieve recent episodes', async () => {
-      mockQueryContext.mockResolvedValue({
-        rows: [
-          {
-            id: 'ep-1',
-            context: 'work',
-            trigger: 'Recent question',
-            response: 'Recent answer',
-            episode_type: 'conversation',
-            emotional_valence: 0.2,
-            emotional_arousal: 0.4,
-            time_of_day: 'morning',
-            day_of_week: 'Monday',
-            week_of_year: 4,
-            retrieval_strength: 0.9,
-            retrieval_count: 1,
-            session_id: null,
-            idea_id: null,
-            created_at: new Date(),
-            last_retrieved: new Date(),
-          },
-        ],
-        rowCount: 1,
+  describe('applyDecay', () => {
+    it('should apply decay using stored procedure', async () => {
+      // Mock stored procedure call
+      mockQueryContext.mockResolvedValueOnce({
+        rows: [{ apply_episodic_decay: 15 }],
       } as any);
 
-      const episodes = await memory.getRecentEpisodes('work', 10);
+      const decayed = await service.applyDecay(testContext);
 
-      expect(episodes).toHaveLength(1);
-      expect(episodes[0].trigger).toBe('Recent question');
+      expect(decayed).toBe(15);
+      expect(mockQueryContext).toHaveBeenCalledWith(
+        testContext,
+        expect.stringContaining('apply_episodic_decay')
+      );
+    });
+
+    it('should fallback to UPDATE if stored procedure fails', async () => {
+      // Mock stored procedure to fail
+      mockQueryContext.mockRejectedValueOnce(new Error('Function not found'));
+      // Mock fallback UPDATE to succeed
+      mockQueryContext.mockResolvedValueOnce({ rowCount: 10 } as any);
+
+      const decayed = await service.applyDecay(testContext);
+
+      expect(decayed).toBe(10);
+    });
+
+    it('should throw if fallback also fails', async () => {
+      mockQueryContext.mockRejectedValueOnce(new Error('Function not found'));
+      mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(service.applyDecay(testContext)).rejects.toThrow('DB error');
     });
   });
 
   // ===========================================
-  // Singleton Tests
+  // consolidate() Tests
   // ===========================================
 
-  describe('episodicMemory singleton', () => {
-    it('should be defined', () => {
-      expect(episodicMemory).toBeDefined();
-      expect(episodicMemory).toBeInstanceOf(EpisodicMemoryService);
+  describe('consolidate', () => {
+    it('should process episodes for consolidation', async () => {
+      const strongEpisodes = [
+        {
+          id: 'ep-1',
+          trigger: 'Important question',
+          response: 'Important answer',
+          retrieval_count: 5,
+          retrieval_strength: 0.9,
+        },
+      ];
+
+      mockQueryContext.mockResolvedValueOnce({ rows: strongEpisodes } as any);
+      // Mock fact extraction query
+      mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
+
+      const result = await service.consolidate(testContext);
+
+      expect(result).toBeDefined();
+      expect(result.episodesProcessed).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should return zeros on error', async () => {
+      mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
+
+      const result = await service.consolidate(testContext);
+
+      expect(result.episodesProcessed).toBe(0);
+      expect(result.factsExtracted).toBe(0);
+    });
+  });
+
+  // ===========================================
+  // calculateEmotionalTone() Tests
+  // ===========================================
+
+  describe('calculateEmotionalTone', () => {
+    it('should calculate average emotional tone', () => {
+      const episodes: Episode[] = [
+        {
+          id: '1',
+          context: 'personal',
+          sessionId: 'sess-1',
+          timestamp: new Date(),
+          trigger: 'Q1',
+          response: 'A1',
+          emotionalValence: 0.5,
+          emotionalArousal: 0.3,
+          temporalContext: { timeOfDay: 'morning', dayOfWeek: 'Monday', isWeekend: false },
+          linkedEpisodes: [],
+          linkedFacts: [],
+          retrievalCount: 0,
+          lastRetrieved: null,
+          retrievalStrength: 1.0,
+        },
+        {
+          id: '2',
+          context: 'personal',
+          sessionId: 'sess-1',
+          timestamp: new Date(),
+          trigger: 'Q2',
+          response: 'A2',
+          emotionalValence: -0.3,
+          emotionalArousal: 0.7,
+          temporalContext: { timeOfDay: 'evening', dayOfWeek: 'Friday', isWeekend: false },
+          linkedEpisodes: [],
+          linkedFacts: [],
+          retrievalCount: 0,
+          lastRetrieved: null,
+          retrievalStrength: 1.0,
+        },
+      ];
+
+      const tone = service.calculateEmotionalTone(episodes);
+
+      expect(tone.avgValence).toBeCloseTo(0.1, 1); // (0.5 + -0.3) / 2
+      expect(tone.avgArousal).toBeCloseTo(0.5, 1); // (0.3 + 0.7) / 2
+    });
+
+    it('should return neutral tone for empty array', () => {
+      const tone = service.calculateEmotionalTone([]);
+
+      expect(tone.avgValence).toBe(0);
+      expect(tone.avgArousal).toBe(0.5); // Default baseline arousal
+      expect(tone.dominantMood).toBe('neutral');
+    });
+
+    it('should identify dominant mood based on valence and arousal', () => {
+      // High valence + high arousal = excited (valence > 0.3, arousal > 0.6)
+      const excitedEpisodes: Episode[] = [
+        {
+          id: '1',
+          context: 'personal',
+          sessionId: 'sess-1',
+          timestamp: new Date(),
+          trigger: 'Great!',
+          response: 'Awesome!',
+          emotionalValence: 0.8,
+          emotionalArousal: 0.7, // > 0.6 to trigger 'excited'
+          temporalContext: { timeOfDay: 'morning', dayOfWeek: 'Monday', isWeekend: false },
+          linkedEpisodes: [],
+          linkedFacts: [],
+          retrievalCount: 0,
+          lastRetrieved: null,
+          retrievalStrength: 1.0,
+        },
+      ];
+
+      const excitedTone = service.calculateEmotionalTone(excitedEpisodes);
+      expect(excitedTone.dominantMood).toBe('excited');
+
+      // High valence + low arousal = positive
+      const positiveEpisodes: Episode[] = [
+        {
+          ...excitedEpisodes[0],
+          id: '2',
+          emotionalArousal: 0.4, // <= 0.6 to trigger 'positive'
+        },
+      ];
+
+      const positiveTone = service.calculateEmotionalTone(positiveEpisodes);
+      expect(positiveTone.dominantMood).toBe('positive');
     });
   });
 });

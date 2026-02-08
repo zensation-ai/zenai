@@ -3,11 +3,16 @@
  *
  * Tests audio transcription functionality.
  * Uses mocks for child_process and fs operations.
+ *
+ * Note: transcribeAudio calls spawn twice:
+ * 1. checkWhisperAvailable() - spawns "whisper --help"
+ * 2. runWhisperCLI() - spawns the actual transcription
+ *
+ * Tests use mockReturnValueOnce to handle both spawn calls.
  */
 
 import { spawn } from 'child_process';
 import * as fs from 'fs';
-import * as path from 'path';
 import { EventEmitter } from 'events';
 
 // Mock modules before importing
@@ -19,24 +24,39 @@ import { transcribeAudio, checkWhisperAvailable } from '../../../services/whispe
 const mockedSpawn = spawn as jest.MockedFunction<typeof spawn>;
 const mockedFs = fs as jest.Mocked<typeof fs>;
 
-// Helper to emit event on next tick (more reliable than process.nextTick in Jest)
-const emitOnNextTick = (emitter: EventEmitter, event: string, ...args: unknown[]) => {
-  process.nextTick(() => emitter.emit(event, ...args));
-};
+// Helper to create a controllable mock process
+function createMockProcess() {
+  const emitter = new EventEmitter();
+  const mockProcess = emitter as any;
+  mockProcess.stderr = new EventEmitter();
+  mockProcess.stdout = new EventEmitter();
+  mockProcess.kill = jest.fn();
+  return mockProcess;
+}
+
+// Helper to setup a mock process that closes successfully
+function createSuccessProcess(exitCode: number = 0) {
+  const mockProcess = createMockProcess();
+  // Emit close on next tick after event listeners are attached
+  setImmediate(() => mockProcess.emit('close', exitCode));
+  return mockProcess;
+}
+
+// Helper to setup a mock process that emits an error
+function createErrorProcess(error: Error) {
+  const mockProcess = createMockProcess();
+  setImmediate(() => mockProcess.emit('error', error));
+  return mockProcess;
+}
 
 describe('Whisper Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useRealTimers();
     // Default mock for existsSync
     mockedFs.existsSync.mockReturnValue(false);
     mockedFs.mkdirSync.mockReturnValue(undefined);
     mockedFs.writeFileSync.mockReturnValue(undefined);
     mockedFs.unlinkSync.mockReturnValue(undefined);
-  });
-
-  afterEach(() => {
-    jest.clearAllTimers();
   });
 
   // ===========================================
@@ -45,14 +65,7 @@ describe('Whisper Service', () => {
 
   describe('checkWhisperAvailable', () => {
     it('should return true when whisper is available', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.on = jest.fn((event, callback) => {
-        if (event === 'close') {
-          process.nextTick(() => callback(0));
-        }
-        return mockProcess;
-      });
-      mockedSpawn.mockReturnValue(mockProcess);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       const result = await checkWhisperAvailable();
 
@@ -61,14 +74,7 @@ describe('Whisper Service', () => {
     });
 
     it('should return false when whisper exits with error', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.on = jest.fn((event, callback) => {
-        if (event === 'close') {
-          process.nextTick(() => callback(1));
-        }
-        return mockProcess;
-      });
-      mockedSpawn.mockReturnValue(mockProcess);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(1) as any);
 
       const result = await checkWhisperAvailable();
 
@@ -76,14 +82,7 @@ describe('Whisper Service', () => {
     });
 
     it('should return false when spawn fails', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.on = jest.fn((event, callback) => {
-        if (event === 'error') {
-          process.nextTick(() => callback(new Error('Command not found')));
-        }
-        return mockProcess;
-      });
-      mockedSpawn.mockReturnValue(mockProcess);
+      mockedSpawn.mockReturnValueOnce(createErrorProcess(new Error('Command not found')) as any);
 
       const result = await checkWhisperAvailable();
 
@@ -93,45 +92,41 @@ describe('Whisper Service', () => {
 
   // ===========================================
   // transcribeAudio Tests
-  // TODO: These tests have timing issues with EventEmitter mocking in CI
-  // The mocked spawn process events don't fire reliably with process.nextTick
-  // Need to refactor to use jest fake timers or a different mocking approach
+  // Note: Each test needs to mock TWO spawn calls:
+  // 1. For checkWhisperAvailable (returns code 0 to indicate whisper is installed)
+  // 2. For runWhisperCLI (the actual transcription)
   // ===========================================
 
-  describe.skip('transcribeAudio', () => {
-    let mockProcess: any;
-
+  describe('transcribeAudio', () => {
     beforeEach(() => {
-      // Create mock process with EventEmitter behavior
-      mockProcess = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
-      mockProcess.kill = jest.fn();
-
-      mockedSpawn.mockReturnValue(mockProcess as any);
-
-      // Mock temp directory creation
+      // Mock temp directory exists
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (p.includes('whisper-temp')) return true;
+        if (typeof p === 'string' && p.includes('whisper-temp')) return true;
         return false;
       });
     });
 
     it('should create temp directory if not exists', async () => {
+      // First spawn: checkWhisperAvailable
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      // Second spawn: runWhisperCLI
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
+      let tempDirChecked = false;
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (p.includes('whisper-temp')) return false;
+        const path = String(p);
+        // First check: whisper-temp directory (return false to trigger mkdir)
+        if (path.endsWith('whisper-temp') && !tempDirChecked) {
+          tempDirChecked = true;
+          return false;
+        }
+        // JSON output file check
+        if (path.includes('.json')) return true;
         return true;
       });
+      mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test', language: 'de' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      // Simulate successful completion
-      process.nextTick(() => {
-        mockedFs.existsSync.mockReturnValue(true);
-        mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test', language: 'de' }));
-        mockProcess.emit('close', 0);
-      });
-
-      await transcribePromise;
+      await transcribeAudio(Buffer.from('audio'), 'test.wav');
 
       expect(mockedFs.mkdirSync).toHaveBeenCalledWith(
         expect.stringContaining('whisper-temp'),
@@ -142,15 +137,16 @@ describe('Whisper Service', () => {
     it('should write audio buffer to temp file', async () => {
       const audioBuffer = Buffer.from('test audio data');
 
-      const transcribePromise = transcribeAudio(audioBuffer, 'test.wav');
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
-      process.nextTick(() => {
-        mockedFs.existsSync.mockReturnValue(true);
-        mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test', language: 'de' }));
-        mockProcess.emit('close', 0);
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
       });
+      mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test', language: 'de' }));
 
-      await transcribePromise;
+      await transcribeAudio(audioBuffer, 'test.wav');
 
       expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('input-'),
@@ -161,19 +157,16 @@ describe('Whisper Service', () => {
     it('should return transcription result from JSON output', async () => {
       const mockResult = { text: 'Hello world', language: 'en' };
 
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) return true;
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify(mockResult));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      const result = await transcribePromise;
+      const result = await transcribeAudio(Buffer.from('audio'), 'test.wav');
 
       expect(result.text).toBe('Hello world');
       expect(result.language).toBe('en');
@@ -181,76 +174,62 @@ describe('Whisper Service', () => {
     });
 
     it('should fallback to txt output if JSON not found', async () => {
-      let jsonChecked = false;
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (p.includes('.json')) {
-          jsonChecked = true;
-          return false;
-        }
-        if (p.includes('.txt')) return true;
+        if (typeof p === 'string' && p.includes('.json')) return false;
+        if (typeof p === 'string' && p.includes('.txt')) return true;
         return true;
       });
       mockedFs.readFileSync.mockReturnValue('Fallback text');
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      const result = await transcribePromise;
+      const result = await transcribeAudio(Buffer.from('audio'), 'test.wav');
 
       expect(result.text).toBe('Fallback text');
       expect(result.language).toBe('de');
     });
 
     it('should reject on non-zero exit code', async () => {
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(1) as any);
 
-      process.nextTick(() => {
-        mockProcess.stderr.emit('data', Buffer.from('Error message'));
-        mockProcess.emit('close', 1);
-      });
-
-      await expect(transcribePromise).rejects.toThrow('Whisper exited with code 1');
+      await expect(transcribeAudio(Buffer.from('audio'), 'test.wav'))
+        .rejects.toThrow('Whisper exited with code 1');
     });
 
     it('should reject on spawn error', async () => {
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createErrorProcess(new Error('Failed to start')) as any);
 
-      process.nextTick(() => {
-        mockProcess.emit('error', new Error('Failed to start'));
-      });
-
-      await expect(transcribePromise).rejects.toThrow('Failed to start Whisper');
+      await expect(transcribeAudio(Buffer.from('audio'), 'test.wav'))
+        .rejects.toThrow('Failed to start Whisper');
     });
 
     it('should reject when no output file found', async () => {
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (p.includes('.json') || p.includes('.txt')) return false;
+        if (typeof p === 'string' && (p.includes('.json') || p.includes('.txt'))) return false;
         return true;
       });
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      await expect(transcribePromise).rejects.toThrow('No output file found');
+      await expect(transcribeAudio(Buffer.from('audio'), 'test.wav'))
+        .rejects.toThrow('No output file found');
     });
 
     it('should use correct file extension from originalFilename', async () => {
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'recording.m4a');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      await transcribePromise;
+      await transcribeAudio(Buffer.from('audio'), 'recording.m4a');
 
       expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('.m4a'),
@@ -259,16 +238,16 @@ describe('Whisper Service', () => {
     });
 
     it('should use .wav as default extension', async () => {
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'));
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      await transcribePromise;
+      await transcribeAudio(Buffer.from('audio'));
 
       expect(mockedFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('.wav'),
@@ -277,18 +256,20 @@ describe('Whisper Service', () => {
     });
 
     it('should call whisper with correct arguments', async () => {
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
+      await transcribeAudio(Buffer.from('audio'), 'test.wav');
 
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      await transcribePromise;
-
-      expect(mockedSpawn).toHaveBeenCalledWith(
+      // Second call should be for runWhisperCLI
+      expect(mockedSpawn).toHaveBeenCalledTimes(2);
+      expect(mockedSpawn).toHaveBeenLastCalledWith(
         'whisper',
         expect.arrayContaining([
           expect.stringContaining('input-'),
@@ -301,30 +282,27 @@ describe('Whisper Service', () => {
     });
 
     it('should cleanup temp files after success', async () => {
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      await transcribePromise;
+      await transcribeAudio(Buffer.from('audio'), 'test.wav');
 
       // Should attempt to cleanup input file
       expect(mockedFs.unlinkSync).toHaveBeenCalled();
     });
 
     it('should cleanup temp files after error', async () => {
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 1);
-      });
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(1) as any);
 
       try {
-        await transcribePromise;
+        await transcribeAudio(Buffer.from('audio'), 'test.wav');
       } catch {
         // Expected to throw
       }
@@ -334,31 +312,31 @@ describe('Whisper Service', () => {
     });
 
     it('should trim whitespace from text output', async () => {
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: '  Hello world  ', language: 'de' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      const result = await transcribePromise;
+      const result = await transcribeAudio(Buffer.from('audio'), 'test.wav');
 
       expect(result.text).toBe('Hello world');
     });
 
     it('should default language to de if not in response', async () => {
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      const result = await transcribePromise;
+      const result = await transcribeAudio(Buffer.from('audio'), 'test.wav');
 
       expect(result.language).toBe('de');
     });
@@ -366,74 +344,57 @@ describe('Whisper Service', () => {
 
   // ===========================================
   // Edge Cases
-  // TODO: These tests have timing issues with EventEmitter mocking
-  // They work locally but timeout in CI. Need to refactor mocking approach.
   // ===========================================
 
-  describe.skip('Edge Cases', () => {
+  describe('Edge Cases', () => {
     it('should handle empty audio buffer', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stderr = new EventEmitter();
-      mockProcess.kill = jest.fn();
-      mockedSpawn.mockReturnValue(mockProcess);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: '' }));
 
-      const transcribePromise = transcribeAudio(Buffer.from(''), 'empty.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      const result = await transcribePromise;
+      const result = await transcribeAudio(Buffer.from(''), 'empty.wav');
 
       expect(result.text).toBe('');
     });
 
     it('should handle special characters in filename', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stderr = new EventEmitter();
-      mockProcess.kill = jest.fn();
-      mockedSpawn.mockReturnValue(mockProcess);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
 
-      const transcribePromise = transcribeAudio(
+      const result = await transcribeAudio(
         Buffer.from('audio'),
         'my recording (1).m4a'
       );
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
-      const result = await transcribePromise;
 
       expect(result.text).toBe('Test');
     });
 
     it('should ignore cleanup errors', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stderr = new EventEmitter();
-      mockProcess.kill = jest.fn();
-      mockedSpawn.mockReturnValue(mockProcess);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
+      mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
-      mockedFs.existsSync.mockReturnValue(true);
+      mockedFs.existsSync.mockImplementation((p: any) => {
+        if (typeof p === 'string' && p.includes('.json')) return true;
+        return true;
+      });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
       mockedFs.unlinkSync.mockImplementation(() => {
         throw new Error('Permission denied');
       });
 
-      const transcribePromise = transcribeAudio(Buffer.from('audio'), 'test.wav');
-
-      process.nextTick(() => {
-        mockProcess.emit('close', 0);
-      });
-
       // Should not throw despite cleanup error
-      const result = await transcribePromise;
+      const result = await transcribeAudio(Buffer.from('audio'), 'test.wav');
       expect(result.text).toBe('Test');
     });
   });
