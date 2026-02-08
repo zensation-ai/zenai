@@ -656,7 +656,7 @@ Erstelle nur Diagramme wenn die Daten sinnvolle Visualisierungen ermöglichen.`;
    */
   isCached(cacheKey: string): boolean {
     const cached = this.documentCache.get(cacheKey);
-    if (!cached) return false;
+    if (!cached) {return false;}
     if (Date.now() - cached.createdAt > CACHE_TTL_MS) {
       this.documentCache.delete(cacheKey);
       return false;
@@ -1048,7 +1048,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
     const text = buffer.toString('utf-8');
     const lines = text.split('\n').filter((line) => line.trim());
 
-    if (lines.length === 0) return '(Leere CSV-Datei)';
+    if (lines.length === 0) {return '(Leere CSV-Datei)';}
 
     // Detect separator (comma, semicolon, tab)
     const firstLine = lines[0];
@@ -1122,9 +1122,9 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
    * Detect section type based on content
    */
   private detectSectionType(content: string): AnalysisSection['type'] {
-    if (content.includes('|') && content.includes('---')) return 'table';
-    if (content.match(/^[\s]*[-*]\s/m)) return 'list';
-    if (content.match(/\b\d+[.,]\d+\s*[€$%]/)) return 'kpi';
+    if (content.includes('|') && content.includes('---')) {return 'table';}
+    if (content.match(/^[\s]*[-*]\s/m)) {return 'list';}
+    if (content.match(/\b\d+[.,]\d+\s*[€$%]/)) {return 'kpi';}
     return 'text';
   }
 
@@ -1259,7 +1259,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
         values.push(updates.icon);
       }
 
-      if (fields.length === 0) return this.getCustomTemplateById(id);
+      if (fields.length === 0) {return this.getCustomTemplateById(id);}
 
       fields.push(`updated_at = NOW()`);
       values.push(id);
@@ -1272,7 +1272,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
         values
       );
 
-      if (res.rows.length === 0) return null;
+      if (res.rows.length === 0) {return null;}
       logger.info('Custom template updated', { id });
       return res.rows[0];
     } catch (error) {
@@ -1347,12 +1347,12 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
       const content = match[1].trim();
       // Try to detect diagram type for title
       let title = `Diagramm ${index}`;
-      if (content.startsWith('pie')) title = `Kreisdiagramm ${index}`;
-      else if (content.startsWith('graph') || content.startsWith('flowchart')) title = `Flussdiagramm ${index}`;
-      else if (content.startsWith('sequenceDiagram')) title = `Sequenzdiagramm ${index}`;
-      else if (content.startsWith('gantt')) title = `Gantt-Diagramm ${index}`;
-      else if (content.startsWith('classDiagram')) title = `Klassendiagramm ${index}`;
-      else if (content.startsWith('xychart-beta') || content.startsWith('bar')) title = `Balkendiagramm ${index}`;
+      if (content.startsWith('pie')) {title = `Kreisdiagramm ${index}`;}
+      else if (content.startsWith('graph') || content.startsWith('flowchart')) {title = `Flussdiagramm ${index}`;}
+      else if (content.startsWith('sequenceDiagram')) {title = `Sequenzdiagramm ${index}`;}
+      else if (content.startsWith('gantt')) {title = `Gantt-Diagramm ${index}`;}
+      else if (content.startsWith('classDiagram')) {title = `Klassendiagramm ${index}`;}
+      else if (content.startsWith('xychart-beta') || content.startsWith('bar')) {title = `Balkendiagramm ${index}`;}
 
       diagrams.push({ title, content });
     }
@@ -1375,7 +1375,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
           oldestKey = k;
         }
       }
-      if (oldestKey) this.documentCache.delete(oldestKey);
+      if (oldestKey) {this.documentCache.delete(oldestKey);}
     }
 
     this.documentCache.set(key, doc);
@@ -1438,7 +1438,7 @@ export function validateFileMagicNumber(buffer: Buffer, mimeType: string): boole
   }
 
   return signatures.some((sig) => {
-    if (buffer.length < sig.length) return false;
+    if (buffer.length < sig.length) {return false;}
     return sig.every((byte, i) => buffer[i] === byte);
   });
 }

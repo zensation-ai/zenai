@@ -81,7 +81,7 @@ export function recordHttpRequest(method: string, statusCode: number, durationMs
 export function recordDbQuery(durationMs: number, slow: boolean): void {
   observeHistogram(dbQueryDuration, durationMs);
   dbQueryTotal++;
-  if (slow) dbSlowQueryTotal++;
+  if (slow) {dbSlowQueryTotal++;}
 }
 
 /** Record Claude API token usage */

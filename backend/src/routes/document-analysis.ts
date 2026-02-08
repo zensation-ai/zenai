@@ -95,7 +95,7 @@ const uploadMulti = multer({
 const VALID_TEMPLATES: AnalysisTemplate[] = ['general', 'financial', 'contract', 'data', 'summary'];
 
 function validateTemplate(template: unknown): AnalysisTemplate {
-  if (!template || typeof template !== 'string') return 'general';
+  if (!template || typeof template !== 'string') {return 'general';}
   if (!VALID_TEMPLATES.includes(template as AnalysisTemplate)) {
     throw new ValidationError(
       `Ungültiges Template. Verfügbar: ${VALID_TEMPLATES.join(', ')}`
@@ -867,7 +867,7 @@ documentAnalysisRouter.post(
       }
 
       // Table separator - skip
-      if (line.match(/^\|?\s*---/)) continue;
+      if (line.match(/^\|?\s*---/)) {continue;}
 
       // Regular text
       if (line.trim()) {
@@ -879,7 +879,7 @@ documentAnalysisRouter.post(
 
     // --- Footer ---
     doc.moveDown(2);
-    if (doc.y > 720) doc.addPage();
+    if (doc.y > 720) {doc.addPage();}
     doc.strokeColor('#ccc').lineWidth(0.5)
       .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
     doc.moveDown(0.5);

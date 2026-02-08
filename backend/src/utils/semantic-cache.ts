@@ -129,7 +129,7 @@ export class SemanticCache<T = unknown> {
    * Start automatic cleanup interval (skip in test env to prevent Jest handle leaks)
    */
   private startAutoCleanup(): void {
-    if (process.env.NODE_ENV === 'test') return;
+    if (process.env.NODE_ENV === 'test') {return;}
     // Clean up every 5 minutes
     const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
     this.cleanupInterval = setInterval(() => {

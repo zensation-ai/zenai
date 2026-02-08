@@ -18,7 +18,7 @@ import { logger } from '../utils/logger';
 import { queryContext, AIContext } from '../utils/database-context';
 import { documentProcessingService, ProcessingResult } from './document-processing';
 import { generateEmbedding } from './ai';
-import { cosineSimilarity } from '../utils/embedding';
+import { cosineSimilarity as _cosineSimilarity } from '../utils/embedding';
 
 // ===========================================
 // Types

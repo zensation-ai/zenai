@@ -638,7 +638,7 @@ async function batchIncrementTopicInterests(
     .map(t => t.toLowerCase().trim())
     .filter(t => t.length >= 2);
 
-  if (validTopics.length === 0) return;
+  if (validTopics.length === 0) {return;}
 
   try {
     // Build a JSONB object with weights, then merge with existing using SUM

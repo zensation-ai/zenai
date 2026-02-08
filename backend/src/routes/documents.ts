@@ -10,7 +10,7 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
-import crypto from 'crypto';
+import _crypto from 'crypto';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
@@ -784,7 +784,7 @@ router.post(
     let successCount = 0;
     for (const id of ids) {
       const success = await documentService.moveToFolder(id, folderPath, context);
-      if (success) successCount++;
+      if (success) {successCount++;}
     }
 
     res.json({
@@ -816,7 +816,7 @@ router.delete(
     let deletedCount = 0;
     for (const id of ids) {
       const deleted = await documentService.deleteDocument(id, context);
-      if (deleted) deletedCount++;
+      if (deleted) {deletedCount++;}
     }
 
     res.json({

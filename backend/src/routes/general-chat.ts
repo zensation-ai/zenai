@@ -547,8 +547,8 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         let eventType = '';
         let dataStr = '';
         for (const line of lines) {
-          if (line.startsWith('event: ')) eventType = line.slice(7).trim();
-          else if (line.startsWith('data: ')) dataStr = line.slice(6);
+          if (line.startsWith('event: ')) {eventType = line.slice(7).trim();}
+          else if (line.startsWith('data: ')) {dataStr = line.slice(6);}
         }
 
         if (eventType && dataStr) {

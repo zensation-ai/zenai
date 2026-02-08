@@ -32,7 +32,7 @@ import {
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
-import { AIContext, queryContext } from '../utils/database-context';
+import { queryContext } from '../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
 import { generateEmbedding } from './ai';
 import { longTermMemory, episodicMemory } from './memory';
@@ -42,7 +42,6 @@ import * as github from './github';
 import * as projectContext from './project-context';
 import { executeCodeDirect, isCodeExecutionEnabled, isSupportedLanguage, SupportedLanguage } from './code-execution';
 import { documentAnalysis, type AnalysisTemplate } from './document-analysis';
-import { documentRAGService } from './document-rag';
 import { documentService } from './document-service';
 import path from 'path';
 
@@ -280,9 +279,9 @@ function safeEvaluate(expr: string): number {
       if ((op === '/' || op === '%') && right === 0) {
         throw new Error('Division durch Null ist nicht erlaubt.');
       }
-      if (op === '*') result *= right;
-      else if (op === '/') result /= right;
-      else result %= right;
+      if (op === '*') {result *= right;}
+      else if (op === '/') {result /= right;}
+      else {result %= right;}
     }
     return result;
   }

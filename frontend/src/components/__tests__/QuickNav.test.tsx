@@ -2,7 +2,7 @@
  * Unit Tests for QuickNav Component
  *
  * Tests quick navigation functionality including:
- * - Tile rendering (KI-Werkstatt, Lernen, Meetings, Sortieren)
+ * - Tile rendering (KI-Werkstatt, Lernen, Meetings, Dokumente, Sortieren)
  * - Active state highlighting
  * - Page navigation
  * - Keyboard navigation (Arrow keys)
@@ -10,7 +10,7 @@
  *
  * Note: QuickNav only shows items NOT in main header navigation.
  * Main nav has: Gedanken, Insights, Archiv, Einstellungen
- * QuickNav shows: KI-Werkstatt, Lernen, Meetings, Sortieren
+ * QuickNav shows: KI-Werkstatt, Lernen, Meetings, Dokumente, Sortieren
  *
  * @module tests/components/QuickNav
  */
@@ -42,16 +42,17 @@ describe('QuickNav Component', () => {
     it('renders all navigation tiles', () => {
       render(<QuickNav {...defaultProps} />);
       const buttons = screen.getAllByRole('button');
-      // Should have 4 tiles: KI-Werkstatt, Lernen, Meetings, Sortieren
-      expect(buttons).toHaveLength(4);
+      // Should have 5 tiles: KI-Werkstatt, Lernen, Meetings, Dokumente, Sortieren
+      expect(buttons).toHaveLength(5);
     });
 
     it('displays correct labels', () => {
       render(<QuickNav {...defaultProps} />);
-      // KI is the shortLabel for KI-Werkstatt
+      // KI is the shortLabel for KI-Werkstatt, Docs is the shortLabel for Dokumente
       expect(screen.getByText('KI')).toBeInTheDocument();
       expect(screen.getByText('Lernen')).toBeInTheDocument();
       expect(screen.getByText('Meetings')).toBeInTheDocument();
+      expect(screen.getByText('Docs')).toBeInTheDocument();
       expect(screen.getByText('Sortieren')).toBeInTheDocument();
     });
 
@@ -284,12 +285,33 @@ describe('QuickNav Component', () => {
       const workshopButton = screen.getByRole('button', { name: /KI-Werkstatt/i });
       const learningButton = screen.getByRole('button', { name: /Lernen/i });
       const meetingsButton = screen.getByRole('button', { name: /Meetings/i });
+      const documentsButton = screen.getByRole('button', { name: /Dokumente/i });
       const triageButton = screen.getByRole('button', { name: /Sortieren/i });
 
       expect(workshopButton).toHaveClass('color-purple');
       expect(learningButton).toHaveClass('color-green');
       expect(meetingsButton).toHaveClass('color-cyan');
+      expect(documentsButton).toHaveClass('color-blue');
       expect(triageButton).toHaveClass('color-coral');
+    });
+  });
+
+  describe('Documents Tile', () => {
+    it('highlights active tile for documents page', () => {
+      render(<QuickNav {...defaultProps} currentPage="documents" />);
+      const documentsButton = screen.getByRole('button', { name: /Dokumente/i });
+      expect(documentsButton).toHaveClass('active');
+      expect(documentsButton).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('navigates to documents on click', async () => {
+      const user = userEvent.setup();
+      render(<QuickNav {...defaultProps} />);
+
+      const documentsButton = screen.getByRole('button', { name: /Dokumente/i });
+      await user.click(documentsButton);
+
+      expect(mockOnNavigate).toHaveBeenCalledWith('documents');
     });
   });
 });

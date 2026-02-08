@@ -13,7 +13,7 @@
 import { logger } from '../utils/logger';
 import { queryContext, AIContext } from '../utils/database-context';
 import { generateEmbedding } from './ai';
-import { cosineSimilarity } from '../utils/embedding';
+import { cosineSimilarity as _cosineSimilarity } from '../utils/embedding';
 import { documentService, DocumentSearchResult } from './document-service';
 
 // ===========================================

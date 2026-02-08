@@ -262,7 +262,7 @@ export class DocumentProcessingService {
    */
   private async extractPdfText(filePath: string): Promise<ExtractedText> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const pdfParse = require('pdf-parse');
       const dataBuffer = await fs.readFile(filePath);
       const data = await pdfParse(dataBuffer);
@@ -272,7 +272,7 @@ export class DocumentProcessingService {
         pageCount: data.numpages,
         metadata: data.info,
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error('PDF extraction failed', undefined, { filePath });
       throw new Error('Failed to extract text from PDF');
     }
@@ -290,7 +290,7 @@ export class DocumentProcessingService {
         text: result.value,
         metadata: { messages: result.messages },
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error('DOCX extraction failed', undefined, { filePath });
       throw new Error('Failed to extract text from DOCX');
     }
@@ -410,7 +410,7 @@ export class DocumentProcessingService {
   private async extractEpubText(filePath: string): Promise<ExtractedText> {
     try {
       // Use adm-zip to read epub as zip
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const AdmZip = require('adm-zip');
       const cheerio = await import('cheerio');
       const zip = new AdmZip(filePath);
@@ -435,7 +435,7 @@ export class DocumentProcessingService {
   /**
    * Generate AI summary of document content
    */
-  async generateSummary(text: string, context: AIContext): Promise<string> {
+  async generateSummary(text: string, _context: AIContext): Promise<string> {
     try {
       const truncatedText = text.substring(0, CONFIG.maxSummaryInput);
 
@@ -524,8 +524,8 @@ ${text.substring(0, 2000)}`;
     const keywords: Array<{ word: string; score: number }> = [];
 
     for (const [word, freq] of wordFreq.entries()) {
-      if (stopWords.has(word)) continue;
-      if (freq < 2) continue;
+      if (stopWords.has(word)) {continue;}
+      if (freq < 2) {continue;}
 
       const score = freq * Math.log(word.length);
       keywords.push({ word, score });
@@ -551,8 +551,8 @@ ${text.substring(0, 2000)}`;
     const englishPatterns = /\b(the|and|or|is|are|have|has|been|will|not|also|for|with|from|at|by)\b/g;
     const englishCount = (sample.match(englishPatterns) || []).length;
 
-    if (germanCount > englishCount * 1.5) return 'de';
-    if (englishCount > germanCount * 1.5) return 'en';
+    if (germanCount > englishCount * 1.5) {return 'de';}
+    if (englishCount > germanCount * 1.5) {return 'en';}
 
     return germanCount >= englishCount ? 'de' : 'en';
   }
@@ -595,7 +595,7 @@ ${text.substring(0, 2000)}`;
 
       // Move start with overlap
       charStart = charEnd - overlap;
-      if (charStart >= text.length - overlap) break;
+      if (charStart >= text.length - overlap) {break;}
     }
 
     return chunks;

@@ -455,7 +455,7 @@ ${conversationText}`;
    * Start the cleanup interval (skip in test env to prevent Jest handle leaks)
    */
   private startCleanupInterval(): void {
-    if (process.env.NODE_ENV === 'test') return;
+    if (process.env.NODE_ENV === 'test') {return;}
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredSessions();
     }, CONFIG.CLEANUP_INTERVAL_MS);
