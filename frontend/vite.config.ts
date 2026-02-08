@@ -26,8 +26,8 @@ export default defineConfig({
   build: {
     // Target modern browsers for smaller output (drops legacy polyfills)
     target: 'es2020',
-    // vendor-syntax (react-syntax-highlighter) is ~619KB but lazy-loaded only on artifact open
-    chunkSizeWarningLimit: 650,
+    // vendor-syntax uses light build with common languages (~60KB vs ~619KB full)
+    chunkSizeWarningLimit: 250,
     // Disable sourcemaps in production for smaller bundles
     sourcemap: false,
     // Enable CSS code splitting - only load CSS for active chunks
@@ -52,7 +52,7 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-router': ['react-router-dom'],
           'vendor-axios': ['axios'],
-          // Heavy rendering libs - lazy-loaded with ArtifactPanel
+          // Heavy rendering libs - lazy-loaded with ArtifactPanel (light build ~60KB)
           'vendor-syntax': ['react-syntax-highlighter'],
           'vendor-markdown': ['react-markdown', 'remark-gfm'],
           // ReactFlow - heavy (~200KB), only used on Insights/Connections tab

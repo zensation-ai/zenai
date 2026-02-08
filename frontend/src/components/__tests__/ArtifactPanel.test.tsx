@@ -17,12 +17,9 @@ import userEvent from '@testing-library/user-event';
 import { ArtifactPanel, ArtifactButton } from '../ArtifactPanel';
 import type { Artifact } from '../../types/artifacts';
 
-// Mock react-syntax-highlighter to avoid issues with ESM imports
-vi.mock('react-syntax-highlighter', () => ({
-  Prism: ({ children }: { children: string }) => <pre data-testid="syntax-highlighter">{children}</pre>,
-}));
-
-vi.mock('react-syntax-highlighter/dist/esm/styles/prism', () => ({
+// Mock syntax highlighter utility
+vi.mock('../../utils/syntaxHighlighter', () => ({
+  SyntaxHighlighter: ({ children }: { children: string }) => <pre data-testid="syntax-highlighter">{children}</pre>,
   oneDark: {},
 }));
 

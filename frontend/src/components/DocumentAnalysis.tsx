@@ -18,8 +18,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { SyntaxHighlighter, oneDark } from '../utils/syntaxHighlighter';
 import { showToast } from './Toast';
 
 // Simple inline file upload component for DocumentAnalysis
