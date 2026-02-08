@@ -200,14 +200,43 @@
   flex-shrink: 0;
 }
 
-.folder-sidebar h2 {
-  margin: 0 0 0.75rem 0;
+.folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
   padding: 0 0.5rem;
+}
+
+.folder-sidebar h2,
+.folder-header h2 {
+  margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.create-folder-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: transparent;
+  border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.2));
+  border-radius: 4px;
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--neuro-timing-quick, 0.15s);
+}
+
+.create-folder-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--neuro-accent, #667eea);
+  color: var(--neuro-accent, #667eea);
 }
 
 .folder-list {
@@ -601,5 +630,187 @@
   .action-button {
     width: 2.5rem;
     height: 2.5rem;
+  }
+}
+
+/* Create Folder Modal */
+.create-folder-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.create-folder-modal {
+  width: 90%;
+  max-width: 400px;
+  background: var(--neuro-bg-secondary, #1e293b);
+  border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.create-folder-modal h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--neuro-text-primary, #fff);
+}
+
+.folder-name-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--glass-2026-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.15));
+  border-radius: 8px;
+  color: var(--neuro-text-primary, #fff);
+  font-size: 1rem;
+}
+
+.folder-name-input:focus {
+  outline: none;
+  border-color: var(--neuro-accent, #667eea);
+}
+
+.folder-location {
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.5));
+}
+
+.create-folder-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+.create-folder-actions button {
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--neuro-timing-quick, 0.15s);
+}
+
+.cancel-btn {
+  background: transparent;
+  border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.2));
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.create-btn {
+  background: var(--neuro-accent, #667eea);
+  border: none;
+  color: white;
+}
+
+.create-btn:hover:not(:disabled) {
+  background: var(--neuro-accent-hover, #5a6fd6);
+}
+
+.create-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Batch Action Bar */
+.batch-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--neuro-accent, #667eea);
+  color: white;
+  flex-shrink: 0;
+}
+
+.batch-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.batch-count {
+  font-weight: 600;
+}
+
+.batch-select-all,
+.batch-clear {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background var(--neuro-timing-quick, 0.15s);
+}
+
+.batch-select-all:hover,
+.batch-clear:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.batch-move-dropdown select {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.batch-move-dropdown select option {
+  background: var(--neuro-bg-secondary, #1e293b);
+  color: var(--neuro-text-primary, #fff);
+}
+
+.batch-delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background: rgba(239, 68, 68, 0.9);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background var(--neuro-timing-quick, 0.15s);
+}
+
+.batch-delete-btn:hover {
+  background: rgba(239, 68, 68, 1);
+}
+
+@media (max-width: 600px) {
+  .batch-action-bar {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .batch-info,
+  .batch-actions {
+    width: 100%;
+    justify-content: center;
   }
 }

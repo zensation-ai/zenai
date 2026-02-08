@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DocumentUpload } from './DocumentUpload';
 import { DocumentCard } from './DocumentCard';
+import { DocumentDetailModal } from './DocumentDetailModal';
 import {
   Document,
   DocumentFilters,
@@ -50,9 +51,12 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showUpload, setShowUpload] = useState(false);
   const [showMobileFolders, setShowMobileFolders] = useState(false);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string>('/');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
+  const [detailDocument, setDetailDocument] = useState<Document | null>(null);
 
   // Filters
   const [filters, setFilters] = useState<DocumentFilters>({
@@ -158,8 +162,13 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (showUpload) {
+        if (detailDocument) {
+          setDetailDocument(null);
+        } else if (showUpload) {
           setShowUpload(false);
+        } else if (showCreateFolder) {
+          setShowCreateFolder(false);
+          setNewFolderName('');
         } else if (showMobileFolders) {
           setShowMobileFolders(false);
         }
@@ -168,7 +177,53 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showUpload, showMobileFolders]);
+  }, [showUpload, showMobileFolders, showCreateFolder, detailDocument]);
+
+  // Create new folder
+  const handleCreateFolder = useCallback(async () => {
+    if (!newFolderName.trim()) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/${context}/documents/folders`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY,
+          },
+          body: JSON.stringify({
+            name: newFolderName.trim(),
+            parentPath: selectedFolder === '/' ? '/' : selectedFolder,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        fetchFolders();
+        setShowCreateFolder(false);
+        setNewFolderName('');
+      }
+    } catch (err) {
+      console.error('Failed to create folder:', err);
+    }
+  }, [API_URL, API_KEY, context, newFolderName, selectedFolder, fetchFolders]);
+
+  // Handle document update from detail modal
+  const handleDocumentUpdate = useCallback((updatedDoc: Document) => {
+    setDocuments(prev => prev.map(d => d.id === updatedDoc.id ? updatedDoc : d));
+    setDetailDocument(updatedDoc);
+  }, []);
+
+  // Handle document deletion from detail modal
+  const handleDocumentDeleted = useCallback(() => {
+    if (detailDocument) {
+      setDocuments(prev => prev.filter(d => d.id !== detailDocument.id));
+      setDetailDocument(null);
+      fetchStats();
+    }
+  }, [detailDocument, fetchStats]);
 
   // Handle folder change
   const handleFolderChange = useCallback((path: string) => {
@@ -289,6 +344,77 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
     });
   }, []);
 
+  // Select all visible documents
+  const selectAll = useCallback(() => {
+    setSelectedDocuments(new Set(documents.map(d => d.id)));
+  }, [documents]);
+
+  // Clear selection
+  const clearSelection = useCallback(() => {
+    setSelectedDocuments(new Set());
+  }, []);
+
+  // Batch delete
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedDocuments.size === 0) return;
+    if (!confirm(`${selectedDocuments.size} Dokument(e) wirklich löschen?`)) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/${context}/documents/batch`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY,
+          },
+          body: JSON.stringify({ ids: Array.from(selectedDocuments) }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        setDocuments(prev => prev.filter(d => !selectedDocuments.has(d.id)));
+        setSelectedDocuments(new Set());
+        fetchStats();
+      }
+    } catch (err) {
+      console.error('Batch delete failed:', err);
+    }
+  }, [API_URL, API_KEY, context, selectedDocuments, fetchStats]);
+
+  // Batch move
+  const handleBatchMove = useCallback(async (targetFolder: string) => {
+    if (selectedDocuments.size === 0) return;
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/${context}/documents/batch/move`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY,
+          },
+          body: JSON.stringify({
+            ids: Array.from(selectedDocuments),
+            folderPath: targetFolder,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        // Refresh documents
+        fetchDocuments(filters);
+        setSelectedDocuments(new Set());
+        fetchFolders();
+      }
+    } catch (err) {
+      console.error('Batch move failed:', err);
+    }
+  }, [API_URL, API_KEY, context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
+
   // Load more
   const loadMore = useCallback(() => {
     if (!hasMore || loading) return;
@@ -389,11 +515,64 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
         </div>
       )}
 
+      {/* Batch Action Bar */}
+      {selectedDocuments.size > 0 && (
+        <div className="batch-action-bar">
+          <div className="batch-info">
+            <span className="batch-count">{selectedDocuments.size} ausgewählt</span>
+            <button type="button" className="batch-select-all" onClick={selectAll}>
+              Alle auswählen
+            </button>
+            <button type="button" className="batch-clear" onClick={clearSelection}>
+              Auswahl aufheben
+            </button>
+          </div>
+          <div className="batch-actions">
+            <div className="batch-move-dropdown">
+              <select
+                aria-label="Dokumente verschieben"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleBatchMove(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>Verschieben nach...</option>
+                {folders.map(folder => (
+                  <option key={folder.id} value={folder.path}>
+                    {folder.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              className="batch-delete-btn"
+              onClick={handleBatchDelete}
+            >
+              🗑️ Löschen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="vault-content">
         {/* Folder Sidebar */}
         <aside className="folder-sidebar">
-          <h2>Ordner</h2>
+          <div className="folder-header">
+            <h2>Ordner</h2>
+            <button
+              type="button"
+              className="create-folder-btn"
+              onClick={() => setShowCreateFolder(true)}
+              aria-label="Neuer Ordner"
+            >
+              +
+            </button>
+          </div>
           <nav className="folder-list">
             {folders.map(folder => (
               <button
@@ -453,10 +632,7 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
                     viewMode={viewMode}
                     selected={selectedDocuments.has(doc.id)}
                     onSelect={(selected) => toggleSelection(doc.id, selected)}
-                    onClick={() => {
-                      // Open document detail modal (TODO)
-                      console.log('Open document:', doc.id);
-                    }}
+                    onClick={() => setDetailDocument(doc)}
                     onDelete={() => handleDelete(doc.id)}
                     onToggleFavorite={() => handleToggleFavorite(doc)}
                   />
@@ -538,6 +714,55 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
                 folderPath={selectedFolder}
                 onUploadComplete={handleUploadComplete}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Detail Modal */}
+      {detailDocument && (
+        <DocumentDetailModal
+          doc={detailDocument}
+          context={context}
+          onClose={() => setDetailDocument(null)}
+          onUpdate={handleDocumentUpdate}
+          onDelete={handleDocumentDeleted}
+        />
+      )}
+
+      {/* Create Folder Modal */}
+      {showCreateFolder && (
+        <div className="create-folder-overlay" onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }}>
+          <div className="create-folder-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Neuer Ordner</h3>
+            <input
+              type="text"
+              className="folder-name-input"
+              placeholder="Ordnername"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateFolder();
+              }}
+              autoFocus
+            />
+            <p className="folder-location">Wird erstellt in: {selectedFolder}</p>
+            <div className="create-folder-actions">
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }}
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                className="create-btn"
+                onClick={handleCreateFolder}
+                disabled={!newFolderName.trim()}
+              >
+                Erstellen
+              </button>
             </div>
           </div>
         </div>
