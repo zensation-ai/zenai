@@ -19,7 +19,7 @@ import {
   type ServerMessage,
   type VoicePipelineSession,
 } from '../services/voice-pipeline';
-import type { TTSVoice } from '../services/tts';
+import { TTS_VOICES, type TTSVoice } from '../services/tts';
 
 // ============================================================
 // WebSocket Connection Handler
@@ -55,9 +55,8 @@ export function handleVoicePipelineConnection(ws: WebSocket, _req: IncomingMessa
   ws.on('message', async (data: Buffer | string) => {
     try {
       // Binary data = audio chunk
-      if (Buffer.isBuffer(data) || (typeof data === 'object' && data !== null)) {
-        const chunk = Buffer.isBuffer(data) ? data : Buffer.from(data);
-        audioChunks.push(chunk);
+      if (Buffer.isBuffer(data)) {
+        audioChunks.push(data);
         return;
       }
 
@@ -119,7 +118,9 @@ export function handleVoicePipelineConnection(ws: WebSocket, _req: IncomingMessa
         }
 
         case 'config': {
-          if (message.voice) session.voice = message.voice as TTSVoice;
+          if (message.voice && TTS_VOICES.some(v => v.id === message.voice)) {
+            session.voice = message.voice as TTSVoice;
+          }
           if (message.speed) session.speed = message.speed;
           if (message.chatSessionId) session.chatSessionId = message.chatSessionId;
 

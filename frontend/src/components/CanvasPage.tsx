@@ -294,11 +294,12 @@ export function CanvasPage({ context }: CanvasPageProps) {
         <div className="canvas-empty-content">
           <h2>{'\uD83C\uDFA8'} Canvas</h2>
           <p>Erstelle interaktive Dokumente mit Live-Vorschau.</p>
-          <button className="canvas-create-btn" onClick={handleNewDocument}>
+          <button type="button" className="canvas-create-btn" onClick={handleNewDocument}>
             + Neues Dokument erstellen
           </button>
           {documents.length > 0 && (
             <button
+              type="button"
               className="canvas-browse-btn"
               onClick={() => setShowDocList(true)}
             >

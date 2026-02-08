@@ -106,6 +106,7 @@ export function CanvasEditorPanel({
                   : '<html>...'
             }
             spellCheck={type === 'markdown'}
+            aria-label="Dokumentinhalt bearbeiten"
           />
         </div>
       )}

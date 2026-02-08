@@ -83,6 +83,7 @@ export function CanvasDocumentList({
             placeholder="Dokument suchen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Dokumente durchsuchen"
           />
         </div>
 

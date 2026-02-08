@@ -102,8 +102,7 @@ export class StreamingAudioPlayer {
       };
 
       source.start(0);
-    } catch (error) {
-      console.error('Audio playback error:', error);
+    } catch {
       this.currentSource = null;
       // Try next chunk even if this one failed
       void this.playNext();

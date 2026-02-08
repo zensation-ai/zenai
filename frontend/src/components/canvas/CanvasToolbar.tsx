@@ -98,6 +98,7 @@ export function CanvasToolbar({
             defaultValue={title}
             onBlur={handleTitleBlur}
             onKeyDown={handleTitleKeyDown}
+            aria-label="Dokumenttitel"
             autoFocus
           />
         ) : (
@@ -115,6 +116,7 @@ export function CanvasToolbar({
           className="canvas-type-select"
           value={type}
           onChange={(e) => onTypeChange(e.target.value as 'markdown' | 'code' | 'html')}
+          aria-label="Dokumenttyp"
         >
           <option value="markdown">Markdown</option>
           <option value="code">Code</option>
@@ -127,6 +129,7 @@ export function CanvasToolbar({
             className="canvas-language-select"
             value={language || 'javascript'}
             onChange={(e) => onLanguageChange(e.target.value)}
+            aria-label="Programmiersprache"
           >
             <option value="javascript">JavaScript</option>
             <option value="typescript">TypeScript</option>
@@ -176,13 +179,13 @@ export function CanvasToolbar({
         </div>
 
         {/* Actions */}
-        <button className="canvas-toolbar-btn" onClick={onCopy} title="Kopieren">
+        <button className="canvas-toolbar-btn" onClick={onCopy} title="Kopieren" aria-label="Inhalt kopieren">
           {'\uD83D\uDCCB'}
         </button>
-        <button className="canvas-toolbar-btn" onClick={onDownload} title="Herunterladen">
+        <button className="canvas-toolbar-btn" onClick={onDownload} title="Herunterladen" aria-label="Dokument herunterladen">
           {'\u2B07\uFE0F'}
         </button>
-        <button className="canvas-toolbar-btn" onClick={onNewDocument} title="Neues Dokument">
+        <button className="canvas-toolbar-btn" onClick={onNewDocument} title="Neues Dokument" aria-label="Neues Dokument erstellen">
           +
         </button>
       </div>

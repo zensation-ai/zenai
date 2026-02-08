@@ -142,7 +142,6 @@ export function useVAD(options: UseVADOptions): UseVADReturn {
 
       setIsListening(true);
     } catch (error) {
-      console.error('Failed to start VAD:', error);
       throw error;
     }
   }, [energyThreshold, silenceDurationMs, onSpeechStart, onSpeechEnd]);
