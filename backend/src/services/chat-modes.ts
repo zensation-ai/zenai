@@ -114,6 +114,29 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
   { pattern: /test(e|en?)?\s+(diesen?\s+)?code/i, tools: ['execute_code'], weight: 0.9 },
   { pattern: /```(python|javascript|nodejs|bash)/i, tools: ['execute_code'], weight: 0.85 },
   { pattern: /(python|javascript|nodejs|bash)\s+(code\s+)?ausführen/i, tools: ['execute_code'], weight: 0.95 },
+
+  // Meeting creation patterns
+  { pattern: /meeting\s+(erstell|anlegen|einrichten|planen)/i, tools: ['create_meeting'], weight: 0.95 },
+  { pattern: /termin\s+(am|um|für|mit|erstell|anlegen)/i, tools: ['create_meeting'], weight: 0.9 },
+  { pattern: /besprechung\s+(am|um|für|mit|planen|erstell)/i, tools: ['create_meeting'], weight: 0.9 },
+  { pattern: /ich\s+habe?\s+(ein|einen?)\s+(meeting|termin|besprechung|treffen)/i, tools: ['create_meeting'], weight: 0.95 },
+  { pattern: /erstell(e|en?)?\s+(ein|einen?)\s+(meeting|termin)/i, tools: ['create_meeting'], weight: 0.95 },
+  { pattern: /trag\s+(ein|einen?)\s+(meeting|termin)\s+ein/i, tools: ['create_meeting'], weight: 0.95 },
+
+  // Navigation patterns
+  { pattern: /wo\s+finde\s+ich/i, tools: ['navigate_to', 'app_help'], weight: 0.9 },
+  { pattern: /zeig(e?)\s+mir\s+(die|das|den)\s+\w*(seite|bereich|dashboard)/i, tools: ['navigate_to'], weight: 0.9 },
+  { pattern: /geh(e?)\s+zu\s+/i, tools: ['navigate_to'], weight: 0.95 },
+  { pattern: /navigiere?\s+(zu|nach|auf)/i, tools: ['navigate_to'], weight: 0.95 },
+  { pattern: /öffne\s+(die|das|den)/i, tools: ['navigate_to'], weight: 0.85 },
+  { pattern: /bring\s+mich\s+(zu|nach|auf)/i, tools: ['navigate_to'], weight: 0.9 },
+
+  // App help patterns
+  { pattern: /wie\s+funktioniert/i, tools: ['app_help'], weight: 0.9 },
+  { pattern: /was\s+kann\s+(ich|man|die\s+app)/i, tools: ['app_help'], weight: 0.85 },
+  { pattern: /erkläre?\s+(mir\s+)?(die|das|den)/i, tools: ['app_help'], weight: 0.8 },
+  { pattern: /hilfe\s+(zu|bei|mit|für)/i, tools: ['app_help'], weight: 0.9 },
+  { pattern: /was\s+ist\s+(die|der|das)\s+\w+(seite|bereich|feature)/i, tools: ['app_help'], weight: 0.85 },
 ];
 
 /**
@@ -417,6 +440,9 @@ function analyzeKeywordsForTools(message: string): string[] {
     get_related_ideas: ['verwandt', 'ähnlich', 'zusammenhang', 'verbunden', 'bezug'],
     remember: ['merken', 'vergessen', 'behalten'],
     recall: ['erinnern', 'früher', 'gesagt', 'erwähnt'],
+    create_meeting: ['meeting', 'termin', 'besprechung', 'treffen', 'kalender'],
+    navigate_to: ['seite', 'navigieren', 'öffnen', 'gehen'],
+    app_help: ['hilfe', 'erklären', 'funktioniert', 'feature', 'anleitung'],
   };
 
   for (const [tool, keywords] of Object.entries(toolKeywords)) {
@@ -434,9 +460,9 @@ function analyzeKeywordsForTools(message: string): string[] {
 export function getDefaultToolsForMode(mode: ChatMode): string[] {
   switch (mode) {
     case 'tool_assisted':
-      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'execute_code'];
+      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help'];
     case 'agent':
-      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'execute_code'];
+      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help'];
     case 'rag_enhanced':
       return ['search_ideas', 'recall'];
     default:

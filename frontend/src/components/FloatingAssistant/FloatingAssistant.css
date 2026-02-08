@@ -1,0 +1,434 @@
+/* ============================================
+   FLOATING ASSISTANT - Global AI Helper
+   ============================================ */
+
+/* ---- Bubble Button ---- */
+
+.assistant-bubble {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-primary, #6366f1);
+  border: none;
+  cursor: pointer;
+  z-index: 150;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.assistant-bubble:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.45);
+}
+
+.assistant-bubble:active {
+  transform: scale(0.95);
+}
+
+.assistant-bubble.open {
+  background: var(--text-secondary, #64748b);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.assistant-bubble-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.assistant-bubble.open .assistant-bubble-icon {
+  transform: rotate(45deg);
+}
+
+.assistant-bubble-close {
+  font-size: 1.4rem;
+}
+
+/* Unread Badge */
+.assistant-bubble-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid var(--surface-solid, #fff);
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* ---- Panel ---- */
+
+.assistant-panel {
+  position: fixed;
+  bottom: 96px;
+  right: 24px;
+  width: 400px;
+  max-height: min(600px, calc(100vh - 140px));
+  z-index: 160;
+  border-radius: 16px;
+  background: var(--surface-solid, #fff);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: assistantSlideIn 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes assistantSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---- Panel Header ---- */
+
+.assistant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
+  flex-shrink: 0;
+}
+
+.assistant-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.assistant-header-avatar {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.assistant-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.assistant-header-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+  line-height: 1.2;
+}
+
+.assistant-header-status {
+  font-size: 0.72rem;
+  color: var(--text-tertiary, #94a3b8);
+  line-height: 1.2;
+}
+
+.assistant-close-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.assistant-close-btn:hover {
+  background: var(--bg-secondary, rgba(20, 60, 80, 0.08));
+}
+
+/* ---- Quick Actions ---- */
+
+.assistant-quick-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-light, rgba(20, 50, 70, 0.06));
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.assistant-quick-actions::-webkit-scrollbar {
+  display: none;
+}
+
+.assistant-quick-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-secondary, rgba(20, 60, 80, 0.06));
+  border: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #475569);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.assistant-quick-action:hover {
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  border-color: transparent;
+}
+
+.assistant-quick-action-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+/* ---- Chat Container ---- */
+
+.assistant-chat-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.assistant-chat-container .general-chat {
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.assistant-chat-container .general-chat.compact {
+  min-height: unset;
+}
+
+/* Hide thinking mode bar in assistant */
+.assistant-chat-container .thinking-mode-bar {
+  display: none;
+}
+
+/* Hide new chat button in assistant */
+.assistant-chat-container .new-chat-btn {
+  display: none;
+}
+
+/* Hide voice chat toggle in assistant (voice input stays) */
+.assistant-chat-container .voice-chat-toggle {
+  display: none;
+}
+
+/* Shrink empty state in assistant */
+.assistant-chat-container .chat-empty {
+  padding: 24px 16px;
+}
+
+.assistant-chat-container .chat-empty-avatar {
+  font-size: 2rem;
+}
+
+.assistant-chat-container .chat-empty-title {
+  font-size: 1rem;
+}
+
+.assistant-chat-container .chat-empty-description {
+  font-size: 0.82rem;
+}
+
+.assistant-chat-container .chat-empty-name {
+  font-size: 0.78rem;
+}
+
+/* Keyboard shortcut hint */
+.assistant-shortcut-hint {
+  display: none;
+}
+
+/* ---- Onboarding Tooltip ---- */
+
+.assistant-tooltip {
+  position: fixed;
+  bottom: 88px;
+  right: 24px;
+  background: var(--surface-solid, #fff);
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  max-width: 220px;
+  z-index: 149;
+  animation: tooltipFadeIn 0.4s ease 0.5s both;
+}
+
+.assistant-tooltip-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #475569);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.assistant-tooltip-kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  background: var(--bg-secondary, rgba(20, 60, 80, 0.08));
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-family: monospace;
+  color: var(--text, #0f172a);
+  margin-left: 4px;
+}
+
+.assistant-tooltip-arrow {
+  position: absolute;
+  bottom: -6px;
+  right: 20px;
+  width: 12px;
+  height: 12px;
+  background: var(--surface-solid, #fff);
+  transform: rotate(45deg);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.assistant-tooltip-dismiss {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-tertiary, #94a3b8);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.assistant-tooltip-dismiss:hover {
+  color: var(--text, #0f172a);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   Responsive: Mobile
+   ============================================ */
+
+@media (max-width: 768px) {
+  .assistant-bubble {
+    bottom: calc(var(--bottombar-height, 64px) + 16px);
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.3rem;
+  }
+
+  .assistant-panel {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-height: 100%;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
+    animation: assistantSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes assistantSlideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .assistant-tooltip {
+    bottom: calc(var(--bottombar-height, 64px) + 72px);
+    right: 16px;
+  }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-bubble,
+  .assistant-panel,
+  .assistant-tooltip {
+    transition: none;
+    animation: none;
+  }
+
+  .assistant-bubble-badge {
+    animation: none;
+  }
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .assistant-panel {
+    background: #1e293b;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+
+  .assistant-tooltip {
+    background: #1e293b;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .assistant-tooltip-arrow {
+    background: #1e293b;
+  }
+}
+
+/* ============================================
+   Print: Hide
+   ============================================ */
+
+@media print {
+  .assistant-bubble,
+  .assistant-panel,
+  .assistant-tooltip {
+    display: none !important;
+  }
+}

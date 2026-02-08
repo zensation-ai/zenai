@@ -26,6 +26,7 @@ import {
   addMessage,
   GENERAL_CHAT_SYSTEM_PROMPT,
 } from '../services/general-chat';
+import { getAssistantSystemPrompt } from '../services/assistant-knowledge';
 import { isValidUUID, toIntBounded } from '../utils/validation';
 import { validateBody } from '../utils/schemas';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
@@ -101,11 +102,12 @@ const visionUpload = multer({
  * Create a new chat session
  */
 generalChatRouter.post('/sessions', apiKeyAuth, validateBody(CreateChatSessionSchema), asyncHandler(async (req: Request, res: Response) => {
-  const { context } = req.body;
+  const { context, type } = req.body;
+  const sessionType = type === 'assistant' ? 'assistant' as const : 'general' as const;
 
-  const session = await createSession(context);
+  const session = await createSession(context, sessionType);
 
-  logger.info('Chat session created via API', { sessionId: session.id, context });
+  logger.info('Chat session created via API', { sessionId: session.id, context, sessionType });
 
   res.status(201).json({
     success: true,
@@ -132,7 +134,9 @@ generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request,
     throw new ValidationError('Context must be "personal" or "work"');
   }
 
-  const sessions = await getSessions(context as 'personal' | 'work', limit);
+  const typeFilter = req.query.type as string | undefined;
+  const sessionType = typeFilter === 'assistant' ? 'assistant' as const : undefined;
+  const sessions = await getSessions(context as 'personal' | 'work', limit, sessionType);
 
   res.json({
     success: true,
@@ -501,13 +505,14 @@ generalChatRouter.get('/thinking-modes', apiKeyAuth, asyncHandler(async (_req: R
 
 generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { message, thinking_mode } = req.body;
+  const { message, thinking_mode, assistantMode } = req.body;
+  const isAssistantMode = assistantMode === true;
   const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
 
-  // Validate thinking mode (Phase 32C-1)
-  const thinkingMode: ThinkingMode = thinking_mode && isValidThinkingMode(thinking_mode)
-    ? thinking_mode
-    : 'assist';
+  // Validate thinking mode (Phase 32C-1) - assistant always uses 'assist'
+  const thinkingMode: ThinkingMode = isAssistantMode
+    ? 'assist'
+    : (thinking_mode && isValidThinkingMode(thinking_mode) ? thinking_mode : 'assist');
 
   // Validate UUID format
   if (!isValidUUID(id)) {
@@ -547,8 +552,10 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
   // Detect mode for system prompt enhancement (message already trimmed by Zod)
   const modeResult = detectChatMode(message);
 
-  // Build system prompt from the shared constant (single source of truth)
-  let systemPrompt = GENERAL_CHAT_SYSTEM_PROMPT;
+  // Build system prompt - use assistant knowledge for assistant mode
+  let systemPrompt = isAssistantMode
+    ? getAssistantSystemPrompt()
+    : GENERAL_CHAT_SYSTEM_PROMPT;
 
   // Apply thinking partner mode (Phase 32C-1)
   if (thinkingMode !== 'assist') {

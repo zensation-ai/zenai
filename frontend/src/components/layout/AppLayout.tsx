@@ -14,6 +14,7 @@ import { TopBar } from './TopBar';
 import { MobileBottomBar } from './MobileBottomBar';
 import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { safeLocalStorage } from '../../utils/storage';
+import { FloatingAssistant } from '../FloatingAssistant/FloatingAssistant';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -208,6 +209,13 @@ export function AppLayout({
         favoritePages={favoritePages}
         toggleFavorite={toggleFavorite}
         isFavorited={isFavorited}
+      />
+
+      {/* Floating AI Assistant */}
+      <FloatingAssistant
+        context={context}
+        currentPage={currentPage}
+        onNavigate={handleMobileNavigate}
       />
 
       {/* Mobile Chat Overlay */}

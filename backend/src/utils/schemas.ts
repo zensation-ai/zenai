@@ -359,6 +359,7 @@ export function validateParams<T>(schema: ZodSchema<T>) {
  */
 export const CreateChatSessionSchema = z.object({
   context: ContextSchema.default('personal'),
+  type: z.enum(['general', 'assistant']).optional(),
 });
 
 /**
@@ -370,6 +371,8 @@ export const ChatMessageSchema = z.object({
     .max(100000, 'Message must be at most 100000 characters')
     .transform((s: string) => s.trim()),
   include_metadata: z.boolean().optional(),
+  thinking_mode: z.string().optional(),
+  assistantMode: z.boolean().optional(),
 });
 
 // ===========================================

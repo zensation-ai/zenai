@@ -106,14 +106,14 @@ export interface EnhancedResponse {
  * Create a new chat session
  * Initializes both database session and HiMeS memory layers
  */
-export async function createSession(context: 'personal' | 'work' = 'personal'): Promise<ChatSession> {
+export async function createSession(context: 'personal' | 'work' = 'personal', sessionType: 'general' | 'assistant' = 'general'): Promise<ChatSession> {
   const id = uuidv4();
 
   const result = await query(`
-    INSERT INTO general_chat_sessions (id, context)
-    VALUES ($1, $2)
+    INSERT INTO general_chat_sessions (id, context, session_type)
+    VALUES ($1, $2, $3)
     RETURNING id, context, title, created_at, updated_at
-  `, [id, context]);
+  `, [id, context, sessionType]);
 
   const row = result.rows[0];
 
@@ -185,15 +185,22 @@ export async function getSession(sessionId: string): Promise<ChatSessionWithMess
  */
 export async function getSessions(
   context: 'personal' | 'work' = 'personal',
-  limit: number = 20
+  limit: number = 20,
+  sessionType?: 'general' | 'assistant'
 ): Promise<ChatSession[]> {
+  const params: (string | number)[] = [context, limit];
+  let typeFilter = '';
+  if (sessionType) {
+    typeFilter = 'AND (session_type = $3 OR session_type IS NULL)';
+    params.push(sessionType);
+  }
   const result = await query(`
     SELECT id, context, title, created_at, updated_at
     FROM general_chat_sessions
-    WHERE context = $1
+    WHERE context = $1 ${typeFilter}
     ORDER BY updated_at DESC
     LIMIT $2
-  `, [context, limit]);
+  `, params);
 
   return result.rows.map(row => ({
     id: row.id,

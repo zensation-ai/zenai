@@ -50,9 +50,10 @@ export interface ChatSession {
 interface GeneralChatProps {
   context: AIContext;
   isCompact?: boolean;
+  assistantMode?: boolean;
 }
 
-export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
+export function GeneralChat({ context, isCompact = false, assistantMode = false }: GeneralChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -99,11 +100,26 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Listen for quick action input events from FloatingAssistant
+  useEffect(() => {
+    if (!assistantMode) return;
+    const handler = (e: Event) => {
+      const prompt = (e as CustomEvent).detail?.prompt;
+      if (prompt) {
+        setInputValue(prompt);
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('zenai-assistant-fill-input', handler);
+    return () => window.removeEventListener('zenai-assistant-fill-input', handler);
+  }, [assistantMode]);
+
   const loadLastSession = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       // Get list of sessions for current context
-      const res = await axios.get(`/api/chat/sessions?context=${context}&limit=1`, { signal });
+      const typeFilter = assistantMode ? '&type=assistant' : '';
+      const res = await axios.get(`/api/chat/sessions?context=${context}&limit=1${typeFilter}`, { signal });
       const sessions = res.data.data?.sessions || [];
 
       if (sessions.length > 0) {
@@ -137,7 +153,9 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
 
   const createNewSession = async (): Promise<string | null> => {
     try {
-      const res = await axios.post('/api/chat/sessions', { context });
+      const sessionPayload: Record<string, string> = { context };
+      if (assistantMode) sessionPayload.type = 'assistant';
+      const res = await axios.post('/api/chat/sessions', sessionPayload);
       const session = res.data.data?.session;
       if (session) {
         setSessionId(session.id);
@@ -242,7 +260,11 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: messageContent, thinking_mode: thinkingMode }),
+            body: JSON.stringify({
+              message: messageContent,
+              thinking_mode: assistantMode ? 'assist' : thinkingMode,
+              ...(assistantMode && { assistantMode: true }),
+            }),
             signal: streamAbortController.signal, // Add abort signal to prevent memory leaks
           });
 
@@ -361,7 +383,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [inputValue, sending, sessionId, selectedImages, context]);
+  }, [inputValue, sending, sessionId, selectedImages, context, assistantMode, thinkingMode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

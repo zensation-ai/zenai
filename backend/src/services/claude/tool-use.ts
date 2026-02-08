@@ -657,6 +657,83 @@ export const TOOL_SYNTHESIZE_KNOWLEDGE: ToolDefinition = {
 };
 
 // ===========================================
+// Assistant Tools (Floating Assistant)
+// ===========================================
+
+export const TOOL_CREATE_MEETING: ToolDefinition = {
+  name: 'create_meeting',
+  description: 'Erstellt ein neues Meeting/Termin. Nutze dies wenn der Nutzer ein Meeting, Termin, oder Besprechung erwähnt. Parse Datum, Uhrzeit, Teilnehmer und Dauer aus natürlicher Sprache.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        description: 'Titel des Meetings',
+      },
+      date: {
+        type: 'string',
+        description: 'Datum und Uhrzeit im ISO 8601 Format (z.B. 2026-02-10T14:00:00)',
+      },
+      duration_minutes: {
+        type: 'number',
+        description: 'Dauer in Minuten (Standard: 60)',
+      },
+      participants: {
+        type: 'array',
+        description: 'Liste der Teilnehmer',
+        items: { type: 'string' },
+      },
+      location: {
+        type: 'string',
+        description: 'Ort des Meetings (optional)',
+      },
+    },
+    required: ['title', 'date'],
+  },
+};
+
+export const TOOL_NAVIGATE_TO: ToolDefinition = {
+  name: 'navigate_to',
+  description: 'Navigiert den Nutzer zu einer bestimmten Seite der App. Nutze dies wenn der Nutzer eine Seite besuchen möchte oder nach einem Feature fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      page: {
+        type: 'string',
+        description: 'Zielseite',
+        enum: [
+          'home', 'ideas', 'insights', 'archive', 'settings',
+          'ai-workshop', 'learning', 'profile', 'meetings', 'media',
+          'stories', 'documents', 'automations', 'integrations',
+          'notifications', 'export', 'sync', 'personalization',
+          'canvas', 'triage', 'voice-chat', 'agent-teams',
+        ],
+      },
+      reason: {
+        type: 'string',
+        description: 'Kurze Erklärung warum diese Seite relevant ist',
+      },
+    },
+    required: ['page'],
+  },
+};
+
+export const TOOL_APP_HELP: ToolDefinition = {
+  name: 'app_help',
+  description: 'Erklärt ein Feature oder eine Seite der ZenAI App. Nutze dies wenn der Nutzer fragt wie etwas funktioniert oder was eine Seite tut.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      topic: {
+        type: 'string',
+        description: 'Das Feature oder die Seite über die Hilfe gebraucht wird',
+      },
+    },
+    required: ['topic'],
+  },
+};
+
+// ===========================================
 // Tool Registry
 // ===========================================
 

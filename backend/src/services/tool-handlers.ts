@@ -30,8 +30,13 @@ import {
   TOOL_ANALYZE_DOCUMENT,
   TOOL_SEARCH_DOCUMENTS,
   TOOL_SYNTHESIZE_KNOWLEDGE,
+  TOOL_CREATE_MEETING,
+  TOOL_NAVIGATE_TO,
+  TOOL_APP_HELP,
   ToolExecutionContext,
 } from './claude/tool-use';
+import { createMeeting } from './meetings';
+import { getFeatureHelp } from './assistant-knowledge';
 import { enhancedRAG } from './enhanced-rag';
 import { queryContext } from '../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
@@ -1208,6 +1213,84 @@ async function handleSynthesizeKnowledge(
 }
 
 // ===========================================
+// Assistant Tools
+// ===========================================
+
+async function handleCreateMeeting(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const title = input.title as string;
+  const date = input.date as string;
+  const duration_minutes = (input.duration_minutes as number) || 60;
+  const participants = input.participants as string[] | undefined;
+  const location = input.location as string | undefined;
+
+  if (!title || !date) {
+    return 'Fehler: Titel und Datum sind erforderlich.';
+  }
+
+  try {
+    const meeting = await createMeeting({
+      title,
+      date,
+      duration_minutes,
+      participants,
+      location,
+    });
+
+    const dateFormatted = new Date(meeting.date).toLocaleDateString('de-DE', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const parts = [`Meeting erstellt: "${meeting.title}" am ${dateFormatted}.`];
+    if (participants && participants.length > 0) {
+      parts.push(`Teilnehmer: ${participants.join(', ')}.`);
+    }
+    if (location) {
+      parts.push(`Ort: ${location}.`);
+    }
+    parts.push(`Dauer: ${duration_minutes} Minuten.`);
+
+    return parts.join(' ');
+  } catch (error) {
+    logger.error('Tool create_meeting failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Erstellen des Meetings: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
+async function handleNavigateTo(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const page = input.page as string;
+  const reason = (input.reason as string) || '';
+
+  return JSON.stringify({
+    action: 'navigate',
+    page,
+    reason,
+    message: `Navigiere zu ${page}. ${reason}`.trim(),
+  });
+}
+
+async function handleAppHelp(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const topic = input.topic as string;
+  if (!topic) {
+    return 'Bitte gib an, zu welchem Feature du Hilfe brauchst.';
+  }
+  return getFeatureHelp(topic);
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -1256,6 +1339,11 @@ export function registerAllToolHandlers(): void {
   // Synthesis tools (Phase 32B)
   toolRegistry.register(TOOL_SYNTHESIZE_KNOWLEDGE, handleSynthesizeKnowledge);
 
+  // Assistant tools (Floating Assistant)
+  toolRegistry.register(TOOL_CREATE_MEETING, handleCreateMeeting);
+  toolRegistry.register(TOOL_NAVIGATE_TO, handleNavigateTo);
+  toolRegistry.register(TOOL_APP_HELP, handleAppHelp);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1278,6 +1366,9 @@ export function registerAllToolHandlers(): void {
       'analyze_document',
       'search_documents',
       'synthesize_knowledge',
+      'create_meeting',
+      'navigate_to',
+      'app_help',
     ],
   });
 }
