@@ -130,7 +130,7 @@
   .virtualized-list-container::after {
     background: linear-gradient(
       to top,
-      var(--background, #0d1821) 0%,
+      var(--background, #0a1a24) 0%,
       transparent 100%
     );
   }

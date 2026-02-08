@@ -46,7 +46,7 @@
 .tour-tooltip {
   position: absolute;
   width: 320px;
-  background: var(--card-bg, #1a1a2e);
+  background: var(--card-bg, #142a34);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -179,7 +179,7 @@
   position: absolute;
   width: 16px;
   height: 16px;
-  background: var(--card-bg, #1a1a2e);
+  background: var(--card-bg, #142a34);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   transform: rotate(45deg);
 }

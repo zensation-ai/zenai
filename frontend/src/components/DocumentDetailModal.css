@@ -18,7 +18,7 @@
   width: 100%;
   max-width: 1200px;
   max-height: 90vh;
-  background: var(--neuro-bg-secondary, #1e293b);
+  background: var(--neuro-bg-secondary, #1a3440);
   border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
   border-radius: 16px;
   overflow: hidden;
@@ -148,7 +148,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--neuro-bg-primary, #0f172a);
+  background: var(--neuro-bg-primary, #0c1e28);
   overflow: hidden;
 }
 
@@ -364,7 +364,7 @@
 }
 
 .full-text {
-  background: var(--neuro-bg-primary, #0f172a);
+  background: var(--neuro-bg-primary, #0c1e28);
   border-radius: 8px;
   padding: 1rem;
   max-height: 100%;

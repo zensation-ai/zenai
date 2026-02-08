@@ -329,7 +329,7 @@
 
 /* Dark Mode */
 :root.dark-mode .command-palette {
-  background: var(--card-bg, #1a1a2e);
+  background: var(--card-bg, #142a34);
   border-color: var(--border-color, rgba(255, 255, 255, 0.1));
 }
 

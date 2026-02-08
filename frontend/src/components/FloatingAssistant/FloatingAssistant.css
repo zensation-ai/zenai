@@ -407,17 +407,17 @@
 
 @media (prefers-color-scheme: dark) {
   .assistant-panel {
-    background: #1e293b;
+    background: #1a3440;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
 
   .assistant-tooltip {
-    background: #1e293b;
+    background: #1a3440;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
 
   .assistant-tooltip-arrow {
-    background: #1e293b;
+    background: #1a3440;
   }
 }
 

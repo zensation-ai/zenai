@@ -326,6 +326,11 @@
   transition: border-color 0.2s;
 }
 
+.doc-analysis-custom-prompt textarea::placeholder {
+  color: var(--text-placeholder, #1a2a38);
+  opacity: 1;
+}
+
 .doc-analysis-custom-prompt textarea:focus {
   outline: none;
   border-color: var(--accent-color, #ff8c00);
@@ -629,13 +634,13 @@
 
 :root.dark-mode .doc-analysis,
 .dark .doc-analysis {
-  background: var(--bg-primary, #0f172a);
+  background: var(--bg-primary, #0c1e28);
 }
 
 :root.dark-mode .doc-upload-dropzone,
 .dark .doc-upload-dropzone {
   border-color: var(--border-color, #334155);
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, #1a3440);
 }
 
 :root.dark-mode .doc-analysis-main,
@@ -646,7 +651,7 @@
 .dark .doc-analysis-result-header,
 .dark .doc-upload-selected,
 .dark .doc-template-card {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, #1a3440);
   border-color: var(--border-color, #334155);
 }
 
@@ -956,6 +961,11 @@
   transition: border-color 0.2s;
 }
 
+.doc-followup-input textarea::placeholder {
+  color: var(--text-placeholder, #1a2a38);
+  opacity: 1;
+}
+
 .doc-followup-input textarea:focus {
   outline: none;
   border-color: var(--accent-color, #ff8c00);
@@ -996,18 +1006,18 @@
 .dark .doc-compare-file-item,
 .dark .doc-history-item,
 .dark .doc-followup-section {
-  background: var(--bg-secondary, #1e293b);
+  background: var(--bg-secondary, #1a3440);
   border-color: var(--border-color, #334155);
 }
 
 :root.dark-mode .doc-followup-assistant,
 .dark .doc-followup-assistant {
-  background: var(--bg-tertiary, #0f172a);
+  background: var(--bg-tertiary, #0c1e28);
 }
 
 :root.dark-mode .doc-followup-input textarea,
 .dark .doc-followup-input textarea {
-  background: var(--bg-tertiary, #0f172a);
+  background: var(--bg-tertiary, #0c1e28);
   border-color: var(--border-color, #334155);
   color: var(--text-primary, #e2e8f0);
 }
@@ -1221,5 +1231,5 @@
 
 :root.dark-mode .doc-diagram-preview,
 .dark .doc-diagram-preview {
-  background: var(--bg-secondary, #1a1a2e);
+  background: var(--bg-secondary, #142a34);
 }

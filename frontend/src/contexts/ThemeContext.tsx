@@ -63,7 +63,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // Update meta theme-color
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', resolved === 'dark' ? '#0d1821' : '#667eea');
+      metaThemeColor.setAttribute('content', resolved === 'dark' ? '#0a1a24' : '#667eea');
     }
   }, [theme]);
 

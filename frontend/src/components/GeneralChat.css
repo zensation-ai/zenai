@@ -105,7 +105,6 @@
 
 .chat-empty-hint {
   font-size: 0.8rem;
-  opacity: 0.7;
   max-width: 300px;
   font-style: italic;
 }
@@ -219,7 +218,6 @@
 .chat-message-time {
   font-size: 0.7rem;
   color: var(--text-muted);
-  opacity: 0.7;
 }
 
 .chat-message.user .chat-message-time {
@@ -228,7 +226,7 @@
 
 /* Code Blocks */
 .code-block {
-  background: #1e1e1e;
+  background: #0e1e26;
   color: #d4d4d4;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
@@ -394,7 +392,6 @@
 .chat-hint {
   font-size: 0.75rem;
   color: var(--text-muted);
-  opacity: 0.7;
 }
 
 .new-chat-btn {
@@ -500,18 +497,18 @@
 /* Supports both system preference AND manual .dark-mode class */
 @media (prefers-color-scheme: dark) {
   .general-chat {
-    background: rgba(25, 40, 55, 0.85);
+    background: rgba(22, 46, 56, 0.85);
     border-color: rgba(255, 255, 255, 0.12);
   }
 
   .chat-input {
-    background: rgba(40, 55, 70, 0.8);
+    background: rgba(34, 58, 68, 0.8);
     border-color: rgba(255, 255, 255, 0.18);
     color: #f5f9fc;
   }
 
   .chat-input:focus {
-    background: rgba(45, 60, 75, 0.9);
+    background: rgba(38, 64, 74, 0.9);
   }
 
   .chat-input::placeholder {
@@ -519,7 +516,7 @@
   }
 
   .chat-input-area {
-    background: rgba(20, 35, 50, 0.5);
+    background: rgba(18, 38, 48, 0.5);
     border-top-color: rgba(255, 255, 255, 0.12);
   }
 
@@ -528,7 +525,7 @@
   }
 
   .chat-message.assistant .chat-message-text {
-    background: rgba(45, 60, 75, 0.8);
+    background: rgba(38, 64, 74, 0.8);
     color: #f5f9fc;
   }
 
@@ -541,7 +538,7 @@
   }
 
   .code-block {
-    background: #0d1117;
+    background: #091a22;
     border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
@@ -567,7 +564,7 @@
   }
 
   .chat-send-btn:disabled {
-    background: rgba(40, 55, 70, 0.6);
+    background: rgba(34, 58, 68, 0.6);
     color: rgba(255, 255, 255, 0.55);
   }
 
@@ -595,20 +592,20 @@
 /* Manual dark mode class - same styles for .dark-mode on :root */
 :root.dark-mode .general-chat,
 .dark-mode .general-chat {
-  background: rgba(25, 40, 55, 0.85);
+  background: rgba(22, 46, 56, 0.85);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
 :root.dark-mode .chat-input,
 .dark-mode .chat-input {
-  background: rgba(40, 55, 70, 0.8);
+  background: rgba(34, 58, 68, 0.8);
   border-color: rgba(255, 255, 255, 0.18);
   color: #f5f9fc;
 }
 
 :root.dark-mode .chat-input:focus,
 .dark-mode .chat-input:focus {
-  background: rgba(45, 60, 75, 0.9);
+  background: rgba(38, 64, 74, 0.9);
 }
 
 :root.dark-mode .chat-input::placeholder,
@@ -618,7 +615,7 @@
 
 :root.dark-mode .chat-input-area,
 .dark-mode .chat-input-area {
-  background: rgba(20, 35, 50, 0.5);
+  background: rgba(18, 38, 48, 0.5);
   border-top-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -629,7 +626,7 @@
 
 :root.dark-mode .chat-message.assistant .chat-message-text,
 .dark-mode .chat-message.assistant .chat-message-text {
-  background: rgba(45, 60, 75, 0.8);
+  background: rgba(38, 64, 74, 0.8);
   color: #f5f9fc;
 }
 
@@ -645,7 +642,7 @@
 
 :root.dark-mode .code-block,
 .dark-mode .code-block {
-  background: #0d1117;
+  background: #091a22;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -677,7 +674,7 @@
 
 :root.dark-mode .chat-send-btn:disabled,
 .dark-mode .chat-send-btn:disabled {
-  background: rgba(40, 55, 70, 0.6);
+  background: rgba(34, 58, 68, 0.6);
   color: rgba(255, 255, 255, 0.55);
 }
 
@@ -993,7 +990,7 @@
   padding: 6px;
   border-radius: 8px;
   font-size: 1.1rem;
-  opacity: 0.7;
+  opacity: 0.85;
   transition: opacity 0.2s, transform 0.15s;
   flex-shrink: 0;
 }

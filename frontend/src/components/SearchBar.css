@@ -129,8 +129,8 @@
   .search-bar {
     background: linear-gradient(
       165deg,
-      rgba(30, 45, 60, 0.75) 0%,
-      rgba(25, 40, 55, 0.7) 100%
+      rgba(26, 48, 58, 0.75) 0%,
+      rgba(22, 46, 56, 0.7) 100%
     );
     border-color: rgba(255, 255, 255, 0.1);
   }
@@ -138,13 +138,13 @@
   .search-bar:hover:not(:focus-within) {
     background: linear-gradient(
       165deg,
-      rgba(35, 50, 65, 0.8) 0%,
-      rgba(30, 45, 60, 0.75) 100%
+      rgba(30, 54, 64, 0.8) 0%,
+      rgba(26, 48, 58, 0.75) 100%
     );
   }
 
   .search-bar:focus-within {
-    background: rgba(30, 45, 60, 0.85);
+    background: rgba(26, 48, 58, 0.85);
   }
 
   .search-clear {

@@ -297,7 +297,7 @@
 
 @media (prefers-color-scheme: dark) {
   .image-upload-dropzone {
-    background: rgba(40, 55, 70, 0.5);
+    background: rgba(34, 58, 68, 0.5);
     border-color: rgba(255, 255, 255, 0.15);
   }
 
@@ -315,7 +315,7 @@
   }
 
   .image-upload-button {
-    background: rgba(40, 55, 70, 0.8);
+    background: rgba(34, 58, 68, 0.8);
     border-color: rgba(255, 255, 255, 0.18);
     color: rgba(255, 255, 255, 0.8);  /* Erhöht von 0.6 für bessere Lesbarkeit */
   }

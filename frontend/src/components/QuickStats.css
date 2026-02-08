@@ -244,9 +244,9 @@
   .quick-stats {
     background: linear-gradient(
       135deg,
-      rgba(30, 45, 60, 0.85) 0%,
-      rgba(25, 40, 55, 0.8) 50%,
-      rgba(30, 45, 60, 0.85) 100%
+      rgba(26, 48, 58, 0.85) 0%,
+      rgba(22, 46, 56, 0.8) 50%,
+      rgba(26, 48, 58, 0.85) 100%
     );
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow:
@@ -256,14 +256,14 @@
   }
 
   .quick-stat-pill {
-    background: linear-gradient(135deg, rgba(45, 60, 75, 0.9), rgba(40, 55, 70, 0.85));
+    background: linear-gradient(135deg, rgba(38, 64, 74, 0.9), rgba(34, 58, 68, 0.85));
     border-color: rgba(255, 255, 255, 0.12);
     color: #f5f9fc;  /* Heller für bessere Lesbarkeit */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
 
   .quick-stat-pill:hover {
-    background: linear-gradient(135deg, rgba(55, 70, 85, 0.95), rgba(50, 65, 80, 0.9));
+    background: linear-gradient(135deg, rgba(48, 74, 84, 0.95), rgba(44, 68, 78, 0.9));
     box-shadow:
       0 4px 12px rgba(0, 0, 0, 0.25),
       0 0 0 2px color-mix(in srgb, var(--pill-accent, var(--primary)) 20%, transparent);

@@ -932,13 +932,13 @@
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   :root {
-    --glass-2026-bg: rgba(30, 30, 35, 0.8);
-    --glass-2026-border: rgba(255, 255, 255, 0.1);
+    --glass-2026-bg: rgba(18, 36, 42, 0.82);
+    --glass-2026-border: rgba(60, 150, 170, 0.12);
     --glass-2026-reflection: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.02) 40%,
-      rgba(255, 255, 255, 0) 60%
+      rgba(40, 160, 180, 0.08) 0%,
+      rgba(40, 160, 180, 0.02) 40%,
+      transparent 60%
     );
   }
 }

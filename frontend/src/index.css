@@ -19,6 +19,20 @@
   box-sizing: border-box;
 }
 
+/* Global Input Baseline - crystal clear readability */
+input,
+textarea,
+select {
+  color: var(--text);
+  font-family: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-placeholder, #1a2a38);
+  opacity: 1;
+}
+
 :root {
   /* Zensation Design: Midnight Petrol + Sunset Orange */
   /* Enhanced with more depth and less white */
@@ -129,7 +143,7 @@
   --border-color: var(--border);
 
   /* Code Block Colors */
-  --code-block-bg: #1e1e1e;
+  --code-block-bg: #0e1e26;
   --code-block-text: #d4d4d4;
   --code-inline-bg: rgba(0, 0, 0, 0.08);
   --code-inline-text: #c7254e;
@@ -150,14 +164,14 @@
   /* Layout - Sidebar & TopBar */
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 64px;
-  --sidebar-bg: linear-gradient(180deg, rgba(15, 25, 38, 0.98) 0%, rgba(20, 35, 50, 0.96) 100%);
+  --sidebar-bg: linear-gradient(180deg, rgba(12, 28, 36, 0.98) 0%, rgba(16, 38, 48, 0.96) 100%);
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-item-active-bg: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 90, 42, 0.10) 100%);
   --sidebar-item-hover-bg: rgba(255, 255, 255, 0.06);
   --sidebar-section-label: rgba(255, 255, 255, 0.55);
   --topbar-height: 52px;
   --bottombar-height: 64px;
-  --bottombar-bg: rgba(15, 25, 38, 0.95);
+  --bottombar-bg: rgba(12, 28, 36, 0.95);
   --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Animation */
@@ -207,13 +221,13 @@
   --context-work-hover: #2563eb;
 
   /* Dark Petrol Header Theme (WCAG AAA compliant, max contrast) */
-  --header-bg: linear-gradient(135deg, #0f1d2a 0%, #162736 50%, #1a2e3d 100%);
-  --header-bg-solid: #142230;
+  --header-bg: linear-gradient(135deg, #0c1e28 0%, #133038 50%, #173640 100%);
+  --header-bg-solid: #112a32;
   --header-text: #ffffff;
   --header-text-muted: #e8f0f5;      /* Sehr hell für maximale Lesbarkeit */
   --header-text-secondary: #d0e0ea;  /* Hell für klare Lesbarkeit */
   --header-border: rgba(255, 255, 255, 0.18);
-  --header-glass: rgba(20, 34, 48, 0.85);
+  --header-glass: rgba(18, 36, 44, 0.85);
   --header-hover: rgba(255, 255, 255, 0.15);
   --header-active: rgba(255, 107, 53, 0.25);
 
@@ -258,33 +272,33 @@
     --primary-lighter: #ffbb99;
     --primary-glow: rgba(255, 122, 74, 0.4);
 
-    /* Background - Dark Petrol Theme */
-    --background: #0d1821;
+    /* Background - Midnight Dark Petrol Theme */
+    --background: #0a1a24;
     --background-gradient: linear-gradient(
       145deg,
-      #0d1821 0%,
-      #122230 20%,
-      #152838 40%,
-      #1a2e40 60%,
-      #152838 80%,
-      #0d1821 100%
+      #0a1a24 0%,
+      #10252e 20%,
+      #142e38 40%,
+      #183642 60%,
+      #142e38 80%,
+      #0a1a24 100%
     );
 
-    /* Surfaces - Dark glass morphism */
-    --surface: rgba(25, 45, 60, 0.8);
-    --surface-solid: #1a2e40;
-    --surface-light: rgba(30, 55, 75, 0.65);
-    --surface-hover: rgba(35, 65, 90, 0.88);
+    /* Surfaces - Dark glass morphism with petrol depth */
+    --surface: rgba(22, 50, 62, 0.82);
+    --surface-solid: #183642;
+    --surface-light: rgba(28, 60, 72, 0.68);
+    --surface-hover: rgba(32, 72, 85, 0.88);
     --surface-warm: rgba(40, 30, 25, 0.8);
-    --surface-petrol: rgba(25, 50, 70, 0.75);
+    --surface-petrol: rgba(22, 56, 68, 0.78);
 
-    /* Glassmorphism - Dark frosted glass */
-    --glass-bg: rgba(20, 40, 55, 0.85);
+    /* Glassmorphism - Frosted glass with petrol reflection */
+    --glass-bg: rgba(18, 46, 56, 0.85);
     --glass-bg-warm: rgba(35, 28, 25, 0.8);
-    --glass-bg-petrol: rgba(20, 45, 65, 0.8);
-    --glass-border: rgba(80, 120, 150, 0.3);
-    --glass-highlight: rgba(255, 255, 255, 0.08);
-    --glass-shadow: rgba(0, 0, 0, 0.4);
+    --glass-bg-petrol: rgba(18, 52, 62, 0.82);
+    --glass-border: rgba(60, 150, 170, 0.18);
+    --glass-highlight: rgba(80, 180, 200, 0.06);
+    --glass-shadow: rgba(5, 20, 30, 0.45);
     --glass-warm: rgba(80, 50, 35, 0.4);
 
     /* Text Colors - Light for dark backgrounds (WCAG AAA optimiert für beste Lesbarkeit) */
@@ -293,25 +307,25 @@
     --text-secondary: #c0d4e0;  /* Heller für klare Lesbarkeit - ~6:1 Kontrast */
     --text-placeholder: #b0c4d0; /* Deutlich sichtbar für Placeholder im Dark Mode */
 
-    /* Borders - More visible on dark */
-    --border: rgba(100, 150, 180, 0.2);
-    --border-light: rgba(100, 150, 180, 0.1);
+    /* Borders - Petrol-tinted for modern depth */
+    --border: rgba(60, 150, 170, 0.18);
+    --border-light: rgba(60, 150, 170, 0.1);
     --border-warm: rgba(255, 122, 74, 0.25);
     --border-glow: rgba(255, 122, 74, 0.5);
 
-    /* Enhanced Shadows for dark mode */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
-    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+    /* Enhanced Shadows - petrol undertone for modern depth */
+    --shadow-sm: 0 1px 3px rgba(5, 20, 30, 0.35), 0 1px 2px rgba(5, 20, 30, 0.25);
+    --shadow-md: 0 4px 16px rgba(5, 20, 30, 0.4), 0 2px 6px rgba(5, 20, 30, 0.3);
+    --shadow-lg: 0 12px 40px rgba(5, 20, 30, 0.5), 0 4px 12px rgba(5, 20, 30, 0.35);
     --shadow-glow: 0 4px 24px rgba(255, 122, 74, 0.4);
-    --shadow-glow-petrol: 0 4px 24px rgba(50, 90, 120, 0.3);
-    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.05);
-    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+    --shadow-glow-petrol: 0 4px 24px rgba(30, 120, 150, 0.35);
+    --shadow-card: 0 2px 12px rgba(5, 20, 30, 0.35), 0 1px 3px rgba(5, 20, 30, 0.25), inset 0 1px 0 rgba(80, 180, 200, 0.04);
+    --shadow-glass: 0 8px 32px rgba(5, 20, 30, 0.4), inset 0 1px 0 rgba(80, 180, 200, 0.05);
 
     /* Card and Filter specific - dark mode */
     --card-bg: var(--glass-bg);
-    --hover-bg: rgba(35, 65, 90, 0.88);
-    --bg-secondary: rgba(50, 80, 110, 0.2);
+    --hover-bg: rgba(32, 72, 85, 0.88);
+    --bg-secondary: rgba(40, 85, 105, 0.2);
     --bg-tertiary: rgba(255, 122, 74, 0.12);
     --text-primary: #f5f9fc;
     --border-color: var(--border);
@@ -319,14 +333,14 @@
     /* Command Center - Dark mode */
     --command-bg: linear-gradient(
       165deg,
-      rgba(25, 45, 65, 0.95) 0%,
-      rgba(20, 40, 55, 0.92) 100%
+      rgba(22, 50, 62, 0.95) 0%,
+      rgba(18, 46, 56, 0.92) 100%
     );
     --command-border: rgba(255, 122, 74, 0.25);
     --command-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
 
     /* Dashboard - Dark mode */
-    --dashboard-card-bg: rgba(25, 45, 65, 0.75);
+    --dashboard-card-bg: rgba(22, 50, 62, 0.78);
   }
 
   /* Adjust animated blobs for dark mode */
@@ -343,9 +357,9 @@
   .blob-2 {
     background: radial-gradient(
       ellipse at 60% 60%,
-      rgba(50, 90, 120, 0.2) 0%,
-      rgba(60, 110, 150, 0.12) 30%,
-      rgba(70, 130, 170, 0.06) 50%,
+      rgba(30, 120, 150, 0.22) 0%,
+      rgba(40, 140, 170, 0.14) 30%,
+      rgba(50, 150, 180, 0.07) 50%,
       transparent 75%
     );
   }
@@ -409,7 +423,7 @@
 
   /* Loading overlay for dark mode */
   .loading::after {
-    background: rgba(15, 30, 45, 0.6);
+    background: rgba(12, 30, 42, 0.6);
   }
 }
 
@@ -1124,24 +1138,24 @@ select:focus-visible {
   --primary-light: #ff9a70;
   --primary-glow: rgba(255, 122, 74, 0.4);
 
-  /* Background - Dark Petrol Theme */
-  --background: #0d1821;
+  /* Background - Midnight Dark Petrol Theme */
+  --background: #0a1a24;
   --background-gradient: linear-gradient(
     145deg,
-    #0d1821 0%,
-    #122230 20%,
-    #152838 40%,
-    #1a2e40 60%,
-    #152838 80%,
-    #0d1821 100%
+    #0a1a24 0%,
+    #10252e 20%,
+    #142e38 40%,
+    #183642 60%,
+    #142e38 80%,
+    #0a1a24 100%
   );
 
-  /* Surfaces - Dark glass morphism */
-  --surface: rgba(25, 45, 60, 0.8);
-  --surface-solid: #1a2e40;
-  --glass-bg: rgba(20, 40, 55, 0.85);
-  --glass-border: rgba(80, 120, 150, 0.3);
-  --glass-shadow: rgba(0, 0, 0, 0.4);
+  /* Surfaces - Dark glass morphism with petrol depth */
+  --surface: rgba(22, 50, 62, 0.82);
+  --surface-solid: #183642;
+  --glass-bg: rgba(18, 46, 56, 0.85);
+  --glass-border: rgba(60, 150, 170, 0.18);
+  --glass-shadow: rgba(5, 20, 30, 0.45);
 
   /* Text Colors - Light for dark backgrounds (WCAG AAA optimiert für beste Lesbarkeit) */
   --text: #f5f9fc;            /* Sehr hell für maximale Lesbarkeit - ~12:1 Kontrast */
@@ -1149,17 +1163,17 @@ select:focus-visible {
   --text-secondary: #c0d4e0;  /* Heller für klare Lesbarkeit - ~6:1 Kontrast */
   --text-placeholder: #b0c4d0; /* Deutlich sichtbar für Placeholder im Dark Mode */
 
-  /* Borders */
-  --border: rgba(100, 150, 180, 0.2);
-  --border-light: rgba(100, 150, 180, 0.1);
+  /* Borders - Petrol-tinted */
+  --border: rgba(60, 150, 170, 0.18);
+  --border-light: rgba(60, 150, 170, 0.1);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
+  /* Shadows - petrol undertone */
+  --shadow-sm: 0 1px 3px rgba(5, 20, 30, 0.35), 0 1px 2px rgba(5, 20, 30, 0.25);
+  --shadow-md: 0 4px 16px rgba(5, 20, 30, 0.4), 0 2px 6px rgba(5, 20, 30, 0.3);
+  --shadow-lg: 0 12px 40px rgba(5, 20, 30, 0.5), 0 4px 12px rgba(5, 20, 30, 0.35);
   --shadow-glow: 0 4px 24px rgba(255, 122, 74, 0.4);
 
   /* Card specific */
   --card-bg: var(--glass-bg);
-  --hover-bg: rgba(35, 65, 90, 0.88);
+  --hover-bg: rgba(32, 72, 85, 0.88);
 }

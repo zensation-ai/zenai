@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--neuro-bg-primary, #0f172a);
+  background: var(--neuro-bg-primary, #0c1e28);
   color: var(--neuro-text-primary, #fff);
 }
 
@@ -431,7 +431,7 @@
   width: 90%;
   max-width: 600px;
   max-height: 80vh;
-  background: var(--neuro-bg-secondary, #1e293b);
+  background: var(--neuro-bg-secondary, #1a3440);
   border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
   border-radius: 16px;
   overflow: hidden;
@@ -525,7 +525,7 @@
   bottom: 0;
   width: 280px;
   max-width: 85vw;
-  background: var(--neuro-bg-secondary, #1e293b);
+  background: var(--neuro-bg-secondary, #1a3440);
   border-right: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
   padding: 1rem;
   transform: translateX(-100%);
@@ -649,7 +649,7 @@
 .create-folder-modal {
   width: 90%;
   max-width: 400px;
-  background: var(--neuro-bg-secondary, #1e293b);
+  background: var(--neuro-bg-secondary, #1a3440);
   border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
   border-radius: 12px;
   padding: 1.5rem;
@@ -670,6 +670,11 @@
   border-radius: 8px;
   color: var(--neuro-text-primary, #fff);
   font-size: 1rem;
+}
+
+.folder-name-input::placeholder {
+  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.5));
+  opacity: 1;
 }
 
 .folder-name-input:focus {
@@ -779,7 +784,7 @@
 }
 
 .batch-move-dropdown select option {
-  background: var(--neuro-bg-secondary, #1e293b);
+  background: var(--neuro-bg-secondary, #1a3440);
   color: var(--neuro-text-primary, #fff);
 }
 
