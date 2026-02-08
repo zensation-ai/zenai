@@ -20,8 +20,8 @@
 .enhanced-tooltip {
   position: absolute;
   z-index: 1000;
-  min-width: 180px;
-  max-width: 280px;
+  min-width: min(180px, 80vw);
+  max-width: min(280px, 90vw);
   padding: 0.75rem 1rem;
   background: var(--neuro-focus, #1a3a4a);
   color: white;
@@ -188,11 +188,11 @@
 .help-icon-trigger:focus {
   color: var(--text-primary, #fff);
   background: var(--hover-bg, rgba(255, 255, 255, 0.1));
-  border-color: var(--primary-color, #6366f1);
+  border-color: var(--primary, #ff6b35);
 }
 
 .help-icon-trigger:focus-visible {
-  outline: 2px solid var(--focus-color, #6366f1);
+  outline: 2px solid var(--primary, #ff6b35);
   outline-offset: 2px;
 }
 

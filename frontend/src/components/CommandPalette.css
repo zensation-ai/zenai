@@ -328,57 +328,57 @@
 }
 
 /* Dark Mode */
-[data-theme="dark"] .command-palette {
+:root.dark-mode .command-palette {
   background: var(--card-bg, #1a1a2e);
   border-color: var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-[data-theme="dark"] .command-palette-search {
+:root.dark-mode .command-palette-search {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .command-palette-input {
+:root.dark-mode .command-palette-input {
   color: var(--text-primary, #fff);
 }
 
-[data-theme="dark"] .command-palette-input::placeholder {
+:root.dark-mode .command-palette-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
-[data-theme="dark"] .command-palette-group-header {
+:root.dark-mode .command-palette-group-header {
   color: rgba(255, 255, 255, 0.6);
 }
 
-[data-theme="dark"] .command-palette-item:hover,
-[data-theme="dark"] .command-palette-item.selected {
+:root.dark-mode .command-palette-item:hover,
+:root.dark-mode .command-palette-item.selected {
   background: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .command-palette-item.selected {
+:root.dark-mode .command-palette-item.selected {
   background: var(--primary-glow, rgba(255, 107, 53, 0.2));
 }
 
-[data-theme="dark"] .command-palette-item-label {
+:root.dark-mode .command-palette-item-label {
   color: var(--text-primary, #fff);
 }
 
-[data-theme="dark"] .command-palette-item-description {
+:root.dark-mode .command-palette-item-description {
   color: rgba(255, 255, 255, 0.6);
 }
 
-[data-theme="dark"] .command-palette-footer {
+:root.dark-mode .command-palette-footer {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .command-palette-hint {
+:root.dark-mode .command-palette-hint {
   color: rgba(255, 255, 255, 0.5);
 }
 
-[data-theme="dark"] .command-palette-shortcut-hint,
-[data-theme="dark"] .command-palette-item-shortcut,
-[data-theme="dark"] .command-palette-hint kbd {
+:root.dark-mode .command-palette-shortcut-hint,
+:root.dark-mode .command-palette-item-shortcut,
+:root.dark-mode .command-palette-hint kbd {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.7);
@@ -460,10 +460,10 @@
   background: var(--text-muted, rgba(20, 50, 70, 0.25));
 }
 
-[data-theme="dark"] .command-palette-results::-webkit-scrollbar-thumb {
+:root.dark-mode .command-palette-results::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
 }
 
-[data-theme="dark"] .command-palette-results::-webkit-scrollbar-thumb:hover {
+:root.dark-mode .command-palette-results::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }

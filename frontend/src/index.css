@@ -154,7 +154,7 @@
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-item-active-bg: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 90, 42, 0.10) 100%);
   --sidebar-item-hover-bg: rgba(255, 255, 255, 0.06);
-  --sidebar-section-label: rgba(255, 255, 255, 0.45);
+  --sidebar-section-label: rgba(255, 255, 255, 0.55);
   --topbar-height: 52px;
   --bottombar-height: 64px;
   --bottombar-bg: rgba(15, 25, 38, 0.95);

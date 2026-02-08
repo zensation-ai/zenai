@@ -120,7 +120,7 @@
 
 .confirm-dialog-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-glow, rgba(255, 107, 53, 0.35)), 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Animations */
@@ -189,6 +189,10 @@
   .confirm-dialog-button.cancel:hover {
     background: rgba(255, 255, 255, 0.12);
     color: #f1f5f9;
+  }
+
+  .confirm-dialog-warning .confirm-dialog-title {
+    color: #fbbf24;
   }
 }
 

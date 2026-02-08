@@ -627,21 +627,21 @@
 
 /* --- Dark Mode --- */
 
-[data-theme="dark"] .doc-analysis,
+:root.dark-mode .doc-analysis,
 .dark .doc-analysis {
   background: var(--bg-primary, #0f172a);
 }
 
-[data-theme="dark"] .doc-upload-dropzone,
+:root.dark-mode .doc-upload-dropzone,
 .dark .doc-upload-dropzone {
   border-color: var(--border-color, #334155);
   background: var(--bg-secondary, #1e293b);
 }
 
-[data-theme="dark"] .doc-analysis-main,
-[data-theme="dark"] .doc-analysis-result-header,
-[data-theme="dark"] .doc-upload-selected,
-[data-theme="dark"] .doc-template-card,
+:root.dark-mode .doc-analysis-main,
+:root.dark-mode .doc-analysis-result-header,
+:root.dark-mode .doc-upload-selected,
+:root.dark-mode .doc-template-card,
 .dark .doc-analysis-main,
 .dark .doc-analysis-result-header,
 .dark .doc-upload-selected,
@@ -990,9 +990,9 @@
 
 /* --- Dark Mode (Phase 2 additions) --- */
 
-[data-theme="dark"] .doc-compare-file-item,
-[data-theme="dark"] .doc-history-item,
-[data-theme="dark"] .doc-followup-section,
+:root.dark-mode .doc-compare-file-item,
+:root.dark-mode .doc-history-item,
+:root.dark-mode .doc-followup-section,
 .dark .doc-compare-file-item,
 .dark .doc-history-item,
 .dark .doc-followup-section {
@@ -1000,12 +1000,12 @@
   border-color: var(--border-color, #334155);
 }
 
-[data-theme="dark"] .doc-followup-assistant,
+:root.dark-mode .doc-followup-assistant,
 .dark .doc-followup-assistant {
   background: var(--bg-tertiary, #0f172a);
 }
 
-[data-theme="dark"] .doc-followup-input textarea,
+:root.dark-mode .doc-followup-input textarea,
 .dark .doc-followup-input textarea {
   background: var(--bg-tertiary, #0f172a);
   border-color: var(--border-color, #334155);
@@ -1190,15 +1190,15 @@
    Phase 3: Dark Mode Additions
    =========================================== */
 
-[data-theme="dark"] .doc-template-editor,
+:root.dark-mode .doc-template-editor,
 .dark .doc-template-editor {
   background: var(--bg-secondary, #1e1e2e);
   border-color: var(--border-color, #333);
 }
 
-[data-theme="dark"] .doc-template-editor-field input,
-[data-theme="dark"] .doc-template-editor-field select,
-[data-theme="dark"] .doc-template-editor-field textarea,
+:root.dark-mode .doc-template-editor-field input,
+:root.dark-mode .doc-template-editor-field select,
+:root.dark-mode .doc-template-editor-field textarea,
 .dark .doc-template-editor-field input,
 .dark .doc-template-editor-field select,
 .dark .doc-template-editor-field textarea {
@@ -1207,19 +1207,19 @@
   color: var(--text-primary, #e0e0e0);
 }
 
-[data-theme="dark"] .doc-analysis-diagrams,
+:root.dark-mode .doc-analysis-diagrams,
 .dark .doc-analysis-diagrams {
   background: var(--bg-secondary, #1e1e2e);
   border-color: var(--border-color, #333);
 }
 
-[data-theme="dark"] .doc-diagram-card,
+:root.dark-mode .doc-diagram-card,
 .dark .doc-diagram-card {
   background: var(--bg-primary, #151525);
   border-color: var(--border-color, #444);
 }
 
-[data-theme="dark"] .doc-diagram-preview,
+:root.dark-mode .doc-diagram-preview,
 .dark .doc-diagram-preview {
   background: var(--bg-secondary, #1a1a2e);
 }
