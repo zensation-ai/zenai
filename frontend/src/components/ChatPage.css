@@ -127,7 +127,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-tertiary, #6a6a8a);
+  color: var(--text-tertiary, #8a8aaa);
   padding: 8px 12px 4px;
 }
 
@@ -180,7 +180,7 @@
   background: transparent;
   border: none;
   border-radius: 4px;
-  color: var(--text-tertiary, #6a6a8a);
+  color: var(--text-tertiary, #8a8aaa);
   cursor: pointer;
   font-size: 1.2rem;
   transition: all 0.2s ease;
@@ -265,7 +265,7 @@
 
 .chat-empty-hint {
   font-size: 0.875rem;
-  color: var(--text-tertiary, #6a6a8a);
+  color: var(--text-tertiary, #8a8aaa);
   font-style: italic;
 }
 
@@ -333,7 +333,7 @@
 .chat-message-time,
 .chat-message-status {
   font-size: 0.7rem;
-  color: var(--text-tertiary, #6a6a8a);
+  color: var(--text-tertiary, #8a8aaa);
 }
 
 .chat-message-text {
@@ -492,7 +492,7 @@
 
 .chat-hint {
   font-size: 0.75rem;
-  color: var(--text-tertiary, #6a6a8a);
+  color: var(--text-tertiary, #8a8aaa);
 }
 
 /* ================================

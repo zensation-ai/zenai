@@ -450,7 +450,7 @@
 
 .suggestion-reasoning {
   font-size: 0.8rem;
-  color: var(--text-tertiary, #9ca3af);
+  color: var(--text-tertiary, #6b7280);
   background: var(--bg-secondary, #f9fafb);
   padding: 0.75rem;
   border-radius: 8px;
@@ -468,7 +468,7 @@
 
 .suggestion-date {
   font-size: 0.75rem;
-  color: var(--text-tertiary, #9ca3af);
+  color: var(--text-tertiary, #6b7280);
 }
 
 .suggestion-footer .suggestion-actions {
@@ -548,7 +548,7 @@
 
 .research-date {
   font-size: 0.75rem;
-  color: var(--text-tertiary, #9ca3af);
+  color: var(--text-tertiary, #6b7280);
 }
 
 /* Feedback Tab */
@@ -673,7 +673,7 @@
 
 .last-updated {
   font-size: 0.75rem;
-  color: var(--text-tertiary, #9ca3af);
+  color: var(--text-tertiary, #6b7280);
 }
 
 .analyze-button {
@@ -828,7 +828,7 @@
 .profile-empty {
   text-align: center;
   padding: 1.5rem;
-  color: var(--text-tertiary, #9ca3af);
+  color: var(--text-tertiary, #6b7280);
   font-size: 0.875rem;
 }
 
@@ -951,7 +951,7 @@
   margin-bottom: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary, #6b7280);
 }
 
 .edit-profile-content input {
@@ -986,7 +986,7 @@
   background: transparent;
   border: 1px solid var(--border, #4b5563);
   border-radius: 8px;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary, #6b7280);
   cursor: pointer;
   font-size: 0.875rem;
 }
@@ -1076,7 +1076,7 @@
 
 .chart-label {
   font-size: 0.625rem;
-  color: var(--text-tertiary, #9ca3af);
+  color: var(--text-tertiary, #6b7280);
   margin-top: 0.5rem;
   text-transform: uppercase;
 }
@@ -1093,7 +1093,7 @@
   align-items: center;
   gap: 0.375rem;
   font-size: 0.75rem;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-secondary, #6b7280);
 }
 
 .legend-color {

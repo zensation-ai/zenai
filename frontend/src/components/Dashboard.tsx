@@ -1,11 +1,10 @@
 /**
  * Dashboard - Zentrale Startseite
  *
- * Zeigt Übersicht aller Features:
+ * Zeigt Übersicht:
  * - Welcome Banner mit AI-Greeting
  * - Quick Stats (4 Metriken)
  * - Letzte Gedanken + KI-Aktivität
- * - Schnellzugriff-Grid zu allen Bereichen
  */
 
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
@@ -46,18 +45,6 @@ interface ActivityItem {
   message: string;
   timestamp: string;
 }
-
-const QUICK_ACCESS_ITEMS = [
-  { page: 'ai-workshop' as Page, icon: '🧪', label: 'KI-Werkstatt', description: 'Inkubator & Evolution', color: 'purple' },
-  { page: 'documents' as Page, icon: '📄', label: 'Dokumente', description: 'Dokument-Verwaltung', color: 'blue' },
-  { page: 'meetings' as Page, icon: '📅', label: 'Meetings', description: 'Meeting-Notizen', color: 'cyan' },
-  { page: 'learning' as Page, icon: '📚', label: 'Lernen', description: 'Lernziele & Aufgaben', color: 'green' },
-  { page: 'insights' as Page, icon: '📊', label: 'Insights', description: 'Analytics & Trends', color: 'orange' },
-  { page: 'archive' as Page, icon: '📥', label: 'Archiv', description: 'Archivierte Gedanken', color: 'teal' },
-  { page: 'media' as Page, icon: '🖼️', label: 'Medien', description: 'Bilder & Dateien', color: 'pink' },
-  { page: 'stories' as Page, icon: '📖', label: 'Stories', description: 'Gedanken-Geschichten', color: 'warm' },
-  { page: 'triage' as Page, icon: '📋', label: 'Sortieren', description: 'Gedanken einordnen', color: 'coral' },
-];
 
 const TYPE_EMOJIS: Record<string, string> = {
   task: '📋', idea: '💡', note: '📝', question: '❓',
@@ -160,28 +147,28 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           <SkeletonLoader type="card" count={4} />
         ) : (
           <>
-            <button type="button" className="dash-stat-card neuro-focus-ring" onClick={() => onNavigate('ideas')}>
+            <div className="dash-stat-card" role="link" tabIndex={0} onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
               <span className="dash-stat-icon" aria-hidden="true">💭</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.total}</span>
                 <span className="dash-stat-label">Gesamt</span>
               </div>
-            </button>
-            <button type="button" className="dash-stat-card priority neuro-focus-ring" onClick={() => onNavigate('ideas')}>
+            </div>
+            <div className="dash-stat-card priority" role="link" tabIndex={0} onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
               <span className="dash-stat-icon" aria-hidden="true">🔥</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.highPriority}</span>
-                <span className="dash-stat-label">Hohe Priorität</span>
+                <span className="dash-stat-label">Hohe Prioritat</span>
               </div>
-            </button>
-            <button type="button" className="dash-stat-card neuro-focus-ring" onClick={() => onNavigate('triage')}>
+            </div>
+            <div className="dash-stat-card" role="link" tabIndex={0} onClick={() => onNavigate('triage')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('triage')}>
               <span className="dash-stat-icon" aria-hidden="true">📋</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.thisWeek}</span>
                 <span className="dash-stat-label">Diese Woche</span>
               </div>
-            </button>
-            <button type="button" className="dash-stat-card ai neuro-focus-ring" onClick={() => onNavigate('ai-workshop')}>
+            </div>
+            <div className="dash-stat-card ai" role="link" tabIndex={0} onClick={() => onNavigate('ai-workshop')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ai-workshop')}>
               <span className="dash-stat-icon" aria-hidden="true">🧠</span>
               <div className="dash-stat-data">
                 <span className={`dash-stat-value ${isAIActive ? 'active' : ''}`}>
@@ -189,7 +176,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                 </span>
                 <span className="dash-stat-label">KI-Status</span>
               </div>
-            </button>
+            </div>
           </>
         )}
       </section>
@@ -266,28 +253,6 @@ const DashboardComponent: React.FC<DashboardProps> = ({
               ))
             )}
           </div>
-        </div>
-      </section>
-
-      {/* Quick Access Grid */}
-      <section className="dash-quick-access" aria-label="Schnellzugriff">
-        <h3 className="dash-section-title">Schnellzugriff</h3>
-        <div className="dash-quick-grid">
-          {QUICK_ACCESS_ITEMS.map((item) => (
-            <button
-              key={item.page}
-              type="button"
-              className={`dash-quick-card neuro-hover-lift neuro-focus-ring color-${item.color}`}
-              onClick={() => onNavigate(item.page)}
-            >
-              <span className="dash-quick-icon" aria-hidden="true">{item.icon}</span>
-              <div className="dash-quick-content">
-                <span className="dash-quick-label">{item.label}</span>
-                <span className="dash-quick-desc">{item.description}</span>
-              </div>
-              <span className="dash-quick-arrow" aria-hidden="true">→</span>
-            </button>
-          ))}
         </div>
       </section>
     </div>
