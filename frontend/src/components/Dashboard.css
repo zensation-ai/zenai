@@ -27,8 +27,8 @@
   align-items: center;
   gap: 16px;
   padding: 20px 24px;
-  background: var(--card-bg, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+  background: var(--glass-bg-warm, rgba(252, 245, 238, 0.75));
+  border: 1px solid rgba(255, 200, 170, 0.3);
   border-radius: 16px;
   position: relative;
   overflow: hidden;
@@ -40,8 +40,8 @@
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(255, 107, 53, 0.06) 0%,
-    rgba(255, 140, 90, 0.03) 50%,
+    rgba(255, 107, 53, 0.12) 0%,
+    rgba(255, 140, 90, 0.06) 50%,
     transparent 100%
   );
   pointer-events: none;
@@ -110,8 +110,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: var(--card-bg, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+  background: var(--surface-warm, rgba(255, 245, 238, 0.8));
+  border: 1px solid rgba(255, 200, 170, 0.2);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -131,8 +131,8 @@
 }
 
 .dash-stat-card:hover {
-  background: var(--sidebar-item-hover-bg, rgba(255, 255, 255, 0.06));
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 240, 230, 0.9);
+  border-color: rgba(255, 180, 140, 0.35);
   transform: translateY(-2px);
 }
 
