@@ -15,9 +15,14 @@ build/
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
+
+# VS Code - track shared settings, ignore user-specific files
+!.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # Xcode / Capacitor iOS
 *.xcuserstate

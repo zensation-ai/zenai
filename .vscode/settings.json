@@ -1,0 +1,36 @@
+{
+  // Workspace Settings for ZenAI / KI-AB
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // Claude Code Extension
+  "claude-dev.allowedCommands": [
+    "npm test",
+    "npm run build",
+    "npm run lint",
+    "npx tsc --noEmit"
+  ],
+
+  // Search Exclusions (performance)
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/.next": true
+  },
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+
+  // File Associations
+  "files.associations": {
+    "*.env.*": "dotenv"
+  }
+}
