@@ -30,6 +30,14 @@ import {
 } from '../services/claude';
 import { proactiveSuggestionEngine } from '../services/proactive-suggestions';
 import { getSuggestedConnections, multiHopSearch } from '../services/knowledge-graph';
+import { deepSearch } from '../services/enhanced-rag';
+import { generateWithExtendedThinking } from '../services/claude/extended-thinking';
+import { memoryCoordinator } from '../services/memory';
+import { synthesizeKnowledge } from '../services/synthesis-engine';
+import { generateChallenge, evaluateRecall, getReviewSchedule } from '../services/active-recall';
+import { getProductivityDashboard } from '../services/productivity-analytics';
+import { getDecisionLogs, generateComplianceReport } from '../services/compliance-logger';
+import { findDuplicates } from '../services/duplicate-detection';
 
 // ===========================================
 // Types
@@ -45,12 +53,23 @@ interface MCPToolProperty {
   type: string;
   description?: string;
   enum?: string[];
+  items?: { type: string };
 }
 
+/**
+ * MCP Tool with optional structured output schema (MCP 2026 Spec)
+ * outputSchema defines the JSON structure clients can expect
+ */
 interface MCPTool {
   name: string;
   description: string;
   inputSchema: {
+    type: string;
+    properties: Record<string, MCPToolProperty>;
+    required?: string[];
+  };
+  /** Structured output schema (MCP 2026 spec) */
+  outputSchema?: {
     type: string;
     properties: Record<string, MCPToolProperty>;
     required?: string[];
@@ -201,6 +220,270 @@ const TOOLS: MCPTool[] = [
       },
     },
   },
+
+  // === Phase 33B: 10 neue MCP Tools ===
+
+  {
+    name: 'deep_analysis',
+    description: 'Führt eine tiefgehende Analyse mit Extended Thinking durch. Ideal für komplexe Fragen, die sorgfältiges Nachdenken erfordern.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Die Frage oder das Thema für die Tiefenanalyse',
+        },
+        thinkingBudget: {
+          type: 'number',
+          description: 'Token-Budget für Extended Thinking (default: 20000, max: 50000)',
+        },
+      },
+      required: ['query'],
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        analysis: { type: 'string', description: 'Die tiefgehende Analyse' },
+        hadThinking: { type: 'boolean', description: 'Ob Extended Thinking genutzt wurde' },
+        thinkingBudget: { type: 'number', description: 'Genutztes Thinking-Budget' },
+      },
+      required: ['analysis', 'hadThinking'],
+    },
+  },
+  {
+    name: 'explore_connections',
+    description: 'Erkundet Verbindungen zwischen Ideen über den Knowledge Graph. Findet versteckte Zusammenhänge und Cluster.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Suchbegriff oder Thema für die Graph-Exploration',
+        },
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext-Filter (default: personal)',
+        },
+        maxDistance: {
+          type: 'number',
+          description: 'Maximale Graph-Distanz (1-3, default: 2)',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'query_memory',
+    description: 'Durchsucht das gesamte 4-Schicht-Gedächtnis (Working, Short-Term, Episodic, Long-Term). Findet Erinnerungen und Kontext aus allen Ebenen.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Die Suchanfrage ans Gedächtnis',
+        },
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext (default: personal)',
+        },
+        includeEpisodic: {
+          type: 'boolean',
+          description: 'Episodische Erinnerungen einschließen (default: true)',
+        },
+        includeLongTerm: {
+          type: 'boolean',
+          description: 'Langzeitgedächtnis einschließen (default: true)',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'generate_draft',
+    description: 'Generiert einen strukturierten Entwurf basierend auf einer Idee oder einem Thema. Kann E-Mails, Artikel, Proposals und Dokumente erstellen.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'Der Text oder die Idee als Grundlage für den Entwurf',
+        },
+        type: {
+          type: 'string',
+          enum: ['email', 'article', 'proposal', 'document', 'generic'],
+          description: 'Art des Entwurfs (default: generic)',
+        },
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext (default: personal)',
+        },
+      },
+      required: ['text'],
+    },
+  },
+  {
+    name: 'deep_search',
+    description: 'Tiefensuche mit HyDE (Hypothetical Document Embeddings) und Cross-Encoder Re-Ranking. Findet auch semantisch verwandte Ergebnisse.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Die Suchanfrage',
+        },
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext-Filter (default: personal)',
+        },
+      },
+      required: ['query'],
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        results: { type: 'array', items: { type: 'object' } },
+        confidence: { type: 'number', description: '0-1 Konfidenz-Score' },
+        methodsUsed: { type: 'array', items: { type: 'string' } },
+        totalResults: { type: 'number' },
+      },
+      required: ['query', 'results', 'confidence'],
+    },
+  },
+  {
+    name: 'find_contradictions',
+    description: 'Findet widersprüchliche oder doppelte Ideen. Hilft bei der Konsistenz des Wissens und identifiziert Duplikate.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        content: {
+          type: 'string',
+          description: 'Der Inhalt, gegen den auf Widersprüche/Duplikate geprüft wird',
+        },
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext (default: personal)',
+        },
+        threshold: {
+          type: 'number',
+          description: 'Ähnlichkeitsschwelle (0-1, default: 0.6 für breitere Suche)',
+        },
+      },
+      required: ['content'],
+    },
+  },
+  {
+    name: 'productivity_report',
+    description: 'Erstellt einen Produktivitätsbericht mit AI-ROI-Kennzahlen, Zeitersparnis, Aktivitätsmuster und Wissens-Wachstum.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext (default: personal)',
+        },
+      },
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        dashboard: { type: 'object', description: 'Vollständiges Produktivitäts-Dashboard' },
+        context: { type: 'string' },
+        generatedAt: { type: 'string', description: 'ISO-Timestamp der Generierung' },
+      },
+      required: ['dashboard', 'generatedAt'],
+    },
+  },
+  {
+    name: 'active_recall_quiz',
+    description: 'Spaced-Repetition-Lernquiz basierend auf dem FSRS-Algorithmus. Generiert Lernkarten und bewertet Wiedergabe.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['generate', 'evaluate', 'schedule'],
+          description: 'Aktion: generate (Quiz erstellen), evaluate (Antwort bewerten), schedule (Nächste Reviews)',
+        },
+        taskId: {
+          type: 'string',
+          description: 'Task-ID für generate/evaluate',
+        },
+        userRecall: {
+          type: 'string',
+          description: 'Benutzerantwort für evaluate',
+        },
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext (default: personal)',
+        },
+      },
+      required: ['action'],
+    },
+  },
+  {
+    name: 'synthesize_knowledge',
+    description: 'Multi-Schritt-Wissens-Synthese: Sammelt Informationen aus mehreren Quellen (RAG, Graph, Memory) und erstellt eine kohärente Zusammenfassung.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Das Thema für die Wissens-Synthese',
+        },
+        context: {
+          type: 'string',
+          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          description: 'Kontext (default: personal)',
+        },
+        enableGraphExpansion: {
+          type: 'boolean',
+          description: 'Knowledge Graph für Querverbindungen nutzen (default: true)',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'compliance_check',
+    description: 'EU AI Act Compliance-Status: Zeigt AI-Entscheidungsprotokolle, generiert Compliance-Berichte und ermöglicht Daten-Lineage-Nachverfolgung.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['report', 'logs', 'status'],
+          description: 'Aktion: report (Compliance-Bericht), logs (Entscheidungs-Logs), status (Schnellübersicht)',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximale Anzahl der Log-Einträge (default: 20)',
+        },
+        context: {
+          type: 'string',
+          description: 'Optionaler Kontext-Filter',
+        },
+      },
+      required: ['action'],
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', description: 'Compliance-Status (compliant/warning/violation)' },
+        totalDecisions: { type: 'number' },
+        averageConfidence: { type: 'number' },
+        report: { type: 'object', description: 'Vollständiger Compliance-Bericht' },
+        logs: { type: 'array', items: { type: 'object' }, description: 'AI-Entscheidungsprotokolle' },
+      },
+    },
+  },
 ];
 
 // ===========================================
@@ -307,6 +590,47 @@ export class KIABMCPServer {
 
       case 'get_stats':
         result = await this.handleGetStats(args);
+        break;
+
+      // Phase 33B: 10 neue Tools
+      case 'deep_analysis':
+        result = await this.handleDeepAnalysis(args);
+        break;
+
+      case 'explore_connections':
+        result = await this.handleExploreConnections(args);
+        break;
+
+      case 'query_memory':
+        result = await this.handleQueryMemory(args);
+        break;
+
+      case 'generate_draft':
+        result = await this.handleGenerateDraft(args);
+        break;
+
+      case 'deep_search':
+        result = await this.handleDeepSearch(args);
+        break;
+
+      case 'find_contradictions':
+        result = await this.handleFindContradictions(args);
+        break;
+
+      case 'productivity_report':
+        result = await this.handleProductivityReport(args);
+        break;
+
+      case 'active_recall_quiz':
+        result = await this.handleActiveRecallQuiz(args);
+        break;
+
+      case 'synthesize_knowledge':
+        result = await this.handleSynthesizeKnowledge(args);
+        break;
+
+      case 'compliance_check':
+        result = await this.handleComplianceCheck(args);
         break;
 
       default:
@@ -475,6 +799,319 @@ export class KIABMCPServer {
       depth,
     };
   }
+
+  // ===========================================
+  // Phase 33B: New Tool Handlers (10 tools)
+  // ===========================================
+
+  private async handleDeepAnalysis(args: Record<string, unknown>): Promise<unknown> {
+    const queryStr = args.query as string | undefined;
+    const thinkingBudget = Math.min((args.thinkingBudget as number | undefined) ?? 20000, 50000);
+
+    if (!queryStr) {
+      throw new Error('Query ist erforderlich');
+    }
+
+    const systemPrompt = `Du bist ein analytischer Denker. Analysiere die folgende Frage gründlich.
+Strukturiere deine Analyse in:
+1. **Kernfrage** - Was genau wird gefragt?
+2. **Analyse** - Tiefgehende Betrachtung mit Pro/Contra
+3. **Erkenntnisse** - Die wichtigsten Einsichten
+4. **Empfehlung** - Klare Handlungsempfehlung
+
+Antworte auf Deutsch.`;
+
+    const result = await generateWithExtendedThinking(systemPrompt, queryStr, {
+      thinkingBudget,
+      maxTokens: 8000,
+    });
+
+    return {
+      analysis: result.response,
+      hadThinking: !!result.thinking,
+      thinkingBudget,
+    };
+  }
+
+  private async handleExploreConnections(args: Record<string, unknown>): Promise<unknown> {
+    const queryStr = args.query as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const maxDistance = Math.min((args.maxDistance as number | undefined) ?? 2, 3);
+
+    if (!queryStr) {
+      throw new Error('Query ist erforderlich');
+    }
+
+    // First, find seed ideas via deep search
+    const searchResults = await deepSearch(queryStr, context);
+    const seedIds = searchResults.results.slice(0, 3).map(r => r.id).filter(Boolean);
+
+    // Then explore connections via multi-hop graph traversal
+    const connections: unknown[] = [];
+    for (const seedId of seedIds) {
+      try {
+        const hops = await multiHopSearch(seedId as string, maxDistance);
+        connections.push(...hops);
+      } catch {
+        // Skip if idea has no graph connections
+      }
+    }
+
+    // Get direct connection suggestions for top result
+    let directSuggestions: unknown[] = [];
+    if (seedIds.length > 0) {
+      try {
+        directSuggestions = await getSuggestedConnections(seedIds[0] as string);
+      } catch {
+        // Skip if no suggestions available
+      }
+    }
+
+    return {
+      query: queryStr,
+      seedIdeas: searchResults.results.slice(0, 3).map(r => ({
+        title: r.title,
+        summary: r.summary,
+        score: r.score,
+      })),
+      graphConnections: connections,
+      suggestedConnections: directSuggestions,
+      maxDistance,
+    };
+  }
+
+  private async handleQueryMemory(args: Record<string, unknown>): Promise<unknown> {
+    const queryStr = args.query as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const includeEpisodic = (args.includeEpisodic as boolean | undefined) ?? true;
+    const includeLongTerm = (args.includeLongTerm as boolean | undefined) ?? true;
+
+    if (!queryStr) {
+      throw new Error('Query ist erforderlich');
+    }
+
+    // Use a temporary session ID for MCP queries
+    const sessionId = `mcp-memory-${Date.now()}`;
+
+    const memoryResult = await memoryCoordinator.prepareEnhancedContext(
+      sessionId,
+      queryStr,
+      context,
+      {
+        includeEpisodic,
+        includeLongTerm,
+        includeWorking: true,
+        maxContextTokens: 4000,
+      }
+    );
+
+    return {
+      query: queryStr,
+      context,
+      systemEnhancement: memoryResult.systemEnhancement,
+      stats: memoryResult.stats,
+    };
+  }
+
+  private async handleGenerateDraft(args: Record<string, unknown>): Promise<unknown> {
+    const text = args.text as string | undefined;
+    const draftType = (args.type as string | undefined) ?? 'generic';
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+
+    if (!text) {
+      throw new Error('Text ist erforderlich');
+    }
+
+    const typePrompts: Record<string, string> = {
+      email: 'Erstelle eine professionelle E-Mail basierend auf dem folgenden Input.',
+      article: 'Erstelle einen gut strukturierten Artikel basierend auf dem folgenden Input.',
+      proposal: 'Erstelle ein überzeugendes Proposal/Angebot basierend auf dem folgenden Input.',
+      document: 'Erstelle ein strukturiertes Dokument basierend auf dem folgenden Input.',
+      generic: 'Erstelle einen gut strukturierten Entwurf basierend auf dem folgenden Input.',
+    };
+
+    const systemPrompt = `${typePrompts[draftType] || typePrompts.generic}
+Kontext: ${context}
+
+Regeln:
+- Schreibe auf Deutsch, es sei denn der Input ist auf Englisch
+- Nutze eine professionelle, klare Sprache
+- Strukturiere den Text mit Überschriften und Absätzen
+- Liefere einen fertigen, sofort nutzbaren Entwurf`;
+
+    const result = await generateClaudeResponse(systemPrompt, text);
+
+    return {
+      draft: result,
+      type: draftType,
+      context,
+      inputLength: text.length,
+    };
+  }
+
+  private async handleDeepSearch(args: Record<string, unknown>): Promise<unknown> {
+    const queryStr = args.query as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+
+    if (!queryStr) {
+      throw new Error('Query ist erforderlich');
+    }
+
+    const results = await deepSearch(queryStr, context);
+
+    return {
+      query: queryStr,
+      results: results.results.map(r => ({
+        title: r.title,
+        summary: r.summary,
+        score: r.score,
+        relevanceReason: r.relevanceReason,
+      })),
+      confidence: results.confidence,
+      methodsUsed: results.methodsUsed,
+      timing: results.timing,
+      totalResults: results.results.length,
+    };
+  }
+
+  private async handleFindContradictions(args: Record<string, unknown>): Promise<unknown> {
+    const content = args.content as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const threshold = (args.threshold as number | undefined) ?? 0.6;
+
+    if (!content) {
+      throw new Error('Content ist erforderlich');
+    }
+
+    const duplicates = await findDuplicates(context, content, threshold);
+
+    return {
+      hasDuplicatesOrContradictions: duplicates.hasDuplicates,
+      count: duplicates.count,
+      suggestions: duplicates.suggestions,
+      threshold,
+    };
+  }
+
+  private async handleProductivityReport(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+
+    const dashboard = await getProductivityDashboard(context);
+
+    return {
+      dashboard,
+      context,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  private async handleActiveRecallQuiz(args: Record<string, unknown>): Promise<unknown> {
+    const action = args.action as string;
+    const taskId = args.taskId as string | undefined;
+    const userRecall = args.userRecall as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+
+    switch (action) {
+      case 'generate': {
+        if (!taskId) {
+          throw new Error('taskId ist erforderlich für generate');
+        }
+        const challenge = await generateChallenge(taskId, context);
+        if (!challenge) {
+          return { success: false, message: 'Keine Lernkarte für diese Task-ID gefunden' };
+        }
+        return { success: true, challenge };
+      }
+
+      case 'evaluate': {
+        if (!taskId || !userRecall) {
+          throw new Error('taskId und userRecall sind erforderlich für evaluate');
+        }
+        const result = await evaluateRecall(taskId, context, userRecall);
+        if (!result) {
+          return { success: false, message: 'Bewertung fehlgeschlagen' };
+        }
+        return { success: true, result };
+      }
+
+      case 'schedule': {
+        const schedule = await getReviewSchedule(context);
+        return {
+          success: true,
+          schedule,
+          totalDue: schedule.length,
+        };
+      }
+
+      default:
+        throw new Error(`Unbekannte Aktion: ${action}. Erlaubt: generate, evaluate, schedule`);
+    }
+  }
+
+  private async handleSynthesizeKnowledge(args: Record<string, unknown>): Promise<unknown> {
+    const queryStr = args.query as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const enableGraphExpansion = (args.enableGraphExpansion as boolean | undefined) ?? true;
+
+    if (!queryStr) {
+      throw new Error('Query ist erforderlich');
+    }
+
+    const result = await synthesizeKnowledge(queryStr, context, {
+      enableGraphExpansion,
+      maxTotalIdeas: 20,
+    });
+
+    return {
+      synthesis: result.synthesis,
+      sources: result.sources,
+      contradictions: result.contradictions,
+      gaps: result.gaps,
+      timing: result.timing,
+    };
+  }
+
+  private async handleComplianceCheck(args: Record<string, unknown>): Promise<unknown> {
+    const action = args.action as string;
+    const limit = (args.limit as number | undefined) ?? 20;
+    const context = args.context as string | undefined;
+
+    switch (action) {
+      case 'report': {
+        const report = generateComplianceReport();
+        return {
+          report,
+          generatedAt: new Date().toISOString(),
+        };
+      }
+
+      case 'logs': {
+        const logs = getDecisionLogs({
+          limit,
+          context,
+        });
+        return logs;
+      }
+
+      case 'status': {
+        const report = generateComplianceReport();
+        return {
+          status: 'compliant',
+          totalDecisions: report.summary.totalDecisions,
+          averageConfidence: report.summary.averageConfidence,
+          modelBreakdown: report.modelBreakdown,
+          period: report.period,
+        };
+      }
+
+      default:
+        throw new Error(`Unbekannte Aktion: ${action}. Erlaubt: report, logs, status`);
+    }
+  }
+
+  // ===========================================
+  // Original Tool Handlers (continued)
+  // ===========================================
 
   private async handleGetStats(args: Record<string, unknown>): Promise<unknown> {
     const context = args.context as AIContext | undefined;

@@ -37,6 +37,78 @@ jest.mock('../../../services/knowledge-graph', () => ({
   multiHopSearch: jest.fn(),
 }));
 
+// Phase 33B: Mocks for 10 new MCP tools
+jest.mock('../../../services/enhanced-rag', () => ({
+  deepSearch: jest.fn().mockResolvedValue({
+    results: [],
+    confidence: 0,
+    methodsUsed: [],
+    timing: { total: 0 },
+  }),
+}));
+
+jest.mock('../../../services/claude/extended-thinking', () => ({
+  generateWithExtendedThinking: jest.fn().mockResolvedValue({
+    response: 'Analysis result',
+    thinking: 'Thinking...',
+  }),
+}));
+
+jest.mock('../../../services/memory', () => ({
+  memoryCoordinator: {
+    prepareEnhancedContext: jest.fn().mockResolvedValue({
+      systemEnhancement: 'Memory context',
+      stats: { longTermFacts: 0, episodesRetrieved: 0, workingMemorySlots: 0 },
+    }),
+  },
+}));
+
+jest.mock('../../../services/synthesis-engine', () => ({
+  synthesizeKnowledge: jest.fn().mockResolvedValue({
+    synthesis: 'Synthesized knowledge',
+    sources: [],
+    gaps: [],
+    contradictions: [],
+    queryVariants: [],
+    timing: { total: 0, queryExpansion: 0, retrieval: 0, graphExpansion: 0, synthesis: 0 },
+  }),
+}));
+
+jest.mock('../../../services/active-recall', () => ({
+  generateChallenge: jest.fn().mockResolvedValue({ prompt: 'Test question?', hint: 'Hint' }),
+  evaluateRecall: jest.fn().mockResolvedValue({ quality: 'perfect', score: 1.0 }),
+  getReviewSchedule: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('../../../services/productivity-analytics', () => ({
+  getProductivityDashboard: jest.fn().mockResolvedValue({
+    timeSaved: { totalMinutes: 120 },
+    activityStreak: 5,
+  }),
+}));
+
+jest.mock('../../../services/compliance-logger', () => ({
+  getDecisionLogs: jest.fn().mockReturnValue({ logs: [], total: 0 }),
+  generateComplianceReport: jest.fn().mockReturnValue({
+    generatedAt: Date.now(),
+    period: { start: 0, end: Date.now() },
+    summary: { totalDecisions: 42, averageConfidence: 0.85, ragUsageRate: 0.6, webSearchUsageRate: 0.1 },
+    decisions: [],
+    sourceBreakdown: {},
+    modelBreakdown: { 'claude-sonnet': { count: 30, avgConfidence: 0.85 } },
+  }),
+  logAIDecision: jest.fn(),
+}));
+
+jest.mock('../../../services/duplicate-detection', () => ({
+  findDuplicates: jest.fn().mockResolvedValue({
+    hasDuplicates: false,
+    count: 0,
+    suggestions: [],
+    threshold: 0.6,
+  }),
+}));
+
 import { queryContext } from '../../../utils/database-context';
 import { structureWithClaudePersonalized, generateClaudeResponse } from '../../../services/claude';
 import { proactiveSuggestionEngine } from '../../../services/proactive-suggestions';
@@ -130,12 +202,45 @@ describe('MCP Server', () => {
       const response = await server.handleRequest({ method: 'tools/list' });
 
       const toolNames = response.tools!.map(t => t.name);
+      // Original 6 tools
       expect(toolNames).toContain('create_idea');
       expect(toolNames).toContain('search_ideas');
       expect(toolNames).toContain('get_suggestions');
       expect(toolNames).toContain('chat');
       expect(toolNames).toContain('get_related_ideas');
       expect(toolNames).toContain('get_stats');
+      // Phase 33B: 10 new tools
+      expect(toolNames).toContain('deep_analysis');
+      expect(toolNames).toContain('explore_connections');
+      expect(toolNames).toContain('query_memory');
+      expect(toolNames).toContain('generate_draft');
+      expect(toolNames).toContain('deep_search');
+      expect(toolNames).toContain('find_contradictions');
+      expect(toolNames).toContain('productivity_report');
+      expect(toolNames).toContain('active_recall_quiz');
+      expect(toolNames).toContain('synthesize_knowledge');
+      expect(toolNames).toContain('compliance_check');
+    });
+
+    it('should have exactly 16 tools', async () => {
+      const response = await server.handleRequest({ method: 'tools/list' });
+      expect(response.tools!.length).toBe(16);
+    });
+
+    it('should include output schemas on key tools (MCP 2026 spec)', async () => {
+      const response = await server.handleRequest({ method: 'tools/list' });
+      const tools = response.tools!;
+
+      const deepAnalysis = tools.find(t => t.name === 'deep_analysis');
+      expect(deepAnalysis?.outputSchema).toBeDefined();
+      expect(deepAnalysis?.outputSchema?.properties.analysis).toBeDefined();
+
+      const deepSearchTool = tools.find(t => t.name === 'deep_search');
+      expect(deepSearchTool?.outputSchema).toBeDefined();
+      expect(deepSearchTool?.outputSchema?.properties.confidence).toBeDefined();
+
+      const complianceTool = tools.find(t => t.name === 'compliance_check');
+      expect(complianceTool?.outputSchema).toBeDefined();
     });
   });
 
@@ -418,6 +523,241 @@ describe('MCP Server', () => {
       const result = JSON.parse(response.content![0].text);
       expect(result.stats).toBeDefined();
       expect(result.typeDistribution).toBeDefined();
+    });
+  });
+
+  // ===========================================
+  // Phase 33B: New Tool Tests
+  // ===========================================
+
+  describe('tools/call - deep_analysis', () => {
+    it('should perform deep analysis with Extended Thinking', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'deep_analysis',
+          arguments: { query: 'Analysiere die Marktchancen' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.analysis).toBeDefined();
+      expect(result.hadThinking).toBe(true);
+    });
+
+    it('should error when query is missing', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: { name: 'deep_analysis', arguments: {} },
+      });
+      expect(response.isError).toBe(true);
+    });
+  });
+
+  describe('tools/call - deep_search', () => {
+    it('should perform deep RAG search', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'deep_search',
+          arguments: { query: 'machine learning' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.query).toBe('machine learning');
+      expect(result.results).toBeDefined();
+    });
+  });
+
+  describe('tools/call - query_memory', () => {
+    it('should query the 4-layer memory system', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'query_memory',
+          arguments: { query: 'Was weiß ich über React?' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.systemEnhancement).toBeDefined();
+      expect(result.stats).toBeDefined();
+    });
+  });
+
+  describe('tools/call - generate_draft', () => {
+    it('should generate a draft', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'generate_draft',
+          arguments: { text: 'Schreibe eine Zusammenfassung', type: 'email' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.draft).toBeDefined();
+      expect(result.type).toBe('email');
+    });
+
+    it('should error when text is missing', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: { name: 'generate_draft', arguments: {} },
+      });
+      expect(response.isError).toBe(true);
+    });
+  });
+
+  describe('tools/call - find_contradictions', () => {
+    it('should find contradictions/duplicates', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'find_contradictions',
+          arguments: { content: 'React ist das beste Framework' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result).toHaveProperty('hasDuplicatesOrContradictions');
+    });
+  });
+
+  describe('tools/call - productivity_report', () => {
+    it('should generate productivity report', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'productivity_report',
+          arguments: {},
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.dashboard).toBeDefined();
+      expect(result.generatedAt).toBeDefined();
+    });
+  });
+
+  describe('tools/call - active_recall_quiz', () => {
+    it('should generate quiz challenge', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'active_recall_quiz',
+          arguments: { action: 'generate', taskId: 'task-1' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.success).toBe(true);
+    });
+
+    it('should get review schedule', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'active_recall_quiz',
+          arguments: { action: 'schedule' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.success).toBe(true);
+      expect(result.schedule).toBeDefined();
+    });
+
+    it('should error for unknown action', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'active_recall_quiz',
+          arguments: { action: 'unknown' },
+        },
+      });
+      expect(response.isError).toBe(true);
+    });
+  });
+
+  describe('tools/call - synthesize_knowledge', () => {
+    it('should synthesize knowledge from multiple sources', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'synthesize_knowledge',
+          arguments: { query: 'Alles über KI-Strategien' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.synthesis).toBeDefined();
+    });
+  });
+
+  describe('tools/call - compliance_check', () => {
+    it('should generate compliance report', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'compliance_check',
+          arguments: { action: 'report' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.report).toBeDefined();
+    });
+
+    it('should return compliance status', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'compliance_check',
+          arguments: { action: 'status' },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.status).toBe('compliant');
+      expect(result.totalDecisions).toBe(42);
+    });
+
+    it('should return decision logs', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'compliance_check',
+          arguments: { action: 'logs', limit: 10 },
+        },
+      });
+
+      expect(response.isError).toBeFalsy();
+      const result = JSON.parse(response.content![0].text);
+      expect(result.logs).toBeDefined();
+    });
+
+    it('should error for unknown action', async () => {
+      const response = await server.handleRequest({
+        method: 'tools/call',
+        params: {
+          name: 'compliance_check',
+          arguments: { action: 'unknown' },
+        },
+      });
+      expect(response.isError).toBe(true);
     });
   });
 

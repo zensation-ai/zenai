@@ -17,6 +17,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Response } from 'express';
 import { logger } from '../../utils/logger';
 import { getClaudeClient, CLAUDE_MODEL } from './client';
+import {
+  CompactionConfig,
+  COMPACTION_BETA,
+  buildContextManagement,
+  hasCompactionBlock,
+  calculateTokensSaved,
+  recordCompaction,
+} from './context-compaction';
 
 // ===========================================
 // Types & Interfaces
@@ -34,6 +42,7 @@ export type StreamEventType =
   | 'content_end'       // Response complete
   | 'tool_use_start'    // Tool call initiated
   | 'tool_use_end'      // Tool call complete
+  | 'compaction_info'   // Context was compacted (infinite conversations)
   | 'error'             // Error occurred
   | 'done';             // Stream complete
 
@@ -76,6 +85,10 @@ export interface StreamingOptions {
   maxTokens?: number;
   /** Tools to enable */
   tools?: Anthropic.Tool[];
+  /** Context compaction configuration (enables infinite conversations) */
+  compactionConfig?: CompactionConfig;
+  /** Session ID for compaction state tracking */
+  sessionId?: string;
 }
 
 /**
@@ -94,6 +107,10 @@ export interface StreamingResult {
     thinkingTokens?: number;
   };
   stopReason: string;
+  /** Whether context compaction occurred during this response */
+  compactionOccurred?: boolean;
+  /** Tokens saved by compaction */
+  compactionTokensSaved?: number;
 }
 
 // ===========================================
@@ -157,7 +174,7 @@ export async function streamToSSE(
 
   try {
     // Build request parameters
-    const params: Anthropic.MessageCreateParams = {
+    const params: Record<string, unknown> = {
       model: CLAUDE_MODEL,
       max_tokens: opts.maxTokens ?? 16000,
       messages,
@@ -184,13 +201,30 @@ export async function streamToSSE(
       params.tools = opts.tools;
     }
 
-    // Create streaming response
-    const stream = client.messages.stream(params);
+    // Add context compaction if configured
+    const contextManagement = opts.compactionConfig
+      ? buildContextManagement(opts.compactionConfig)
+      : undefined;
+    if (contextManagement) {
+      params.context_management = contextManagement;
+    }
+
+    // Request options for beta features
+    const requestOpts = contextManagement
+      ? { headers: { 'anthropic-beta': COMPACTION_BETA } }
+      : undefined;
+
+    // Create streaming response (with beta headers if compaction enabled)
+    const stream = client.messages.stream(
+      params as unknown as Anthropic.MessageCreateParams,
+      requestOpts
+    );
 
     let isInThinking = false;
     let isInContent = false;
     let thinkingContent = '';
     let responseContent = '';
+    let compactionDetected = false;
 
     // Handle text content deltas
     stream.on('text', (text: string) => {
@@ -208,7 +242,7 @@ export async function streamToSSE(
       sendSSE(res, { type: 'thinking_delta', data: { thinking: thinkingDelta } });
     });
 
-    // Handle block-level events for start/end markers and tool use
+    // Handle block-level events for start/end markers, tool use, and compaction
     stream.on('streamEvent', (event: Anthropic.MessageStreamEvent) => {
       if (event.type === 'content_block_start') {
         if (event.content_block.type === 'thinking') {
@@ -229,6 +263,30 @@ export async function streamToSSE(
     // Wait for stream completion
     const finalMessage = await stream.finalMessage();
 
+    // Check if compaction occurred in the response
+    if (hasCompactionBlock(finalMessage.content)) {
+      compactionDetected = true;
+      const tokensSaved = calculateTokensSaved(finalMessage.usage as unknown as Parameters<typeof calculateTokensSaved>[0]);
+
+      // Track compaction state for this session
+      if (opts.sessionId) {
+        recordCompaction(opts.sessionId, tokensSaved);
+      }
+
+      // Notify client about compaction
+      sendSSE(res, {
+        type: 'compaction_info',
+        data: {
+          content: `Kontext wurde komprimiert (${tokensSaved > 0 ? tokensSaved.toLocaleString() + ' Tokens gespart' : 'aktiv'})`,
+        },
+      });
+
+      logger.info('Context compaction occurred during stream', {
+        sessionId: opts.sessionId,
+        tokensSaved,
+      });
+    }
+
     // Send completion event with metadata
     sendSSE(res, {
       type: 'done',
@@ -247,6 +305,7 @@ export async function streamToSSE(
       outputTokens: finalMessage.usage.output_tokens,
       stopReason: finalMessage.stop_reason,
       hadThinking: thinkingContent.length > 0,
+      compactionOccurred: compactionDetected,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown streaming error';
@@ -281,7 +340,7 @@ export async function streamAndCollect(
   });
 
   // Build request parameters
-  const params: Anthropic.MessageCreateParams = {
+  const params: Record<string, unknown> = {
     model: CLAUDE_MODEL,
     max_tokens: opts.maxTokens ?? 16000,
     messages,
@@ -306,8 +365,23 @@ export async function streamAndCollect(
     params.tools = opts.tools;
   }
 
+  // Add context compaction if configured
+  const contextManagement = opts.compactionConfig
+    ? buildContextManagement(opts.compactionConfig)
+    : undefined;
+  if (contextManagement) {
+    params.context_management = contextManagement;
+  }
+
+  const requestOpts = contextManagement
+    ? { headers: { 'anthropic-beta': COMPACTION_BETA } }
+    : undefined;
+
   // Create streaming response
-  const stream = client.messages.stream(params);
+  const stream = client.messages.stream(
+    params as unknown as Anthropic.MessageCreateParams,
+    requestOpts
+  );
 
   let thinking = '';
   let content = '';
@@ -327,6 +401,8 @@ export async function streamAndCollect(
   const finalMessage = await stream.finalMessage();
 
   // Extract tool calls from final message
+  let compactionOccurred = false;
+  let compactionTokensSaved = 0;
   for (const block of finalMessage.content) {
     if (block.type === 'tool_use') {
       toolCalls.push({
@@ -334,6 +410,19 @@ export async function streamAndCollect(
         input: block.input as Record<string, unknown>,
       });
     }
+  }
+
+  // Check for compaction
+  if (hasCompactionBlock(finalMessage.content)) {
+    compactionOccurred = true;
+    compactionTokensSaved = calculateTokensSaved(finalMessage.usage as unknown as Parameters<typeof calculateTokensSaved>[0]);
+    if (opts.sessionId) {
+      recordCompaction(opts.sessionId, compactionTokensSaved);
+    }
+    logger.info('Context compaction occurred during collect', {
+      sessionId: opts.sessionId,
+      tokensSaved: compactionTokensSaved,
+    });
   }
 
   return {
@@ -346,6 +435,8 @@ export async function streamAndCollect(
       thinkingTokens: thinking.length > 0 ? Math.ceil(thinking.length / 4) : undefined,
     },
     stopReason: finalMessage.stop_reason || 'end_turn',
+    compactionOccurred,
+    compactionTokensSaved: compactionTokensSaved > 0 ? compactionTokensSaved : undefined,
   };
 }
 
@@ -378,7 +469,9 @@ export async function thinkingStream(
   res: Response,
   messages: Anthropic.MessageParam[],
   systemPrompt?: string,
-  thinkingBudget: number = 10000
+  thinkingBudget: number = 10000,
+  compactionConfig?: CompactionConfig,
+  sessionId?: string
 ): Promise<void> {
   setupSSEHeaders(res);
 
@@ -387,5 +480,7 @@ export async function thinkingStream(
     thinkingBudget,
     systemPrompt,
     maxTokens: 16000,
+    compactionConfig,
+    sessionId,
   });
 }

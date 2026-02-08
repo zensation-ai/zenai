@@ -29,9 +29,20 @@ import {
 import { isValidUUID, toIntBounded } from '../utils/validation';
 import { validateBody } from '../utils/schemas';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
-import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
+import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
 import { detectChatMode } from '../services/chat-modes';
 import { isValidThinkingMode, getAvailableModes, applyThinkingMode, ThinkingMode } from '../services/thinking-partner';
+import {
+  buildCompactionConfig,
+  shouldEnableCompaction,
+  estimateConversationTokens,
+  getCompactionState,
+} from '../services/claude/context-compaction';
+import {
+  classifyTaskType,
+  calculateDynamicBudget,
+} from '../services/claude/thinking-budget';
+import { classifyIntent } from '../services/query-intent-classifier';
 import { query } from '../utils/database';
 import {
   VisionImage,
@@ -548,6 +559,73 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
     systemPrompt += `\n\n[MODUS: ${modeResult.mode}]\nDiese Anfrage erfordert tieferes Nachdenken. Nutze Extended Thinking um deine Gedanken zu strukturieren.`;
   }
 
+  // Determine if context compaction should be enabled
+  const estimatedTokens = estimateConversationTokens(
+    historyResult.rows as Array<{ content: string }>,
+    systemPrompt
+  );
+  const compactionConfig = shouldEnableCompaction(estimatedTokens)
+    ? buildCompactionConfig()
+    : undefined;
+
+  if (compactionConfig) {
+    const state = getCompactionState(id);
+    logger.info('Context compaction enabled for stream', {
+      sessionId: id,
+      estimatedTokens,
+      threshold: compactionConfig.triggerThreshold,
+      previousCompactions: state.compactionCount,
+    });
+  }
+
+  // === Adaptive Thinking Budget (Phase 33A-2) ===
+  // Dynamically adjust thinking budget based on query complexity.
+  // Simple queries (greetings, confirmations) get minimal/no thinking.
+  // Complex queries (analysis, synthesis) get full thinking budget.
+  let adaptiveThinkingBudget = thinkingBudget;
+  let enableThinking = true;
+
+  try {
+    const intentResult = classifyIntent(message, {
+      messageCount: historyResult.rows.length,
+      recentMessages: historyResult.rows.slice(-3).map((r: { role: string; content: string }) => ({
+        role: r.role as 'user' | 'assistant',
+        content: r.content,
+      })),
+      currentMode: modeResult.mode,
+    });
+
+    if (intentResult.intent === 'skip' || intentResult.intent === 'conversation_only') {
+      // Simple queries: minimal or no thinking
+      adaptiveThinkingBudget = 2000;
+      if (intentResult.intent === 'skip') {
+        enableThinking = false;
+      }
+    } else {
+      // Use dynamic budget system for retrieval-worthy queries
+      const taskType = classifyTaskType(message);
+      const budgetRec = await calculateDynamicBudget(message, taskType, 'personal');
+      adaptiveThinkingBudget = budgetRec.recommendedBudget;
+
+      logger.info('Adaptive thinking budget calculated', {
+        sessionId: id,
+        intent: intentResult.intent,
+        taskType,
+        staticBudget: thinkingBudget,
+        adaptiveBudget: adaptiveThinkingBudget,
+        complexity: budgetRec.complexity.score,
+        reasoning: budgetRec.reasoning,
+      });
+    }
+  } catch (error) {
+    // Fallback to static budget if adaptive fails
+    logger.warn('Adaptive thinking budget failed, using static', {
+      sessionId: id,
+      error: error instanceof Error ? error.message : 'Unknown',
+      fallbackBudget: thinkingBudget,
+    });
+  }
+
   // Setup SSE and stream response
   setupSSEHeaders(res);
 
@@ -606,13 +684,27 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
   res.write = interceptWrite;
 
   try {
-    // Stream the response
-    await thinkingStream(
-      res,
-      messages,
-      systemPrompt,
-      thinkingBudget
-    );
+    // Stream the response with adaptive thinking + compaction
+    if (enableThinking) {
+      await thinkingStream(
+        res,
+        messages,
+        systemPrompt,
+        adaptiveThinkingBudget,
+        compactionConfig,
+        id
+      );
+    } else {
+      // Simple queries: skip thinking entirely for faster response
+      await streamToSSE(res, messages, {
+        enableThinking: false,
+        systemPrompt,
+        temperature: 0.7,
+        maxTokens: 4096,
+        compactionConfig,
+        sessionId: id,
+      });
+    }
 
     // Store assistant response after stream completes
     if (fullResponse) {
