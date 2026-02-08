@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { ExportMenu } from './ExportMenu';
+import type { AIContext } from './ContextSwitcher';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { logError } from '../utils/errors';
 import '../neurodesign.css';
@@ -27,6 +29,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
   const [selectedFormat, setSelectedFormat] = useState<string>('json');
   const [selectedContent, setSelectedContent] = useState<string[]>(['ideas']);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [ideasCount, setIdeasCount] = useState(0);
 
   // AbortController ref to prevent memory leaks on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -41,6 +44,16 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
       logError('ExportDashboard:loadHistory', err);
     }
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    axios.get(`/api/${context}/ideas?limit=1`, { signal: controller.signal })
+      .then(res => {
+        setIdeasCount(res.data.pagination?.total ?? res.data.ideas?.length ?? 0);
+      })
+      .catch(() => { /* ignore */ });
+    return () => controller.abort();
+  }, [context]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -156,9 +169,7 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
           <h1>{greeting.emoji} Export Center</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
         </div>
-        <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
-        </span>
+        <ExportMenu context={context as AIContext} ideasCount={ideasCount} />
       </div>
 
       <div className="export-tabs">

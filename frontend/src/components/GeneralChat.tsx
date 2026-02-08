@@ -27,6 +27,8 @@ import { logError } from '../utils/errors';
 
 // Lazy-load ArtifactPanel (pulls in react-syntax-highlighter ~200KB + react-markdown)
 const ArtifactPanel = lazy(() => import('./ArtifactPanel').then(m => ({ default: m.ArtifactPanel })));
+// Lazy-load VoiceChat overlay
+const VoiceChatOverlay = lazy(() => import('./VoiceChat').then(m => ({ default: m.VoiceChat })));
 
 interface ChatMessage {
   id: string;
@@ -63,6 +65,8 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
   const [thinkingContent, setThinkingContent] = useState<string>('');
   // Thinking partner mode state (Phase 32C-1)
   const [thinkingMode, setThinkingMode] = useState<'assist' | 'challenge' | 'coach' | 'synthesize'>('assist');
+  // Voice chat overlay state
+  const [voiceChatOpen, setVoiceChatOpen] = useState(false);
   // Artifacts state
   const [artifacts, setArtifacts] = useState<Map<string, Artifact[]>>(new Map());
   const [activeArtifact, setActiveArtifact] = useState<{ artifact: Artifact; messageId: string; index: number } | null>(null);
@@ -661,6 +665,16 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             context={context}
             compact={true}
           />
+          <button
+            type="button"
+            className="voice-chat-toggle neuro-hover-lift neuro-focus-ring"
+            onClick={() => setVoiceChatOpen(true)}
+            disabled={sending}
+            aria-label="Sprachkonversation starten"
+            title="Sprachkonversation"
+          >
+            <span aria-hidden="true">🎧</span>
+          </button>
           <textarea
             ref={inputRef}
             value={inputValue}
@@ -717,6 +731,33 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             />
           </Suspense>
         </ErrorBoundary>
+      )}
+
+      {/* Voice Chat Overlay */}
+      {voiceChatOpen && (
+        <div
+          className="voice-chat-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Sprachkonversation"
+          onKeyDown={(e) => { if (e.key === 'Escape') setVoiceChatOpen(false); }}
+        >
+          <div
+            className="voice-chat-overlay-backdrop"
+            onClick={() => setVoiceChatOpen(false)}
+            role="presentation"
+          />
+          <div className="voice-chat-overlay-content">
+            <Suspense fallback={<div className="voice-chat-loading">Lade Sprachkonversation...</div>}>
+              <VoiceChatOverlay
+                context={context}
+                apiUrl={import.meta.env.VITE_API_URL || ''}
+                apiKey={import.meta.env.VITE_API_KEY || ''}
+                onClose={() => setVoiceChatOpen(false)}
+              />
+            </Suspense>
+          </div>
+        </div>
       )}
     </div>
   );

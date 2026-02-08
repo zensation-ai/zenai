@@ -57,6 +57,8 @@ const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ d
 const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
 const IdeasPage = lazy(() => import('./components/IdeasPage').then(m => ({ default: m.IdeasPage })));
 const CanvasPage = lazy(() => import('./components/CanvasPage').then(m => ({ default: m.CanvasPage })));
+const VoiceChatPage = lazy(() => import('./components/VoiceChat').then(m => ({ default: m.VoiceChat })));
+const AgentTeamsPage = lazy(() => import('./components/AgentTeamsPage').then(m => ({ default: m.AgentTeamsPage })));
 
 const PageLoader = () => (
   <div className="page-loader" role="status" aria-live="polite">
@@ -90,6 +92,8 @@ const PAGE_PATHS: Record<Page, string> = {
   'documents': '/documents',
   'triage': '/triage',
   'canvas': '/canvas',
+  'voice-chat': '/voice-chat',
+  'agent-teams': '/agent-teams',
   // Legacy redirects
   'incubator': '/ai-workshop/incubator',
   'proactive': '/ai-workshop/proactive',
@@ -122,6 +126,8 @@ const PATH_PAGES: Record<string, Page> = {
   '/documents': 'documents',
   '/triage': 'triage',
   '/canvas': 'canvas',
+  '/voice-chat': 'voice-chat',
+  '/agent-teams': 'agent-teams',
 };
 
 function useUrlNavigation() {
@@ -763,6 +769,28 @@ function App() {
             <CanvasPage
               context={context}
               onNavigate={(page) => navigateToPage(page as Page)}
+            />
+          </Suspense>
+        );
+
+      case 'voice-chat':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <VoiceChatPage
+              context={context}
+              apiUrl={import.meta.env.VITE_API_URL || ''}
+              apiKey={import.meta.env.VITE_API_KEY || ''}
+              onClose={() => navigateToPage('home')}
+            />
+          </Suspense>
+        );
+
+      case 'agent-teams':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <AgentTeamsPage
+              context={context}
+              onBack={() => navigateToPage('home')}
             />
           </Suspense>
         );

@@ -545,6 +545,26 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
       priority: 50,
       action: () => navigateTo('personalization'),
     },
+    {
+      id: 'voice-chat',
+      label: 'Sprachkonversation',
+      description: 'Echtzeit-Sprachkonversation mit ZenAI',
+      icon: '🎙️',
+      category: 'ai-features',
+      keywords: ['voice', 'sprache', 'mikrofon', 'sprechen', 'reden', 'stimme'],
+      priority: 52,
+      action: () => navigateTo('voice-chat'),
+    },
+    {
+      id: 'agent-teams',
+      label: 'Agent Teams',
+      description: 'Multi-Agent Aufgaben orchestrieren',
+      icon: '🤖',
+      category: 'ai-features',
+      keywords: ['agent', 'team', 'multi', 'researcher', 'writer', 'reviewer', 'orchestrieren'],
+      priority: 53,
+      action: () => navigateTo('agent-teams'),
+    },
 
     // === Inhalte ===
     {

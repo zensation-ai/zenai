@@ -141,6 +141,16 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   'stories': [ROOT, { label: 'Stories', page: 'stories', icon: '📖' }],
   'archive': [ROOT, { label: 'Archiv', page: 'archive', icon: '📥' }],
   'canvas': [ROOT, { label: 'Inhalte', page: 'home', icon: '📁' }, { label: 'Canvas', page: 'canvas', icon: '🎨' }],
+  'voice-chat': [
+    ROOT,
+    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
+    { label: 'Sprachkonversation', page: 'voice-chat', icon: '🎙️' },
+  ],
+  'agent-teams': [
+    ROOT,
+    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
+    { label: 'Agent Teams', page: 'agent-teams', icon: '🤖' },
+  ],
 };
 
 /**

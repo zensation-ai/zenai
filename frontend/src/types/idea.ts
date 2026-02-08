@@ -78,6 +78,8 @@ export type Page =
   | 'knowledge-graph'
   | 'learning-tasks'
   | 'triage'
-  | 'canvas';
+  | 'canvas'
+  | 'voice-chat'
+  | 'agent-teams';
 
 export type Context = 'personal' | 'work' | 'learning' | 'creative';

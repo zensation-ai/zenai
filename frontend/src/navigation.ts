@@ -46,7 +46,7 @@ export const NAV_SECTIONS: NavSection[] = [
     icon: '🧠',
     items: [
       { page: 'insights', icon: '📊', label: 'Insights', description: 'Dashboard & Analytics', subPages: ['dashboard', 'analytics', 'digest', 'knowledge-graph'] },
-      { page: 'ai-workshop', icon: '🧪', label: 'KI-Werkstatt', description: 'Inkubator & Evolution', subPages: ['incubator', 'proactive', 'evolution'] },
+      { page: 'ai-workshop', icon: '🧪', label: 'KI-Werkstatt', description: 'Inkubator & Evolution', subPages: ['incubator', 'proactive', 'evolution', 'voice-chat', 'agent-teams'] },
       { page: 'learning', icon: '📚', label: 'Lernen', description: 'Lernziele und Aufgaben', subPages: ['learning-tasks'] },
       { page: 'personalization', icon: '🎨', label: 'Personalisierung', description: 'KI auf dich anpassen' },
     ],
