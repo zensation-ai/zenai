@@ -249,9 +249,9 @@ notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'
   // Log notification event
   await queryContext(
     ctx,
-    `INSERT INTO notification_history (type, title, body, data, recipients_count)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [payload.type, payload.title, payload.body, JSON.stringify(payload.data || {}), tokens.rows.length]
+    `INSERT INTO notification_history (context, notification_type, title, body, payload, status)
+     VALUES ($1, $2, $3, $4, $5, 'sent')`,
+    [ctx, payload.type, payload.title, payload.body, JSON.stringify(payload.data || {})]
   );
 
   // In production, this would call APNs/FCM
@@ -282,7 +282,7 @@ notificationsRouter.get('/notifications/history', apiKeyAuth, asyncHandler(async
 
   const result = await queryContext(
     ctx,
-    `SELECT id, type, title, body, data, recipients_count, created_at
+    `SELECT id, notification_type AS type, title, body, payload AS data, status, sent_at, opened_at, created_at
      FROM notification_history
      ORDER BY created_at DESC
      LIMIT $1`,
@@ -351,14 +351,14 @@ export async function checkAndNotifyReadyClusters(context: AIContext): Promise<n
     for (const cluster of clusters.rows) {
       await queryContext(
         context,
-        `INSERT INTO notification_history (type, title, body, data, recipients_count)
-         VALUES ($1, $2, $3, $4, $5)`,
+        `INSERT INTO notification_history (context, notification_type, title, body, payload, status)
+         VALUES ($1, $2, $3, $4, $5, 'sent')`,
         [
+          context,
           NotificationType.CLUSTER_READY,
           'Gedanken-Cluster bereit!',
           `"${cluster.suggested_title}" ist bereit zur Konsolidierung`,
           JSON.stringify({ clusterId: cluster.id }),
-          tokens.rows.length,
         ]
       );
     }
@@ -423,14 +423,14 @@ export async function generateDailyDigest(context: AIContext): Promise<void> {
 
     await queryContext(
       context,
-      `INSERT INTO notification_history (type, title, body, data, recipients_count)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO notification_history (context, notification_type, title, body, payload, status)
+       VALUES ($1, $2, $3, $4, $5, 'sent')`,
       [
+        context,
         NotificationType.DAILY_DIGEST,
         'Tägliche Zusammenfassung',
         parts.join(' • '),
         JSON.stringify({ new_ideas, high_priority, ready_clusters }),
-        parseInt(tokens.rows[0].count),
       ]
     );
 
