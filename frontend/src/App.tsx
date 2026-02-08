@@ -71,7 +71,6 @@ const MediaGallery = lazy(() => import('./components/MediaGallery').then(m => ({
 const StoriesPage = lazy(() => import('./components/StoriesPage').then(m => ({ default: m.StoriesPage })));
 const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m => ({ default: m.ExportDashboard })));
 const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
-const DocumentAnalysis = lazy(() => import('./components/DocumentAnalysis').then(m => ({ default: m.DocumentAnalysis })));
 const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
 
 // === Triage (bleibt als separate Seite) ===
@@ -112,7 +111,6 @@ const PAGE_PATHS: Record<Page, string> = {
   'personalization': '/personalization',
   'documents': '/documents',
   'triage': '/triage',
-  'documents': '/documents',
   // Legacy redirects (will redirect to parent with tab param)
   'incubator': '/ai-workshop/incubator',
   'proactive': '/ai-workshop/proactive',
@@ -144,7 +142,6 @@ const PATH_PAGES: Record<string, Page> = {
   '/personalization': 'personalization',
   '/documents': 'documents',
   '/triage': 'triage',
-  '/documents': 'documents',
 };
 
 // Custom hook for URL-based navigation
@@ -740,22 +737,6 @@ function App() {
         <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
         <Suspense fallback={<PageLoader />}>
           <LearningDashboard
-            context={context}
-            onBack={() => navigateToPage('ideas')}
-          />
-        </Suspense>
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
-
-  // Dokument-Analyse - KI-gestützte Dokumentanalyse
-  if (currentPage === 'documents') {
-    return (
-      <ErrorBoundary>
-        <QuickNav currentPage={currentPage} onNavigate={(p) => navigateToPage(p as Page)} archivedCount={archivedCount} />
-        <Suspense fallback={<PageLoader />}>
-          <DocumentAnalysis
             context={context}
             onBack={() => navigateToPage('ideas')}
           />

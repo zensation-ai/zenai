@@ -20,8 +20,78 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { DocumentUpload } from './DocumentUpload';
 import { showToast } from './Toast';
+
+// Simple inline file upload component for DocumentAnalysis
+interface SimpleFileUploadProps {
+  onFileSelect: (file: File | null) => void;
+  selectedFile: File | null;
+  disabled?: boolean;
+}
+
+function SimpleFileUpload({ onFileSelect, selectedFile, disabled = false }: SimpleFileUploadProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onFileSelect(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!disabled && e.dataTransfer.files.length > 0) {
+      onFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  if (selectedFile) {
+    return (
+      <div className="simple-file-selected">
+        <span className="file-icon">📄</span>
+        <div className="file-info">
+          <span className="file-name">{selectedFile.name}</span>
+          <span className="file-size">{formatSize(selectedFile.size)}</span>
+        </div>
+        <button type="button" onClick={() => onFileSelect(null)} disabled={disabled}>✕</button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`simple-file-dropzone ${isDragging ? 'dragging' : ''} ${disabled ? 'disabled' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleDrop}
+      onClick={() => !disabled && fileInputRef.current?.click()}
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.xlsx,.xls,.csv"
+        onChange={handleFileChange}
+        className="visually-hidden"
+        disabled={disabled}
+        aria-label="Datei auswählen"
+      />
+      <div className="dropzone-content">
+        <span className="dropzone-icon">📁</span>
+        <p>Datei hierher ziehen oder klicken</p>
+        <span className="dropzone-hint">PDF, Excel, CSV</span>
+      </div>
+    </div>
+  );
+}
 import { ArtifactPanel } from './ArtifactPanel';
 import type { Artifact } from '../types/artifacts';
 import './DocumentAnalysis.css';
@@ -689,7 +759,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
                 Lade ein PDF, Excel oder CSV hoch und erhalte eine KI-gest\u00fctzte Analyse.
               </p>
 
-              <DocumentUpload
+              <SimpleFileUpload
                 onFileSelect={setSelectedFile}
                 selectedFile={selectedFile}
                 disabled={isAnalyzing}
@@ -810,7 +880,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
 
               {/* Add file (up to 3) */}
               {compareFiles.length < 3 && (
-                <DocumentUpload
+                <SimpleFileUpload
                   onFileSelect={handleAddCompareFile}
                   selectedFile={null}
                   disabled={isAnalyzing}
