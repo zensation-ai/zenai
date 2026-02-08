@@ -277,7 +277,7 @@ app.use('/api/knowledge-graph', knowledgeGraphRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/profile', userProfileRouter);
 app.use('/api', userProfileContextRouter);  // Context-aware profile routes: /api/:context/profile/*
-app.use('/api/companies', companiesRouter);
+app.use('/api/companies', companiesRouter);  // @deprecated - No frontend consumer (audit 2026-02-08)
 
 // Phase 4: Enterprise Integration Routes
 app.use('/api/keys', apiKeysRouter);
@@ -298,7 +298,7 @@ app.use('/api', voiceMemoContextRouter);
 app.use('/api', mediaRouter);  // Context-aware media routes: /api/:context/media
 app.use('/api', storiesRouter);  // Context-aware stories: /api/:context/stories
 
-// Phase 6: Training Routes
+// Phase 6: Training Routes - @deprecated - Covered by LearningDashboard + LearningTasks (audit 2026-02-08)
 app.use('/api', trainingRouter);  // Context-aware training routes: /api/:context/training
 
 // Phase 10: Offline Sync Routes

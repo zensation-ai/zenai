@@ -1,53 +1,47 @@
 /**
- * ZenAI Service Worker
+ * ZenAI Service Worker v2
  *
  * Provides offline caching and background sync capabilities.
- * Uses Cache-First strategy for static assets and Network-First for API calls.
  *
- * @version 1.0.0
+ * Strategies:
+ * - Navigation requests (HTML): Network-First (always get latest after deployment)
+ * - API requests: Network-First with cache fallback
+ * - Hashed assets (/assets/*): Cache-First (immutable, Vite content-hashes)
+ * - Other static assets: Network-First
+ *
+ * @version 2.0.0
  */
 
-const CACHE_NAME = 'zenai-v1';
-const STATIC_CACHE = 'zenai-static-v1';
-const DYNAMIC_CACHE = 'zenai-dynamic-v1';
+const STATIC_CACHE = 'zenai-static-v2';
+const DYNAMIC_CACHE = 'zenai-dynamic-v2';
 
-// Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/zenai-brain.svg',
+// Old cache names to clean up
+const VALID_CACHES = [STATIC_CACHE, DYNAMIC_CACHE];
+
+// Static assets to pre-cache on install
+const PRECACHE_ASSETS = [
   '/manifest.json',
 ];
 
-// API endpoints to cache with Network-First strategy
-const API_CACHE_PATTERNS = [
-  /\/api\/topics/,
-  /\/api\/ideas/,
-  /\/api\/chat\/sessions/,
-];
-
-// Install event - cache static assets
+// Install event - cache essential assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker...');
+  console.log('[SW] Installing Service Worker v2...');
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up ALL old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Service Worker...');
+  console.log('[SW] Activating Service Worker v2...');
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames
-            .filter((name) => name !== STATIC_CACHE && name !== DYNAMIC_CACHE)
+            .filter((name) => !VALID_CACHES.includes(name))
             .map((name) => {
               console.log('[SW] Deleting old cache:', name);
               return caches.delete(name);
@@ -58,42 +52,48 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache or network
+// Fetch event - route requests to appropriate strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Skip non-GET requests
-  if (request.method !== 'GET') {
+  if (request.method !== 'GET') return;
+
+  // Skip non-http(s) requests
+  if (!url.protocol.startsWith('http')) return;
+
+  // Navigation requests (HTML pages) - ALWAYS Network-First
+  // This ensures users get the latest index.html after deployments
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirstStrategy(request, STATIC_CACHE));
     return;
   }
 
-  // Skip chrome-extension and other non-http(s) requests
-  if (!url.protocol.startsWith('http')) {
-    return;
-  }
-
-  // API requests - Network First with cache fallback
+  // API requests - Network-First with cache fallback
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstStrategy(request));
+    event.respondWith(networkFirstStrategy(request, DYNAMIC_CACHE));
     return;
   }
 
-  // Static assets - Cache First with network fallback
-  event.respondWith(cacheFirstStrategy(request));
+  // Hashed assets (Vite bundles with content hashes) - Cache-First
+  // These are immutable: filename changes when content changes
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(cacheFirstImmutable(request));
+    return;
+  }
+
+  // All other requests - Network-First
+  event.respondWith(networkFirstStrategy(request, STATIC_CACHE));
 });
 
 /**
- * Cache-First Strategy
- * Try cache first, fall back to network, then cache the response
+ * Cache-First for immutable hashed assets
+ * Safe because Vite changes the filename hash when content changes
  */
-async function cacheFirstStrategy(request) {
+async function cacheFirstImmutable(request) {
   const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    // Return cached version and update cache in background
-    updateCache(request);
-    return cachedResponse;
-  }
+  if (cachedResponse) return cachedResponse;
 
   try {
     const networkResponse = await fetch(request);
@@ -102,12 +102,11 @@ async function cacheFirstStrategy(request) {
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
-  } catch (error) {
-    console.log('[SW] Network request failed, returning offline page');
-    return caches.match('/offline.html') || new Response('Offline', {
+  } catch {
+    return new Response('Asset not available offline', {
       status: 503,
       statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'text/plain' }
+      headers: { 'Content-Type': 'text/plain' },
     });
   }
 }
@@ -116,45 +115,37 @@ async function cacheFirstStrategy(request) {
  * Network-First Strategy
  * Try network first, fall back to cache
  */
-async function networkFirstStrategy(request) {
+async function networkFirstStrategy(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      // Cache successful responses
-      const cache = await caches.open(DYNAMIC_CACHE);
+      const cache = await caches.open(cacheName);
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
-  } catch (error) {
-    console.log('[SW] Network failed, trying cache for:', request.url);
+  } catch {
     const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
+    if (cachedResponse) return cachedResponse;
+
+    // For navigation, return a basic offline page
+    if (request.mode === 'navigate') {
+      return new Response(
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline</title></head>' +
+        '<body style="font-family:system-ui;text-align:center;padding:4rem">' +
+        '<h1>Offline</h1><p>Bitte pr\u00fcfe deine Internetverbindung.</p>' +
+        '<button onclick="location.reload()">Erneut versuchen</button></body></html>',
+        { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      );
     }
-    // Return error response for API calls
+
     return new Response(JSON.stringify({
       error: 'Offline',
-      message: 'Diese Anfrage ist offline nicht verfügbar'
+      message: 'Diese Anfrage ist offline nicht verf\u00fcgbar',
     }), {
       status: 503,
       statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
-  }
-}
-
-/**
- * Update cache in background (stale-while-revalidate)
- */
-async function updateCache(request) {
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, networkResponse);
-    }
-  } catch (error) {
-    // Silently fail - we already have a cached version
   }
 }
 
@@ -187,8 +178,6 @@ self.addEventListener('sync', (event) => {
  * Sync pending ideas when back online
  */
 async function syncIdeas() {
-  // This would sync any pending offline actions
-  // Implementation depends on IndexedDB storage of pending actions
   console.log('[SW] Syncing ideas...');
 }
 
@@ -204,12 +193,12 @@ self.addEventListener('push', (event) => {
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      url: data.url || '/'
+      url: data.url || '/',
     },
     actions: [
-      { action: 'open', title: 'Öffnen' },
-      { action: 'close', title: 'Schließen' }
-    ]
+      { action: 'open', title: '\u00d6ffnen' },
+      { action: 'close', title: 'Schlie\u00dfen' },
+    ],
   };
 
   event.waitUntil(
@@ -225,13 +214,11 @@ self.addEventListener('notificationclick', (event) => {
     const urlToOpen = event.notification.data?.url || '/';
     event.waitUntil(
       clients.matchAll({ type: 'window' }).then((clientList) => {
-        // Focus existing window if available
         for (const client of clientList) {
           if (client.url === urlToOpen && 'focus' in client) {
             return client.focus();
           }
         }
-        // Open new window
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }
@@ -240,4 +227,4 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-console.log('[SW] Service Worker loaded');
+console.log('[SW] Service Worker v2 loaded');

@@ -1,3 +1,9 @@
+/**
+ * @deprecated UNUSED - No frontend component consumes these endpoints.
+ * LearningDashboard + LearningTasks cover this functionality.
+ * Candidates for removal in next cleanup phase.
+ * Last audit: 2026-02-08
+ */
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getPool, AIContext } from '../utils/database-context';

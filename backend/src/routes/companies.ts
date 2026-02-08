@@ -1,3 +1,8 @@
+/**
+ * @deprecated UNUSED - No frontend component consumes these endpoints.
+ * Candidates for removal in next cleanup phase.
+ * Last audit: 2026-02-08
+ */
 import { Router } from 'express';
 import { query } from '../utils/database';
 import { apiKeyAuth, requireScope } from '../middleware/auth';

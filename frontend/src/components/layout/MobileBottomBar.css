@@ -140,6 +140,20 @@
 }
 
 /* ============================================
+   Focus Accessibility
+   ============================================ */
+
+.bottom-tab:focus-visible {
+  outline: 2px solid var(--primary, #ff6b35);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.bottom-tab.chat-tab:focus-visible {
+  outline-offset: 2px;
+}
+
+/* ============================================
    Reduced Motion
    ============================================ */
 

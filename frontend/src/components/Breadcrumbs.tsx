@@ -111,38 +111,18 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Entwicklung', page: 'evolution', icon: '🚀' },
   ],
 
-  // Settings hierarchy
+  // Settings
   'settings': [ROOT, { label: 'Einstellungen', page: 'settings', icon: '⚙️' }],
-  'profile': [
-    ROOT,
-    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
-    { label: 'Profil', page: 'profile', icon: '👤' },
-  ],
-  'integrations': [
-    ROOT,
-    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
-    { label: 'Integrationen', page: 'integrations', icon: '🔗' },
-  ],
-  'automations': [
-    ROOT,
-    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
-    { label: 'Automationen', page: 'automations', icon: '⚡' },
-  ],
-  'notifications': [
-    ROOT,
-    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
-    { label: 'Benachrichtigungen', page: 'notifications', icon: '🔔' },
-  ],
-  'export': [
-    ROOT,
-    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
-    { label: 'Export', page: 'export', icon: '📤' },
-  ],
-  'sync': [
-    ROOT,
-    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
-    { label: 'Synchronisierung', page: 'sync', icon: '🔄' },
-  ],
+
+  // Footer items (standalone, not under Settings)
+  'profile': [ROOT, { label: 'Profil', page: 'profile', icon: '👤' }],
+  'notifications': [ROOT, { label: 'Benachrichtigungen', page: 'notifications', icon: '🔔' }],
+
+  // System section
+  'automations': [ROOT, { label: 'Automationen', page: 'automations', icon: '⚡' }],
+  'integrations': [ROOT, { label: 'Integrationen', page: 'integrations', icon: '🔗' }],
+  'export': [ROOT, { label: 'Export', page: 'export', icon: '📤' }],
+  'sync': [ROOT, { label: 'Synchronisierung', page: 'sync', icon: '🔄' }],
 
   // Learning hierarchy
   'learning': [ROOT, { label: 'Lernen', page: 'learning', icon: '📚' }],

@@ -13,6 +13,8 @@ import { ContextSwitcher } from '../ContextSwitcher';
 import { ThemeToggle } from '../ThemeToggle';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, getNavItemByPage, type NavItem } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
+import { safeLocalStorage } from '../../utils/storage';
+import { BrainLogo } from './BrainLogo';
 import './MobileSidebarDrawer.css';
 
 interface MobileSidebarDrawerProps {
@@ -23,6 +25,7 @@ interface MobileSidebarDrawerProps {
   context: AIContext;
   onContextChange: (ctx: AIContext) => void;
   archivedCount: number;
+  notificationCount: number;
   isAIActive: boolean;
   recentPages?: Page[];
   favoritePages?: Page[];
@@ -40,14 +43,21 @@ export function MobileSidebarDrawer({
   context,
   onContextChange,
   archivedCount,
+  notificationCount,
   isAIActive,
   recentPages,
   favoritePages,
+  toggleFavorite,
 }: MobileSidebarDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    () => new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents'])
-  );
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+    try {
+      const stored = safeLocalStorage('get', 'sidebar-expanded');
+      return stored ? new Set(JSON.parse(stored)) : new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents']);
+    } catch {
+      return new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents']);
+    }
+  });
 
   // Close on Escape
   useEffect(() => {
@@ -103,12 +113,14 @@ export function MobileSidebarDrawer({
       const next = new Set(prev);
       if (next.has(sectionId)) next.delete(sectionId);
       else next.add(sectionId);
+      safeLocalStorage('set', 'sidebar-expanded', JSON.stringify([...next]));
       return next;
     });
   };
 
   const getBadgeValue = (item: NavItem): number | undefined => {
     if (item.badge === 'archived') return archivedCount > 0 ? archivedCount : undefined;
+    if (item.badge === 'notifications') return notificationCount > 0 ? notificationCount : undefined;
     return undefined;
   };
 
@@ -133,7 +145,9 @@ export function MobileSidebarDrawer({
         {/* Header */}
         <div className="msd-header">
           <div className="msd-title-area">
-            <span className="msd-logo" aria-hidden="true">🧠</span>
+            <span className="msd-logo" aria-hidden="true">
+              <BrainLogo size={28} />
+            </span>
             <span className={`msd-logo-dot ${isAIActive ? 'active' : ''}`} aria-hidden="true" />
             <span className="msd-title">{AI_PERSONALITY.name}</span>
           </div>
@@ -197,17 +211,29 @@ export function MobileSidebarDrawer({
                   if (!navItem) return null;
                   const isActive = currentPage === page;
                   return (
-                    <button
-                      key={`fav-${page}`}
-                      type="button"
-                      className={`msd-item nested neuro-focus-ring ${isActive ? 'active' : ''}`}
-                      onClick={() => handleNavigate(page)}
-                      aria-current={isActive ? 'page' : undefined}
-                    >
-                      <span className="msd-item-icon">{navItem.icon}</span>
-                      <span className="msd-item-label">{navItem.label}</span>
-                      {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
-                    </button>
+                    <div key={`fav-${page}`} className="msd-item-wrapper">
+                      <button
+                        type="button"
+                        className={`msd-item nested neuro-focus-ring ${isActive ? 'active' : ''}`}
+                        onClick={() => handleNavigate(page)}
+                        aria-current={isActive ? 'page' : undefined}
+                      >
+                        <span className="msd-item-icon">{navItem.icon}</span>
+                        <span className="msd-item-label">{navItem.label}</span>
+                        {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
+                      </button>
+                      {toggleFavorite && (
+                        <button
+                          type="button"
+                          className="msd-favorite-btn neuro-focus-ring"
+                          onClick={() => toggleFavorite(page)}
+                          aria-label={`${navItem.label} aus Favoriten entfernen`}
+                          title="Aus Favoriten entfernen"
+                        >
+                          <span aria-hidden="true">★</span>
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>

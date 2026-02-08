@@ -12,7 +12,6 @@
 import { useState, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
-import { getBreadcrumbs } from './Breadcrumbs';
 import '../neurodesign.css';
 import './SettingsDashboard.css';
 
@@ -72,7 +71,6 @@ export const SettingsDashboard = memo(({
         subtitle="Passe My Brain an deine Bedürfnisse an"
         onBack={onBack}
         backLabel="Zurück"
-        breadcrumbs={getBreadcrumbs('settings')}
         onNavigate={(page) => onNavigate(page)}
       />
 

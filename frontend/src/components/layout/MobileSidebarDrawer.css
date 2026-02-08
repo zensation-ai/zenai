@@ -71,6 +71,9 @@
 
 .msd-logo {
   font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .msd-logo-dot {
@@ -228,6 +231,40 @@
 
 .msd-section-items.visible {
   max-height: 300px;
+}
+
+/* Item Wrapper (for favorite toggle) */
+.msd-item-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.msd-item-wrapper .msd-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.msd-favorite-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--primary, #ff6b35);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 6px;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.msd-favorite-btn:hover {
+  opacity: 1;
+  background: var(--primary-glow, rgba(255, 107, 53, 0.12));
 }
 
 /* ============================================

@@ -100,7 +100,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleAcceptSuggestion = async (id: string) => {
     try {
-      await axios.post(`/api/suggestions/${id}/accept?context=${context}`);
+      await axios.post(`/api/suggestions/${id}/accept`, { context });
       setSuggestions(prev =>
         prev.map(s => s.id === id ? { ...s, status: 'accepted' } : s)
       );
@@ -113,7 +113,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleDismissSuggestion = async (id: string) => {
     try {
-      await axios.post(`/api/suggestions/${id}/dismiss?context=${context}`);
+      await axios.post(`/api/suggestions/${id}/dismiss`, { context });
       setSuggestions(prev =>
         prev.map(s => s.id === id ? { ...s, status: 'dismissed' } : s)
       );
@@ -126,7 +126,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleToggleRoutine = async (id: string, enabled: boolean) => {
     try {
-      await axios.patch(`/api/routines/${id}?context=${context}`, { enabled });
+      await axios.patch(`/api/routines/${id}`, { context, enabled });
       setRoutines(prev =>
         prev.map(r => r.id === id ? { ...r, enabled } : r)
       );
@@ -139,7 +139,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleSaveSettings = async () => {
     try {
-      await axios.put(`/api/settings?context=${context}`, settings);
+      await axios.put(`/api/settings`, { ...settings, context });
       showToast('Einstellungen gespeichert!', 'success');
     } catch (err) {
       logError('ProactiveDashboard:saveSettings', err);

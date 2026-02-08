@@ -14,6 +14,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { safeLocalStorage } from '../../utils/storage';
+import { BrainLogo } from './BrainLogo';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -24,6 +25,7 @@ interface SidebarProps {
   apiStatus: ApiStatus | null;
   isAIActive: boolean;
   archivedCount: number;
+  notificationCount: number;
   recentPages?: Page[];
   favoritePages?: Page[];
   toggleFavorite?: (page: Page) => void;
@@ -38,6 +40,7 @@ export const Sidebar = memo(function Sidebar({
   apiStatus,
   isAIActive,
   archivedCount,
+  notificationCount,
   recentPages,
   favoritePages,
   toggleFavorite,
@@ -79,6 +82,7 @@ export const Sidebar = memo(function Sidebar({
   // Resolve badge values
   const getBadgeValue = (item: NavItem): number | undefined => {
     if (item.badge === 'archived') return archivedCount > 0 ? archivedCount : undefined;
+    if (item.badge === 'notifications') return notificationCount > 0 ? notificationCount : undefined;
     return undefined;
   };
 
@@ -103,23 +107,7 @@ export const Sidebar = memo(function Sidebar({
           title="Dashboard"
           aria-label="Zum Dashboard"
         >
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="sidebar-logo-svg" aria-hidden="true">
-            <defs>
-              <linearGradient id="sidebarLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#ffb347" />
-                <stop offset="40%" stopColor="#ff9f33" />
-                <stop offset="60%" stopColor="#ff8c00" />
-                <stop offset="100%" stopColor="#ff6347" />
-              </linearGradient>
-            </defs>
-            <circle cx="50" cy="50" r="48" fill="#1a2634" />
-            <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-            <path d="M30 50 C30 40, 33 32, 40 28 C44 26, 47 27, 49 30 C49 35, 47 40, 46 45 C45 50, 47 55, 45 60 C42 66, 38 68, 34 66 C30 63, 30 56, 30 50Z" fill="url(#sidebarLogoGradient)" />
-            <path d="M70 50 C70 40, 67 32, 60 28 C56 26, 53 27, 51 30 C51 35, 53 40, 54 45 C55 50, 53 55, 55 60 C58 66, 62 68, 66 66 C70 63, 70 56, 70 50Z" fill="url(#sidebarLogoGradient)" />
-            <line x1="37" y1="40" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-            <line x1="63" y1="40" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-            <circle cx="50" cy="50" r="4" fill="#ffb347" />
-          </svg>
+          <BrainLogo size={32} className="sidebar-logo-svg" />
           <span className={`sidebar-logo-dot ${isAIActive ? 'active' : ''}`} aria-hidden="true" />
         </button>
         {!collapsed && <span className="sidebar-logo-text">My Brain</span>}

@@ -53,6 +53,7 @@ const QUICK_ACCESS_ITEMS = [
   { page: 'meetings' as Page, icon: '📅', label: 'Meetings', description: 'Meeting-Notizen', color: 'cyan' },
   { page: 'learning' as Page, icon: '📚', label: 'Lernen', description: 'Lernziele & Aufgaben', color: 'green' },
   { page: 'insights' as Page, icon: '📊', label: 'Insights', description: 'Analytics & Trends', color: 'orange' },
+  { page: 'archive' as Page, icon: '📥', label: 'Archiv', description: 'Archivierte Gedanken', color: 'teal' },
   { page: 'media' as Page, icon: '🖼️', label: 'Medien', description: 'Bilder & Dateien', color: 'pink' },
   { page: 'stories' as Page, icon: '📖', label: 'Stories', description: 'Gedanken-Geschichten', color: 'warm' },
   { page: 'triage' as Page, icon: '📋', label: 'Sortieren', description: 'Gedanken einordnen', color: 'coral' },

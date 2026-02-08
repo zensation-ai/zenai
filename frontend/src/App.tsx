@@ -188,6 +188,7 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [archivedIdeas, setArchivedIdeas] = useState<StructuredIdea[]>([]);
   const [archivedCount, setArchivedCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return safeLocalStorage('get', 'onboardingComplete') !== 'true';
   });
@@ -238,6 +239,7 @@ function App() {
       checkHealth(abortController.signal),
       loadIdeas(abortController.signal),
       loadArchivedCount(abortController.signal),
+      loadNotificationCount(abortController.signal),
     ]);
     return () => { abortController.abort(); };
   }, [context]);
@@ -377,6 +379,16 @@ function App() {
       if (!signal?.aborted) {
         setArchivedCount(0);
       }
+    }
+  };
+
+  const loadNotificationCount = async (signal?: AbortSignal) => {
+    try {
+      const response = await axios.get('/api/notifications/history?limit=1', { signal });
+      const total = response.data?.total ?? response.data?.notifications?.length ?? 0;
+      setNotificationCount(total);
+    } catch {
+      // Notifications not available - keep count at 0
     }
   };
 
@@ -800,14 +812,20 @@ function App() {
 
       default:
         return (
-          <Suspense fallback={<PageLoader />}>
-            <Dashboard
-              context={context}
-              onNavigate={navigateToPage}
-              isAIActive={isAIActive}
-              ideasCount={ideas.length}
-            />
-          </Suspense>
+          <div className="not-found-page">
+            <div className="not-found-content">
+              <span className="not-found-icon" aria-hidden="true">🔍</span>
+              <h1>Seite nicht gefunden</h1>
+              <p>Die angeforderte Seite existiert nicht.</p>
+              <button
+                type="button"
+                className="not-found-cta neuro-press-effect neuro-focus-ring"
+                onClick={() => navigateToPage('home')}
+              >
+                Zum Dashboard
+              </button>
+            </div>
+          </div>
         );
     }
   };
@@ -834,6 +852,7 @@ function App() {
         apiStatus={apiStatus}
         isAIActive={isAIActive}
         archivedCount={archivedCount}
+        notificationCount={notificationCount}
         onOpenSearch={commandPalette.open}
         onRefresh={() => loadIdeas()}
         recentPages={pageHistory.recentPages}

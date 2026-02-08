@@ -17,7 +17,6 @@ import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'r
 import { AIContext } from './ContextSwitcher';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
-import { getBreadcrumbs } from './Breadcrumbs';
 import { SkeletonLoader } from './SkeletonLoader';
 import '../neurodesign.css';
 import './InsightsDashboard.css';
@@ -59,11 +58,13 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
   initialTab = 'overview',
 }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<InsightsTab>(initialTab);
+  const VALID_TABS: InsightsTab[] = ['overview', 'analytics', 'digest', 'connections'];
+  const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'overview';
+  const [activeTab, setActiveTab] = useState<InsightsTab>(validatedTab);
 
   // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
   useEffect(() => {
-    setActiveTab(initialTab);
+    setActiveTab(VALID_TABS.includes(initialTab) ? initialTab : 'overview');
   }, [initialTab]);
 
   // Update URL when tab changes (for browser history support)
@@ -166,7 +167,6 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
         subtitle="Deine Gedanken im Überblick"
         onBack={onBack}
         backLabel="Zurück"
-        breadcrumbs={getBreadcrumbs('insights')}
         onNavigate={onNavigate ? (page) => onNavigate(page) : undefined}
       />
 

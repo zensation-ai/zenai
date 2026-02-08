@@ -16,7 +16,6 @@ import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'r
 import { AIContext } from './ContextSwitcher';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
-import { getBreadcrumbs } from './Breadcrumbs';
 import { SkeletonLoader } from './SkeletonLoader';
 import '../neurodesign.css';
 import './AIWorkshop.css';
@@ -56,11 +55,13 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
   initialTab = 'incubator',
 }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<WorkshopTab>(initialTab);
+  const VALID_TABS: WorkshopTab[] = ['incubator', 'proactive', 'evolution'];
+  const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'incubator';
+  const [activeTab, setActiveTab] = useState<WorkshopTab>(validatedTab);
 
   // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
   useEffect(() => {
-    setActiveTab(initialTab);
+    setActiveTab(VALID_TABS.includes(initialTab) ? initialTab : 'incubator');
   }, [initialTab]);
 
   // Update URL when tab changes (for browser history support)
@@ -127,7 +128,6 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
         subtitle="Lass deine Gedanken mit KI wachsen"
         onBack={onBack}
         backLabel="Zurück"
-        breadcrumbs={getBreadcrumbs('ai-workshop')}
         onNavigate={onNavigate ? (page) => onNavigate(page) : undefined}
       />
 

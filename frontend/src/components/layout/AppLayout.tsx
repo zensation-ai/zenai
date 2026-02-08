@@ -5,7 +5,7 @@
  * Manages sidebar collapsed/expanded state and mobile drawer.
  */
 
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { Breadcrumbs, getBreadcrumbs } from '../Breadcrumbs';
@@ -25,6 +25,7 @@ interface AppLayoutProps {
   apiStatus: ApiStatus | null;
   isAIActive: boolean;
   archivedCount: number;
+  notificationCount: number;
   onOpenSearch: () => void;
   onRefresh: () => void;
   recentPages?: Page[];
@@ -44,6 +45,7 @@ export function AppLayout({
   apiStatus,
   isAIActive,
   archivedCount,
+  notificationCount,
   onOpenSearch,
   onRefresh,
   recentPages,
@@ -93,6 +95,52 @@ export function AppLayout({
     setMobileChatOpen(false);
   }, []);
 
+  const chatOverlayRef = useRef<HTMLDivElement>(null);
+
+  // Escape key + body scroll lock for chat overlay
+  useEffect(() => {
+    if (!mobileChatOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleCloseChat();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [mobileChatOpen, handleCloseChat]);
+
+  // Focus trap for chat overlay
+  useEffect(() => {
+    if (!mobileChatOpen || !chatOverlayRef.current) return;
+
+    const focusable = chatOverlayRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0] as HTMLElement;
+    const last = focusable[focusable.length - 1] as HTMLElement;
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    first?.focus();
+    document.addEventListener('keydown', handleTab);
+
+    return () => document.removeEventListener('keydown', handleTab);
+  }, [mobileChatOpen]);
+
   return (
     <div className="app-layout" data-context={context}>
       {/* Desktop Sidebar */}
@@ -104,6 +152,7 @@ export function AppLayout({
         apiStatus={apiStatus}
         isAIActive={isAIActive}
         archivedCount={archivedCount}
+        notificationCount={notificationCount}
         recentPages={recentPages}
         favoritePages={favoritePages}
         toggleFavorite={toggleFavorite}
@@ -153,6 +202,7 @@ export function AppLayout({
         context={context}
         onContextChange={onContextChange}
         archivedCount={archivedCount}
+        notificationCount={notificationCount}
         isAIActive={isAIActive}
         recentPages={recentPages}
         favoritePages={favoritePages}
@@ -162,7 +212,7 @@ export function AppLayout({
 
       {/* Mobile Chat Overlay */}
       {mobileChatOpen && renderChat && (
-        <div className="mobile-chat-overlay">
+        <div className="mobile-chat-overlay" ref={chatOverlayRef}>
           <div className="mobile-chat-backdrop" onClick={handleCloseChat} aria-hidden="true" />
           <div className="mobile-chat-sheet">
             <div className="mobile-chat-header">

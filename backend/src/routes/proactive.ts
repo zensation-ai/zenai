@@ -176,6 +176,41 @@ router.get('/routines/active', apiKeyAuth, requireScope('read'), asyncHandler(as
   });
 }));
 
+/**
+ * PATCH /api/proactive/routines/:id
+ * Toggle a routine's enabled/disabled state
+ */
+router.patch('/routines/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const context = (req.body.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  const { enabled } = req.body;
+  if (typeof enabled !== 'boolean') {
+    throw new ValidationError('enabled (boolean) is required');
+  }
+
+  const { queryContext } = await import('../utils/database-context');
+  const result = await queryContext(
+    context as AIContext,
+    `UPDATE routine_patterns SET is_active = $1, updated_at = NOW() WHERE id = $2 RETURNING id, is_active`,
+    [enabled, id]
+  );
+
+  if (result.rows.length === 0) {
+    res.status(404).json({ success: false, error: 'Routine not found' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    message: enabled ? 'Routine enabled' : 'Routine disabled',
+    routine: result.rows[0],
+  });
+}));
+
 // ===========================================
 // Action Recording Endpoint
 // ===========================================
