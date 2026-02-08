@@ -171,7 +171,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
       />
 
       {/* Tab Navigation */}
-      <nav className="insights-tabs liquid-glass-nav" role="tablist" aria-label="Insights Navigation">
+      <nav className="insights-tabs" role="tablist" aria-label="Insights Navigation">
         {TABS.map((tab) => (
           <button
             key={tab.id}

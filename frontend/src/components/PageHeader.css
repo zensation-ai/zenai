@@ -9,13 +9,11 @@
   z-index: 100;
   padding: 1rem 2rem;
   padding-left: max(2rem, env(safe-area-inset-left, 0px) + 80px);
-  background: var(--header-bg);
+  background: rgba(20, 34, 48, 0.65);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid var(--header-border);
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
   -webkit-app-region: drag;
   animation: pageHeaderSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -56,16 +54,16 @@
   -webkit-app-region: no-drag;
 }
 
-/* Back Button */
+/* Back Button - Ghost style */
 .page-back-button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--header-border);
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  color: var(--header-text-muted);
+  color: rgba(255, 255, 255, 0.55);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -75,9 +73,9 @@
 }
 
 .page-back-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: var(--header-text);
-  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .page-back-button:active {
@@ -88,7 +86,7 @@
 .page-back-button:focus-visible {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25);
 }
 
 .back-arrow {
@@ -100,6 +98,17 @@
   transform: translateX(-3px);
 }
 
+/* Separator between back button and title */
+.page-back-button + .page-title-group::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 1.5rem;
+  background: rgba(255, 255, 255, 0.12);
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+}
+
 /* Title Group */
 .page-title-group {
   display: flex;
@@ -109,8 +118,9 @@
 }
 
 .page-icon {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .page-title-content {
@@ -118,23 +128,24 @@
 }
 
 .page-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 600;
-  color: var(--header-text);
+  color: #fff;
   margin: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .page-subtitle {
-  font-size: 0.75rem;
-  color: var(--header-text-secondary);
-  margin: 0.125rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0.2rem 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 }
 
 /* Compact Variant */

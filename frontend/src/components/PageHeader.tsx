@@ -39,7 +39,7 @@ export function PageHeader({
       {breadcrumbs && breadcrumbs.length > 1 && onNavigate && (
         <Breadcrumbs items={breadcrumbs} onNavigate={onNavigate} />
       )}
-      <header className={`page-header liquid-glass-dark page-header-${variant}`}>
+      <header className={`page-header page-header-${variant}`}>
         <div className="page-header-content">
           <div className="page-header-left">
             <button
