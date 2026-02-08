@@ -147,6 +147,19 @@
   --input-bg-disabled: rgba(200, 210, 220, 0.4);
   --input-text-disabled: #8a9aa8;
 
+  /* Layout - Sidebar & TopBar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 64px;
+  --sidebar-bg: linear-gradient(180deg, rgba(15, 25, 38, 0.98) 0%, rgba(20, 35, 50, 0.96) 100%);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-item-active-bg: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 90, 42, 0.10) 100%);
+  --sidebar-item-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-section-label: rgba(255, 255, 255, 0.45);
+  --topbar-height: 52px;
+  --bottombar-height: 64px;
+  --bottombar-bg: rgba(15, 25, 38, 0.95);
+  --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+
   /* Animation */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);

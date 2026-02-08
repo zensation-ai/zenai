@@ -65,133 +65,101 @@ export const Breadcrumbs = memo(function Breadcrumbs({
  * Breadcrumb mapping for all pages
  * Defines the navigation hierarchy
  */
+const ROOT: BreadcrumbItem = { label: 'Dashboard', page: 'home', icon: '🏠' };
+
 export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
-  // Root level pages - no breadcrumbs needed
-  'ideas': [{ label: 'Gedanken', page: 'ideas', icon: '💭' }],
+  // Dashboard root
+  'home': [ROOT],
+
+  // Main pages
+  'ideas': [ROOT, { label: 'Gedanken', page: 'ideas', icon: '💭' }],
 
   // Insights hierarchy
-  'insights': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Insights', page: 'insights', icon: '📊' },
-  ],
-  'dashboard': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Insights', page: 'insights', icon: '📊' },
-    { label: 'Dashboard', page: 'dashboard', icon: '🏠' },
-  ],
+  'insights': [ROOT, { label: 'Insights', page: 'insights', icon: '📊' }],
+  'dashboard': [ROOT, { label: 'Insights', page: 'insights', icon: '📊' }],
   'analytics': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Insights', page: 'insights', icon: '📊' },
     { label: 'Statistiken', page: 'analytics', icon: '📈' },
   ],
   'digest': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Insights', page: 'insights', icon: '📊' },
     { label: 'Zusammenfassung', page: 'digest', icon: '📋' },
   ],
   'knowledge-graph': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Insights', page: 'insights', icon: '📊' },
     { label: 'Verbindungen', page: 'knowledge-graph', icon: '🕸️' },
   ],
 
   // AI Workshop hierarchy
-  'ai-workshop': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
-  ],
+  'ai-workshop': [ROOT, { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' }],
   'incubator': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
     { label: 'Inkubator', page: 'incubator', icon: '🌱' },
   ],
   'proactive': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
     { label: 'Vorschläge', page: 'proactive', icon: '💡' },
   ],
   'evolution': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
     { label: 'Entwicklung', page: 'evolution', icon: '🚀' },
   ],
 
   // Settings hierarchy
-  'settings': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
-  ],
+  'settings': [ROOT, { label: 'Einstellungen', page: 'settings', icon: '⚙️' }],
   'profile': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
     { label: 'Profil', page: 'profile', icon: '👤' },
   ],
   'integrations': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
     { label: 'Integrationen', page: 'integrations', icon: '🔗' },
   ],
   'automations': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
     { label: 'Automationen', page: 'automations', icon: '⚡' },
   ],
   'notifications': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
     { label: 'Benachrichtigungen', page: 'notifications', icon: '🔔' },
   ],
   'export': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
     { label: 'Export', page: 'export', icon: '📤' },
   ],
   'sync': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
     { label: 'Synchronisierung', page: 'sync', icon: '🔄' },
   ],
 
   // Learning hierarchy
-  'learning': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Lernen', page: 'learning', icon: '📚' },
-  ],
+  'learning': [ROOT, { label: 'Lernen', page: 'learning', icon: '📚' }],
   'learning-tasks': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    ROOT,
     { label: 'Lernen', page: 'learning', icon: '📚' },
     { label: 'Aufgaben', page: 'learning-tasks', icon: '✅' },
   ],
 
   // Standalone pages
-  'triage': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Sortieren', page: 'triage', icon: '📋' },
-  ],
-  'meetings': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Meetings', page: 'meetings', icon: '📅' },
-  ],
-  'personalization': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Personalisierung', page: 'personalization', icon: '🎨' },
-  ],
-  'documents': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Dokumente', page: 'documents', icon: '📄' },
-  ],
-  'media': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Medien', page: 'media', icon: '🖼️' },
-  ],
-  'stories': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Stories', page: 'stories', icon: '📖' },
-  ],
-  'archive': [
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Archiv', page: 'archive', icon: '📥' },
-  ],
+  'triage': [ROOT, { label: 'Sortieren', page: 'triage', icon: '📋' }],
+  'meetings': [ROOT, { label: 'Meetings', page: 'meetings', icon: '📅' }],
+  'personalization': [ROOT, { label: 'Personalisierung', page: 'personalization', icon: '🎨' }],
+  'documents': [ROOT, { label: 'Dokumente', page: 'documents', icon: '📄' }],
+  'media': [ROOT, { label: 'Medien', page: 'media', icon: '🖼️' }],
+  'stories': [ROOT, { label: 'Stories', page: 'stories', icon: '📖' }],
+  'archive': [ROOT, { label: 'Archiv', page: 'archive', icon: '📥' }],
 };
 
 /**

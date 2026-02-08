@@ -1,0 +1,266 @@
+/**
+ * Sidebar - Persistente Navigation
+ *
+ * Dark Petrol Design, passend zum bestehenden Header-Stil.
+ * Neuro-optimiert:
+ * - Collapsible Sektionen (Miller's Law: max 4 Items pro Gruppe)
+ * - Smooth Collapse/Expand Animation
+ * - Active State mit Orange-Akzent
+ * - Keyboard Navigation
+ * - WCAG 2.1 AA Compliant
+ */
+
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
+import type { Page, ApiStatus } from '../../types';
+import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, type NavItem, type NavSection } from '../../navigation';
+import { safeLocalStorage } from '../../utils/storage';
+import './Sidebar.css';
+
+interface SidebarProps {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  currentPage: Page;
+  onNavigate: (page: Page) => void;
+  apiStatus: ApiStatus | null;
+  isAIActive: boolean;
+  archivedCount: number;
+}
+
+export const Sidebar = memo(function Sidebar({
+  collapsed,
+  onToggleCollapse,
+  currentPage,
+  onNavigate,
+  apiStatus,
+  isAIActive,
+  archivedCount,
+}: SidebarProps) {
+  // Track which sections are expanded (all expanded by default)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+    try {
+      const stored = safeLocalStorage('get', 'sidebar-expanded');
+      return stored ? new Set(JSON.parse(stored)) : new Set(NAV_SECTIONS.map(s => s.id));
+    } catch {
+      return new Set(NAV_SECTIONS.map(s => s.id));
+    }
+  });
+
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  // Persist expanded sections
+  useEffect(() => {
+    safeLocalStorage('set', 'sidebar-expanded', JSON.stringify([...expandedSections]));
+  }, [expandedSections]);
+
+  const toggleSection = useCallback((sectionId: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleNavigate = useCallback((page: Page) => {
+    onNavigate(page);
+  }, [onNavigate]);
+
+  // Resolve badge values
+  const getBadgeValue = (item: NavItem): number | undefined => {
+    if (item.badge === 'archived') return archivedCount > 0 ? archivedCount : undefined;
+    return undefined;
+  };
+
+  // Check if section contains active page
+  const isSectionActive = (section: NavSection): boolean => {
+    return section.items.some(item => isNavItemActive(item, currentPage));
+  };
+
+  return (
+    <aside
+      ref={sidebarRef}
+      className={`sidebar ${collapsed ? 'collapsed' : ''}`}
+      role="navigation"
+      aria-label="Hauptnavigation"
+    >
+      {/* Header: Logo + Collapse Toggle */}
+      <div className="sidebar-header">
+        <button
+          type="button"
+          className="sidebar-logo-btn"
+          onClick={() => handleNavigate('home')}
+          title="Dashboard"
+          aria-label="Zum Dashboard"
+        >
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="sidebar-logo-svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="sidebarLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ffb347" />
+                <stop offset="40%" stopColor="#ff9f33" />
+                <stop offset="60%" stopColor="#ff8c00" />
+                <stop offset="100%" stopColor="#ff6347" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="48" fill="#1a2634" />
+            <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+            <path d="M30 50 C30 40, 33 32, 40 28 C44 26, 47 27, 49 30 C49 35, 47 40, 46 45 C45 50, 47 55, 45 60 C42 66, 38 68, 34 66 C30 63, 30 56, 30 50Z" fill="url(#sidebarLogoGradient)" />
+            <path d="M70 50 C70 40, 67 32, 60 28 C56 26, 53 27, 51 30 C51 35, 53 40, 54 45 C55 50, 53 55, 55 60 C58 66, 62 68, 66 66 C70 63, 70 56, 70 50Z" fill="url(#sidebarLogoGradient)" />
+            <line x1="37" y1="40" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+            <line x1="63" y1="40" x2="50" y2="50" stroke="#ff8c00" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+            <circle cx="50" cy="50" r="4" fill="#ffb347" />
+          </svg>
+          <span className={`sidebar-logo-dot ${isAIActive ? 'active' : ''}`} aria-hidden="true" />
+        </button>
+        {!collapsed && <span className="sidebar-logo-text">My Brain</span>}
+        <button
+          type="button"
+          className="sidebar-collapse-btn neuro-focus-ring"
+          onClick={onToggleCollapse}
+          title={collapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+          aria-label={collapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d={collapsed ? 'M6 3l5 5-5 5' : 'M10 3L5 8l5 5'}
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Dashboard Link */}
+      <div className="sidebar-dashboard">
+        <button
+          type="button"
+          className={`sidebar-item neuro-focus-ring ${currentPage === 'home' ? 'active' : ''}`}
+          onClick={() => handleNavigate('home')}
+          title="Dashboard"
+          aria-current={currentPage === 'home' ? 'page' : undefined}
+        >
+          <span className="sidebar-item-icon" aria-hidden="true">🏠</span>
+          {!collapsed && <span className="sidebar-item-label">Dashboard</span>}
+        </button>
+      </div>
+
+      {/* Scrollable Navigation Sections */}
+      <div className="sidebar-nav">
+        {NAV_SECTIONS.map((section) => {
+          const isExpanded = expandedSections.has(section.id);
+          const hasActive = isSectionActive(section);
+
+          return (
+            <div
+              key={section.id}
+              className={`sidebar-section ${hasActive ? 'has-active' : ''}`}
+            >
+              {/* Section Header */}
+              {!collapsed ? (
+                <button
+                  type="button"
+                  className="sidebar-section-header neuro-focus-ring"
+                  onClick={() => toggleSection(section.id)}
+                  aria-expanded={isExpanded}
+                >
+                  <span className="sidebar-section-label">{section.label}</span>
+                  <svg
+                    className={`sidebar-section-chevron ${isExpanded ? 'expanded' : ''}`}
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              ) : (
+                <div className="sidebar-section-divider" aria-hidden="true" />
+              )}
+
+              {/* Section Items */}
+              <div className={`sidebar-section-items ${isExpanded || collapsed ? 'expanded' : ''}`}>
+                {section.items.map((item) => {
+                  const isActive = isNavItemActive(item, currentPage);
+                  const badge = getBadgeValue(item);
+
+                  return (
+                    <button
+                      key={item.page}
+                      type="button"
+                      className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
+                      onClick={() => handleNavigate(item.page)}
+                      title={collapsed ? `${item.label}${item.description ? ': ' + item.description : ''}` : undefined}
+                      aria-current={isActive ? 'page' : undefined}
+                      aria-label={item.label}
+                    >
+                      <span className="sidebar-item-icon" aria-hidden="true">{item.icon}</span>
+                      {!collapsed && (
+                        <>
+                          <span className="sidebar-item-label">{item.label}</span>
+                          {badge !== undefined && (
+                            <span className="sidebar-item-badge" aria-label={`${badge} Einträge`}>{badge}</span>
+                          )}
+                        </>
+                      )}
+                      {collapsed && badge !== undefined && (
+                        <span className="sidebar-item-badge-dot" aria-hidden="true" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer: Profile, Notifications, Settings */}
+      <div className="sidebar-footer">
+        {/* Status Indicators */}
+        <div className="sidebar-status" aria-label="Systemstatus">
+          <span
+            className={`sidebar-status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}
+            title={apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}
+          />
+          <span
+            className={`sidebar-status-dot ${apiStatus?.ollama ? 'connected' : 'disconnected'}`}
+            title={apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}
+          />
+          {!collapsed && <span className="sidebar-status-text">
+            {apiStatus?.database && apiStatus?.ollama ? 'Verbunden' : 'Teilweise verbunden'}
+          </span>}
+        </div>
+
+        {/* Footer Nav Items */}
+        <div className="sidebar-footer-items">
+          {NAV_FOOTER_ITEMS.map((item) => {
+            const isActive = currentPage === item.page;
+
+            return (
+              <button
+                key={item.page}
+                type="button"
+                className={`sidebar-footer-item neuro-focus-ring ${isActive ? 'active' : ''}`}
+                onClick={() => handleNavigate(item.page)}
+                title={item.label}
+                aria-current={isActive ? 'page' : undefined}
+                aria-label={item.label}
+              >
+                <span className="sidebar-footer-icon" aria-hidden="true">{item.icon}</span>
+                {!collapsed && <span className="sidebar-footer-label">{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </aside>
+  );
+});
+
+export default Sidebar;

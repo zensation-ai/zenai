@@ -469,13 +469,23 @@ export function useCommandPalette({ onNavigate, onAction }: UseCommandPaletteOpt
   const commands: Command[] = useMemo(() => [
     // === Navigation (Main) ===
     {
+      id: 'home',
+      label: 'Dashboard',
+      description: 'Startseite mit Übersicht',
+      icon: '🏠',
+      category: 'navigation',
+      keywords: ['home', 'start', 'dashboard', 'übersicht', 'startseite'],
+      shortcut: 'Cmd+H',
+      priority: 105,
+      action: () => navigateTo('home'),
+    },
+    {
       id: 'ideas',
       label: 'Gedanken',
       description: 'Hauptansicht mit Chat',
       icon: '💭',
       category: 'navigation',
-      keywords: ['home', 'start', 'ideas', 'chat', 'gespräch'],
-      shortcut: 'Cmd+H',
+      keywords: ['ideas', 'chat', 'gespräch', 'gedanken'],
       priority: 100,
       action: () => navigateTo('ideas'),
     },

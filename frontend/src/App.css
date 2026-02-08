@@ -2738,6 +2738,23 @@
 /* Archive page specific transition */
 .archive-page {
   animation: pageSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.archive-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.archive-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, rgba(255, 255, 255, 0.95));
 }
 
 @keyframes pageSlideIn {

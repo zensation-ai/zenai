@@ -47,7 +47,9 @@ export interface ApiStatus {
  * - Tab 3 (Einstellungen): automations, integrations, profile, notifications, export, sync
  */
 export type Page =
-  // Haupt-Navigation (4 Tabs)
+  // Dashboard (Startseite)
+  | 'home'
+  // Haupt-Navigation
   | 'ideas'
   | 'insights'
   | 'archive'
@@ -66,7 +68,6 @@ export type Page =
   | 'export'
   | 'sync'
   | 'personalization'
-  | 'documents'
   // Legacy-Seiten (intern weitergeleitet)
   | 'incubator'
   | 'proactive'
