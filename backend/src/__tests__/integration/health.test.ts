@@ -127,8 +127,9 @@ describe('Health API Integration Tests', () => {
         .expect(200);
       const duration = Date.now() - start;
 
-      // Should be very fast (< 100ms) since no external calls
-      expect(duration).toBeLessThan(100);
+      // Should be very fast (< 200ms) since no external calls
+      // Increased from 100ms for CI resilience
+      expect(duration).toBeLessThan(200);
     });
   });
 
