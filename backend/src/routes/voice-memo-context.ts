@@ -23,6 +23,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
+import { extractStructuredKnowledge } from '../services/structured-extraction';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 // Phase 23: Proactive Research Integration
 import { processIdeaForResearch } from '../services/proactive-intelligence';
@@ -586,6 +587,37 @@ OUTPUT FORMAT:
     };
   }
 }
+
+/**
+ * POST /api/:context/voice-memo/extract
+ *
+ * Phase 32E: Extract structured knowledge from a transcription.
+ * Returns core ideas, action items, mentions, mood, and auto-links.
+ */
+voiceMemoContextRouter.post('/:context/voice-memo/extract', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  const { transcript } = req.body;
+  if (!transcript || typeof transcript !== 'string' || transcript.trim().length < 10) {
+    throw new ValidationError('Transcript is required (min 10 characters).');
+  }
+
+  const enableAutoLinking = req.body.enableAutoLinking !== false;
+
+  const result = await extractStructuredKnowledge(
+    transcript.trim(),
+    context as AIContext,
+    { enableAutoLinking }
+  );
+
+  res.json({
+    success: true,
+    data: result,
+  });
+}));
 
 /**
  * GET /api/:context/stats

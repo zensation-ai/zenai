@@ -26,6 +26,7 @@ function sanitizeString(input: string | undefined, maxLength: number): string | 
   if (!input) {return undefined;}
   return input.trim().slice(0, maxLength);
 }
+import { generateChallenge, evaluateRecall, getReviewSchedule } from '../services/active-recall';
 import {
   createLearningTask,
   getLearningTasks,
@@ -488,6 +489,68 @@ router.get('/:context/learning-categories', apiKeyAuth, asyncHandler(async (req:
   res.json({
     success: true,
     categories: LEARNING_CATEGORIES,
+  });
+}));
+
+// ===========================================
+// Active Recall Endpoints
+// ===========================================
+
+/**
+ * GET /api/:context/learning-tasks/:id/challenge
+ * Generate a recall challenge (shows title + tags, hides content)
+ */
+router.get('/:context/learning-tasks/:id/challenge', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context, id } = req.params;
+  validateTaskId(id);
+
+  const challenge = await generateChallenge(id, context as AIContext);
+  if (!challenge) {
+    throw new NotFoundError('Task not found');
+  }
+
+  res.json({ success: true, data: challenge });
+}));
+
+/**
+ * POST /api/:context/learning-tasks/:id/recall
+ * Submit a recall attempt and get evaluation + next review schedule
+ */
+router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context, id } = req.params;
+  const { user_recall } = req.body;
+  validateTaskId(id);
+
+  if (!user_recall || typeof user_recall !== 'string' || user_recall.trim().length === 0) {
+    throw new ValidationError('user_recall is required and must be a non-empty string.');
+  }
+
+  const sanitizedRecall = user_recall.trim().slice(0, 2000);
+
+  const result = await evaluateRecall(id, context as AIContext, sanitizedRecall);
+  if (!result) {
+    throw new NotFoundError('Task not found');
+  }
+
+  res.json({ success: true, data: result });
+}));
+
+/**
+ * GET /api/:context/learning-tasks/review-schedule
+ * Get tasks due for active recall review
+ */
+router.get('/:context/learning-tasks/review-schedule', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+  const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+
+  const schedule = await getReviewSchedule(context as AIContext, limit);
+
+  res.json({
+    success: true,
+    data: {
+      dueForReview: schedule,
+      count: schedule.length,
+    },
   });
 }));
 

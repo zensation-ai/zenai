@@ -41,6 +41,10 @@ import {
   WorkingMemorySlot,
   WorkingMemoryState,
 } from './working-memory';
+import {
+  expandViaGraph,
+  toContextParts as graphToContextParts,
+} from './graph-memory-bridge';
 
 // ===========================================
 // Types & Interfaces
@@ -50,7 +54,7 @@ export interface ContextPart {
   type: 'summary' | 'fact' | 'pattern' | 'document' | 'interaction' | 'hint' | 'episode' | 'working';
   content: string;
   relevance: number;
-  source: 'short_term' | 'long_term' | 'pre_retrieved' | 'episodic' | 'working';
+  source: 'short_term' | 'long_term' | 'pre_retrieved' | 'episodic' | 'working' | 'knowledge_graph';
   timestamp?: number;
 }
 
@@ -116,6 +120,10 @@ export interface MemorySessionOptions {
   maxContextTokens?: number;
   /** Emotional priming (filter episodes by emotional context) */
   emotionalPriming?: boolean;
+  /** Include graph expansion for idea neighbors (default: true) */
+  includeGraphExpansion?: boolean;
+  /** Enable serendipity hints from 2-hop graph neighbors */
+  enableSerendipity?: boolean;
 }
 
 // ===========================================
@@ -376,6 +384,8 @@ export class MemoryCoordinator {
       minRelevance = CONFIG.DEFAULT_MIN_RELEVANCE,
       maxContextTokens = CONFIG.DEFAULT_MAX_CONTEXT_TOKENS,
       emotionalPriming = false,
+      includeGraphExpansion = true,
+      enableSerendipity = false,
     } = options;
 
     try {
@@ -413,14 +423,43 @@ export class MemoryCoordinator {
           : Promise.resolve(null),
       ]);
 
+      // 2b. Graph expansion: enrich with knowledge graph neighbors
+      let graphParts: ContextPart[] = [];
+      if (includeGraphExpansion) {
+        try {
+          // Extract idea IDs from pre-retrieved documents
+          const seedIdeaIds = shortTerm.preloadedIdeas.map((doc) => doc.ideaId).filter(Boolean);
+          if (seedIdeaIds.length > 0) {
+            const expansion = await expandViaGraph(seedIdeaIds, context, {
+              enableSerendipity,
+              minStrength: 0.5,
+              maxNeighborsPerSeed: 3,
+            });
+            const rawParts = graphToContextParts(expansion);
+            graphParts = rawParts.map((p) => ({
+              type: p.type,
+              content: p.content,
+              relevance: p.relevance,
+              source: p.source,
+              timestamp: Date.now(),
+            }));
+          }
+        } catch (error) {
+          logger.debug('Graph expansion skipped (non-critical)', { error });
+        }
+      }
+
       // 3. Combine all sources into context parts
-      const allParts = this.combineAllContextParts({
-        workingState,
-        episodes,
-        shortTerm,
-        longTerm,
-        includePreRetrieved,
-      });
+      const allParts = [
+        ...this.combineAllContextParts({
+          workingState,
+          episodes,
+          shortTerm,
+          longTerm,
+          includePreRetrieved,
+        }),
+        ...graphParts,
+      ];
 
       // 4. Prune and prioritize
       const prunedParts = await this.pruneContext(allParts, userQuery, minRelevance);
@@ -474,6 +513,7 @@ export class MemoryCoordinator {
       logger.debug('Enhanced context prepared', {
         sessionId,
         partsCount: finalParts.length,
+        graphPartsCount: graphParts.length,
         episodesCount: episodes.length,
         workingSlots: workingState?.slots.length || 0,
         estimatedTokens,

@@ -632,6 +632,30 @@ export const TOOL_SEARCH_DOCUMENTS: ToolDefinition = {
   },
 };
 
+/**
+ * Synthesize Knowledge - Cross-Idea Synthesis via RAG-Fusion
+ * Phase 32B: Synthesis Engine
+ */
+export const TOOL_SYNTHESIZE_KNOWLEDGE: ToolDefinition = {
+  name: 'synthesize_knowledge',
+  description: 'Synthetisiert Wissen über mehrere Ideen hinweg zu einem kohärenten Überblick. Nutze dieses Tool wenn der Nutzer einen Überblick, eine Zusammenfassung oder eine Synthese über ein Thema aus seinen Ideen möchte. Zeigt Entwicklung, Widersprüche und Wissenslücken. Besser als einfache Suche für Fragen wie "Was weiß ich über X?" oder "Fasse zusammen was ich zu Y habe".',
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Das Thema für die Synthese (z.B. "Marketing-Strategien" oder "KI im Gesundheitswesen")',
+      },
+      language: {
+        type: 'string',
+        description: 'Sprache der Synthese: "de" (Standard) oder "en"',
+        enum: ['de', 'en'],
+      },
+    },
+    required: ['query'],
+  },
+};
+
 // ===========================================
 // Tool Registry
 // ===========================================

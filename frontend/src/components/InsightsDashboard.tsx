@@ -27,8 +27,9 @@ const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then(m => (
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
 const ProductivityDashboard = lazy(() => import('./ProductivityDashboard').then(m => ({ default: m.ProductivityDashboard })));
+const MemoryTransparency = lazy(() => import('./MemoryTransparency').then(m => ({ default: m.MemoryTransparency })));
 
-type InsightsTab = 'overview' | 'analytics' | 'digest' | 'connections' | 'productivity';
+type InsightsTab = 'overview' | 'analytics' | 'digest' | 'connections' | 'productivity' | 'memory';
 
 interface InsightsDashboardProps {
   context: AIContext;
@@ -44,6 +45,7 @@ const TABS: { id: InsightsTab; label: string; icon: string; description: string 
   { id: 'digest', label: 'Zusammenfassung', icon: '📊', description: 'Tägliche und wöchentliche Digests' },
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
   { id: 'productivity', label: 'Produktivität', icon: '⚡', description: 'ROI und Zeitersparnis' },
+  { id: 'memory', label: 'Memory', icon: '🧠', description: 'Was deine AI gelernt hat' },
 ];
 
 const TabLoader = () => (
@@ -60,7 +62,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
   initialTab = 'overview',
 }) => {
   const navigate = useNavigate();
-  const VALID_TABS: InsightsTab[] = ['overview', 'analytics', 'digest', 'connections', 'productivity'];
+  const VALID_TABS: InsightsTab[] = ['overview', 'analytics', 'digest', 'connections', 'productivity', 'memory'];
   const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'overview';
   const [activeTab, setActiveTab] = useState<InsightsTab>(validatedTab);
 
@@ -84,6 +86,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
       'digest': 'digest',
       'knowledge-graph': 'connections',
       'productivity': 'productivity',
+      'memory': 'memory',
     };
 
     // Wenn es ein interner Tab ist, wechsle den Tab statt zu navigieren
@@ -165,6 +168,15 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
                 context={context}
                 onBack={() => setActiveTab('overview')}
               />
+            </div>
+          </Suspense>
+        );
+
+      case 'memory':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="insights-tab-content">
+              <MemoryTransparency context={context} />
             </div>
           </Suspense>
         );

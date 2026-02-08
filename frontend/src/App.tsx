@@ -466,13 +466,27 @@ function App() {
 
     setIsSearching(true);
     try {
-      const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 });
-      const parsed = safeParseResponse(SearchResponseSchema, response.data, 'handleSearch');
-      setSearchResults(parsed.ideas as unknown as StructuredIdea[]);
-    } catch (err: unknown) {
-      const errorMessage = getErrorMessage(err, 'Suche fehlgeschlagen');
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
+      // Phase 32B: Progressive search - keyword-first, then semantic
+      const response = await axios.post(`/api/${context}/ideas/search/progressive`, { query, limit: 15 });
+      const data = response.data;
+
+      // Merge keyword results (fast) + semantic results (deep), keyword first
+      const keywordIdeas = data.keyword?.ideas ?? [];
+      const semanticIdeas = data.semantic?.ideas ?? [];
+      const merged = [...keywordIdeas, ...semanticIdeas];
+
+      setSearchResults(merged as unknown as StructuredIdea[]);
+    } catch {
+      // Fallback to classic search if progressive endpoint not available
+      try {
+        const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 });
+        const parsed = safeParseResponse(SearchResponseSchema, response.data, 'handleSearch');
+        setSearchResults(parsed.ideas as unknown as StructuredIdea[]);
+      } catch (err: unknown) {
+        const errorMessage = getErrorMessage(err, 'Suche fehlgeschlagen');
+        setError(errorMessage);
+        showToast(errorMessage, 'error');
+      }
     } finally {
       setIsSearching(false);
     }

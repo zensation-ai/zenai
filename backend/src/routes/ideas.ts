@@ -483,6 +483,88 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * POST /api/ideas/search/progressive
+ * Phase 32B: Progressive Search - keyword-first, then semantic
+ *
+ * Returns both keyword (BM25/ILIKE) and semantic (embedding) results
+ * in a single response with phase labels. Keyword results are fast
+ * and appear first; semantic results provide deeper relevance.
+ */
+ideasRouter.post('/search/progressive', apiKeyAuth, asyncHandler(async (req, res) => {
+  const startTime = Date.now();
+  const ctx = getContext(req);
+
+  const queryResult = validateRequiredString(req.body.query, 'query', { minLength: 1, maxLength: 500 });
+  if (!queryResult.success) {
+    throw new ValidationError('Invalid search query');
+  }
+  const searchQuery = queryResult.data ?? '';
+
+  const limitResult = parseIntSafe(req.body.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
+  const limit = limitResult.success ? (limitResult.data ?? 10) : 10;
+
+  // Phase 1: Keyword search (fast, < 50ms typically)
+  const keywordStart = Date.now();
+  const keywordResult = await queryContext(
+    ctx,
+    `SELECT id, title, type, category, priority, summary,
+            next_steps, context_needed, keywords, context, created_at
+     FROM ideas
+     WHERE title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1
+     ORDER BY created_at DESC
+     LIMIT $2`,
+    [`%${searchQuery}%`, limit]
+  );
+  const keywordTime = Date.now() - keywordStart;
+
+  const keywordIds = new Set(keywordResult.rows.map((r: IdeaDatabaseRow) => r.id));
+
+  // Phase 2: Semantic search (parallel with keyword, but takes longer)
+  const semanticStart = Date.now();
+  let semanticResults: IdeaDatabaseRow[] = [];
+  let semanticTime = 0;
+  try {
+    const queryEmbedding = await generateEmbedding(searchQuery);
+    if (queryEmbedding.length > 0) {
+      const result = await queryContext(
+        ctx,
+        `SELECT * FROM search_ideas_by_embedding($1::vector(768), $2, $3, $4)`,
+        [formatForPgVector(queryEmbedding), ctx, 0.4, limit]
+      );
+      // Deduplicate: exclude ideas already found by keyword search
+      semanticResults = (result.rows as IdeaDatabaseRow[]).filter(
+        (r: IdeaDatabaseRow) => !keywordIds.has(r.id)
+      );
+    }
+    semanticTime = Date.now() - semanticStart;
+  } catch (error) {
+    logger.debug('Semantic search in progressive mode failed', {
+      error: error instanceof Error ? error.message : 'unknown',
+    });
+    semanticTime = Date.now() - semanticStart;
+  }
+
+  const totalTime = Date.now() - startTime;
+
+  res.json({
+    keyword: {
+      ideas: parseIdeaRows(keywordResult.rows as IdeaDatabaseRow[]),
+      count: keywordResult.rows.length,
+    },
+    semantic: {
+      ideas: parseIdeaRows(semanticResults),
+      count: semanticResults.length,
+    },
+    performance: {
+      totalMs: totalTime,
+      keywordMs: keywordTime,
+      semanticMs: semanticTime,
+      totalResults: keywordResult.rows.length + semanticResults.length,
+    },
+  });
+}));
+
+/**
  * GET /api/ideas/:id/similar
  * Find similar ideas using Supabase function
  * Uses pre-computed embeddings for instant results

@@ -29,6 +29,7 @@ import {
   TOOL_EXECUTE_CODE,
   TOOL_ANALYZE_DOCUMENT,
   TOOL_SEARCH_DOCUMENTS,
+  TOOL_SYNTHESIZE_KNOWLEDGE,
   ToolExecutionContext,
 } from './claude/tool-use';
 import { enhancedRAG } from './enhanced-rag';
@@ -43,6 +44,7 @@ import * as projectContext from './project-context';
 import { executeCodeDirect, isCodeExecutionEnabled, isSupportedLanguage, SupportedLanguage } from './code-execution';
 import { documentAnalysis, type AnalysisTemplate } from './document-analysis';
 import { documentService } from './document-service';
+import { synthesizeKnowledge } from './synthesis-engine';
 import path from 'path';
 
 /**
@@ -1157,6 +1159,55 @@ async function handleAnalyzeDocument(
 }
 
 // ===========================================
+// Synthesis Handler
+// ===========================================
+
+/**
+ * Synthesize knowledge across ideas
+ * Phase 32B: Cross-Idea Synthesis
+ */
+async function handleSynthesizeKnowledge(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const context = execContext.aiContext;
+
+  try {
+    const query = input.query as string;
+    const language = (input.language as 'de' | 'en') || 'de';
+
+    if (!query || query.trim().length === 0) {
+      return 'Bitte gib ein Thema für die Synthese an.';
+    }
+
+    logger.info('Tool synthesize_knowledge called', { query, language, context });
+
+    const result = await synthesizeKnowledge(query, context, {
+      language,
+      maxQueryVariants: 4,
+      maxTotalIdeas: 25,
+      enableGraphExpansion: true,
+    });
+
+    const parts: string[] = [];
+
+    // Main synthesis
+    parts.push(result.synthesis);
+
+    // Source attribution
+    if (result.sources.length > 0) {
+      parts.push('\n---');
+      parts.push(`*Synthese basiert auf ${result.sources.length} Ideen (${result.queryVariants.length} Suchvarianten, ${Math.round(result.timing.total / 1000)}s)*`);
+    }
+
+    return parts.join('\n');
+  } catch (error) {
+    logger.error('Tool synthesize_knowledge failed', error instanceof Error ? error : undefined);
+    return `Fehler bei der Wissenssynthese: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -1202,6 +1253,9 @@ export function registerAllToolHandlers(): void {
   // Document Vault tools (Phase 32)
   toolRegistry.register(TOOL_SEARCH_DOCUMENTS, handleSearchDocuments);
 
+  // Synthesis tools (Phase 32B)
+  toolRegistry.register(TOOL_SYNTHESIZE_KNOWLEDGE, handleSynthesizeKnowledge);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1223,6 +1277,7 @@ export function registerAllToolHandlers(): void {
       'execute_code',
       'analyze_document',
       'search_documents',
+      'synthesize_knowledge',
     ],
   });
 }

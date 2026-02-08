@@ -9,6 +9,13 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { auditLogger, AuditCategory, AuditSeverity } from '../services/audit-logger';
+import {
+  getDecisionLogs,
+  getDecisionById,
+  generateComplianceReport,
+  getDataLineage,
+  exportDecisionLogs,
+} from '../services/compliance-logger';
 
 export const auditLogsRouter = Router();
 
@@ -218,4 +225,132 @@ auditLogsRouter.post('/cleanup', apiKeyAuth, requireScope('admin'), asyncHandler
     deletedCount,
     retentionDays: days,
   });
+}));
+
+// ===========================================
+// Compliance & Governance Endpoints
+// ===========================================
+
+/**
+ * GET /api/audit-logs/compliance/decisions
+ * Query AI decision logs for compliance auditing.
+ */
+auditLogsRouter.get('/compliance/decisions', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { limit, offset, startDate, endDate, context, modelId, minConfidence } = req.query;
+
+  const parsedLimit = limit ? parseInt(limit as string) : 50;
+  const parsedOffset = offset ? parseInt(offset as string) : 0;
+
+  if (parsedLimit < 1 || parsedLimit > 500) {
+    throw new ValidationError('Invalid limit parameter.');
+  }
+  if (parsedOffset < 0) {
+    throw new ValidationError('Invalid offset parameter.');
+  }
+
+  const options: {
+    limit: number;
+    offset: number;
+    startDate?: number;
+    endDate?: number;
+    context?: string;
+    modelId?: string;
+    minConfidence?: number;
+  } = { limit: parsedLimit, offset: parsedOffset };
+
+  if (startDate) {
+    const d = new Date(startDate as string);
+    if (isNaN(d.getTime())) throw new ValidationError('Invalid startDate format.');
+    options.startDate = d.getTime();
+  }
+  if (endDate) {
+    const d = new Date(endDate as string);
+    if (isNaN(d.getTime())) throw new ValidationError('Invalid endDate format.');
+    options.endDate = d.getTime();
+  }
+  if (context) options.context = context as string;
+  if (modelId) options.modelId = modelId as string;
+  if (minConfidence) options.minConfidence = parseFloat(minConfidence as string);
+
+  const result = getDecisionLogs(options);
+
+  res.json({
+    success: true,
+    total: result.total,
+    limit: parsedLimit,
+    offset: parsedOffset,
+    hasMore: parsedOffset + result.logs.length < result.total,
+    decisions: result.logs,
+  });
+}));
+
+/**
+ * GET /api/audit-logs/compliance/decisions/:id
+ * Get a single AI decision by ID.
+ */
+auditLogsRouter.get('/compliance/decisions/:id', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const decision = getDecisionById(req.params.id);
+
+  if (!decision) {
+    res.status(404).json({ success: false, error: 'Decision not found' });
+    return;
+  }
+
+  res.json({ success: true, decision });
+}));
+
+/**
+ * GET /api/audit-logs/compliance/decisions/:id/lineage
+ * Get data lineage for a specific AI decision.
+ */
+auditLogsRouter.get('/compliance/decisions/:id/lineage', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const lineage = getDataLineage(req.params.id);
+
+  if (!lineage.decision) {
+    res.status(404).json({ success: false, error: 'Decision not found' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    decision: lineage.decision,
+    sources: lineage.sources,
+    sourceTypes: lineage.sourceTypes,
+  });
+}));
+
+/**
+ * GET /api/audit-logs/compliance/report
+ * Generate a compliance report for a time period.
+ */
+auditLogsRouter.get('/compliance/report', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { days, context } = req.query;
+  const periodDays = days ? parseInt(days as string) : 30;
+
+  if (periodDays < 1 || periodDays > 365) {
+    throw new ValidationError('Invalid days parameter.');
+  }
+
+  const report = generateComplianceReport(periodDays, context as string | undefined);
+
+  res.json({ success: true, report });
+}));
+
+/**
+ * GET /api/audit-logs/compliance/export
+ * Export AI decision logs as CSV.
+ */
+auditLogsRouter.get('/compliance/export', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { days, context } = req.query;
+  const periodDays = days ? parseInt(days as string) : 30;
+
+  if (periodDays < 1 || periodDays > 365) {
+    throw new ValidationError('Invalid days parameter.');
+  }
+
+  const csv = exportDecisionLogs(periodDays, context as string | undefined);
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=compliance-decisions-${periodDays}d.csv`);
+  res.send(csv);
 }));

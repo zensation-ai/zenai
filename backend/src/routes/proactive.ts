@@ -21,6 +21,10 @@ import {
   routineDetectionService,
   UserAction,
 } from '../services/routine-detection';
+import {
+  processWorkflowBoundary,
+  BoundaryTrigger,
+} from '../services/workflow-boundary-detector';
 
 const router = Router();
 
@@ -349,6 +353,47 @@ router.get('/stats', apiKeyAuth, requireScope('read'), asyncHandler(async (req: 
         context_based: patterns.filter(p => p.patternType === 'context_based').length,
       },
     },
+  });
+}));
+
+// ===========================================
+// Workflow Boundary Endpoints (Phase 32C)
+// ===========================================
+
+const VALID_TRIGGERS: BoundaryTrigger[] = ['idea_saved', 'chat_session_end', 'login_after_absence', 'draft_completed'];
+
+/**
+ * POST /api/proactive/boundary
+ * Process a workflow boundary event and get contextual suggestion.
+ *
+ * Body: { trigger: BoundaryTrigger, context: AIContext, params: {...} }
+ */
+router.post('/boundary', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const { trigger, context, params } = req.body;
+
+  if (!trigger || !VALID_TRIGGERS.includes(trigger)) {
+    throw new ValidationError(`Invalid trigger. Use one of: ${VALID_TRIGGERS.join(', ')}`);
+  }
+
+  if (!context || !isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  // Handle login_after_absence specially: convert timestamp to Date
+  const processedParams = { ...params };
+  if (trigger === 'login_after_absence' && processedParams.lastActiveAt) {
+    processedParams.lastActiveAt = new Date(processedParams.lastActiveAt);
+  }
+
+  const suggestion = await processWorkflowBoundary(
+    trigger as BoundaryTrigger,
+    context as AIContext,
+    processedParams || {}
+  );
+
+  res.json({
+    success: true,
+    suggestion, // null if no suggestion (frequency limits, quiet hours, etc.)
   });
 }));
 

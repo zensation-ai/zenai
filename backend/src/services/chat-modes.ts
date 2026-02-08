@@ -98,6 +98,14 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
   { pattern: /was\s+hängt\s+(damit\s+)?zusammen/i, tools: ['get_related_ideas'], weight: 0.85 },
   { pattern: /verbundene\s+(ideen?|konzepte?)/i, tools: ['get_related_ideas'], weight: 0.85 },
 
+  // Synthesis patterns (Phase 32B)
+  { pattern: /fasse?\s+(alles\s+)?zusammen\s+was\s+(ich|du|wir)/i, tools: ['synthesize_knowledge'], weight: 0.95 },
+  { pattern: /was\s+weiß\s+(ich|du)\s+(alles\s+)?(über|zu|von)/i, tools: ['synthesize_knowledge'], weight: 0.9 },
+  { pattern: /überblick\s+über\s+(alle|meine|das\s+thema)/i, tools: ['synthesize_knowledge'], weight: 0.9 },
+  { pattern: /verbinde\s+(alle|meine)\s+(ideen?|gedanken)/i, tools: ['synthesize_knowledge'], weight: 0.9 },
+  { pattern: /synthes(e|iere)\s/i, tools: ['synthesize_knowledge'], weight: 0.95 },
+  { pattern: /gesamtbild\s+(zu|über|von)/i, tools: ['synthesize_knowledge'], weight: 0.9 },
+
   // Code execution patterns
   { pattern: /führ(e|en?)\s+.{0,30}code\s+aus/i, tools: ['execute_code'], weight: 0.95 },
   { pattern: /führ(e|en?)\s+(diesen?\s+)?(python|javascript|nodejs|bash|script)\s+aus/i, tools: ['execute_code'], weight: 0.95 },

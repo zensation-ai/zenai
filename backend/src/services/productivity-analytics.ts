@@ -379,7 +379,7 @@ export async function getStreakInfo(context: AIContext): Promise<StreakInfo> {
 
     // Calculate current streak
     let currentStreak = 0;
-    let checkDate = new Date(today);
+    const checkDate = new Date(today);
 
     // If not active today, check if yesterday was active (streak still counts)
     if (!activeToday) {

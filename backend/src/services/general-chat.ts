@@ -16,8 +16,11 @@ import { classifyIntent, intentToRetrievalConfig } from './query-intent-classifi
 import { ThinkingMode, applyThinkingMode, isValidThinkingMode } from './thinking-partner';
 import { executeWithTools, ToolExecutionContext } from './claude/tool-use';
 import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
+import { searchWeb } from './web-search';
 import { claudeVision, VisionImage } from './claude-vision';
 import { CHAT } from '../config/constants';
+import { routeToModel, recordUsage } from './model-orchestrator';
+import { logAIDecision } from './compliance-logger';
 
 // ===========================================
 // Types
@@ -520,26 +523,57 @@ export async function generateEnhancedResponse(
 
       if (ragResults.length > 0) {
         ragDocumentsCount = ragResults.length;
+        const confidence = ragQuality?.confidence || 0;
 
-        // Format context with relevance scores for high-quality results
+        // Format context with relevance scores and source attribution
         const ragContext = ragResults.map(r => {
           const scoreLabel = r.score >= 0.8 ? '🟢' : r.score >= 0.6 ? '🟡' : '🔵';
           const relevanceInfo = r.relevanceReason ? ` - ${r.relevanceReason}` : '';
-          return `${scoreLabel} **${r.title}**: ${r.summary || 'Keine Zusammenfassung'}${relevanceInfo}`;
+          return `${scoreLabel} [Aus deinen Ideen] **${r.title}**: ${r.summary || 'Keine Zusammenfassung'}${relevanceInfo}`;
         }).join('\n');
 
-        // Add source information for transparency
         const methodInfo = ragQuality?.methodsUsed.length > 1
           ? ` (via ${ragQuality.methodsUsed.join(' + ')})`
           : '';
 
-        systemPrompt += `\n\n[RELEVANTE IDEEN${methodInfo}]\n${ragContext}\n\nNutze diese Informationen wenn relevant für die Antwort. Bei hoher Relevanz (🟢) zitiere die Quelle.`;
+        // Confidence-Gate: determine how to use RAG results
+        if (confidence >= 0.7) {
+          // High confidence: use results directly
+          systemPrompt += `\n\n[RELEVANTE IDEEN${methodInfo}]\n${ragContext}\n\nNutze diese Informationen für die Antwort. Bei hoher Relevanz (🟢) zitiere die Quelle mit [Aus deinen Ideen].`;
+        } else if (confidence >= 0.4) {
+          // Medium confidence: use with disclaimer
+          systemPrompt += `\n\n[RELEVANTE IDEEN - MITTLERE KONFIDENZ${methodInfo}]\n${ragContext}\n\nDiese Ergebnisse haben mittlere Relevanz. Nutze sie als Kontext, aber ergänze mit deinem eigenen Wissen. Markiere eigenes Wissen mit [AI-Wissen].`;
+        } else {
+          // Low confidence: still include what was found, but trigger web search fallback
+          systemPrompt += `\n\n[RELEVANTE IDEEN - NIEDRIGE KONFIDENZ${methodInfo}]\n${ragContext}\n\nDiese Ergebnisse haben niedrige Relevanz.`;
+
+          // Corrective RAG: Web search fallback for low-confidence queries
+          try {
+            const webResults = await searchWeb(userMessage, { count: 3, timeout: 8000 });
+            if (webResults.success && webResults.results.length > 0) {
+              const webContext = webResults.results.map(r =>
+                `🌐 [Aus Web-Recherche] **${r.title}**: ${r.description} (${r.domain})`
+              ).join('\n');
+
+              systemPrompt += `\n\n[WEB-RECHERCHE ERGÄNZUNG]\n${webContext}\n\nDie obigen Informationen stammen aus einer Web-Recherche. Kennzeichne Informationen aus dem Web mit [Aus Web-Recherche] und eigenes Wissen mit [AI-Wissen].`;
+
+              logger.info('Corrective RAG: web search fallback triggered', {
+                sessionId,
+                ragConfidence: confidence,
+                webResultCount: webResults.results.length,
+              });
+            }
+          } catch (webError) {
+            logger.debug('Corrective RAG web fallback failed (non-critical)', { webError });
+          }
+        }
 
         logger.debug('RAG enhancement applied', {
           sessionId,
           documentsRetrieved: ragDocumentsCount,
           intent: intentClassification.intent,
-          confidence: ragQuality?.confidence,
+          confidence,
+          confidenceTier: confidence >= 0.7 ? 'high' : confidence >= 0.4 ? 'medium' : 'low',
           methods: ragQuality?.methodsUsed,
         });
       }
@@ -630,6 +664,47 @@ export async function generateEnhancedResponse(
   }
 
   const processingTimeMs = Date.now() - startTime;
+
+  // Model Orchestrator: classify and record for cost/routing insights (Phase 32F)
+  const routingDecision = routeToModel(userMessage, {
+    requiresTools: modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent',
+    requiresSynthesis: modeResult.mode === 'rag_enhanced',
+    hasConversationHistory: conversationHistory.length > 0,
+  });
+
+  // Estimate token usage (approximate: ~4 chars/token)
+  const estimatedInputTokens = Math.ceil((systemPrompt.length + userMessage.length) / 4);
+  const estimatedOutputTokens = Math.ceil(response.length / 4);
+  recordUsage(
+    routingDecision.model.modelId,
+    routingDecision.model.provider,
+    estimatedInputTokens,
+    estimatedOutputTokens,
+    contextType
+  );
+
+  // Compliance Logger: audit trail for AI decisions (Phase 32G)
+  logAIDecision({
+    input: userMessage,
+    output: response,
+    modelId: routingDecision.model.modelId,
+    confidence: ragQuality?.confidence || 0.5,
+    sources: ragDocumentsCount > 0
+      ? [{ type: 'rag', description: `${ragDocumentsCount} ideas retrieved`, relevance: ragQuality?.confidence }]
+      : [{ type: 'ai_knowledge', description: 'Direct AI response' }],
+    context: contextType,
+    processingTimeMs,
+    toolsUsed: toolsCalled.map(t => t.name),
+    ragUsed: ragDocumentsCount > 0,
+    webSearchUsed: ragQuality?.confidence !== undefined && ragQuality.confidence < 0.4,
+  });
+
+  logger.debug('Model orchestrator routing', {
+    sessionId,
+    complexity: routingDecision.complexity,
+    selectedModel: routingDecision.model.modelId,
+    reason: routingDecision.reason,
+  });
 
   return {
     content: response,

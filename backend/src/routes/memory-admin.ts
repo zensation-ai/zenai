@@ -260,4 +260,77 @@ router.get('/patterns/:context', apiKeyAuth, asyncHandler(async (req: Request, r
   });
 }));
 
+/**
+ * GET /api/memory/transparency/:context
+ * Memory transparency: show what the AI has learned about the user
+ */
+router.get('/transparency/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  }
+
+  const ctx = context as AIContext;
+
+  // Gather data from all memory layers in parallel
+  const [stats, facts, patterns, episodicStats] = await Promise.all([
+    longTermMemory.getStats(ctx),
+    longTermMemory.getFacts(ctx),
+    longTermMemory.getPatterns(ctx),
+    episodicMemory.getStats(ctx),
+  ]);
+
+  // Recent learnings: facts confirmed in last 7 days
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recentLearnings = facts
+    .filter(f => f.lastConfirmed.getTime() > sevenDaysAgo)
+    .sort((a, b) => b.lastConfirmed.getTime() - a.lastConfirmed.getTime())
+    .slice(0, 10)
+    .map(f => ({
+      type: f.factType,
+      content: f.content,
+      confidence: f.confidence,
+      source: f.source,
+      learnedAt: f.firstSeen.toISOString(),
+      lastConfirmed: f.lastConfirmed.toISOString(),
+      occurrences: f.occurrences,
+    }));
+
+  // Average confidence
+  const avgConfidence = facts.length > 0
+    ? Math.round(facts.reduce((sum, f) => sum + f.confidence, 0) / facts.length * 100) / 100
+    : 0;
+
+  // High-confidence facts (>= 0.7)
+  const highConfidenceFacts = facts.filter(f => f.confidence >= 0.7).length;
+
+  res.json({
+    success: true,
+    data: {
+      factsLearned: stats.factCount,
+      patternsDetected: stats.patternCount,
+      episodesStored: episodicStats.totalEpisodes,
+      lastConsolidation: stats.lastConsolidation?.toISOString() || null,
+      recentLearnings,
+      memoryHealth: {
+        avgConfidence,
+        highConfidenceFacts,
+        totalFacts: stats.factCount,
+        totalPatterns: stats.patternCount,
+        totalEpisodes: episodicStats.totalEpisodes,
+        avgEpisodicStrength: episodicStats.avgRetrievalStrength,
+        recentEpisodes: episodicStats.recentEpisodes,
+        hasProfileEmbedding: stats.hasProfileEmbedding,
+      },
+      topPatterns: patterns.slice(0, 5).map(p => ({
+        type: p.patternType,
+        pattern: p.pattern,
+        frequency: p.frequency,
+        confidence: p.confidence,
+      })),
+    },
+  });
+}));
+
 export const memoryAdminRouter = router;
