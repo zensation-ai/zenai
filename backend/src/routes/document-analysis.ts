@@ -31,7 +31,6 @@ import {
   getDocumentTypeLabel,
   type DocumentMediaType,
   type AnalysisTemplate,
-  type CustomAnalysisTemplate,
 } from '../services/document-analysis';
 import PDFDocument from 'pdfkit';
 

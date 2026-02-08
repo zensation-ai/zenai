@@ -327,7 +327,7 @@ export class DocumentProcessingService {
         text: texts.join('\n\n'),
         metadata: { sheets: workbook.SheetNames },
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error('XLSX extraction failed', undefined, { filePath });
       throw new Error('Failed to extract text from spreadsheet');
     }
@@ -361,7 +361,7 @@ export class DocumentProcessingService {
         text,
         metadata: { title },
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error('HTML extraction failed', undefined, { filePath });
       throw new Error('Failed to extract text from HTML');
     }
@@ -398,7 +398,7 @@ export class DocumentProcessingService {
         text: result.structured?.extractedText || result.text,
         confidence: result.structured?.confidence,
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error('Image OCR failed', undefined, { filePath });
       throw new Error('Failed to extract text from image');
     }
@@ -426,7 +426,7 @@ export class DocumentProcessingService {
       }
 
       return { text: texts.join('\n\n') };
-    } catch (error) {
+    } catch (_error) {
       logger.error('ePub extraction failed', undefined, { filePath });
       throw new Error('Failed to extract text from ePub');
     }
@@ -452,7 +452,7 @@ Zusammenfassung:`;
       });
 
       return response.trim();
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Summary generation failed, using fallback');
       // Fallback: First few sentences
       const sentences = text.split(/[.!?]+/).slice(0, 3);
@@ -485,7 +485,7 @@ ${text.substring(0, 2000)}`;
 
       const title = response.trim().replace(/^["']|["']$/g, '');
       return title || path.basename(filePath, path.extname(filePath));
-    } catch (error) {
+    } catch (_error) {
       // Fallback to filename
       return path.basename(filePath, path.extname(filePath));
     }
@@ -607,7 +607,7 @@ ${text.substring(0, 2000)}`;
   private async generateDocumentEmbedding(text: string): Promise<number[]> {
     try {
       return await generateEmbedding(text.substring(0, 8000));
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Embedding generation failed');
       return [];
     }

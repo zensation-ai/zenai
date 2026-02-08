@@ -675,7 +675,7 @@ async function batchIncrementTopicInterests(
  * Increment topic interest with optional weight (single topic)
  * @deprecated Use batchIncrementTopicInterests for multiple topics
  */
-async function incrementTopicInterest(
+async function _incrementTopicInterest(
   client: PoolClient,
   userId: string,
   topic: string,
