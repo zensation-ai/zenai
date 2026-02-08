@@ -318,8 +318,14 @@ export class DocumentService {
       paramIndex++;
     }
 
-    const sortBy = filters?.sortBy || 'created_at';
-    const sortOrder = filters?.sortOrder || 'desc';
+    const VALID_SORT_FIELDS = ['created_at', 'updated_at', 'title', 'file_size'] as const;
+    const VALID_SORT_ORDERS = ['asc', 'desc'] as const;
+    const sortBy = VALID_SORT_FIELDS.includes(filters?.sortBy as typeof VALID_SORT_FIELDS[number])
+      ? filters!.sortBy!
+      : 'created_at';
+    const sortOrder = VALID_SORT_ORDERS.includes(filters?.sortOrder as typeof VALID_SORT_ORDERS[number])
+      ? filters!.sortOrder!
+      : 'desc';
     const orderClause = `ORDER BY ${sortBy} ${sortOrder}`;
 
     // Get total count

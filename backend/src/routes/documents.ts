@@ -210,83 +210,9 @@ router.get(
   })
 );
 
-/**
- * GET /:context/documents/:id - Get single document
- */
-router.get(
-  '/:context/documents/:id',
-  requireScope('read'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { context, id } = req.params;
-    validateContext(context);
-    validateDocumentId(id);
-
-    const document = await documentService.getDocument(id, context);
-    if (!document) {
-      throw new NotFoundError('Document not found');
-    }
-
-    res.json({
-      success: true,
-      data: document,
-    });
-  })
-);
-
-/**
- * PUT /:context/documents/:id - Update document metadata
- */
-router.put(
-  '/:context/documents/:id',
-  requireScope('write'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { context, id } = req.params;
-    validateContext(context);
-    validateDocumentId(id);
-
-    const { title, tags, folderPath, isFavorite, isArchived } = req.body;
-
-    const document = await documentService.updateDocument(id, context, {
-      title,
-      tags,
-      folderPath,
-      isFavorite,
-      isArchived,
-    });
-
-    if (!document) {
-      throw new NotFoundError('Document not found');
-    }
-
-    res.json({
-      success: true,
-      data: document,
-    });
-  })
-);
-
-/**
- * DELETE /:context/documents/:id - Delete document
- */
-router.delete(
-  '/:context/documents/:id',
-  requireScope('write'),
-  asyncHandler(async (req: Request, res: Response) => {
-    const { context, id } = req.params;
-    validateContext(context);
-    validateDocumentId(id);
-
-    const deleted = await documentService.deleteDocument(id, context);
-    if (!deleted) {
-      throw new NotFoundError('Document not found');
-    }
-
-    res.json({
-      success: true,
-      message: 'Document deleted',
-    });
-  })
-);
+// NOTE: GET/PUT/DELETE /:context/documents/:id routes are defined after all
+// specific sub-path routes (stats, folders, search, etc.) to prevent Express
+// from matching "stats" or "folders" as :id parameters.
 
 // ===========================================
 // Search & Discovery
@@ -848,6 +774,89 @@ router.get(
     res.json({
       success: true,
       data: stats,
+    });
+  })
+);
+
+// ===========================================
+// Single Document CRUD (must be AFTER specific sub-path routes
+// like /stats, /folders, /search to prevent :id from matching those)
+// ===========================================
+
+/**
+ * GET /:context/documents/:id - Get single document
+ */
+router.get(
+  '/:context/documents/:id',
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context, id } = req.params;
+    validateContext(context);
+    validateDocumentId(id);
+
+    const document = await documentService.getDocument(id, context);
+    if (!document) {
+      throw new NotFoundError('Document not found');
+    }
+
+    res.json({
+      success: true,
+      data: document,
+    });
+  })
+);
+
+/**
+ * PUT /:context/documents/:id - Update document metadata
+ */
+router.put(
+  '/:context/documents/:id',
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context, id } = req.params;
+    validateContext(context);
+    validateDocumentId(id);
+
+    const { title, tags, folderPath, isFavorite, isArchived } = req.body;
+
+    const document = await documentService.updateDocument(id, context, {
+      title,
+      tags,
+      folderPath,
+      isFavorite,
+      isArchived,
+    });
+
+    if (!document) {
+      throw new NotFoundError('Document not found');
+    }
+
+    res.json({
+      success: true,
+      data: document,
+    });
+  })
+);
+
+/**
+ * DELETE /:context/documents/:id - Delete document
+ */
+router.delete(
+  '/:context/documents/:id',
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { context, id } = req.params;
+    validateContext(context);
+    validateDocumentId(id);
+
+    const deleted = await documentService.deleteDocument(id, context);
+    if (!deleted) {
+      throw new NotFoundError('Document not found');
+    }
+
+    res.json({
+      success: true,
+      message: 'Document deleted',
     });
   })
 );

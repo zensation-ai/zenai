@@ -51,7 +51,7 @@ interface RegisterTokenRequest {
  * POST /api/notifications/register
  * Register a push notification token
  */
-notificationsRouter.post('/register', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
   const { token, platform, deviceId, deviceName } = req.body as RegisterTokenRequest;
 
@@ -107,7 +107,7 @@ notificationsRouter.post('/register', apiKeyAuth, asyncHandler(async (req: Reque
  * DELETE /api/notifications/unregister
  * Unregister a push notification token
  */
-notificationsRouter.delete('/unregister', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+notificationsRouter.delete('/notifications/unregister', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
   const { token } = req.body;
 
@@ -141,7 +141,7 @@ interface NotificationPreferences {
  * GET /api/notifications/preferences
  * Get notification preferences
  */
-notificationsRouter.get('/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
 
   const result = await queryContext(
@@ -170,7 +170,7 @@ notificationsRouter.get('/preferences', apiKeyAuth, asyncHandler(async (req: Req
  * PUT /api/notifications/preferences
  * Update notification preferences
  */
-notificationsRouter.put('/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+notificationsRouter.put('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
   const prefs = req.body as NotificationPreferences;
 
@@ -224,7 +224,7 @@ interface NotificationPayload {
  * POST /api/notifications/send (internal use / testing)
  * Trigger a notification
  */
-notificationsRouter.post('/send', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
   const payload = req.body as NotificationPayload;
 
@@ -274,7 +274,7 @@ notificationsRouter.post('/send', apiKeyAuth, requireScope('admin'), asyncHandle
  * GET /api/notifications/history
  * Get notification history
  */
-notificationsRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+notificationsRouter.get('/notifications/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
   // Validate and constrain limit to prevent excessive queries
   const parsedLimit = parseInt(req.query.limit as string, 10);
