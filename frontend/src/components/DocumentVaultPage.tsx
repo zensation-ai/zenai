@@ -24,6 +24,20 @@ interface DocumentVaultPageProps {
 
 type ViewMode = 'grid' | 'list';
 
+// Folder icon mapping
+const FOLDER_ICONS: Record<string, string> = {
+  'folder': '📁',
+  'inbox': '📥',
+  'archive': '📦',
+  'briefcase': '💼',
+  'file-text': '📝',
+  'receipt': '🧾',
+};
+
+function getFolderIcon(icon?: string): string {
+  return icon ? (FOLDER_ICONS[icon] || '📁') : '📁';
+}
+
 export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
   // State
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -35,6 +49,7 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
   // UI State
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showUpload, setShowUpload] = useState(false);
+  const [showMobileFolders, setShowMobileFolders] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string>('/');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
@@ -139,10 +154,27 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
     fetchStats();
   }, [fetchDocuments, fetchFolders, fetchStats, filters]);
 
+  // Keyboard event handler for closing modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showUpload) {
+          setShowUpload(false);
+        } else if (showMobileFolders) {
+          setShowMobileFolders(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showUpload, showMobileFolders]);
+
   // Handle folder change
   const handleFolderChange = useCallback((path: string) => {
     setSelectedFolder(path);
     setFilters(prev => ({ ...prev, folderPath: path, offset: 0 }));
+    setShowMobileFolders(false); // Close mobile drawer on selection
   }, []);
 
   // Handle search
@@ -273,6 +305,14 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
           </button>
           <h1>Document Vault</h1>
           <span className="context-badge">{context}</span>
+          <button
+            type="button"
+            className="mobile-folder-toggle"
+            onClick={() => setShowMobileFolders(true)}
+            aria-label="Ordner anzeigen"
+          >
+            📁
+          </button>
         </div>
 
         <div className="header-actions">
@@ -362,7 +402,7 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
                 className={`folder-item ${selectedFolder === folder.path ? 'active' : ''}`}
                 onClick={() => handleFolderChange(folder.path)}
               >
-                <span className="folder-icon">{folder.icon === 'inbox' ? '📥' : '📁'}</span>
+                <span className="folder-icon">{getFolderIcon(folder.icon)}</span>
                 <span className="folder-name">{folder.name}</span>
                 <span className="folder-count">{folder.documentCount}</span>
               </button>
@@ -438,6 +478,43 @@ export function DocumentVaultPage({ onBack, context }: DocumentVaultPageProps) {
             </>
           )}
         </main>
+      </div>
+
+      {/* Mobile Folder Drawer */}
+      <div
+        className={`folder-drawer-overlay ${showMobileFolders ? 'open' : ''}`}
+        onClick={() => setShowMobileFolders(false)}
+      >
+        <div
+          className={`folder-drawer ${showMobileFolders ? 'open' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="folder-drawer-header">
+            <h2>Ordner</h2>
+            <button
+              type="button"
+              className="folder-drawer-close"
+              onClick={() => setShowMobileFolders(false)}
+              aria-label="Schließen"
+            >
+              ✕
+            </button>
+          </div>
+          <nav className="folder-list">
+            {folders.map(folder => (
+              <button
+                key={folder.id}
+                type="button"
+                className={`folder-item ${selectedFolder === folder.path ? 'active' : ''}`}
+                onClick={() => handleFolderChange(folder.path)}
+              >
+                <span className="folder-icon">{getFolderIcon(folder.icon)}</span>
+                <span className="folder-name">{folder.name}</span>
+                <span className="folder-count">{folder.documentCount}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {/* Upload Modal */}
