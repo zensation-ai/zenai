@@ -75,7 +75,7 @@ export const SettingsDashboard = memo(({
       />
 
       {/* Tab Navigation - Identisch zu InsightsDashboard Pattern */}
-      <nav className="settings-tabs liquid-glass-nav" role="tablist" aria-label="Einstellungs-Kategorien">
+      <nav className="settings-tabs" role="tablist" aria-label="Einstellungs-Kategorien">
         {TABS.map((tab) => (
           <button
             key={tab.id}

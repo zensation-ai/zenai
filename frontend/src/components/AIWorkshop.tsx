@@ -132,7 +132,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
       />
 
       {/* Tab Navigation */}
-      <nav className="workshop-tabs liquid-glass-nav" role="tablist" aria-label="KI-Werkstatt Navigation">
+      <nav className="workshop-tabs" role="tablist" aria-label="KI-Werkstatt Navigation">
         {TABS.map((tab) => (
           <button
             key={tab.id}
