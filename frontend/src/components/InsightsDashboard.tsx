@@ -26,8 +26,9 @@ const DashboardHome = lazy(() => import('./DashboardHome').then(m => ({ default:
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
+const ProductivityDashboard = lazy(() => import('./ProductivityDashboard').then(m => ({ default: m.ProductivityDashboard })));
 
-type InsightsTab = 'overview' | 'analytics' | 'digest' | 'connections';
+type InsightsTab = 'overview' | 'analytics' | 'digest' | 'connections' | 'productivity';
 
 interface InsightsDashboardProps {
   context: AIContext;
@@ -42,6 +43,7 @@ const TABS: { id: InsightsTab; label: string; icon: string; description: string 
   { id: 'analytics', label: 'Statistiken', icon: '📈', description: 'Detaillierte Analysen und Trends' },
   { id: 'digest', label: 'Zusammenfassung', icon: '📊', description: 'Tägliche und wöchentliche Digests' },
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
+  { id: 'productivity', label: 'Produktivität', icon: '⚡', description: 'ROI und Zeitersparnis' },
 ];
 
 const TabLoader = () => (
@@ -58,7 +60,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
   initialTab = 'overview',
 }) => {
   const navigate = useNavigate();
-  const VALID_TABS: InsightsTab[] = ['overview', 'analytics', 'digest', 'connections'];
+  const VALID_TABS: InsightsTab[] = ['overview', 'analytics', 'digest', 'connections', 'productivity'];
   const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'overview';
   const [activeTab, setActiveTab] = useState<InsightsTab>(validatedTab);
 
@@ -81,6 +83,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
       'analytics': 'analytics',
       'digest': 'digest',
       'knowledge-graph': 'connections',
+      'productivity': 'productivity',
     };
 
     // Wenn es ein interner Tab ist, wechsle den Tab statt zu navigieren
@@ -149,6 +152,18 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
                 context={context}
                 onBack={() => setActiveTab('overview')}
                 onSelectIdea={handleSelectIdea}
+              />
+            </div>
+          </Suspense>
+        );
+
+      case 'productivity':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="insights-tab-content">
+              <ProductivityDashboard
+                context={context}
+                onBack={() => setActiveTab('overview')}
               />
             </div>
           </Suspense>

@@ -907,6 +907,72 @@
   color: var(--primary-light, #ff9a70);
 }
 
+/* ===========================================
+   Thinking Mode Toggle Bar (Phase 32C-1)
+   =========================================== */
+
+.thinking-mode-bar {
+  display: flex;
+  gap: 4px;
+  padding: 6px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.thinking-mode-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.thinking-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.thinking-mode-btn:hover {
+  background: var(--bg-hover, rgba(0,0,0,0.04));
+  border-color: var(--border-hover, rgba(0,0,0,0.15));
+}
+
+.thinking-mode-btn.active {
+  background: var(--accent-bg, #EFF6FF);
+  border-color: var(--accent-color, #3B82F6);
+  color: var(--accent-color, #3B82F6);
+  font-weight: 500;
+}
+
+.thinking-mode-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.thinking-mode-label {
+  font-size: 11px;
+}
+
+@media (max-width: 640px) {
+  .thinking-mode-bar {
+    padding: 4px 8px;
+  }
+  .thinking-mode-label {
+    display: none;
+  }
+  .thinking-mode-btn {
+    padding: 5px 8px;
+  }
+}
+
 /* Reduced motion for streaming */
 @media (prefers-reduced-motion: reduce) {
   .streaming-cursor,

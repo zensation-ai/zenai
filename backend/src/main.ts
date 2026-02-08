@@ -317,6 +317,10 @@ app.use('/api', notificationsRouter);  // Context-aware: /api/:context/notificat
 app.use('/api', digestRouter);  // Digest routes: /api/:context/digest/*
 app.use('/api', advancedAnalyticsRouter);  // Advanced analytics: /api/:context/analytics/dashboard, etc.
 
+// Phase 32D: Productivity Analytics
+import { productivityRouter } from './routes/productivity';
+app.use('/api', productivityRouter);  // ROI analytics: /api/:context/productivity/*
+
 // Phase 21: Personalization Chat - "Lerne mich kennen"
 app.use('/api/personalization', personalizationChatRouter);  // Chat: /api/personalization/chat, /api/personalization/facts
 

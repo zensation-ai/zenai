@@ -103,7 +103,8 @@
 .insights-tab-content .dashboard-home,
 .insights-tab-content .analytics-dashboard,
 .insights-tab-content .digest-dashboard,
-.insights-tab-content .knowledge-graph-page {
+.insights-tab-content .knowledge-graph-page,
+.insights-tab-content .prod-dashboard {
   min-height: auto;
 }
 

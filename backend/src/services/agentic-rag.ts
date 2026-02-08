@@ -15,6 +15,7 @@ import { AIContext, queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { generateClaudeResponse, queryClaudeJSON } from './claude';
 import { generateEmbedding } from './ai';
+import { parseTemporalQuery, timeRangeToSQL } from './temporal-query-parser';
 
 // ===========================================
 // Types & Interfaces
@@ -450,6 +451,7 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
 
   /**
    * Temporal (time-based) retrieval
+   * Enhanced with TemporalQueryParser for precise German time expression handling
    */
   private async temporalRetrieval(
     query: string,
@@ -457,29 +459,48 @@ Wähle die beste Strategie aus: ${availableStrategies.join(', ')}`;
     maxResults: number
   ): Promise<RetrievalResult[]> {
     try {
-      // Parse temporal references
-      let interval = '7 days';
-      if (/heute|today/i.test(query)) {interval = '1 day';}
-      else if (/gestern|yesterday/i.test(query)) {interval = '2 days';}
-      else if (/diese woche|this week/i.test(query)) {interval = '7 days';}
-      else if (/letzten? monat|last month/i.test(query)) {interval = '30 days';}
-      else if (/vor (\d+) tag/i.test(query)) {
-        const match = query.match(/vor (\d+) tag/i);
-        if (match) {interval = `${match[1]} days`;}
-      }
+      // Use the temporal query parser for precise date range extraction
+      const temporalResult = parseTemporalQuery(query);
 
-      const result = await queryContext(
-        context,
-        `SELECT id, title, summary, raw_transcript, created_at,
+      let sql: string;
+      let params: (string | number | Date)[];
+
+      if (temporalResult.hasTemporalContext && temporalResult.combinedRange) {
+        // Use parsed time range for precise filtering
+        const range = temporalResult.combinedRange;
+        const { sql: whereSql, params: whereParams } = timeRangeToSQL(range, 'created_at', 3);
+
+        sql = `SELECT id, title, summary, raw_transcript, created_at,
                 1.0 - (EXTRACT(EPOCH FROM (NOW() - created_at)) / (86400 * 30)) as recency_score
          FROM ideas
          WHERE context = $1
            AND is_archived = false
-           AND created_at >= NOW() - ($2)::INTERVAL
+           AND ${whereSql}
          ORDER BY created_at DESC
-         LIMIT $3`,
-        [context, interval, maxResults]
-      );
+         LIMIT $2`;
+        params = [context, maxResults, ...whereParams];
+
+        logger.debug('Temporal retrieval with parsed range', {
+          label: range.label,
+          start: range.start.toISOString(),
+          end: range.end.toISOString(),
+        });
+      } else {
+        // Fallback: use interval-based approach for unrecognized patterns
+        const interval = temporalResult.combinedRange?.sqlInterval || '7 days';
+
+        sql = `SELECT id, title, summary, raw_transcript, created_at,
+                1.0 - (EXTRACT(EPOCH FROM (NOW() - created_at)) / (86400 * 30)) as recency_score
+         FROM ideas
+         WHERE context = $1
+           AND is_archived = false
+           AND created_at >= NOW() - ($3)::INTERVAL
+         ORDER BY created_at DESC
+         LIMIT $2`;
+        params = [context, maxResults, interval];
+      }
+
+      const result = await queryContext(context, sql, params);
 
       return result.rows.map((r: { id: string; title: string; summary?: string; raw_transcript?: string; recency_score: string; created_at: string }) => ({
         id: r.id,

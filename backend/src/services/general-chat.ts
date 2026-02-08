@@ -12,6 +12,8 @@ import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable
 import { getUnifiedContext } from './business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from './memory';
 import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode, ChatMode } from './chat-modes';
+import { classifyIntent, intentToRetrievalConfig } from './query-intent-classifier';
+import { ThinkingMode, applyThinkingMode, isValidThinkingMode } from './thinking-partner';
 import { executeWithTools, ToolExecutionContext } from './claude/tool-use';
 import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
 import { claudeVision, VisionImage } from './claude-vision';
@@ -68,6 +70,12 @@ export interface ResponseMetadata {
   modeConfidence: number;
   modeReasoning: string;
   toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }>;
+  intentClassification?: {
+    intent: string;
+    confidence: number;
+    tier: string;
+    reasoning: string;
+  };
   ragUsed: boolean;
   ragDocumentsCount: number;
   ragQuality?: RAGQualityMetrics;
@@ -308,7 +316,8 @@ export async function generateResponse(
 export async function generateEnhancedResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' = 'personal'
+  contextType: 'personal' | 'work' = 'personal',
+  thinkingMode: ThinkingMode = 'assist'
 ): Promise<EnhancedResponse> {
   const startTime = Date.now();
 
@@ -350,6 +359,12 @@ export async function generateEnhancedResponse(
 
   // Build enhanced system prompt with HiMeS memory context
   let systemPrompt = GENERAL_CHAT_SYSTEM_PROMPT;
+
+  // Apply thinking partner mode (Phase 32C-1)
+  if (thinkingMode !== 'assist') {
+    systemPrompt = applyThinkingMode(systemPrompt, thinkingMode);
+    logger.info('Thinking mode applied', { sessionId, thinkingMode });
+  }
   let memoryStats = { longTermFacts: 0, episodesRetrieved: 0, workingMemorySlots: 0 };
 
   try {
@@ -413,15 +428,41 @@ export async function generateEnhancedResponse(
     }
   }
 
-  // Check if RAG enhancement is needed
+  // === Adaptive RAG: Intent Classification (Phase 32A-1) ===
+  // Classify query intent BEFORE deciding whether to run RAG.
+  // This prevents unnecessary retrieval for greetings, confirmations, etc.
+  const intentClassification = classifyIntent(userMessage, {
+    messageCount: conversationHistory.length,
+    recentMessages: conversationHistory.slice(-3),
+    currentMode: modeResult.mode,
+  });
+
+  const retrievalConfig = intentToRetrievalConfig(intentClassification.intent);
+
+  logger.info('Intent classification', {
+    sessionId,
+    intent: intentClassification.intent,
+    confidence: intentClassification.confidence,
+    tier: intentClassification.tier,
+    reasoning: intentClassification.reasoning,
+    shouldRetrieve: retrievalConfig.shouldRetrieve,
+  });
+
+  // Determine if RAG should be used: combine intent classifier with legacy RAG decision
   const ragDecision = shouldEnhanceWithRAG(userMessage, modeResult.mode);
+  const shouldRunRAG = retrievalConfig.shouldRetrieve || (
+    ragDecision.shouldUse && ragDecision.urgency === 'required'
+  );
+
   let ragDocumentsCount = 0;
   let ragQuality: RAGQualityMetrics | undefined;
 
-  if (ragDecision.shouldUse) {
+  if (shouldRunRAG) {
     try {
-      // Use full RAG for rag_enhanced mode, quick for others
-      const useDeepRAG = modeResult.mode === 'rag_enhanced' || ragDecision.urgency === 'required';
+      // Use intent classifier to determine RAG depth
+      const useDeepRAG = intentClassification.intent === 'full_retrieve' ||
+        modeResult.mode === 'rag_enhanced' ||
+        ragDecision.urgency === 'required';
 
       let ragResults: EnhancedResult[];
       let ragMetadata: EnhancedRAGResult | undefined;
@@ -429,12 +470,13 @@ export async function generateEnhancedResponse(
       if (useDeepRAG) {
         // Full RAG with HyDE + Cross-Encoder for knowledge-intensive queries
         ragMetadata = await enhancedRAG.retrieve(userMessage, contextType, {
-          enableHyDE: true,
+          enableHyDE: retrievalConfig.enableHyDE,
           autoDetectHyDE: true,
-          enableCrossEncoder: true,
+          enableCrossEncoder: retrievalConfig.enableCrossEncoder,
           crossEncodeTop: 10,
           minRelevance: 0.35,
-          maxResults: 8,
+          maxResults: retrievalConfig.maxResults,
+          agenticConfig: { maxIterations: retrievalConfig.maxIterations },
         });
         ragResults = ragMetadata.results;
 
@@ -458,7 +500,11 @@ export async function generateEnhancedResponse(
         });
       } else {
         // Quick RAG for supplementary context
-        ragResults = await enhancedRAG.quickRetrieve(userMessage, contextType, 5);
+        ragResults = await enhancedRAG.quickRetrieve(
+          userMessage,
+          contextType,
+          retrievalConfig.maxResults || 5
+        );
 
         ragQuality = {
           used: true,
@@ -492,7 +538,7 @@ export async function generateEnhancedResponse(
         logger.debug('RAG enhancement applied', {
           sessionId,
           documentsRetrieved: ragDocumentsCount,
-          reason: ragDecision.reason,
+          intent: intentClassification.intent,
           confidence: ragQuality?.confidence,
           methods: ragQuality?.methodsUsed,
         });
@@ -592,6 +638,12 @@ export async function generateEnhancedResponse(
       modeConfidence: modeResult.confidence,
       modeReasoning: modeResult.reasoning,
       toolsCalled,
+      intentClassification: {
+        intent: intentClassification.intent,
+        confidence: intentClassification.confidence,
+        tier: intentClassification.tier,
+        reasoning: intentClassification.reasoning,
+      },
       ragUsed: ragDocumentsCount > 0,
       ragDocumentsCount,
       ragQuality,
@@ -620,7 +672,8 @@ export async function sendMessage(
   sessionId: string,
   userMessage: string,
   contextType: 'personal' | 'work' = 'personal',
-  includeMetadata: boolean = false
+  includeMetadata: boolean = false,
+  thinkingMode: ThinkingMode = 'assist'
 ): Promise<SendMessageResult> {
   // Store user message
   const storedUserMessage = await addMessage(sessionId, 'user', userMessage);
@@ -640,7 +693,7 @@ export async function sendMessage(
   let metadata: ResponseMetadata | undefined;
 
   if (includeMetadata) {
-    const enhancedResult = await generateEnhancedResponse(sessionId, userMessage, contextType);
+    const enhancedResult = await generateEnhancedResponse(sessionId, userMessage, contextType, thinkingMode);
     aiResponse = enhancedResult.content;
     metadata = enhancedResult.metadata;
   } else {

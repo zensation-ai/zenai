@@ -31,6 +31,7 @@ import { validateBody } from '../utils/schemas';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
 import { setupSSEHeaders, thinkingStream } from '../services/claude/streaming';
 import { detectChatMode } from '../services/chat-modes';
+import { isValidThinkingMode, getAvailableModes, applyThinkingMode, ThinkingMode } from '../services/thinking-partner';
 import { query } from '../utils/database';
 import {
   VisionImage,
@@ -174,8 +175,13 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
  */
 generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { message, include_metadata } = req.body;
+  const { message, include_metadata, thinking_mode } = req.body;
   const includeMetadata = req.query.include_metadata === 'true' || include_metadata === true;
+
+  // Validate and resolve thinking mode (Phase 32C-1)
+  const thinkingMode: ThinkingMode = thinking_mode && isValidThinkingMode(thinking_mode)
+    ? thinking_mode
+    : 'assist';
 
   // Validate UUID format
   if (!isValidUUID(id)) {
@@ -192,6 +198,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMe
     sessionId: id,
     messageLength: message.length,
     includeMetadata,
+    thinkingMode,
   });
 
   // Send message and get response (message already trimmed by Zod schema)
@@ -199,7 +206,8 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMe
     id,
     message,
     session.context as 'personal' | 'work',
-    includeMetadata
+    includeMetadata,
+    thinkingMode
   );
 
   // Build response data
@@ -468,10 +476,27 @@ generalChatRouter.post(
  * - done: Stream complete with metadata
  * - error: Error occurred
  */
+/**
+ * GET /api/chat/thinking-modes
+ * Get available thinking partner modes for the frontend
+ */
+generalChatRouter.get('/thinking-modes', apiKeyAuth, asyncHandler(async (_req: Request, res: Response) => {
+  const modes = getAvailableModes();
+  res.json({
+    success: true,
+    data: { modes },
+  });
+}));
+
 generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { message } = req.body;
+  const { message, thinking_mode } = req.body;
   const thinkingBudget = toIntBounded(req.query.thinking_budget as string, 10000, 1000, 50000);
+
+  // Validate thinking mode (Phase 32C-1)
+  const thinkingMode: ThinkingMode = thinking_mode && isValidThinkingMode(thinking_mode)
+    ? thinking_mode
+    : 'assist';
 
   // Validate UUID format
   if (!isValidUUID(id)) {
@@ -513,6 +538,11 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
 
   // Build system prompt from the shared constant (single source of truth)
   let systemPrompt = GENERAL_CHAT_SYSTEM_PROMPT;
+
+  // Apply thinking partner mode (Phase 32C-1)
+  if (thinkingMode !== 'assist') {
+    systemPrompt = applyThinkingMode(systemPrompt, thinkingMode);
+  }
 
   if (modeResult.mode === 'agent' || modeResult.mode === 'rag_enhanced') {
     systemPrompt += `\n\n[MODUS: ${modeResult.mode}]\nDiese Anfrage erfordert tieferes Nachdenken. Nutze Extended Thinking um deine Gedanken zu strukturieren.`;

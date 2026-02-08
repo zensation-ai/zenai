@@ -61,6 +61,8 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [thinkingContent, setThinkingContent] = useState<string>('');
+  // Thinking partner mode state (Phase 32C-1)
+  const [thinkingMode, setThinkingMode] = useState<'assist' | 'challenge' | 'coach' | 'synthesize'>('assist');
   // Artifacts state
   const [artifacts, setArtifacts] = useState<Map<string, Artifact[]>>(new Map());
   const [activeArtifact, setActiveArtifact] = useState<{ artifact: Artifact; messageId: string; index: number } | null>(null);
@@ -236,7 +238,7 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: messageContent }),
+            body: JSON.stringify({ message: messageContent, thinking_mode: thinkingMode }),
             signal: streamAbortController.signal, // Add abort signal to prevent memory leaks
           });
 
@@ -618,6 +620,27 @@ export function GeneralChat({ context, isCompact = false }: GeneralChatProps) {
             <div ref={messagesEndRef} />
           </>
         )}
+      </div>
+
+      {/* Thinking Mode Toggle (Phase 32C-1) */}
+      <div className="thinking-mode-bar">
+        {([
+          { mode: 'assist' as const, icon: '💡', label: 'Hilf mir' },
+          { mode: 'challenge' as const, icon: '🔥', label: 'Fordere mich heraus' },
+          { mode: 'coach' as const, icon: '🎯', label: 'Coache mich' },
+          { mode: 'synthesize' as const, icon: '🔗', label: 'Verbinde Ideen' },
+        ]).map(({ mode, icon, label }) => (
+          <button
+            key={mode}
+            type="button"
+            className={`thinking-mode-btn ${thinkingMode === mode ? 'active' : ''}`}
+            onClick={() => setThinkingMode(mode)}
+            title={label}
+          >
+            <span className="thinking-mode-icon">{icon}</span>
+            <span className="thinking-mode-label">{label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Input Area */}
