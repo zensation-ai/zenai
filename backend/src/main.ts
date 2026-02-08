@@ -361,6 +361,14 @@ app.use('/api/vision', visionRouter);  // /api/vision/analyze, /api/vision/extra
 // Phase 31: Topic Enhancement - Advanced Topic Analysis
 app.use('/api/topics', topicEnhancementRouter);  // /api/topics/enhanced, /api/topics/quality, /api/topics/similar, etc.
 
+// Phase 33 Sprint 4: Voice/TTS Integration
+import { voiceRouter } from './routes/voice';
+app.use('/api/voice', voiceRouter);  // /api/voice/speak, /api/voice/status, /api/voice/voices
+
+// Phase 33 Sprint 4: Interactive Canvas Mode
+import { canvasRouter } from './routes/canvas';
+app.use('/api/canvas', canvasRouter);  // /api/canvas, /api/canvas/:id, /api/canvas/:id/versions
+
 // Phase 31: Project Context - Codebase Analysis
 app.use('/api/project', projectContextRouter);  // /api/project/analyze, /api/project/summary, /api/project/structure
 app.use('/api/:context/project', projectContextRouter);  // Context-aware: /api/personal/project/analyze, etc.
@@ -499,7 +507,7 @@ async function startServer(): Promise<void> {
   validateEnvironmentVariables();
 
   // Start server after secrets are validated
-  app.listen(PORT, async () => {
+  const server = app.listen(PORT, async () => {
     // Get secrets health status for startup display
     const secretsHealth = secretsManager.getHealthSummary();
   const secretsDbStatus = secretsManager.getDatabaseStatus();
@@ -702,6 +710,17 @@ Phase 4 APIs:
     logger.info('AI Tool Handlers registered successfully', { operation: 'startup' });
   } catch (error) {
     logger.error('AI Tool Handlers registration failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+  }
+
+  // Phase 33 Sprint 4: Voice Pipeline WebSocket
+  try {
+    const { setupWebSocket } = await import('./services/websocket');
+    const { handleVoicePipelineConnection } = await import('./routes/voice-pipeline');
+    const wss = setupWebSocket(server);
+    wss.on('connection', handleVoicePipelineConnection);
+    logger.info('Voice Pipeline WebSocket ready', { path: '/api/voice/pipeline', operation: 'startup' });
+  } catch (error) {
+    logger.error('Voice Pipeline WebSocket setup failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
   }
 
   // Phase 9: Deferred non-critical initialization

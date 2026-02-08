@@ -56,6 +56,7 @@ const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').th
 const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ default: m.InboxTriage })));
 const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
 const IdeasPage = lazy(() => import('./components/IdeasPage').then(m => ({ default: m.IdeasPage })));
+const CanvasPage = lazy(() => import('./components/CanvasPage').then(m => ({ default: m.CanvasPage })));
 
 const PageLoader = () => (
   <div className="page-loader" role="status" aria-live="polite">
@@ -88,6 +89,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'personalization': '/personalization',
   'documents': '/documents',
   'triage': '/triage',
+  'canvas': '/canvas',
   // Legacy redirects
   'incubator': '/ai-workshop/incubator',
   'proactive': '/ai-workshop/proactive',
@@ -119,6 +121,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/personalization': 'personalization',
   '/documents': 'documents',
   '/triage': 'triage',
+  '/canvas': 'canvas',
 };
 
 function useUrlNavigation() {
@@ -750,6 +753,16 @@ function App() {
             <SyncDashboard
               context={context}
               onBack={() => navigateToPage('home')}
+            />
+          </Suspense>
+        );
+
+      case 'canvas':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <CanvasPage
+              context={context}
+              onNavigate={(page) => navigateToPage(page as Page)}
             />
           </Suspense>
         );

@@ -43,6 +43,17 @@ export function isOpenAIAvailable(): boolean {
 }
 
 /**
+ * Get the OpenAI client instance (for use by other services like TTS)
+ * @throws Error if client is not initialized
+ */
+export function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    throw new Error('OpenAI client not initialized. Set OPENAI_API_KEY.');
+  }
+  return openaiClient;
+}
+
+/**
  * Structure transcript using OpenAI
  */
 export async function structureWithOpenAI(transcript: string): Promise<StructuredIdea> {

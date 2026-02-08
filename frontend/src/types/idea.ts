@@ -77,6 +77,7 @@ export type Page =
   | 'digest'
   | 'knowledge-graph'
   | 'learning-tasks'
-  | 'triage';
+  | 'triage'
+  | 'canvas';
 
 export type Context = 'personal' | 'work' | 'learning' | 'creative';
