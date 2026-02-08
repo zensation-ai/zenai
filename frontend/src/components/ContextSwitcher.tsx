@@ -70,7 +70,7 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
   };
 
   return (
-    <div className="context-switcher liquid-glass-nav" role="region" aria-label="Kontext-Auswahl">
+    <div className="context-switcher" role="region" aria-label="Kontext-Auswahl">
       <div className="context-toggle" role="group" aria-label="Kontext wählen">
         {(Object.keys(CONTEXT_CONFIG) as AIContext[]).map((ctx) => {
           const config = CONTEXT_CONFIG[ctx];

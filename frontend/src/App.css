@@ -2125,13 +2125,10 @@
 
 .context-toggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.06);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--header-border);
-  padding: 4px;
-  gap: 2px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  gap: 4px;
 }
 
 .context-option {
