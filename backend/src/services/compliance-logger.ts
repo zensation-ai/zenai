@@ -243,9 +243,10 @@ export function generateComplianceReport(
     averageProcessingTimeMs: Math.round(avgProcessingTime),
   };
 
+  const logContext = context === 'personal' || context === 'work' ? context : undefined;
   logger.info('Compliance report generated', {
     periodDays,
-    context: context as 'personal' | 'work' | undefined,
+    context: logContext,
     totalDecisions,
     avgConfidence: summary.averageConfidence,
   });
