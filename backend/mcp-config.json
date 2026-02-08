@@ -3,7 +3,6 @@
     "ki-ab-brain": {
       "command": "npx",
       "args": ["ts-node", "src/mcp/server.ts"],
-      "cwd": "/Users/alexanderbering/Projects/KI-AB/backend",
       "env": {
         "NODE_ENV": "production"
       }
