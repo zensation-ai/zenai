@@ -268,6 +268,10 @@ app.use('/api/code', codeExecutionRouter);
 // Phase 32: Document Analysis - Must be before context-aware routes
 app.use('/api/documents', documentAnalysisRouter);
 
+// Phase 33: Agent Teams - Multi-Agent Orchestration
+import { agentTeamsRouter } from './routes/agent-teams';
+app.use('/api/agents', agentTeamsRouter);
+
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);
 app.use('/api/voice-memo', voiceMemoRouter);
