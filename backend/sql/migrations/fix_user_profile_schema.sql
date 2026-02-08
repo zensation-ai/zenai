@@ -98,6 +98,7 @@ SET search_path TO personal, public;
 
 CREATE TABLE IF NOT EXISTS user_profile (
     id VARCHAR(255) PRIMARY KEY DEFAULT 'default',
+    user_id VARCHAR(255) NOT NULL DEFAULT 'default',
     name VARCHAR(255),
     preferences JSONB DEFAULT '{}',
     preferred_categories JSONB DEFAULT '{}',
