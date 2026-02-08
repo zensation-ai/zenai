@@ -146,7 +146,11 @@ export function useSwipeGesture(
       }
 
       if (shouldTrigger && direction) {
-        // Trigger appropriate callback
+        // Keep visual offset alive for exit animation - don't reset yet
+        isDraggingRef.current = false;
+        setState((s) => ({ ...s, isDragging: false }));
+
+        // Trigger appropriate callback - consumer handles exit animation and reset
         switch (direction) {
           case 'left':
             onSwipeLeft?.();
@@ -158,10 +162,10 @@ export function useSwipeGesture(
             onSwipeUp?.();
             break;
         }
+      } else {
+        // Threshold not met - snap back
+        reset();
       }
-
-      // Reset state
-      reset();
     };
 
     // Touch event handlers

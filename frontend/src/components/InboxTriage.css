@@ -193,28 +193,22 @@
 }
 
 @keyframes cardSwipeRight {
-  to {
-    transform: translateX(150%) rotate(20deg);
-    opacity: 0;
-  }
+  from { transform: translateX(0) rotate(0deg); opacity: 1; }
+  to { transform: translateX(150%) rotate(20deg); opacity: 0; }
 }
 
 @keyframes cardSwipeLeft {
-  to {
-    transform: translateX(-150%) rotate(-20deg);
-    opacity: 0;
-  }
+  from { transform: translateX(0) rotate(0deg); opacity: 1; }
+  to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
 }
 
 @keyframes cardSwipeUp {
-  to {
-    transform: translateY(-150%);
-    opacity: 0;
-  }
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-150%); opacity: 0; }
 }
 
 @keyframes cardKeep {
-  0% { transform: scale(1); }
+  0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.02); box-shadow: 0 0 20px var(--primary-glow, rgba(255, 107, 53, 0.3)); }
   100% { transform: scale(1); }
 }

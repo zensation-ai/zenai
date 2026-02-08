@@ -107,6 +107,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   const [stats, setStats] = useState({ prioritized: 0, archived: 0, kept: 0, later: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationClass, setAnimationClass] = useState('');
+  const [exitStyle, setExitStyle] = useState<React.CSSProperties | null>(null);
   // Neuro-UX: States für Dopamin-Belohnungen und Flow-State
   const [showReward, setShowReward] = useState<{ message: string; emoji: string } | null>(null);
   const [showUndoHint, setShowUndoHint] = useState(false);
@@ -116,6 +117,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
   const [loadingMessage, setLoadingMessage] = useState('');
 
   const cardRef = useRef<HTMLDivElement>(null);
+  const swipeResetRef = useRef<() => void>(() => {});
   const { triggerMilestone, triggerStreak } = useNeuroFeedback();
 
   // Neuro-UX: Check for reduced motion preference
@@ -235,26 +237,42 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
 
   // Handle triage action
   const handleTriageAction = useCallback(
-    async (action: TriageAction) => {
+    async (action: TriageAction, fromSwipe = false) => {
       if (!currentIdea || isAnimating) return;
 
       // Neuro-UX: Animation setzen mit success-burst für Dopamin-Feedback
       setIsAnimating(true);
       setExpandedDetails(false); // Progressive Disclosure zurücksetzen
 
-      switch (action) {
-        case 'priority':
-          setAnimationClass('animate-swipe-right neuro-success-burst');
-          break;
-        case 'later':
-          setAnimationClass('animate-swipe-left');
-          break;
-        case 'archive':
-          setAnimationClass('animate-swipe-up');
-          break;
-        case 'keep':
-          setAnimationClass('animate-keep neuro-success-burst');
-          break;
+      if (fromSwipe) {
+        // Swipe-triggered: animate from current drag position via inline transition
+        const exitTransforms: Record<TriageAction, string> = {
+          priority: 'translateX(150%) rotate(20deg)',
+          later: 'translateX(-150%) rotate(-20deg)',
+          archive: 'translateY(-150%)',
+          keep: 'scale(1.02)',
+        };
+        setExitStyle({
+          transform: exitTransforms[action],
+          opacity: action === 'keep' ? 1 : 0,
+          transition: 'transform 0.3s ease-out, opacity 0.3s ease-out',
+        });
+      } else {
+        // Button-triggered: use CSS animation from center
+        switch (action) {
+          case 'priority':
+            setAnimationClass('animate-swipe-right neuro-success-burst');
+            break;
+          case 'later':
+            setAnimationClass('animate-swipe-left');
+            break;
+          case 'archive':
+            setAnimationClass('animate-swipe-up');
+            break;
+          case 'keep':
+            setAnimationClass('animate-keep neuro-success-burst');
+            break;
+        }
       }
 
       // Neuro-UX: Dopamin-Belohnung triggern
@@ -310,6 +328,8 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
       } finally {
         setIsAnimating(false);
         setAnimationClass('');
+        setExitStyle(null);
+        swipeResetRef.current();
       }
     },
     [
@@ -330,27 +350,31 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
     ]
   );
 
-  // Swipe handlers
-  const handleSwipeRight = useCallback(() => handleTriageAction('priority'), [handleTriageAction]);
-  const handleSwipeLeft = useCallback(() => handleTriageAction('later'), [handleTriageAction]);
-  const handleSwipeUp = useCallback(() => handleTriageAction('archive'), [handleTriageAction]);
+  // Swipe handlers - fromSwipe=true preserves drag offset for smooth exit animation
+  const handleSwipeRight = useCallback(() => handleTriageAction('priority', true), [handleTriageAction]);
+  const handleSwipeLeft = useCallback(() => handleTriageAction('later', true), [handleTriageAction]);
+  const handleSwipeUp = useCallback(() => handleTriageAction('archive', true), [handleTriageAction]);
 
-  // Set up swipe gestures
-  const { isDragging, direction, progress, offsetX, offsetY } = useSwipeGesture(cardRef, {
-    threshold: 100,
+  // Set up swipe gestures (60px threshold matches iOS/Android conventions for mobile)
+  const { isDragging, direction, progress, offsetX, offsetY, reset: swipeReset } = useSwipeGesture(cardRef, {
+    threshold: 60,
+    velocityThreshold: 0.3,
     onSwipeRight: handleSwipeRight,
     onSwipeLeft: handleSwipeLeft,
     onSwipeUp: handleSwipeUp,
     enabled: !isAnimating && !!currentIdea,
   });
+  swipeResetRef.current = swipeReset;
 
-  // Calculate card transform based on swipe progress
+  // Calculate card transform based on swipe progress or exit animation
   const cardStyle: React.CSSProperties = isDragging
     ? {
         transform: 'translate(' + offsetX + 'px, ' + offsetY + 'px) rotate(' + (offsetX * 0.05) + 'deg)',
         transition: 'none',
       }
-    : {};
+    : exitStyle
+      ? { ...exitStyle }
+      : {};
 
   // Determine swipe indicator class
   const getSwipeClass = (): string => {
@@ -523,13 +547,13 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
         </div>
 
         {/* Swipe indicators */}
-        <div className={'swipe-indicator right ' + (direction === 'right' && progress > 0.5 ? 'visible' : '')} aria-hidden="true">
+        <div className={'swipe-indicator right ' + (direction === 'right' && progress > 0.6 ? 'visible' : '')} aria-hidden="true">
           🔥
         </div>
-        <div className={'swipe-indicator left ' + (direction === 'left' && progress > 0.5 ? 'visible' : '')} aria-hidden="true">
+        <div className={'swipe-indicator left ' + (direction === 'left' && progress > 0.6 ? 'visible' : '')} aria-hidden="true">
           ⏰
         </div>
-        <div className={'swipe-indicator up ' + (direction === 'up' && progress > 0.5 ? 'visible' : '')} aria-hidden="true">
+        <div className={'swipe-indicator up ' + (direction === 'up' && progress > 0.6 ? 'visible' : '')} aria-hidden="true">
           📥
         </div>
 

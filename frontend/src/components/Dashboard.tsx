@@ -86,9 +86,9 @@ const DashboardComponent: React.FC<DashboardProps> = ({
     setLoading(true);
     try {
       const [statsRes, ideasRes, activityRes] = await Promise.all([
-        axios.get(`/api/${context}/ideas/stats/summary`).catch(() => ({ data: null })),
-        axios.get(`/api/${context}/ideas?limit=6`).catch(() => ({ data: null })),
-        axios.get(`/api/${context}/ai-activity?limit=5`).catch(() => ({ data: null })),
+        axios.get(`/api/${context}/ideas/stats/summary`).catch(e => { logError('Dashboard:stats', e); return { data: null }; }),
+        axios.get(`/api/${context}/ideas?limit=6`).catch(e => { logError('Dashboard:ideas', e); return { data: null }; }),
+        axios.get(`/api/${context}/ai-activity?limit=5`).catch(e => { logError('Dashboard:activity', e); return { data: null }; }),
       ]);
 
       if (statsRes.data) {
@@ -103,7 +103,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         setRecentIdeas(ideasRes.data.ideas.slice(0, 6));
       }
 
-      if (activityRes.data?.success && activityRes.data?.activities) {
+      if (activityRes.data?.activities) {
         setActivity(activityRes.data.activities.slice(0, 5));
       }
     } catch (err) {
