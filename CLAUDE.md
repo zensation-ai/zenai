@@ -389,6 +389,47 @@ mockQueryContext
 
 ## Changelog
 
+### 2026-02-09: Full Section Review & Context Parity Fix
+
+**Umfassender Review aller Sektionen** auf Verbindungen, Funktionen, Konsistenz, Login und Navigation/UX.
+
+**Kritischer Bug gefunden & behoben:** 9 Tabellen im `public`-Schema hatten CHECK-Constraints, die nur `'personal'` und `'work'` als Context erlaubten. INSERTs mit `context='learning'` oder `'creative'` schlugen fehl.
+
+**Betroffene Tabellen:**
+
+| Tabelle | Effekt |
+|---------|--------|
+| `documents` | Dokument-Upload in learning/creative blockiert |
+| `document_folders` | Ordner-Erstellung blockiert |
+| `conversation_memory` | Chat-Memory blockiert |
+| `conversation_patterns` | Pattern-Erkennung blockiert |
+| `proactive_actions` | Proaktive Aktionen blockiert |
+| `feedback_loops` | Feedback-Loops blockiert |
+| `memory_settings` | Memory-Settings blockiert |
+| `learned_facts` | Gelernte Fakten blockiert |
+| `learning_tasks` | Lernaufgaben blockiert |
+
+**Fixes:**
+
+- Migration `fix_context_check_constraints.sql`: CHECK-Constraints auf alle 4 Kontexte erweitert
+- `updateInterestEmbedding()` jetzt context-aware (nutzt `queryContext()` statt `query()`)
+- 63 irreführende Fehlermeldungen in 11 Dateien korrigiert ("personal or work" → alle 4 Kontexte)
+- Notification-History-Endpoint fehlte Context-Parameter (NotificationsPage + App.tsx)
+- DocumentVaultPage/DocumentUpload/DocumentDetailModal: Context-Typ auf alle 4 Kontexte erweitert
+- MyAIPage MemoryTransparency: Type-Narrowing auf `AIContext` korrigiert
+- Duplikat `suggested_context` in `StructuredIdea` entfernt (TypeScript-Kompilierfehler)
+- sync.ts: 5 Fehlermeldungen auf alle 4 Kontexte aktualisiert
+
+**Frontend-Backend Alignment Ergebnis:**
+
+- 0 Frontend-Calls ohne Backend-Route
+- 0 fehlende Frontend-Anbindungen (alle Backend-Features haben UI außer interne Admin-Routes)
+- Memory Admin Routes (`/api/memory/consolidate`, `/decay`, `/stats`, `/facts`, `/patterns`) sind interne Endpoints, kein Frontend nötig
+
+**Tests:** 1,931 bestanden, 24 übersprungen, 0 fehlgeschlagen
+
+---
+
 ### 2026-02-09: Database Schema Full Parity (4 Kontexte)
 
 **Problem:** learning/creative Schemas fehlten komplett, personal/work hatten unterschiedliche Tabellenanzahl (19 vs 18). Schema-Mismatch verursachte Runtime-Fehler bei Context-Routing.
