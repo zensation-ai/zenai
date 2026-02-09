@@ -403,7 +403,7 @@ function App() {
 
   const loadNotificationCount = async (signal?: AbortSignal) => {
     try {
-      const response = await axios.get('/api/notifications/history?limit=1', { signal });
+      const response = await axios.get(`/api/notifications/history?context=${context}&limit=1`, { signal });
       const total = response.data?.total ?? response.data?.notifications?.length ?? 0;
       setNotificationCount(total);
     } catch {
@@ -801,7 +801,7 @@ function App() {
         return (
           <Suspense fallback={<PageLoader />}>
             <DocumentVaultPage
-              context={context as 'personal' | 'work'}
+              context={context}
               onBack={() => navigateToPage('home')}
               initialTab={tabParam as 'documents' | 'editor' | 'media' | undefined}
             />

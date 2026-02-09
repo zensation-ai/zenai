@@ -15,7 +15,7 @@ import './DocumentUpload.css';
 
 interface DocumentUploadProps {
   onUploadComplete: (result: DocumentUploadResult) => void;
-  context: 'personal' | 'work';
+  context: string;
   folderPath?: string;
   tags?: string[];
   maxFiles?: number;

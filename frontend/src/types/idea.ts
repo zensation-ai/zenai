@@ -14,7 +14,6 @@ export interface StructuredIdea {
   type: IdeaType;
   category: IdeaCategory;
   priority: IdeaPriority;
-  suggested_context?: Context;
   summary: string;
   next_steps: string[];
   context_needed: string[];

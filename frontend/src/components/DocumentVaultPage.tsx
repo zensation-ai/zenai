@@ -29,7 +29,7 @@ type DocumentsTab = 'documents' | 'editor' | 'media';
 
 interface DocumentVaultPageProps {
   onBack: () => void;
-  context: 'personal' | 'work';
+  context: string;
   initialTab?: DocumentsTab;
 }
 
