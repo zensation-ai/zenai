@@ -13,7 +13,7 @@ import { useContextState } from './components/ContextSwitcher';
 import { usePersonaState } from './components/PersonaSelector';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
-import { useCommandPalette } from './components/CommandPalette';
+import { useCommandPalette, CommandPalette } from './components/CommandPalette';
 import type { ProcessType } from './components/AIProcessingOverlay';
 import type { InputMode } from './components/CommandCenter';
 import type { AdvancedFilters } from './components/SearchFilterBar';
@@ -34,7 +34,7 @@ import { usePageHistory } from './hooks/usePageHistory';
 import './App.css';
 
 // Lazy-loaded modal/on-demand components
-const CommandPalette = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
+// CommandPalette is statically imported alongside useCommandPalette (line 16)
 
 // Lazy-loaded page components
 const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
@@ -893,14 +893,12 @@ function App() {
       )}
 
       {commandPalette.isOpen && (
-        <Suspense fallback={null}>
-          <CommandPalette
-            isOpen={commandPalette.isOpen}
-            onClose={commandPalette.close}
-            commands={commandPalette.commands}
-            recentPages={pageHistory.recentPages}
-          />
-        </Suspense>
+        <CommandPalette
+          isOpen={commandPalette.isOpen}
+          onClose={commandPalette.close}
+          commands={commandPalette.commands}
+          recentPages={pageHistory.recentPages}
+        />
       )}
 
       <KeyboardShortcutsModal

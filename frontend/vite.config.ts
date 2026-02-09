@@ -62,7 +62,6 @@ export default defineConfig({
 
           // Feature-based chunks for lazy-loaded pages
           'feature-insights': [
-            './src/components/DashboardHome.tsx',
             './src/components/AnalyticsDashboard.tsx',
             './src/components/DigestDashboard.tsx',
           ],
@@ -77,7 +76,6 @@ export default defineConfig({
           ],
           'feature-media': [
             './src/components/MediaGallery.tsx',
-            './src/components/StoriesPage.tsx',
           ],
           'feature-meetings': [
             './src/components/MeetingsPage.tsx',

@@ -147,28 +147,28 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           <SkeletonLoader type="card" count={4} />
         ) : (
           <>
-            <div className="dash-stat-card" role="link" tabIndex={0} onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
+            <div className="dash-stat-card" role="link" tabIndex={0} title="Alle Gedanken anzeigen" onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
               <span className="dash-stat-icon" aria-hidden="true">💭</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.total}</span>
                 <span className="dash-stat-label">Gesamt</span>
               </div>
             </div>
-            <div className="dash-stat-card priority" role="link" tabIndex={0} onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
+            <div className="dash-stat-card priority" role="link" tabIndex={0} title="Wichtige Gedanken anzeigen" onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
               <span className="dash-stat-icon" aria-hidden="true">🔥</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.highPriority}</span>
                 <span className="dash-stat-label">Hohe Prioritat</span>
               </div>
             </div>
-            <div className="dash-stat-card" role="link" tabIndex={0} onClick={() => onNavigate('triage')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('triage')}>
+            <div className="dash-stat-card" role="link" tabIndex={0} title="Triage starten" onClick={() => onNavigate('triage')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('triage')}>
               <span className="dash-stat-icon" aria-hidden="true">📋</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.thisWeek}</span>
                 <span className="dash-stat-label">Diese Woche</span>
               </div>
             </div>
-            <div className="dash-stat-card ai" role="link" tabIndex={0} onClick={() => onNavigate('ai-workshop')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ai-workshop')}>
+            <div className="dash-stat-card ai" role="link" tabIndex={0} title="KI-Werkstatt öffnen" onClick={() => onNavigate('ai-workshop')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ai-workshop')}>
               <span className="dash-stat-icon" aria-hidden="true">🧠</span>
               <div className="dash-stat-data">
                 <span className={`dash-stat-value ${isAIActive ? 'active' : ''}`}>

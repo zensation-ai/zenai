@@ -10,6 +10,7 @@
 import { useState, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
+import { useSettings } from '../hooks/useSettings';
 import '../neurodesign.css';
 import './SettingsDashboard.css';
 
@@ -24,10 +25,50 @@ interface SettingsDashboardProps {
 }
 
 const TABS = [
-  { id: 'general' as const, label: 'Allgemein', icon: '⚙️', description: 'Erscheinungsbild und Verhalten' },
-  { id: 'ai' as const, label: 'KI', icon: '🧠', description: 'KI-Modell und Antwort-Stil' },
-  { id: 'privacy' as const, label: 'Datenschutz', icon: '🔒', description: 'Daten-Kontrolle und Privatsphäre' },
+  { id: 'general' as const, label: 'Allgemein', icon: '\u2699\uFE0F', description: 'Erscheinungsbild und Verhalten' },
+  { id: 'ai' as const, label: 'KI', icon: '\uD83E\uDDE0', description: 'KI-Modell und Antwort-Stil' },
+  { id: 'privacy' as const, label: 'Datenschutz', icon: '\uD83D\uDD12', description: 'Daten-Kontrolle und Privatsph\u00E4re' },
 ];
+
+function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (val: boolean) => void; label: string }) {
+  return (
+    <label className="settings-toggle" aria-label={label}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="settings-toggle-slider" />
+    </label>
+  );
+}
+
+function SettingsSelect({
+  value,
+  options,
+  onChange,
+  label,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (val: string) => void;
+  label: string;
+}) {
+  return (
+    <select
+      className="settings-select neuro-focus-ring"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label={label}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 export const SettingsDashboard = memo(({
   context,
@@ -36,6 +77,7 @@ export const SettingsDashboard = memo(({
   initialTab = 'general'
 }: SettingsDashboardProps) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const { settings, updateSetting } = useSettings();
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -47,16 +89,33 @@ export const SettingsDashboard = memo(({
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Farbschema</span>
-                  <span className="settings-item-desc">Midnight Dark Petrol</span>
+                  <span className="settings-item-desc">Wähle dein bevorzugtes Erscheinungsbild</span>
                 </div>
-                <span className="settings-item-value">Dunkel</span>
+                <SettingsSelect
+                  value={settings.theme}
+                  onChange={(val) => updateSetting('theme', val as 'dark' | 'light' | 'auto')}
+                  label="Farbschema"
+                  options={[
+                    { value: 'dark', label: 'Dunkel' },
+                    { value: 'light', label: 'Hell' },
+                    { value: 'auto', label: 'Automatisch' },
+                  ]}
+                />
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Sprache</span>
                   <span className="settings-item-desc">Anzeigesprache der App</span>
                 </div>
-                <span className="settings-item-value">Deutsch</span>
+                <SettingsSelect
+                  value={settings.language}
+                  onChange={(val) => updateSetting('language', val as 'de' | 'en')}
+                  label="Sprache"
+                  options={[
+                    { value: 'de', label: 'Deutsch' },
+                    { value: 'en', label: 'English' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -67,7 +126,16 @@ export const SettingsDashboard = memo(({
                   <span className="settings-item-label">Startseite</span>
                   <span className="settings-item-desc">Was beim App-Start angezeigt wird</span>
                 </div>
-                <span className="settings-item-value">Dashboard</span>
+                <SettingsSelect
+                  value={settings.startPage}
+                  onChange={(val) => updateSetting('startPage', val as 'home' | 'ideas' | 'insights')}
+                  label="Startseite"
+                  options={[
+                    { value: 'home', label: 'Dashboard' },
+                    { value: 'ideas', label: 'Gedanken' },
+                    { value: 'insights', label: 'Insights' },
+                  ]}
+                />
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
@@ -103,9 +171,18 @@ export const SettingsDashboard = memo(({
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Aktives Modell</span>
-                  <span className="settings-item-desc">Claude Sonnet (Standard)</span>
+                  <span className="settings-item-desc">Primäres Sprachmodell für Antworten</span>
                 </div>
-                <span className="settings-item-value">claude-sonnet</span>
+                <SettingsSelect
+                  value={settings.aiModel}
+                  onChange={(val) => updateSetting('aiModel', val as 'claude-sonnet' | 'claude-haiku' | 'ollama')}
+                  label="KI-Modell"
+                  options={[
+                    { value: 'claude-sonnet', label: 'Claude Sonnet' },
+                    { value: 'claude-haiku', label: 'Claude Haiku' },
+                    { value: 'ollama', label: 'Ollama (Lokal)' },
+                  ]}
+                />
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
@@ -123,14 +200,22 @@ export const SettingsDashboard = memo(({
                   <span className="settings-item-label">Proaktive Vorschläge</span>
                   <span className="settings-item-desc">KI schlägt eigenständig Ideen vor</span>
                 </div>
-                <span className="settings-item-value">Aktiv</span>
+                <ToggleSwitch
+                  checked={settings.proactiveSuggestions}
+                  onChange={(val) => updateSetting('proactiveSuggestions', val)}
+                  label="Proaktive Vorschläge"
+                />
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Memory-System</span>
                   <span className="settings-item-desc">HiMeS 4-Layer Architektur</span>
                 </div>
-                <span className="settings-item-value">Aktiv</span>
+                <ToggleSwitch
+                  checked={settings.memorySystem}
+                  onChange={(val) => updateSetting('memorySystem', val)}
+                  label="Memory-System"
+                />
               </div>
             </div>
 
@@ -158,7 +243,11 @@ export const SettingsDashboard = memo(({
                   <span className="settings-item-label">Datenverarbeitung</span>
                   <span className="settings-item-desc">KI-Analyse deiner Gedanken</span>
                 </div>
-                <span className="settings-item-value">Aktiv</span>
+                <ToggleSwitch
+                  checked={settings.dataProcessing}
+                  onChange={(val) => updateSetting('dataProcessing', val)}
+                  label="Datenverarbeitung"
+                />
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
@@ -207,7 +296,7 @@ export const SettingsDashboard = memo(({
             role="tab"
             className={`settings-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
-            aria-current={activeTab === tab.id ? 'true' : undefined}
+            aria-selected={activeTab === tab.id ? true : undefined}
             aria-controls={`tabpanel-${tab.id}`}
             title={tab.description}
           >

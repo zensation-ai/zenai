@@ -144,6 +144,11 @@ export function AppLayout({
 
   return (
     <div className="app-layout" data-context={context}>
+      {/* Skip to main content link (accessibility) */}
+      <a href="#main-content" className="skip-link">
+        Zum Hauptinhalt springen
+      </a>
+
       {/* Desktop Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
