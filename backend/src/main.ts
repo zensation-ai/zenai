@@ -640,19 +640,19 @@ Phase 4 APIs:
 ========================================================
   `);
 
-  // Test both database connections
+  // Test all database connections (personal, work, learning, creative)
   logger.info('Testing database connections...');
   const dbStatus = await testConnections();
+  const failedContexts = Object.entries(dbStatus).filter(([, ok]) => !ok).map(([ctx]) => ctx);
 
-  if (!dbStatus.personal && !dbStatus.work) {
-    // Critical: Both databases failed - cannot operate
-    logger.error('CRITICAL: Both databases failed to connect - shutting down', undefined, { dbStatus, operation: 'startup' });
-    process.exit(1);
-  } else if (!dbStatus.personal || !dbStatus.work) {
-    // One database failed - warn but continue (partial functionality)
-    logger.warn('One database is not connected properly', { dbStatus, operation: 'startup' });
-  } else {
+  if (Object.values(dbStatus).every(ok => ok)) {
     logger.info('All databases connected successfully', { dbStatus, operation: 'startup' });
+  } else if (!dbStatus.personal && !dbStatus.work) {
+    // Critical: Both primary databases failed - cannot operate
+    logger.error('CRITICAL: Both primary databases failed to connect - shutting down', undefined, { dbStatus, operation: 'startup' });
+    process.exit(1);
+  } else {
+    logger.warn(`Database connections failed: ${failedContexts.join(', ')}`, { dbStatus, failedContexts, operation: 'startup' });
   }
 
   // Validate PostgreSQL extensions

@@ -14,7 +14,7 @@
  * - triage_completed: User completed triage session
  */
 
-import { pool } from '../utils/database';
+import { queryContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 
 /**
@@ -30,11 +30,6 @@ export type AIActivityType =
   | 'suggestion_made'
   | 'triage_completed'
   | 'learning_applied';
-
-/**
- * Context types
- */
-export type AIContext = 'personal' | 'work' | 'learning' | 'creative';
 
 /**
  * Activity log entry
@@ -71,12 +66,12 @@ export async function logAIActivity(
   activity: AIActivity
 ): Promise<string | null> {
   try {
-    const result = await pool.query(
-      `INSERT INTO ai_activity_log (context, activity_type, message, idea_id, metadata)
-       VALUES ($1, $2, $3, $4, $5)
+    const result = await queryContext(
+      activity.context,
+      `INSERT INTO ai_activity_log (activity_type, message, idea_id, metadata)
+       VALUES ($1, $2, $3, $4)
        RETURNING id`,
       [
-        activity.context,
         activity.type,
         activity.message,
         activity.ideaId || null,
@@ -122,10 +117,10 @@ export async function getRecentAIActivities(
   limit: number = 10
 ): Promise<AIActivityLogEntry[]> {
   try {
-    const result = await pool.query(
+    const result = await queryContext(
+      context,
       `SELECT
          id,
-         context,
          activity_type as "activityType",
          message,
          idea_id as "ideaId",
@@ -133,10 +128,9 @@ export async function getRecentAIActivities(
          is_read as "isRead",
          created_at as "createdAt"
        FROM ai_activity_log
-       WHERE context = $1
        ORDER BY created_at DESC
-       LIMIT $2`,
-      [context, limit]
+       LIMIT $1`,
+      [limit]
     );
 
     return result.rows;
@@ -172,20 +166,21 @@ export async function markActivitiesAsRead(
     let result;
 
     if (activityIds && activityIds.length > 0) {
-      result = await pool.query(
+      result = await queryContext(
+        context,
         `UPDATE ai_activity_log
          SET is_read = true
-         WHERE context = $1 AND id = ANY($2) AND is_read = false
+         WHERE id = ANY($1) AND is_read = false
          RETURNING id`,
-        [context, activityIds]
+        [activityIds]
       );
     } else {
-      result = await pool.query(
+      result = await queryContext(
+        context,
         `UPDATE ai_activity_log
          SET is_read = true
-         WHERE context = $1 AND is_read = false
-         RETURNING id`,
-        [context]
+         WHERE is_read = false
+         RETURNING id`
       );
     }
 
@@ -206,11 +201,11 @@ export async function getUnreadActivityCount(
   context: AIContext
 ): Promise<number> {
   try {
-    const result = await pool.query(
+    const result = await queryContext(
+      context,
       `SELECT COUNT(*) as count
        FROM ai_activity_log
-       WHERE context = $1 AND is_read = false`,
-      [context]
+       WHERE is_read = false`
     );
 
     return parseInt(result.rows[0]?.count || '0', 10);
