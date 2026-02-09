@@ -39,7 +39,7 @@ const router = Router();
 router.get('/suggestions', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const limit = toIntBounded(req.query.limit as string, 5, 1, 50);
@@ -68,7 +68,7 @@ router.post('/suggestions/:id/accept', apiKeyAuth, requireScope('write'), asyncH
   const { id } = req.params;
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const actionTaken = req.body.actionTaken;
@@ -95,7 +95,7 @@ router.post('/suggestions/:id/dismiss', apiKeyAuth, requireScope('write'), async
   const { id } = req.params;
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const reason = req.body.reason;
@@ -121,7 +121,7 @@ router.post('/suggestions/:id/dismiss', apiKeyAuth, requireScope('write'), async
 router.get('/routines', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const activeOnly = req.query.activeOnly !== 'false';
@@ -146,7 +146,7 @@ router.get('/routines', apiKeyAuth, requireScope('read'), asyncHandler(async (re
 router.post('/routines/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const days = toIntBounded(req.body.days as string, 30, 1, 365);
@@ -168,7 +168,7 @@ router.post('/routines/analyze', apiKeyAuth, requireScope('write'), asyncHandler
 router.get('/routines/active', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const activeRoutines = await routineDetectionService.checkActiveRoutines(context as AIContext);
@@ -188,7 +188,7 @@ router.patch('/routines/:id', apiKeyAuth, requireScope('write'), asyncHandler(as
   const { id } = req.params;
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const { enabled } = req.body;
@@ -226,7 +226,7 @@ router.patch('/routines/:id', apiKeyAuth, requireScope('write'), asyncHandler(as
 router.post('/actions', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   if (!req.body.actionType) {
@@ -258,7 +258,7 @@ router.post('/actions', apiKeyAuth, requireScope('write'), asyncHandler(async (r
 router.get('/settings', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const settings = await proactiveSuggestionEngine.getSettings(context as AIContext);
@@ -276,7 +276,7 @@ router.get('/settings', apiKeyAuth, requireScope('read'), asyncHandler(async (re
 router.put('/settings', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const { proactivityLevel, enabledTypes, quietHoursStart, quietHoursEnd, maxSuggestionsPerDay } = req.body;
@@ -329,7 +329,7 @@ router.put('/settings', apiKeyAuth, requireScope('write'), asyncHandler(async (r
 router.get('/stats', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const patterns = await routineDetectionService.getPatterns(context as AIContext, { activeOnly: false });
@@ -376,7 +376,7 @@ router.post('/boundary', apiKeyAuth, requireScope('read'), asyncHandler(async (r
   }
 
   if (!context || !isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Handle login_after_absence specially: convert timestamp to Date

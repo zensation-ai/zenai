@@ -619,7 +619,7 @@ export function requireContext(source: 'query' | 'params' = 'query') {
 
     if (!result.success) {
       return res.status(400).json({
-        error: 'Invalid context. Use "personal" or "work".'
+        error: 'Invalid context. Use "personal", "work", "learning", or "creative".'
       });
     }
 
@@ -660,7 +660,7 @@ export function checkContext(
   const result = validateContext(contextValue);
 
   if (!result.success || !result.data) {
-    res.status(400).json({ error: 'Invalid context. Use "personal" or "work".' });
+    res.status(400).json({ error: 'Invalid context. Use "personal", "work", "learning", or "creative".' });
     return null;
   }
 

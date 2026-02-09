@@ -111,7 +111,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
   // Validate context
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const startTime = Date.now();
@@ -600,7 +600,7 @@ OUTPUT FORMAT:
 voiceMemoContextRouter.post('/:context/voice-memo/extract', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const { transcript } = req.body;
@@ -631,7 +631,7 @@ voiceMemoContextRouter.get('/:context/stats', apiKeyAuth, asyncHandler(async (re
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const [ideasCount, thoughtsCount, clustersCount] = await Promise.all([
@@ -668,7 +668,7 @@ voiceMemoContextRouter.get('/:context/personas', apiKeyAuth, (req: Request, res:
   if (!isValidContext(context)) {
     return res.status(400).json({
       success: false,
-      error: 'Invalid context. Use "personal" or "work".',
+      error: 'Invalid context. Use "personal", "work", "learning", or "creative".',
       code: 'VALIDATION_ERROR',
     });
   }

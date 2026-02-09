@@ -47,7 +47,7 @@ automationsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const stats = await getAutomationStats(context as AIContext);
@@ -76,7 +76,7 @@ automationsRouter.get(
     const limit = toIntBounded(req.query.limit as string, 10, 1, 50);
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const suggestions = await getPendingSuggestions(
@@ -104,7 +104,7 @@ automationsRouter.post(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const suggestions = await generateAutomationSuggestions(context as AIContext);
@@ -130,7 +130,7 @@ automationsRouter.post(
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const automation = await acceptSuggestion(context as AIContext, id);
@@ -159,7 +159,7 @@ automationsRouter.post(
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     await dismissSuggestion(context as AIContext, id);
@@ -187,7 +187,7 @@ automationsRouter.get(
     const { active_only, trigger_type } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const automations = await listAutomations(context as AIContext, {
@@ -214,7 +214,7 @@ automationsRouter.get(
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const automation = await getAutomation(context as AIContext, id);
@@ -243,7 +243,7 @@ automationsRouter.post(
     const { name, description, trigger, conditions, actions, is_active } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     // Validation
@@ -316,7 +316,7 @@ automationsRouter.put(
     const { name, description, trigger, conditions, actions, is_active } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     // Check if exists
@@ -373,7 +373,7 @@ automationsRouter.delete(
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const deleted = await deleteAutomation(context as AIContext, id);
@@ -406,7 +406,7 @@ automationsRouter.post(
     const { trigger_data } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const execution = await executeAutomation(
@@ -435,7 +435,7 @@ automationsRouter.get(
     const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const executions = await getExecutionHistory(
@@ -468,7 +468,7 @@ automationsRouter.post(
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal" or "work".');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const automation = await getAutomation(context as AIContext, id);

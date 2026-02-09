@@ -171,7 +171,7 @@ userProfileContextRouter.get('/:context/profile/stats', apiKeyAuth, asyncHandler
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Use context-aware function that queries the correct schema
@@ -211,7 +211,7 @@ userProfileContextRouter.get('/:context/profile/recommendations', apiKeyAuth, as
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Use context-aware function that queries the correct schema
@@ -228,12 +228,12 @@ userProfileContextRouter.post('/:context/profile/recalculate', apiKeyAuth, requi
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Use context-aware functions that query the correct schema
   await recalculateStatsWithContext(context as AIContext, 'default');
-  await updateInterestEmbedding('default'); // TODO: Make this context-aware if needed
+  await updateInterestEmbedding('default', context as AIContext);
 
   const profile = await getUserProfileWithContext(context as AIContext, 'default');
 
@@ -249,7 +249,7 @@ userProfileContextRouter.put('/:context/profile/auto-priority', apiKeyAuth, requ
   const { enabled } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   if (typeof enabled !== 'boolean') {
