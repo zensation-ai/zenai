@@ -406,7 +406,7 @@
   transition:
     opacity var(--neuro-timing-quick) ease,
     transform var(--neuro-timing-quick) ease;
-  z-index: 100;
+  z-index: 10001;
 }
 
 .neuro-anticipate::after {
@@ -420,6 +420,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--neuro-timing-quick) ease;
+  z-index: 10001;
 }
 
 .neuro-anticipate:hover::before,
