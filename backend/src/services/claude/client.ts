@@ -126,12 +126,20 @@ BEISPIELE für "task":
 - "Entwurf für Präsentation erstellen" → type: "task"
 - "Antwort auf die Anfrage formulieren" → type: "task"
 
+KONTEXT-VORSCHLAG:
+Schlage vor, in welchen Bereich dieser Gedanke gehört:
+- "work" = Berufliches, Geschäftliches, Projekte, Meetings, Kunden
+- "personal" = Privates, Familie, Gesundheit, Alltag, Hobbys
+- "learning" = Lernen, Weiterbildung, Kurse, Recherche, Wissen
+- "creative" = Kreatives, Kunst, Design, Schreiben, Musik, Content
+
 OUTPUT FORMAT (JSON):
 {
   "title": "Prägnante Überschrift (max 10 Wörter)",
   "type": "idea|task|insight|problem|question",
   "category": "business|technical|personal|learning",
   "priority": "low|medium|high",
+  "suggested_context": "personal|work|learning|creative",
   "summary": "1-2 Sätze Zusammenfassung",
   "next_steps": ["Schritt 1", "Schritt 2"],
   "context_needed": ["Kontext 1", "Kontext 2"],

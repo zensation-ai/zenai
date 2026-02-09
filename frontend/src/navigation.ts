@@ -61,7 +61,7 @@ export const NAV_SECTIONS: NavSection[] = [
     icon: '📊',
     items: [
       { page: 'insights', icon: '📊', label: 'Insights', description: 'Analytics, Digest & Verbindungen', subPages: ['analytics', 'digest', 'knowledge-graph'] },
-      { page: 'documents', icon: '📄', label: 'Dokumente', description: 'Dateien, Editor & Medien', subPages: ['canvas', 'media'] },
+      { page: 'documents', icon: '📚', label: 'Wissensbasis', description: 'Dokumente, Editor & Medien', subPages: ['canvas', 'media'] },
       { page: 'meetings', icon: '📅', label: 'Meetings', description: 'Meeting-Notizen' },
     ],
   },
