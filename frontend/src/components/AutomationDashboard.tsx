@@ -3,6 +3,7 @@ import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import { AutomationFormModal } from './AutomationFormModal';
 import '../neurodesign.css';
 import './AutomationDashboard.css';
 
@@ -97,6 +98,8 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
   const [activeTab, setActiveTab] = useState<'automations' | 'suggestions' | 'stats'>('automations');
   const [selectedAutomation, setSelectedAutomation] = useState<Automation | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
 
   // AbortController ref to prevent memory leaks on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -240,7 +243,17 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
           <h1>{greeting.emoji} Automationen</h1>
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
         </div>
-        <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="create-automation-btn neuro-button neuro-hover-lift"
+            onClick={() => { setEditingAutomation(null); setShowFormModal(true); }}
+            aria-label="Neue Automation erstellen"
+          >
+            + Neue Automation
+          </button>
+          <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
+        </div>
       </header>
 
       {error && (
@@ -378,6 +391,16 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
                         >
                           ▶ Jetzt ausführen
                         </button>
+                        {!automation.is_system && (
+                          <button
+                            type="button"
+                            className="action-btn edit neuro-hover-lift"
+                            onClick={(e) => { e.stopPropagation(); setEditingAutomation(automation); setShowFormModal(true); }}
+                            aria-label="Automation bearbeiten"
+                          >
+                            Bearbeiten
+                          </button>
+                        )}
                         {!automation.is_system && (
                           <button
                             type="button"
@@ -535,6 +558,15 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
           </div>
         )}
       </div>
+
+      {showFormModal && (
+        <AutomationFormModal
+          context={context}
+          automation={editingAutomation}
+          onClose={() => { setShowFormModal(false); setEditingAutomation(null); }}
+          onSaved={() => { setShowFormModal(false); setEditingAutomation(null); handleReload(); }}
+        />
+      )}
     </div>
   );
 }
