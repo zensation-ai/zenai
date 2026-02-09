@@ -27,7 +27,7 @@ import { securityHeaders } from './middleware/security-headers';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
-import { testConnections, setupGracefulShutdown, startConnectionHealthCheck, validateRequiredExtensions, ensurePerformanceIndexes } from './utils/database-context';
+import { testConnections, setupGracefulShutdown, startConnectionHealthCheck, validateRequiredExtensions, ensurePerformanceIndexes, ensureSchemas } from './utils/database-context';
 import { voiceMemoContextRouter } from './routes/voice-memo-context';
 import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
@@ -94,6 +94,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Readiness gate - reject non-health requests until DB connections are verified
+let serverReady = false;
 
 // SECURITY: Trust proxy for correct client IP behind reverse proxies (Railway, Vercel, etc.)
 // This ensures rate limiting works correctly with real client IPs
@@ -225,6 +228,19 @@ app.use(compression({
 
 // Phase 9: Cache-Control headers & ETag support for GET responses
 app.use(cacheControlMiddleware);
+
+// Readiness gate: return 503 until DB connections are confirmed
+// Health endpoints are always allowed (for container probes)
+app.use((req, res, next) => {
+  if (serverReady || req.path.startsWith('/api/health') || req.path.startsWith('/api-docs')) {
+    return next();
+  }
+  return res.status(503).json({
+    success: false,
+    error: 'Service starting up, please retry shortly',
+    code: 'SERVICE_UNAVAILABLE',
+  });
+});
 
 // Global rate limiter for all requests
 app.use(rateLimiter);
@@ -641,6 +657,14 @@ Phase 4 APIs:
 ========================================================
   `);
 
+  // Ensure all 4 context schemas exist before testing connections
+  try {
+    await ensureSchemas();
+    logger.info('All database schemas ensured');
+  } catch (error) {
+    logger.warn('Schema creation check failed (non-fatal)', { error: error instanceof Error ? error.message : String(error) });
+  }
+
   // Test all database connections (personal, work, learning, creative)
   logger.info('Testing database connections...');
   const dbStatus = await testConnections();
@@ -655,6 +679,10 @@ Phase 4 APIs:
   } else {
     logger.warn(`Database connections failed: ${failedContexts.join(', ')}`, { dbStatus, failedContexts, operation: 'startup' });
   }
+
+  // Open readiness gate - server can now handle requests
+  serverReady = true;
+  logger.info('Server ready to accept requests', { operation: 'startup' });
 
   // Validate PostgreSQL extensions
   const extensionStatus = await validateRequiredExtensions();

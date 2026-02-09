@@ -372,6 +372,23 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
     next();
   } catch (error) {
+    // Distinguish transient DB errors (503) from actual failures (500)
+    const pgError = error as { code?: string };
+    const transientCodes = ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE', '57P01', '57P03'];
+    const isTransient = pgError.code && transientCodes.includes(pgError.code);
+
+    if (isTransient) {
+      logger.warn('API key auth: transient DB error', {
+        operation: 'apiKeyAuth',
+        pgCode: pgError.code,
+      });
+      return res.status(503).json({
+        success: false,
+        error: 'Service temporarily unavailable, please retry',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+
     logger.error('API key auth error', error instanceof Error ? error : undefined, { operation: 'apiKeyAuth' });
     return res.status(500).json({
       success: false,

@@ -404,7 +404,28 @@ export function setupGracefulShutdown(): void {
 }
 
 /**
- * Test both database connections
+ * Ensure all context schemas exist in the database.
+ * Uses the personal pool directly (all pools share the same DATABASE_URL).
+ * Safe to call multiple times (CREATE SCHEMA IF NOT EXISTS).
+ */
+export async function ensureSchemas(): Promise<void> {
+  const pool = pools.personal;
+  for (const ctx of VALID_CONTEXTS) {
+    try {
+      await pool.query(`CREATE SCHEMA IF NOT EXISTS ${ctx}`);
+      logger.debug(`Schema ${ctx} ensured`, { operation: 'ensureSchemas' });
+    } catch (error) {
+      const pgError = error as { code?: string };
+      logger.error(`Failed to ensure schema ${ctx}`, error instanceof Error ? error : undefined, {
+        operation: 'ensureSchemas',
+        pgCode: pgError.code,
+      });
+    }
+  }
+}
+
+/**
+ * Test all database connections (personal, work, learning, creative)
  */
 export async function testConnections(): Promise<Record<AIContext, boolean>> {
   const results: Record<AIContext, boolean> = {
@@ -420,7 +441,15 @@ export async function testConnections(): Promise<Record<AIContext, boolean>> {
       results[ctx] = true;
       logger.info(`${ctx} database connected`, { context: ctx, operation: 'testConnection' });
     } catch (error) {
-      logger.error(`${ctx} database connection failed`, error instanceof Error ? error : undefined, { context: ctx, operation: 'testConnection' });
+      const pgError = error as { code?: string; detail?: string; hint?: string };
+      logger.error(`${ctx} database connection failed`, error instanceof Error ? error : undefined, {
+        context: ctx,
+        operation: 'testConnection',
+        pgCode: pgError.code,
+        pgDetail: pgError.detail,
+        pgHint: pgError.hint,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

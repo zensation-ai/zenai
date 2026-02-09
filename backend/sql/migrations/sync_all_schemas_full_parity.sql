@@ -290,8 +290,8 @@ BEGIN
       CREATE TABLE IF NOT EXISTS %I.ai_activity_log (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         activity_type VARCHAR(100) NOT NULL,
-        title VARCHAR(500),
-        description TEXT,
+        message TEXT,
+        idea_id UUID,
         metadata JSONB DEFAULT ''{}''::jsonb,
         is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
