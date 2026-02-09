@@ -65,6 +65,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [thinkingContent, setThinkingContent] = useState<string>('');
+  // Inline error message for assistant mode (toast is hidden behind panel)
+  const [inlineError, setInlineError] = useState<string | null>(null);
   // Thinking partner mode state (Phase 32C-1)
   const [thinkingMode, setThinkingMode] = useState<'assist' | 'challenge' | 'coach' | 'synthesize'>('assist');
   // Voice chat overlay state
@@ -165,15 +167,19 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
       }
       return null;
     } catch (err) {
-      showToast('Ups, ich konnte gerade keine neue Unterhaltung starten.', {
-        type: 'error',
-        duration: 8000,
-        onUndo: () => {
-          // Retry creating session
-          createNewSession();
-        },
-        undoLabel: 'Erneut versuchen',
-      });
+      const msg = 'Ups, ich konnte gerade keine neue Unterhaltung starten.';
+      if (assistantMode) {
+        setInlineError(msg);
+      } else {
+        showToast(msg, {
+          type: 'error',
+          duration: 8000,
+          onUndo: () => {
+            createNewSession();
+          },
+          undoLabel: 'Erneut versuchen',
+        });
+      }
       return null;
     }
   };
@@ -191,6 +197,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
     setInputValue('');
     setSelectedImages([]);
     setSending(true);
+    setInlineError(null);
 
     try {
       // Get or create session
@@ -367,24 +374,26 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
       setStreamingContent('');
       setThinkingContent('');
 
-      // Show error toast with retry button
-      showToast(errorMessage, {
-        type: 'error',
-        duration: 8000, // Give more time to see the retry button
-        onUndo: () => {
-          // Focus input and trigger send after a tick (state needs to be restored first)
-          setTimeout(() => {
-            inputRef.current?.focus();
-            // Input value is already restored, just need to submit
-            // Using a custom event to trigger send without clearing input again
-            const form = inputRef.current?.closest('form');
-            if (form) {
-              form.requestSubmit();
-            }
-          }, 100);
-        },
-        undoLabel: 'Erneut senden',
-      });
+      if (assistantMode) {
+        // In assistant mode, show error inline (toast is hidden behind the panel)
+        setInlineError(errorMessage);
+      } else {
+        // Show error toast with retry button
+        showToast(errorMessage, {
+          type: 'error',
+          duration: 8000,
+          onUndo: () => {
+            setTimeout(() => {
+              inputRef.current?.focus();
+              const form = inputRef.current?.closest('form');
+              if (form) {
+                form.requestSubmit();
+              }
+            }, 100);
+          },
+          undoLabel: 'Erneut senden',
+        });
+      }
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -674,6 +683,22 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
           </button>
         ))}
       </div>
+
+      {/* Inline Error Display (for assistant mode where toast is hidden) */}
+      {inlineError && (
+        <div className="chat-inline-error" role="alert">
+          <span className="chat-inline-error-icon" aria-hidden="true">✕</span>
+          <span className="chat-inline-error-message">{inlineError}</span>
+          <button
+            type="button"
+            className="chat-inline-error-dismiss"
+            onClick={() => setInlineError(null)}
+            aria-label="Fehlermeldung schließen"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="chat-input-area">

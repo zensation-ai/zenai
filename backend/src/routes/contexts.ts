@@ -123,16 +123,35 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
-  const result = await queryContext(context as AIContext, `
-    SELECT
-      id, title, type, category, priority, summary,
-      next_steps, context_needed, keywords, raw_transcript,
-      created_at, updated_at
-    FROM ideas
-    WHERE is_archived = true
-    ORDER BY updated_at DESC
-    LIMIT $1 OFFSET $2
-  `, [parseInt(limit as string), parseInt(offset as string)]);
+  const parsedLimit = parseInt(limit as string) || 50;
+  const parsedOffset = parseInt(offset as string) || 0;
+
+  let result;
+  try {
+    // Try with all columns (including raw_transcript for newer schemas)
+    result = await queryContext(context as AIContext, `
+      SELECT
+        id, title, type, category, priority, summary,
+        next_steps, context_needed, keywords, raw_transcript,
+        created_at, updated_at
+      FROM ideas
+      WHERE is_archived = true
+      ORDER BY updated_at DESC
+      LIMIT $1 OFFSET $2
+    `, [parsedLimit, parsedOffset]);
+  } catch {
+    // Fallback: raw_transcript may not exist in older schemas
+    result = await queryContext(context as AIContext, `
+      SELECT
+        id, title, type, category, priority, summary,
+        next_steps, context_needed, keywords,
+        created_at, updated_at
+      FROM ideas
+      WHERE is_archived = true
+      ORDER BY updated_at DESC
+      LIMIT $1 OFFSET $2
+    `, [parsedLimit, parsedOffset]);
+  }
 
   const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = true');
   const total = parseInt(countResult.rows[0].count);
@@ -141,9 +160,9 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
     ideas: result.rows,
     pagination: {
       total,
-      limit: parseInt(limit as string),
-      offset: parseInt(offset as string),
-      hasMore: parseInt(offset as string) + result.rows.length < total
+      limit: parsedLimit,
+      offset: parsedOffset,
+      hasMore: parsedOffset + result.rows.length < total
     },
     context
   });

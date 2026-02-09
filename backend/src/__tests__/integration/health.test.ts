@@ -17,6 +17,8 @@ jest.mock('../../utils/database-context', () => ({
   getPoolStats: jest.fn().mockReturnValue({
     personal: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 100, avgQueryTime: 5 },
     work: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 50, avgQueryTime: 6 },
+    learning: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 30, avgQueryTime: 5 },
+    creative: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 20, avgQueryTime: 5 },
   }),
   getHealthCheckStatus: jest.fn().mockReturnValue({ lastCheck: new Date().toISOString(), status: 'ok' }),
 }));

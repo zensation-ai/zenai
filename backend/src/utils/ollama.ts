@@ -121,12 +121,12 @@ WICHTIG:
 - Keine zusätzlichen Erklärungen
 - Keine Markdown-Formatierung
 
-KONTEXT-ERKENNUNG:
-Erkenne aus dem Text den passenden Lebensbereich:
-- "personal" = Privatleben, Familie, Gesundheit, Hobby, persönliche Reflexion
-- "work" = Beruf, Kunden, Projekte, Meetings, Geschäftsstrategie, Kollegen
-- "learning" = Lernen, Kurse, Studium, Forschung, Weiterbildung
-- "creative" = Kreative Projekte, Kunst, Musik, Schreiben, Design
+KONTEXT-VORSCHLAG:
+Schlage vor, in welchen Bereich dieser Gedanke gehört:
+- "work" = Berufliches, Geschäftliches, Projekte, Meetings, Kunden
+- "personal" = Privates, Familie, Gesundheit, Alltag, Hobbys
+- "learning" = Lernen, Weiterbildung, Kurse, Recherche, Wissen
+- "creative" = Kreatives, Kunst, Design, Schreiben, Musik, Content
 
 OUTPUT FORMAT (JSON):
 {
@@ -150,11 +150,11 @@ export interface StructuredIdea {
   type: 'idea' | 'task' | 'insight' | 'problem' | 'question';
   category: 'business' | 'technical' | 'personal' | 'learning';
   priority: 'low' | 'medium' | 'high';
-  suggested_context?: 'personal' | 'work' | 'learning' | 'creative';
   summary: string;
   next_steps: string[];
   context_needed: string[];
   keywords: string[];
+  suggested_context?: 'personal' | 'work' | 'learning' | 'creative';
 }
 
 // ===========================================
@@ -164,10 +164,12 @@ export interface StructuredIdea {
 const VALID_CATEGORIES = ['business', 'technical', 'personal', 'learning'] as const;
 const VALID_TYPES = ['idea', 'task', 'insight', 'problem', 'question'] as const;
 const VALID_PRIORITIES = ['low', 'medium', 'high'] as const;
+const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
 
 type ValidCategory = typeof VALID_CATEGORIES[number];
 type ValidType = typeof VALID_TYPES[number];
 type ValidPriority = typeof VALID_PRIORITIES[number];
+type ValidContext = typeof VALID_CONTEXTS[number];
 
 // ===========================================
 // Category Mapping
@@ -227,81 +229,55 @@ const CATEGORY_MAPPING: Record<string, ValidCategory> = {
   'forschung': 'learning',
 };
 
-// ===========================================
-// Context Mapping (for suggested_context normalization)
-// ===========================================
-
-const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
-type ValidContext = typeof VALID_CONTEXTS[number];
-
+// Context mapping for LLM outputs to valid context values
 const CONTEXT_MAPPING: Record<string, ValidContext> = {
-  // Personal
-  'privat': 'personal',
-  'persönlich': 'personal',
-  'persoenlich': 'personal',
-  'familie': 'personal',
-  'family': 'personal',
-  'gesundheit': 'personal',
-  'health': 'personal',
-  'hobby': 'personal',
-  'freizeit': 'personal',
-  'private': 'personal',
-  // Work
-  'beruf': 'work',
+  // Work-related
   'arbeit': 'work',
-  'geschäft': 'work',
-  'geschaeft': 'work',
-  'business': 'work',
-  'projekt': 'work',
-  'project': 'work',
-  'meeting': 'work',
-  'kunde': 'work',
-  'kunden': 'work',
+  'beruf': 'work',
   'büro': 'work',
   'office': 'work',
+  'business': 'work',
+  'geschäft': 'work',
+  'projekt': 'work',
   'job': 'work',
+  'professional': 'work',
   'beruflich': 'work',
-  // Learning
+  'geschäftlich': 'work',
+  // Personal-related
+  'privat': 'personal',
+  'persönlich': 'personal',
+  'private': 'personal',
+  'zuhause': 'personal',
+  'home': 'personal',
+  'familie': 'personal',
+  'family': 'personal',
+  'freizeit': 'personal',
+  'alltag': 'personal',
+  // Learning-related
   'lernen': 'learning',
   'studium': 'learning',
-  'kurs': 'learning',
   'weiterbildung': 'learning',
-  'forschung': 'learning',
   'education': 'learning',
-  'research': 'learning',
-  'study': 'learning',
+  'kurs': 'learning',
   'training': 'learning',
-  // Creative
+  'research': 'learning',
+  'forschung': 'learning',
+  'skill': 'learning',
+  'wissen': 'learning',
+  // Creative-related
   'kreativ': 'creative',
   'kunst': 'creative',
+  'art': 'creative',
   'design': 'creative',
   'musik': 'creative',
   'music': 'creative',
   'schreiben': 'creative',
   'writing': 'creative',
-  'art': 'creative',
-  'kreativität': 'creative',
+  'foto': 'creative',
+  'photography': 'creative',
+  'video': 'creative',
+  'content': 'creative',
 };
-
-/**
- * Normalize suggested context from LLM output
- *
- * @param context - Raw context string from LLM
- * @returns Valid context or undefined if unrecognized
- */
-export function normalizeContext(context: string | undefined): ValidContext | undefined {
-  if (!context) return undefined;
-
-  const lower = context.toLowerCase().trim();
-
-  // Direct match
-  if (VALID_CONTEXTS.includes(lower as ValidContext)) {
-    return lower as ValidContext;
-  }
-
-  // Check mapping
-  return CONTEXT_MAPPING[lower] || undefined;
-}
 
 // ===========================================
 // Helper Functions
@@ -387,6 +363,31 @@ export function normalizePriority(priority: string | undefined): ValidPriority {
 }
 
 /**
+ * Normalize context suggestion to valid context value
+ *
+ * @param context - Raw context string from LLM
+ * @returns Valid context value or undefined if not determinable
+ */
+export function normalizeContext(context: string | undefined): ValidContext | undefined {
+  if (!context) {return undefined;}
+
+  const lower = context.toLowerCase().trim();
+
+  // Direct match
+  if (VALID_CONTEXTS.includes(lower as ValidContext)) {
+    return lower as ValidContext;
+  }
+
+  // Check mapping
+  const mapped = CONTEXT_MAPPING[lower];
+  if (mapped) {
+    return mapped;
+  }
+
+  return undefined;
+}
+
+/**
  * Creates a fallback structured idea when LLM fails
  */
 function createFallbackIdea(transcript: string): StructuredIdea {
@@ -463,17 +464,24 @@ STRUCTURED OUTPUT:`;
     const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
     // Normalize fields to ensure they match database constraints
-    return {
+    const suggestedContext = normalizeContext(parsed.suggested_context as string | undefined);
+
+    const result: StructuredIdea = {
       title: typeof parsed.title === 'string' ? parsed.title : 'Unstrukturierte Notiz',
       type: normalizeType(parsed.type as string | undefined),
       category: normalizeCategory(parsed.category as string | undefined),
       priority: normalizePriority(parsed.priority as string | undefined),
-      suggested_context: normalizeContext(parsed.suggested_context as string | undefined),
       summary: typeof parsed.summary === 'string' ? parsed.summary : '',
       next_steps: parseStringArray(parsed.next_steps),
       context_needed: parseStringArray(parsed.context_needed),
       keywords: parseStringArray(parsed.keywords),
     };
+
+    if (suggestedContext) {
+      result.suggested_context = suggestedContext;
+    }
+
+    return result;
   } catch (error: unknown) {
     // Check if this is a connection error (Ollama not running)
     const isConnectionError = error instanceof AxiosError &&

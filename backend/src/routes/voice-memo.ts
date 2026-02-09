@@ -188,8 +188,8 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
       structured.priority = learnedSuggestion.suggested_priority as typeof structured.priority;
       appliedLearning = true;
     }
-    // Enrich context suggestion from learning if LLM didn't provide one
-    if (learnedSuggestion.suggested_context && !structured.suggested_context) {
+    // Apply learned context if LLM didn't suggest one
+    if (!structured.suggested_context && learnedSuggestion.suggested_context) {
       structured.suggested_context = learnedSuggestion.suggested_context as 'personal' | 'work' | 'learning' | 'creative';
     }
   }
@@ -242,7 +242,8 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     ideaId,
     transcript,
     structured,
-    suggestedContext: structured.suggested_context || null,
+    suggestedContext: structured.suggested_context,
+    contextConfidence: structured.suggested_context ? 0.7 : 0,
     appliedLearning,
     learningConfidence: learnedSuggestion?.confidence || 0,
     performance: {
@@ -340,7 +341,8 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
     ideaId,
     transcript: text,
     structured,
-    suggestedContext: structured.suggested_context || null,
+    suggestedContext: structured.suggested_context,
+    contextConfidence: structured.suggested_context ? 0.7 : 0,
     suggestedPriority: suggestedPrio,
     appliedLearning,
     learningConfidence: learnedSuggestion?.confidence || 0,

@@ -31,7 +31,6 @@ interface DocumentVaultPageProps {
   onBack: () => void;
   context: 'personal' | 'work';
   initialTab?: DocumentsTab;
-  onNavigate?: (page: string) => void;
 }
 
 type ViewMode = 'grid' | 'list';
@@ -51,7 +50,7 @@ function getFolderIcon(icon?: string): string {
 }
 
 const DOC_TABS: { id: DocumentsTab; label: string; icon: string }[] = [
-  { id: 'documents', label: 'Wissen', icon: '📚' },
+  { id: 'documents', label: 'Dokumente', icon: '📄' },
   { id: 'editor', label: 'Editor', icon: '✏️' },
   { id: 'media', label: 'Medien', icon: '🖼️' },
 ];
@@ -118,7 +117,7 @@ export function DocumentVaultPage({ onBack, context, initialTab = 'documents' }:
 }
 
 function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }: DocumentVaultPageProps & { activeDocTab: DocumentsTab; onDocTabChange: (tab: DocumentsTab) => void }) {
-  const navigate = useNavigate();
+  const contentNavigate = useNavigate();
   // State
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -541,7 +540,7 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
           <div className="search-box">
             <input
               type="text"
-              placeholder="Wissen durchsuchen..."
+              placeholder="Dokumente durchsuchen..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               className="search-input"
@@ -579,8 +578,12 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
 
           <button
             type="button"
-            className="ask-knowledge-btn neuro-hover-lift"
-            onClick={() => navigate('/ai-workshop?mode=knowledge')}
+            className="upload-trigger neuro-hover-lift"
+            onClick={() => contentNavigate('/ai-workshop/voice-chat')}
+            style={{
+              background: 'linear-gradient(135deg, var(--accent, #0ea5e9), var(--info, #06b6d4))',
+              color: '#fff',
+            }}
           >
             Frag dein Wissen
           </button>
@@ -802,7 +805,7 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
         <div className="upload-modal-overlay" onClick={() => setShowUpload(false)}>
           <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Wissen hochladen</h2>
+              <h2>Dokumente hochladen</h2>
               <button
                 type="button"
                 className="modal-close"

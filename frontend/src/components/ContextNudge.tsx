@@ -1,117 +1,135 @@
-/**
- * ContextNudge Component
- *
- * Shows a toast-like nudge when the AI detects that a newly created idea
- * might belong to a different context than the currently active one.
- * User can accept (move idea) or dismiss.
- */
+import { useState, useEffect } from 'react';
+import { AIContext } from './ContextSwitcher';
+import '../neurodesign.css';
 
-import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import type { Context } from '../types/idea';
-import './ContextNudge.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-const CONTEXT_LABELS: Record<Context, string> = {
-  personal: 'Persönlich',
-  work: 'Arbeit',
-  learning: 'Lernen',
-  creative: 'Kreativ',
-};
-
-const CONTEXT_ICONS: Record<Context, string> = {
-  personal: '\u{1F3E0}',
-  work: '\u{1F4BC}',
-  learning: '\u{1F4DA}',
-  creative: '\u{1F3A8}',
+const CONTEXT_CONFIG: Record<AIContext, { icon: string; label: string }> = {
+  personal: { icon: '🏠', label: 'Privat' },
+  work: { icon: '💼', label: 'Arbeit' },
+  learning: { icon: '📚', label: 'Lernen' },
+  creative: { icon: '🎨', label: 'Kreativ' },
 };
 
 interface ContextNudgeProps {
-  ideaId: string;
+  currentContext: AIContext;
+  suggestedContext: AIContext;
   ideaTitle: string;
-  currentContext: Context;
-  suggestedContext: Context;
-  onMoved?: (targetContext: Context) => void;
-  onDismissed?: () => void;
+  ideaId: string;
+  confidence?: number;
+  onMove: (ideaId: string, targetContext: AIContext) => void;
+  onDismiss: () => void;
 }
 
-export default function ContextNudge({
-  ideaId,
-  ideaTitle,
+export function ContextNudge({
   currentContext,
   suggestedContext,
-  onMoved,
-  onDismissed,
+  ideaTitle,
+  ideaId,
+  confidence = 0.7,
+  onMove,
+  onDismiss,
 }: ContextNudgeProps) {
-  const [visible, setVisible] = useState(true);
-  const [moving, setMoving] = useState(false);
-  const [exiting, setExiting] = useState(false);
+  const [visible, setVisible] = useState(false);
 
-  const dismiss = useCallback(() => {
-    setExiting(true);
-    setTimeout(() => {
-      setVisible(false);
-      onDismissed?.();
-    }, 300);
-  }, [onDismissed]);
-
-  // Auto-dismiss after 10 seconds
   useEffect(() => {
-    const timer = setTimeout(dismiss, 10000);
+    // Animate in
+    const timer = setTimeout(() => setVisible(true), 100);
     return () => clearTimeout(timer);
-  }, [dismiss]);
+  }, []);
 
-  const handleMove = async () => {
-    setMoving(true);
-    try {
-      await axios.post(
-        `${API_URL}/api/${currentContext}/ideas/${ideaId}/move`,
-        { targetContext: suggestedContext }
-      );
-      setExiting(true);
-      setTimeout(() => {
-        setVisible(false);
-        onMoved?.(suggestedContext);
-      }, 300);
-    } catch {
-      setMoving(false);
-    }
+  // Don't show if same context or low confidence
+  if (currentContext === suggestedContext || confidence < 0.5) {
+    return null;
+  }
+
+  const suggested = CONTEXT_CONFIG[suggestedContext];
+  const current = CONTEXT_CONFIG[currentContext];
+
+  const handleMove = () => {
+    setVisible(false);
+    setTimeout(() => onMove(ideaId, suggestedContext), 200);
   };
 
-  if (!visible || currentContext === suggestedContext) return null;
+  const handleDismiss = () => {
+    setVisible(false);
+    setTimeout(onDismiss, 200);
+  };
 
-  const icon = CONTEXT_ICONS[suggestedContext];
-  const label = CONTEXT_LABELS[suggestedContext];
   const truncatedTitle = ideaTitle.length > 40
-    ? ideaTitle.substring(0, 40) + '...'
+    ? ideaTitle.substring(0, 37) + '...'
     : ideaTitle;
 
   return (
-    <div className={`context-nudge ${exiting ? 'context-nudge-exit' : ''}`}>
-      <div className="context-nudge-icon">{icon}</div>
-      <div className="context-nudge-content">
-        <div className="context-nudge-title">
-          &laquo;{truncatedTitle}&raquo; klingt nach <strong>{label}</strong>
+    <div
+      style={{
+        position: 'fixed',
+        bottom: '80px',
+        left: '50%',
+        transform: `translateX(-50%) translateY(${visible ? '0' : '20px'})`,
+        opacity: visible ? 1 : 0,
+        transition: 'all 0.3s ease',
+        zIndex: 1000,
+        background: 'var(--card-bg, #142a34)',
+        border: '1px solid var(--border, #1e3a4a)',
+        borderRadius: '12px',
+        padding: '12px 16px',
+        maxWidth: '400px',
+        width: 'calc(100% - 32px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+        <span style={{ fontSize: '20px' }}>{suggested.icon}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: '13px',
+            color: 'var(--text-secondary, #8ba4b4)',
+            marginBottom: '4px',
+          }}>
+            KI-Vorschlag
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: 'var(--text-primary, #e0e8ef)',
+            lineHeight: '1.4',
+          }}>
+            &laquo;{truncatedTitle}&raquo; passt besser zu <strong>{suggested.label}</strong> als zu {current.label}.
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            marginTop: '10px',
+          }}>
+            <button
+              onClick={handleMove}
+              style={{
+                background: 'var(--accent, #0ea5e9)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {suggested.icon} Verschieben
+            </button>
+            <button
+              onClick={handleDismiss}
+              style={{
+                background: 'transparent',
+                color: 'var(--text-secondary, #8ba4b4)',
+                border: '1px solid var(--border, #1e3a4a)',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Passt schon
+            </button>
+          </div>
         </div>
-        <div className="context-nudge-subtitle">
-          Verschieben?
-        </div>
-      </div>
-      <div className="context-nudge-actions">
-        <button
-          className="context-nudge-btn context-nudge-btn-move"
-          onClick={handleMove}
-          disabled={moving}
-        >
-          {moving ? 'Wird verschoben...' : `Ja, nach ${label}`}
-        </button>
-        <button
-          className="context-nudge-btn context-nudge-btn-dismiss"
-          onClick={dismiss}
-        >
-          Nein
-        </button>
       </div>
     </div>
   );

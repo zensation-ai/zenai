@@ -21,7 +21,7 @@ import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import { safeParseResponse, HealthResponseSchema, IdeasResponseSchema, IdeaCreationResponseSchema, SearchResponseSchema } from './utils/apiSchemas';
 import { GeneralChat } from './components/GeneralChat';
-import ContextNudge from './components/ContextNudge';
+import { ContextNudge } from './components/ContextNudge';
 
 // Neurodesign System
 import { NeuroFeedbackProvider } from './components/NeuroFeedback';
@@ -204,11 +204,6 @@ function App() {
     return safeLocalStorage('get', 'onboardingComplete') !== 'true';
   });
   const [inputMode, setInputMode] = useState<InputMode>('voice');
-  const [contextNudge, setContextNudge] = useState<{
-    ideaId: string;
-    ideaTitle: string;
-    suggestedContext: 'personal' | 'work' | 'learning' | 'creative';
-  } | null>(null);
   const isSubmittingRef = useRef(false);
   const [aiOverlay, setAIOverlay] = useState<{
     visible: boolean;
@@ -219,6 +214,14 @@ function App() {
   const [context, setContext] = useContextState();
   const [selectedPersona] = usePersonaState(context);
   const keyboardShortcuts = useKeyboardShortcutsModal();
+
+  // Context nudge state for AI-suggested context
+  const [contextNudge, setContextNudge] = useState<{
+    ideaId: string;
+    ideaTitle: string;
+    suggestedContext: 'personal' | 'work' | 'learning' | 'creative';
+    confidence: number;
+  } | null>(null);
 
   const pageHistory = usePageHistory();
 
@@ -434,6 +437,17 @@ function App() {
     setSelectedIdea(null);
   }, []);
 
+  const handleContextNudgeMove = useCallback(async (ideaId: string, targetContext: 'personal' | 'work' | 'learning' | 'creative') => {
+    try {
+      await axios.post(`/api/${context}/ideas/${ideaId}/move`, { targetContext });
+      setIdeas(prev => prev.filter(i => i.id !== ideaId));
+      showToast(`Gedanke nach "${targetContext}" verschoben`, 'success');
+    } catch (err: unknown) {
+      showToast(getErrorMessage(err, 'Verschieben fehlgeschlagen'), 'error');
+    }
+    setContextNudge(null);
+  }, [context]);
+
   const submitText = useCallback(async () => {
     if (!textInput.trim()) return;
     if (isSubmittingRef.current) return;
@@ -470,12 +484,13 @@ function App() {
       showToast('Gedanke erfolgreich strukturiert!', 'success');
 
       // Show context nudge if AI suggests a different context
-      const suggestedCtx = (response.data?.suggestedContext || creationData.structured?.suggested_context) as 'personal' | 'work' | 'learning' | 'creative' | undefined;
-      if (suggestedCtx && suggestedCtx !== context && creationData.structured?.title) {
+      const suggested = response.data.suggestedContext || creationData.structured?.suggested_context;
+      if (suggested && suggested !== context) {
         setContextNudge({
           ideaId: creationData.ideaId,
-          ideaTitle: creationData.structured.title,
-          suggestedContext: suggestedCtx,
+          ideaTitle: creationData.structured?.title || 'Neuer Gedanke',
+          suggestedContext: suggested,
+          confidence: response.data.contextConfidence || 0.7,
         });
       }
     } catch (err: unknown) {
@@ -543,7 +558,12 @@ function App() {
     setShowOnboarding(false);
   };
 
-  const handleRecordProcessed = useCallback((result: { ideaId: string; structured: Partial<StructuredIdea> }) => {
+  const handleRecordProcessed = useCallback((result: {
+    ideaId: string;
+    structured: Partial<StructuredIdea>;
+    suggestedContext?: 'personal' | 'work' | 'learning' | 'creative';
+    contextConfidence?: number;
+  }) => {
     const newIdea: StructuredIdea = {
       id: result.ideaId,
       ...result.structured,
@@ -554,7 +574,18 @@ function App() {
     } as StructuredIdea;
     setIdeas(prev => [newIdea, ...prev]);
     setTextInput('');
-  }, []);
+
+    // Show context nudge if AI suggests a different context
+    const suggested = result.suggestedContext || result.structured.suggested_context;
+    if (suggested && suggested !== context && (result.contextConfidence || 0.7) >= 0.5) {
+      setContextNudge({
+        ideaId: result.ideaId,
+        ideaTitle: result.structured.title || 'Neuer Gedanke',
+        suggestedContext: suggested,
+        confidence: result.contextConfidence || 0.7,
+      });
+    }
+  }, [context]);
 
   // ============================================
   // LEGACY REDIRECTS
@@ -851,15 +882,13 @@ function App() {
 
       {contextNudge && (
         <ContextNudge
-          ideaId={contextNudge.ideaId}
-          ideaTitle={contextNudge.ideaTitle}
           currentContext={context}
           suggestedContext={contextNudge.suggestedContext}
-          onMoved={() => {
-            setContextNudge(null);
-            showToast('Gedanke verschoben!', 'success');
-          }}
-          onDismissed={() => setContextNudge(null)}
+          ideaTitle={contextNudge.ideaTitle}
+          ideaId={contextNudge.ideaId}
+          confidence={contextNudge.confidence}
+          onMove={handleContextNudgeMove}
+          onDismiss={() => setContextNudge(null)}
         />
       )}
 

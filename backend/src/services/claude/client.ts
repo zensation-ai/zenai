@@ -126,12 +126,12 @@ BEISPIELE für "task":
 - "Entwurf für Präsentation erstellen" → type: "task"
 - "Antwort auf die Anfrage formulieren" → type: "task"
 
-KONTEXT-ERKENNUNG:
-Erkenne aus dem Text den passenden Lebensbereich:
-- "personal" = Privatleben, Familie, Gesundheit, Hobby, persönliche Reflexion
-- "work" = Beruf, Kunden, Projekte, Meetings, Geschäftsstrategie, Kollegen
-- "learning" = Lernen, Kurse, Studium, Forschung, Weiterbildung
-- "creative" = Kreative Projekte, Kunst, Musik, Schreiben, Design
+KONTEXT-VORSCHLAG:
+Schlage vor, in welchen Bereich dieser Gedanke gehört:
+- "work" = Berufliches, Geschäftliches, Projekte, Meetings, Kunden
+- "personal" = Privates, Familie, Gesundheit, Alltag, Hobbys
+- "learning" = Lernen, Weiterbildung, Kurse, Recherche, Wissen
+- "creative" = Kreatives, Kunst, Design, Schreiben, Musik, Content
 
 OUTPUT FORMAT (JSON):
 {
@@ -151,11 +151,10 @@ OUTPUT FORMAT (JSON):
  */
 export const SYSTEM_PROMPT_WITH_CONFIDENCE = `${SYSTEM_PROMPT}
 
-ZUSÄTZLICH: Gib für type, category, priority und suggested_context jeweils einen confidence-Wert (0-1) an:
+ZUSÄTZLICH: Gib für type, category und priority jeweils einen confidence-Wert (0-1) an:
 {
   ...
   "confidence_type": 0.9,
   "confidence_category": 0.85,
-  "confidence_priority": 0.7,
-  "confidence_context": 0.85
+  "confidence_priority": 0.7
 }`;

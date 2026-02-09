@@ -34,51 +34,95 @@ export async function moveIdea(
   targetContext: AIContext,
   ideaId: string
 ): Promise<MoveResult> {
-  // 1. Read the full idea from source
-  const sourceResult = await queryContext(sourceContext, `
-    SELECT
-      title, type, category, priority, summary, raw_input, raw_transcript,
-      next_steps, context_needed, keywords, embedding, is_archived,
-      viewed_count, created_at
-    FROM ideas
-    WHERE id = $1
-  `, [ideaId]);
+  // 1. Read the full idea from source (try with extended columns, fallback to core)
+  let sourceResult;
+  try {
+    sourceResult = await queryContext(sourceContext, `
+      SELECT
+        title, type, category, priority, summary, raw_input, raw_transcript,
+        next_steps, context_needed, keywords, embedding, is_archived,
+        viewed_count, created_at
+      FROM ideas
+      WHERE id = $1
+    `, [ideaId]);
+  } catch {
+    // Fallback: raw_transcript/viewed_count may not exist in older schemas
+    sourceResult = await queryContext(sourceContext, `
+      SELECT
+        title, type, category, priority, summary, raw_input,
+        next_steps, context_needed, keywords, embedding, is_archived,
+        created_at
+      FROM ideas
+      WHERE id = $1
+    `, [ideaId]);
+  }
 
   if (sourceResult.rows.length === 0) {
     throw new Error('IDEA_NOT_FOUND');
   }
 
   const idea = sourceResult.rows[0];
+  const hasExtendedColumns = 'raw_transcript' in idea;
 
   // 2. Insert into target schema with new UUID and updated context field
-  const insertResult = await queryContext(targetContext, `
-    INSERT INTO ideas (
-      title, type, category, priority, summary, raw_input, raw_transcript,
-      next_steps, context_needed, keywords, embedding, is_archived,
-      context, viewed_count, created_at, updated_at
-    ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7,
-      $8, $9, $10, $11, $12,
-      $13, $14, $15, NOW()
-    )
-    RETURNING id
-  `, [
-    idea.title,
-    idea.type,
-    idea.category,
-    idea.priority,
-    idea.summary,
-    idea.raw_input,
-    idea.raw_transcript,
-    idea.next_steps,
-    idea.context_needed,
-    idea.keywords,
-    idea.embedding,
-    idea.is_archived,
-    targetContext,
-    idea.viewed_count || 0,
-    idea.created_at,
-  ]);
+  let insertResult;
+  if (hasExtendedColumns) {
+    insertResult = await queryContext(targetContext, `
+      INSERT INTO ideas (
+        title, type, category, priority, summary, raw_input, raw_transcript,
+        next_steps, context_needed, keywords, embedding, is_archived,
+        context, viewed_count, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7,
+        $8, $9, $10, $11, $12,
+        $13, $14, $15, NOW()
+      )
+      RETURNING id
+    `, [
+      idea.title,
+      idea.type,
+      idea.category,
+      idea.priority,
+      idea.summary,
+      idea.raw_input,
+      idea.raw_transcript,
+      idea.next_steps,
+      idea.context_needed,
+      idea.keywords,
+      idea.embedding,
+      idea.is_archived,
+      targetContext,
+      idea.viewed_count || 0,
+      idea.created_at,
+    ]);
+  } else {
+    insertResult = await queryContext(targetContext, `
+      INSERT INTO ideas (
+        title, type, category, priority, summary, raw_input,
+        next_steps, context_needed, keywords, embedding, is_archived,
+        context, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10, $11,
+        $12, $13, NOW()
+      )
+      RETURNING id
+    `, [
+      idea.title,
+      idea.type,
+      idea.category,
+      idea.priority,
+      idea.summary,
+      idea.raw_input,
+      idea.next_steps,
+      idea.context_needed,
+      idea.keywords,
+      idea.embedding,
+      idea.is_archived,
+      targetContext,
+      idea.created_at,
+    ]);
+  }
 
   const newIdeaId = insertResult.rows[0].id;
 

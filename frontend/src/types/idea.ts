@@ -23,6 +23,7 @@ export interface StructuredIdea {
   created_at: string;
   updated_at?: string;
   similarity?: number;
+  suggested_context?: Context;
 }
 
 export interface ApiStatus {
