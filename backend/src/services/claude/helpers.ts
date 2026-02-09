@@ -8,7 +8,7 @@
  */
 
 import { logger } from '../../utils/logger';
-import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority } from '../../utils/ollama';
+import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority, normalizeContext } from '../../utils/ollama';
 
 // ===========================================
 // Types
@@ -217,6 +217,7 @@ export function validateAndNormalizeIdea(parsed: unknown, fallbackTitle?: string
     type: normalizeType(typeof obj.type === 'string' ? obj.type : undefined),
     category: normalizeCategory(typeof obj.category === 'string' ? obj.category : undefined),
     priority: normalizePriority(typeof obj.priority === 'string' ? obj.priority : undefined),
+    suggested_context: normalizeContext(typeof obj.suggested_context === 'string' ? obj.suggested_context : undefined),
     summary,
     next_steps: nextSteps,
     context_needed: contextNeeded,

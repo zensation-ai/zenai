@@ -100,6 +100,7 @@ export interface PersonalizedSuggestion {
   suggested_type: string;
   suggested_category: string;
   suggested_priority: string;
+  suggested_context?: string;
   confidence: number;
   reasoning: string;
 }
@@ -128,7 +129,8 @@ export async function suggestFromLearning(
     // Get user's learning profile
     const profileResult = await client.query(
       `SELECT thinking_patterns, language_style, topic_interests,
-              preferred_categories, preferred_types, priority_keywords
+              preferred_categories, preferred_types, priority_keywords,
+              preferred_contexts
        FROM user_profile WHERE id = $1`,
       [userId]
     );
@@ -157,11 +159,12 @@ export async function suggestFromLearning(
     const typeCounts: Record<string, number> = {};
     const categoryCounts: Record<string, number> = {};
     const priorityCounts: Record<string, number> = {};
+    const contextCounts: Record<string, number> = {};
 
     // 1. SIMILARITY-BASED: Finde ähnliche vergangene Ideen
     if (inputEmbedding.length > 0) {
       const similarIdeas = await client.query(
-        `SELECT type, category, priority, keywords,
+        `SELECT type, category, priority, context, keywords,
                 1 - (embedding <=> $1::vector) as similarity
          FROM ideas
          WHERE embedding IS NOT NULL
@@ -176,6 +179,9 @@ export async function suggestFromLearning(
           typeCounts[idea.type] = (typeCounts[idea.type] || 0) + weight;
           categoryCounts[idea.category] = (categoryCounts[idea.category] || 0) + weight;
           priorityCounts[idea.priority] = (priorityCounts[idea.priority] || 0) + weight;
+          if (idea.context) {
+            contextCounts[idea.context] = (contextCounts[idea.context] || 0) + weight;
+          }
         }
       }
     }
@@ -184,9 +190,12 @@ export async function suggestFromLearning(
     const preferredCategories = parseJsonbWithDefault<Record<string, number>>(profile.preferred_categories, {});
     const preferredTypes = parseJsonbWithDefault<Record<string, number>>(profile.preferred_types, {});
 
+    const preferredContexts = parseJsonbWithDefault<Record<string, number>>(profile.preferred_contexts, {});
+
     // Normalisiere Präferenzen (relative Gewichtung)
     const totalCatPrefs = Object.values(preferredCategories).reduce((a, b) => a + b, 0) || 1;
     const totalTypePrefs = Object.values(preferredTypes).reduce((a, b) => a + b, 0) || 1;
+    const totalCtxPrefs = Object.values(preferredContexts).reduce((a, b) => a + b, 0) || 1;
 
     for (const [cat, count] of Object.entries(preferredCategories)) {
       const normalizedWeight = (count / totalCatPrefs) * CONFIG.PREFERENCE_WEIGHT;
@@ -195,6 +204,10 @@ export async function suggestFromLearning(
     for (const [type, count] of Object.entries(preferredTypes)) {
       const normalizedWeight = (count / totalTypePrefs) * CONFIG.PREFERENCE_WEIGHT;
       typeCounts[type] = (typeCounts[type] || 0) + normalizedWeight;
+    }
+    for (const [ctx, count] of Object.entries(preferredContexts)) {
+      const normalizedWeight = (count / totalCtxPrefs) * CONFIG.PREFERENCE_WEIGHT;
+      contextCounts[ctx] = (contextCounts[ctx] || 0) + normalizedWeight;
     }
 
     // 3. KEYWORD-BASED: Prüfe Priority-Keywords
@@ -261,10 +274,25 @@ export async function suggestFromLearning(
       categoryCounts['business'] = (categoryCounts['business'] || 0) + 0.2;
     }
 
+    // 6. CONTEXT-DETECTION: Erkenne Lebensbereich aus Text
+    if (/\b(privat|familie|gesundheit|hobby|freizeit|zuhause|persönlich|family|health|home)\b/i.test(text)) {
+      contextCounts['personal'] = (contextCounts['personal'] || 0) + 0.3;
+    }
+    if (/\b(arbeit|beruf|kunde|projekt|meeting|büro|kollege|team|firma|geschäft|job|office|client|business)\b/i.test(text)) {
+      contextCounts['work'] = (contextCounts['work'] || 0) + 0.3;
+    }
+    if (/\b(lernen|kurs|studium|weiterbildung|tutorial|buch|forschung|zertifikat|learn|study|research|course)\b/i.test(text)) {
+      contextCounts['learning'] = (contextCounts['learning'] || 0) + 0.3;
+    }
+    if (/\b(kreativ|kunst|design|musik|schreiben|zeichnen|malen|fotografie|creative|art|music|writing)\b/i.test(text)) {
+      contextCounts['creative'] = (contextCounts['creative'] || 0) + 0.3;
+    }
+
     // Get top suggestions
     const suggestedType = getTopKey(typeCounts) || 'idea';
     const suggestedCategory = getTopKey(categoryCounts) || 'personal';
     const suggestedPriority = getTopKey(priorityCounts) || 'medium';
+    const suggestedContext = getTopKey(contextCounts) || undefined;
 
     // Calculate confidence based on how clear the winner is
     const typeConfidence = calculateSelectionConfidence(typeCounts);
@@ -298,6 +326,7 @@ export async function suggestFromLearning(
       suggested_type: suggestedType,
       suggested_category: suggestedCategory,
       suggested_priority: suggestedPriority,
+      suggested_context: suggestedContext,
       confidence: overallConfidence,
       reasoning: reasons.length > 0
         ? `Basierend auf ${reasons.join(', ')}`
@@ -438,6 +467,8 @@ export async function learnFromCorrection(
     newCategory?: string;
     oldPriority?: string;
     newPriority?: string;
+    oldContext?: string;
+    newContext?: string;
   },
   userId: string = 'default'
 ): Promise<void> {
@@ -468,6 +499,15 @@ export async function learnFromCorrection(
       logger.debug('Type correction learned', {
         from: corrections.oldType,
         to: corrections.newType
+      });
+    }
+
+    if (corrections.oldContext && corrections.newContext && corrections.oldContext !== corrections.newContext) {
+      await decrementPreference(client, userId, 'preferred_contexts', corrections.oldContext, 3);
+      await incrementPreference(client, userId, 'preferred_contexts', corrections.newContext, 5);
+      logger.debug('Context correction learned', {
+        from: corrections.oldContext,
+        to: corrections.newContext
       });
     }
 

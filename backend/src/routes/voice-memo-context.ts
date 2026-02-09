@@ -380,6 +380,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
       ideaId,
       transcript,
       structured,
+      suggestedContext: structured.suggested_context || null,
       // Also include idea object for other consumers
       idea: {
         id: ideaId,

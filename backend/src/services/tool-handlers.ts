@@ -162,11 +162,15 @@ async function handleCreateIdea(
 
     logger.info('Idea created via tool', { id, title });
 
+    const contextLabels: Record<string, string> = { personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' };
+    const contextLabel = contextLabels[context] || context;
+
     return `Idee erfolgreich erstellt:
 - **Titel**: ${title}
 - **Typ**: ${type}
 - **Kategorie**: ${category}
 - **Priorität**: ${priority}
+- **Bereich**: ${contextLabel}
 - **ID**: ${id}`;
   } catch (error) {
     logger.error('Tool create_idea failed', error instanceof Error ? error : undefined);

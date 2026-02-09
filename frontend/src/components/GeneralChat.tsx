@@ -11,6 +11,7 @@ import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
+import { safeLocalStorage } from '../utils/storage';
 import {
   AI_PERSONALITY,
   AI_AVATAR,
@@ -255,10 +256,15 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
         abortControllerRef.current = streamAbortController;
 
         try {
-          const response = await fetch(`/api/chat/sessions/${currentSessionId}/messages/stream`, {
+          // Build full URL: native fetch doesn't use axios baseURL
+          const baseUrl = import.meta.env.VITE_API_URL || '';
+          const apiKey = safeLocalStorage('get', 'apiKey') || import.meta.env.VITE_API_KEY;
+
+          const response = await fetch(`${baseUrl}/api/chat/sessions/${currentSessionId}/messages/stream`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
             },
             body: JSON.stringify({
               message: messageContent,

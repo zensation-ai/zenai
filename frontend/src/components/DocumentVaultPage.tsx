@@ -31,6 +31,7 @@ interface DocumentVaultPageProps {
   onBack: () => void;
   context: 'personal' | 'work';
   initialTab?: DocumentsTab;
+  onNavigate?: (page: string) => void;
 }
 
 type ViewMode = 'grid' | 'list';
@@ -50,7 +51,7 @@ function getFolderIcon(icon?: string): string {
 }
 
 const DOC_TABS: { id: DocumentsTab; label: string; icon: string }[] = [
-  { id: 'documents', label: 'Dokumente', icon: '📄' },
+  { id: 'documents', label: 'Wissen', icon: '📚' },
   { id: 'editor', label: 'Editor', icon: '✏️' },
   { id: 'media', label: 'Medien', icon: '🖼️' },
 ];
@@ -117,6 +118,7 @@ export function DocumentVaultPage({ onBack, context, initialTab = 'documents' }:
 }
 
 function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }: DocumentVaultPageProps & { activeDocTab: DocumentsTab; onDocTabChange: (tab: DocumentsTab) => void }) {
+  const navigate = useNavigate();
   // State
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -523,7 +525,7 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
           <button type="button" className="back-button" onClick={onBack} aria-label="Zurück">
             ←
           </button>
-          <h1>Dokumente</h1>
+          <h1>Wissensbasis</h1>
           <span className="context-badge">{context}</span>
           <button
             type="button"
@@ -539,7 +541,7 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
           <div className="search-box">
             <input
               type="text"
-              placeholder="Dokumente durchsuchen..."
+              placeholder="Wissen durchsuchen..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               className="search-input"
@@ -574,6 +576,14 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
               ☰
             </button>
           </div>
+
+          <button
+            type="button"
+            className="ask-knowledge-btn neuro-hover-lift"
+            onClick={() => navigate('/ai-workshop?mode=knowledge')}
+          >
+            Frag dein Wissen
+          </button>
 
           <button
             type="button"
@@ -792,7 +802,7 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
         <div className="upload-modal-overlay" onClick={() => setShowUpload(false)}>
           <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Dokumente hochladen</h2>
+              <h2>Wissen hochladen</h2>
               <button
                 type="button"
                 className="modal-close"

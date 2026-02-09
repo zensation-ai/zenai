@@ -121,12 +121,20 @@ WICHTIG:
 - Keine zusätzlichen Erklärungen
 - Keine Markdown-Formatierung
 
+KONTEXT-ERKENNUNG:
+Erkenne aus dem Text den passenden Lebensbereich:
+- "personal" = Privatleben, Familie, Gesundheit, Hobby, persönliche Reflexion
+- "work" = Beruf, Kunden, Projekte, Meetings, Geschäftsstrategie, Kollegen
+- "learning" = Lernen, Kurse, Studium, Forschung, Weiterbildung
+- "creative" = Kreative Projekte, Kunst, Musik, Schreiben, Design
+
 OUTPUT FORMAT (JSON):
 {
   "title": "Prägnante Überschrift (max 10 Wörter)",
   "type": "idea|task|insight|problem|question",
   "category": "business|technical|personal|learning",
   "priority": "low|medium|high",
+  "suggested_context": "personal|work|learning|creative",
   "summary": "1-2 Sätze Zusammenfassung",
   "next_steps": ["Schritt 1", "Schritt 2"],
   "context_needed": ["Kontext 1", "Kontext 2"],
@@ -142,6 +150,7 @@ export interface StructuredIdea {
   type: 'idea' | 'task' | 'insight' | 'problem' | 'question';
   category: 'business' | 'technical' | 'personal' | 'learning';
   priority: 'low' | 'medium' | 'high';
+  suggested_context?: 'personal' | 'work' | 'learning' | 'creative';
   summary: string;
   next_steps: string[];
   context_needed: string[];
@@ -217,6 +226,82 @@ const CATEGORY_MAPPING: Record<string, ValidCategory> = {
   'weiterbildung': 'learning',
   'forschung': 'learning',
 };
+
+// ===========================================
+// Context Mapping (for suggested_context normalization)
+// ===========================================
+
+const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
+type ValidContext = typeof VALID_CONTEXTS[number];
+
+const CONTEXT_MAPPING: Record<string, ValidContext> = {
+  // Personal
+  'privat': 'personal',
+  'persönlich': 'personal',
+  'persoenlich': 'personal',
+  'familie': 'personal',
+  'family': 'personal',
+  'gesundheit': 'personal',
+  'health': 'personal',
+  'hobby': 'personal',
+  'freizeit': 'personal',
+  'private': 'personal',
+  // Work
+  'beruf': 'work',
+  'arbeit': 'work',
+  'geschäft': 'work',
+  'geschaeft': 'work',
+  'business': 'work',
+  'projekt': 'work',
+  'project': 'work',
+  'meeting': 'work',
+  'kunde': 'work',
+  'kunden': 'work',
+  'büro': 'work',
+  'office': 'work',
+  'job': 'work',
+  'beruflich': 'work',
+  // Learning
+  'lernen': 'learning',
+  'studium': 'learning',
+  'kurs': 'learning',
+  'weiterbildung': 'learning',
+  'forschung': 'learning',
+  'education': 'learning',
+  'research': 'learning',
+  'study': 'learning',
+  'training': 'learning',
+  // Creative
+  'kreativ': 'creative',
+  'kunst': 'creative',
+  'design': 'creative',
+  'musik': 'creative',
+  'music': 'creative',
+  'schreiben': 'creative',
+  'writing': 'creative',
+  'art': 'creative',
+  'kreativität': 'creative',
+};
+
+/**
+ * Normalize suggested context from LLM output
+ *
+ * @param context - Raw context string from LLM
+ * @returns Valid context or undefined if unrecognized
+ */
+export function normalizeContext(context: string | undefined): ValidContext | undefined {
+  if (!context) return undefined;
+
+  const lower = context.toLowerCase().trim();
+
+  // Direct match
+  if (VALID_CONTEXTS.includes(lower as ValidContext)) {
+    return lower as ValidContext;
+  }
+
+  // Check mapping
+  return CONTEXT_MAPPING[lower] || undefined;
+}
 
 // ===========================================
 // Helper Functions
@@ -383,6 +468,7 @@ STRUCTURED OUTPUT:`;
       type: normalizeType(parsed.type as string | undefined),
       category: normalizeCategory(parsed.category as string | undefined),
       priority: normalizePriority(parsed.priority as string | undefined),
+      suggested_context: normalizeContext(parsed.suggested_context as string | undefined),
       summary: typeof parsed.summary === 'string' ? parsed.summary : '',
       next_steps: parseStringArray(parsed.next_steps),
       context_needed: parseStringArray(parsed.context_needed),

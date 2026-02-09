@@ -5,6 +5,7 @@ import { asyncHandler, ValidationError, NotFoundError } from '../middleware/erro
 import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';
 import { getRecentAIActivities, markActivitiesAsRead, getUnreadActivityCount } from '../services/ai-activity-logger';
 import { moveIdea } from '../services/idea-move';
+import { learnFromCorrection } from '../services/learning-engine';
 
 const router = Router();
 
@@ -234,6 +235,12 @@ router.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), async
       invalidateCacheForContext(context as AIContext, 'ideas'),
       invalidateCacheForContext(targetContext as AIContext, 'ideas'),
     ]);
+
+    // Learn from context move (non-blocking)
+    learnFromCorrection(id, {
+      oldContext: context,
+      newContext: targetContext,
+    }).catch(() => { /* Background learning - ignore errors */ });
 
     res.json({
       message: `Idea moved from ${context} to ${targetContext}`,

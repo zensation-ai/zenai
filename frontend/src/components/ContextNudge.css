@@ -1,0 +1,137 @@
+/* ContextNudge - Toast-like nudge for context routing suggestions */
+
+.context-nudge {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md, 12px);
+  padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.92));
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.12));
+  max-width: 440px;
+  animation: nudgeSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.context-nudge-exit {
+  animation: nudgeSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.context-nudge-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.context-nudge-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.context-nudge-title {
+  font-size: 0.875rem;
+  color: var(--text, #1a1a2e);
+  line-height: 1.4;
+}
+
+.context-nudge-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  margin-top: 2px;
+}
+
+.context-nudge-actions {
+  display: flex;
+  gap: var(--spacing-xs, 4px);
+  flex-shrink: 0;
+}
+
+.context-nudge-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-md, 8px);
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.context-nudge-btn-move {
+  background: var(--petrol, #1a3a4a);
+  color: #fff;
+}
+
+.context-nudge-btn-move:hover:not(:disabled) {
+  background: var(--petrol-light, #2d5a6e);
+  transform: translateY(-1px);
+}
+
+.context-nudge-btn-move:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.context-nudge-btn-dismiss {
+  background: transparent;
+  color: var(--text-muted, #6b7280);
+}
+
+.context-nudge-btn-dismiss:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+  color: var(--text, #1a1a2e);
+}
+
+@keyframes nudgeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nudgeSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .context-nudge {
+    left: 12px;
+    right: 12px;
+    bottom: 80px; /* Above MobileBottomBar */
+    max-width: none;
+    flex-wrap: wrap;
+  }
+
+  .context-nudge-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .context-nudge {
+    animation: none;
+  }
+  .context-nudge-exit {
+    animation: none;
+    opacity: 0;
+  }
+}

@@ -427,6 +427,7 @@ export interface StructuredIdea {
   type: IdeaType;
   category: IdeaCategory;
   priority: Priority;
+  suggested_context?: AIContext;
   summary: string;
   next_steps: string[];
   context_needed: string[];

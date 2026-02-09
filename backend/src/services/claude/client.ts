@@ -126,12 +126,20 @@ BEISPIELE für "task":
 - "Entwurf für Präsentation erstellen" → type: "task"
 - "Antwort auf die Anfrage formulieren" → type: "task"
 
+KONTEXT-ERKENNUNG:
+Erkenne aus dem Text den passenden Lebensbereich:
+- "personal" = Privatleben, Familie, Gesundheit, Hobby, persönliche Reflexion
+- "work" = Beruf, Kunden, Projekte, Meetings, Geschäftsstrategie, Kollegen
+- "learning" = Lernen, Kurse, Studium, Forschung, Weiterbildung
+- "creative" = Kreative Projekte, Kunst, Musik, Schreiben, Design
+
 OUTPUT FORMAT (JSON):
 {
   "title": "Prägnante Überschrift (max 10 Wörter)",
   "type": "idea|task|insight|problem|question",
   "category": "business|technical|personal|learning",
   "priority": "low|medium|high",
+  "suggested_context": "personal|work|learning|creative",
   "summary": "1-2 Sätze Zusammenfassung",
   "next_steps": ["Schritt 1", "Schritt 2"],
   "context_needed": ["Kontext 1", "Kontext 2"],
@@ -143,10 +151,11 @@ OUTPUT FORMAT (JSON):
  */
 export const SYSTEM_PROMPT_WITH_CONFIDENCE = `${SYSTEM_PROMPT}
 
-ZUSÄTZLICH: Gib für type, category und priority jeweils einen confidence-Wert (0-1) an:
+ZUSÄTZLICH: Gib für type, category, priority und suggested_context jeweils einen confidence-Wert (0-1) an:
 {
   ...
   "confidence_type": 0.9,
   "confidence_category": 0.85,
-  "confidence_priority": 0.7
+  "confidence_priority": 0.7,
+  "confidence_context": 0.85
 }`;

@@ -172,6 +172,23 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+/* Ask Knowledge Button */
+.ask-knowledge-btn {
+  padding: 0.625rem 1.25rem;
+  background: var(--petrol, #1a3a4a);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--neuro-timing-natural, 0.28s);
+}
+
+.ask-knowledge-btn:hover {
+  background: var(--petrol-light, #2d5a6e);
+}
+
 /* Upload Trigger */
 .upload-trigger {
   padding: 0.625rem 1.25rem;

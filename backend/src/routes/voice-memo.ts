@@ -188,6 +188,10 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
       structured.priority = learnedSuggestion.suggested_priority as typeof structured.priority;
       appliedLearning = true;
     }
+    // Enrich context suggestion from learning if LLM didn't provide one
+    if (learnedSuggestion.suggested_context && !structured.suggested_context) {
+      structured.suggested_context = learnedSuggestion.suggested_context as 'personal' | 'work' | 'learning' | 'creative';
+    }
   }
 
   // 2. Generate embedding
@@ -238,6 +242,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     ideaId,
     transcript,
     structured,
+    suggestedContext: structured.suggested_context || null,
     appliedLearning,
     learningConfidence: learnedSuggestion?.confidence || 0,
     performance: {
@@ -335,6 +340,7 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
     ideaId,
     transcript: text,
     structured,
+    suggestedContext: structured.suggested_context || null,
     suggestedPriority: suggestedPrio,
     appliedLearning,
     learningConfidence: learnedSuggestion?.confidence || 0,

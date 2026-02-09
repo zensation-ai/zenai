@@ -33,6 +33,7 @@ export interface StructuredIdeaWithConfidence extends StructuredIdea {
     type: number;
     category: number;
     priority: number;
+    context?: number;
   };
   confidenceLevel: 'high' | 'medium' | 'low';
   suggestCorrection: boolean;
@@ -261,6 +262,7 @@ export function addConfidenceToIdea(
       type: scores.type,
       category: scores.category,
       priority: scores.priority,
+      context: idea.suggested_context ? 0.7 : undefined,
     },
     confidenceLevel: getConfidenceLevel(scores.overall),
     suggestCorrection: scores.overall < 0.6,

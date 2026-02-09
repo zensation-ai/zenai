@@ -21,6 +21,7 @@ import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage, logError } from './utils/errors';
 import { safeParseResponse, HealthResponseSchema, IdeasResponseSchema, IdeaCreationResponseSchema, SearchResponseSchema } from './utils/apiSchemas';
 import { GeneralChat } from './components/GeneralChat';
+import ContextNudge from './components/ContextNudge';
 
 // Neurodesign System
 import { NeuroFeedbackProvider } from './components/NeuroFeedback';
@@ -203,6 +204,11 @@ function App() {
     return safeLocalStorage('get', 'onboardingComplete') !== 'true';
   });
   const [inputMode, setInputMode] = useState<InputMode>('voice');
+  const [contextNudge, setContextNudge] = useState<{
+    ideaId: string;
+    ideaTitle: string;
+    suggestedContext: 'personal' | 'work' | 'learning' | 'creative';
+  } | null>(null);
   const isSubmittingRef = useRef(false);
   const [aiOverlay, setAIOverlay] = useState<{
     visible: boolean;
@@ -462,6 +468,16 @@ function App() {
       setIdeas(prev => [newIdea, ...prev]);
       setTextInput('');
       showToast('Gedanke erfolgreich strukturiert!', 'success');
+
+      // Show context nudge if AI suggests a different context
+      const suggestedCtx = (response.data?.suggestedContext || creationData.structured?.suggested_context) as 'personal' | 'work' | 'learning' | 'creative' | undefined;
+      if (suggestedCtx && suggestedCtx !== context && creationData.structured?.title) {
+        setContextNudge({
+          ideaId: creationData.ideaId,
+          ideaTitle: creationData.structured.title,
+          suggestedContext: suggestedCtx,
+        });
+      }
     } catch (err: unknown) {
       const errorMessage = getErrorMessage(err, 'Verarbeitung fehlgeschlagen');
       setError(errorMessage);
@@ -832,6 +848,20 @@ function App() {
       </AppLayout>
 
       <ToastContainer />
+
+      {contextNudge && (
+        <ContextNudge
+          ideaId={contextNudge.ideaId}
+          ideaTitle={contextNudge.ideaTitle}
+          currentContext={context}
+          suggestedContext={contextNudge.suggestedContext}
+          onMoved={() => {
+            setContextNudge(null);
+            showToast('Gedanke verschoben!', 'success');
+          }}
+          onDismissed={() => setContextNudge(null)}
+        />
+      )}
 
       {commandPalette.isOpen && (
         <Suspense fallback={null}>
