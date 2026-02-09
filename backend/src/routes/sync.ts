@@ -63,7 +63,7 @@ syncRouter.post('/:context/sync/swipe-actions', apiKeyAuth, requireScope('write'
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
   }
 
   const { actions } = req.body as { actions: SwipeAction[] };
@@ -141,7 +141,7 @@ syncRouter.post('/:context/sync/batch', apiKeyAuth, requireScope('write'), async
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
   }
 
   const {
@@ -286,7 +286,7 @@ syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Req
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
   }
 
   // Get pending changes count (items modified in last hour)
@@ -344,7 +344,7 @@ syncRouter.get('/:context/sync/pending', apiKeyAuth, asyncHandler(async (req: Re
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
   }
 
   // Get recently modified items that might need sync
@@ -403,7 +403,7 @@ syncRouter.post('/:context/sync/trigger', apiKeyAuth, requireScope('write'), asy
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
   }
 
   // Record sync event

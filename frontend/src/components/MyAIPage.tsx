@@ -7,6 +7,7 @@
 
 import React, { useState, Suspense, lazy, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
 import '../neurodesign.css';
@@ -63,7 +64,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="insights-tab-content">
-              <MemoryTransparency context={context as 'personal' | 'work'} />
+              <MemoryTransparency context={context as AIContext} />
             </div>
           </Suspense>
         );

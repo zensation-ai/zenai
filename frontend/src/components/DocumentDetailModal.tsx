@@ -16,7 +16,7 @@ import './DocumentDetailModal.css';
 
 interface DocumentDetailModalProps {
   doc: Document;
-  context: 'personal' | 'work';
+  context: string;
   onClose: () => void;
   onUpdate: (doc: Document) => void;
   onDelete: () => void;
