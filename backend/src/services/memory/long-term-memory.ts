@@ -202,6 +202,34 @@ class LongTermMemoryService {
   }
 
   /**
+   * Detect whether the personalization_facts table uses HiMeS schema (Phase 27+)
+   * by checking for the 'is_active' column. Cached per context.
+   */
+  private hiMeSSchemaCache: Map<AIContext, boolean> = new Map();
+
+  private async hasHiMeSSchema(context: AIContext): Promise<boolean> {
+    const cached = this.hiMeSSchemaCache.get(context);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    try {
+      const result = await queryContext(
+        context,
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_name = 'personalization_facts' AND column_name = 'is_active'
+         LIMIT 1`
+      );
+      const hasSchema = result.rows.length > 0;
+      this.hiMeSSchemaCache.set(context, hasSchema);
+      return hasSchema;
+    } catch {
+      this.hiMeSSchemaCache.set(context, false);
+      return false;
+    }
+  }
+
+  /**
    * Load memory from database
    * Supports both HiMeS schema (Phase 27+) and legacy schema
    */
@@ -209,35 +237,42 @@ class LongTermMemoryService {
     // Load personalization facts with schema detection
     let facts: PersonalizationFact[] = [];
 
-    try {
-      // Try HiMeS schema first (Phase 27+)
-      const factsResult = await queryContext(
-        context,
-        `SELECT id, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences
-         FROM personalization_facts
-         WHERE context = $1 AND is_active = true
-         ORDER BY confidence DESC, occurrences DESC
-         LIMIT $2`,
-        [context, CONFIG.MAX_FACTS]
-      );
+    const useHiMeS = await this.hasHiMeSSchema(context);
 
-      facts = factsResult.rows.map((r: Record<string, unknown>) => ({
-        id: r.id as string,
-        factType: r.fact_type as PersonalizationFact['factType'],
-        content: r.content as string,
-        confidence: parseFloat(r.confidence as string),
-        source: r.source as PersonalizationFact['source'],
-        firstSeen: new Date(r.first_seen as string),
-        lastConfirmed: new Date(r.last_confirmed as string),
-        occurrences: r.occurrences as number,
-      }));
-    } catch (hiMeSError) {
-      // Fall back to legacy schema
-      logger.debug('HiMeS schema not available, trying legacy schema', {
-        context,
-        error: hiMeSError instanceof Error ? hiMeSError.message : 'Unknown',
-      });
+    if (useHiMeS) {
+      try {
+        const factsResult = await queryContext(
+          context,
+          `SELECT id, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences
+           FROM personalization_facts
+           WHERE context = $1 AND is_active = true
+           ORDER BY confidence DESC, occurrences DESC
+           LIMIT $2`,
+          [context, CONFIG.MAX_FACTS]
+        );
 
+        facts = factsResult.rows.map((r: Record<string, unknown>) => ({
+          id: r.id as string,
+          factType: r.fact_type as PersonalizationFact['factType'],
+          content: r.content as string,
+          confidence: parseFloat(r.confidence as string),
+          source: r.source as PersonalizationFact['source'],
+          firstSeen: new Date(r.first_seen as string),
+          lastConfirmed: new Date(r.last_confirmed as string),
+          occurrences: r.occurrences as number,
+        }));
+      } catch (hiMeSError) {
+        logger.warn('HiMeS schema query failed, falling back to legacy', {
+          context,
+          error: hiMeSError instanceof Error ? hiMeSError.message : 'Unknown',
+        });
+        // Reset cache so next init retries
+        this.hiMeSSchemaCache.delete(context);
+      }
+    }
+
+    // Fall back to legacy schema if HiMeS not available or failed
+    if (!useHiMeS || (useHiMeS && facts.length === 0)) {
       try {
         const legacyResult = await queryContext(
           context,
@@ -247,21 +282,23 @@ class LongTermMemoryService {
           [CONFIG.MAX_FACTS]
         );
 
-        facts = legacyResult.rows.map((r: Record<string, unknown>) => ({
-          id: r.id as string,
-          factType: ((r.category as string) || 'knowledge') as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
-          content: (r.fact_value as string) || (r.fact_key as string) || '',
-          confidence: parseFloat(r.confidence as string) || 0.7,
-          source: ((r.source as string) || 'inferred') as 'explicit' | 'inferred' | 'consolidated',
-          firstSeen: new Date((r.created_at as string) || Date.now()),
-          lastConfirmed: new Date((r.updated_at as string) || Date.now()),
-          occurrences: 1,
-        }));
+        if (legacyResult.rows.length > 0) {
+          facts = legacyResult.rows.map((r: Record<string, unknown>) => ({
+            id: r.id as string,
+            factType: ((r.category as string) || 'knowledge') as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
+            content: (r.fact_value as string) || (r.fact_key as string) || '',
+            confidence: parseFloat(r.confidence as string) || 0.7,
+            source: ((r.source as string) || 'inferred') as 'explicit' | 'inferred' | 'consolidated',
+            firstSeen: new Date((r.created_at as string) || Date.now()),
+            lastConfirmed: new Date((r.updated_at as string) || Date.now()),
+            occurrences: 1,
+          }));
 
-        logger.info('Loaded facts from legacy schema', {
-          context,
-          factCount: facts.length,
-        });
+          logger.info('Loaded facts from legacy schema', {
+            context,
+            factCount: facts.length,
+          });
+        }
       } catch (legacyError) {
         // Table doesn't exist or other error - start with empty facts
         logger.debug('No personalization_facts table available', {

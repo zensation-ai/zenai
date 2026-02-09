@@ -558,6 +558,7 @@ Phase 32 APIs (Document Analysis):
   - Analyze Document:POST /api/documents/analyze
 
 Phase 30 APIs (Memory Scheduler):
+  - Domain Strengths:    GET /api/:context/evolution/domain-strengths
   - Scheduler Status:  GET /api/memory/status
   - Trigger Consolidate: POST /api/memory/consolidate
   - Trigger Decay:     POST /api/memory/decay

@@ -77,7 +77,7 @@ router.post('/consolidate', apiKeyAuth, asyncHandler(async (req: Request, res: R
 
   // Validate context if provided
   if (context && !isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   logger.info('Manual consolidation triggered', {
@@ -123,7 +123,7 @@ router.post('/decay', apiKeyAuth, asyncHandler(async (req: Request, res: Respons
 
   // Validate context if provided
   if (context && !isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   logger.info('Manual decay triggered', {
@@ -165,7 +165,7 @@ router.get('/stats/:context', apiKeyAuth, asyncHandler(async (req: Request, res:
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const [ltStats, epStats] = await Promise.all([
@@ -207,7 +207,7 @@ router.get('/facts/:context', apiKeyAuth, asyncHandler(async (req: Request, res:
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const facts = await longTermMemory.getFacts(context as AIContext);
@@ -245,7 +245,7 @@ router.get('/patterns/:context', apiKeyAuth, asyncHandler(async (req: Request, r
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const patterns = await longTermMemory.getPatterns(context as AIContext);
@@ -268,7 +268,7 @@ router.get('/transparency/:context', apiKeyAuth, asyncHandler(async (req: Reques
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const ctx = context as AIContext;
