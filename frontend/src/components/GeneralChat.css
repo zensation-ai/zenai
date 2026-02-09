@@ -280,6 +280,61 @@
   }
 }
 
+/* Inline Error Message (visible inside assistant panel) */
+.chat-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 0 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm, 8px);
+  color: #dc2626;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  animation: messageSlideIn 0.25s ease;
+}
+
+.chat-inline-error-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.15);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.chat-inline-error-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.chat-inline-error-dismiss {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: #dc2626;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.chat-inline-error-dismiss:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
 /* Input Area */
 .chat-input-area {
   padding: 0.75rem 1rem 1rem;
@@ -563,6 +618,26 @@
     color: rgba(255, 255, 255, 0.7);
   }
 
+  .chat-inline-error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+  }
+
+  .chat-inline-error-icon {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+  }
+
+  .chat-inline-error-dismiss {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+  }
+
+  .chat-inline-error-dismiss:hover {
+    background: rgba(239, 68, 68, 0.25);
+  }
+
   .chat-send-btn:disabled {
     background: rgba(34, 58, 68, 0.6);
     color: rgba(255, 255, 255, 0.55);
@@ -670,6 +745,30 @@
 :root.dark-mode .chat-empty-hint,
 .dark-mode .chat-empty-hint {
   color: rgba(255, 255, 255, 0.7);
+}
+
+:root.dark-mode .chat-inline-error,
+.dark-mode .chat-inline-error {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+:root.dark-mode .chat-inline-error-icon,
+.dark-mode .chat-inline-error-icon {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+:root.dark-mode .chat-inline-error-dismiss,
+.dark-mode .chat-inline-error-dismiss {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+:root.dark-mode .chat-inline-error-dismiss:hover,
+.dark-mode .chat-inline-error-dismiss:hover {
+  background: rgba(239, 68, 68, 0.25);
 }
 
 :root.dark-mode .chat-send-btn:disabled,
