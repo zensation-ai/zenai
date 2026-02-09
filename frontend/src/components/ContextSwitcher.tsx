@@ -18,57 +18,6 @@ interface ContextSwitcherProps {
 }
 
 export function ContextSwitcher({ context, onContextChange }: ContextSwitcherProps) {
-  const [showSuggestion, setShowSuggestion] = useState(false);
-  const [suggestedContext, setSuggestedContext] = useState<AIContext | null>(null);
-
-  // Check for context suggestion based on time
-  useEffect(() => {
-    const checkContextSuggestion = () => {
-      const now = new Date();
-      const hour = now.getHours();
-      const day = now.getDay();
-
-      const isWeekday = day >= 1 && day <= 5;
-      const isWorkHours = hour >= 8 && hour < 18;
-      const isEveningLearning = hour >= 19 && hour < 22;
-
-      // Suggest work during work hours on weekdays
-      if (isWeekday && isWorkHours && context === 'personal') {
-        setSuggestedContext('work');
-        setShowSuggestion(true);
-      }
-      // Suggest learning in the evening
-      else if (isEveningLearning && (context === 'work' || context === 'personal')) {
-        setSuggestedContext('learning');
-        setShowSuggestion(true);
-      }
-      // Suggest personal outside work hours
-      else if ((!isWeekday || !isWorkHours) && context === 'work') {
-        setSuggestedContext('personal');
-        setShowSuggestion(true);
-      } else {
-        setShowSuggestion(false);
-        setSuggestedContext(null);
-      }
-    };
-
-    checkContextSuggestion();
-    const interval = setInterval(checkContextSuggestion, 60000);
-
-    return () => clearInterval(interval);
-  }, [context]);
-
-  const handleSuggestionAccept = () => {
-    if (suggestedContext) {
-      onContextChange(suggestedContext);
-      setShowSuggestion(false);
-    }
-  };
-
-  const handleSuggestionDismiss = () => {
-    setShowSuggestion(false);
-  };
-
   return (
     <div className="context-switcher" role="region" aria-label="Kontext-Auswahl">
       <div className="context-toggle" role="group" aria-label="Kontext wählen">
@@ -92,30 +41,6 @@ export function ContextSwitcher({ context, onContextChange }: ContextSwitcherPro
           );
         })}
       </div>
-
-      {showSuggestion && suggestedContext && (
-        <div className="context-suggestion neuro-tooltip-enhanced" role="alert" aria-live="polite">
-          <span className="suggestion-text">
-            Wechsel zu {CONTEXT_CONFIG[suggestedContext].icon} {CONTEXT_CONFIG[suggestedContext].label}?
-          </span>
-          <button
-            type="button"
-            className="suggestion-accept neuro-press-effect neuro-focus-ring"
-            onClick={handleSuggestionAccept}
-            aria-label="Kontextwechsel akzeptieren"
-          >
-            Ja
-          </button>
-          <button
-            type="button"
-            className="suggestion-dismiss neuro-press-effect neuro-focus-ring"
-            onClick={handleSuggestionDismiss}
-            aria-label="Kontextwechsel ablehnen"
-          >
-            Nein
-          </button>
-        </div>
-      )}
     </div>
   );
 }
