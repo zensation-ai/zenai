@@ -576,7 +576,7 @@ function App() {
     setTextInput('');
 
     // Show context nudge if AI suggests a different context
-    const suggested = result.suggestedContext || result.structured.suggested_context;
+    const suggested = result.suggestedContext || (result.structured as Record<string, unknown>).suggested_context as typeof result.suggestedContext;
     if (suggested && suggested !== context && (result.contextConfidence || 0.7) >= 0.5) {
       setContextNudge({
         ideaId: result.ideaId,
@@ -616,6 +616,7 @@ function App() {
               onNavigate={navigateToPage}
               isAIActive={isAIActive}
               ideasCount={ideas.length}
+              apiStatus={apiStatus}
             />
           </Suspense>
         );

@@ -7,9 +7,9 @@
  * - Letzte Gedanken + KI-Aktivität
  */
 
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import axios from 'axios';
-import type { Page } from '../types';
+import type { Page, ApiStatus } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import { AIBrain } from './AIBrain';
 import { SkeletonLoader } from './SkeletonLoader';
@@ -23,6 +23,7 @@ interface DashboardProps {
   onNavigate: (page: Page) => void;
   isAIActive: boolean;
   ideasCount: number;
+  apiStatus: ApiStatus | null;
 }
 
 interface DashboardStats {
@@ -61,11 +62,13 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   onNavigate,
   isAIActive,
   ideasCount,
+  apiStatus,
 }) => {
   const [stats, setStats] = useState<DashboardStats>({ total: 0, highPriority: 0, thisWeek: 0 });
   const [recentIdeas, setRecentIdeas] = useState<RecentIdea[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
 
   const greeting = useMemo(() => getTimeBasedGreeting(), []);
 
@@ -93,6 +96,13 @@ const DashboardComponent: React.FC<DashboardProps> = ({
       if (activityRes.data?.activities) {
         setActivity(activityRes.data.activities.slice(0, 5));
       }
+
+      // If all responses came back null, retry once after a short delay
+      if (!statsRes.data && !ideasRes.data && !activityRes.data && !hasFetched.current) {
+        hasFetched.current = true;
+        setTimeout(() => fetchData(), 1500);
+        return;
+      }
     } catch (err) {
       logError('Dashboard:fetchData', err);
     } finally {
@@ -100,9 +110,13 @@ const DashboardComponent: React.FC<DashboardProps> = ({
     }
   }, [context]);
 
+  // Wait for API to be ready before fetching dashboard data
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (apiStatus) {
+      hasFetched.current = false;
+      fetchData();
+    }
+  }, [apiStatus, fetchData]);
 
   const formatTime = (dateString: string) => {
     const diff = Date.now() - new Date(dateString).getTime();
