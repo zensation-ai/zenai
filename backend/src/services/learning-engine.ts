@@ -445,6 +445,8 @@ export async function learnFromCorrection(
     newCategory?: string;
     oldPriority?: string;
     newPriority?: string;
+    oldContext?: string;
+    newContext?: string;
   },
   userId: string = 'default'
 ): Promise<void> {

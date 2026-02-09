@@ -432,7 +432,6 @@ export interface StructuredIdea {
   next_steps: string[];
   context_needed: string[];
   keywords: string[];
-  suggested_context?: 'personal' | 'work' | 'learning' | 'creative';
 }
 
 // ============================================
