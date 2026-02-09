@@ -121,7 +121,7 @@ knowledgeGraphRouter.get('/full', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = (req.query.context as string) || 'personal';
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   logger.info('Loading full knowledge graph', { context });
@@ -146,7 +146,7 @@ knowledgeGraphRouter.get('/subgraph/:ideaId', apiKeyAuth, asyncHandler(async (re
   const minStrength = toFloatBounded(req.query.minStrength as string, 0.5, 0, 1);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   logger.info('Loading subgraph', { ideaId, depth });
@@ -168,7 +168,7 @@ knowledgeGraphRouter.post('/discover', apiKeyAuth, requireScope('write'), asyncH
   const { context = 'personal', force = false } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   logger.info('Starting relationship discovery', { context });
@@ -188,7 +188,7 @@ knowledgeGraphRouter.get('/analytics', apiKeyAuth, asyncHandler(async (req, res)
   const context = (req.query.context as string) || 'personal';
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const analytics = await getGraphAnalytics(context as AIContext);
@@ -212,7 +212,7 @@ knowledgeGraphRouter.get('/topics', apiKeyAuth, asyncHandler(async (req, res) =>
   const context = (req.query.context as string) || 'personal';
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const topics = await getTopics(context as AIContext);
@@ -234,7 +234,7 @@ knowledgeGraphRouter.get('/topics/:topicId', apiKeyAuth, asyncHandler(async (req
   const context = (req.query.context as string) || 'personal';
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const result = await getTopicWithIdeas(context as AIContext, topicId);
@@ -257,7 +257,7 @@ knowledgeGraphRouter.post('/topics/generate', apiKeyAuth, requireScope('write'),
   const { context = 'personal', minClusterSize = 2, maxClusters = 10 } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   logger.info('Generating topics', { context });
@@ -276,7 +276,7 @@ knowledgeGraphRouter.post('/topics/merge', apiKeyAuth, requireScope('write'), as
   const { context = 'personal', topicIds, newName } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   if (!Array.isArray(topicIds) || topicIds.length < 2) {
@@ -308,7 +308,7 @@ knowledgeGraphRouter.post('/topics/assign/:ideaId', apiKeyAuth, requireScope('wr
   const { context = 'personal' } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const result = await assignIdeaToTopic(context as AIContext, ideaId);

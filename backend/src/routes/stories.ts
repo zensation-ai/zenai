@@ -22,7 +22,7 @@ router.get('/:context/stories', apiKeyAuth, asyncHandler(async (req: Request, re
 
   // Validate context
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Validate and parse minItems

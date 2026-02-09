@@ -98,7 +98,7 @@ function validateMediaId(id: string): void {
 
 function validateContext(context: string): void {
   if (!VALID_CONTEXTS.includes(context as typeof VALID_CONTEXTS[number])) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 }
 

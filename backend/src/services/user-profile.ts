@@ -521,14 +521,19 @@ export async function getRecommendations(profileId: string = 'default'): Promise
 /**
  * Update user interest embedding based on recent ideas
  */
-export async function updateInterestEmbedding(profileId: string = 'default'): Promise<void> {
+export async function updateInterestEmbedding(profileId: string = 'default', context?: AIContext): Promise<void> {
   // Get recent ideas to build interest profile (excluding archived)
-  const recentIdeas = await query(
-    `SELECT title, summary, keywords FROM ideas
-     WHERE is_archived = false
-     ORDER BY created_at DESC
-     LIMIT 50`
-  );
+  const recentIdeas = context
+    ? await queryContext(context, `SELECT title, summary, keywords FROM ideas
+       WHERE is_archived = false
+       ORDER BY created_at DESC
+       LIMIT 50`)
+    : await query(
+      `SELECT title, summary, keywords FROM ideas
+       WHERE is_archived = false
+       ORDER BY created_at DESC
+       LIMIT 50`
+    );
 
   if (recentIdeas.rows.length === 0) {return;}
 
