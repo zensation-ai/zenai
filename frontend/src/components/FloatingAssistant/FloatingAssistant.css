@@ -11,11 +11,11 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--accent-primary, #6366f1);
+  background: var(--accent-primary, #0d3b4f);
   border: none;
   cursor: pointer;
   z-index: 150;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 16px rgba(13, 59, 79, 0.4);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   display: flex;
   align-items: center;
@@ -28,7 +28,7 @@
 
 .assistant-bubble:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 6px 24px rgba(13, 59, 79, 0.55);
 }
 
 .assistant-bubble:active {
@@ -195,7 +195,7 @@
 }
 
 .assistant-quick-action:hover {
-  background: var(--accent-primary, #6366f1);
+  background: var(--accent-primary, #0d3b4f);
   color: white;
   border-color: transparent;
 }
