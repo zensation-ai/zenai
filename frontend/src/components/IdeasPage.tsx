@@ -5,7 +5,7 @@
  * Contains: Hero section, CommandCenter, search/filters, ideas list, detail modal.
  */
 
-import { lazy, Suspense, useMemo, memo } from 'react';
+import { lazy, Suspense, useMemo, memo, useState } from 'react';
 import type { StructuredIdea } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import type { AdvancedFilters } from './SearchFilterBar';
@@ -24,6 +24,7 @@ import { GeneralChat } from './GeneralChat';
 import { AIProcessingOverlay } from './AIProcessingOverlay';
 import { CommandCenter } from './CommandCenter';
 import { RateLimitBanner } from './RateLimitBanner';
+import { showToast } from './Toast';
 import {
   AI_PERSONALITY,
   AI_AVATAR,
@@ -34,6 +35,7 @@ import {
 import './IdeasPage.css';
 
 const IdeaDetail = lazy(() => import('./IdeaDetail').then(m => ({ default: m.IdeaDetail })));
+const InboxTriage = lazy(() => import('./InboxTriage').then(m => ({ default: m.InboxTriage })));
 
 interface IdeasPageProps {
   context: AIContext;
@@ -69,7 +71,15 @@ interface IdeasPageProps {
   onIdeaClick: (idea: StructuredIdea) => void;
   onCloseDetail: () => void;
   onNavigateToIdea: (ideaId: string) => void;
+  // Archive integration
+  archivedIdeas?: StructuredIdea[];
+  archivedCount?: number;
+  onRestore?: (id: string) => void;
+  // Triage integration
+  onTriageComplete?: () => void;
 }
+
+type IdeasTab = 'ideas' | 'archive' | 'triage';
 
 const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   context,
@@ -104,7 +114,12 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   onIdeaClick,
   onCloseDetail,
   onNavigateToIdea,
+  archivedIdeas = [],
+  archivedCount = 0,
+  onRestore,
+  onTriageComplete,
 }) => {
+  const [activeIdeasTab, setActiveIdeasTab] = useState<IdeasTab>('ideas');
   const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
 
   const humanGreeting = useMemo(() => {
@@ -200,6 +215,89 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
         <div className="particle particle-5" />
       </div>
 
+      {/* Ideas Tab Navigation */}
+      <div className="ideas-tab-bar" role="tablist" aria-label="Gedanken-Ansicht">
+        <button
+          type="button"
+          role="tab"
+          aria-current={activeIdeasTab === 'ideas' ? 'true' : undefined}
+          className={`ideas-tab ${activeIdeasTab === 'ideas' ? 'active' : ''}`}
+          onClick={() => setActiveIdeasTab('ideas')}
+        >
+          <span>💭</span> Gedanken
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-current={activeIdeasTab === 'archive' ? 'true' : undefined}
+          className={`ideas-tab ${activeIdeasTab === 'archive' ? 'active' : ''}`}
+          onClick={() => setActiveIdeasTab('archive')}
+        >
+          <span>📥</span> Archiv
+          {archivedCount > 0 && <span className="ideas-tab-badge">{archivedCount}</span>}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-current={activeIdeasTab === 'triage' ? 'true' : undefined}
+          className={`ideas-tab ${activeIdeasTab === 'triage' ? 'active' : ''}`}
+          onClick={() => setActiveIdeasTab('triage')}
+        >
+          <span>📋</span> Sortieren
+        </button>
+      </div>
+
+      {/* Archive Tab */}
+      {activeIdeasTab === 'archive' && (
+        <div className="ideas-archive-content">
+          <div className="archive-header-inline">
+            <h2>Archivierte Gedanken</h2>
+            <span className="archive-count-badge">{archivedCount} archiviert</span>
+          </div>
+          {loading ? (
+            <div className="loading-state" role="status" aria-live="polite">
+              <SkeletonLoader type="card" count={3} />
+            </div>
+          ) : archivedIdeas.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">📭</span>
+              <h3>Archiv ist leer</h3>
+              <p>Archivierte Gedanken erscheinen hier.</p>
+              <button type="button" className="empty-state-cta" onClick={() => setActiveIdeasTab('ideas')}>
+                Zu deinen Gedanken
+              </button>
+            </div>
+          ) : (
+            <SmartIdeaList
+              ideas={archivedIdeas}
+              viewMode={viewMode}
+              onDelete={onDeleteIdea}
+              onRestore={onRestore}
+              isArchived={true}
+              context={context}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Triage Tab */}
+      {activeIdeasTab === 'triage' && (
+        <Suspense fallback={<SkeletonLoader type="card" count={2} />}>
+          <InboxTriage
+            context={context}
+            apiBase="/api"
+            onBack={() => setActiveIdeasTab('ideas')}
+            onComplete={() => {
+              if (onTriageComplete) onTriageComplete();
+              setActiveIdeasTab('ideas');
+            }}
+            showToast={showToast}
+          />
+        </Suspense>
+      )}
+
+      {/* Ideas Tab - Original Content */}
+      {activeIdeasTab === 'ideas' && <>
       {/* Hero Section with AI Brain */}
       <section
         className={`hero-section ${loading || ideas.length > 0 ? 'compact' : ''}`}
@@ -452,6 +550,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
           currentStepIndex={aiOverlay.step}
         />
       )}
+      </>}
     </div>
   );
 };

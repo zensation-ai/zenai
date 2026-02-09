@@ -12,6 +12,80 @@
   flex-direction: column;
 }
 
+/* Ideas Tab Bar (Gedanken / Archiv / Sortieren) */
+.ideas-tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem 0;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.ideas-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s ease;
+}
+
+.ideas-tab:hover {
+  color: var(--neuro-text-primary, #fff);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ideas-tab.active {
+  color: var(--neuro-accent, #ff6b35);
+  background: rgba(255, 107, 53, 0.1);
+  border-bottom: 2px solid var(--neuro-accent, #ff6b35);
+}
+
+.ideas-tab-badge {
+  background: var(--neuro-accent, #ff6b35);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+/* Archive content within Ideas */
+.ideas-archive-content {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.archive-header-inline {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.archive-header-inline h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.archive-count-badge {
+  font-size: 0.8rem;
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.5));
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
 .ideas-main {
   flex: 1;
   padding: 0 1rem 2rem;

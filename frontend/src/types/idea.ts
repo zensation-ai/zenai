@@ -33,43 +33,47 @@ export interface ApiStatus {
 // Note: Filters type is defined in SearchFilterBar.tsx to match component requirements
 
 /**
- * Page Types - Konsolidierte Navigation 2026
+ * Page Types - Radikale Navigation 2026
  *
- * Haupt-Tabs (4):
- * - ideas: Gedanken-Sammlung mit integriertem Chat (GeneralChat)
- * - insights: Dashboard + Analytics + Digest + Graph kombiniert
- * - archive: Archivierte Gedanken
- * - settings: KI-Tools + Inhalte + Einstellungen Dashboard (NEU)
+ * 4 Sektionen:
+ * - Gedanken: ideas (inkl. Archiv-Tab + Triage-Modus), incubator
+ * - KI-Assistenz: ai-workshop, learning, my-ai
+ * - Wissen & Inhalte: insights, documents (inkl. Canvas + Medien), meetings
+ * - System: automations, integrations, export, sync
  *
- * Sekundäre Seiten (via Settings Dashboard):
- * - Tab 1 (KI-Tools): ai-workshop, learning, triage, personalization
- * - Tab 2 (Inhalte): meetings, media, stories
- * - Tab 3 (Einstellungen): automations, integrations, profile, notifications, export, sync
+ * Footer: profile, notifications, settings
+ * Dashboard: home (Startseite via Logo-Klick)
  */
 export type Page =
   // Dashboard (Startseite)
   | 'home'
-  // Haupt-Navigation
+  // Gedanken
   | 'ideas'
-  | 'insights'
-  | 'archive'
-  | 'settings'
-  // Sekundäre Seiten
+  | 'incubator'
+  // KI-Assistenz
   | 'ai-workshop'
   | 'learning'
-  | 'profile'
-  | 'meetings'
-  | 'media'
-  | 'stories'
+  | 'my-ai'
+  // Wissen & Inhalte
+  | 'insights'
   | 'documents'
+  | 'meetings'
+  // System
   | 'automations'
   | 'integrations'
-  | 'notifications'
   | 'export'
   | 'sync'
-  | 'personalization'
+  // Footer
+  | 'profile'
+  | 'notifications'
+  | 'settings'
   // Legacy-Seiten (intern weitergeleitet)
-  | 'incubator'
+  | 'archive'
+  | 'triage'
+  | 'stories'
+  | 'media'
+  | 'canvas'
+  | 'personalization'
   | 'proactive'
   | 'evolution'
   | 'dashboard'
@@ -77,8 +81,6 @@ export type Page =
   | 'digest'
   | 'knowledge-graph'
   | 'learning-tasks'
-  | 'triage'
-  | 'canvas'
   | 'voice-chat'
   | 'agent-teams';
 

@@ -21,11 +21,12 @@ import '../neurodesign.css';
 import './AIWorkshop.css';
 
 // Lazy-load die Sub-Komponenten
-const IncubatorPage = lazy(() => import('./IncubatorPage').then(m => ({ default: m.IncubatorPage })));
 const ProactiveDashboard = lazy(() => import('./ProactiveDashboard').then(m => ({ default: m.ProactiveDashboard })));
 const EvolutionDashboard = lazy(() => import('./EvolutionDashboard').then(m => ({ default: m.EvolutionDashboard })));
+const VoiceChat = lazy(() => import('./VoiceChat').then(m => ({ default: m.VoiceChat })));
+const AgentTeamsPage = lazy(() => import('./AgentTeamsPage').then(m => ({ default: m.AgentTeamsPage })));
 
-type WorkshopTab = 'incubator' | 'proactive' | 'evolution';
+type WorkshopTab = 'proactive' | 'evolution' | 'voice-chat' | 'agent-teams';
 
 interface AIWorkshopProps {
   context: AIContext;
@@ -36,9 +37,10 @@ interface AIWorkshopProps {
 }
 
 const TABS: { id: WorkshopTab; label: string; icon: string; description: string }[] = [
-  { id: 'incubator', label: 'Inkubator', icon: '🧠', description: 'Gedanken reifen lassen und konsolidieren' },
   { id: 'proactive', label: 'Vorschläge', icon: '✨', description: 'KI-generierte Ideen und Routinen' },
   { id: 'evolution', label: 'Entwicklung', icon: '🌱', description: 'Wie deine Gedanken sich entwickeln' },
+  { id: 'voice-chat', label: 'Sprach-Chat', icon: '🎙️', description: 'Echtzeit-Sprachgespräch mit KI' },
+  { id: 'agent-teams', label: 'Agenten', icon: '👥', description: 'Multi-Agenten für komplexe Aufgaben' },
 ];
 
 const TabLoader = () => (
@@ -51,17 +53,17 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
   context,
   onBack,
   onNavigate,
-  onIdeaCreated,
-  initialTab = 'incubator',
+  onIdeaCreated: _onIdeaCreated,
+  initialTab = 'proactive',
 }) => {
   const navigate = useNavigate();
-  const VALID_TABS: WorkshopTab[] = ['incubator', 'proactive', 'evolution'];
-  const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'incubator';
+  const VALID_TABS: WorkshopTab[] = ['proactive', 'evolution', 'voice-chat', 'agent-teams'];
+  const validatedTab = VALID_TABS.includes(initialTab as WorkshopTab) ? initialTab as WorkshopTab : 'proactive';
   const [activeTab, setActiveTab] = useState<WorkshopTab>(validatedTab);
 
   // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
   useEffect(() => {
-    setActiveTab(VALID_TABS.includes(initialTab) ? initialTab : 'incubator');
+    setActiveTab(VALID_TABS.includes(initialTab as WorkshopTab) ? initialTab as WorkshopTab : 'proactive');
   }, [initialTab]);
 
   // Update URL when tab changes (for browser history support)
@@ -71,33 +73,15 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
     navigate(`/ai-workshop/${tab}`, { replace: true });
   }, [navigate]);
 
-  const handleIdeaCreated = (ideaId: string) => {
-    if (onIdeaCreated) {
-      onIdeaCreated(ideaId);
-    }
-  };
-
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'incubator':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <div className="workshop-tab-content">
-              <IncubatorPage
-                onBack={() => handleTabChange('incubator')}
-                onIdeaCreated={handleIdeaCreated}
-              />
-            </div>
-          </Suspense>
-        );
-
       case 'proactive':
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="workshop-tab-content workshop-tab-fullwidth">
               <ProactiveDashboard
                 context={context}
-                onBack={() => handleTabChange('incubator')}
+                onBack={() => handleTabChange('proactive')}
               />
             </div>
           </Suspense>
@@ -109,7 +93,33 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
             <div className="workshop-tab-content workshop-tab-fullwidth">
               <EvolutionDashboard
                 context={context}
-                onBack={() => handleTabChange('incubator')}
+                onBack={() => handleTabChange('proactive')}
+              />
+            </div>
+          </Suspense>
+        );
+
+      case 'voice-chat':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="workshop-tab-content workshop-tab-fullwidth">
+              <VoiceChat
+                context={context}
+                apiUrl={import.meta.env.VITE_API_URL || ''}
+                apiKey={import.meta.env.VITE_API_KEY || ''}
+                onClose={() => handleTabChange('proactive')}
+              />
+            </div>
+          </Suspense>
+        );
+
+      case 'agent-teams':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="workshop-tab-content workshop-tab-fullwidth">
+              <AgentTeamsPage
+                context={context}
+                onBack={() => handleTabChange('proactive')}
               />
             </div>
           </Suspense>

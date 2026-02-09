@@ -7,7 +7,6 @@ import type { StructuredIdea, ApiStatus, Page } from './types';
 import { RECENT_CUTOFF_MS, SYNC_INTERVAL_MS, AI_PROCESSING_STEP_DELAY_MS, AI_PROCESSING_INITIAL_DELAY_MS } from './constants';
 
 // Core components - always loaded
-import { SmartIdeaList } from './components/VirtualizedIdeaList';
 import { ToastContainer, showToast } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useContextState } from './components/ContextSwitcher';
@@ -47,18 +46,13 @@ const IntegrationsPage = lazy(() => import('./components/IntegrationsPage').then
 const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
 const AutomationDashboard = lazy(() => import('./components/AutomationDashboard').then(m => ({ default: m.AutomationDashboard })));
 const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
-const PersonalizationChat = lazy(() => import('./components/PersonalizationChat').then(m => ({ default: m.PersonalizationChat })));
-const MediaGallery = lazy(() => import('./components/MediaGallery').then(m => ({ default: m.MediaGallery })));
-const StoriesPage = lazy(() => import('./components/StoriesPage').then(m => ({ default: m.StoriesPage })));
+const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
 const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m => ({ default: m.ExportDashboard })));
 const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
 const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
-const InboxTriage = lazy(() => import('./components/InboxTriage').then(m => ({ default: m.InboxTriage })));
 const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
 const IdeasPage = lazy(() => import('./components/IdeasPage').then(m => ({ default: m.IdeasPage })));
-const CanvasPage = lazy(() => import('./components/CanvasPage').then(m => ({ default: m.CanvasPage })));
-const VoiceChatPage = lazy(() => import('./components/VoiceChat').then(m => ({ default: m.VoiceChat })));
-const AgentTeamsPage = lazy(() => import('./components/AgentTeamsPage').then(m => ({ default: m.AgentTeamsPage })));
+const IncubatorPage = lazy(() => import('./components/IncubatorPage').then(m => ({ default: m.IncubatorPage })));
 
 const PageLoader = () => (
   <div className="page-loader" role="status" aria-live="polite">
@@ -72,62 +66,68 @@ const PageLoader = () => (
 // ============================================
 
 const PAGE_PATHS: Record<Page, string> = {
+  // Primary pages
   'home': '/',
   'ideas': '/ideas',
-  'insights': '/insights',
-  'archive': '/archive',
-  'settings': '/settings',
+  'incubator': '/incubator',
   'ai-workshop': '/ai-workshop',
   'learning': '/learning',
-  'profile': '/profile',
+  'my-ai': '/my-ai',
+  'insights': '/insights',
+  'documents': '/documents',
   'meetings': '/meetings',
-  'media': '/media',
-  'stories': '/stories',
   'automations': '/automations',
   'integrations': '/integrations',
-  'notifications': '/notifications',
   'export': '/export',
   'sync': '/sync',
-  'personalization': '/personalization',
-  'documents': '/documents',
-  'triage': '/triage',
-  'canvas': '/canvas',
-  'voice-chat': '/voice-chat',
-  'agent-teams': '/agent-teams',
-  // Legacy redirects
-  'incubator': '/ai-workshop/incubator',
+  'profile': '/profile',
+  'notifications': '/notifications',
+  'settings': '/settings',
+  // Legacy redirects (old pages -> new locations)
+  'archive': '/ideas',
+  'triage': '/ideas',
+  'stories': '/insights/connections',
+  'media': '/documents',
+  'canvas': '/documents',
+  'personalization': '/my-ai',
   'proactive': '/ai-workshop/proactive',
   'evolution': '/ai-workshop/evolution',
-  'dashboard': '/insights/overview',
+  'dashboard': '/insights/analytics',
   'analytics': '/insights/analytics',
   'digest': '/insights/digest',
   'knowledge-graph': '/insights/connections',
   'learning-tasks': '/learning',
+  'voice-chat': '/ai-workshop/voice-chat',
+  'agent-teams': '/ai-workshop/agent-teams',
 };
 
 const PATH_PAGES: Record<string, Page> = {
+  // Primary routes
   '/': 'home',
   '/ideas': 'ideas',
-  '/insights': 'insights',
-  '/archive': 'archive',
-  '/settings': 'settings',
+  '/incubator': 'incubator',
   '/ai-workshop': 'ai-workshop',
   '/learning': 'learning',
-  '/profile': 'profile',
+  '/my-ai': 'my-ai',
+  '/insights': 'insights',
+  '/documents': 'documents',
   '/meetings': 'meetings',
-  '/media': 'media',
-  '/stories': 'stories',
   '/automations': 'automations',
   '/integrations': 'integrations',
-  '/notifications': 'notifications',
   '/export': 'export',
   '/sync': 'sync',
-  '/personalization': 'personalization',
-  '/documents': 'documents',
-  '/triage': 'triage',
-  '/canvas': 'canvas',
-  '/voice-chat': 'voice-chat',
-  '/agent-teams': 'agent-teams',
+  '/profile': 'profile',
+  '/notifications': 'notifications',
+  '/settings': 'settings',
+  // Legacy paths -> redirect to new pages
+  '/archive': 'ideas',
+  '/triage': 'ideas',
+  '/stories': 'insights',
+  '/media': 'documents',
+  '/canvas': 'documents',
+  '/personalization': 'my-ai',
+  '/voice-chat': 'ai-workshop',
+  '/agent-teams': 'ai-workshop',
 };
 
 function useUrlNavigation() {
@@ -144,6 +144,7 @@ function useUrlNavigation() {
 
     if (fullPath.startsWith('/insights/')) return 'insights';
     if (fullPath.startsWith('/ai-workshop/')) return 'ai-workshop';
+    if (fullPath.startsWith('/documents/')) return 'documents';
 
     return PATH_PAGES[basePath] || 'home';
   }, [location.pathname]);
@@ -160,7 +161,7 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      if (page === 'insights' || page === 'ai-workshop') {
+      if (page === 'insights' || page === 'ai-workshop' || page === 'documents') {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
     }
@@ -550,7 +551,7 @@ function App() {
     return <Navigate to={`/insights/${tab}`} replace />;
   }
 
-  if (currentPage === 'incubator' || currentPage === 'proactive' || currentPage === 'evolution') {
+  if (currentPage === 'proactive' || currentPage === 'evolution') {
     return <Navigate to={`/ai-workshop/${currentPage}`} replace />;
   }
 
@@ -609,9 +610,26 @@ function App() {
                 onIdeaClick={handleIdeaClick}
                 onCloseDetail={() => setSelectedIdea(null)}
                 onNavigateToIdea={navigateToIdea}
+                archivedIdeas={archivedIdeas}
+                archivedCount={archivedCount}
+                onRestore={handleRestore}
+                onTriageComplete={() => loadIdeas()}
               />
             </Suspense>
           </NeuroFeedbackProvider>
+        );
+
+      case 'incubator':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <IncubatorPage
+              onBack={() => navigateToPage('ideas')}
+              onIdeaCreated={() => {
+                loadIdeas();
+                navigateToPage('ideas');
+              }}
+            />
+          </Suspense>
         );
 
       case 'insights':
@@ -628,7 +646,7 @@ function App() {
                   navigateToPage('ideas');
                 }
               }}
-              initialTab={(tabParam || 'overview') as 'overview' | 'analytics' | 'digest' | 'connections'}
+              initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections'}
             />
           </Suspense>
         );
@@ -644,13 +662,12 @@ function App() {
                 loadIdeas();
                 navigateToPage('ideas');
               }}
-              initialTab={(tabParam || 'incubator') as 'incubator' | 'proactive' | 'evolution'}
+              initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'voice-chat' | 'agent-teams'}
             />
           </Suspense>
         );
 
       case 'learning':
-      case 'learning-tasks':
         return (
           <Suspense fallback={<PageLoader />}>
             <LearningDashboard
@@ -660,22 +677,14 @@ function App() {
           </Suspense>
         );
 
-      case 'triage':
+      case 'my-ai':
         return (
-          <NeuroFeedbackProvider>
-            <Suspense fallback={<PageLoader />}>
-              <InboxTriage
-                context={context}
-                apiBase="/api"
-                onBack={() => navigateToPage('home')}
-                onComplete={() => {
-                  loadIdeas();
-                  navigateToPage('ideas');
-                }}
-                showToast={showToast}
-              />
-            </Suspense>
-          </NeuroFeedbackProvider>
+          <Suspense fallback={<PageLoader />}>
+            <MyAIPage
+              context={context}
+              onBack={() => navigateToPage('home')}
+            />
+          </Suspense>
         );
 
       case 'meetings':
@@ -719,35 +728,6 @@ function App() {
           </Suspense>
         );
 
-      case 'personalization':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <PersonalizationChat
-              context={context}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'media':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <MediaGallery
-              context={context}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'stories':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <StoriesPage
-              context={context}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
 
       case 'export':
         return (
@@ -769,49 +749,17 @@ function App() {
           </Suspense>
         );
 
-      case 'canvas':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <CanvasPage
-              context={context}
-              onNavigate={(page) => navigateToPage(page as Page)}
-            />
-          </Suspense>
-        );
 
-      case 'voice-chat':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <VoiceChatPage
-              context={context}
-              apiUrl={import.meta.env.VITE_API_URL || ''}
-              apiKey={import.meta.env.VITE_API_KEY || ''}
-              onClose={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'agent-teams':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <AgentTeamsPage
-              context={context}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'documents': {
-        const docContext = context === 'work' ? 'work' : 'personal';
+      case 'documents':
         return (
           <Suspense fallback={<PageLoader />}>
             <DocumentVaultPage
-              context={docContext}
+              context={context as 'personal' | 'work'}
               onBack={() => navigateToPage('home')}
+              initialTab={tabParam as 'documents' | 'editor' | 'media' | undefined}
             />
           </Suspense>
         );
-      }
 
       case 'settings':
         return (
@@ -823,52 +771,6 @@ function App() {
               onNavigate={(page) => navigateToPage(page as Page)}
             />
           </Suspense>
-        );
-
-      case 'archive':
-        return (
-          <NeuroFeedbackProvider>
-            <div className="archive-page">
-              <div className="archive-header">
-                <h1>📥 Archiv</h1>
-                <span className="archive-count">{archivedCount} archiviert</span>
-              </div>
-              <section className="ideas-section">
-                <div className="section-header">
-                  <h2>Archivierte Gedanken</h2>
-                </div>
-                {loading ? (
-                  <div className="loading-state" role="status" aria-live="polite">
-                    <SkeletonLoader type="card" count={3} />
-                  </div>
-                ) : archivedIdeas.length === 0 ? (
-                  <div className="empty-state">
-                    <span className="empty-icon">📭</span>
-                    <h3>Archiv ist leer</h3>
-                    <p>Archivierte Gedanken erscheinen hier. Archiviere Gedanken, die du aufbewahren aber nicht mehr aktiv nutzen möchtest.</p>
-                    <div className="empty-state-actions">
-                      <button
-                        type="button"
-                        className="empty-state-cta"
-                        onClick={() => navigateToPage('ideas')}
-                      >
-                        ← Zu deinen Gedanken
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <SmartIdeaList
-                    ideas={archivedIdeas}
-                    viewMode={viewMode}
-                    onDelete={(id) => setArchivedIdeas(prev => prev.filter(i => i.id !== id))}
-                    onRestore={handleRestore}
-                    isArchived={true}
-                    context={context}
-                  />
-                )}
-              </section>
-            </div>
-          </NeuroFeedbackProvider>
         );
 
       default:

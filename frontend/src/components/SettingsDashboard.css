@@ -201,6 +201,92 @@
 }
 
 /* ============================================
+   Settings Content (Real Settings)
+   ============================================ */
+
+.settings-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.settings-group {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.settings-group-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.5));
+  padding: 1rem 1.25rem 0.5rem;
+  margin: 0;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.settings-item-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--neuro-text-primary, #fff);
+}
+
+.settings-item-desc {
+  font-size: 0.78rem;
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.5));
+}
+
+.settings-item-value {
+  font-size: 0.85rem;
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+}
+
+.settings-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem 1rem;
+}
+
+.settings-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--neuro-text-primary, #fff);
+  font-size: 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-quick-link:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+/* ============================================
    Dark Mode Support
    ============================================ */
 

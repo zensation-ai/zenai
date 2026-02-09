@@ -22,14 +22,11 @@ import '../neurodesign.css';
 import './InsightsDashboard.css';
 
 // Lazy-load die Sub-Komponenten für bessere Performance
-const DashboardHome = lazy(() => import('./DashboardHome').then(m => ({ default: m.DashboardHome })));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
-const ProductivityDashboard = lazy(() => import('./ProductivityDashboard').then(m => ({ default: m.ProductivityDashboard })));
-const MemoryTransparency = lazy(() => import('./MemoryTransparency').then(m => ({ default: m.MemoryTransparency })));
 
-type InsightsTab = 'overview' | 'analytics' | 'digest' | 'connections' | 'productivity' | 'memory';
+type InsightsTab = 'analytics' | 'digest' | 'connections';
 
 interface InsightsDashboardProps {
   context: AIContext;
@@ -40,12 +37,9 @@ interface InsightsDashboardProps {
 }
 
 const TABS: { id: InsightsTab; label: string; icon: string; description: string }[] = [
-  { id: 'overview', label: 'Übersicht', icon: '🏠', description: 'Dashboard mit wichtigsten Metriken' },
-  { id: 'analytics', label: 'Statistiken', icon: '📈', description: 'Detaillierte Analysen und Trends' },
+  { id: 'analytics', label: 'Statistiken', icon: '📈', description: 'Analysen, Trends und Produktivität' },
   { id: 'digest', label: 'Zusammenfassung', icon: '📊', description: 'Tägliche und wöchentliche Digests' },
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
-  { id: 'productivity', label: 'Produktivität', icon: '⚡', description: 'ROI und Zeitersparnis' },
-  { id: 'memory', label: 'Memory', icon: '🧠', description: 'Was deine AI gelernt hat' },
 ];
 
 const TabLoader = () => (
@@ -59,16 +53,16 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
   onBack,
   onNavigate,
   onSelectIdea,
-  initialTab = 'overview',
+  initialTab = 'analytics',
 }) => {
   const navigate = useNavigate();
-  const VALID_TABS: InsightsTab[] = ['overview', 'analytics', 'digest', 'connections', 'productivity', 'memory'];
-  const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'overview';
+  const VALID_TABS: InsightsTab[] = ['analytics', 'digest', 'connections'];
+  const validatedTab = VALID_TABS.includes(initialTab as InsightsTab) ? initialTab as InsightsTab : 'analytics';
   const [activeTab, setActiveTab] = useState<InsightsTab>(validatedTab);
 
   // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
   useEffect(() => {
-    setActiveTab(VALID_TABS.includes(initialTab) ? initialTab : 'overview');
+    setActiveTab(VALID_TABS.includes(initialTab as InsightsTab) ? initialTab as InsightsTab : 'analytics');
   }, [initialTab]);
 
   // Update URL when tab changes (for browser history support)
@@ -78,29 +72,6 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
     navigate(`/insights/${tab}`, { replace: true });
   }, [navigate]);
 
-  const handleNavigate = (page: string) => {
-    // Mapping für interne Tab-Switches (falls jemand 'analytics' etc. aufruft)
-    const tabMapping: Record<string, InsightsTab> = {
-      'dashboard': 'overview',
-      'analytics': 'analytics',
-      'digest': 'digest',
-      'knowledge-graph': 'connections',
-      'productivity': 'productivity',
-      'memory': 'memory',
-    };
-
-    // Wenn es ein interner Tab ist, wechsle den Tab statt zu navigieren
-    if (tabMapping[page]) {
-      handleTabChange(tabMapping[page]);
-      return;
-    }
-
-    // Ansonsten normale Navigation zur App-Ebene
-    if (onNavigate) {
-      onNavigate(page);
-    }
-  };
-
   const handleSelectIdea = (ideaId: string) => {
     if (onSelectIdea) {
       onSelectIdea(ideaId);
@@ -109,27 +80,13 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'overview':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content">
-              <DashboardHome
-                context={context}
-                apiBase="/api"
-                onNavigate={handleNavigate}
-                showToast={() => {}}
-              />
-            </div>
-          </Suspense>
-        );
-
       case 'analytics':
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="insights-tab-content insights-tab-fullwidth">
               <AnalyticsDashboard
                 context={context}
-                onBack={() => setActiveTab('overview')}
+                onBack={() => setActiveTab('analytics')}
               />
             </div>
           </Suspense>
@@ -141,7 +98,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
             <div className="insights-tab-content insights-tab-fullwidth">
               <DigestDashboard
                 context={context}
-                onBack={() => setActiveTab('overview')}
+                onBack={() => setActiveTab('analytics')}
               />
             </div>
           </Suspense>
@@ -153,30 +110,9 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
             <div className="insights-tab-content insights-tab-fullheight">
               <KnowledgeGraphPage
                 context={context}
-                onBack={() => setActiveTab('overview')}
+                onBack={() => setActiveTab('analytics')}
                 onSelectIdea={handleSelectIdea}
               />
-            </div>
-          </Suspense>
-        );
-
-      case 'productivity':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content">
-              <ProductivityDashboard
-                context={context}
-                onBack={() => setActiveTab('overview')}
-              />
-            </div>
-          </Suspense>
-        );
-
-      case 'memory':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content">
-              <MemoryTransparency context={context} />
             </div>
           </Suspense>
         );

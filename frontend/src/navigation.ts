@@ -28,6 +28,12 @@ export interface NavSection {
 /**
  * Main navigation sections displayed in sidebar
  * Grouped by functional area, max 4 items per group (Miller's Law)
+ *
+ * Radikale Umstrukturierung 2026:
+ * - Gedanken: Ideas (inkl. Archiv + Triage) + Inkubator
+ * - KI-Assistenz: KI-Werkstatt + Lernen + Meine KI
+ * - Wissen & Inhalte: Insights + Dokumente (inkl. Canvas + Medien) + Meetings
+ * - System: Automationen + Integrationen + Export + Sync
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
@@ -35,32 +41,28 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Gedanken',
     icon: '💭',
     items: [
-      { page: 'ideas', icon: '💭', label: 'Meine Gedanken', description: 'Ideen, Notizen und Chat' },
-      { page: 'archive', icon: '📥', label: 'Archiv', description: 'Archivierte Gedanken', badge: 'archived' },
-      { page: 'triage', icon: '📋', label: 'Sortieren', description: 'Gedanken einordnen' },
+      { page: 'ideas', icon: '💭', label: 'Meine Gedanken', description: 'Ideen, Archiv und Sortieren' },
+      { page: 'incubator', icon: '🧫', label: 'Inkubator', description: 'Gedanken reifen lassen' },
     ],
   },
   {
     id: 'ki',
-    label: 'KI & Insights',
+    label: 'KI-Assistenz',
     icon: '🧠',
     items: [
-      { page: 'insights', icon: '📊', label: 'Insights', description: 'Dashboard & Analytics', subPages: ['dashboard', 'analytics', 'digest', 'knowledge-graph'] },
-      { page: 'ai-workshop', icon: '🧪', label: 'KI-Werkstatt', description: 'Inkubator & Evolution', subPages: ['incubator', 'proactive', 'evolution', 'voice-chat', 'agent-teams'] },
+      { page: 'ai-workshop', icon: '🧪', label: 'KI-Werkstatt', description: 'Proaktiv, Evolution & Agenten', subPages: ['proactive', 'evolution', 'voice-chat', 'agent-teams'] },
       { page: 'learning', icon: '📚', label: 'Lernen', description: 'Lernziele und Aufgaben', subPages: ['learning-tasks'] },
-      { page: 'personalization', icon: '🎨', label: 'Personalisierung', description: 'KI auf dich anpassen' },
+      { page: 'my-ai', icon: '🤖', label: 'Meine KI', description: 'Personalisierung & KI-Wissen' },
     ],
   },
   {
-    id: 'inhalte',
-    label: 'Inhalte',
-    icon: '📁',
+    id: 'wissen',
+    label: 'Wissen & Inhalte',
+    icon: '📊',
     items: [
-      { page: 'documents', icon: '📄', label: 'Dokumente', description: 'Dokument-Verwaltung' },
-      { page: 'canvas', icon: '🎨', label: 'Canvas', description: 'Interaktiver Editor' },
+      { page: 'insights', icon: '📊', label: 'Insights', description: 'Analytics, Digest & Verbindungen', subPages: ['analytics', 'digest', 'knowledge-graph'] },
+      { page: 'documents', icon: '📄', label: 'Dokumente', description: 'Dateien, Editor & Medien', subPages: ['canvas', 'media'] },
       { page: 'meetings', icon: '📅', label: 'Meetings', description: 'Meeting-Notizen' },
-      { page: 'media', icon: '🖼️', label: 'Medien', description: 'Bilder und Dateien' },
-      { page: 'stories', icon: '📖', label: 'Stories', description: 'Gedanken-Geschichten' },
     ],
   },
   {

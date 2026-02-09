@@ -10,6 +10,43 @@
   color: var(--neuro-text-primary, #fff);
 }
 
+/* Document Tabs (Dokumente / Editor / Medien) */
+.vault-doc-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.75rem 1.5rem 0;
+  background: var(--glass-2026-bg, rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
+  flex-shrink: 0;
+}
+
+.vault-doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  transition: all 0.2s ease;
+}
+
+.vault-doc-tab:hover {
+  color: var(--neuro-text-primary, #fff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vault-doc-tab.active {
+  color: var(--neuro-accent, #ff6b35);
+  border-bottom-color: var(--neuro-accent, #ff6b35);
+  background: rgba(255, 107, 53, 0.08);
+}
+
 /* Header */
 .vault-header {
   display: flex;

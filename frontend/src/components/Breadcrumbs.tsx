@@ -97,8 +97,8 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   'ai-workshop': [ROOT, { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' }],
   'incubator': [
     ROOT,
-    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
-    { label: 'Inkubator', page: 'incubator', icon: '🌱' },
+    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    { label: 'Inkubator', page: 'incubator', icon: '🧫' },
   ],
   'proactive': [
     ROOT,
@@ -140,7 +140,12 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   'media': [ROOT, { label: 'Medien', page: 'media', icon: '🖼️' }],
   'stories': [ROOT, { label: 'Stories', page: 'stories', icon: '📖' }],
   'archive': [ROOT, { label: 'Archiv', page: 'archive', icon: '📥' }],
-  'canvas': [ROOT, { label: 'Inhalte', page: 'home', icon: '📁' }, { label: 'Canvas', page: 'canvas', icon: '🎨' }],
+  'canvas': [ROOT, { label: 'Dokumente', page: 'documents', icon: '📄' }, { label: 'Canvas', page: 'canvas', icon: '🎨' }],
+  'my-ai': [
+    ROOT,
+    { label: 'KI-Assistenz', page: 'ai-workshop', icon: '🧠' },
+    { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
+  ],
   'voice-chat': [
     ROOT,
     { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
