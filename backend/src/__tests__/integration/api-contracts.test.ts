@@ -215,14 +215,16 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         expect(res.status).toBe(200);
 
-        // Contract: single idea object (not wrapped)
-        expect(res.body).toHaveProperty('id', UUID);
-        expect(res.body).toHaveProperty('title');
-        expect(res.body).toHaveProperty('summary');
-        expect(res.body).toHaveProperty('type');
-        expect(res.body).toHaveProperty('category');
-        expect(res.body).toHaveProperty('priority');
-        expect(res.body).toHaveProperty('created_at');
+        // Contract: { success: true, idea: { id, title, ... } }
+        expect(res.body).toHaveProperty('success', true);
+        expect(res.body).toHaveProperty('idea');
+        expect(res.body.idea).toHaveProperty('id', UUID);
+        expect(res.body.idea).toHaveProperty('title');
+        expect(res.body.idea).toHaveProperty('summary');
+        expect(res.body.idea).toHaveProperty('type');
+        expect(res.body.idea).toHaveProperty('category');
+        expect(res.body.idea).toHaveProperty('priority');
+        expect(res.body.idea).toHaveProperty('created_at');
       });
 
       it('should return 404 with standard error shape for non-existent idea', async () => {

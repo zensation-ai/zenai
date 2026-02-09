@@ -75,6 +75,7 @@ ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
   ]);
 
   res.json({
+    success: true,
     total: parseInt(totalResult.rows[0].total),
     byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {} as Record<string, number>),
     byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {} as Record<string, number>),
@@ -404,7 +405,7 @@ ideasRouter.get('/:id', apiKeyAuth, validateUUID, asyncHandler(async (req, res) 
   queryContext(ctx, 'UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
     .catch((err) => logger.debug('Background view count update skipped', { error: err.message }));
 
-  res.json(parseIdeaRow(row as IdeaDatabaseRow));
+  res.json({ success: true, idea: parseIdeaRow(row as IdeaDatabaseRow) });
 }));
 
 /**
@@ -703,7 +704,7 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
     ...result.rows[0]
   }).catch((err) => logger.debug('Background webhook skipped', { error: err.message }));
 
-  res.json(result.rows[0]);
+  res.json({ success: true, ...result.rows[0] });
 }));
 
 /**

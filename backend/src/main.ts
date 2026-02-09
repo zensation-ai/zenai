@@ -10,8 +10,6 @@ import { healthRouter } from './routes/health';
 import { knowledgeGraphRouter } from './routes/knowledge-graph';
 import { meetingsRouter } from './routes/meetings';
 import { userProfileRouter, userProfileContextRouter } from './routes/user-profile';
-// DEPRECATED - Removed from routing 2026-02-08. No frontend consumer.
-// import { companiesRouter } from './routes/companies';
 // Phase 4: Enterprise Integration Routes
 import { apiKeysRouter } from './routes/api-keys';
 // Phase Security Sprint 3: Audit Logs
@@ -33,8 +31,6 @@ import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
 import mediaRouter from './routes/media';
 import storiesRouter from './routes/stories';
-// Phase 6: Training - DEPRECATED - Removed from routing 2026-02-08. Superseded by LearningDashboard.
-// import { trainingRouter } from './routes/training';
 // Phase 10: Offline Sync
 import { syncRouter } from './routes/sync';
 // Phase 10: Analytics
@@ -298,7 +294,6 @@ app.use('/api/knowledge-graph', knowledgeGraphRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/profile', userProfileRouter);
 app.use('/api', userProfileContextRouter);  // Context-aware profile routes: /api/:context/profile/*
-// REMOVED: app.use('/api/companies', companiesRouter) - @deprecated, no frontend consumer (2026-02-08)
 
 // Phase 4: Enterprise Integration Routes
 app.use('/api/keys', apiKeysRouter);
@@ -318,8 +313,6 @@ app.use('/api', voiceMemoContextRouter);
 // Phase 7: Media & Stories
 app.use('/api', mediaRouter);  // Context-aware media routes: /api/:context/media
 app.use('/api', storiesRouter);  // Context-aware stories: /api/:context/stories
-
-// REMOVED: app.use('/api', trainingRouter) - @deprecated, superseded by LearningDashboard (2026-02-08)
 
 // Phase 10: Offline Sync Routes
 app.use('/api', syncRouter);  // Context-aware sync routes: /api/:context/sync/*

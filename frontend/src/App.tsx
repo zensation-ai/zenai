@@ -205,6 +205,7 @@ function App() {
   });
   const [inputMode, setInputMode] = useState<InputMode>('voice');
   const isSubmittingRef = useRef(false);
+  const lastSubmitTimeRef = useRef(0);
   const [aiOverlay, setAIOverlay] = useState<{
     visible: boolean;
     type: ProcessType;
@@ -274,9 +275,13 @@ function App() {
   useEffect(() => {
     if (currentPage !== 'ideas') return;
 
+    const abortController = new AbortController();
     const syncInterval = setInterval(async () => {
+      // Skip sync if a new idea was recently submitted to avoid overwriting optimistic updates
+      if (Date.now() - lastSubmitTimeRef.current < RECENT_CUTOFF_MS) return;
+
       try {
-        const res = await axios.get(`/api/${context}/ideas`);
+        const res = await axios.get(`/api/${context}/ideas`, { signal: abortController.signal });
         const serverIdeas: StructuredIdea[] = res.data.ideas || [];
         const serverIdeaIds = new Set(serverIdeas.map(i => i.id));
 
@@ -299,7 +304,10 @@ function App() {
       }
     }, SYNC_INTERVAL_MS);
 
-    return () => clearInterval(syncInterval);
+    return () => {
+      clearInterval(syncInterval);
+      abortController.abort();
+    };
   }, [currentPage, context]);
 
   const checkHealth = async (signal?: AbortSignal) => {
@@ -480,6 +488,7 @@ function App() {
       } as unknown as StructuredIdea;
 
       setIdeas(prev => [newIdea, ...prev]);
+      lastSubmitTimeRef.current = Date.now();
       setTextInput('');
       showToast('Gedanke erfolgreich strukturiert!', 'success');
 

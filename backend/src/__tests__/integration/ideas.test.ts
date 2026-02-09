@@ -221,9 +221,10 @@ describe('Ideas API Integration Tests', () => {
         .get('/api/ideas/550e8400-e29b-41d4-a716-446655440001')
         .expect(200);
 
-      expect(response.body.id).toBe(mockIdea.id);
-      expect(response.body.title).toBe(mockIdea.title);
-      expect(response.body.next_steps).toEqual(['Step 1', 'Step 2']);
+      expect(response.body.success).toBe(true);
+      expect(response.body.idea.id).toBe(mockIdea.id);
+      expect(response.body.idea.title).toBe(mockIdea.title);
+      expect(response.body.idea.next_steps).toEqual(['Step 1', 'Step 2']);
     });
 
     it('should return 404 for non-existent idea', async () => {

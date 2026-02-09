@@ -320,11 +320,13 @@ export class DocumentService {
 
     const VALID_SORT_FIELDS = ['created_at', 'updated_at', 'title', 'file_size'] as const;
     const VALID_SORT_ORDERS = ['asc', 'desc'] as const;
-    const sortBy = VALID_SORT_FIELDS.includes(filters?.sortBy as typeof VALID_SORT_FIELDS[number])
-      ? filters!.sortBy!
+    const requestedSortBy = filters?.sortBy;
+    const sortBy = requestedSortBy && VALID_SORT_FIELDS.includes(requestedSortBy as typeof VALID_SORT_FIELDS[number])
+      ? requestedSortBy
       : 'created_at';
-    const sortOrder = VALID_SORT_ORDERS.includes(filters?.sortOrder as typeof VALID_SORT_ORDERS[number])
-      ? filters!.sortOrder!
+    const requestedSortOrder = filters?.sortOrder;
+    const sortOrder = requestedSortOrder && VALID_SORT_ORDERS.includes(requestedSortOrder as typeof VALID_SORT_ORDERS[number])
+      ? requestedSortOrder
       : 'desc';
     const orderClause = `ORDER BY ${sortBy} ${sortOrder}`;
 

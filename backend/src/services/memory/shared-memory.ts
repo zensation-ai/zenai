@@ -91,7 +91,8 @@ class SharedMemoryService {
     let store = this.stores.get(teamId);
     if (!store) {
       this.initialize(teamId);
-      store = this.stores.get(teamId)!;
+      store = this.stores.get(teamId);
+      if (!store) throw new Error(`Failed to initialize shared memory for team ${teamId}`);
     }
 
     const entry: SharedMemoryEntry = {
@@ -152,7 +153,8 @@ class SharedMemoryService {
       entries = entries.filter(e => e.type === filter.type);
     }
     if (filter?.since) {
-      entries = entries.filter(e => e.timestamp >= filter.since!);
+      const since = filter.since;
+      entries = entries.filter(e => e.timestamp >= since);
     }
 
     // Sort by timestamp (newest first)

@@ -364,18 +364,20 @@ Structure your response:
 
     synthesis = response.content[0].type === 'text' ? response.content[0].text : '';
 
-    // Extract gaps and contradictions from the synthesis
-    const gapSection = synthesis.match(/## (?:Wissenslücken|Knowledge Gaps)\s*\n([\s\S]*?)(?=\n## |$)/);
-    if (gapSection) {
-      const gapLines = gapSection[1].split('\n')
+    // Extract gaps and contradictions from the synthesis using safe split-based parsing
+    const gapSections = synthesis.split(/\n## (?:Wissenslücken|Knowledge Gaps)\s*\n/);
+    if (gapSections.length > 1) {
+      const gapContent = gapSections[1].split(/\n## /)[0] || '';
+      const gapLines = gapContent.split('\n')
         .map(l => l.replace(/^[-*•]\s*/, '').trim())
         .filter(l => l.length > 5);
       gaps.push(...gapLines);
     }
 
-    const contradictionSection = synthesis.match(/## (?:Widersprüche|Contradictions)\s*\n([\s\S]*?)(?=\n## |$)/);
-    if (contradictionSection) {
-      const contradictionLines = contradictionSection[1].split('\n')
+    const contradictionSections = synthesis.split(/\n## (?:Widersprüche|Contradictions)\s*\n/);
+    if (contradictionSections.length > 1) {
+      const contradictionContent = contradictionSections[1].split(/\n## /)[0] || '';
+      const contradictionLines = contradictionContent.split('\n')
         .map(l => l.replace(/^[-*•]\s*/, '').trim())
         .filter(l => l.length > 5);
       contradictions.push(...contradictionLines);

@@ -135,8 +135,9 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
         .get(`/api/ideas/${TEST_UUID}`)
         .set('x-ai-context', 'personal');
       expect(getRes.status).toBe(200);
-      expect(getRes.body).toHaveProperty('id', TEST_UUID);
-      expect(getRes.body).toHaveProperty('title', 'Test Idea');
+      expect(getRes.body).toHaveProperty('success', true);
+      expect(getRes.body.idea).toHaveProperty('id', TEST_UUID);
+      expect(getRes.body.idea).toHaveProperty('title', 'Test Idea');
 
       // Step 3: Update the idea (2 queries: SELECT old values + UPDATE RETURNING)
       mockQueryContext.mockReset();

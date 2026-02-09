@@ -389,6 +389,38 @@ mockQueryContext
 
 ## Changelog
 
+### 2026-02-09: Comprehensive Code Review & Critical Fixes
+
+**Umfassende Review des gesamten Projekts** (Backend, Frontend, Infrastruktur). 17 Findings identifiziert, kritische und wichtige Issues behoben.
+
+**Kritische Fixes:**
+
+| Bereich | Fix |
+|---------|-----|
+| Schema-Bypass | Deprecated `training.ts` + `companies.ts` entfernt (nutzten `pool.query()` statt `queryContext()`) |
+| Non-Null Assertions | `document-service.ts`, `shared-memory.ts`: `!`-Operator durch sichere Null-Checks ersetzt |
+| Unsafe Regex | `synthesis-engine.ts`: ReDoS-anfällige `[\s\S]*?` durch split-basiertes Parsing ersetzt |
+
+**Wichtige Fixes:**
+
+| Bereich | Fix |
+|---------|-----|
+| API Response Format | `GET /ideas/:id` jetzt `{ success: true, idea: {...} }`, `GET /ideas/stats/summary` mit `success` Feld |
+| Swagger URL | Hardcoded `localhost:3000` durch `process.env.API_URL` ersetzt |
+| Dead Code | Auskommentierte Imports für companies/training aus `main.ts` entfernt |
+| Race Condition | Background-Sync in `App.tsx` pausiert nach Idea-Erstellung + AbortController für Cleanup |
+
+**Geänderte Dateien (12):**
+- `backend/src/main.ts`, `routes/ideas.ts`, `services/document-service.ts`
+- `services/memory/shared-memory.ts`, `services/synthesis-engine.ts`, `utils/swagger.ts`
+- `routes/training.ts` (gelöscht), `routes/companies.ts` (gelöscht)
+- `frontend/src/App.tsx`
+- 3 Test-Dateien angepasst (`ideas.test.ts`, `api-contracts.test.ts`, `user-flows.test.ts`)
+
+**Tests:** 1,931 bestanden, 24 übersprungen, 0 fehlgeschlagen
+
+---
+
 ### 2026-02-09: Full Section Review & Context Parity Fix
 
 **Umfassender Review aller Sektionen** auf Verbindungen, Funktionen, Konsistenz, Login und Navigation/UX.
