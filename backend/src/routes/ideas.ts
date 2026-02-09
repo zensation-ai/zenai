@@ -1027,19 +1027,34 @@ ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, 
  */
 ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContextFromParams(req);
-  const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-    queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
-    queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
-    queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
-    queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
-  ]);
 
-  res.json({
-    total: parseInt(totalResult.rows[0].total),
-    byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {} as Record<string, number>),
-    byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {} as Record<string, number>),
-    byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {} as Record<string, number>),
-  });
+  try {
+    const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
+      queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
+      queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
+      queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
+      queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
+    ]);
+
+    res.json({
+      total: parseInt(totalResult.rows[0]?.total ?? '0'),
+      byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
+      byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
+      byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
+    });
+  } catch (error) {
+    // Database/schema issue - return empty stats instead of 500
+    logger.warn('ideas stats/summary query failed', {
+      context: ctx,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.json({
+      total: 0,
+      byType: {},
+      byCategory: {},
+      byPriority: {},
+    });
+  }
 }));
 
 /**
