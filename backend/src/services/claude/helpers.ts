@@ -8,7 +8,7 @@
  */
 
 import { logger } from '../../utils/logger';
-import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority } from '../../utils/ollama';
+import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority, normalizeContext } from '../../utils/ollama';
 
 // ===========================================
 // Types
@@ -212,7 +212,12 @@ export function validateAndNormalizeIdea(parsed: unknown, fallbackTitle?: string
     keywords = obj.keywords.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
   }
 
-  return {
+  // Normalize suggested_context if present
+  const suggestedContext = normalizeContext(
+    typeof obj.suggested_context === 'string' ? obj.suggested_context : undefined
+  );
+
+  const result: StructuredIdea = {
     title,
     type: normalizeType(typeof obj.type === 'string' ? obj.type : undefined),
     category: normalizeCategory(typeof obj.category === 'string' ? obj.category : undefined),
@@ -222,6 +227,12 @@ export function validateAndNormalizeIdea(parsed: unknown, fallbackTitle?: string
     context_needed: contextNeeded,
     keywords,
   };
+
+  if (suggestedContext) {
+    result.suggested_context = suggestedContext;
+  }
+
+  return result;
 }
 
 // ===========================================

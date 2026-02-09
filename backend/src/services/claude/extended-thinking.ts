@@ -224,6 +224,7 @@ export async function structureWithClaudeAdvanced(
       type: confidenceType,
       category: confidenceCategory,
       priority: confidencePriority,
+      context: 0.5,
     },
     confidenceLevel: getConfidenceLevel(overallConfidence),
     suggestCorrection: overallConfidence < 0.6,

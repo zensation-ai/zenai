@@ -117,6 +117,7 @@ export function DocumentVaultPage({ onBack, context, initialTab = 'documents' }:
 }
 
 function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }: DocumentVaultPageProps & { activeDocTab: DocumentsTab; onDocTabChange: (tab: DocumentsTab) => void }) {
+  const contentNavigate = useNavigate();
   // State
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -523,7 +524,7 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
           <button type="button" className="back-button" onClick={onBack} aria-label="Zurück">
             ←
           </button>
-          <h1>Dokumente</h1>
+          <h1>Wissensbasis</h1>
           <span className="context-badge">{context}</span>
           <button
             type="button"
@@ -574,6 +575,18 @@ function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }:
               ☰
             </button>
           </div>
+
+          <button
+            type="button"
+            className="upload-trigger neuro-hover-lift"
+            onClick={() => contentNavigate('/ai-workshop/voice-chat')}
+            style={{
+              background: 'linear-gradient(135deg, var(--accent, #0ea5e9), var(--info, #06b6d4))',
+              color: '#fff',
+            }}
+          >
+            Frag dein Wissen
+          </button>
 
           <button
             type="button"

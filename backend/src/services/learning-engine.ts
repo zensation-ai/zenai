@@ -100,6 +100,7 @@ export interface PersonalizedSuggestion {
   suggested_type: string;
   suggested_category: string;
   suggested_priority: string;
+  suggested_context?: string;
   confidence: number;
   reasoning: string;
 }
@@ -157,11 +158,12 @@ export async function suggestFromLearning(
     const typeCounts: Record<string, number> = {};
     const categoryCounts: Record<string, number> = {};
     const priorityCounts: Record<string, number> = {};
+    const contextCounts: Record<string, number> = {};
 
     // 1. SIMILARITY-BASED: Finde ähnliche vergangene Ideen
     if (inputEmbedding.length > 0) {
       const similarIdeas = await client.query(
-        `SELECT type, category, priority, keywords,
+        `SELECT type, category, priority, keywords, context,
                 1 - (embedding <=> $1::vector) as similarity
          FROM ideas
          WHERE embedding IS NOT NULL
@@ -176,6 +178,9 @@ export async function suggestFromLearning(
           typeCounts[idea.type] = (typeCounts[idea.type] || 0) + weight;
           categoryCounts[idea.category] = (categoryCounts[idea.category] || 0) + weight;
           priorityCounts[idea.priority] = (priorityCounts[idea.priority] || 0) + weight;
+          if (idea.context) {
+            contextCounts[idea.context] = (contextCounts[idea.context] || 0) + weight;
+          }
         }
       }
     }
@@ -265,6 +270,7 @@ export async function suggestFromLearning(
     const suggestedType = getTopKey(typeCounts) || 'idea';
     const suggestedCategory = getTopKey(categoryCounts) || 'personal';
     const suggestedPriority = getTopKey(priorityCounts) || 'medium';
+    const suggestedContext = getTopKey(contextCounts) || undefined;
 
     // Calculate confidence based on how clear the winner is
     const typeConfidence = calculateSelectionConfidence(typeCounts);
@@ -298,6 +304,7 @@ export async function suggestFromLearning(
       suggested_type: suggestedType,
       suggested_category: suggestedCategory,
       suggested_priority: suggestedPriority,
+      suggested_context: suggestedContext,
       confidence: overallConfidence,
       reasoning: reasons.length > 0
         ? `Basierend auf ${reasons.join(', ')}`

@@ -28,7 +28,10 @@ interface ProcessedResult {
     next_steps?: string[];
     context_needed?: string[];
     keywords?: string[];
+    suggested_context?: 'personal' | 'work' | 'learning' | 'creative';
   };
+  suggestedContext?: 'personal' | 'work' | 'learning' | 'creative';
+  contextConfidence?: number;
 }
 
 export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled, context = 'personal', persona }: RecordButtonProps) {
@@ -159,6 +162,8 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
           ideaId: response.data.ideaId,
           transcript: response.data.transcript,
           structured: response.data.structured,
+          suggestedContext: response.data.suggestedContext,
+          contextConfidence: response.data.contextConfidence,
         });
       }
     } catch (error: unknown) {

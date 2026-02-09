@@ -22,6 +22,7 @@ export interface ConfidenceScores {
   category: number;
   priority: number;
   summary: number;
+  context: number;
 }
 
 /**
@@ -33,6 +34,7 @@ export interface StructuredIdeaWithConfidence extends StructuredIdea {
     type: number;
     category: number;
     priority: number;
+    context: number;
   };
   confidenceLevel: 'high' | 'medium' | 'low';
   suggestCorrection: boolean;
@@ -103,6 +105,32 @@ const CATEGORY_KEYWORDS: Record<string, KeywordConfig> = {
     de: ['lernen', 'kurs', 'buch', 'tutorial', 'verstehen', 'wissen', 'studieren', 'recherchieren', 'nachlesen', 'schulung', 'weiterbildung', 'zertifikat'],
     en: ['learn', 'course', 'book', 'tutorial', 'understand', 'knowledge', 'study', 'research', 'training', 'certification', 'skill', 'competency'],
     patterns: [/will.*(lernen|verstehen)/i, /want to (learn|understand)/i, /how does.*work/i, /wie funktioniert/i, /dokumentation lesen/i],
+  },
+};
+
+/**
+ * Context keywords for suggested_context confidence scoring
+ */
+const CONTEXT_KEYWORDS: Record<string, KeywordConfig> = {
+  work: {
+    de: ['arbeit', 'beruf', 'büro', 'meeting', 'kunde', 'projekt', 'geschäft', 'firma', 'team', 'kollege', 'chef', 'vertrieb', 'umsatz', 'budget', 'deadline'],
+    en: ['work', 'office', 'meeting', 'client', 'project', 'business', 'company', 'team', 'colleague', 'boss', 'sales', 'revenue', 'budget', 'deadline', 'professional'],
+    patterns: [/\b(arbeits|berufs|geschäfts)/i, /\b(work|office|corporate|b2b)/i, /im büro/i, /beim kunden/i, /at work/i],
+  },
+  personal: {
+    de: ['privat', 'persönlich', 'zuhause', 'familie', 'freund', 'gesundheit', 'hobby', 'sport', 'urlaub', 'einkaufen', 'kochen', 'garten', 'wohnung'],
+    en: ['private', 'personal', 'home', 'family', 'friend', 'health', 'hobby', 'sport', 'vacation', 'shopping', 'cooking', 'garden', 'apartment'],
+    patterns: [/für mich/i, /\b(privat|persönlich|zuhause)/i, /\b(personal|private|at home)/i, /meine (familie|frau|mann|kinder)/i],
+  },
+  learning: {
+    de: ['lernen', 'kurs', 'studium', 'buch', 'tutorial', 'weiterbildung', 'zertifikat', 'prüfung', 'vorlesung', 'seminar', 'workshop', 'recherche'],
+    en: ['learn', 'course', 'study', 'book', 'tutorial', 'training', 'certificate', 'exam', 'lecture', 'seminar', 'workshop', 'research'],
+    patterns: [/will.*(lernen|verstehen)/i, /want to (learn|understand)/i, /wie funktioniert/i, /how does.*work/i, /\b(udemy|coursera|youtube.*tutorial)/i],
+  },
+  creative: {
+    de: ['kreativ', 'design', 'kunst', 'musik', 'schreiben', 'malen', 'zeichnen', 'foto', 'video', 'content', 'blog', 'story', 'gedicht', 'komposition'],
+    en: ['creative', 'design', 'art', 'music', 'write', 'paint', 'draw', 'photo', 'video', 'content', 'blog', 'story', 'poem', 'composition'],
+    patterns: [/\b(kreativ|künstlerisch|gestalten)/i, /\b(creative|artistic|design)/i, /content (erstellen|creation)/i, /\b(figma|photoshop|canva|premiere)/i],
   },
 };
 
@@ -194,6 +222,13 @@ export function calculateConfidence(
   }
   const priorityConfidence = prioMatches > 0 ? Math.min(0.5 + prioMatches * 0.12, 1.0) : 0.45;
 
+  // Calculate context confidence with pattern matching
+  const ctxConfig = structured.suggested_context ? CONTEXT_KEYWORDS[structured.suggested_context] : undefined;
+  const ctxMatches = ctxConfig ? countMatches(transcript, lowerTranscript, ctxConfig) : 0;
+  const contextConfidence = structured.suggested_context
+    ? Math.min(0.4 + ctxMatches * 0.1, 1.0)
+    : 0.3;
+
   // Enhanced summary confidence: based on completeness, coherence, and actionability
   const summaryLength = structured.summary?.length || 0;
   const hasSummary = summaryLength > 20;
@@ -236,6 +271,7 @@ export function calculateConfidence(
     category: Math.round(categoryConfidence * 100) / 100,
     priority: Math.round(priorityConfidence * 100) / 100,
     summary: Math.round(summaryConfidence * 100) / 100,
+    context: Math.round(contextConfidence * 100) / 100,
   };
 }
 
@@ -261,6 +297,7 @@ export function addConfidenceToIdea(
       type: scores.type,
       category: scores.category,
       priority: scores.priority,
+      context: scores.context,
     },
     confidenceLevel: getConfidenceLevel(scores.overall),
     suggestCorrection: scores.overall < 0.6,

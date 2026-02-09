@@ -122,7 +122,10 @@ export const IdeaCreationResponseSchema = z.object({
     next_steps: z.array(z.string()).optional(),
     context_needed: z.array(z.string()).optional(),
     keywords: z.array(z.string()).optional(),
+    suggested_context: z.enum(['personal', 'work', 'learning', 'creative']).optional(),
   }).passthrough().optional(),
+  suggestedContext: z.enum(['personal', 'work', 'learning', 'creative']).optional(),
+  contextConfidence: z.number().optional(),
   success: z.boolean().optional(),
   transcript: z.string().optional(),
 }).passthrough();
