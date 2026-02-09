@@ -14,6 +14,7 @@ let intelligentLearningRouter: any;
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
+  isValidContext: jest.fn((context: string) => ['personal', 'work', 'learning', 'creative'].includes(context)),
   AIContext: {},
 }));
 
