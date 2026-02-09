@@ -18,6 +18,11 @@
 - **Frontend**: React + TypeScript (Vite)
 - **Backend**: Express.js + TypeScript
 - **AI**: Claude API (Primary), Ollama (Fallback)
+- **Database**: Supabase PostgreSQL + pgvector
+  - 4 Kontexte: `personal`, `work`, `learning`, `creative`
+  - Schema-Isolation per Context via `SET search_path TO {context}, public`
+  - 40 Tabellen pro Schema (volle Parität)
+  - `queryContext(context, sql, params)` für korrektes Schema-Routing
 - **Memory**: HiMeS 4-Layer Architecture
   - Working Memory (aktiver Task-Fokus)
   - Episodic Memory (konkrete Erfahrungen)
@@ -281,15 +286,18 @@ cd backend && npm test -- --coverage
 cd frontend && npm test
 ```
 
-### Test-Status (2026-02-01)
+### Test-Status (2026-02-09)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Gesamt** | 1221 | 94 | 0 |
-| Unit Tests | ~800 | 0 | 0 |
-| Integration Tests | ~421 | 94 | 0 |
+| **Gesamt** | 1931 | 24 | 0 |
+| Unit Tests | ~1400 | 0 | 0 |
+| Integration Tests | ~531 | 24 | 0 |
 
-**Absichtlich übersprungene Tests:** Whisper-Transkription (erfordert lokale Whisper-Installation)
+**Absichtlich übersprungene Tests (24):**
+- 21x Code-Execution Sandbox (Docker nicht verfügbar)
+- 1x URL-Fetch Real-Request (Netzwerk)
+- 2x SSL-Zertifikat NODE_EXTRA_CA_CERTS (Umgebung)
 
 ### Test-Struktur
 
@@ -380,6 +388,31 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-02-09: Database Schema Full Parity (4 Kontexte)
+
+**Problem:** learning/creative Schemas fehlten komplett, personal/work hatten unterschiedliche Tabellenanzahl (19 vs 18). Schema-Mismatch verursachte Runtime-Fehler bei Context-Routing.
+
+**Lösung:**
+
+- Idempotente Migration `sync_all_schemas_full_parity.sql`: 40 Tabellen pro Schema
+- Migration `fix_idea_relations_columns.sql`: 9 fehlende Spalten + UNIQUE-Constraint-Fix
+- `ai-activity-logger.ts`: Von `pool.query()` auf `queryContext()` umgestellt (Schema-Routing)
+- `main.ts`: Startup-Check auf alle 4 Kontexte erweitert
+- `intelligent-learning.test.ts`: Fehlenden `isValidContext`-Mock hinzugefügt (23 Tests repariert)
+
+**Ergebnis:**
+
+| Schema | Tabellen vorher | Tabellen nachher |
+|--------|----------------|-----------------|
+| personal | 19 | 40 |
+| work | 18 | 40 |
+| learning | 30 | 40 |
+| creative | 30 | 40 |
+
+**Tests:** 1,931 bestanden, 24 übersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-02-05: Code Quality 100% Verified
 
