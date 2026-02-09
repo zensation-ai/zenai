@@ -55,6 +55,7 @@ interface IdeasPageProps {
   onClearSearch: () => void;
   onDeleteIdea: (id: string) => void;
   onArchiveIdea: (id: string) => void;
+  onMoveIdea?: (id: string, targetContext: AIContext) => void;
   onRecordingChange: (recording: boolean) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onRecordProcessed: (result: any) => void;
@@ -90,6 +91,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   onClearSearch,
   onDeleteIdea,
   onArchiveIdea,
+  onMoveIdea,
   onRecordingChange,
   onRecordProcessed,
   viewMode,
@@ -416,6 +418,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
               onIdeaClick={onIdeaClick}
               onDelete={onDeleteIdea}
               onArchive={onArchiveIdea}
+              onMove={onMoveIdea}
               context={context}
             />
           )}
@@ -435,6 +438,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
               idea={selectedIdea}
               onClose={onCloseDetail}
               onNavigate={onNavigateToIdea}
+              onMove={onMoveIdea}
             />
           </div>
         </Suspense>

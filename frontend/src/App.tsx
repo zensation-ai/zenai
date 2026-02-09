@@ -422,6 +422,11 @@ function App() {
     });
   }, []);
 
+  const handleMove = useCallback((id: string) => {
+    setIdeas(prev => prev.filter(i => i.id !== id));
+    setSelectedIdea(null);
+  }, []);
+
   const submitText = useCallback(async () => {
     if (!textInput.trim()) return;
     if (isSubmittingRef.current) return;
@@ -591,6 +596,7 @@ function App() {
                 onClearSearch={clearSearch}
                 onDeleteIdea={(id) => setIdeas(prev => prev.filter(i => i.id !== id))}
                 onArchiveIdea={handleArchive}
+                onMoveIdea={handleMove}
                 onRecordingChange={setIsRecording}
                 onRecordProcessed={handleRecordProcessed}
                 viewMode={viewMode}

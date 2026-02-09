@@ -116,11 +116,13 @@ describe('Database Context Utilities', () => {
   describe('AIContext Type', () => {
     it('should only allow valid context values', () => {
       // TypeScript compile-time check - these should be valid
-      const validContexts: AIContext[] = ['personal', 'work'];
+      const validContexts: AIContext[] = ['personal', 'work', 'learning', 'creative'];
 
       expect(validContexts).toContain('personal');
       expect(validContexts).toContain('work');
-      expect(validContexts.length).toBe(2);
+      expect(validContexts).toContain('learning');
+      expect(validContexts).toContain('creative');
+      expect(validContexts.length).toBe(4);
     });
 
     it('should work with type guard', () => {

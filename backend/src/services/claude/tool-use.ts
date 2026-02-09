@@ -27,7 +27,7 @@ import { getClaudeClient, executeWithProtection, CLAUDE_MODEL } from './client';
  */
 export interface ToolExecutionContext {
   /** The AI context (personal or work) */
-  aiContext: 'personal' | 'work';
+  aiContext: 'personal' | 'work' | 'learning' | 'creative';
   /** Optional session ID for tracking */
   sessionId?: string;
   /** Optional user ID for audit */

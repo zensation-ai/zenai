@@ -14,7 +14,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 interface LogContext {
   requestId?: string;
   userId?: string;
-  context?: 'personal' | 'work';
+  context?: 'personal' | 'work' | 'learning' | 'creative';
   operation?: string;
   duration?: number;
   [key: string]: unknown;

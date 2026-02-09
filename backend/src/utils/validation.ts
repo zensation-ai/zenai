@@ -366,7 +366,7 @@ export function validateEnum<T extends string>(
 // Context Validation
 // ===========================================
 
-const VALID_CONTEXTS: readonly AIContext[] = ['personal', 'work'];
+const VALID_CONTEXTS: readonly AIContext[] = ['personal', 'work', 'learning', 'creative'];
 
 /**
  * Validate AI context parameter

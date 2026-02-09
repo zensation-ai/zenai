@@ -9,7 +9,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { AIContext, isValidUUID } from '../utils/database-context';
+import { AIContext, isValidUUID, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
@@ -74,8 +74,8 @@ const MAX_DESCRIPTION_LENGTH = 2000;
 const MAX_FEEDBACK_LENGTH = 5000;
 
 function validateContext(context: string): AIContext {
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
   return context as AIContext;
 }

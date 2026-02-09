@@ -21,8 +21,8 @@ export const UUIDSchema = z.string().uuid('Invalid UUID format');
 /**
  * Context schema (personal/work)
  */
-export const ContextSchema = z.enum(['personal', 'work'], {
-  message: 'Context must be "personal" or "work"'
+export const ContextSchema = z.enum(['personal', 'work', 'learning', 'creative'], {
+  message: 'Context must be "personal", "work", "learning", or "creative"'
 });
 
 /**

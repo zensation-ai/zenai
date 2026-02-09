@@ -16,7 +16,8 @@ export { isValidUUID } from './validation';
 
 dotenv.config();
 
-export type AIContext = 'personal' | 'work';
+import { AIContext, VALID_CONTEXTS } from '../types';
+export type { AIContext };
 
 // ===========================================
 // Pool Configuration (Phase 11 Optimized)
@@ -154,31 +155,30 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// For Railway (single database), we use the same database for both contexts
-// but prefix tables with context (schema separation can be added later)
-// For local dev, we use separate databases
-const personalConfig = useConnectionString
-  ? { ...POOL_CONFIG } // Use same database from DATABASE_URL
+// For Railway/Supabase (single database), all contexts use the same connection config
+// but are separated by PostgreSQL schemas. For local dev, separate databases can be used.
+const sharedPoolConfig = useConnectionString
+  ? { ...POOL_CONFIG }
   : { ...POOL_CONFIG, database: 'personal_ai' };
-
-const workConfig = useConnectionString
-  ? { ...POOL_CONFIG } // Use same database from DATABASE_URL
-  : { ...POOL_CONFIG, database: 'work_ai' };
 
 // Connection pools for each context
 const pools: Record<AIContext, Pool> = {
-  personal: new Pool(personalConfig),
-  work: new Pool(workConfig),
+  personal: new Pool(useConnectionString ? { ...POOL_CONFIG } : { ...POOL_CONFIG, database: 'personal_ai' }),
+  work: new Pool(useConnectionString ? { ...POOL_CONFIG } : { ...POOL_CONFIG, database: 'work_ai' }),
+  learning: new Pool(sharedPoolConfig),
+  creative: new Pool(sharedPoolConfig),
 };
 
 // Track pool stats for monitoring
 const poolStats: Record<AIContext, { queries: number; errors: number; slowQueries: number }> = {
   personal: { queries: 0, errors: 0, slowQueries: 0 },
   work: { queries: 0, errors: 0, slowQueries: 0 },
+  learning: { queries: 0, errors: 0, slowQueries: 0 },
+  creative: { queries: 0, errors: 0, slowQueries: 0 },
 };
 
 // Log pool errors with detailed PostgreSQL diagnostics
-(['personal', 'work'] as const).forEach((ctx) => {
+(VALID_CONTEXTS).forEach((ctx) => {
   pools[ctx].on('error', (err) => {
     const pgError = err as { code?: string; detail?: string; hint?: string; severity?: string; constraint?: string };
     logger.error(`Pool error [${ctx}]`, err, {
@@ -223,7 +223,7 @@ export async function queryContext(
 ): Promise<QueryResult> {
   // Validate context parameter to prevent SQL injection via search_path
   if (!isValidContext(context)) {
-    throw new Error(`Invalid context: ${context}. Must be 'personal' or 'work'.`);
+    throw new Error(`Invalid context: ${context}. Must be one of: ${VALID_CONTEXTS.join(', ')}.`);
   }
 
   // Use the actual context for schema routing
@@ -342,7 +342,7 @@ export async function queryContext(
  * Validate that a context string is valid
  */
 export function isValidContext(context: string): context is AIContext {
-  return context === 'personal' || context === 'work';
+  return VALID_CONTEXTS.includes(context as AIContext);
 }
 
 /**
@@ -351,10 +351,9 @@ export function isValidContext(context: string): context is AIContext {
 export async function closeAllPools(): Promise<void> {
   logger.info('Closing database connections...', { operation: 'shutdown' });
   try {
-    await Promise.all([
-      pools.personal.end(),
-      pools.work.end(),
-    ]);
+    await Promise.all(
+      VALID_CONTEXTS.map(ctx => pools[ctx].end())
+    );
     logger.info('All database pools closed', { operation: 'shutdown' });
   } catch (error) {
     logger.error('Error closing database pools', error instanceof Error ? error : undefined, { operation: 'shutdown' });
@@ -407,29 +406,22 @@ export function setupGracefulShutdown(): void {
 /**
  * Test both database connections
  */
-export async function testConnections(): Promise<{
-  personal: boolean;
-  work: boolean;
-}> {
-  const results = {
+export async function testConnections(): Promise<Record<AIContext, boolean>> {
+  const results: Record<AIContext, boolean> = {
     personal: false,
     work: false,
+    learning: false,
+    creative: false,
   };
 
-  try {
-    await queryContext('personal', 'SELECT 1');
-    results.personal = true;
-    logger.info('Personal database connected', { context: 'personal', operation: 'testConnection' });
-  } catch (error) {
-    logger.error('Personal database connection failed', error instanceof Error ? error : undefined, { context: 'personal', operation: 'testConnection' });
-  }
-
-  try {
-    await queryContext('work', 'SELECT 1');
-    results.work = true;
-    logger.info('Work database connected', { context: 'work', operation: 'testConnection' });
-  } catch (error) {
-    logger.error('Work database connection failed', error instanceof Error ? error : undefined, { context: 'work', operation: 'testConnection' });
+  for (const ctx of VALID_CONTEXTS) {
+    try {
+      await queryContext(ctx, 'SELECT 1');
+      results[ctx] = true;
+      logger.info(`${ctx} database connected`, { context: ctx, operation: 'testConnection' });
+    } catch (error) {
+      logger.error(`${ctx} database connection failed`, error instanceof Error ? error : undefined, { context: ctx, operation: 'testConnection' });
+    }
   }
 
   return results;
@@ -446,20 +438,16 @@ export function getPoolStats(): Record<AIContext, {
   idleCount: number;
   waitingCount: number;
 }> {
-  return {
-    personal: {
-      ...poolStats.personal,
-      poolSize: pools.personal.totalCount,
-      idleCount: pools.personal.idleCount,
-      waitingCount: pools.personal.waitingCount,
-    },
-    work: {
-      ...poolStats.work,
-      poolSize: pools.work.totalCount,
-      idleCount: pools.work.idleCount,
-      waitingCount: pools.work.waitingCount,
-    },
-  };
+  const stats = {} as Record<AIContext, { queries: number; errors: number; slowQueries: number; poolSize: number; idleCount: number; waitingCount: number }>;
+  for (const ctx of VALID_CONTEXTS) {
+    stats[ctx] = {
+      ...poolStats[ctx],
+      poolSize: pools[ctx].totalCount,
+      idleCount: pools[ctx].idleCount,
+      waitingCount: pools[ctx].waitingCount,
+    };
+  }
+  return stats;
 }
 
 // Periodic connection health check interval reference
@@ -493,10 +481,9 @@ export function startConnectionHealthCheck(intervalMs: number = 5 * 60 * 1000): 
   healthCheckInterval = setInterval(async () => {
     try {
       const start = Date.now();
-      await Promise.all([
-        pools.personal.query('SELECT 1'),
-        pools.work.query('SELECT 1'),
-      ]);
+      await Promise.all(
+        VALID_CONTEXTS.map(ctx => pools[ctx].query('SELECT 1'))
+      );
       const duration = Date.now() - start;
 
       // Reset failure counter on success
@@ -693,7 +680,7 @@ export async function ensurePerformanceIndexes(): Promise<{ created: number; err
   let created = 0;
   let errors = 0;
 
-  for (const context of ['personal', 'work'] as AIContext[]) {
+  for (const context of VALID_CONTEXTS) {
     for (const sql of PERFORMANCE_INDEXES) {
       try {
         await queryContext(context, sql);

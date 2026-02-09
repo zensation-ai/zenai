@@ -6,6 +6,7 @@ import { useConfirm } from './ConfirmDialog';
 import { AIFeedback } from './AIFeedback';
 import { InlineLoader } from './SkeletonLoader';
 import { useNeuroFeedback } from './NeuroFeedback';
+import { ContextPickerDialog } from './ContextPickerDialog';
 import { getTypeIcon, getTypeLabel, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
 import { formatDate } from '../utils/dateUtils';
 import { IS_NEW_THRESHOLD_MS } from '../constants';
@@ -31,13 +32,16 @@ interface IdeaCardProps {
   onDelete?: (id: string) => void;
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
+  onMove?: (id: string, targetContext: AIContext) => void;
   isArchived?: boolean;
   context?: AIContext;
 }
 
-function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = false, context = 'personal' }: IdeaCardProps) {
+function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArchived = false, context = 'personal' }: IdeaCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+  const [showContextPicker, setShowContextPicker] = useState(false);
   const confirm = useConfirm();
   const { triggerSuccess } = useNeuroFeedback();
 
@@ -85,6 +89,23 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
       showToast(message, 'error');
     } finally {
       setIsArchiving(false);
+    }
+  };
+
+  const handleMove = async (targetContext: AIContext) => {
+    setShowContextPicker(false);
+    setIsMoving(true);
+    try {
+      await axios.post(`/api/${context}/ideas/${idea.id}/move`, { targetContext });
+      onMove?.(idea.id, targetContext);
+      triggerSuccess('Verschoben!');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data as { error?: string })?.error || 'Verschieben fehlgeschlagen'
+        : 'Verschieben fehlgeschlagen';
+      showToast(message, 'error');
+    } finally {
+      setIsMoving(false);
     }
   };
 
@@ -141,6 +162,19 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
               aria-label="Gedanke archivieren"
             >
               {isArchiving ? <InlineLoader size="small" color="muted" /> : '📥'}
+            </button>
+          )}
+          {!isArchived && (
+            <button
+              type="button"
+              className="move-button neuro-press-effect neuro-focus-ring neuro-anticipate"
+              data-anticipate="Verschieben"
+              onClick={(e) => { e.stopPropagation(); setShowContextPicker(true); }}
+              disabled={isMoving}
+              title="In anderen Kontext verschieben"
+              aria-label="Gedanke verschieben"
+            >
+              {isMoving ? <InlineLoader size="small" color="muted" /> : '↔'}
             </button>
           )}
           <button
@@ -203,6 +237,13 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, isArchived = 
           compact
         />
       </div>
+
+      <ContextPickerDialog
+        isOpen={showContextPicker}
+        currentContext={context}
+        onSelect={handleMove}
+        onCancel={() => setShowContextPicker(false)}
+      />
     </div>
   );
 }

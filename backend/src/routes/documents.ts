@@ -23,11 +23,11 @@ import { AIContext, isValidUUID } from '../utils/database-context';
 // Validation Helpers
 // ===========================================
 
-const VALID_CONTEXTS = ['personal', 'work'] as const;
+const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
 
 function validateContext(context: string): asserts context is AIContext {
   if (!VALID_CONTEXTS.includes(context as AIContext)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 }
 

@@ -145,15 +145,15 @@ Use the \`X-AI-Context\` header or \`context\` query parameter:
         ContextHeader: {
           name: 'X-AI-Context',
           in: 'header',
-          description: 'AI context (personal or work)',
-          schema: { type: 'string', enum: ['personal', 'work'], default: 'personal' },
+          description: 'AI context',
+          schema: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], default: 'personal' },
         },
         ContextPath: {
           name: 'context',
           in: 'path',
           required: true,
-          description: 'AI context (personal or work)',
-          schema: { type: 'string', enum: ['personal', 'work'] },
+          description: 'AI context',
+          schema: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'] },
         },
         IdPath: {
           name: 'id',
@@ -291,7 +291,7 @@ Use the \`X-AI-Context\` header or \`context\` query parameter:
           tags: ['Incubator'],
           summary: 'Get loose thoughts',
           parameters: [
-            { name: 'context', in: 'query', schema: { type: 'string', enum: ['personal', 'work'] } },
+            { name: 'context', in: 'query', schema: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'] } },
             { $ref: '#/components/parameters/LimitQuery' },
           ],
           responses: {

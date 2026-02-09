@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { QuickFeedback, DraftFeedbackForm, FeedbackPrompt } from './DraftFeedback';
-import { useContextState } from './ContextSwitcher';
+import { AIContext, useContextState } from './ContextSwitcher';
+import { ContextPickerDialog } from './ContextPickerDialog';
 import { logError } from '../utils/errors';
 import '../neurodesign.css';
 import './IdeaDetail.css';
@@ -55,6 +56,7 @@ interface IdeaDetailProps {
   onConvertToTask?: (idea: Idea) => void;
   onOpenInChat?: (idea: Idea) => void;
   onMarkComplete?: (idea: Idea) => void;
+  onMove?: (id: string, targetContext: AIContext) => void;
 }
 
 const typeLabels: Record<string, { label: string; icon: string }> = {
@@ -96,13 +98,17 @@ const draftTypeLabels: Record<string, { label: string; icon: string }> = {
   generic: { label: 'Text', icon: '📃' },
 };
 
-export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenInChat, onMarkComplete }: IdeaDetailProps) {
+export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenInChat, onMarkComplete, onMove }: IdeaDetailProps) {
   const [context] = useContextState();
   const [relations, setRelations] = useState<Relation[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [loadingRelations, setLoadingRelations] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Move to other context
+  const [isMoving, setIsMoving] = useState(false);
+  const [showContextPicker, setShowContextPicker] = useState(false);
 
   // Phase 25: Draft Support
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -328,6 +334,31 @@ Details: ${idea.summary}`,
     }
   };
 
+  const handleMove = async (targetContext: AIContext) => {
+    setShowContextPicker(false);
+    setIsMoving(true);
+    try {
+      const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const KEY = import.meta.env.VITE_API_KEY || '';
+      await axios.post(
+        `${API}/api/${context}/ideas/${idea.id}/move`,
+        { targetContext },
+        { headers: { 'x-api-key': KEY } }
+      );
+      const contextLabels: Record<string, string> = {
+        personal: 'Privat', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ'
+      };
+      showToast(`Verschoben nach ${contextLabels[targetContext] || targetContext}`, 'success');
+      if (onMove) onMove(idea.id, targetContext);
+      onClose();
+    } catch (err) {
+      logError('IdeaDetail.handleMove', err);
+      showToast('Verschieben fehlgeschlagen', 'error');
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   const typeInfo = typeLabels[idea.type] || { label: idea.type, icon: '📝' };
 
   return (
@@ -453,6 +484,18 @@ Details: ${idea.summary}`,
               onClick={() => onOpenInChat(idea)}
             >
               💬 Im Chat
+            </button>
+          )}
+
+          {/* Alle Typen: In anderen Kontext verschieben */}
+          {onMove && (
+            <button
+              type="button"
+              className="action-btn action-move neuro-button neuro-focus-ring"
+              onClick={() => setShowContextPicker(true)}
+              disabled={isMoving}
+            >
+              {isMoving ? '...' : '↔ Verschieben'}
             </button>
           )}
         </div>
@@ -709,6 +752,13 @@ Details: ${idea.summary}`,
         </div>
         </div>{/* End of idea-detail-content */}
       </div>
+
+      <ContextPickerDialog
+        isOpen={showContextPicker}
+        currentContext={context}
+        onSelect={handleMove}
+        onCancel={() => setShowContextPicker(false)}
+      />
     </div>
   );
 }

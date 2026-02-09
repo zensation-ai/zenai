@@ -1,0 +1,116 @@
+/**
+ * Idea Move Service
+ *
+ * Moves an idea from one context schema to another.
+ * Cross-schema operation: read from source → insert into target → delete from source.
+ */
+
+import { queryContext } from '../utils/database-context';
+import { AIContext } from '../types';
+import { logger } from '../utils/logger';
+
+export interface MoveResult {
+  success: boolean;
+  ideaId: string;
+  newIdeaId: string;
+  sourceContext: AIContext;
+  targetContext: AIContext;
+}
+
+/**
+ * Move an idea from one context to another.
+ *
+ * Algorithm:
+ * 1. Read full idea from source schema
+ * 2. Insert into target schema with new UUID
+ * 3. Delete from source schema (CASCADE cleans up relations/memberships)
+ *
+ * Deliberately NOT moved:
+ * - idea_relations (reference other ideas in source schema)
+ * - idea_topic_memberships (topics are context-specific)
+ */
+export async function moveIdea(
+  sourceContext: AIContext,
+  targetContext: AIContext,
+  ideaId: string
+): Promise<MoveResult> {
+  // 1. Read the full idea from source
+  const sourceResult = await queryContext(sourceContext, `
+    SELECT
+      title, type, category, priority, summary, raw_input, raw_transcript,
+      next_steps, context_needed, keywords, embedding, is_archived,
+      viewed_count, created_at
+    FROM ideas
+    WHERE id = $1
+  `, [ideaId]);
+
+  if (sourceResult.rows.length === 0) {
+    throw new Error('IDEA_NOT_FOUND');
+  }
+
+  const idea = sourceResult.rows[0];
+
+  // 2. Insert into target schema with new UUID and updated context field
+  const insertResult = await queryContext(targetContext, `
+    INSERT INTO ideas (
+      title, type, category, priority, summary, raw_input, raw_transcript,
+      next_steps, context_needed, keywords, embedding, is_archived,
+      context, viewed_count, created_at, updated_at
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7,
+      $8, $9, $10, $11, $12,
+      $13, $14, $15, NOW()
+    )
+    RETURNING id
+  `, [
+    idea.title,
+    idea.type,
+    idea.category,
+    idea.priority,
+    idea.summary,
+    idea.raw_input,
+    idea.raw_transcript,
+    idea.next_steps,
+    idea.context_needed,
+    idea.keywords,
+    idea.embedding,
+    idea.is_archived,
+    targetContext,
+    idea.viewed_count || 0,
+    idea.created_at,
+  ]);
+
+  const newIdeaId = insertResult.rows[0].id;
+
+  // 3. Delete from source schema (CASCADE handles relations, topic memberships)
+  try {
+    await queryContext(sourceContext, 'DELETE FROM ideas WHERE id = $1', [ideaId]);
+  } catch (deleteError) {
+    // If delete fails, we have a duplicate. Log it for manual cleanup.
+    logger.error('Failed to delete source idea after move - duplicate may exist', deleteError instanceof Error ? deleteError : undefined, {
+      operation: 'moveIdea',
+      sourceContext,
+      targetContext,
+      oldIdeaId: ideaId,
+      newIdeaId,
+    });
+    throw deleteError;
+  }
+
+  logger.info('Idea moved successfully', {
+    operation: 'moveIdea',
+    sourceContext,
+    targetContext,
+    oldIdeaId: ideaId,
+    newIdeaId,
+    title: idea.title?.substring(0, 50),
+  });
+
+  return {
+    success: true,
+    ideaId,
+    newIdeaId,
+    sourceContext,
+    targetContext,
+  };
+}

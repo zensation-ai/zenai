@@ -34,7 +34,7 @@ export type AIActivityType =
 /**
  * Context types
  */
-export type AIContext = 'personal' | 'work';
+export type AIContext = 'personal' | 'work' | 'learning' | 'creative';
 
 /**
  * Activity log entry

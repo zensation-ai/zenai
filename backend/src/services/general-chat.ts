@@ -28,7 +28,7 @@ import { logAIDecision } from './compliance-logger';
 
 export interface ChatSession {
   id: string;
-  context: 'personal' | 'work';
+  context: 'personal' | 'work' | 'learning' | 'creative';
   title: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -106,7 +106,7 @@ export interface EnhancedResponse {
  * Create a new chat session
  * Initializes both database session and HiMeS memory layers
  */
-export async function createSession(context: 'personal' | 'work' = 'personal', sessionType: 'general' | 'assistant' = 'general'): Promise<ChatSession> {
+export async function createSession(context: 'personal' | 'work' | 'learning' | 'creative' = 'personal', sessionType: 'general' | 'assistant' = 'general'): Promise<ChatSession> {
   const id = uuidv4();
 
   const result = await query(`
@@ -184,7 +184,7 @@ export async function getSession(sessionId: string): Promise<ChatSessionWithMess
  * Get all sessions for a context
  */
 export async function getSessions(
-  context: 'personal' | 'work' = 'personal',
+  context: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
   limit: number = 20,
   sessionType?: 'general' | 'assistant'
 ): Promise<ChatSession[]> {
@@ -222,7 +222,7 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
   `, [sessionId]);
 
   const rawContext = sessionResult.rows[0]?.context;
-  const context: 'personal' | 'work' | undefined =
+  const context: 'personal' | 'work' | 'learning' | 'creative' | undefined =
     rawContext === 'personal' || rawContext === 'work' ? rawContext : undefined;
 
   const result = await query(`
@@ -313,7 +313,7 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
 export async function generateResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' = 'personal'
+  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal'
 ): Promise<string> {
   const enhanced = await generateEnhancedResponse(sessionId, userMessage, contextType);
   return enhanced.content;
@@ -326,7 +326,7 @@ export async function generateResponse(
 export async function generateEnhancedResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' = 'personal',
+  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
   thinkingMode: ThinkingMode = 'assist'
 ): Promise<EnhancedResponse> {
   const startTime = Date.now();
@@ -753,7 +753,7 @@ export interface SendMessageResult {
 export async function sendMessage(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' = 'personal',
+  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
   includeMetadata: boolean = false,
   thinkingMode: ThinkingMode = 'assist'
 ): Promise<SendMessageResult> {
@@ -820,7 +820,7 @@ async function recordEpisode(
   sessionId: string,
   trigger: string,
   response: string,
-  context: 'personal' | 'work'
+  context: 'personal' | 'work' | 'learning' | 'creative'
 ): Promise<void> {
   try {
     await episodicMemory.store(trigger, response, sessionId, context);
@@ -874,7 +874,7 @@ export async function sendMessageWithVision(
   userMessage: string,
   images: VisionImage[],
   task: string = 'qa',
-  contextType: 'personal' | 'work' = 'personal',
+  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
   includeMetadata: boolean = false
 ): Promise<VisionMessageResult> {
   const startTime = Date.now();

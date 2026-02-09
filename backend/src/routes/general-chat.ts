@@ -136,7 +136,7 @@ generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request,
 
   const typeFilter = req.query.type as string | undefined;
   const sessionType = typeFilter === 'assistant' ? 'assistant' as const : undefined;
-  const sessions = await getSessions(context as 'personal' | 'work', limit, sessionType);
+  const sessions = await getSessions(context as 'personal' | 'work' | 'learning' | 'creative', limit, sessionType);
 
   res.json({
     success: true,
@@ -220,7 +220,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMe
   const result = await sendMessage(
     id,
     message,
-    session.context as 'personal' | 'work',
+    session.context as 'personal' | 'work' | 'learning' | 'creative',
     includeMetadata,
     thinkingMode
   );
@@ -435,7 +435,7 @@ generalChatRouter.post(
       message || '',
       visionImages,
       visionTask,
-      session.context as 'personal' | 'work',
+      session.context as 'personal' | 'work' | 'learning' | 'creative',
       includeMetadata
     );
 

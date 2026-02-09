@@ -6,7 +6,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { AIContext, isValidUUID } from '../utils/database-context';
+import { AIContext, isValidUUID, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
@@ -54,8 +54,8 @@ router.get('/:context/learning-tasks', apiKeyAuth, asyncHandler(async (req: Requ
   const { context } = req.params;
   const { status, category, limit, offset } = req.query;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Validate and parse pagination parameters
@@ -103,8 +103,8 @@ router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), async
   const { context } = req.params;
   const { topic, description, category, priority, target_completion_date, generate_outline } = req.body;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   if (!topic || topic.trim().length === 0) {
@@ -160,8 +160,8 @@ router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), async
 router.get('/:context/learning-tasks/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   validateTaskId(id);
@@ -190,8 +190,8 @@ router.put('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), as
   const { context, id } = req.params;
   const { topic, description, category, priority, status, target_completion_date, learning_outline, summary } = req.body;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   validateTaskId(id);
@@ -242,8 +242,8 @@ router.put('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), as
 router.delete('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   validateTaskId(id);
@@ -268,8 +268,8 @@ router.post('/:context/learning-tasks/:id/session', apiKeyAuth, requireScope('wr
   const { context, id } = req.params;
   const { session_type, duration_minutes, notes, key_learnings, questions, understanding_level } = req.body;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   validateTaskId(id);
@@ -336,8 +336,8 @@ router.get('/:context/learning-tasks/:id/sessions', apiKeyAuth, asyncHandler(asy
   const { context, id } = req.params;
   const { limit } = req.query;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   validateTaskId(id);
@@ -370,8 +370,8 @@ router.get('/:context/learning-tasks/:id/sessions', apiKeyAuth, asyncHandler(asy
 router.post('/:context/learning-tasks/:id/generate-outline', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   validateTaskId(id);
@@ -402,8 +402,8 @@ router.post('/:context/learning-tasks/:id/generate-outline', apiKeyAuth, require
 router.get('/:context/learning-stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const stats = await getLearningStats('default', context as AIContext);
@@ -422,8 +422,8 @@ router.get('/:context/learning-stats', apiKeyAuth, asyncHandler(async (req: Requ
 router.get('/:context/learning-daily-summary', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const summary = await getDailyLearningSummary('default', context as AIContext);
@@ -442,8 +442,8 @@ router.get('/:context/learning-daily-summary', apiKeyAuth, asyncHandler(async (r
 router.get('/:context/learning-insights', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const insights = await getLearningInsights('default', context as AIContext);
@@ -461,8 +461,8 @@ router.get('/:context/learning-insights', apiKeyAuth, asyncHandler(async (req: R
 router.post('/:context/learning-insights/:insightId/acknowledge', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, insightId } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   if (!isValidUUID(insightId)) {

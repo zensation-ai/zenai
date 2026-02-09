@@ -86,7 +86,7 @@ async function validateFileMagicNumber(filePath: string, claimedMimeType: string
 }
 
 // Validation helpers
-const VALID_CONTEXTS = ['personal', 'work'] as const;
+const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 50;
 

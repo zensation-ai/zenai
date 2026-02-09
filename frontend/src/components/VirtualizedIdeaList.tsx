@@ -25,6 +25,7 @@ interface VirtualizedIdeaListProps {
   onDelete: (id: string) => void;
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
+  onMove?: (id: string, targetContext: AIContext) => void;
   isArchived?: boolean;
   context: AIContext;
 }
@@ -45,6 +46,7 @@ function VirtualizedIdeaListComponent({
   onDelete,
   onArchive,
   onRestore,
+  onMove,
   isArchived = false,
   context,
 }: VirtualizedIdeaListProps) {
@@ -171,6 +173,7 @@ function VirtualizedIdeaListComponent({
                     onDelete={onDelete}
                     onArchive={onArchive}
                     onRestore={onRestore}
+                    onMove={onMove}
                     isArchived={isArchived}
                     context={context}
                   />
@@ -197,7 +200,7 @@ export const VIRTUALIZATION_THRESHOLD = 50;
  * Smart list component that auto-selects virtualization based on count
  */
 export function SmartIdeaList(props: VirtualizedIdeaListProps) {
-  const { ideas, viewMode, onIdeaClick, onDelete, onArchive, onRestore, isArchived, context } = props;
+  const { ideas, viewMode, onIdeaClick, onDelete, onArchive, onRestore, onMove, isArchived, context } = props;
 
   // Use virtualization for large lists
   if (ideas.length >= VIRTUALIZATION_THRESHOLD) {
@@ -229,6 +232,7 @@ export function SmartIdeaList(props: VirtualizedIdeaListProps) {
             onDelete={onDelete}
             onArchive={onArchive}
             onRestore={onRestore}
+            onMove={onMove}
             isArchived={isArchived}
             context={context}
           />

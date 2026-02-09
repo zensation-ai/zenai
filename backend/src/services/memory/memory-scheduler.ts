@@ -70,7 +70,7 @@ const CONFIG = {
   ENABLE_STATS_LOGGING: process.env.ENABLE_MEMORY_STATS !== 'false',
 
   /** Contexts to process (all by default) */
-  CONTEXTS: ['personal', 'work'] as AIContext[],
+  CONTEXTS: ['personal', 'work', 'learning', 'creative'] as AIContext[],
 };
 
 // ===========================================

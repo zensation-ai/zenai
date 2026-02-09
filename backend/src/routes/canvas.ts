@@ -38,7 +38,7 @@ export const canvasRouter = Router();
 // ============================================================
 
 const CreateCanvasSchema = z.object({
-  context: z.enum(['personal', 'work']).default('personal'),
+  context: z.enum(['personal', 'work', 'learning', 'creative']).default('personal'),
   title: z.string().min(1, 'Title is required').max(500).trim(),
   type: z.enum(['markdown', 'code', 'html']).default('markdown'),
   language: z.string().max(50).optional(),
@@ -99,8 +99,8 @@ canvasRouter.get(
     const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 100);
     const offset = parseInt(req.query.offset as string, 10) || 0;
 
-    if (!['personal', 'work'].includes(context)) {
-      throw new ValidationError('Context must be "personal" or "work"');
+    if (!['personal', 'work', 'learning', 'creative'].includes(context)) {
+      throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
     }
 
     const result = await listCanvasDocuments(context, limit, offset);

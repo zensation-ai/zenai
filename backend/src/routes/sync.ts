@@ -455,7 +455,7 @@ syncRouter.delete('/devices/:deviceId', apiKeyAuth, requireScope('write'), async
   // This works across both contexts since devices are typically global
   let deleted = false;
 
-  for (const ctx of ['personal', 'work'] as AIContext[]) {
+  for (const ctx of (['personal', 'work', 'learning', 'creative'] as AIContext[])) {
     try {
       const result = await queryContext(
         ctx,

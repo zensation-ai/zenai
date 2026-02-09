@@ -190,7 +190,7 @@ export const CHAT = {
 // ===========================================
 // Valid Context Types
 // ===========================================
-export const VALID_CONTEXTS = ['personal', 'work'] as const;
+export const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
 export type AIContext = (typeof VALID_CONTEXTS)[number];
 
 /** Type guard for context validation */

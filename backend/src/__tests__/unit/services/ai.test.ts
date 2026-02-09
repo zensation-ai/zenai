@@ -239,17 +239,17 @@ describe('AI Service', () => {
   describe('Context Handling', () => {
     it('should accept personal context', () => {
       const context = 'personal';
-      expect(['personal', 'work'].includes(context)).toBe(true);
+      expect(['personal', 'work', 'learning', 'creative'].includes(context)).toBe(true);
     });
 
     it('should accept work context', () => {
       const context = 'work';
-      expect(['personal', 'work'].includes(context)).toBe(true);
+      expect(['personal', 'work', 'learning', 'creative'].includes(context)).toBe(true);
     });
 
     it('should reject invalid context', () => {
       const context = 'invalid';
-      expect(['personal', 'work'].includes(context)).toBe(false);
+      expect(['personal', 'work', 'learning', 'creative'].includes(context)).toBe(false);
     });
   });
 

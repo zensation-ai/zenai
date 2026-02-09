@@ -6,7 +6,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getPool, AIContext } from '../utils/database-context';
+import { getPool, AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
@@ -58,8 +58,8 @@ const TRAINING_WEIGHTS: Record<TrainingType, number> = {
 router.get('/:context/training', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const pool = getPool(context as AIContext);
@@ -98,8 +98,8 @@ router.post('/:context/training', apiKeyAuth, requireScope('write'), asyncHandle
   const { context } = req.params;
   const body = req.body as TrainingRequest;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   if (!body.idea_id || !body.training_type) {
@@ -217,8 +217,8 @@ router.post('/:context/training', apiKeyAuth, requireScope('write'), asyncHandle
 router.get('/:context/training/stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const pool = getPool(context as AIContext);
@@ -260,8 +260,8 @@ router.get('/:context/training/stats', apiKeyAuth, asyncHandler(async (req: Requ
 router.delete('/:context/training/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
-  if (!['personal', 'work'].includes(context)) {
-    throw new ValidationError('Invalid context. Use "personal" or "work".');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const pool = getPool(context as AIContext);

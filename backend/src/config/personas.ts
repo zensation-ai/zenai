@@ -353,6 +353,14 @@ export const CONTEXT_PERSONAS: Record<AIContext, ContextPersonas> = {
     default: 'coordinator',
     personas: WORK_PERSONAS,
   },
+  learning: {
+    default: 'companion',
+    personas: PERSONAL_PERSONAS,
+  },
+  creative: {
+    default: 'companion',
+    personas: PERSONAL_PERSONAS,
+  },
 };
 
 // ===========================================
