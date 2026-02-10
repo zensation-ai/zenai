@@ -1,0 +1,32 @@
+export function getSuggestionIcon(type: string): string {
+  const icons: Record<string, string> = {
+    topic_to_explore: '🔬',
+    action_reminder: '⏰',
+    connection_insight: '🔗',
+    learning_opportunity: '📚',
+    pattern_detected: '📊',
+    focus_suggestion: '🎯',
+  };
+  return icons[type] || '💡';
+}
+
+export function getSuggestionLabel(type: string): string {
+  const labels: Record<string, string> = {
+    topic_to_explore: 'Zu erkunden',
+    action_reminder: 'Erinnerung',
+    connection_insight: 'Verbindung',
+    learning_opportunity: 'Lernchance',
+    pattern_detected: 'Muster erkannt',
+    focus_suggestion: 'Fokus-Empfehlung',
+  };
+  return labels[type] || type;
+}
+
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}

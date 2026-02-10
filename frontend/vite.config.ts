@@ -71,7 +71,7 @@ export default defineConfig({
             './src/components/EvolutionDashboard.tsx',
           ],
           'feature-learning': [
-            './src/components/LearningDashboard.tsx',
+            './src/components/LearningDashboard/index.ts',
             './src/components/LearningTasksDashboard.tsx',
           ],
           'feature-media': [

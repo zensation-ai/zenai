@@ -1,0 +1,361 @@
+/* Neuro-UX optimierte Integrations Page */
+.integrations-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* Neuro Page Enter Animation */
+.integrations-page.neuro-page-enter {
+  animation: pageEnter 450ms ease-out;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  padding-left: 80px; /* Platz für macOS Traffic Lights */
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  -webkit-app-region: drag;
+}
+
+.page-header button,
+.page-header a,
+.page-header input {
+  -webkit-app-region: no-drag;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    padding-left: 1rem; /* Kein Traffic Lights auf Mobile */
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tabs button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.tabs button.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+.integrations-content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.integration-card {
+  background: var(--bg-secondary);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.integration-card.connected {
+  border-color: var(--success-color);
+}
+
+.integration-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.integration-icon {
+  font-size: 2rem;
+}
+
+.integration-info h3 {
+  margin: 0 0 0.25rem;
+}
+
+.integration-info p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.connected, .status-badge.active {
+  background: var(--success-color-light);
+  color: var(--success-color);
+}
+
+.status-badge.disconnected, .status-badge.inactive {
+  background: var(--danger-color-light);
+  color: var(--danger-color);
+}
+
+.integration-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.feature-tag {
+  background: var(--bg-tertiary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.sync-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 1rem 0;
+}
+
+.integration-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.connect-button, .sync-button {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--accent-color);
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.disconnect-button {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--danger-color);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--danger-color);
+  cursor: pointer;
+}
+
+.create-form {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 2rem;
+}
+
+.create-form h3 {
+  margin: 0 0 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.form-row input[type="text"],
+.form-row input[type="url"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.scopes-selector, .events-selector {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.apikeys-list, .webhooks-list {
+  margin-top: 2rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+}
+
+tr.inactive {
+  opacity: 0.5;
+}
+
+.webhooks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.webhook-card {
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.webhook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.webhook-url code {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.webhook-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+.event-tag {
+  background: var(--accent-color-light);
+  color: var(--accent-color);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+}
+
+.webhook-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.webhook-actions button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background: var(--bg-primary);
+  cursor: pointer;
+}
+
+.delete-button {
+  color: var(--danger-color);
+}
+
+.success-banner {
+  background: var(--success-color-light);
+  color: var(--success-color-dark);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.api-key-display {
+  background: var(--bg-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.error-banner {
+  background: var(--danger-color-light);
+  color: var(--danger-color);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-message {
+  color: var(--danger-color);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.empty-message {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 2rem;
+}
+
+.failure-count {
+  color: var(--warning-color);
+  margin-left: 1rem;
+}
