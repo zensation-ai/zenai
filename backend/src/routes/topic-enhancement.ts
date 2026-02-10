@@ -17,7 +17,7 @@ import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { isValidUUID, toFloatBounded, toIntBounded } from '../utils/validation';
-import { AIContext } from '../utils/database-context';
+import { AIContext, isValidContext } from '../utils/database-context';
 import {
   getTopicsWithKeywords,
   calculateTopicQuality,
@@ -35,8 +35,8 @@ export const topicEnhancementRouter = Router();
  * Validate context parameter
  */
 function validateContext(context: unknown): AIContext {
-  if (context !== 'personal' && context !== 'work') {
-    throw new ValidationError('Context must be "personal" or "work"');
+  if (typeof context !== 'string' || !isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
   return context as AIContext;
 }

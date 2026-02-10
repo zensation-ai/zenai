@@ -496,7 +496,7 @@ notificationsRouter.post(
     const { deviceToken, deviceId, deviceName, deviceModel, osVersion, appVersion } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     if (!deviceToken || typeof deviceToken !== 'string') {
@@ -544,7 +544,7 @@ notificationsRouter.delete(
     const token = deviceToken || deviceId;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     if (!token) {
@@ -572,7 +572,7 @@ notificationsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const devices = await getActiveDeviceTokens(context as AIContext);
@@ -607,7 +607,7 @@ notificationsRouter.get(
     const { context, deviceId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const preferences = await getPrefs(context as AIContext, deviceId);
@@ -664,7 +664,7 @@ notificationsRouter.put(
     const body = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     // Accept both snake_case (frontend) and camelCase (legacy) formats
@@ -718,7 +718,7 @@ notificationsRouter.post(
     const { type, title, body, subtitle, draftId, ideaId, deviceId, data } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     if (!type || !title || !body) {
@@ -771,7 +771,7 @@ notificationsRouter.post(
     const { context, notificationId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     await recordNotificationOpened(context as AIContext, notificationId);
@@ -796,7 +796,7 @@ notificationsRouter.get(
     const { days = '30' } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const stats = await getNotificationStats(context as AIContext, parseInt(days as string, 10));
@@ -829,7 +829,7 @@ notificationsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Must be "personal" or "work"');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
 
     const status = getPushNotificationsStatus();

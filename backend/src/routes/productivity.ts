@@ -17,7 +17,7 @@
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { AIContext } from '../utils/database-context';
+import { isValidContext } from '../utils/database-context';
 import {
   getProductivityDashboard,
   getTimeSavedMetrics,
@@ -28,10 +28,6 @@ import {
 } from '../services/productivity-analytics';
 
 export const productivityRouter = Router();
-
-function isValidContext(context: string): context is AIContext {
-  return context === 'personal' || context === 'work';
-}
 
 /**
  * GET /api/:context/productivity/dashboard

@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { query } from '../utils/database';
-import { isValidUUID } from '../utils/database-context';
+import { isValidUUID, isValidContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import crypto from 'crypto';
 import { analyzeImage, extractTextFromImage, analyzeDocument } from '../utils/image-analysis';
@@ -86,7 +86,6 @@ async function validateFileMagicNumber(filePath: string, claimedMimeType: string
 }
 
 // Validation helpers
-const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 50;
 
@@ -97,7 +96,7 @@ function validateMediaId(id: string): void {
 }
 
 function validateContext(context: string): void {
-  if (!VALID_CONTEXTS.includes(context as typeof VALID_CONTEXTS[number])) {
+  if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 }

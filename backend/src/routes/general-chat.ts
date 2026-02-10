@@ -28,6 +28,7 @@ import {
 } from '../services/general-chat';
 import { getAssistantSystemPrompt } from '../services/assistant-knowledge';
 import { isValidUUID, toIntBounded } from '../utils/validation';
+import { isValidContext } from '../utils/database-context';
 import { validateBody } from '../utils/schemas';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
 import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
@@ -130,8 +131,8 @@ generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request,
   const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
 
   // Validate context
-  if (context !== 'personal' && context !== 'work') {
-    throw new ValidationError('Context must be "personal" or "work"');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const typeFilter = req.query.type as string | undefined;
@@ -306,8 +307,8 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
   const includeMetadata = include_metadata === true;
 
   // Validate context
-  if (context !== 'personal' && context !== 'work') {
-    throw new ValidationError('Context must be "personal" or "work"');
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Validate message

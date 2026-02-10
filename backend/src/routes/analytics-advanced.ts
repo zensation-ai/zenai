@@ -27,7 +27,7 @@ advancedAnalyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHa
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const ctx = context as AIContext;
@@ -232,7 +232,7 @@ advancedAnalyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const ctx = context as AIContext;
@@ -337,7 +337,7 @@ advancedAnalyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHan
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const ctx = context as AIContext;
@@ -440,7 +440,7 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncH
   const { period = 'week' } = req.query;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const ctx = context as AIContext;

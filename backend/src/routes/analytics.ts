@@ -47,7 +47,7 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const ctx = context as AIContext;
@@ -166,7 +166,7 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
   const { period = 'week' } = req.query;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   // Whitelist-based interval mapping (prevents SQL injection)
@@ -237,7 +237,7 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal" or "work"');
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
   const ctx = context as AIContext;

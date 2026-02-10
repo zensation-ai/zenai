@@ -17,16 +17,14 @@ import { asyncHandler, ValidationError, NotFoundError } from '../middleware/erro
 import { documentService, Document, DocumentFilters } from '../services/document-service';
 import { documentProcessingService } from '../services/document-processing';
 import { documentRAGService } from '../services/document-rag';
-import { AIContext, isValidUUID } from '../utils/database-context';
+import { AIContext, isValidUUID, isValidContext } from '../utils/database-context';
 
 // ===========================================
 // Validation Helpers
 // ===========================================
 
-const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
-
 function validateContext(context: string): asserts context is AIContext {
-  if (!VALID_CONTEXTS.includes(context as AIContext)) {
+  if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 }
