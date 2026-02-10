@@ -101,7 +101,7 @@ describe('Whisper Service', () => {
     beforeEach(() => {
       // Mock temp directory exists
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('whisper-temp')) return true;
+        if (typeof p === 'string' && p.includes('whisper-temp')) {return true;}
         return false;
       });
     });
@@ -121,7 +121,7 @@ describe('Whisper Service', () => {
           return false;
         }
         // JSON output file check
-        if (path.includes('.json')) return true;
+        if (path.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test', language: 'de' }));
@@ -141,7 +141,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test', language: 'de' }));
@@ -161,7 +161,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify(mockResult));
@@ -178,8 +178,8 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return false;
-        if (typeof p === 'string' && p.includes('.txt')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return false;}
+        if (typeof p === 'string' && p.includes('.txt')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue('Fallback text');
@@ -211,7 +211,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && (p.includes('.json') || p.includes('.txt'))) return false;
+        if (typeof p === 'string' && (p.includes('.json') || p.includes('.txt'))) {return false;}
         return true;
       });
 
@@ -224,7 +224,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
@@ -242,7 +242,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
@@ -260,7 +260,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
@@ -286,7 +286,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
@@ -316,7 +316,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: '  Hello world  ', language: 'de' }));
@@ -331,7 +331,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
@@ -352,7 +352,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: '' }));
@@ -367,7 +367,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));
@@ -385,7 +385,7 @@ describe('Whisper Service', () => {
       mockedSpawn.mockReturnValueOnce(createSuccessProcess(0) as any);
 
       mockedFs.existsSync.mockImplementation((p: any) => {
-        if (typeof p === 'string' && p.includes('.json')) return true;
+        if (typeof p === 'string' && p.includes('.json')) {return true;}
         return true;
       });
       mockedFs.readFileSync.mockReturnValue(JSON.stringify({ text: 'Test' }));

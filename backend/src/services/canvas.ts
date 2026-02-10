@@ -89,7 +89,7 @@ export async function getCanvasDocument(id: string): Promise<CanvasDocument | nu
     [id]
   );
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return mapRow(result.rows[0]);
 }
 
@@ -156,7 +156,7 @@ export async function updateCanvasDocument(
     values.push(updates.language);
   }
 
-  if (setClauses.length === 0) return getCanvasDocument(id);
+  if (setClauses.length === 0) {return getCanvasDocument(id);}
 
   values.push(id);
 
@@ -168,7 +168,7 @@ export async function updateCanvasDocument(
     values
   );
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
 
   // Auto-save version if content changed
   if (updates.content !== undefined) {
@@ -314,7 +314,7 @@ export async function restoreVersion(
     [versionId, documentId]
   );
 
-  if (versionResult.rows.length === 0) return null;
+  if (versionResult.rows.length === 0) {return null;}
 
   const content = versionResult.rows[0].content;
 

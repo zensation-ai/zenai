@@ -260,17 +260,27 @@ auditLogsRouter.get('/compliance/decisions', apiKeyAuth, requireScope('admin'), 
 
   if (startDate) {
     const d = new Date(startDate as string);
-    if (isNaN(d.getTime())) throw new ValidationError('Invalid startDate format.');
+    if (isNaN(d.getTime())) {
+      throw new ValidationError('Invalid startDate format.');
+    }
     options.startDate = d.getTime();
   }
   if (endDate) {
     const d = new Date(endDate as string);
-    if (isNaN(d.getTime())) throw new ValidationError('Invalid endDate format.');
+    if (isNaN(d.getTime())) {
+      throw new ValidationError('Invalid endDate format.');
+    }
     options.endDate = d.getTime();
   }
-  if (context) options.context = context as string;
-  if (modelId) options.modelId = modelId as string;
-  if (minConfidence) options.minConfidence = parseFloat(minConfidence as string);
+  if (context) {
+    options.context = context as string;
+  }
+  if (modelId) {
+    options.modelId = modelId as string;
+  }
+  if (minConfidence) {
+    options.minConfidence = parseFloat(minConfidence as string);
+  }
 
   const result = getDecisionLogs(options);
 

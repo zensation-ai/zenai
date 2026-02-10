@@ -22,6 +22,13 @@ describe('Workflow Boundary Detector', () => {
     jest.clearAllMocks();
     mockQueryContext.mockReset();
     resetFrequencyState();
+    // Pin time to noon so quiet hours (22:00–07:00) never block suggestions
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-02-09T12:00:00'));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   // ========================================

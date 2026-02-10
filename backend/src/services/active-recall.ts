@@ -93,7 +93,9 @@ export async function generateChallenge(
       WHERE t.id = $1 AND t.context = $2
     `, [taskId, context]);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {
+      return null;
+    }
 
     const task = result.rows[0];
     const tags = Array.isArray(task.tags) ? task.tags : [];
@@ -131,7 +133,9 @@ export async function evaluateRecall(
       WHERE t.id = $1 AND t.context = $2
     `, [taskId, context]);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {
+      return null;
+    }
 
     const task = result.rows[0];
     const originalContent = task.description || task.summary || task.title;
@@ -328,11 +332,15 @@ function calculateWordOverlap(text1: string, text2: string): number {
   const words1 = new Set(text1.toLowerCase().split(/\s+/).filter(w => w.length > 3));
   const words2 = new Set(text2.toLowerCase().split(/\s+/).filter(w => w.length > 3));
 
-  if (words1.size === 0 || words2.size === 0) return 0;
+  if (words1.size === 0 || words2.size === 0) {
+    return 0;
+  }
 
   let overlap = 0;
   for (const word of words1) {
-    if (words2.has(word)) overlap++;
+    if (words2.has(word)) {
+      overlap++;
+    }
   }
 
   return overlap / Math.max(words1.size, words2.size);

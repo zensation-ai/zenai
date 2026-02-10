@@ -155,11 +155,11 @@ export function getDecisionLogs(
 
   let filtered = [...decisionLogs];
 
-  if (startDate) filtered = filtered.filter(l => l.timestamp >= startDate);
-  if (endDate) filtered = filtered.filter(l => l.timestamp <= endDate);
-  if (context) filtered = filtered.filter(l => l.context === context);
-  if (modelId) filtered = filtered.filter(l => l.modelId === modelId);
-  if (minConfidence !== undefined) filtered = filtered.filter(l => l.confidence >= minConfidence);
+  if (startDate) {filtered = filtered.filter(l => l.timestamp >= startDate);}
+  if (endDate) {filtered = filtered.filter(l => l.timestamp <= endDate);}
+  if (context) {filtered = filtered.filter(l => l.context === context);}
+  if (modelId) {filtered = filtered.filter(l => l.modelId === modelId);}
+  if (minConfidence !== undefined) {filtered = filtered.filter(l => l.confidence >= minConfidence);}
 
   // Sort by timestamp descending (most recent first)
   filtered.sort((a, b) => b.timestamp - a.timestamp);

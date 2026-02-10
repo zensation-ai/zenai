@@ -337,7 +337,7 @@ function classifyHeuristic(
         bestReason = reason;
       }
       // Track specific signals
-      if (reason.includes('Temporal')) temporalDetected = true;
+      if (reason.includes('Temporal')) {temporalDetected = true;}
       if (reason.includes('Personal') || reason.includes('user data') || reason.includes('user notes')) {
         personalReference = true;
       }

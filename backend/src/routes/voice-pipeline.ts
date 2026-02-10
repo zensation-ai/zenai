@@ -102,7 +102,9 @@ export function handleVoicePipelineConnection(ws: WebSocket, _req: IncomingMessa
           // Process the voice turn (streaming results)
           try {
             for await (const msg of processVoiceTurn(session, audioBuffer, 'audio/webm')) {
-              if (ws.readyState !== WebSocket.OPEN) break;
+              if (ws.readyState !== WebSocket.OPEN) {
+                break;
+              }
 
               if (msg.type === 'audio_chunk') {
                 // Send binary audio data directly
@@ -121,8 +123,12 @@ export function handleVoicePipelineConnection(ws: WebSocket, _req: IncomingMessa
           if (message.voice && TTS_VOICES.some(v => v.id === message.voice)) {
             session.voice = message.voice as TTSVoice;
           }
-          if (message.speed) session.speed = message.speed;
-          if (message.chatSessionId) session.chatSessionId = message.chatSessionId;
+          if (message.speed) {
+            session.speed = message.speed;
+          }
+          if (message.chatSessionId) {
+            session.chatSessionId = message.chatSessionId;
+          }
 
           logger.info('Voice pipeline config updated', {
             sessionId: session.id,

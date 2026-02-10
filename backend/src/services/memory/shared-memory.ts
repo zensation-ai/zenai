@@ -92,7 +92,7 @@ class SharedMemoryService {
     if (!store) {
       this.initialize(teamId);
       store = this.stores.get(teamId);
-      if (!store) throw new Error(`Failed to initialize shared memory for team ${teamId}`);
+      if (!store) {throw new Error(`Failed to initialize shared memory for team ${teamId}`);}
     }
 
     const entry: SharedMemoryEntry = {

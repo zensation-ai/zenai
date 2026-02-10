@@ -204,7 +204,7 @@ export function isValidThinkingMode(mode: string): mode is ThinkingMode {
  */
 export function applyThinkingMode(basePrompt: string, mode: ThinkingMode): string {
   const addition = getThinkingModePrompt(mode);
-  if (!addition) return basePrompt;
+  if (!addition) {return basePrompt;}
 
   logger.debug('Applying thinking mode to system prompt', {
     mode,

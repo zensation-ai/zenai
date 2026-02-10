@@ -233,7 +233,7 @@ export async function* processVoiceTurn(
       const allSentences = chunker.push(claudeResponse);
       sentences.push(...allSentences);
       const remaining = chunker.flush();
-      if (remaining) sentences.push(remaining);
+      if (remaining) {sentences.push(remaining);}
 
       // If no sentences extracted, use full response
       if (sentences.length === 0) {

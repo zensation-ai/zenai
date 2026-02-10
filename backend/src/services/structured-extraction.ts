@@ -194,8 +194,8 @@ async function findSimilarIdeas(
       );
 
       for (const result of results) {
-        if (seenIds.has(result.id)) continue;
-        if (result.score < 0.5) continue;
+        if (seenIds.has(result.id)) {continue;}
+        if (result.score < 0.5) {continue;}
 
         seenIds.add(result.id);
         links.push({
@@ -218,7 +218,7 @@ async function findSimilarIdeas(
 // ===========================================
 
 function validateCoreIdeas(ideas: unknown[]): CoreIdea[] {
-  if (!Array.isArray(ideas)) return [];
+  if (!Array.isArray(ideas)) {return [];}
   return ideas
     .filter((i): i is CoreIdea =>
       typeof i === 'object' && i !== null &&
@@ -235,7 +235,7 @@ function validateCoreIdeas(ideas: unknown[]): CoreIdea[] {
 }
 
 function validateActionItems(items: unknown[]): ActionItem[] {
-  if (!Array.isArray(items)) return [];
+  if (!Array.isArray(items)) {return [];}
   return items
     .filter((i): i is ActionItem =>
       typeof i === 'object' && i !== null &&
@@ -251,7 +251,7 @@ function validateActionItems(items: unknown[]): ActionItem[] {
 }
 
 function validateMentions(mentions: unknown[]): Mention[] {
-  if (!Array.isArray(mentions)) return [];
+  if (!Array.isArray(mentions)) {return [];}
   return mentions
     .filter((m): m is Mention =>
       typeof m === 'object' && m !== null &&

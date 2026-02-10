@@ -102,7 +102,7 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
       const day = parseInt(match[1]);
       const monthName = match[2].toLowerCase();
       const month = GERMAN_MONTHS[monthName];
-      if (month === undefined) return null;
+      if (month === undefined) {return null;}
       const year = now.getFullYear();
       const start = new Date(year, month, day, 0, 0, 0);
       const end = new Date(year, month, day, 23, 59, 59);
@@ -327,7 +327,7 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
       const preposition = match[1].toLowerCase();
       const monthName = match[2].toLowerCase();
       const month = GERMAN_MONTHS[monthName];
-      if (month === undefined) return null;
+      if (month === undefined) {return null;}
 
       const year = now.getFullYear();
 
@@ -344,14 +344,14 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
 
       if (preposition === 'seit' || preposition === 'ab') {
         const start = new Date(year, month, 1, 0, 0, 0);
-        if (start > now) start.setFullYear(year - 1);
+        if (start > now) {start.setFullYear(year - 1);}
         return { start, end: now, label: `seit ${match[2]}`, matchedText: match[0] };
       }
 
       if (preposition === 'bis') {
         const start = new Date(year, 0, 1, 0, 0, 0);
         const end = new Date(year, month + 1, 0, 23, 59, 59);
-        if (end > now) end.setFullYear(year - 1);
+        if (end > now) {end.setFullYear(year - 1);}
         return { start, end, label: `bis ${match[2]}`, matchedText: match[0] };
       }
 
@@ -367,12 +367,12 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
     parse: (match, now) => {
       const dayName = match[1].toLowerCase();
       const targetDay = GERMAN_WEEKDAYS[dayName];
-      if (targetDay === undefined) return null;
+      if (targetDay === undefined) {return null;}
 
       const start = new Date(now);
       const currentDay = start.getDay();
       let diff = currentDay - targetDay;
-      if (diff <= 0) diff += 7; // Go to last week's instance
+      if (diff <= 0) {diff += 7;} // Go to last week's instance
       start.setDate(start.getDate() - diff);
       start.setHours(0, 0, 0, 0);
       const end = new Date(start);

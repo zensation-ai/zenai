@@ -157,8 +157,8 @@ export function classifyComplexity(
   const length = message.length;
 
   // Explicit complex indicators
-  if (options.requiresSynthesis) return 'complex';
-  if (options.requiresTools && length > 200) return 'complex';
+  if (options.requiresSynthesis) {return 'complex';}
+  if (options.requiresTools && length > 200) {return 'complex';}
 
   // Simple indicators
   const simplePatterns = [
@@ -190,7 +190,7 @@ export function classifyComplexity(
   }
 
   // Default based on length
-  if (length > 300) return 'standard';
+  if (length > 300) {return 'standard';}
 
   return 'simple';
 }

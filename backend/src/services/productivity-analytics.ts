@@ -474,8 +474,8 @@ export async function getWeeklyReport(context: AIContext): Promise<WeeklyReportC
     let trendPercentage = 0;
     if (lastWeek > 0) {
       trendPercentage = Math.round(((thisWeek - lastWeek) / lastWeek) * 100);
-      if (trendPercentage > 10) trend = 'improving';
-      else if (trendPercentage < -10) trend = 'declining';
+      if (trendPercentage > 10) {trend = 'improving';}
+      else if (trendPercentage < -10) {trend = 'declining';}
     } else if (thisWeek > 0) {
       trend = 'improving';
       trendPercentage = 100;

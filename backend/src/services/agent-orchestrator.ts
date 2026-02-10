@@ -240,7 +240,7 @@ REGELN:
 
       for (const item of parsed) {
         const role = item.agent as AgentRole;
-        if (!pipeline.includes(role)) continue;
+        if (!pipeline.includes(role)) {continue;}
 
         const id = uuidv4();
         subTasks.push({

@@ -95,9 +95,9 @@ function canSuggest(context: AIContext): boolean {
     state.dailyCount = 0;
   }
 
-  if (state.hourlyCount >= LIMITS.MAX_PER_HOUR) return false;
-  if (state.dailyCount >= LIMITS.MAX_PER_DAY) return false;
-  if (now - state.lastSuggestionAt < LIMITS.MIN_GAP_MS) return false;
+  if (state.hourlyCount >= LIMITS.MAX_PER_HOUR) {return false;}
+  if (state.dailyCount >= LIMITS.MAX_PER_DAY) {return false;}
+  if (now - state.lastSuggestionAt < LIMITS.MIN_GAP_MS) {return false;}
 
   return true;
 }
@@ -123,7 +123,7 @@ async function onIdeaSaved(
   ideaTitle: string,
   context: AIContext
 ): Promise<BoundarySuggestion | null> {
-  if (!canSuggest(context)) return null;
+  if (!canSuggest(context)) {return null;}
 
   try {
     // Find similar ideas (keyword-based for speed)
@@ -136,7 +136,7 @@ async function onIdeaSaved(
       [ideaId, `%${ideaTitle.split(' ').slice(0, 3).join('%')}%`]
     );
 
-    if (similar.rows.length === 0) return null;
+    if (similar.rows.length === 0) {return null;}
 
     const titles = similar.rows.map((r: { title: string }) => r.title).join('", "');
     recordSuggestion(context);
@@ -166,7 +166,7 @@ async function onChatSessionEnd(
   sessionId: string,
   context: AIContext
 ): Promise<BoundarySuggestion | null> {
-  if (!canSuggest(context)) return null;
+  if (!canSuggest(context)) {return null;}
 
   try {
     // Check if the session had substantive messages
@@ -178,7 +178,7 @@ async function onChatSessionEnd(
     );
 
     const messageCount = parseInt(messages.rows[0]?.count ?? '0', 10);
-    if (messageCount < 2) return null;
+    if (messageCount < 2) {return null;}
 
     recordSuggestion(context);
 
@@ -207,11 +207,11 @@ async function onLoginAfterAbsence(
   lastActiveAt: Date,
   context: AIContext
 ): Promise<BoundarySuggestion | null> {
-  if (!canSuggest(context)) return null;
+  if (!canSuggest(context)) {return null;}
 
   const lastActiveDate = lastActiveAt instanceof Date ? lastActiveAt : new Date(lastActiveAt);
   const absenceMs = Date.now() - lastActiveDate.getTime();
-  if (absenceMs < LIMITS.ABSENCE_THRESHOLD_MS) return null;
+  if (absenceMs < LIMITS.ABSENCE_THRESHOLD_MS) {return null;}
 
   try {
     // Count new items since last active
@@ -230,12 +230,12 @@ async function onLoginAfterAbsence(
     const ideaCount = parseInt(newIdeas.rows[0]?.count ?? '0', 10);
     const draftCount = parseInt(newDrafts.rows[0]?.count ?? '0', 10);
 
-    if (ideaCount === 0 && draftCount === 0) return null;
+    if (ideaCount === 0 && draftCount === 0) {return null;}
 
     const hours = Math.round(absenceMs / 3600_000);
     const parts: string[] = [];
-    if (ideaCount > 0) parts.push(`${ideaCount} neue Idee${ideaCount !== 1 ? 'n' : ''}`);
-    if (draftCount > 0) parts.push(`${draftCount} neue${draftCount !== 1 ? '' : 'r'} Entwurf${draftCount !== 1 ? 'e' : ''}`);
+    if (ideaCount > 0) {parts.push(`${ideaCount} neue Idee${ideaCount !== 1 ? 'n' : ''}`);}
+    if (draftCount > 0) {parts.push(`${draftCount} neue${draftCount !== 1 ? '' : 'r'} Entwurf${draftCount !== 1 ? 'e' : ''}`);}
 
     recordSuggestion(context);
 
@@ -265,7 +265,7 @@ async function onDraftCompleted(
   ideaTitle: string,
   context: AIContext
 ): Promise<BoundarySuggestion | null> {
-  if (!canSuggest(context)) return null;
+  if (!canSuggest(context)) {return null;}
 
   try {
     recordSuggestion(context);

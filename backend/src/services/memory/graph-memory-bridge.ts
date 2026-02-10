@@ -235,7 +235,7 @@ export async function expandViaGraph(
 
   for (const { seedId, neighbors } of neighborResults) {
     for (const neighbor of neighbors) {
-      if (seenIds.has(neighbor.ideaId)) continue;
+      if (seenIds.has(neighbor.ideaId)) {continue;}
       seenIds.add(neighbor.ideaId);
 
       // Build annotated content: "[Relation] Title: Summary"
