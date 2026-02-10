@@ -15,8 +15,9 @@ import { logger } from './logger';
 // Response Types
 // ===========================================
 
-export interface SuccessResponseOptions<T> {
-  data: T;
+export interface SuccessResponseOptions<T extends Record<string, unknown>> {
+  /** Fields to include directly in the response (flat, not nested in `data`). */
+  fields: T;
   pagination?: PaginationInfo;
   requestId?: string;
   message?: string;
@@ -66,16 +67,19 @@ function getStatusCode(code: ErrorCode, defaultCode: number = 500): number {
 // ===========================================
 
 /**
- * Send a successful JSON response
+ * Send a successful JSON response.
+ *
+ * Standard format: `{ success: true, ...fields, pagination?, message? }`
+ * Fields are spread directly — NOT nested in a `data` property.
  */
-export function sendSuccess<T>(
+export function sendSuccess<T extends Record<string, unknown>>(
   res: Response,
   options: SuccessResponseOptions<T>,
   statusCode: number = 200
 ): void {
   const response: Record<string, unknown> = {
     success: true,
-    data: options.data,
+    ...options.fields,
   };
 
   if (options.pagination) {
@@ -96,8 +100,8 @@ export function sendSuccess<T>(
 /**
  * Send a created (201) response
  */
-export function sendCreated<T>(res: Response, data: T, requestId?: string): void {
-  sendSuccess(res, { data, requestId }, 201);
+export function sendCreated<T extends Record<string, unknown>>(res: Response, fields: T, requestId?: string): void {
+  sendSuccess(res, { fields, requestId }, 201);
 }
 
 /**
@@ -236,14 +240,15 @@ export function createPaginationInfo(
  */
 export function sendPaginated<T>(
   res: Response,
-  data: T[],
+  items: T[],
+  itemKey: string,
   total: number,
   limit: number,
   offset: number,
   requestId?: string
 ): void {
   sendSuccess(res, {
-    data,
+    fields: { [itemKey]: items } as Record<string, unknown>,
     pagination: createPaginationInfo(total, limit, offset),
     requestId,
   });

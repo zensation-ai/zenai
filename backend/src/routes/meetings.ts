@@ -39,6 +39,7 @@ meetingsRouter.post('/search', apiKeyAuth, validateBody(MeetingSearchSchema), as
   const results = await searchMeetings(query, limit);
 
   res.json({
+    success: true,
     results,
     count: results.length,
     processingTime: Date.now() - startTime,
@@ -59,6 +60,7 @@ meetingsRouter.get('/action-items/all', apiKeyAuth, asyncHandler(async (req, res
   });
 
   res.json({
+    success: true,
     action_items: items,
     count: items.length,
   });
@@ -101,6 +103,7 @@ meetingsRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   });
 
   res.json({
+    success: true,
     meetings: result.meetings,
     pagination: {
       total: result.total,
@@ -129,7 +132,7 @@ meetingsRouter.get('/:id', apiKeyAuth, asyncHandler(async (req, res) => {
 
   const notes = await getMeetingNotes(req.params.id);
 
-  res.json({ meeting, notes });
+  res.json({ success: true, meeting, notes });
 }));
 
 /**
@@ -230,5 +233,5 @@ meetingsRouter.get('/:id/notes', apiKeyAuth, asyncHandler(async (req, res) => {
     throw new NotFoundError('Notes not found for this meeting');
   }
 
-  res.json({ notes });
+  res.json({ success: true, notes });
 }));

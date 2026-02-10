@@ -331,6 +331,7 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   );
 
   res.json({
+    success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
       total: parseInt(countResult.rows[0].total),
@@ -368,6 +369,7 @@ ideasRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, res) =>
   const totalTime = Date.now() - startTime;
 
   res.json({
+    success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     personalized: result.rows.length > 0 && result.rows[0].relevance_score > 0,
     processingTime: totalTime,
@@ -454,6 +456,7 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
     );
 
     return res.json({
+      success: true,
       ideas: textResult.rows,
       searchType: 'text-fallback',
       processingTime: Date.now() - startTime,
@@ -472,6 +475,7 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
   const totalTime = Date.now() - startTime;
 
   res.json({
+    success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     searchType: 'supabase-function',
     performance: {
@@ -548,6 +552,7 @@ ideasRouter.post('/search/progressive', apiKeyAuth, asyncHandler(async (req, res
   const totalTime = Date.now() - startTime;
 
   res.json({
+    success: true,
     keyword: {
       ideas: parseIdeaRows(keywordResult.rows as IdeaDatabaseRow[]),
       count: keywordResult.rows.length,
@@ -598,6 +603,7 @@ ideasRouter.get('/:id/similar', apiKeyAuth, validateUUID, asyncHandler(async (re
   const totalTime = Date.now() - startTime;
 
   res.json({
+    success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     sourceIdeaId: ideaId,
     processingTime: totalTime,
@@ -704,7 +710,7 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
     ...result.rows[0]
   }).catch((err) => logger.debug('Background webhook skipped', { error: err.message }));
 
-  res.json({ success: true, ...result.rows[0] });
+  res.json({ success: true, idea: parseIdeaRow(result.rows[0] as IdeaDatabaseRow) });
 }));
 
 /**
@@ -885,6 +891,7 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
   );
 
   res.json({
+    success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
       total: parseInt(countResult.rows[0].total),
@@ -1038,6 +1045,7 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
     ]);
 
     res.json({
+      success: true,
       total: parseInt(totalResult.rows[0]?.total ?? '0'),
       byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
       byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
@@ -1050,6 +1058,7 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
       error: error instanceof Error ? error.message : String(error),
     });
     res.json({
+      success: true,
       total: 0,
       byType: {},
       byCategory: {},

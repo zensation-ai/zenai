@@ -279,6 +279,7 @@ router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Resp
   const result = await query(queryStr, params);
 
   res.json({
+    success: true,
     media: result.rows,
     total: result.rows.length
   });
@@ -683,6 +684,7 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
     );
 
     return res.json({
+      success: true,
       id: mediaItem.id,
       mediaType: mediaItem.media_type,
       filename: mediaItem.filename,
@@ -698,6 +700,7 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
   }
 
   res.json({
+    success: true,
     id: mediaItem.id,
     mediaType: mediaItem.media_type,
     filename: mediaItem.filename,

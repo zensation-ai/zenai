@@ -199,7 +199,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
         });
 
         if (response.data.success) {
-          setResult(response.data.data);
+          setResult(response.data);
           showToast('Analyse abgeschlossen', 'success');
         } else {
           throw new Error('Analyse fehlgeschlagen');
@@ -237,7 +237,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
       });
 
       if (response.data.success) {
-        setResult(response.data.data);
+        setResult(response.data);
         showToast('Vergleich abgeschlossen', 'success');
       } else {
         throw new Error('Vergleich fehlgeschlagen');
@@ -273,8 +273,8 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
           ...prev,
           {
             role: 'assistant',
-            content: response.data.data.answer,
-            tokenUsage: response.data.data.tokenUsage,
+            content: response.data.answer,
+            tokenUsage: response.data.tokenUsage,
           },
         ]);
       } else {
@@ -310,8 +310,8 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
         params: { limit: 20, offset: 0 },
       });
       if (response.data.success) {
-        setHistory(response.data.data.entries);
-        setHistoryTotal(response.data.data.total);
+        setHistory(response.data.entries);
+        setHistoryTotal(response.data.total);
       }
     } catch {
       showToast('Historie konnte nicht geladen werden', 'error');
@@ -324,7 +324,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
     try {
       const response = await axios.get(`/api/documents/history/${id}`);
       if (response.data.success) {
-        setResult(response.data.data.analysisResult);
+        setResult(response.data.analysisResult);
         setViewMode('upload');
         showToast('Analyse geladen', 'success');
       }
@@ -359,7 +359,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
     try {
       const response = await axios.get('/api/documents/templates/custom');
       if (response.data.success) {
-        setCustomTemplates(response.data.data.templates);
+        setCustomTemplates(response.data.templates);
       }
     } catch {
       showToast('Custom Templates konnten nicht geladen werden', 'error');
@@ -386,7 +386,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
         });
         if (response.data.success) {
           setCustomTemplates((prev) =>
-            prev.map((t) => (t.id === editingTemplate.id ? response.data.data.template : t))
+            prev.map((t) => (t.id === editingTemplate.id ? response.data.template : t))
           );
           showToast('Template aktualisiert', 'success');
         }
@@ -399,7 +399,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
           icon: editingTemplate.icon || 'file-text',
         });
         if (response.data.success) {
-          setCustomTemplates((prev) => [response.data.data.template, ...prev]);
+          setCustomTemplates((prev) => [response.data.template, ...prev]);
           showToast('Template erstellt', 'success');
         }
       }

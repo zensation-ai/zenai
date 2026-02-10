@@ -57,6 +57,7 @@ router.get('/:context/stories', apiKeyAuth, asyncHandler(async (req: Request, re
     );
 
     return res.json({
+      success: true,
       stories,
       total: stories.length,
       context
@@ -67,6 +68,7 @@ router.get('/:context/stories', apiKeyAuth, asyncHandler(async (req: Request, re
   const stories = await getAllStories(context as AIContext);
 
   res.json({
+    success: true,
     stories,
     total: stories.length,
     context

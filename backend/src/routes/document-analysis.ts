@@ -132,28 +132,26 @@ documentAnalysisRouter.get(
 
     res.json({
       success: true,
-      data: {
-        available,
-        supportedFormats: [
-          { mimeType: 'application/pdf', label: 'PDF', maxSize: '32MB', maxPages: 100 },
-          {
-            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            label: 'Excel (XLSX)',
-            maxSize: '32MB',
-          },
-          { mimeType: 'application/vnd.ms-excel', label: 'Excel (XLS)', maxSize: '32MB' },
-          { mimeType: 'text/csv', label: 'CSV', maxSize: '32MB' },
-        ],
-        templates: VALID_TEMPLATES,
-        features: {
-          streaming: true,
-          comparison: true,
-          followUp: true,
-          history: true,
-          customTemplates: true,
-          pdfExport: true,
-          mermaidVisualization: true,
+      available,
+      supportedFormats: [
+        { mimeType: 'application/pdf', label: 'PDF', maxSize: '32MB', maxPages: 100 },
+        {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          label: 'Excel (XLSX)',
+          maxSize: '32MB',
         },
+        { mimeType: 'application/vnd.ms-excel', label: 'Excel (XLS)', maxSize: '32MB' },
+        { mimeType: 'text/csv', label: 'CSV', maxSize: '32MB' },
+      ],
+      templates: VALID_TEMPLATES,
+      features: {
+        streaming: true,
+        comparison: true,
+        followUp: true,
+        history: true,
+        customTemplates: true,
+        pdfExport: true,
+        mermaidVisualization: true,
       },
     });
   })
@@ -169,40 +167,38 @@ documentAnalysisRouter.get(
   asyncHandler(async (_req: Request, res: Response) => {
     res.json({
       success: true,
-      data: {
-        templates: [
-          {
-            id: 'general',
-            name: 'Allgemeine Analyse',
-            description: 'Umfassende Dokumentanalyse mit Zusammenfassung, Hauptinhalten und Auffälligkeiten',
-            icon: 'search',
-          },
-          {
-            id: 'financial',
-            name: 'Finanzanalyse',
-            description: 'KPIs, Trends, Periodenvergleiche und Handlungsempfehlungen',
-            icon: 'trending-up',
-          },
-          {
-            id: 'contract',
-            name: 'Vertragsprüfung',
-            description: 'Schlüsselklauseln, Fristen, Konditionen und Risikobewertung',
-            icon: 'file-text',
-          },
-          {
-            id: 'data',
-            name: 'Datenauswertung',
-            description: 'Statistische Kennzahlen, Muster, Ausreißer und Insights',
-            icon: 'bar-chart',
-          },
-          {
-            id: 'summary',
-            name: 'Schnellzusammenfassung',
-            description: 'Prägnante Zusammenfassung der Kernaussagen und Schlüsseldaten',
-            icon: 'zap',
-          },
-        ],
-      },
+      templates: [
+        {
+          id: 'general',
+          name: 'Allgemeine Analyse',
+          description: 'Umfassende Dokumentanalyse mit Zusammenfassung, Hauptinhalten und Auffälligkeiten',
+          icon: 'search',
+        },
+        {
+          id: 'financial',
+          name: 'Finanzanalyse',
+          description: 'KPIs, Trends, Periodenvergleiche und Handlungsempfehlungen',
+          icon: 'trending-up',
+        },
+        {
+          id: 'contract',
+          name: 'Vertragsprüfung',
+          description: 'Schlüsselklauseln, Fristen, Konditionen und Risikobewertung',
+          icon: 'file-text',
+        },
+        {
+          id: 'data',
+          name: 'Datenauswertung',
+          description: 'Statistische Kennzahlen, Muster, Ausreißer und Insights',
+          icon: 'bar-chart',
+        },
+        {
+          id: 'summary',
+          name: 'Schnellzusammenfassung',
+          description: 'Prägnante Zusammenfassung der Kernaussagen und Schlüsseldaten',
+          icon: 'zap',
+        },
+      ],
     });
   })
 );
@@ -258,16 +254,14 @@ documentAnalysisRouter.post(
 
     res.json({
       success: true,
-      data: {
-        id: historyId,
-        cacheKey,
-        filename: result.filename,
-        documentType: result.documentType,
-        analysis: result.analysis,
-        sections: result.sections,
-        keyFindings: result.keyFindings,
-        metadata: result.metadata,
-      },
+      id: historyId,
+      cacheKey,
+      filename: result.filename,
+      documentType: result.documentType,
+      analysis: result.analysis,
+      sections: result.sections,
+      keyFindings: result.keyFindings,
+      metadata: result.metadata,
     });
   })
 );
@@ -365,15 +359,13 @@ documentAnalysisRouter.post(
 
     res.json({
       success: true,
-      data: {
-        id: historyId,
-        filename: result.filename,
-        documentType: result.documentType,
-        analysis: result.analysis,
-        sections: result.sections,
-        keyFindings: result.keyFindings,
-        metadata: result.metadata,
-      },
+      id: historyId,
+      filename: result.filename,
+      documentType: result.documentType,
+      analysis: result.analysis,
+      sections: result.sections,
+      keyFindings: result.keyFindings,
+      metadata: result.metadata,
     });
   })
 );
@@ -422,11 +414,9 @@ documentAnalysisRouter.post(
 
     res.json({
       success: true,
-      data: {
-        answer: result.answer,
-        tokenUsage: result.tokenUsage,
-        cached: result.cached,
-      },
+      answer: result.answer,
+      tokenUsage: result.tokenUsage,
+      cached: result.cached,
     });
   })
 );
@@ -451,21 +441,19 @@ documentAnalysisRouter.get(
 
     res.json({
       success: true,
-      data: {
-        entries: entries.map((e) => ({
-          id: e.id,
-          filename: e.filename,
-          fileType: getDocumentTypeLabel(e.file_type),
-          fileSize: e.file_size,
-          analysisType: e.analysis_type,
-          tokenUsage: e.token_usage,
-          context: e.context,
-          createdAt: e.created_at,
-        })),
-        total,
-        limit,
-        offset,
-      },
+      entries: entries.map((e) => ({
+        id: e.id,
+        filename: e.filename,
+        fileType: getDocumentTypeLabel(e.file_type),
+        fileSize: e.file_size,
+        analysisType: e.analysis_type,
+        tokenUsage: e.token_usage,
+        context: e.context,
+        createdAt: e.created_at,
+      })),
+      total,
+      limit,
+      offset,
     });
   })
 );
@@ -490,17 +478,15 @@ documentAnalysisRouter.get(
 
     res.json({
       success: true,
-      data: {
-        id: entry.id,
-        filename: entry.filename,
-        fileType: getDocumentTypeLabel(entry.file_type),
-        fileSize: entry.file_size,
-        analysisType: entry.analysis_type,
-        analysisResult: entry.analysis_result,
-        tokenUsage: entry.token_usage,
-        context: entry.context,
-        createdAt: entry.created_at,
-      },
+      id: entry.id,
+      filename: entry.filename,
+      fileType: getDocumentTypeLabel(entry.file_type),
+      fileSize: entry.file_size,
+      analysisType: entry.analysis_type,
+      analysisResult: entry.analysis_result,
+      tokenUsage: entry.token_usage,
+      context: entry.context,
+      createdAt: entry.created_at,
     });
   })
 );
@@ -523,7 +509,7 @@ documentAnalysisRouter.delete(
       return;
     }
 
-    res.json({ success: true, data: { deleted: true } });
+    res.json({ success: true, deleted: true });
   })
 );
 
@@ -544,12 +530,10 @@ documentAnalysisRouter.get(
 
     res.json({
       success: true,
-      data: {
-        cachedDocuments: cacheSize,
-        cleanedExpired: cleaned,
-        maxCacheSize: 20,
-        ttlMinutes: 5,
-      },
+      cachedDocuments: cacheSize,
+      cleanedExpired: cleaned,
+      maxCacheSize: 20,
+      ttlMinutes: 5,
     });
   })
 );
@@ -571,7 +555,7 @@ documentAnalysisRouter.get(
 
     res.json({
       success: true,
-      data: { templates },
+      templates,
     });
   })
 );
@@ -613,7 +597,7 @@ documentAnalysisRouter.post(
 
     res.status(201).json({
       success: true,
-      data: { template },
+      template,
     });
   })
 );
@@ -666,7 +650,7 @@ documentAnalysisRouter.put(
 
     res.json({
       success: true,
-      data: { template },
+      template,
     });
   })
 );
@@ -689,7 +673,7 @@ documentAnalysisRouter.delete(
       return;
     }
 
-    res.json({ success: true, data: { deleted: true } });
+    res.json({ success: true, deleted: true });
   })
 );
 
@@ -928,7 +912,8 @@ documentAnalysisRouter.post(
 
     res.json({
       success: true,
-      data: { diagrams, count: diagrams.length },
+      diagrams,
+      count: diagrams.length,
     });
   })
 );

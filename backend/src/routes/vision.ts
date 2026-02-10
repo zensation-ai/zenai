@@ -135,21 +135,19 @@ visionRouter.get(
 
     res.json({
       success: true,
-      data: {
-        available,
-        supportedFormats: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-        maxFileSize: '10MB',
-        maxFiles: 5,
-        availableTasks: [
-          'describe',
-          'extract_text',
-          'analyze',
-          'extract_ideas',
-          'summarize',
-          'compare',
-          'qa',
-        ],
-      },
+      available,
+      supportedFormats: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+      maxFileSize: '10MB',
+      maxFiles: 5,
+      availableTasks: [
+        'describe',
+        'extract_text',
+        'analyze',
+        'extract_ideas',
+        'summarize',
+        'compare',
+        'qa',
+      ],
     });
   })
 );
@@ -192,12 +190,10 @@ visionRouter.post(
 
     res.json({
       success: true,
-      data: {
-        task: result.task,
-        text: result.text,
-        structured: result.structured,
-        metadata: result.metadata,
-      },
+      task: result.task,
+      text: result.text,
+      structured: result.structured,
+      metadata: result.metadata,
     });
   })
 );
@@ -231,10 +227,8 @@ visionRouter.post(
 
     res.json({
       success: true,
-      data: {
-        text: result.text,
-        confidence: result.confidence,
-      },
+      text: result.text,
+      confidence: result.confidence,
     });
   })
 );
@@ -271,10 +265,8 @@ visionRouter.post(
 
     res.json({
       success: true,
-      data: {
-        ideas,
-        count: ideas.length,
-      },
+      ideas,
+      count: ideas.length,
     });
   })
 );
@@ -308,9 +300,7 @@ visionRouter.post(
 
     res.json({
       success: true,
-      data: {
-        description,
-      },
+      description,
     });
   })
 );
@@ -351,10 +341,8 @@ visionRouter.post(
 
     res.json({
       success: true,
-      data: {
-        question,
-        answer,
-      },
+      question,
+      answer,
     });
   })
 );
@@ -394,10 +382,8 @@ visionRouter.post(
 
     res.json({
       success: true,
-      data: {
-        comparison: result.text,
-        metadata: result.metadata,
-      },
+      comparison: result.text,
+      metadata: result.metadata,
     });
   })
 );
@@ -432,7 +418,7 @@ visionRouter.post(
 
     res.json({
       success: true,
-      data: result,
+      ...result,
     });
   })
 );

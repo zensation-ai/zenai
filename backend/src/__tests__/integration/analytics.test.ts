@@ -141,13 +141,13 @@ describe('Analytics API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('summary');
-      expect(response.body.data).toHaveProperty('recentActivity');
-      expect(response.body.data).toHaveProperty('distribution');
-      expect(response.body.data).toHaveProperty('dailyTrend');
+      expect(response.body).toHaveProperty('summary');
+      expect(response.body).toHaveProperty('recentActivity');
+      expect(response.body).toHaveProperty('distribution');
+      expect(response.body).toHaveProperty('dailyTrend');
 
-      expect(response.body.data.summary.total).toBe(100);
-      expect(response.body.data.summary.active).toBe(85);
+      expect(response.body.summary.total).toBe(100);
+      expect(response.body.summary.active).toBe(85);
     });
 
     it('should return 400 for invalid context', async () => {
@@ -206,8 +206,8 @@ describe('Analytics API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('byHour');
-      expect(response.body.data).toHaveProperty('byDayOfWeek');
+      expect(response.body).toHaveProperty('byHour');
+      expect(response.body).toHaveProperty('byDayOfWeek');
     });
 
     it('should default to week period if not specified', async () => {
@@ -260,9 +260,9 @@ describe('Analytics API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('avgIdeasPerDay');
-      expect(response.body.data).toHaveProperty('currentStreak');
-      expect(response.body.data).toHaveProperty('processing');
+      expect(response.body).toHaveProperty('avgIdeasPerDay');
+      expect(response.body).toHaveProperty('currentStreak');
+      expect(response.body).toHaveProperty('processing');
     });
 
     it('should return 400 for invalid context', async () => {
@@ -314,7 +314,7 @@ describe('Analytics API Integration Tests', () => {
         .get('/api/personal/analytics/overview')
         .expect(200);
 
-      expect(response.body.data.summary.total).toBe(0);
+      expect(response.body.summary.total).toBe(0);
     });
 
     it('should handle work context the same as personal', async () => {
@@ -331,7 +331,7 @@ describe('Analytics API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.summary.total).toBe(50);
+      expect(response.body.summary.total).toBe(50);
     });
   });
 });

@@ -1007,6 +1007,7 @@ exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: 
   }));
 
   res.json({
+    success: true,
     exports,
     pagination: {
       total: parseInt(countResult.rows[0]?.total || '0'),
@@ -1042,5 +1043,5 @@ exportRouter.post('/history', apiKeyAuth, asyncHandler(async (req: Request, res:
     ]
   );
 
-  res.status(201).json(result.rows[0]);
+  res.status(201).json({ success: true, ...result.rows[0] });
 }));

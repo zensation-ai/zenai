@@ -82,7 +82,7 @@ canvasRouter.post(
 
     res.status(201).json({
       success: true,
-      data: document,
+      ...document,
     });
   })
 );
@@ -107,7 +107,7 @@ canvasRouter.get(
 
     res.json({
       success: true,
-      data: result,
+      ...result,
     });
   })
 );
@@ -133,7 +133,7 @@ canvasRouter.get(
 
     res.json({
       success: true,
-      data: document,
+      ...document,
     });
   })
 );
@@ -171,7 +171,7 @@ canvasRouter.patch(
 
     res.json({
       success: true,
-      data: document,
+      ...document,
     });
   })
 );
@@ -197,7 +197,7 @@ canvasRouter.delete(
 
     res.json({
       success: true,
-      data: { deleted: true },
+      deleted: true,
     });
   })
 );
@@ -228,7 +228,7 @@ canvasRouter.post(
 
     res.json({
       success: true,
-      data: { linked: true },
+      linked: true,
     });
   })
 );
@@ -258,7 +258,7 @@ canvasRouter.get(
 
     res.json({
       success: true,
-      data: { versions },
+      versions,
     });
   })
 );
@@ -290,7 +290,7 @@ canvasRouter.post(
 
     res.json({
       success: true,
-      data: document,
+      ...document,
     });
   })
 );

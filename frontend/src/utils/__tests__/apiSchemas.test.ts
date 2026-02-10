@@ -197,26 +197,24 @@ describe('API Schema Validation', () => {
   describe('ChatSessionsResponseSchema', () => {
     it('should validate chat sessions response', () => {
       const data = {
-        data: {
-          sessions: [
-            { id: 'session-1', title: 'Chat 1', created_at: '2026-02-07T12:00:00Z' },
-          ],
-        },
+        sessions: [
+          { id: 'session-1', title: 'Chat 1', created_at: '2026-02-07T12:00:00Z' },
+        ],
       };
 
       const result = ChatSessionsResponseSchema.safeParse(data);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.data.sessions).toHaveLength(1);
+        expect(result.data.sessions).toHaveLength(1);
       }
     });
 
     it('should default sessions to empty array', () => {
-      const data = { data: {} };
+      const data = {};
       const result = ChatSessionsResponseSchema.safeParse(data);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.data.sessions).toEqual([]);
+        expect(result.data.sessions).toEqual([]);
       }
     });
   });
@@ -224,12 +222,10 @@ describe('API Schema Validation', () => {
   describe('ChatMessageResponseSchema', () => {
     it('should validate chat message response', () => {
       const data = {
-        data: {
-          userMessage: { id: 'msg-1', role: 'user' as const, content: 'Hello' },
-          assistantMessage: { id: 'msg-2', role: 'assistant' as const, content: 'Hi there!' },
-          titleUpdated: true,
-          title: 'Greeting Chat',
-        },
+        userMessage: { id: 'msg-1', role: 'user' as const, content: 'Hello' },
+        assistantMessage: { id: 'msg-2', role: 'assistant' as const, content: 'Hi there!' },
+        titleUpdated: true,
+        title: 'Greeting Chat',
       };
 
       const result = ChatMessageResponseSchema.safeParse(data);
@@ -241,29 +237,25 @@ describe('API Schema Validation', () => {
     it('should validate code execution response', () => {
       const data = {
         success: true,
-        data: {
-          output: 'Hello World\n',
-          exitCode: 0,
-          executionTime: 150,
-          language: 'python',
-          code: 'print("Hello World")',
-        },
+        output: 'Hello World\n',
+        exitCode: 0,
+        executionTime: 150,
+        language: 'python',
+        code: 'print("Hello World")',
       };
 
       const result = CodeExecutionResponseSchema.safeParse(data);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.data?.output).toBe('Hello World\n');
+        expect(result.data.output).toBe('Hello World\n');
       }
     });
 
     it('should validate failed execution', () => {
       const data = {
         success: false,
-        data: {
-          error: 'SyntaxError: invalid syntax',
-          exitCode: 1,
-        },
+        error: 'SyntaxError: invalid syntax',
+        exitCode: 1,
       };
 
       const result = CodeExecutionResponseSchema.safeParse(data);

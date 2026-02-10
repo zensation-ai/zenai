@@ -81,28 +81,26 @@ describe('GeneralChat Component', () => {
 
     // Default mock for session list (empty)
     mockedAxios.get.mockResolvedValue({
-      data: { data: { sessions: [] } },
+      data: { sessions: [] },
     });
 
     // Default mock for session creation
     mockedAxios.post.mockResolvedValue({
       data: {
-        data: {
-          session: { id: 'test-session-id' },
-          userMessage: {
-            id: 'msg-1',
-            sessionId: 'test-session-id',
-            role: 'user',
-            content: 'Test message',
-            createdAt: new Date().toISOString(),
-          },
-          assistantMessage: {
-            id: 'msg-2',
-            sessionId: 'test-session-id',
-            role: 'assistant',
-            content: 'Test response',
-            createdAt: new Date().toISOString(),
-          },
+        session: { id: 'test-session-id' },
+        userMessage: {
+          id: 'msg-1',
+          sessionId: 'test-session-id',
+          role: 'user',
+          content: 'Test message',
+          createdAt: new Date().toISOString(),
+        },
+        assistantMessage: {
+          id: 'msg-2',
+          sessionId: 'test-session-id',
+          role: 'assistant',
+          content: 'Test response',
+          createdAt: new Date().toISOString(),
         },
       },
     });
@@ -386,31 +384,27 @@ describe('GeneralChat Component', () => {
       mockedAxios.get
         .mockResolvedValueOnce({
           data: {
-            data: {
-              sessions: [{ id: 'existing-session' }],
-            },
+            sessions: [{ id: 'existing-session' }],
           },
         })
         .mockResolvedValueOnce({
           data: {
-            data: {
-              session: {
-                id: 'existing-session',
-                messages: [
-                  {
-                    id: 'msg-1',
-                    role: 'user',
-                    content: 'Previous message',
-                    createdAt: new Date().toISOString(),
-                  },
-                  {
-                    id: 'msg-2',
-                    role: 'assistant',
-                    content: 'Previous response',
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-              },
+            session: {
+              id: 'existing-session',
+              messages: [
+                {
+                  id: 'msg-1',
+                  role: 'user',
+                  content: 'Previous message',
+                  createdAt: new Date().toISOString(),
+                },
+                {
+                  id: 'msg-2',
+                  role: 'assistant',
+                  content: 'Previous response',
+                  createdAt: new Date().toISOString(),
+                },
+              ],
             },
           },
         });
@@ -445,17 +439,15 @@ describe('GeneralChat Component', () => {
     it('should show new chat button after session exists', async () => {
       mockedAxios.get
         .mockResolvedValueOnce({
-          data: { data: { sessions: [{ id: 'session-1' }] } },
+          data: { sessions: [{ id: 'session-1' }] },
         })
         .mockResolvedValueOnce({
           data: {
-            data: {
-              session: {
-                id: 'session-1',
-                messages: [
-                  { id: 'm1', role: 'user', content: 'Hi', createdAt: new Date().toISOString() },
-                ],
-              },
+            session: {
+              id: 'session-1',
+              messages: [
+                { id: 'm1', role: 'user', content: 'Hi', createdAt: new Date().toISOString() },
+              ],
             },
           },
         });
@@ -476,22 +468,20 @@ describe('GeneralChat Component', () => {
     it('should display user message with correct styling', async () => {
       mockedAxios.get
         .mockResolvedValueOnce({
-          data: { data: { sessions: [{ id: 's1' }] } },
+          data: { sessions: [{ id: 's1' }] },
         })
         .mockResolvedValueOnce({
           data: {
-            data: {
-              session: {
-                id: 's1',
-                messages: [
-                  {
-                    id: 'm1',
-                    role: 'user',
-                    content: 'User message',
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-              },
+            session: {
+              id: 's1',
+              messages: [
+                {
+                  id: 'm1',
+                  role: 'user',
+                  content: 'User message',
+                  createdAt: new Date().toISOString(),
+                },
+              ],
             },
           },
         });
@@ -508,22 +498,20 @@ describe('GeneralChat Component', () => {
     it('should display assistant message with AI name', async () => {
       mockedAxios.get
         .mockResolvedValueOnce({
-          data: { data: { sessions: [{ id: 's1' }] } },
+          data: { sessions: [{ id: 's1' }] },
         })
         .mockResolvedValueOnce({
           data: {
-            data: {
-              session: {
-                id: 's1',
-                messages: [
-                  {
-                    id: 'm1',
-                    role: 'assistant',
-                    content: 'AI response',
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-              },
+            session: {
+              id: 's1',
+              messages: [
+                {
+                  id: 'm1',
+                  role: 'assistant',
+                  content: 'AI response',
+                  createdAt: new Date().toISOString(),
+                },
+              ],
             },
           },
         });
@@ -542,7 +530,7 @@ describe('GeneralChat Component', () => {
       // First call creates session, second call (vision upload) hangs
       mockedAxios.post
         .mockResolvedValueOnce({
-          data: { data: { session: { id: 'test-session-id' } } },
+          data: { session: { id: 'test-session-id' } },
         })
         .mockImplementation(() => new Promise(() => {})); // Vision upload hangs
 
@@ -572,22 +560,20 @@ describe('GeneralChat Component', () => {
     it('should render markdown formatting', async () => {
       mockedAxios.get
         .mockResolvedValueOnce({
-          data: { data: { sessions: [{ id: 's1' }] } },
+          data: { sessions: [{ id: 's1' }] },
         })
         .mockResolvedValueOnce({
           data: {
-            data: {
-              session: {
-                id: 's1',
-                messages: [
-                  {
-                    id: 'm1',
-                    role: 'assistant',
-                    content: '**Bold text** and *italic*',
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-              },
+            session: {
+              id: 's1',
+              messages: [
+                {
+                  id: 'm1',
+                  role: 'assistant',
+                  content: '**Bold text** and *italic*',
+                  createdAt: new Date().toISOString(),
+                },
+              ],
             },
           },
         });

@@ -82,6 +82,7 @@ router.get('/thoughts', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
   const thoughts = await getLooseThoughts(userId, limit, includeProcessed, context);
 
   res.json({
+    success: true,
     thoughts,
     count: thoughts.length,
     context,
@@ -100,6 +101,7 @@ router.get('/clusters', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
   const clusters = await getAllClusters(userId, includeThoughts, context);
 
   res.json({
+    success: true,
     clusters,
     count: clusters.length,
     context,
@@ -117,6 +119,7 @@ router.get('/clusters/ready', apiKeyAuth, asyncHandler(async (req: Request, res:
   const clusters = await getReadyClusters(userId, context);
 
   res.json({
+    success: true,
     clusters,
     count: clusters.length,
     hasNew: clusters.some(c => c.status === 'ready'),
@@ -241,6 +244,7 @@ router.get('/stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response
   const stats = await getIncubatorStats(userId, context);
 
   res.json({
+    success: true,
     ...stats,
     context,
   });
@@ -294,6 +298,7 @@ router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req:
     );
 
     res.json({
+      success: true,
       thoughts: thoughtsResult.rows.map(t => ({
         id: t.id,
         raw_input: t.raw_input?.substring(0, 50) + '...',
@@ -330,6 +335,7 @@ router.get('/learning', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
   const learningProgress = Math.min(totalInteractions / 100, 1); // Max at 100 interactions
 
   res.json({
+    success: true,
     learningProgress,
     confidence: insights.confidence,
     profile: {
@@ -361,7 +367,8 @@ router.get('/context', apiKeyAuth, asyncHandler(async (req: Request, res: Respon
   const context = await getPersonalizedPromptContext(userId);
 
   res.json({
-    context,
+    success: true,
+    context: context,
     hasContext: context.length > 0,
   });
 }));

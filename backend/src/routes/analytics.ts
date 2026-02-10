@@ -126,30 +126,28 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
 
   res.json({
     success: true,
-    data: {
-      summary: {
-        total: toInt(total.total),
-        active: toInt(total.active),
-        archived: toInt(total.archived),
-        lastWeek: toInt(total.last_week),
-        lastMonth: toInt(total.last_month),
-      },
-      recentActivity: {
-        created: toInt(recent.created),
-        updated: toInt(recent.updated),
-        period: '24 hours',
-      },
-      distribution: {
-        byCategory: categoryStats.rows.reduce((acc: Record<string, number>, r: { category: string; count: string }) => ({ ...acc, [r.category]: toInt(r.count) }), {}),
-        byType: typeStats.rows.reduce((acc: Record<string, number>, r: { type: string; count: string }) => ({ ...acc, [r.type]: toInt(r.count) }), {}),
-        byPriority: priorityStats.rows.reduce((acc: Record<string, number>, r: { priority: string; count: string }) => ({ ...acc, [r.priority]: toInt(r.count) }), {}),
-      },
-      dailyTrend: dailyTrend.rows.map((r: { date: string; count: string }) => ({
-        date: r.date,
-        count: toInt(r.count),
-      })),
-      generatedAt: new Date().toISOString(),
+    summary: {
+      total: toInt(total.total),
+      active: toInt(total.active),
+      archived: toInt(total.archived),
+      lastWeek: toInt(total.last_week),
+      lastMonth: toInt(total.last_month),
     },
+    recentActivity: {
+      created: toInt(recent.created),
+      updated: toInt(recent.updated),
+      period: '24 hours',
+    },
+    distribution: {
+      byCategory: categoryStats.rows.reduce((acc: Record<string, number>, r: { category: string; count: string }) => ({ ...acc, [r.category]: toInt(r.count) }), {}),
+      byType: typeStats.rows.reduce((acc: Record<string, number>, r: { type: string; count: string }) => ({ ...acc, [r.type]: toInt(r.count) }), {}),
+      byPriority: priorityStats.rows.reduce((acc: Record<string, number>, r: { priority: string; count: string }) => ({ ...acc, [r.priority]: toInt(r.count) }), {}),
+    },
+    dailyTrend: dailyTrend.rows.map((r: { date: string; count: string }) => ({
+      date: r.date,
+      count: toInt(r.count),
+    })),
+    generatedAt: new Date().toISOString(),
   });
 }));
 
@@ -208,20 +206,18 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
 
   res.json({
     success: true,
-    data: {
-      period,
-      interval: intervalLabel,
-      byHour: hourlyResult.rows.map((r: { hour: string; count: string }) => ({
-        hour: toInt(r.hour),
-        count: toInt(r.count),
-      })),
-      byDayOfWeek: dowResult.rows.map((r: { dow: string; count: string }) => ({
-        day: dayNames[toInt(r.dow)],
-        dayIndex: toInt(r.dow),
-        count: toInt(r.count),
-      })),
-      insights: generateInsights(hourlyResult.rows, dowResult.rows, dayNames),
-    },
+    period,
+    interval: intervalLabel,
+    byHour: hourlyResult.rows.map((r: { hour: string; count: string }) => ({
+      hour: toInt(r.hour),
+      count: toInt(r.count),
+    })),
+    byDayOfWeek: dowResult.rows.map((r: { dow: string; count: string }) => ({
+      day: dayNames[toInt(r.dow)],
+      dayIndex: toInt(r.dow),
+      count: toInt(r.count),
+    })),
+    insights: generateInsights(hourlyResult.rows, dowResult.rows, dayNames),
   });
 }));
 
@@ -282,15 +278,13 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
 
   res.json({
     success: true,
-    data: {
-      avgIdeasPerDay: parseFloat(avgDaily.rows[0]?.avg_per_day || '0').toFixed(2),
-      currentStreak: toInt(streak.rows[0]?.streak_days),
-      processing: {
-        totalProcessed: toInt(processing.rows[0]?.total_processed),
-        avgProcessingTime: parseFloat(processing.rows[0]?.avg_processing_time_sec || '0').toFixed(2) + 's',
-      },
-      period: '30 days',
+    avgIdeasPerDay: parseFloat(avgDaily.rows[0]?.avg_per_day || '0').toFixed(2),
+    currentStreak: toInt(streak.rows[0]?.streak_days),
+    processing: {
+      totalProcessed: toInt(processing.rows[0]?.total_processed),
+      avgProcessingTime: parseFloat(processing.rows[0]?.avg_processing_time_sec || '0').toFixed(2) + 's',
     },
+    period: '30 days',
   });
 }));
 

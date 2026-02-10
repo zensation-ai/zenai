@@ -509,7 +509,7 @@ router.get('/:context/learning-tasks/:id/challenge', apiKeyAuth, asyncHandler(as
     throw new NotFoundError('Task not found');
   }
 
-  res.json({ success: true, data: challenge });
+  res.json({ success: true, challenge });
 }));
 
 /**
@@ -532,7 +532,7 @@ router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, asyncHandler(asyn
     throw new NotFoundError('Task not found');
   }
 
-  res.json({ success: true, data: result });
+  res.json({ success: true, ...result });
 }));
 
 /**
@@ -547,10 +547,8 @@ router.get('/:context/learning-tasks/review-schedule', apiKeyAuth, asyncHandler(
 
   res.json({
     success: true,
-    data: {
-      dueForReview: schedule,
-      count: schedule.length,
-    },
+    dueForReview: schedule,
+    count: schedule.length,
   });
 }));
 

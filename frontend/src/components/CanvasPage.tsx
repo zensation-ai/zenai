@@ -68,10 +68,10 @@ export function CanvasPage({ context }: CanvasPageProps) {
           headers: apiHeaders,
         });
         if (response.data.success && isMountedRef.current) {
-          setDocuments(response.data.data.documents);
+          setDocuments(response.data.documents);
           // Auto-select first document
-          if (response.data.data.documents.length > 0 && !activeDocument) {
-            setActiveDocument(response.data.data.documents[0]);
+          if (response.data.documents.length > 0 && !activeDocument) {
+            setActiveDocument(response.data.documents[0]);
           }
         }
       } catch (error) {
@@ -119,7 +119,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
         { headers: apiHeaders }
       );
       if (response.data.success) {
-        const newDoc = response.data.data;
+        const newDoc = response.data;
         setDocuments((prev) => [newDoc, ...prev]);
         setActiveDocument(newDoc);
         setShowDocList(false);
@@ -139,7 +139,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
           headers: apiHeaders,
         });
         if (response.data.success) {
-          setActiveDocument(response.data.data);
+          setActiveDocument(response.data);
           setSaveStatus('saved');
           setShowDocList(false);
         }

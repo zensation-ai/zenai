@@ -97,6 +97,7 @@ const StructuredIdeaSchema = z.object({
 }).passthrough();
 
 export const IdeasResponseSchema = z.object({
+  success: z.boolean().optional(),
   ideas: z.array(StructuredIdeaSchema).default([]),
   pagination: z.object({
     total: z.number(),
@@ -151,24 +152,21 @@ const ChatSessionSchema = z.object({
 }).passthrough();
 
 export const ChatSessionsResponseSchema = z.object({
-  data: z.object({
-    sessions: z.array(ChatSessionSchema).default([]),
-  }),
+  success: z.boolean().optional(),
+  sessions: z.array(ChatSessionSchema).default([]),
 }).passthrough();
 
 export const ChatSessionResponseSchema = z.object({
-  data: z.object({
-    session: ChatSessionSchema.optional(),
-  }),
+  success: z.boolean().optional(),
+  session: ChatSessionSchema.optional(),
 }).passthrough();
 
 export const ChatMessageResponseSchema = z.object({
-  data: z.object({
-    userMessage: ChatMessageSchema.optional(),
-    assistantMessage: ChatMessageSchema.optional(),
-    titleUpdated: z.boolean().optional(),
-    title: z.string().optional(),
-  }).passthrough(),
+  success: z.boolean().optional(),
+  userMessage: ChatMessageSchema.optional(),
+  assistantMessage: ChatMessageSchema.optional(),
+  titleUpdated: z.boolean().optional(),
+  title: z.string().optional(),
 }).passthrough();
 
 // ---------------------------------------------------------------------------
@@ -177,23 +175,19 @@ export const ChatMessageResponseSchema = z.object({
 
 export const CodeExecutionResponseSchema = z.object({
   success: z.boolean(),
-  data: z.object({
-    output: z.string().optional(),
-    error: z.string().optional(),
-    exitCode: z.number().optional(),
-    executionTime: z.number().optional(),
-    language: z.string().optional(),
-    code: z.string().optional(),
-  }).passthrough().optional(),
+  output: z.string().optional(),
+  error: z.string().optional(),
+  exitCode: z.number().optional(),
+  executionTime: z.number().optional(),
+  language: z.string().optional(),
+  code: z.string().optional(),
 }).passthrough();
 
 export const CodeHealthResponseSchema = z.object({
   success: z.boolean().optional(),
-  data: z.object({
-    available: z.boolean(),
-    enabled: z.boolean().optional(),
-    provider: z.string().optional(),
-  }).passthrough().optional(),
+  available: z.boolean(),
+  enabled: z.boolean().optional(),
+  provider: z.string().optional(),
 }).passthrough();
 
 // ---------------------------------------------------------------------------
@@ -201,6 +195,7 @@ export const CodeHealthResponseSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const SearchResponseSchema = z.object({
+  success: z.boolean().optional(),
   ideas: z.array(StructuredIdeaSchema).default([]),
 }).passthrough();
 
@@ -209,6 +204,7 @@ export const SearchResponseSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const MeetingsResponseSchema = z.object({
+  success: z.boolean().optional(),
   meetings: z.array(z.object({
     id: z.string(),
     title: z.string().optional(),
@@ -218,9 +214,10 @@ export const MeetingsResponseSchema = z.object({
 }).passthrough();
 
 // ---------------------------------------------------------------------------
-// Generic wrapper for { success, data } pattern
+// Generic wrapper (DEPRECATED: responses now use flat format)
 // ---------------------------------------------------------------------------
 
+/** @deprecated Responses now use `{ success, ...fields }` instead of `{ success, data: {...} }`. */
 export function createWrappedSchema<T extends z.ZodType>(dataSchema: T) {
   return z.object({
     success: z.boolean().optional(),
@@ -233,6 +230,7 @@ export function createWrappedSchema<T extends z.ZodType>(dataSchema: T) {
 // ---------------------------------------------------------------------------
 
 export const SyncStatusResponseSchema = z.object({
+  success: z.boolean().optional(),
   last_sync: z.string().optional().nullable(),
   pending_changes: z.number().optional(),
   sync_enabled: z.boolean().optional(),
@@ -243,6 +241,7 @@ export const SyncStatusResponseSchema = z.object({
 }).passthrough();
 
 export const SyncPendingResponseSchema = z.object({
+  success: z.boolean().optional(),
   changes: z.array(z.object({
     id: z.string(),
     type: z.string().optional(),
@@ -281,10 +280,12 @@ const AutomationSchema = z.object({
 }).passthrough();
 
 export const AutomationsResponseSchema = z.object({
+  success: z.boolean().optional(),
   automations: z.array(AutomationSchema).default([]),
 }).passthrough();
 
 export const AutomationSuggestionsResponseSchema = z.object({
+  success: z.boolean().optional(),
   suggestions: z.array(z.object({
     id: z.string(),
     name: z.string().optional(),
@@ -295,6 +296,7 @@ export const AutomationSuggestionsResponseSchema = z.object({
 }).passthrough();
 
 export const AutomationStatsResponseSchema = z.object({
+  success: z.boolean().optional(),
   total_automations: z.number().optional(),
   active_automations: z.number().optional(),
   total_executions: z.number().optional(),
@@ -312,6 +314,7 @@ export type AutomationStatsResponse = z.infer<typeof AutomationStatsResponseSche
 // ---------------------------------------------------------------------------
 
 export const ProfileStatsResponseSchema = z.object({
+  success: z.boolean().optional(),
   total_ideas: z.number().optional(),
   total_meetings: z.number().optional(),
   avg_ideas_per_day: z.number().optional(),
@@ -385,29 +388,27 @@ export type NotificationHistoryResponse = z.infer<typeof NotificationHistoryResp
 // ---------------------------------------------------------------------------
 
 export const AnalyticsDashboardResponseSchema = z.object({
-  data: z.object({
-    summary: z.object({
-      total: z.number().optional(),
-      today: z.number().optional(),
-      thisWeek: z.number().optional(),
-      thisMonth: z.number().optional(),
-    }).passthrough().optional(),
-    goals: z.object({
-      daily: z.object({ target: z.number(), current: z.number(), progress: z.number() }).passthrough().optional(),
-      weekly: z.object({ target: z.number(), current: z.number(), progress: z.number() }).passthrough().optional(),
-    }).passthrough().optional(),
-    streaks: z.object({
-      current: z.number().optional(),
-      longest: z.number().optional(),
-    }).passthrough().optional(),
+  success: z.boolean().optional(),
+  summary: z.object({
+    total: z.number().optional(),
+    today: z.number().optional(),
+    thisWeek: z.number().optional(),
+    thisMonth: z.number().optional(),
+  }).passthrough().optional(),
+  goals: z.object({
+    daily: z.object({ target: z.number(), current: z.number(), progress: z.number() }).passthrough().optional(),
+    weekly: z.object({ target: z.number(), current: z.number(), progress: z.number() }).passthrough().optional(),
+  }).passthrough().optional(),
+  streaks: z.object({
+    current: z.number().optional(),
+    longest: z.number().optional(),
   }).passthrough().optional(),
 }).passthrough();
 
 export const ProductivityScoreResponseSchema = z.object({
-  data: z.object({
-    overall: z.number().optional(),
-    trend: z.string().optional(),
-  }).passthrough().optional(),
+  success: z.boolean().optional(),
+  overall: z.number().optional(),
+  trend: z.string().optional(),
 }).passthrough();
 
 export type AnalyticsDashboardResponse = z.infer<typeof AnalyticsDashboardResponseSchema>;
@@ -418,6 +419,7 @@ export type ProductivityScoreResponse = z.infer<typeof ProductivityScoreResponse
 // ---------------------------------------------------------------------------
 
 export const ExportHistoryResponseSchema = z.object({
+  success: z.boolean().optional(),
   exports: z.array(z.object({
     id: z.string(),
     format: z.string().optional(),
@@ -434,6 +436,7 @@ export type ExportHistoryResponse = z.infer<typeof ExportHistoryResponseSchema>;
 // ---------------------------------------------------------------------------
 
 export const StoriesResponseSchema = z.object({
+  success: z.boolean().optional(),
   stories: z.array(z.object({
     id: z.string(),
     title: z.string().optional(),

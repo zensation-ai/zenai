@@ -154,6 +154,7 @@ notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(a
   if (result.rows.length === 0) {
     // Return defaults
     return res.json({
+      success: true,
       clusterReady: true,
       dailyDigest: false,
       weeklyInsights: true,
@@ -163,7 +164,16 @@ notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(a
     });
   }
 
-  res.json(result.rows[0]);
+  const row = result.rows[0];
+  res.json({
+    success: true,
+    clusterReady: row.cluster_ready,
+    dailyDigest: row.daily_digest,
+    weeklyInsights: row.weekly_insights,
+    priorityReminders: row.priority_reminders,
+    quietHoursStart: row.quiet_hours_start,
+    quietHoursEnd: row.quiet_hours_end,
+  });
 }));
 
 /**
@@ -297,6 +307,7 @@ notificationsRouter.get('/notifications/history', apiKeyAuth, asyncHandler(async
     );
 
     res.json({
+      success: true,
       notifications: result.rows,
       total: result.rows.length,
     });
@@ -312,6 +323,7 @@ notificationsRouter.get('/notifications/history', apiKeyAuth, asyncHandler(async
         [limit]
       );
       res.json({
+        success: true,
         notifications: fallback.rows,
         total: fallback.rows.length,
       });
@@ -321,7 +333,7 @@ notificationsRouter.get('/notifications/history', apiKeyAuth, asyncHandler(async
         context: ctx,
         error: queryError instanceof Error ? queryError.message : String(queryError),
       });
-      res.json({ notifications: [], total: 0 });
+      res.json({ success: true, notifications: [], total: 0 });
     }
   }
 }));

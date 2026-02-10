@@ -319,7 +319,8 @@ describe('Ideas API Integration Tests', () => {
         .send({ title: 'Updated Title', priority: 'high' })
         .expect(200);
 
-      expect(response.body.title).toBe('Updated Title');
+      expect(response.body.success).toBe(true);
+      expect(response.body.idea.title).toBe('Updated Title');
     });
 
     it('should return 404 for non-existent idea', async () => {

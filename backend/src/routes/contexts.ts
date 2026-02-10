@@ -12,6 +12,7 @@ const router = Router();
 // Get available contexts (cached for 1 hour)
 router.get('/contexts', apiKeyAuth, responseCacheMiddleware, (req, res) => {
   res.json({
+    success: true,
     contexts: [
       {
         id: 'personal',
@@ -100,6 +101,7 @@ router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res:
   const total = parseInt(countResult.rows[0].count);
 
   res.json({
+    success: true,
     ideas: result.rows,
     pagination: {
       total,
@@ -157,6 +159,7 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
   const total = parseInt(countResult.rows[0].count);
 
   res.json({
+    success: true,
     ideas: result.rows,
     pagination: {
       total,
@@ -262,8 +265,12 @@ router.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), async
     }).catch(() => { /* Background learning - ignore errors */ });
 
     res.json({
+      success: true,
       message: `Idea moved from ${context} to ${targetContext}`,
-      ...result,
+      ideaId: result.ideaId,
+      newIdeaId: result.newIdeaId,
+      sourceContext: result.sourceContext,
+      targetContext: result.targetContext,
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'IDEA_NOT_FOUND') {
@@ -312,6 +319,7 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
   `, [searchPattern, limitNum]);
 
   res.json({
+    success: true,
     ideas: result.rows,
     query: searchQuery,
     context,
@@ -441,6 +449,7 @@ router.get('/:context/ai-activity', apiKeyAuth, asyncHandler(async (req: Request
   const unreadCount = await getUnreadActivityCount(context as AIContext);
 
   res.json({
+    success: true,
     activities,
     unreadCount,
     context

@@ -310,13 +310,13 @@ describe('Document Analysis - Routes', () => {
       expect([200, 401]).toContain(res.status);
       if (res.status === 200) {
         expect(res.body.success).toBe(true);
-        expect(res.body.data).toHaveProperty('available');
-        expect(res.body.data).toHaveProperty('supportedFormats');
-        expect(res.body.data).toHaveProperty('templates');
-        expect(res.body.data).toHaveProperty('features');
-        expect(res.body.data.supportedFormats).toHaveLength(4);
+        expect(res.body).toHaveProperty('available');
+        expect(res.body).toHaveProperty('supportedFormats');
+        expect(res.body).toHaveProperty('templates');
+        expect(res.body).toHaveProperty('features');
+        expect(res.body.supportedFormats).toHaveLength(4);
         // Phase 2 + 3 features
-        expect(res.body.data.features).toEqual({
+        expect(res.body.features).toEqual({
           streaming: true,
           comparison: true,
           followUp: true,
@@ -337,10 +337,10 @@ describe('Document Analysis - Routes', () => {
       expect([200, 401]).toContain(res.status);
       if (res.status === 200) {
         expect(res.body.success).toBe(true);
-        expect(res.body.data.templates).toHaveLength(5);
-        expect(res.body.data.templates[0]).toHaveProperty('id');
-        expect(res.body.data.templates[0]).toHaveProperty('name');
-        expect(res.body.data.templates[0]).toHaveProperty('description');
+        expect(res.body.templates).toHaveLength(5);
+        expect(res.body.templates[0]).toHaveProperty('id');
+        expect(res.body.templates[0]).toHaveProperty('name');
+        expect(res.body.templates[0]).toHaveProperty('description');
       }
     });
   });
@@ -432,11 +432,11 @@ describe('Document Analysis - Routes', () => {
       expect([200, 401]).toContain(res.status);
       if (res.status === 200) {
         expect(res.body.success).toBe(true);
-        expect(res.body.data).toHaveProperty('cachedDocuments');
-        expect(res.body.data).toHaveProperty('maxCacheSize');
-        expect(res.body.data).toHaveProperty('ttlMinutes');
-        expect(res.body.data.maxCacheSize).toBe(20);
-        expect(res.body.data.ttlMinutes).toBe(5);
+        expect(res.body).toHaveProperty('cachedDocuments');
+        expect(res.body).toHaveProperty('maxCacheSize');
+        expect(res.body).toHaveProperty('ttlMinutes');
+        expect(res.body.maxCacheSize).toBe(20);
+        expect(res.body.ttlMinutes).toBe(5);
       }
     });
   });
@@ -752,9 +752,9 @@ describe('Document Analysis - Phase 3 Routes', () => {
 
       expect([200, 401]).toContain(res.status);
       if (res.status === 200) {
-        expect(res.body.data.features).toHaveProperty('customTemplates', true);
-        expect(res.body.data.features).toHaveProperty('pdfExport', true);
-        expect(res.body.data.features).toHaveProperty('mermaidVisualization', true);
+        expect(res.body.features).toHaveProperty('customTemplates', true);
+        expect(res.body.features).toHaveProperty('pdfExport', true);
+        expect(res.body.features).toHaveProperty('mermaidVisualization', true);
       }
     });
   });
@@ -767,8 +767,8 @@ describe('Document Analysis - Phase 3 Routes', () => {
       expect([200, 401]).toContain(res.status);
       if (res.status === 200) {
         expect(res.body.success).toBe(true);
-        expect(res.body.data).toHaveProperty('templates');
-        expect(Array.isArray(res.body.data.templates)).toBe(true);
+        expect(res.body).toHaveProperty('templates');
+        expect(Array.isArray(res.body.templates)).toBe(true);
       }
     });
   });
@@ -856,8 +856,8 @@ describe('Document Analysis - Phase 3 Routes', () => {
       expect([200, 401]).toContain(res.status);
       if (res.status === 200) {
         expect(res.body.success).toBe(true);
-        expect(res.body.data.count).toBe(1);
-        expect(res.body.data.diagrams[0].title).toContain('Kreisdiagramm');
+        expect(res.body.count).toBe(1);
+        expect(res.body.diagrams[0].title).toContain('Kreisdiagramm');
       }
     });
 
@@ -869,8 +869,8 @@ describe('Document Analysis - Phase 3 Routes', () => {
 
       expect([200, 401]).toContain(res.status);
       if (res.status === 200) {
-        expect(res.body.data.count).toBe(0);
-        expect(res.body.data.diagrams).toHaveLength(0);
+        expect(res.body.count).toBe(0);
+        expect(res.body.diagrams).toHaveLength(0);
       }
     });
   });

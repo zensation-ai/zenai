@@ -121,13 +121,13 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.available).toBe(true);
-      expect(response.body.data.supportedFormats).toContain('image/jpeg');
-      expect(response.body.data.supportedFormats).toContain('image/png');
-      expect(response.body.data.maxFileSize).toBe('10MB');
-      expect(response.body.data.maxFiles).toBe(5);
-      expect(response.body.data.availableTasks).toContain('describe');
-      expect(response.body.data.availableTasks).toContain('extract_text');
+      expect(response.body.available).toBe(true);
+      expect(response.body.supportedFormats).toContain('image/jpeg');
+      expect(response.body.supportedFormats).toContain('image/png');
+      expect(response.body.maxFileSize).toBe('10MB');
+      expect(response.body.maxFiles).toBe(5);
+      expect(response.body.availableTasks).toContain('describe');
+      expect(response.body.availableTasks).toContain('extract_text');
     });
 
     it('should report unavailable when service is down', async () => {
@@ -137,7 +137,7 @@ describe('Vision API Integration Tests', () => {
         .get('/api/vision/status')
         .expect(200);
 
-      expect(response.body.data.available).toBe(false);
+      expect(response.body.available).toBe(false);
     });
   });
 
@@ -154,9 +154,9 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.task).toBe('describe');
-      expect(response.body.data.text).toBeDefined();
-      expect(response.body.data.metadata.imageCount).toBe(1);
+      expect(response.body.task).toBe('describe');
+      expect(response.body.text).toBeDefined();
+      expect(response.body.metadata.imageCount).toBe(1);
     });
 
     it('should reject request without image', async () => {
@@ -204,8 +204,8 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.text).toBeDefined();
-      expect(response.body.data.confidence).toBeGreaterThan(0);
+      expect(response.body.text).toBeDefined();
+      expect(response.body.confidence).toBeGreaterThan(0);
     });
 
     it('should reject request without image', async () => {
@@ -230,9 +230,9 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.ideas).toBeDefined();
-      expect(Array.isArray(response.body.data.ideas)).toBe(true);
-      expect(response.body.data.count).toBeGreaterThan(0);
+      expect(response.body.ideas).toBeDefined();
+      expect(Array.isArray(response.body.ideas)).toBe(true);
+      expect(response.body.count).toBeGreaterThan(0);
     });
 
     it('should default to personal context', async () => {
@@ -258,8 +258,8 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.description).toBeDefined();
-      expect(typeof response.body.data.description).toBe('string');
+      expect(response.body.description).toBeDefined();
+      expect(typeof response.body.description).toBe('string');
     });
   });
 
@@ -276,8 +276,8 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.question).toBe('What trend does this chart show?');
-      expect(response.body.data.answer).toBeDefined();
+      expect(response.body.question).toBe('What trend does this chart show?');
+      expect(response.body.answer).toBeDefined();
     });
 
     it('should reject request without question', async () => {
@@ -303,8 +303,8 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.comparison).toBeDefined();
-      expect(response.body.data.metadata.imageCount).toBe(2);
+      expect(response.body.comparison).toBeDefined();
+      expect(response.body.metadata.imageCount).toBe(2);
     });
 
     it('should reject with less than 2 images', async () => {
@@ -342,9 +342,9 @@ describe('Vision API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.text).toBeDefined();
-      expect(response.body.data.summary).toBeDefined();
-      expect(response.body.data.ideas).toBeDefined();
+      expect(response.body.text).toBeDefined();
+      expect(response.body.summary).toBeDefined();
+      expect(response.body.ideas).toBeDefined();
     });
   });
 

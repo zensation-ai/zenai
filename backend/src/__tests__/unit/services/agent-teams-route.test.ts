@@ -75,11 +75,11 @@ describe('Agent Teams Route', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.teamId).toBe('test-team-123');
-      expect(res.body.data.finalOutput).toContain('AI trends');
-      expect(res.body.data.agents).toHaveLength(2);
-      expect(res.body.data.stats.executionTimeMs).toBe(5500);
-      expect(res.body.data.stats.totalTokens.input).toBe(1300);
+      expect(res.body.teamId).toBe('test-team-123');
+      expect(res.body.finalOutput).toContain('AI trends');
+      expect(res.body.agents).toHaveLength(2);
+      expect(res.body.stats.executionTimeMs).toBe(5500);
+      expect(res.body.stats.totalTokens.input).toBe(1300);
     });
 
     it('should return 400 for missing task', async () => {
@@ -120,7 +120,7 @@ describe('Agent Teams Route', () => {
         .post('/api/agents/execute')
         .send({ task: 'Test' });
 
-      const agents = res.body.data.agents;
+      const agents = res.body.agents;
       expect(agents[0].role).toBe('researcher');
       expect(agents[0].success).toBe(true);
       expect(agents[0].toolsUsed).toContain('search_ideas');
@@ -136,8 +136,8 @@ describe('Agent Teams Route', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.strategy).toBe('research_write_review');
-      expect(res.body.data.description).toBeDefined();
+      expect(res.body.strategy).toBe('research_write_review');
+      expect(res.body.description).toBeDefined();
     });
 
     it('should return 400 for missing task', async () => {

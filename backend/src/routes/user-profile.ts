@@ -28,7 +28,7 @@ userProfileRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   const profileId = (req.query.profile_id as string) || 'default';
   const profile = await getUserProfile(profileId);
 
-  res.json({ profile });
+  res.json({ success: true, profile });
 }));
 
 /**
@@ -60,7 +60,7 @@ userProfileRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, r
   const profileId = (req.query.profile_id as string) || 'default';
   const recommendations = await getRecommendations(profileId);
 
-  res.json({ recommendations });
+  res.json({ success: true, recommendations });
 }));
 
 /**
@@ -73,7 +73,7 @@ userProfileRouter.get('/personalized-ideas', apiKeyAuth, asyncHandler(async (req
 
   const ideas = await getPersonalizedIdeas(limit, profileId);
 
-  res.json({ ideas, count: ideas.length });
+  res.json({ success: true, ideas, count: ideas.length });
 }));
 
 /**
@@ -122,7 +122,7 @@ userProfileRouter.post('/suggest-priority', apiKeyAuth, asyncHandler(async (req,
 
   const suggestedPriority = await suggestPriority(keywords, profileId);
 
-  res.json({ suggested_priority: suggestedPriority });
+  res.json({ success: true, suggested_priority: suggestedPriority });
 }));
 
 /**
@@ -149,6 +149,7 @@ userProfileRouter.get('/stats', apiKeyAuth, asyncHandler(async (req, res) => {
     .slice(0, 10);
 
   res.json({
+    success: true,
     total_ideas: profile.total_ideas,
     total_meetings: profile.total_meetings,
     avg_ideas_per_day: profile.avg_ideas_per_day,
@@ -193,6 +194,7 @@ userProfileContextRouter.get('/:context/profile/stats', apiKeyAuth, asyncHandler
     .slice(0, 10);
 
   res.json({
+    success: true,
     total_ideas: profile.total_ideas,
     total_meetings: profile.total_meetings,
     avg_ideas_per_day: profile.avg_ideas_per_day,
@@ -217,7 +219,7 @@ userProfileContextRouter.get('/:context/profile/recommendations', apiKeyAuth, as
   // Use context-aware function that queries the correct schema
   const recommendations = await getRecommendationsWithContext(context as AIContext, 'default');
 
-  res.json({ recommendations });
+  res.json({ success: true, recommendations });
 }));
 
 /**

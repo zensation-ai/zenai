@@ -322,6 +322,7 @@ syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Req
 
   // Response format matching frontend SyncStatus interface
   res.json({
+    success: true,
     last_sync: new Date().toISOString(),
     pending_changes: parseInt(pendingCount.rows[0]?.count || '0', 10),
     sync_enabled: true,

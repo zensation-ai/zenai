@@ -39,7 +39,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.post.mockResolvedValueOnce({
-        data: { success: true, data: mockResult },
+        data: mockResult,
       });
 
       const result = await executeCode({
@@ -57,7 +57,7 @@ describe('Code Execution API', () => {
 
     it('should forward optional context and inputData', async () => {
       mockedAxios.post.mockResolvedValueOnce({
-        data: { success: true, data: { success: true } },
+        data: { success: true },
       });
 
       await executeCode({
@@ -92,7 +92,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.post.mockResolvedValueOnce({
-        data: { success: true, data: mockResult },
+        data: mockResult,
       });
 
       const result = await runCode({
@@ -115,7 +115,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.post.mockResolvedValueOnce({
-        data: { success: true, data: mockResult },
+        data: mockResult,
       });
 
       const result = await runCode({
@@ -138,7 +138,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.post.mockResolvedValueOnce({
-        data: { success: true, data: mockResult },
+        data: { success: true, ...mockResult },
       });
 
       const result = await validateCode({
@@ -168,7 +168,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.post.mockResolvedValueOnce({
-        data: { success: true, data: mockResult },
+        data: { success: true, ...mockResult },
       });
 
       const result = await validateCode({
@@ -192,7 +192,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.get.mockResolvedValueOnce({
-        data: { success: true, data: mockHealth },
+        data: { success: true, ...mockHealth },
       });
 
       const result = await checkCodeHealth();
@@ -211,7 +211,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.get.mockResolvedValueOnce({
-        data: { success: true, data: mockHealth },
+        data: { success: true, ...mockHealth },
       });
 
       const result = await checkCodeHealth();
@@ -233,7 +233,7 @@ describe('Code Execution API', () => {
       };
 
       mockedAxios.get.mockResolvedValueOnce({
-        data: { success: true, data: mockData },
+        data: { success: true, ...mockData },
       });
 
       const result = await getLanguages();

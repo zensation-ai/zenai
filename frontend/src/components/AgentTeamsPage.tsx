@@ -98,8 +98,8 @@ export function AgentTeamsPage({ context, onBack }: AgentTeamsPageProps) {
     try {
       const res = await axios.post('/api/agents/classify', { task });
       if (res.data.success) {
-        setClassifiedStrategy(res.data.data.strategy);
-        setStrategy(res.data.data.strategy);
+        setClassifiedStrategy(res.data.strategy);
+        setStrategy(res.data.strategy);
       }
     } catch (err) {
       logError('AgentTeamsPage:classify', err);
@@ -135,7 +135,7 @@ export function AgentTeamsPage({ context, onBack }: AgentTeamsPageProps) {
       );
 
       if (res.data.success) {
-        setResult(res.data.data);
+        setResult(res.data);
         // Scroll to results
         setTimeout(() => {
           resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

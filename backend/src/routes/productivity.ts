@@ -43,7 +43,7 @@ productivityRouter.get('/:context/productivity/dashboard', apiKeyAuth, asyncHand
 
   res.json({
     success: true,
-    data: dashboard,
+    ...dashboard,
   });
 }));
 
@@ -61,7 +61,7 @@ productivityRouter.get('/:context/productivity/time-saved', apiKeyAuth, asyncHan
 
   res.json({
     success: true,
-    data: timeSaved,
+    ...timeSaved,
   });
 }));
 
@@ -79,7 +79,7 @@ productivityRouter.get('/:context/productivity/heatmap', apiKeyAuth, asyncHandle
 
   res.json({
     success: true,
-    data: heatmap,
+    ...heatmap,
   });
 }));
 
@@ -97,7 +97,7 @@ productivityRouter.get('/:context/productivity/knowledge-growth', apiKeyAuth, as
 
   res.json({
     success: true,
-    data: growth,
+    ...growth,
   });
 }));
 
@@ -115,7 +115,7 @@ productivityRouter.get('/:context/productivity/streak', apiKeyAuth, asyncHandler
 
   res.json({
     success: true,
-    data: streak,
+    ...streak,
   });
 }));
 
@@ -133,6 +133,6 @@ productivityRouter.get('/:context/productivity/weekly-report', apiKeyAuth, async
 
   res.json({
     success: true,
-    data: report,
+    ...report,
   });
 }));

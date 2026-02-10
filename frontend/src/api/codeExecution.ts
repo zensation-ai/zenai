@@ -107,11 +107,11 @@ export interface LanguageInfo {
 export async function executeCode(
   request: ExecuteCodeRequest
 ): Promise<CodeExecutionResult> {
-  const response = await axios.post<{ success: boolean; data: CodeExecutionResult }>(
+  const response = await axios.post<CodeExecutionResult>(
     '/api/code/execute',
     request
   );
-  return response.data.data;
+  return response.data;
 }
 
 /**
@@ -120,11 +120,11 @@ export async function executeCode(
 export async function runCode(
   request: RunCodeRequest
 ): Promise<CodeExecutionResult> {
-  const response = await axios.post<{ success: boolean; data: CodeExecutionResult }>(
+  const response = await axios.post<CodeExecutionResult>(
     '/api/code/run',
     request
   );
-  return response.data.data;
+  return response.data;
 }
 
 /**
@@ -133,21 +133,23 @@ export async function runCode(
 export async function validateCode(
   request: ValidateCodeRequest
 ): Promise<ValidationResult> {
-  const response = await axios.post<{ success: boolean; data: ValidationResult }>(
+  const response = await axios.post<ValidationResult & { success: boolean }>(
     '/api/code/validate',
     request
   );
-  return response.data.data;
+  const { success: _success, ...result } = response.data;
+  return result;
 }
 
 /**
  * Check code execution service health
  */
 export async function checkCodeHealth(): Promise<CodeExecutionHealth> {
-  const response = await axios.get<{ success: boolean; data: CodeExecutionHealth }>(
+  const response = await axios.get<CodeExecutionHealth & { success: boolean }>(
     '/api/code/health'
   );
-  return response.data.data;
+  const { success: _success, ...result } = response.data;
+  return result;
 }
 
 /**
@@ -159,9 +161,11 @@ export async function getLanguages(): Promise<{
 }> {
   const response = await axios.get<{
     success: boolean;
-    data: { languages: LanguageInfo[]; enabled: boolean };
+    languages: LanguageInfo[];
+    enabled: boolean;
   }>('/api/code/languages');
-  return response.data.data;
+  const { success: _success, ...result } = response.data;
+  return result;
 }
 
 // ===========================================

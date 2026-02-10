@@ -169,54 +169,52 @@ advancedAnalyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHa
 
   res.json({
     success: true,
-    data: {
-      summary: {
-        total: parseInt(summaryRow?.total || '0'),
-        today: parseInt(summaryRow?.today || '0'),
-        thisWeek: parseInt(summaryRow?.this_week || '0'),
-        thisMonth: parseInt(summaryRow?.this_month || '0'),
-        highPriority: parseInt(summaryRow?.high_priority || '0')
+    summary: {
+      total: parseInt(summaryRow?.total || '0'),
+      today: parseInt(summaryRow?.today || '0'),
+      thisWeek: parseInt(summaryRow?.this_week || '0'),
+      thisMonth: parseInt(summaryRow?.this_month || '0'),
+      highPriority: parseInt(summaryRow?.high_priority || '0')
+    },
+    goals: {
+      daily: {
+        target: parseInt(goalRow?.daily_ideas_target || '3'),
+        current: parseInt(goalRow?.today_count || '0'),
+        progress: Math.min(100, Math.round((parseInt(goalRow?.today_count || '0') / parseInt(goalRow?.daily_ideas_target || '3')) * 100))
       },
-      goals: {
-        daily: {
-          target: parseInt(goalRow?.daily_ideas_target || '3'),
-          current: parseInt(goalRow?.today_count || '0'),
-          progress: Math.min(100, Math.round((parseInt(goalRow?.today_count || '0') / parseInt(goalRow?.daily_ideas_target || '3')) * 100))
-        },
-        weekly: {
-          target: parseInt(goalRow?.weekly_ideas_target || '15'),
-          current: parseInt(goalRow?.week_count || '0'),
-          progress: Math.min(100, Math.round((parseInt(goalRow?.week_count || '0') / parseInt(goalRow?.weekly_ideas_target || '15')) * 100))
-        }
-      },
-      streaks: {
-        current: parseInt(streakRow.current_streak),
-        longest: parseInt(streakRow.longest_streak)
-      },
-      trends: {
-        weekly: weeklyTrend.rows.map(r => ({
-          week: r.week,
-          count: parseInt(r.count)
-        })),
-        monthly: monthlyTrend.rows.map(r => ({
-          month: r.month,
-          count: parseInt(r.count)
-        })),
-        byCategory: formatCategoryTrend(categoryTrend.rows)
-      },
-      activity: {
-        byHour: fillHourlyGaps(hourlyActivity.rows)
-      },
-      highlights: recentHighlights.rows.map(r => ({
-        id: r.id,
-        title: r.title,
-        type: r.type,
-        category: r.category,
-        priority: r.priority,
-        createdAt: r.created_at
+      weekly: {
+        target: parseInt(goalRow?.weekly_ideas_target || '15'),
+        current: parseInt(goalRow?.week_count || '0'),
+        progress: Math.min(100, Math.round((parseInt(goalRow?.week_count || '0') / parseInt(goalRow?.weekly_ideas_target || '15')) * 100))
+      }
+    },
+    streaks: {
+      current: parseInt(streakRow.current_streak),
+      longest: parseInt(streakRow.longest_streak)
+    },
+    trends: {
+      weekly: weeklyTrend.rows.map(r => ({
+        week: r.week,
+        count: parseInt(r.count)
       })),
-      generatedAt: new Date().toISOString()
-    }
+      monthly: monthlyTrend.rows.map(r => ({
+        month: r.month,
+        count: parseInt(r.count)
+      })),
+      byCategory: formatCategoryTrend(categoryTrend.rows)
+    },
+    activity: {
+      byHour: fillHourlyGaps(hourlyActivity.rows)
+    },
+    highlights: recentHighlights.rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      type: r.type,
+      category: r.category,
+      priority: r.priority,
+      createdAt: r.created_at
+    })),
+    generatedAt: new Date().toISOString()
   });
 }));
 
@@ -291,37 +289,35 @@ advancedAnalyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth
 
   res.json({
     success: true,
-    data: {
-      overall: overallScore,
-      breakdown: {
-        output: {
-          score: Math.round(outputScore),
-          label: 'Produktivität',
-          description: `${weeklyCount} Gedanken diese Woche`,
-          weight: 40
-        },
-        consistency: {
-          score: Math.round(consistencyScore),
-          label: 'Konsistenz',
-          description: `${activeDays} von 7 Tagen aktiv`,
-          weight: 30
-        },
-        variety: {
-          score: Math.round(varietyScore),
-          label: 'Vielfalt',
-          description: `${categoryCount} verschiedene Kategorien`,
-          weight: 15
-        },
-        quality: {
-          score: Math.round(qualityScore),
-          label: 'Qualität',
-          description: `${qualityCount} hochwertige Einträge`,
-          weight: 15
-        }
+    overall: overallScore,
+    breakdown: {
+      output: {
+        score: Math.round(outputScore),
+        label: 'Produktivität',
+        description: `${weeklyCount} Gedanken diese Woche`,
+        weight: 40
       },
-      trend: overallScore >= 70 ? 'excellent' : overallScore >= 50 ? 'good' : overallScore >= 30 ? 'moderate' : 'needs_improvement',
-      period: 'last 7 days'
-    }
+      consistency: {
+        score: Math.round(consistencyScore),
+        label: 'Konsistenz',
+        description: `${activeDays} von 7 Tagen aktiv`,
+        weight: 30
+      },
+      variety: {
+        score: Math.round(varietyScore),
+        label: 'Vielfalt',
+        description: `${categoryCount} verschiedene Kategorien`,
+        weight: 15
+      },
+      quality: {
+        score: Math.round(qualityScore),
+        label: 'Qualität',
+        description: `${qualityCount} hochwertige Einträge`,
+        weight: 15
+      }
+    },
+    trend: overallScore >= 70 ? 'excellent' : overallScore >= 50 ? 'good' : overallScore >= 30 ? 'moderate' : 'needs_improvement',
+    period: 'last 7 days'
   });
 }));
 
@@ -396,34 +392,32 @@ advancedAnalyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHan
 
   res.json({
     success: true,
-    data: {
-      peakTimes: {
-        hours: peakHours.rows.map(r => ({
-          hour: parseInt(r.hour),
-          label: `${r.hour}:00 - ${parseInt(r.hour) + 1}:00`,
-          count: parseInt(r.count)
-        })),
-        days: peakDays.rows.map(r => ({
-          day: parseInt(r.dow),
-          label: dayNames[parseInt(r.dow)],
-          count: parseInt(r.count)
-        }))
-      },
-      preferences: {
-        categories: categoryPatterns.rows.map(r => ({
-          name: r.category,
-          count: parseInt(r.count),
-          percentage: parseFloat(r.percentage)
-        })),
-        types: typePatterns.rows.map(r => ({
-          name: r.type,
-          count: parseInt(r.count),
-          percentage: parseFloat(r.percentage)
-        }))
-      },
-      insights: generatePatternInsights(peakHours.rows, peakDays.rows, categoryPatterns.rows, dayNames),
-      period: 'last 30 days'
-    }
+    peakTimes: {
+      hours: peakHours.rows.map(r => ({
+        hour: parseInt(r.hour),
+        label: `${r.hour}:00 - ${parseInt(r.hour) + 1}:00`,
+        count: parseInt(r.count)
+      })),
+      days: peakDays.rows.map(r => ({
+        day: parseInt(r.dow),
+        label: dayNames[parseInt(r.dow)],
+        count: parseInt(r.count)
+      }))
+    },
+    preferences: {
+      categories: categoryPatterns.rows.map(r => ({
+        name: r.category,
+        count: parseInt(r.count),
+        percentage: parseFloat(r.percentage)
+      })),
+      types: typePatterns.rows.map(r => ({
+        name: r.type,
+        count: parseInt(r.count),
+        percentage: parseFloat(r.percentage)
+      }))
+    },
+    insights: generatePatternInsights(peakHours.rows, peakDays.rows, categoryPatterns.rows, dayNames),
+    period: 'last 30 days'
   });
 }));
 
@@ -488,30 +482,28 @@ advancedAnalyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncH
 
   res.json({
     success: true,
-    data: {
-      current: {
-        total: parseInt(current.total),
-        highPriority: parseInt(current.high_priority),
-        tasks: parseInt(current.tasks),
-        ideas: parseInt(current.ideas),
-        activeDays: parseInt(current.active_days)
-      },
-      previous: {
-        total: parseInt(previous.total),
-        highPriority: parseInt(previous.high_priority),
-        tasks: parseInt(previous.tasks),
-        ideas: parseInt(previous.ideas),
-        activeDays: parseInt(previous.active_days)
-      },
-      changes: {
-        total: calcChange(current.total, previous.total),
-        highPriority: calcChange(current.high_priority, previous.high_priority),
-        tasks: calcChange(current.tasks, previous.tasks),
-        ideas: calcChange(current.ideas, previous.ideas),
-        activeDays: calcChange(current.active_days, previous.active_days)
-      },
-      period: safePeriod
-    }
+    current: {
+      total: parseInt(current.total),
+      highPriority: parseInt(current.high_priority),
+      tasks: parseInt(current.tasks),
+      ideas: parseInt(current.ideas),
+      activeDays: parseInt(current.active_days)
+    },
+    previous: {
+      total: parseInt(previous.total),
+      highPriority: parseInt(previous.high_priority),
+      tasks: parseInt(previous.tasks),
+      ideas: parseInt(previous.ideas),
+      activeDays: parseInt(previous.active_days)
+    },
+    changes: {
+      total: calcChange(current.total, previous.total),
+      highPriority: calcChange(current.high_priority, previous.high_priority),
+      tasks: calcChange(current.tasks, previous.tasks),
+      ideas: calcChange(current.ideas, previous.ideas),
+      activeDays: calcChange(current.active_days, previous.active_days)
+    },
+    period: safePeriod
   });
 }));
 

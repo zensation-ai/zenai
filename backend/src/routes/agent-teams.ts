@@ -65,22 +65,20 @@ agentTeamsRouter.post(
 
     res.json({
       success: result.success,
-      data: {
-        teamId: result.teamId,
-        finalOutput: result.finalOutput,
-        strategy: result.strategy,
-        agents: result.agentResults.map(a => ({
-          role: a.role,
-          success: a.success,
-          toolsUsed: a.toolsUsed,
-          executionTimeMs: a.executionTimeMs,
-          error: a.error,
-        })),
-        stats: {
-          executionTimeMs: result.executionTimeMs,
-          totalTokens: result.totalTokens,
-          sharedMemoryEntries: result.memoryStats.totalEntries,
-        },
+      teamId: result.teamId,
+      finalOutput: result.finalOutput,
+      strategy: result.strategy,
+      agents: result.agentResults.map(a => ({
+        role: a.role,
+        success: a.success,
+        toolsUsed: a.toolsUsed,
+        executionTimeMs: a.executionTimeMs,
+        error: a.error,
+      })),
+      stats: {
+        executionTimeMs: result.executionTimeMs,
+        totalTokens: result.totalTokens,
+        sharedMemoryEntries: result.memoryStats.totalEntries,
       },
     });
   })
@@ -107,15 +105,13 @@ agentTeamsRouter.post(
 
     res.json({
       success: true,
-      data: {
-        strategy,
-        description: {
-          research_write_review: 'Vollständige Pipeline: Recherche → Schreiben → Review',
-          research_only: 'Nur Recherche',
-          write_only: 'Nur Schreiben (optional mit Review)',
-          custom: 'Benutzerdefinierte Pipeline',
-        }[strategy],
-      },
+      strategy,
+      description: {
+        research_write_review: 'Vollständige Pipeline: Recherche → Schreiben → Review',
+        research_only: 'Nur Recherche',
+        write_only: 'Nur Schreiben (optional mit Review)',
+        custom: 'Benutzerdefinierte Pipeline',
+      }[strategy],
     });
   })
 );

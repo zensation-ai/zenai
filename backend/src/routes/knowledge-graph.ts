@@ -54,6 +54,7 @@ knowledgeGraphRouter.get('/relations/:ideaId', apiKeyAuth, asyncHandler(async (r
   const relationships = await getRelationships(ideaId);
 
   res.json({
+    success: true,
     ideaId,
     relationships,
     count: relationships.length,
@@ -72,6 +73,7 @@ knowledgeGraphRouter.get('/multi-hop/:ideaId', apiKeyAuth, asyncHandler(async (r
   const paths = await multiHopSearch(ideaId, maxHops);
 
   res.json({
+    success: true,
     ideaId,
     maxHops,
     paths,
@@ -89,6 +91,7 @@ knowledgeGraphRouter.get('/suggestions/:ideaId', apiKeyAuth, asyncHandler(async 
   const suggestions = await getSuggestedConnections(ideaId);
 
   res.json({
+    success: true,
     ideaId,
     suggestions,
     count: suggestions.length,
@@ -264,7 +267,11 @@ knowledgeGraphRouter.post('/topics/generate', apiKeyAuth, requireScope('write'),
   const result = await generateTopics(context as AIContext, { minClusterSize, maxClusters });
 
   res.json({
-    ...result,
+    success: result.success,
+    topicsCreated: result.topicsCreated,
+    topicsUpdated: result.topicsUpdated,
+    ideasAssigned: result.ideasAssigned,
+    processingTime: result.processingTime,
   });
 }));
 

@@ -95,7 +95,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
       // Get list of sessions for current context
       const typeFilter = assistantMode ? '&type=assistant' : '';
       const res = await axios.get(`/api/chat/sessions?context=${context}&limit=1${typeFilter}`, { signal });
-      const sessions = res.data.data?.sessions || [];
+      const sessions = res.data.sessions || [];
 
       if (sessions.length > 0) {
         // Load the most recent session
@@ -114,7 +114,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
   const loadSession = async (id: string, signal?: AbortSignal) => {
     try {
       const res = await axios.get(`/api/chat/sessions/${id}`, { signal });
-      const session = res.data.data?.session;
+      const session = res.data.session;
       if (session) {
         setSessionId(session.id);
         setMessages(session.messages || []);
@@ -131,7 +131,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
       const sessionPayload: Record<string, string> = { context };
       if (assistantMode) sessionPayload.type = 'assistant';
       const res = await axios.post('/api/chat/sessions', sessionPayload);
-      const session = res.data.data?.session;
+      const session = res.data.session;
       if (session) {
         setSessionId(session.id);
         setMessages([]);
@@ -216,7 +216,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
           }
         );
 
-        const { userMessage, assistantMessage } = res.data.data;
+        const { userMessage, assistantMessage } = res.data;
 
         // Replace temp message with real ones
         setMessages(prev => {

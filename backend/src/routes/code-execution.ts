@@ -96,9 +96,10 @@ codeExecutionRouter.post(
 
     const status = result.success ? 200 : 400;
 
+    const { success: _success, ...resultFields } = result;
     res.status(status).json({
       success: result.success,
-      data: result,
+      ...resultFields,
     });
   })
 );
@@ -151,9 +152,10 @@ codeExecutionRouter.post(
 
     const status = result.success ? 200 : 400;
 
+    const { success: _success, ...resultFields } = result;
     res.status(status).json({
       success: result.success,
-      data: result,
+      ...resultFields,
     });
   })
 );
@@ -194,12 +196,10 @@ codeExecutionRouter.post(
 
     res.json({
       success: true,
-      data: {
-        safe: result.safe,
-        score: result.score,
-        violations: result.violations,
-        warnings: result.warnings,
-      },
+      safe: result.safe,
+      score: result.score,
+      violations: result.violations,
+      warnings: result.warnings,
     });
   })
 );
@@ -221,7 +221,7 @@ codeExecutionRouter.get(
 
     res.status(status).json({
       success: health.available,
-      data: health,
+      ...health,
     });
   })
 );
@@ -246,10 +246,8 @@ codeExecutionRouter.get(
 
     res.json({
       success: true,
-      data: {
-        languages,
-        enabled: isCodeExecutionEnabled(),
-      },
+      languages,
+      enabled: isCodeExecutionEnabled(),
     });
   })
 );

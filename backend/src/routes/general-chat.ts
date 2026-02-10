@@ -112,9 +112,7 @@ generalChatRouter.post('/sessions', apiKeyAuth, validateBody(CreateChatSessionSc
 
   res.status(201).json({
     success: true,
-    data: {
-      session,
-    },
+    session,
   });
 }));
 
@@ -141,10 +139,8 @@ generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request,
 
   res.json({
     success: true,
-    data: {
-      sessions,
-      count: sessions.length,
-    },
+    sessions,
+    count: sessions.length,
   });
 }));
 
@@ -172,9 +168,7 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
 
   res.json({
     success: true,
-    data: {
-      session,
-    },
+    session,
   });
 }));
 
@@ -258,7 +252,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMe
 
   res.json({
     success: true,
-    data: responseData,
+    ...responseData,
   });
 }));
 
@@ -370,7 +364,7 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
 
   res.json({
     success: true,
-    data: responseData,
+    ...responseData,
   });
 }));
 
@@ -464,7 +458,7 @@ generalChatRouter.post(
 
     res.json({
       success: true,
-      data: responseData,
+      ...responseData,
     });
   })
 );
@@ -500,7 +494,7 @@ generalChatRouter.get('/thinking-modes', apiKeyAuth, asyncHandler(async (_req: R
   const modes = getAvailableModes();
   res.json({
     success: true,
-    data: { modes },
+    modes,
   });
 }));
 
