@@ -15,7 +15,7 @@ import { ideasRouter } from '../../routes/ideas';
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ctx === 'personal' || ctx === 'work'),
+  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
   isValidUUID: jest.fn((id: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id),
   ),

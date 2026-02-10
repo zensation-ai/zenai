@@ -72,7 +72,6 @@ export default defineConfig({
           ],
           'feature-learning': [
             './src/components/LearningDashboard/index.ts',
-            './src/components/LearningTasksDashboard.tsx',
           ],
           'feature-media': [
             './src/components/MediaGallery.tsx',

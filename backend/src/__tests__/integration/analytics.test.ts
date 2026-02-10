@@ -12,7 +12,7 @@ import { analyticsRouter } from '../../routes/analytics';
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ctx === 'personal' || ctx === 'work'),
+  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
   AIContext: {},
 }));
 

@@ -9,6 +9,7 @@ import {
   ANTICIPATORY_MESSAGES,
 } from '../utils/aiPersonality';
 import { useNeuroFeedback } from './NeuroFeedback';
+import type { IdeaPriority } from '../types/idea';
 import './InboxTriage.css';
 
 export type TriageAction = 'priority' | 'keep' | 'later' | 'archive';
@@ -18,7 +19,7 @@ interface TriageIdea {
   title: string;
   type: string;
   category: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: IdeaPriority;
   summary: string;
   nextSteps?: string[];
   keywords?: string[];
@@ -32,7 +33,7 @@ interface ApiIdea {
   title: string;
   type?: string;
   category?: string;
-  priority?: 'low' | 'medium' | 'high';
+  priority?: IdeaPriority;
   summary?: string;
   nextSteps?: string[];
   next_steps?: string[];

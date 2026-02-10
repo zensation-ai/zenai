@@ -20,7 +20,7 @@ jest.mock('../../middleware/auth', () => ({
 
 // Mock database context
 jest.mock('../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ctx === 'personal' || ctx === 'work'),
+  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
   AIContext: {},
 }));
 

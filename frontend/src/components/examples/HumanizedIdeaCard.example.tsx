@@ -27,10 +27,10 @@ import {
   SuccessAnimation,
   ContextualLoader,
   FriendlyError,
-  SkeletonLoader,
   EnhancedTooltip,
   HumanizedEmptyState,
 } from '../HumanizedUI';
+import { SkeletonLoader } from '../SkeletonLoader';
 import { useHumanizedFeedback } from '../../hooks/useHumanizedFeedback';
 import { getRandomPlaceholder } from '../../utils/humanizedMessages';
 
@@ -169,11 +169,11 @@ export function HumanizedIdeaCard({
     return (
       <div className="humanized-idea-card loading">
         <div className="card-header">
-          <SkeletonLoader type="heading" width="60%" />
+          <SkeletonLoader type="text" width="60%" />
           <SkeletonLoader type="text" width="80px" />
         </div>
         <div className="card-content">
-          <SkeletonLoader type="paragraph" />
+          <SkeletonLoader type="text" count={3} />
         </div>
         <div className="card-actions">
           <SkeletonLoader type="button" />

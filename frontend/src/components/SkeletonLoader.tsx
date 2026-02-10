@@ -10,7 +10,8 @@ interface SkeletonLoaderProps {
 
 /**
  * Skeleton Loader Component
- * Provides visual feedback during content loading with animated placeholders
+ * Provides visual feedback during content loading with animated placeholders.
+ * WCAG: role="status" + aria-busy for assistive technology.
  */
 export function SkeletonLoader({
   type = 'card',
@@ -22,12 +23,13 @@ export function SkeletonLoader({
 
   if (type === 'text') {
     return (
-      <div className="skeleton-text-group">
+      <div className="skeleton-text-group" role="status" aria-busy="true" aria-label="Lädt...">
         {items.map((i) => (
           <div
             key={i}
             className="skeleton skeleton-text"
             style={{ width: width || `${80 - i * 15}%` }}
+            aria-hidden="true"
           />
         ))}
       </div>
@@ -39,6 +41,9 @@ export function SkeletonLoader({
       <div
         className="skeleton skeleton-avatar"
         style={{ width: width || '48px', height: height || '48px' }}
+        role="status"
+        aria-busy="true"
+        aria-label="Lädt..."
       />
     );
   }
@@ -48,13 +53,16 @@ export function SkeletonLoader({
       <div
         className="skeleton skeleton-button"
         style={{ width: width || '120px', height: height || '40px' }}
+        role="status"
+        aria-busy="true"
+        aria-label="Lädt..."
       />
     );
   }
 
   // Card skeleton (default)
   return (
-    <div className="skeleton-cards">
+    <div className="skeleton-cards" role="status" aria-busy="true" aria-label="Lädt...">
       {items.map((i) => (
         <div key={i} className="skeleton-card" aria-hidden="true">
           <div className="skeleton-card-header">

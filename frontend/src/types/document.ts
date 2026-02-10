@@ -4,9 +4,11 @@
  * TypeScript types for the Document Vault feature.
  */
 
+import type { AIContext } from '../components/ContextSwitcher';
+
 export type ProcessingStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
 export type StorageProvider = 'local' | 'supabase';
-export type Context = 'personal' | 'work';
+export type Context = AIContext;
 
 /**
  * Document entity

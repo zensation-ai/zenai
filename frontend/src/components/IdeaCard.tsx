@@ -9,6 +9,7 @@ import { InlineLoader } from './SkeletonLoader';
 import { useNeuroFeedback } from './NeuroFeedback';
 import { ContextPickerDialog } from './ContextPickerDialog';
 import { getTypeIcon, getTypeLabel, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
+import type { IdeaPriority } from '../types/idea';
 import { formatDate } from '../utils/dateUtils';
 import { IS_NEW_THRESHOLD_MS } from '../constants';
 import '../neurodesign.css';
@@ -19,7 +20,7 @@ interface Idea {
   title: string;
   type: 'idea' | 'task' | 'insight' | 'problem' | 'question';
   category: 'business' | 'technical' | 'personal' | 'learning';
-  priority: 'low' | 'medium' | 'high';
+  priority: IdeaPriority;
   summary: string;
   next_steps: string[];
   context_needed: string[];

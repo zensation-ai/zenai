@@ -43,6 +43,9 @@ export interface ImageAnalysisResult {
 export async function analyzeImage(imagePath: string, context: string = 'general'): Promise<ImageAnalysisResult> {
   try {
     const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+    if (!process.env.OLLAMA_URL && process.env.NODE_ENV === 'production') {
+      logger.warn('OLLAMA_URL not configured — using localhost fallback in production', { operation: 'image-analysis' });
+    }
 
     // Read image and convert to base64
     const imageData = await fs.readFile(imagePath);

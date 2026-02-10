@@ -84,4 +84,4 @@ export type Page =
   | 'voice-chat'
   | 'agent-teams';
 
-export type Context = 'personal' | 'work' | 'learning' | 'creative';
+export type { AIContext as Context } from '../components/ContextSwitcher';

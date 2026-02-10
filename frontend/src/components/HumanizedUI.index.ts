@@ -29,7 +29,6 @@
 export {
   EnhancedTooltip,
   ContextualLoader,
-  SkeletonLoader,
   SuccessAnimation,
   AIStatusIndicator,
   HumanizedEmptyState,
@@ -60,7 +59,6 @@ export {
 export type {
   EnhancedTooltipProps,
   ContextualLoaderProps,
-  SkeletonLoaderProps,
   SuccessAnimationProps,
   AIStatusIndicatorProps,
   HumanizedEmptyStateProps,

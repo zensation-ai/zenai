@@ -26,9 +26,6 @@ export type { EnhancedTooltipProps } from './EnhancedTooltip';
 export { ContextualLoader } from './ContextualLoader';
 export type { ContextualLoaderProps } from './ContextualLoader';
 
-export { SkeletonLoader } from './SkeletonLoader';
-export type { SkeletonLoaderProps } from './SkeletonLoader';
-
 export { SuccessAnimation } from './SuccessAnimation';
 export type { SuccessAnimationProps } from './SuccessAnimation';
 

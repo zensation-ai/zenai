@@ -4,6 +4,7 @@ import { MeetingCard, Meeting } from './MeetingCard';
 import { MeetingDetail } from './MeetingDetail';
 import { showToast } from './Toast';
 import { getRandomReward } from '../utils/aiPersonality';
+import type { IdeaPriority } from '../types/idea';
 import './MeetingsPage.css';
 import '../neurodesign.css';
 
@@ -22,7 +23,7 @@ interface ActionItem {
   task: string;
   assignee?: string;
   due_date?: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: IdeaPriority;
   completed: boolean;
 }
 

@@ -16,7 +16,7 @@ import { logger } from './logger';
 // Configuration
 // ===========================================
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL;
 const DEFAULT_TTL = 3600; // 1 hour
 const EMBEDDING_TTL = 86400 * 7; // 7 days (embeddings are expensive)
 
@@ -29,6 +29,15 @@ let isConnected = false;
 let redisErrorLogged = false; // Track if we've already logged Redis errors
 
 function getClient(): Redis | null {
+  if (!REDIS_URL) {
+    if (!redisErrorLogged) {
+      const level = process.env.NODE_ENV === 'production' ? 'warn' : 'info';
+      logger[level]('REDIS_URL not configured — caching disabled', { operation: 'cache' });
+      redisErrorLogged = true;
+    }
+    return null;
+  }
+
   if (!redis) {
     try {
       redis = new Redis(REDIS_URL, {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Meeting } from './MeetingCard';
+import type { IdeaPriority } from '../types/idea';
 import './MeetingDetail.css';
 import '../neurodesign.css';
 
@@ -21,7 +22,7 @@ interface ActionItem {
   task: string;
   assignee?: string;
   due_date?: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: IdeaPriority;
   completed: boolean;
 }
 

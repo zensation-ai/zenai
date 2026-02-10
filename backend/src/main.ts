@@ -12,8 +12,6 @@ import { meetingsRouter } from './routes/meetings';
 import { userProfileRouter, userProfileContextRouter } from './routes/user-profile';
 // Phase 4: Enterprise Integration Routes
 import { apiKeysRouter } from './routes/api-keys';
-// Phase Security Sprint 3: Audit Logs
-import { auditLogsRouter } from './routes/audit-logs';
 import { webhooksRouter } from './routes/webhooks';
 import { integrationsRouter } from './routes/integrations';
 import { rateLimiter, cleanupRateLimits } from './middleware/auth';
@@ -30,7 +28,6 @@ import { voiceMemoContextRouter } from './routes/voice-memo-context';
 import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
 import mediaRouter from './routes/media';
-import storiesRouter from './routes/stories';
 // Phase 10: Offline Sync
 import { syncRouter } from './routes/sync';
 // Phase 10: Analytics
@@ -300,9 +297,6 @@ app.use('/api/keys', apiKeysRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/integrations', integrationsRouter);
 
-// Phase Security Sprint 3: Audit Logs
-app.use('/api/audit-logs', auditLogsRouter);
-
 // Phase 5: Thought Incubator
 app.use('/api/incubator', incubatorRouter);
 
@@ -310,9 +304,8 @@ app.use('/api/incubator', incubatorRouter);
 app.use('/api', contextsRouter);
 app.use('/api', voiceMemoContextRouter);
 
-// Phase 7: Media & Stories
+// Phase 7: Media
 app.use('/api', mediaRouter);  // Context-aware media routes: /api/:context/media
-app.use('/api', storiesRouter);  // Context-aware stories: /api/:context/stories
 
 // Phase 10: Offline Sync Routes
 app.use('/api', syncRouter);  // Context-aware sync routes: /api/:context/sync/*
@@ -734,16 +727,6 @@ Phase 4 APIs:
     logger.error('AI Tool Handlers registration failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
   }
 
-  // Phase 33 Sprint 4: Voice Pipeline WebSocket
-  try {
-    const { setupWebSocket } = await import('./services/websocket');
-    const { handleVoicePipelineConnection } = await import('./routes/voice-pipeline');
-    const wss = setupWebSocket(server);
-    wss.on('connection', handleVoicePipelineConnection);
-    logger.info('Voice Pipeline WebSocket ready', { path: '/api/voice/pipeline', operation: 'startup' });
-  } catch (error) {
-    logger.error('Voice Pipeline WebSocket setup failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
-  }
 
   // Phase 9: Deferred non-critical initialization
   // Memory Scheduler and index creation run in background to speed up cold starts.
