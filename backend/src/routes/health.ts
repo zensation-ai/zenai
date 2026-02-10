@@ -164,6 +164,8 @@ healthRouter.get('/', (req, res) => {
       databases: {
         personal: { status: 'connected' }, // If server is running, DB init succeeded
         work: { status: 'connected' },
+        learning: { status: 'connected' },
+        creative: { status: 'connected' },
       },
       ai: {
         primary: aiServices.primary,
@@ -190,13 +192,15 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
                     (req.headers['x-api-key'] as string)?.startsWith('ab_');
 
   // Gather all health checks in parallel (Phase 7.3: expanded with latency + dependencies)
-  const [dbHealth, ollamaHealth, cacheStats, claudeHealth, personalLatency, workLatency] = await Promise.all([
-    testConnections().catch(() => ({ personal: false, work: false })),
+  const [dbHealth, ollamaHealth, cacheStats, claudeHealth, personalLatency, workLatency, learningLatency, creativeLatency] = await Promise.all([
+    testConnections().catch(() => ({ personal: false, work: false, learning: false, creative: false })),
     checkOllamaHealth(),
     getCacheStats(),
     checkClaudeHealth().catch(() => ({ available: false, configured: false, error: 'Health check failed', latencyMs: undefined })),
     measureDbLatency('personal'),
     measureDbLatency('work'),
+    measureDbLatency('learning'),
+    measureDbLatency('creative'),
   ]);
   const braveSearchStatus = checkBraveSearchStatus();
   const codeExecutionStatus = checkCodeExecutionStatus();
@@ -205,8 +209,8 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
   const aiServices = getAvailableServices();
   const circuitBreakerStatus = getCircuitBreakerStatus();
 
-  const allDbHealthy = dbHealth.personal && dbHealth.work;
-  const anyDbHealthy = dbHealth.personal || dbHealth.work;
+  const allDbHealthy = dbHealth.personal && dbHealth.work && dbHealth.learning && dbHealth.creative;
+  const anyDbHealthy = dbHealth.personal || dbHealth.work || dbHealth.learning || dbHealth.creative;
   // Use actual Claude availability from active check, not just config
   const anyAiAvailable = claudeHealth.available || ollamaHealth.available;
   // Check if any circuit breaker is open (degraded state)
@@ -233,6 +237,8 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
         databases: {
           personal: { status: dbHealth.personal ? 'connected' : 'disconnected', latencyMs: personalLatency.latencyMs },
           work: { status: dbHealth.work ? 'connected' : 'disconnected', latencyMs: workLatency.latencyMs },
+          learning: { status: dbHealth.learning ? 'connected' : 'disconnected', latencyMs: learningLatency.latencyMs },
+          creative: { status: dbHealth.creative ? 'connected' : 'disconnected', latencyMs: creativeLatency.latencyMs },
           healthCheck: dbHealthCheckStatus,
         },
         ai: {
@@ -276,6 +282,16 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
           status: dbHealth.work ? 'connected' : 'disconnected',
           latencyMs: workLatency.latencyMs,
           pool: poolStats.work,
+        },
+        learning: {
+          status: dbHealth.learning ? 'connected' : 'disconnected',
+          latencyMs: learningLatency.latencyMs,
+          pool: poolStats.learning,
+        },
+        creative: {
+          status: dbHealth.creative ? 'connected' : 'disconnected',
+          latencyMs: creativeLatency.latencyMs,
+          pool: poolStats.creative,
         },
         healthCheck: dbHealthCheckStatus,
       },
@@ -348,7 +364,7 @@ healthRouter.get('/live', asyncHandler(async (req, res) => {
  * @description Kubernetes readiness probe - checks critical services
  */
 healthRouter.get('/ready', asyncHandler(async (req, res) => {
-  const dbHealth = await testConnections().catch(() => ({ personal: false, work: false }));
+  const dbHealth = await testConnections().catch(() => ({ personal: false, work: false, learning: false, creative: false }));
 
   const isReady = dbHealth.personal || dbHealth.work;
 
@@ -359,6 +375,8 @@ healthRouter.get('/ready', asyncHandler(async (req, res) => {
       databases: {
         personal: dbHealth.personal,
         work: dbHealth.work,
+        learning: dbHealth.learning,
+        creative: dbHealth.creative,
       },
     });
   } else {
