@@ -38,7 +38,7 @@ import { exportRouter } from './routes/export';
 import { notificationsRouter } from './routes/notifications';
 // Phase 20: Digest & Advanced Analytics
 import { digestRouter } from './routes/digest';
-import { advancedAnalyticsRouter } from './routes/analytics-advanced';
+import './routes/analytics-advanced';  // Registers advanced routes on analyticsRouter
 // Phase 21: Personalization Chat
 import { personalizationChatRouter } from './routes/personalization-chat';
 // Phase 22: Learning Tasks
@@ -319,9 +319,10 @@ app.use('/api/export', exportRouter);  // Export routes: /api/export/ideas/pdf, 
 // Phase 19: Push Notifications (Context-Aware APNs)
 app.use('/api', notificationsRouter);  // Context-aware: /api/:context/notifications/device, etc.
 
-// Phase 20: Digest & Advanced Analytics
+// Phase 20: Digest
 app.use('/api', digestRouter);  // Digest routes: /api/:context/digest/*
-app.use('/api', advancedAnalyticsRouter);  // Advanced analytics: /api/:context/analytics/dashboard, etc.
+// Advanced analytics routes (dashboard, productivity-score, patterns, comparison)
+// are registered on analyticsRouter via side-effect import of ./routes/analytics-advanced
 
 // Phase 32D: Productivity Analytics
 import { productivityRouter } from './routes/productivity';

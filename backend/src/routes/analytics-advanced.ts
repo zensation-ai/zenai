@@ -8,12 +8,11 @@
  * - Historical comparisons
  */
 
-import { Router, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-
-export const advancedAnalyticsRouter = Router();
+import { analyticsRouter } from './analytics';
 
 // ===========================================
 // Productivity Dashboard
@@ -23,7 +22,7 @@ export const advancedAnalyticsRouter = Router();
  * GET /api/:context/analytics/dashboard
  * Get comprehensive analytics dashboard data
  */
-advancedAnalyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -226,7 +225,7 @@ advancedAnalyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHa
  * GET /api/:context/analytics/productivity-score
  * Get current productivity score with breakdown
  */
-advancedAnalyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+analyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -329,7 +328,7 @@ advancedAnalyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth
  * GET /api/:context/analytics/patterns
  * Analyze patterns in idea creation
  */
-advancedAnalyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -429,7 +428,7 @@ advancedAnalyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHan
  * GET /api/:context/analytics/comparison
  * Compare current period with previous period
  */
-advancedAnalyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+analyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { period = 'week' } = req.query;
 
