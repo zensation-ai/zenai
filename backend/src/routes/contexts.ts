@@ -6,6 +6,7 @@ import { responseCacheMiddleware, invalidateCacheForContext } from '../middlewar
 import { getRecentAIActivities, markActivitiesAsRead, getUnreadActivityCount } from '../services/ai-activity-logger';
 import { moveIdea } from '../services/idea-move';
 import { learnFromCorrection } from '../services/learning-engine';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -276,6 +277,13 @@ router.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), async
     if (error instanceof Error && error.message === 'IDEA_NOT_FOUND') {
       throw new NotFoundError('Idea');
     }
+    logger.error('Idea move failed', error instanceof Error ? error : undefined, {
+      operation: 'moveIdea',
+      sourceContext: context,
+      targetContext,
+      ideaId: id,
+      pgCode: (error as Record<string, unknown>)?.code,
+    });
     throw error;
   }
 }));
