@@ -665,6 +665,22 @@ export async function query(text: string, params?: QueryParam[]): Promise<QueryR
   return queryContext('personal', text, params);
 }
 
+/**
+ * Query the public schema explicitly.
+ * Use this for global tables (audit_logs, api_keys, webhooks, oauth_tokens, integrations, etc.)
+ * that are NOT context-specific and should always be in the public schema.
+ */
+export async function queryPublic(text: string, params?: QueryParam[]): Promise<QueryResult> {
+  const client = await pools.personal.connect();
+  try {
+    await client.query('SET search_path TO public');
+    const result = await client.query(text, params);
+    return result;
+  } finally {
+    client.release();
+  }
+}
+
 // Export QueryParam type for use in other modules
 export type { QueryParam };
 

@@ -6,6 +6,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import axios from 'axios';
+// pool.query() is intentional here: webhooks/webhook_deliveries are global tables (not per-context)
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
 

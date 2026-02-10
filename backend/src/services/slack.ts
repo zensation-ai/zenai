@@ -5,7 +5,9 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
+// pool.query() is intentional for global tables (oauth_tokens, slack_messages, integrations)
 import { pool } from '../utils/database';
+import { queryContext, AIContext } from '../utils/database-context';
 import { triggerWebhook } from './webhooks';
 import { generateEmbedding, structureWithOllama } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
@@ -322,7 +324,8 @@ async function convertMessageToIdea(
   messageId: string,
   text: string,
   userName: string | null,
-  channelId: string
+  channelId: string,
+  context: AIContext = 'personal'
 ): Promise<string> {
   // Clean up the text
   const cleanText = text
@@ -338,9 +341,10 @@ async function convertMessageToIdea(
   // Generate embedding
   const embedding = await generateEmbedding(cleanText);
 
-  // Create idea
+  // Create idea (routed to correct schema via queryContext)
   const ideaId = uuidv4();
-  await pool.query(
+  await queryContext(
+    context,
     `INSERT INTO ideas (id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, embedding, context, is_archived)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false)`,
     [
@@ -355,7 +359,7 @@ async function convertMessageToIdea(
       JSON.stringify([...(structured.keywords || []), 'slack', userName].filter(Boolean)),
       cleanText,
       embedding.length > 0 ? formatForPgVector(embedding) : null,
-      'personal'
+      context
     ]
   );
 
@@ -487,8 +491,9 @@ async function createIdeaFromCommand(
 
     const ideaId = await convertMessageToIdea(messageId, text, userName, channelId);
 
-    // Get the created idea
-    const result = await pool.query(
+    // Get the created idea (route to correct schema)
+    const result = await queryContext(
+      'personal',
       `SELECT title, type, category, priority, summary FROM ideas WHERE id = $1`,
       [ideaId]
     );
@@ -534,7 +539,7 @@ async function createIdeaFromCommand(
 /**
  * Search ideas from slash command
  */
-async function searchIdeasFromCommand(query: string): Promise<SlashCommandResponse> {
+async function searchIdeasFromCommand(query: string, context: AIContext = 'personal'): Promise<SlashCommandResponse> {
   if (!query.trim()) {
     return {
       response_type: 'ephemeral',
@@ -545,7 +550,8 @@ async function searchIdeasFromCommand(query: string): Promise<SlashCommandRespon
   try {
     const embedding = await generateEmbedding(query);
 
-    const result = await pool.query(
+    const result = await queryContext(
+      context,
       `SELECT id, title, type, category, summary,
               1 - (embedding <=> $1::vector) as similarity
        FROM ideas
@@ -599,8 +605,9 @@ async function searchIdeasFromCommand(query: string): Promise<SlashCommandRespon
 /**
  * Get recent ideas
  */
-async function getRecentIdeas(): Promise<SlashCommandResponse> {
-  const result = await pool.query(
+async function getRecentIdeas(context: AIContext = 'personal'): Promise<SlashCommandResponse> {
+  const result = await queryContext(
+    context,
     `SELECT id, title, type, category, priority, created_at
      FROM ideas
      ORDER BY created_at DESC

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './DigestDashboard.css';
@@ -97,10 +98,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
 
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Laden fehlgeschlagen'
-        : 'Laden fehlgeschlagen';
-      setError(message);
+      setError(getErrorMessage(err, 'Laden fehlgeschlagen'));
     } finally {
       setLoading(false);
     }
@@ -128,10 +126,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       setDigestHistory(prev => [res.data.digest, ...prev]);
       showToast(`${type === 'daily' ? 'Tages' : 'Wochen'}zusammenfassung erstellt!`, 'success');
     } catch (err) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Generierung fehlgeschlagen'
-        : 'Generierung fehlgeschlagen';
-      showToast(message, 'error');
+      showToast(getErrorMessage(err, 'Generierung fehlgeschlagen'), 'error');
     } finally {
       setGenerating(null);
     }
@@ -145,10 +140,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       setEditingGoals(false);
       showToast('Ziele gespeichert!', 'success');
     } catch (err) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Speichern fehlgeschlagen'
-        : 'Speichern fehlgeschlagen';
-      showToast(message, 'error');
+      showToast(getErrorMessage(err, 'Speichern fehlgeschlagen'), 'error');
     } finally {
       setSavingGoals(false);
     }

@@ -14,6 +14,7 @@
  */
 
 import axios from 'axios';
+// pool.query() is intentional here: user_integrations is a global table (not per-context)
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
 

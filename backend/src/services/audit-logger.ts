@@ -13,6 +13,7 @@
  */
 
 import { Request } from 'express';
+// pool.query() is intentional here: audit_logs is a global table (not per-context)
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
 

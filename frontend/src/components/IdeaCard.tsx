@@ -2,6 +2,7 @@ import { useState, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 import { useConfirm } from './ConfirmDialog';
 import { AIFeedback } from './AIFeedback';
 import { InlineLoader } from './SkeletonLoader';
@@ -65,10 +66,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArc
       onDelete?.(idea.id);
       showToast('Gedanke gelöscht', 'success');
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? (error.response?.data as { error?: string })?.error || 'Löschen fehlgeschlagen'
-        : 'Löschen fehlgeschlagen';
-      showToast(message, 'error');
+      showToast(getErrorMessage(error, 'Löschen fehlgeschlagen'), 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -83,10 +81,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArc
       // Neuro-optimiertes Feedback
       triggerSuccess('Archiviert!');
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? (error.response?.data as { error?: string })?.error || 'Archivierung fehlgeschlagen'
-        : 'Archivierung fehlgeschlagen';
-      showToast(message, 'error');
+      showToast(getErrorMessage(error, 'Archivierung fehlgeschlagen'), 'error');
     } finally {
       setIsArchiving(false);
     }
@@ -100,10 +95,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArc
       onMove?.(idea.id, targetContext);
       triggerSuccess('Verschoben!');
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? (error.response?.data as { error?: string })?.error || 'Verschieben fehlgeschlagen'
-        : 'Verschieben fehlgeschlagen';
-      showToast(message, 'error');
+      showToast(getErrorMessage(error, 'Verschieben fehlgeschlagen'), 'error');
     } finally {
       setIsMoving(false);
     }
@@ -117,10 +109,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArc
       onRestore?.(idea.id);
       showToast('Gedanke wiederhergestellt', 'success');
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? (error.response?.data as { error?: string })?.error || 'Wiederherstellung fehlgeschlagen'
-        : 'Wiederherstellung fehlgeschlagen';
-      showToast(message, 'error');
+      showToast(getErrorMessage(error, 'Wiederherstellung fehlgeschlagen'), 'error');
     } finally {
       setIsArchiving(false);
     }

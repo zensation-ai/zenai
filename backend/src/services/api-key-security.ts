@@ -8,6 +8,7 @@
  * - Expiring keys notification
  */
 
+// pool.query() is intentional here: api_keys is a global table (not per-context)
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
 

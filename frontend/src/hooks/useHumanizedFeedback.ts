@@ -350,72 +350,7 @@ export function useHumanizedFeedback(config: HumanizedFeedbackConfig = {}) {
   };
 }
 
-// ============================================
-// SHORTCUT UTILITY HOOK
-// ============================================
-
-/**
- * Hook um zu prüfen ob ein Keyboard-Shortcut auf dem System verfügbar ist
- */
-export function useKeyboardShortcut(
-  shortcut: string,
-  callback: () => void,
-  enabled: boolean = true
-) {
-  useEffect(() => {
-    if (!enabled) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Parse shortcut string (z.B. "Cmd+N" oder "Ctrl+Shift+S")
-      const parts = shortcut.toLowerCase().split('+');
-      const key = parts[parts.length - 1];
-
-      const needsMeta = parts.includes('cmd') || parts.includes('meta');
-      const needsCtrl = parts.includes('ctrl');
-      const needsShift = parts.includes('shift');
-      const needsAlt = parts.includes('alt') || parts.includes('option');
-
-      const isMac = navigator.platform.toUpperCase().includes('MAC');
-
-      // Prüfe Modifier
-      const metaPressed = isMac ? e.metaKey : e.ctrlKey;
-      const ctrlPressed = e.ctrlKey;
-      const shiftPressed = e.shiftKey;
-      const altPressed = e.altKey;
-
-      // Match check
-      const modifiersMatch =
-        (needsMeta ? metaPressed : true) &&
-        (needsCtrl ? ctrlPressed : true) &&
-        (needsShift ? shiftPressed : true) &&
-        (needsAlt ? altPressed : true);
-
-      const keyMatches = e.key.toLowerCase() === key;
-
-      if (modifiersMatch && keyMatches) {
-        e.preventDefault();
-        callback();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcut, callback, enabled]);
-}
-
-/**
- * Formatiert einen Shortcut-String für die Anzeige
- */
-export function formatShortcut(shortcut: string): string {
-  const isMac = typeof navigator !== 'undefined' &&
-    navigator.platform.toUpperCase().includes('MAC');
-
-  return shortcut
-    .replace(/Cmd/gi, isMac ? '⌘' : 'Ctrl')
-    .replace(/Ctrl/gi, isMac ? '⌃' : 'Ctrl')
-    .replace(/Alt/gi, isMac ? '⌥' : 'Alt')
-    .replace(/Shift/gi, isMac ? '⇧' : 'Shift')
-    .replace(/\+/g, ' ');
-}
+// Re-export keyboard shortcut utilities from dedicated module
+export { useKeyboardShortcut, formatShortcut } from './useKeyboardShortcut';
 
 export default useHumanizedFeedback;

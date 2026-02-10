@@ -5,6 +5,8 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import axios, { AxiosInstance } from 'axios';
+// pool.query() is intentional here: oauth_tokens, calendar_events, integrations are global tables.
+// Calendar events from external providers are stored globally, not per-context.
 import { pool } from '../utils/database';
 import { triggerWebhook } from './webhooks';
 import { logger } from '../utils/logger';

@@ -26,18 +26,6 @@ export const AI_PERSONALITY: AIPersonality = {
   strengthAreas: ['Enterprise Intelligence', 'Strategische Analyse', 'Kreative Innovation', 'Wissensmanagement'],
 };
 
-// Wochentag-basierte Kontexte für noch persönlichere Interaktionen
-// Verfügbar für zukünftige Personalisierungs-Features
-export const WEEKDAY_CONTEXTS = {
-  0: { mood: 'entspannt', activity: 'Reflexion und Planung' }, // Sonntag
-  1: { mood: 'energetisch', activity: 'Neuer Wochenstart' }, // Montag
-  2: { mood: 'fokussiert', activity: 'Produktivität' },
-  3: { mood: 'kreativ', activity: 'Mitte der Woche - Zeit für Innovation' },
-  4: { mood: 'ausdauernd', activity: 'Durchhalten' },
-  5: { mood: 'zufrieden', activity: 'Wochenabschluss' }, // Freitag
-  6: { mood: 'frei', activity: 'Kreative Entfaltung' }, // Samstag
-} as const;
-
 // Erweiterte zeitbasierte Begrüßungen mit Neuroscience-Prinzipien
 // Dopamin-Trigger: Variable Nachrichten sorgen für höheres Engagement
 export function getTimeBasedGreeting(): {
@@ -50,9 +38,6 @@ export function getTimeBasedGreeting(): {
 } {
   const now = new Date();
   const hour = now.getHours();
-  // Note: WEEKDAY_CONTEXTS available for future personalization
-  // const dayOfWeek = now.getDay();
-  // const weekdayContext = WEEKDAY_CONTEXTS[dayOfWeek as keyof typeof WEEKDAY_CONTEXTS];
 
   // Variable Greetings - Dopamin-Optimierung durch Unvorhersehbarkeit
   const greetingVariants = {

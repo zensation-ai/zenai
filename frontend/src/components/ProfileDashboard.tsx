@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './ProfileDashboard.css';
@@ -102,10 +103,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
 
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Dein Profil konnte gerade nicht geladen werden. Versuch es gleich noch mal.'
-        : 'Dein Profil konnte gerade nicht geladen werden. Versuch es gleich noch mal.';
-      setError(message);
+      setError(getErrorMessage(err, 'Dein Profil konnte gerade nicht geladen werden. Versuch es gleich noch mal.'));
     } finally {
       setLoading(false);
     }
@@ -148,10 +146,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       setIsEditing(false);
       handleReload();
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Das Profil konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es noch mal.'
-        : 'Das Profil konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es noch mal.';
-      showToast(message, 'error');
+      showToast(getErrorMessage(err, 'Das Profil konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es noch mal.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -163,10 +158,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
       await axios.post(`/api/${context}/profile/recalculate`);
       handleReload();
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Die Aktualisierung hat gerade nicht geklappt. Versuch es gleich noch mal.'
-        : 'Die Aktualisierung hat gerade nicht geklappt. Versuch es gleich noch mal.';
-      setError(message);
+      setError(getErrorMessage(err, 'Die Aktualisierung hat gerade nicht geklappt. Versuch es gleich noch mal.'));
     } finally {
       setRecalculating(false);
     }
@@ -184,10 +176,7 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
         auto_priority_enabled: !profile.auto_priority_enabled,
       });
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Die Einstellung konnte nicht geändert werden. Versuch es gleich noch mal.'
-        : 'Die Einstellung konnte nicht geändert werden. Versuch es gleich noch mal.';
-      setError(message);
+      setError(getErrorMessage(err, 'Die Einstellung konnte nicht geändert werden. Versuch es gleich noch mal.'));
     }
   };
 

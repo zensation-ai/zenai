@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { Page } from '../types/idea';
+import { formatShortcut } from '../hooks/useKeyboardShortcut';
 import './CommandPalette.css';
 
 // ============================================
@@ -156,19 +157,6 @@ const CATEGORY_ORDER: CommandCategory[] = [
   'settings',
   'actions',
 ];
-
-// ============================================
-// Format Shortcut Helper
-// ============================================
-
-function formatShortcut(shortcut: string): string {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-  return shortcut
-    .replace(/Cmd/g, isMac ? '⌘' : 'Ctrl')
-    .replace(/Shift/g, isMac ? '⇧' : 'Shift')
-    .replace(/Alt/g, isMac ? '⌥' : 'Alt')
-    .replace(/\+/g, '');
-}
 
 // ============================================
 // Command Palette Component

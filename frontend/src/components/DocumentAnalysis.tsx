@@ -20,6 +20,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { SyntaxHighlighter, oneDark } from '../utils/syntaxHighlighter';
 import { showToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 
 // Simple inline file upload component for DocumentAnalysis
 interface SimpleFileUploadProps {
@@ -337,10 +338,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
           throw new Error('Analyse fehlgeschlagen');
         }
       } catch (err: unknown) {
-        const message = axios.isAxiosError(err)
-          ? (err.response?.data as { error?: { message?: string } })?.error?.message || err.message
-          : 'Analyse fehlgeschlagen';
-        showToast(message, 'error');
+        showToast(getErrorMessage(err, 'Analyse fehlgeschlagen'), 'error');
       } finally {
         setIsAnalyzing(false);
       }
@@ -378,10 +376,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
         throw new Error('Vergleich fehlgeschlagen');
       }
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: { message?: string } })?.error?.message || err.message
-        : 'Vergleich fehlgeschlagen';
-      showToast(message, 'error');
+      showToast(getErrorMessage(err, 'Vergleich fehlgeschlagen'), 'error');
     } finally {
       setIsAnalyzing(false);
     }
@@ -419,9 +414,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
         throw new Error('Folge-Frage fehlgeschlagen');
       }
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: { message?: string } })?.error?.message || err.message
-        : 'Folge-Frage fehlgeschlagen';
+      const message = getErrorMessage(err, 'Folge-Frage fehlgeschlagen');
       setFollowUpMessages((prev) => [
         ...prev,
         { role: 'assistant', content: `Fehler: ${message}` },

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
+import { formatShortcut } from '../hooks/useKeyboardShortcut';
 import './KeyboardShortcutsModal.css';
 
 interface ShortcutItem {
@@ -17,19 +18,6 @@ interface ShortcutCategory {
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-/**
- * Format shortcut for display (Mac/Windows)
- */
-function formatShortcut(shortcut: string): string {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-
-  return shortcut
-    .replace(/Cmd/g, isMac ? '\u2318' : 'Ctrl')
-    .replace(/Shift/g, isMac ? '\u21E7' : 'Shift')
-    .replace(/Alt/g, isMac ? '\u2325' : 'Alt')
-    .replace(/\+/g, ' + ');
 }
 
 /**
