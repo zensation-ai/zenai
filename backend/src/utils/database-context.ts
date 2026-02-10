@@ -415,10 +415,12 @@ export async function ensureSchemas(): Promise<void> {
       await pool.query(`CREATE SCHEMA IF NOT EXISTS ${ctx}`);
       logger.debug(`Schema ${ctx} ensured`, { operation: 'ensureSchemas' });
     } catch (error) {
+      // Non-fatal: schema likely already exists or DDL is restricted (e.g. Supabase)
       const pgError = error as { code?: string };
-      logger.error(`Failed to ensure schema ${ctx}`, error instanceof Error ? error : undefined, {
+      logger.debug(`Schema ensure skipped for ${ctx} (may already exist)`, {
         operation: 'ensureSchemas',
         pgCode: pgError.code,
+        errorMessage: error instanceof Error ? error.message : String(error),
       });
     }
   }
