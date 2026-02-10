@@ -10,7 +10,8 @@
 |---------|-----|-------|
 | **Frontend (Production)** | https://frontend-mu-six-93.vercel.app/ | Aktive Vercel-Deployment |
 | **Backend (Production)** | https://ki-ab-production.up.railway.app | Railway Auto-Deploy auf `main` |
-| **Database** | Supabase | PostgreSQL mit pgvector |
+| **Database** | Supabase | PostgreSQL mit pgvector, 4 Schemas |
+| **Cache** | Railway Redis 8.2.1 | `redis.railway.internal:6379` (intern) |
 | **Website** | https://zensation.ai | ZenSation Enterprise Solutions |
 
 ## Architecture
@@ -247,9 +248,26 @@ JUDGE0_RAPIDAPI_HOST=judge0-ce.p.rapidapi.com
 # Optional - Web Search (Brave Search API)
 BRAVE_SEARCH_API_KEY=your-brave-api-key  # Falls nicht gesetzt: DuckDuckGo Fallback
 
+# Optional - Redis Cache
+REDIS_URL=redis://default:password@redis.railway.internal:6379  # Falls nicht gesetzt: Caching deaktiviert
+
 # Optional - GitHub Integration
 GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...     # Für github_* Tools
 ```
+
+## Railway Environment Variables (Production)
+
+| Variable | Service | Status | Funktion |
+|----------|---------|--------|----------|
+| `DATABASE_URL` | Backend | Gesetzt | Supabase PostgreSQL Connection |
+| `ANTHROPIC_API_KEY` | Backend | Gesetzt | Claude API Zugang |
+| `VITE_API_KEY` | Backend | Gesetzt | Frontend-zu-Backend Auth |
+| `REDIS_URL` | Backend | Gesetzt | Redis Cache (Railway intern) |
+| `BRAVE_SEARCH_API_KEY` | Backend | Gesetzt | Brave Web Search API |
+| `JUDGE0_API_KEY` | Backend | Gesetzt | RapidAPI Judge0 Code Execution |
+| `NODE_ENV` | Backend | `production` | Environment Flag |
+
+**Health Check:** `GET /api/health/detailed` zeigt Status aller Services (4 DBs, Claude, Redis, Brave, Judge0).
 
 ## API Key Scopes
 
@@ -286,13 +304,13 @@ cd backend && npm test -- --coverage
 cd frontend && npm test
 ```
 
-### Test-Status (2026-02-09)
+### Test-Status (2026-02-10)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Gesamt** | 1931 | 24 | 0 |
-| Unit Tests | ~1400 | 0 | 0 |
-| Integration Tests | ~531 | 24 | 0 |
+| **Backend** | 1914 | 24 | 0 |
+| **Frontend** | 481 | 0 | 0 |
+| **Gesamt** | 2395 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -388,6 +406,41 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-02-10: Frontend-Backend Integration Review, Dead Code Removal & Production Config
+
+**Drei-Phasen-Review der kombinierten Frontend-Backend-Integration.**
+
+**Phase 1 — Typ-Safety & API-Alignment:**
+
+| Fix | Dateien |
+|-----|---------|
+| Document Context-Typ auf alle 4 Kontexte erweitert | `types/document.ts`, `types/idea.ts` |
+| Context-Type konsolidiert (Single Source: `AIContext` in ContextSwitcher) | `types/document.ts`, `types/idea.ts` |
+| Priority-Inline-Typen durch `IdeaPriority` ersetzt | 4 Frontend-Komponenten |
+| Test-Mocks auf alle 4 Kontexte erweitert | 5 Backend-Testdateien |
+
+**Phase 2 — Dead Code & Performance:**
+
+| Aktion | Details |
+|--------|---------|
+| 18 ungenutzte Frontend-Dateien gelöscht | ~4.200 LOC (9 TSX + 9 CSS) |
+| 3 ungenutzte Backend-Routen gelöscht | `audit-logs.ts`, `stories.ts`, `voice-pipeline.test.ts` (~1.100 LOC) |
+| Redis Cache Fix | Kein silent-fail mehr ohne `REDIS_URL` |
+| SkeletonLoader konsolidiert | Duplikat in HumanizedUI entfernt, WCAG a11y hinzugefügt |
+| Ollama Production-Warnung | Log-Warning wenn `OLLAMA_URL` in Production nicht gesetzt |
+
+**Phase 3 — Health Endpoint & Production Config:**
+
+| Fix | Details |
+|-----|---------|
+| Health-Endpoints auf alle 4 DB-Kontexte erweitert | `/health`, `/health/detailed`, `/health/ready` |
+| Railway Env Vars konfiguriert | `REDIS_URL`, `BRAVE_SEARCH_API_KEY`, `JUDGE0_API_KEY` |
+
+**Geänderte Dateien:** ~25 Dateien (Frontend + Backend)
+**Tests:** 1,914 Backend + 481 Frontend bestanden, 24 übersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-02-09: Comprehensive Code Review & Critical Fixes
 
