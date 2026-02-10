@@ -12,6 +12,7 @@ import {
   PROCESSING_STATUS_LABELS,
   PROCESSING_STATUS_COLORS,
 } from '../types/document';
+import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
 import './DocumentDetailModal.css';
 
 interface DocumentDetailModalProps {
@@ -36,7 +37,7 @@ export function DocumentDetailModal({
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'content' | 'keywords'>('details');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_URL = getApiBaseUrl();
   const API_KEY = import.meta.env.VITE_API_KEY || '';
 
   // Keyboard handler
@@ -60,7 +61,7 @@ export function DocumentDetailModal({
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': API_KEY,
+            ...getApiFetchHeaders(),
           },
           body: JSON.stringify({
             title: editTitle,
@@ -90,7 +91,7 @@ export function DocumentDetailModal({
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': API_KEY,
+            ...getApiFetchHeaders(),
           },
           body: JSON.stringify({ isFavorite: !doc.isFavorite }),
         }
@@ -117,7 +118,7 @@ export function DocumentDetailModal({
         `${API_URL}/api/documents/${doc.id}/reprocess`,
         {
           method: 'POST',
-          headers: { 'X-API-Key': API_KEY },
+          headers: getApiFetchHeaders(),
         }
       );
       // Refresh after a moment
@@ -139,7 +140,7 @@ export function DocumentDetailModal({
         `${API_URL}/api/${context}/documents/${doc.id}`,
         {
           method: 'DELETE',
-          headers: { 'X-API-Key': API_KEY },
+          headers: getApiFetchHeaders(),
         }
       );
 

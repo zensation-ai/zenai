@@ -338,12 +338,9 @@ Details: ${idea.summary}`,
     setShowContextPicker(false);
     setIsMoving(true);
     try {
-      const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const KEY = import.meta.env.VITE_API_KEY || '';
       await axios.post(
-        `${API}/api/${context}/ideas/${idea.id}/move`,
-        { targetContext },
-        { headers: { 'x-api-key': KEY } }
+        `/api/${context}/ideas/${idea.id}/move`,
+        { targetContext }
       );
       const contextLabels: Record<string, string> = {
         personal: 'Privat', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ'

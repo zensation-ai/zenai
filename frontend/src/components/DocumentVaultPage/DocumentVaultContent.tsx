@@ -19,6 +19,7 @@ import {
 import { DocumentsTab, DocumentVaultPageProps, DOC_TABS } from './types';
 import { FolderSidebar } from './FolderSidebar';
 import { BatchActionBar } from './BatchActionBar';
+import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import '../DocumentVaultPage.css';
 import type { Folder } from '../../types/document';
 import type { ViewMode } from './types';
@@ -61,8 +62,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
   const [hasMore, setHasMore] = useState(false);
   const [, setTotal] = useState(0);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-  const API_KEY = import.meta.env.VITE_API_KEY || '';
+  const API_URL = getApiBaseUrl();
 
   // Fetch documents
   const fetchDocuments = useCallback(async (currentFilters: DocumentFilters) => {
@@ -83,7 +83,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
       const response = await fetch(
         `${API_URL}/api/${context}/documents?${params.toString()}`,
         {
-          headers: { 'X-API-Key': API_KEY },
+          headers: getApiFetchHeaders(),
         }
       );
 
@@ -101,7 +101,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } finally {
       setLoading(false);
     }
-  }, [API_URL, API_KEY, context]);
+  }, [API_URL,context]);
 
   // Fetch folders
   const fetchFolders = useCallback(async () => {
@@ -109,7 +109,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
       const response = await fetch(
         `${API_URL}/api/${context}/documents/folders`,
         {
-          headers: { 'X-API-Key': API_KEY },
+          headers: getApiFetchHeaders(),
         }
       );
 
@@ -120,7 +120,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       console.error('Failed to fetch folders:', err);
     }
-  }, [API_URL, API_KEY, context]);
+  }, [API_URL,context]);
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
@@ -128,7 +128,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
       const response = await fetch(
         `${API_URL}/api/${context}/documents/stats`,
         {
-          headers: { 'X-API-Key': API_KEY },
+          headers: getApiFetchHeaders(),
         }
       );
 
@@ -139,7 +139,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
-  }, [API_URL, API_KEY, context]);
+  }, [API_URL,context]);
 
   // Initial load
   useEffect(() => {
@@ -179,8 +179,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': API_KEY,
+            ...getApiFetchHeaders('application/json'),
           },
           body: JSON.stringify({
             name: newFolderName.trim(),
@@ -198,7 +197,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       console.error('Failed to create folder:', err);
     }
-  }, [API_URL, API_KEY, context, newFolderName, selectedFolder, fetchFolders]);
+  }, [API_URL,context, newFolderName, selectedFolder, fetchFolders]);
 
   // Handle document update from detail modal
   const handleDocumentUpdate = useCallback((updatedDoc: Document) => {
@@ -231,8 +230,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
       fetch(`${API_URL}/api/${context}/documents/search`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY,
+          ...getApiFetchHeaders('application/json'),
         },
         body: JSON.stringify({ query, limit: 50 }),
       })
@@ -262,7 +260,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
       // Clear search, reload normal list
       fetchDocuments(filters);
     }
-  }, [API_URL, API_KEY, context, filters, fetchDocuments]);
+  }, [API_URL,context, filters, fetchDocuments]);
 
   // Handle upload complete
   const handleUploadComplete = useCallback((_result: DocumentUploadResult) => {
@@ -280,7 +278,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         `${API_URL}/api/${context}/documents/${id}`,
         {
           method: 'DELETE',
-          headers: { 'X-API-Key': API_KEY },
+          headers: getApiFetchHeaders(),
         }
       );
 
@@ -293,7 +291,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       console.error('Delete failed:', err);
     }
-  }, [API_URL, API_KEY, context, fetchStats]);
+  }, [API_URL,context, fetchStats]);
 
   // Handle toggle favorite
   const handleToggleFavorite = useCallback(async (doc: Document) => {
@@ -303,8 +301,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': API_KEY,
+            ...getApiFetchHeaders('application/json'),
           },
           body: JSON.stringify({ isFavorite: !doc.isFavorite }),
         }
@@ -319,7 +316,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       console.error('Toggle favorite failed:', err);
     }
-  }, [API_URL, API_KEY, context]);
+  }, [API_URL,context]);
 
   // Handle document selection
   const toggleSelection = useCallback((id: string, selected: boolean) => {
@@ -355,8 +352,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': API_KEY,
+            ...getApiFetchHeaders('application/json'),
           },
           body: JSON.stringify({ ids: Array.from(selectedDocuments) }),
         }
@@ -371,7 +367,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       console.error('Batch delete failed:', err);
     }
-  }, [API_URL, API_KEY, context, selectedDocuments, fetchStats]);
+  }, [API_URL,context, selectedDocuments, fetchStats]);
 
   // Batch move
   const handleBatchMove = useCallback(async (targetFolder: string) => {
@@ -383,8 +379,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': API_KEY,
+            ...getApiFetchHeaders('application/json'),
           },
           body: JSON.stringify({
             ids: Array.from(selectedDocuments),
@@ -403,7 +398,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       console.error('Batch move failed:', err);
     }
-  }, [API_URL, API_KEY, context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
+  }, [API_URL,context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
 
   // Load more
   const loadMore = useCallback(() => {

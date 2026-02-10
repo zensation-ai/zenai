@@ -11,6 +11,7 @@ import {
   formatFileSize,
   getFileTypeLabel,
 } from '../types/document';
+import { getApiFetchHeaders } from '../utils/apiConfig';
 import './DocumentUpload.css';
 
 interface DocumentUploadProps {
@@ -190,12 +191,10 @@ export function DocumentUpload({
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/${context}/documents`,
+        `${import.meta.env.VITE_API_URL || ''}/api/${context}/documents`,
         {
           method: 'POST',
-          headers: {
-            'X-API-Key': import.meta.env.VITE_API_KEY || '',
-          },
+          headers: getApiFetchHeaders(),
           body: formData,
         }
       );
