@@ -104,18 +104,18 @@ export function DocumentDetailModal({
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
     }
-  }, [API_URL, API_KEY, context, document, onUpdate]);
+  }, [API_URL, API_KEY, context, doc, onUpdate]);
 
   // Download file
   const handleDownload = useCallback(() => {
-    window.open(`${API_URL}/api/documents/file/${doc.id}?key=${API_KEY}`, '_blank');
-  }, [API_URL, API_KEY, doc.id]);
+    window.open(`${API_URL}/api/${context}/documents/${doc.id}/file?key=${API_KEY}`, '_blank');
+  }, [API_URL, API_KEY, context, doc.id]);
 
   // Reprocess document
   const handleReprocess = useCallback(async () => {
     try {
       await fetch(
-        `${API_URL}/api/documents/${doc.id}/reprocess`,
+        `${API_URL}/api/${context}/documents/${doc.id}/reprocess`,
         {
           method: 'POST',
           headers: getApiFetchHeaders(),
@@ -265,13 +265,13 @@ export function DocumentDetailModal({
           <div className="preview-section">
             {isImage ? (
               <img
-                src={`${API_URL}/api/documents/preview/${doc.id}`}
+                src={`${API_URL}/api/${context}/documents/${doc.id}/preview`}
                 alt={doc.title || doc.originalFilename}
                 className="preview-image"
               />
             ) : isPdf ? (
               <iframe
-                src={`${API_URL}/api/documents/file/${doc.id}?key=${API_KEY}`}
+                src={`${API_URL}/api/${context}/documents/${doc.id}/file?key=${API_KEY}`}
                 className="preview-pdf"
                 title="PDF Preview"
               />

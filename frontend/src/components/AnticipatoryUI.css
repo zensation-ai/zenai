@@ -563,7 +563,7 @@
   right: 0;
   height: 3px;
   background: transparent;
-  z-index: 9999;
+  z-index: var(--z-toast);
   pointer-events: none;
 }
 

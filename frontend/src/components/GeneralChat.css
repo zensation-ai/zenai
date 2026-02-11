@@ -23,9 +23,18 @@
 .chat-page {
   height: 100%;
   display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.chat-page-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   align-items: center;
   padding: 24px 24px 16px;
+  overflow-y: auto;
 }
 
 .general-chat.full-page {
@@ -532,7 +541,7 @@
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .chat-page {
+  .chat-page-main {
     padding: 12px 8px 8px;
   }
 

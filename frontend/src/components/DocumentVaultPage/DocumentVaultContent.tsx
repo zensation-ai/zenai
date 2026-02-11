@@ -1,3 +1,4 @@
+import { logError } from '../../utils/errors';
 /**
  * Document Vault Content
  *
@@ -118,7 +119,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         setFolders(result.data);
       }
     } catch (err) {
-      console.error('Failed to fetch folders:', err);
+      logError('DocumentVault.fetchFolders', err);
     }
   }, [API_URL,context]);
 
@@ -137,7 +138,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         setStats(result.data);
       }
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      logError('DocumentVault.fetchStats', err);
     }
   }, [API_URL,context]);
 
@@ -195,7 +196,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         setNewFolderName('');
       }
     } catch (err) {
-      console.error('Failed to create folder:', err);
+      logError('DocumentVault.createFolder', err);
     }
   }, [API_URL,context, newFolderName, selectedFolder, fetchFolders]);
 
@@ -255,7 +256,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
             setHasMore(false);
           }
         })
-        .catch(console.error);
+        .catch((err) => logError('DocumentVault.fetchDocuments', err));
     } else {
       // Clear search, reload normal list
       fetchDocuments(filters);
@@ -289,7 +290,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         fetchStats();
       }
     } catch (err) {
-      console.error('Delete failed:', err);
+      logError('DocumentVault.delete', err);
     }
   }, [API_URL,context, fetchStats]);
 
@@ -314,7 +315,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         );
       }
     } catch (err) {
-      console.error('Toggle favorite failed:', err);
+      logError('DocumentVault.toggleFavorite', err);
     }
   }, [API_URL,context]);
 
@@ -365,7 +366,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         fetchStats();
       }
     } catch (err) {
-      console.error('Batch delete failed:', err);
+      logError('DocumentVault.batchDelete', err);
     }
   }, [API_URL,context, selectedDocuments, fetchStats]);
 
@@ -396,7 +397,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         fetchFolders();
       }
     } catch (err) {
-      console.error('Batch move failed:', err);
+      logError('DocumentVault.batchMove', err);
     }
   }, [API_URL,context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
 
@@ -486,7 +487,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
           <button
             type="button"
             className="upload-trigger neuro-hover-lift"
-            onClick={() => contentNavigate('/ai-workshop/voice-chat')}
+            onClick={() => contentNavigate('/my-ai/voice-chat')}
             style={{
               background: 'linear-gradient(135deg, var(--accent, #0ea5e9), var(--info, #06b6d4))',
               color: '#fff',

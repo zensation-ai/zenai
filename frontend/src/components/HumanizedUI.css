@@ -411,7 +411,7 @@
 
 .success-animation {
   position: fixed;
-  z-index: 10000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1001,7 +1001,7 @@
 
 .progress-toast {
   position: fixed;
-  z-index: 10000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   gap: 1rem;

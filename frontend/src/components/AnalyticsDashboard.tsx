@@ -10,101 +10,172 @@ interface AnalyticsDashboardProps {
   onBack: () => void;
 }
 
-interface Summary {
-  total: number;
-  today: number;
-  thisWeek: number;
-  thisMonth: number;
-  highPriority: number;
-}
-
-interface Goals {
-  daily: { target: number; current: number; progress: number };
-  weekly: { target: number; current: number; progress: number };
-}
-
-interface Streaks {
-  current: number;
-  longest: number;
-}
-
-interface ProductivityScore {
-  overall: number;
-  breakdown: {
-    output: { score: number; label: string; description: string };
-    consistency: { score: number; label: string; description: string };
-    variety: { score: number; label: string; description: string };
-    quality: { score: number; label: string; description: string };
+// Backend response types matching real endpoints
+interface OverviewResponse {
+  success: boolean;
+  summary: {
+    total: number;
+    active: number;
+    archived: number;
+    lastWeek: number;
+    lastMonth: number;
   };
-  trend: string;
+  recentActivity: {
+    created: number;
+    updated: number;
+  };
+  distribution: {
+    byCategory: Record<string, number>;
+    byType: Record<string, number>;
+    byPriority: Record<string, number>;
+  };
+  dailyTrend: { date: string; count: number }[];
 }
 
-interface Patterns {
-  peakTimes: {
-    hours: { hour: number; label: string; count: number }[];
-    days: { day: number; label: string; count: number }[];
-  };
+interface TimelineResponse {
+  success: boolean;
+  byHour: { hour: number; count: number }[];
+  byDayOfWeek: { day: string; dayIndex: number; count: number }[];
   insights: string[];
 }
 
-interface Comparison {
-  current: { total: number; highPriority: number; activeDays: number };
-  changes: { total: number; highPriority: number; activeDays: number };
+interface EngagementResponse {
+  success: boolean;
+  avgIdeasPerDay: string;
+  currentStreak: number;
+  processing: {
+    totalProcessed: number;
+    avgProcessingTime: string;
+  };
 }
 
-interface HourlyActivity {
-  hour: number;
-  count: number;
-}
-
-interface DashboardData {
-  summary: Summary;
-  goals: Goals;
-  streaks: Streaks;
-  activity: { byHour: HourlyActivity[] };
-}
+const CONTEXT_LABELS: Record<string, string> = {
+  personal: 'Persönlich',
+  work: 'Arbeit',
+  learning: 'Lernen',
+  creative: 'Kreativ',
+};
 
 export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps) {
   const greeting = getTimeBasedGreeting();
 
-  // Use the new parallel async data hook with automatic AbortController
   const { data, loading, errors } = useParallelAsyncData<[
-    { data: DashboardData },
-    { data: ProductivityScore },
-    { data: Patterns },
-    { data: Comparison }
+    OverviewResponse,
+    TimelineResponse,
+    EngagementResponse
   ]>(
     [
       async (signal) => {
-        const res = await axios.get(`/api/${context}/analytics/dashboard`, { signal });
+        const res = await axios.get(`/api/${context}/analytics/overview`, { signal });
         return res.data;
       },
       async (signal) => {
-        const res = await axios.get(`/api/${context}/analytics/productivity-score`, { signal });
+        const res = await axios.get(`/api/${context}/analytics/timeline`, { signal });
         return res.data;
       },
       async (signal) => {
-        const res = await axios.get(`/api/${context}/analytics/patterns`, { signal });
-        return res.data;
-      },
-      async (signal) => {
-        const res = await axios.get(`/api/${context}/analytics/comparison`, { signal });
+        const res = await axios.get(`/api/${context}/analytics/engagement`, { signal });
         return res.data;
       },
     ],
     [context]
   );
 
-  // Extract data from parallel fetch results
-  const summary = data[0]?.data?.summary ?? null;
-  const goals = data[0]?.data?.goals ?? null;
-  const streaks = data[0]?.data?.streaks ?? null;
-  const hourlyActivity = data[0]?.data?.activity?.byHour ?? [];
-  const productivityScore = data[1]?.data ?? null;
-  const patterns = data[2]?.data ?? null;
-  const comparison = data[3]?.data ?? null;
+  // Extract from overview
+  const overview = data[0];
+  const summary = overview ? {
+    total: overview.summary?.total ?? 0,
+    today: overview.recentActivity?.created ?? 0,
+    thisWeek: overview.summary?.lastWeek ?? 0,
+    thisMonth: overview.summary?.lastMonth ?? 0,
+    highPriority: overview.distribution?.byPriority?.high ?? 0,
+  } : null;
 
-  // Log any errors (optional - for debugging)
+  // Extract from timeline
+  const timeline = data[1];
+  const hourlyActivity = timeline?.byHour ?? [];
+
+  // Derive patterns from timeline
+  const patterns = timeline ? (() => {
+    const sortedHours = [...(timeline.byHour || [])].sort((a, b) => b.count - a.count);
+    const sortedDays = [...(timeline.byDayOfWeek || [])].sort((a, b) => b.count - a.count);
+    return {
+      peakTimes: {
+        hours: sortedHours.length > 0
+          ? [{ hour: sortedHours[0].hour, label: `${sortedHours[0].hour}:00 Uhr`, count: sortedHours[0].count }]
+          : [],
+        days: sortedDays.length > 0
+          ? [{ day: sortedDays[0].dayIndex, label: sortedDays[0].day, count: sortedDays[0].count }]
+          : [],
+      },
+      insights: timeline.insights ?? [],
+    };
+  })() : null;
+
+  // Extract from engagement
+  const engagement = data[2];
+  const streaks = engagement ? {
+    current: engagement.currentStreak ?? 0,
+    longest: engagement.currentStreak ?? 0,
+  } : null;
+
+  // Derive comparison from overview.dailyTrend (14 days → this week vs last week)
+  const comparison = overview?.dailyTrend ? (() => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    let thisWeekCount = 0;
+    let lastWeekCount = 0;
+    let thisWeekDays = 0;
+    let lastWeekDays = 0;
+
+    for (const entry of overview.dailyTrend) {
+      const date = new Date(entry.date);
+      if (date >= oneWeekAgo) {
+        thisWeekCount += entry.count;
+        thisWeekDays++;
+      } else if (date >= twoWeeksAgo) {
+        lastWeekCount += entry.count;
+        lastWeekDays++;
+      }
+    }
+
+    const totalChange = lastWeekCount > 0
+      ? Math.round(((thisWeekCount - lastWeekCount) / lastWeekCount) * 100)
+      : thisWeekCount > 0 ? 100 : 0;
+    const daysChange = lastWeekDays > 0
+      ? Math.round(((thisWeekDays - lastWeekDays) / lastWeekDays) * 100)
+      : thisWeekDays > 0 ? 100 : 0;
+
+    return {
+      current: { total: thisWeekCount, activeDays: thisWeekDays },
+      changes: { total: totalChange, activeDays: daysChange },
+    };
+  })() : null;
+
+  // Derive productivity score from engagement + summary
+  const productivityScore = (engagement && summary) ? (() => {
+    const avgPerDay = parseFloat(engagement.avgIdeasPerDay || '0');
+    const streakDays = engagement.currentStreak ?? 0;
+
+    const activityScore = Math.min(100, Math.round(avgPerDay * 20));
+    const streakScore = Math.min(100, streakDays * 10);
+    const consistencyScore = summary.thisMonth > 0
+      ? Math.min(100, Math.round((summary.thisWeek / Math.max(1, summary.thisMonth)) * 400))
+      : 0;
+    const overall = Math.round((activityScore + streakScore + consistencyScore) / 3);
+
+    return {
+      overall,
+      breakdown: {
+        activity: { score: activityScore, label: 'Aktivität', description: `${avgPerDay.toFixed(1)} Gedanken/Tag` },
+        consistency: { score: consistencyScore, label: 'Konsistenz', description: `${summary.thisWeek} diese Woche` },
+        streak: { score: streakScore, label: 'Serie', description: `${streakDays} Tage in Folge` },
+      },
+    };
+  })() : null;
+
   if (errors.some(e => e !== null)) {
     logError('AnalyticsDashboard:loadAnalytics', new Error(`Failed to load some analytics: ${errors.filter(e => e !== null).length} errors`));
   }
@@ -116,9 +187,9 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
   };
 
   const getChangeIcon = (change: number) => {
-    if (change > 0) return '↑';
-    if (change < 0) return '↓';
-    return '→';
+    if (change > 0) return '\u2191';
+    if (change < 0) return '\u2193';
+    return '\u2192';
   };
 
   const getChangeClass = (change: number) => {
@@ -132,13 +203,13 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
       <div className="analytics-dashboard neuro-page-enter">
         <header className="header liquid-glass-nav">
           <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">
-            ← Zurück
+            &larr; Zurück
           </button>
           <h1>Analytics Dashboard</h1>
         </header>
         <div className="loading-state neuro-loading-contextual">
           <div className="neuro-loading-spinner" />
-          <p className="neuro-loading-message">Analysiere deine Produktivitat...</p>
+          <p className="neuro-loading-message">Analysiere deine Produktivität...</p>
           <p className="neuro-loading-submessage">Muster werden erkannt</p>
         </div>
       </div>
@@ -150,13 +221,13 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
       <header className="header liquid-glass-nav">
         <div className="header-content">
           <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">
-            ← Zurück
+            &larr; Zurück
           </button>
           <div className="header-greeting">
             <h1>{greeting.emoji} Analytics Dashboard</h1>
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
-          <span className="context-badge">{context === 'personal' ? 'Persönlich' : 'Arbeit'}</span>
+          <span className="context-badge">{CONTEXT_LABELS[context] || context}</span>
         </div>
       </header>
 
@@ -171,26 +242,26 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
               <span className="score-label">Score</span>
             </div>
             <div className="score-breakdown">
-              <h3>Produktivitats-Score</h3>
+              <h3>Produktivitäts-Score</h3>
               <div className="breakdown-items">
-                {Object.entries(productivityScore.breakdown).map(([key, data], index) => (
+                {Object.entries(productivityScore.breakdown).map(([key, item], index) => (
                   <div key={key} className="breakdown-item neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                     <div className="breakdown-header">
-                      <span className="breakdown-label">{data.label}</span>
-                      <span className="breakdown-score" style={{ color: getScoreColor(data.score) }}>
-                        {data.score}%
+                      <span className="breakdown-label">{item.label}</span>
+                      <span className="breakdown-score" style={{ color: getScoreColor(item.score) }}>
+                        {item.score}%
                       </span>
                     </div>
                     <div className="breakdown-bar neuro-progress-indicator">
                       <div
                         className="breakdown-fill"
                         style={{
-                          width: `${data.score}%`,
-                          backgroundColor: getScoreColor(data.score),
+                          width: `${item.score}%`,
+                          backgroundColor: getScoreColor(item.score),
                         }}
                       />
                     </div>
-                    <span className="breakdown-desc">{data.description}</span>
+                    <span className="breakdown-desc">{item.description}</span>
                   </div>
                 ))}
               </div>
@@ -201,73 +272,32 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
         {/* Summary Cards */}
         {summary && (
           <section className="summary-section liquid-glass neuro-stagger-item">
-            <h3>Ubersicht</h3>
+            <h3>Übersicht</h3>
             <div className="summary-cards neuro-flow-list">
               <div className="summary-card neuro-hover-lift">
-                <span className="card-icon">☀️</span>
+                <span className="card-icon">&#9728;&#65039;</span>
                 <span className="card-value">{summary.today}</span>
                 <span className="card-label">Heute</span>
               </div>
               <div className="summary-card neuro-hover-lift">
-                <span className="card-icon">📅</span>
+                <span className="card-icon">&#128197;</span>
                 <span className="card-value">{summary.thisWeek}</span>
                 <span className="card-label">Diese Woche</span>
               </div>
               <div className="summary-card neuro-hover-lift">
-                <span className="card-icon">📊</span>
+                <span className="card-icon">&#128200;</span>
                 <span className="card-value">{summary.thisMonth}</span>
                 <span className="card-label">Dieser Monat</span>
               </div>
               <div className="summary-card neuro-hover-lift">
-                <span className="card-icon">🎯</span>
+                <span className="card-icon">&#127919;</span>
                 <span className="card-value">{summary.total}</span>
                 <span className="card-label">Gesamt</span>
               </div>
               <div className="summary-card highlight neuro-hover-lift">
-                <span className="card-icon">🔴</span>
+                <span className="card-icon">&#128308;</span>
                 <span className="card-value">{summary.highPriority}</span>
-                <span className="card-label">Hohe Prioritat</span>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Goals Progress */}
-        {goals && (
-          <section className="goals-section liquid-glass neuro-stagger-item">
-            <h3>Ziele</h3>
-            <div className="goals-grid">
-              <div className="goal-card neuro-hover-lift">
-                <div className="goal-header">
-                  <span>Tagliches Ziel</span>
-                  <span className="goal-progress">{goals.daily.current}/{goals.daily.target}</span>
-                </div>
-                <div className="goal-bar neuro-progress-indicator">
-                  <div
-                    className={`goal-fill ${goals.daily.progress >= 100 ? 'neuro-success-burst' : ''}`}
-                    style={{
-                      width: `${Math.min(goals.daily.progress, 100)}%`,
-                      backgroundColor: goals.daily.progress >= 100 ? '#22c55e' : '#6366f1',
-                    }}
-                  />
-                </div>
-                <span className="goal-percent">{goals.daily.progress}%</span>
-              </div>
-              <div className="goal-card neuro-hover-lift">
-                <div className="goal-header">
-                  <span>Wochentliches Ziel</span>
-                  <span className="goal-progress">{goals.weekly.current}/{goals.weekly.target}</span>
-                </div>
-                <div className="goal-bar neuro-progress-indicator">
-                  <div
-                    className={`goal-fill ${goals.weekly.progress >= 100 ? 'neuro-success-burst' : ''}`}
-                    style={{
-                      width: `${Math.min(goals.weekly.progress, 100)}%`,
-                      backgroundColor: goals.weekly.progress >= 100 ? '#22c55e' : '#6366f1',
-                    }}
-                  />
-                </div>
-                <span className="goal-percent">{goals.weekly.progress}%</span>
+                <span className="card-label">Hohe Priorität</span>
               </div>
             </div>
           </section>
@@ -277,14 +307,14 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
         {streaks && (
           <section className="streaks-section neuro-stagger-item">
             <div className="streak-card liquid-glass neuro-hover-lift">
-              <span className="streak-icon">{streaks.current > 0 ? '🔥' : '💤'}</span>
+              <span className="streak-icon">{streaks.current > 0 ? '\uD83D\uDD25' : '\uD83D\uDCA4'}</span>
               <span className="streak-value">{streaks.current}</span>
               <span className="streak-label">Aktuelle Serie (Tage)</span>
             </div>
             <div className="streak-card liquid-glass neuro-hover-lift">
-              <span className="streak-icon">🏆</span>
-              <span className="streak-value">{streaks.longest}</span>
-              <span className="streak-label">Langste Serie (Tage)</span>
+              <span className="streak-icon">{engagement ? '\u26A1' : '\uD83C\uDFC6'}</span>
+              <span className="streak-value">{engagement ? parseFloat(engagement.avgIdeasPerDay || '0').toFixed(1) : 0}</span>
+              <span className="streak-label">Gedanken pro Tag (Schnitt)</span>
             </div>
           </section>
         )}
@@ -292,7 +322,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
         {/* Activity Chart */}
         {hourlyActivity.length > 0 && (
           <section className="activity-section liquid-glass neuro-stagger-item">
-            <h3>Aktivitat nach Uhrzeit</h3>
+            <h3>Aktivität nach Uhrzeit</h3>
             <div className="activity-chart">
               {hourlyActivity.map((item, index) => {
                 const maxCount = Math.max(...hourlyActivity.map((h) => h.count), 1);
@@ -302,7 +332,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
                     <div
                       className="activity-bar neuro-hover-lift"
                       style={{ height: `${height}%` }}
-                      title={`${item.hour}:00 - ${item.count} Eintrage`}
+                      title={`${item.hour}:00 - ${item.count} Einträge`}
                     />
                     {item.hour % 6 === 0 && (
                       <span className="activity-label">{item.hour}</span>
@@ -315,14 +345,14 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
         )}
 
         {/* Patterns & Insights */}
-        {patterns && (
+        {patterns && (patterns.peakTimes.hours.length > 0 || patterns.insights.length > 0) && (
           <section className="patterns-section liquid-glass neuro-stagger-item">
             <h3>Muster & Insights</h3>
             <div className="patterns-content">
               <div className="peak-times">
                 {patterns.peakTimes.hours[0] && (
                   <div className="peak-item neuro-hover-lift neuro-stagger-item">
-                    <span className="peak-icon">⏰</span>
+                    <span className="peak-icon">&#9200;</span>
                     <div className="peak-info">
                       <span className="peak-label">Produktivste Zeit</span>
                       <span className="peak-value">{patterns.peakTimes.hours[0].label}</span>
@@ -331,7 +361,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
                 )}
                 {patterns.peakTimes.days[0] && (
                   <div className="peak-item neuro-hover-lift neuro-stagger-item">
-                    <span className="peak-icon">📅</span>
+                    <span className="peak-icon">&#128197;</span>
                     <div className="peak-info">
                       <span className="peak-label">Aktivster Tag</span>
                       <span className="peak-value">{patterns.peakTimes.days[0].label}</span>
@@ -342,7 +372,7 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
               <div className="insights-list neuro-flow-list">
                 {patterns.insights.slice(0, 7).map((insight, index) => (
                   <div key={`insight-${index}-${insight.slice(0, 30)}`} className="insight-item neuro-stagger-item">
-                    <span className="insight-icon">✨</span>
+                    <span className="insight-icon">&#10024;</span>
                     <span>{insight}</span>
                   </div>
                 ))}
@@ -361,13 +391,6 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
                 <span className="comp-value">{comparison.current.total}</span>
                 <span className={`comp-change ${getChangeClass(comparison.changes.total)}`}>
                   {getChangeIcon(comparison.changes.total)} {Math.abs(comparison.changes.total)}%
-                </span>
-              </div>
-              <div className="comparison-card neuro-hover-lift">
-                <span className="comp-label">Hohe Prioritat</span>
-                <span className="comp-value">{comparison.current.highPriority}</span>
-                <span className={`comp-change ${getChangeClass(comparison.changes.highPriority)}`}>
-                  {getChangeIcon(comparison.changes.highPriority)} {Math.abs(comparison.changes.highPriority)}%
                 </span>
               </div>
               <div className="comparison-card neuro-hover-lift">

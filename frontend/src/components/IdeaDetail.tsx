@@ -203,7 +203,6 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
   const loadDraft = async (signal: AbortSignal) => {
     setLoadingDraft(true);
     try {
-      const context = localStorage.getItem('ai-context') || 'personal';
       const response = await axios.get(`/api/${context}/ideas/${idea.id}/draft`, { signal });
       if (!signal.aborted && response.data.draft) {
         setDraft(response.data.draft);
@@ -287,7 +286,6 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     setResearchResult(null);
 
     const signal = abortControllerRef.current?.signal;
-    const context = localStorage.getItem('ai-context') || 'personal';
 
     // Typ-spezifische Prompts
     const prompts: Record<string, string> = {

@@ -1,0 +1,294 @@
+/* ============================================
+   Chat Session Sidebar
+   Konversationsverlauf-Panel
+   ============================================ */
+
+.chat-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  min-width: 260px;
+  height: 100%;
+  background: var(--surface, #fff);
+  border-right: 1px solid var(--glass-border, rgba(255, 200, 170, 0.2));
+  overflow: hidden;
+}
+
+.chat-sidebar.collapsed {
+  width: 48px;
+  min-width: 48px;
+  align-items: center;
+  padding-top: 12px;
+  gap: 8px;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.chat-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 10px;
+  flex-shrink: 0;
+}
+
+.chat-sidebar-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.chat-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-sidebar-toggle:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+  color: var(--text);
+}
+
+.chat-sidebar-new-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--primary, #ff6b35);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-sidebar-new-mini:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* ============================================
+   New Chat Button
+   ============================================ */
+
+.chat-sidebar-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 10px 10px;
+  padding: 10px 14px;
+  background: var(--primary, #ff6b35);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chat-sidebar-new:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.chat-sidebar-new:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   Search
+   ============================================ */
+
+.chat-sidebar-search {
+  padding: 0 10px 10px;
+  flex-shrink: 0;
+}
+
+.chat-sidebar-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--hover-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.08));
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.chat-sidebar-search-input:focus {
+  border-color: var(--primary, #ff6b35);
+}
+
+.chat-sidebar-search-input::placeholder {
+  color: var(--text-muted, #999);
+}
+
+/* ============================================
+   Session List
+   ============================================ */
+
+.chat-sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 6px 12px;
+}
+
+.chat-sidebar-loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.chat-sidebar-empty {
+  text-align: center;
+  padding: 24px 12px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Group Labels
+   ============================================ */
+
+.chat-sidebar-group-label {
+  padding: 8px 10px 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================
+   Session Item
+   ============================================ */
+
+.chat-sidebar-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+  position: relative;
+}
+
+.chat-sidebar-item:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+.chat-sidebar-item.active {
+  background: var(--primary-glow, rgba(255, 107, 53, 0.1));
+}
+
+.chat-sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: var(--primary, #ff6b35);
+  border-radius: 0 2px 2px 0;
+}
+
+.chat-sidebar-item-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.chat-sidebar-item-date {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chat-sidebar-item-delete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  flex-shrink: 0;
+}
+
+.chat-sidebar-item:hover .chat-sidebar-item-delete {
+  display: flex;
+}
+
+.chat-sidebar-item-delete:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .chat-sidebar {
+    display: none;
+  }
+
+  .chat-sidebar.collapsed {
+    display: none;
+  }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-sidebar-new,
+  .chat-sidebar-new-mini,
+  .chat-sidebar-toggle,
+  .chat-sidebar-item {
+    transition-duration: 0.01ms !important;
+  }
+}

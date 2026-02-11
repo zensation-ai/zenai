@@ -267,7 +267,7 @@
 }
 
 .sidebar-section-items.expanded {
-  max-height: 300px; /* Enough for 5+ items */
+  max-height: 500px; /* Enough for 8+ items */
 }
 
 /* ============================================

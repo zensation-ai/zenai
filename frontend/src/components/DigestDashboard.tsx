@@ -46,6 +46,45 @@ const categoryLabels: Record<string, string> = {
   learning: 'Lernen',
 };
 
+// Adapt backend camelCase response to frontend snake_case interface
+function adaptDigest(d: Record<string, unknown>): DigestEntry | null {
+  if (!d) return null;
+  const stats = (d.statistics || {}) as Record<string, unknown>;
+  const byCategory = (stats.byCategory || {}) as Record<string, number>;
+  const topCats: [string, number][] = ((d.topCategories || []) as string[]).map((cat: string) =>
+    [cat, byCategory[cat] ?? 0] as [string, number]
+  );
+  return {
+    id: d.id as string,
+    type: d.type as 'daily' | 'weekly',
+    period_start: (d.periodStart ?? d.period_start ?? '') as string,
+    period_end: (d.periodEnd ?? d.period_end ?? '') as string,
+    summary: (d.summary || '') as string,
+    highlights: (d.highlights || []) as string[],
+    stats: {
+      ideas_created: (d.ideasCount ?? (stats as Record<string, unknown>).totalIdeas ?? 0) as number,
+      tasks_completed: 0,
+      meetings_held: 0,
+      top_categories: topCats,
+      productivity_score: (d.productivityScore ?? 0) as number,
+    },
+    recommendations: (d.recommendations || []) as string[],
+    created_at: (d.createdAt ?? d.created_at ?? '') as string,
+  };
+}
+
+function adaptGoals(d: Record<string, unknown>): ProductivityGoals | null {
+  if (!d) return null;
+  return {
+    daily_ideas_target: (d.dailyIdeasTarget ?? d.daily_ideas_target ?? 3) as number,
+    weekly_ideas_target: (d.weeklyIdeasTarget ?? d.weekly_ideas_target ?? 15) as number,
+    daily_tasks_target: (d.dailyTasksTarget ?? d.daily_tasks_target ?? 5) as number,
+    weekly_tasks_target: (d.weeklyTasksTarget ?? d.weekly_tasks_target ?? 20) as number,
+    focus_categories: (d.focusCategories ?? d.focus_categories ?? []) as string[],
+    reminder_time: (d.reminderTime ?? d.reminder_time ?? null) as string | null,
+  };
+}
+
 export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [latestDigest, setLatestDigest] = useState<DigestEntry | null>(null);
@@ -73,15 +112,16 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
     try {
       setLoading(true);
       const [latestRes, historyRes, goalsRes] = await Promise.all([
-        axios.get(`/api/${context}/digest/latest`, { signal }).catch(() => ({ data: { digest: null } })),
-        axios.get(`/api/${context}/digest/history?limit=10`, { signal }).catch(() => ({ data: { digests: [] } })),
-        axios.get(`/api/${context}/digest/goals`, { signal }).catch(() => ({ data: { goals: null } })),
+        axios.get(`/api/${context}/digest/latest`, { signal }).catch(() => ({ data: { data: null } })),
+        axios.get(`/api/${context}/digest/history?limit=10`, { signal }).catch(() => ({ data: { data: [] } })),
+        axios.get(`/api/${context}/digest/goals`, { signal }).catch(() => ({ data: { data: null } })),
       ]);
 
-      setLatestDigest(latestRes.data.digest);
-      setDigestHistory(historyRes.data.digests || []);
+      setLatestDigest(adaptDigest(latestRes.data.data));
+      const historyItems = (historyRes.data.data || []) as Record<string, unknown>[];
+      setDigestHistory(historyItems.map(adaptDigest).filter((d): d is DigestEntry => d !== null));
 
-      const goalsData = goalsRes.data.goals;
+      const goalsData = adaptGoals(goalsRes.data.data);
       if (goalsData) {
         setGoals(goalsData);
         setGoalForm({
@@ -123,8 +163,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
     try {
       setGenerating(type);
       const res = await axios.post(`/api/${context}/digest/generate/${type}`);
-      setLatestDigest(res.data.digest);
-      setDigestHistory(prev => [res.data.digest, ...prev]);
+      const generated = adaptDigest(res.data.data);
+      if (generated) {
+        setLatestDigest(generated);
+        setDigestHistory(prev => [generated, ...prev]);
+      }
       showToast(`${type === 'daily' ? 'Tages' : 'Wochen'}zusammenfassung erstellt!`, 'success');
     } catch (err) {
       showToast(getErrorMessage(err, 'Generierung fehlgeschlagen'), 'error');
@@ -136,7 +179,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
   const handleSaveGoals = async () => {
     try {
       setSavingGoals(true);
-      await axios.put(`/api/${context}/digest/goals`, goalForm);
+      await axios.put(`/api/${context}/digest/goals`, {
+        dailyIdeasTarget: goalForm.daily_ideas_target,
+        weeklyIdeasTarget: goalForm.weekly_ideas_target,
+        focusCategories: goalForm.focus_categories,
+      });
       setGoals(goalForm as ProductivityGoals);
       setEditingGoals(false);
       showToast('Ziele gespeichert!', 'success');

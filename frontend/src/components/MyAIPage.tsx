@@ -27,7 +27,7 @@ interface MyAIPageProps {
 
 const TABS: { id: MyAITab; label: string; icon: string; description: string }[] = [
   { id: 'personalize', label: 'KI anpassen', icon: '🎨', description: 'Deine KI kennenlernen und trainieren' },
-  { id: 'memory', label: 'KI-Wissen', icon: '🧠', description: 'Was deine KI ueber dich gelernt hat' },
+  { id: 'memory', label: 'KI-Wissen', icon: '🧠', description: 'Was deine KI über dich gelernt hat' },
   { id: 'voice-chat', label: 'Sprach-Chat', icon: '🎙️', description: 'Echtzeit-Sprachgespraech mit KI' },
 ];
 
@@ -99,7 +99,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
         icon="🤖"
         subtitle="Personalisierung, KI-Wissen und Sprach-Chat"
         onBack={onBack}
-        backLabel="Zurueck"
+        backLabel="Zurück"
       />
 
       <nav className="hub-tabs" role="tablist" aria-label="Meine KI Navigation">

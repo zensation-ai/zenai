@@ -98,7 +98,7 @@
 
 .hub-tab-content.hub-tab-fullheight {
   padding: 0;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* Tab Loader */

@@ -33,7 +33,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 10000;
+  z-index: var(--z-modal);
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--nf-timing-natural) ease;
@@ -286,7 +286,7 @@
   bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9999;
+  z-index: var(--z-toast);
   padding: 1rem 1.5rem;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px) saturate(180%);
@@ -363,7 +363,7 @@
   position: fixed;
   top: 100px;
   right: 24px;
-  z-index: 9999;
+  z-index: var(--z-toast);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -435,7 +435,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 9999;
+  z-index: var(--z-toast);
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;

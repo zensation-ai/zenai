@@ -31,7 +31,7 @@ export function AIFeedback({
         original_response: originalResponse,
       });
       setFeedback('positive');
-      showToast('Danke fuer das Feedback!', 'success');
+      showToast('Danke für das Feedback!', 'success');
     } catch (error) {
       showToast('Feedback fehlgeschlagen', 'error');
     } finally {

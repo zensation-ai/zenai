@@ -1,3 +1,4 @@
+import { logError } from '../../utils/errors';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactFlow, {
   Node,
@@ -163,7 +164,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
       setNodes(flowNodes);
       setEdges(flowEdges);
     } catch (error) {
-      console.error('Failed to load graph:', error);
+      logError('KnowledgeGraph.loadGraph', error);
       showToast('Fehler beim Laden des Graphen', 'error');
     } finally {
       setLoading(false);
@@ -196,7 +197,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
       showGenerationReward();
       loadGraph();
     } catch (error) {
-      console.error('Failed to generate topics:', error);
+      logError('KnowledgeGraph.generateTopics', error);
       showToast('Fehler beim Generieren der Themen', 'error');
     } finally {
       setGenerating(false);
@@ -213,7 +214,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
       showGenerationReward();
       loadGraph();
     } catch (error) {
-      console.error('Failed to discover relationships:', error);
+      logError('KnowledgeGraph.discover', error);
       showToast('Fehler beim Analysieren der Beziehungen', 'error');
     } finally {
       setDiscovering(false);
@@ -250,7 +251,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
     <div className="knowledge-graph-page neuro-page-enter">
       <header className="graph-header">
         <button className="back-button" onClick={onBack}>
-          ← Zurueck
+          ← Zurück
         </button>
         <h1>Knowledge Graph</h1>
         <div className="graph-stats">

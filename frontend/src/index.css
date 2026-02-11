@@ -174,6 +174,15 @@ textarea::placeholder {
   --bottombar-bg: rgba(12, 28, 36, 0.95);
   --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 
+  /* Z-Index Scale */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 1000;
+  --z-modal: 2000;
+  --z-toast: 3000;
+  --z-command-palette: 4000;
+  --z-skip-link: 5000;
+
   /* Animation */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -947,7 +956,7 @@ select:focus-visible {
   background: var(--primary);
   color: white;
   padding: 8px 16px;
-  z-index: 10000;
+  z-index: var(--z-skip-link);
   border-radius: 0 0 8px 0;
   transition: top 0.2s;
 }

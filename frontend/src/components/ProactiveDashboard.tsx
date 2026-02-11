@@ -58,9 +58,9 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
     try {
       setLoading(true);
       const [suggestionsRes, routinesRes, statsRes] = await Promise.all([
-        axios.get(`/api/suggestions?context=${context}`, { signal }),
-        axios.get(`/api/routines?context=${context}`, { signal }),
-        axios.get(`/api/stats?context=${context}`, { signal })
+        axios.get(`/api/proactive/suggestions?context=${context}`, { signal }),
+        axios.get(`/api/proactive/routines?context=${context}`, { signal }),
+        axios.get(`/api/proactive/stats?context=${context}`, { signal })
       ]);
       setSuggestions(suggestionsRes.data.suggestions || []);
       setRoutines(routinesRes.data.routines || []);
@@ -100,7 +100,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleAcceptSuggestion = async (id: string) => {
     try {
-      await axios.post(`/api/suggestions/${id}/accept`, { context });
+      await axios.post(`/api/proactive/suggestions/${id}/accept`, { context });
       setSuggestions(prev =>
         prev.map(s => s.id === id ? { ...s, status: 'accepted' } : s)
       );
@@ -113,7 +113,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleDismissSuggestion = async (id: string) => {
     try {
-      await axios.post(`/api/suggestions/${id}/dismiss`, { context });
+      await axios.post(`/api/proactive/suggestions/${id}/dismiss`, { context });
       setSuggestions(prev =>
         prev.map(s => s.id === id ? { ...s, status: 'dismissed' } : s)
       );
@@ -126,7 +126,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleToggleRoutine = async (id: string, enabled: boolean) => {
     try {
-      await axios.patch(`/api/routines/${id}`, { context, enabled });
+      await axios.patch(`/api/proactive/routines/${id}`, { context, enabled });
       setRoutines(prev =>
         prev.map(r => r.id === id ? { ...r, enabled } : r)
       );
@@ -139,7 +139,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   const handleSaveSettings = async () => {
     try {
-      await axios.put(`/api/settings`, { ...settings, context });
+      await axios.put(`/api/proactive/settings`, { ...settings, context });
       showToast('Einstellungen gespeichert!', 'success');
     } catch (err) {
       logError('ProactiveDashboard:saveSettings', err);
@@ -179,7 +179,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
       <div className="proactive-dashboard neuro-page-enter">
         <div className="loading-state neuro-loading-contextual">
           <div className="neuro-loading-spinner" />
-          <p className="neuro-loading-message">Lade AI-Vorschlage...</p>
+          <p className="neuro-loading-message">Lade AI-Vorschläge...</p>
           <p className="neuro-loading-submessage">Muster werden analysiert</p>
         </div>
       </div>
@@ -197,7 +197,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
         </div>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? 'Persönlich' : 'Arbeit'}
+          {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] || context}
         </span>
       </div>
 
@@ -206,7 +206,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
           className={`tab-btn neuro-hover-lift ${activeTab === 'suggestions' ? 'active' : ''}`}
           onClick={() => setActiveTab('suggestions')}
         >
-          Vorschlage
+          Vorschläge
           {pendingSuggestions.length > 0 && (
             <span className="badge">{pendingSuggestions.length}</span>
           )}
@@ -251,9 +251,9 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
           {pendingSuggestions.length === 0 ? (
             <div className="empty-state neuro-empty-state neuro-stagger-item">
               <span className="empty-icon neuro-empty-icon neuro-breathing">✨</span>
-              <h3 className="neuro-empty-title">Keine neuen Vorschlage</h3>
-              <p className="neuro-empty-description">Die AI analysiert deine Aktivitaten und schlagt relevante Aktionen vor.</p>
-              <p className="neuro-empty-encouragement">Neue Vorschlage kommen bald!</p>
+              <h3 className="neuro-empty-title">Keine neuen Vorschläge</h3>
+              <p className="neuro-empty-description">Die AI analysiert deine Aktivitäten und schlägt relevante Aktionen vor.</p>
+              <p className="neuro-empty-encouragement">Neue Vorschläge kommen bald!</p>
             </div>
           ) : (
             <div className="suggestions-list neuro-flow-list">
@@ -336,8 +336,8 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
             <h3>Allgemein</h3>
             <div className="setting-item neuro-hover-lift">
               <div className="setting-info">
-                <span className="setting-label">Proaktive Vorschlage</span>
-                <span className="setting-desc">AI analysiert und schlagt Aktionen vor</span>
+                <span className="setting-label">Proaktive Vorschläge</span>
+                <span className="setting-desc">AI analysiert und schlägt Aktionen vor</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -351,7 +351,7 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
             <div className="setting-item neuro-hover-lift">
               <div className="setting-info">
                 <span className="setting-label">Benachrichtigungen</span>
-                <span className="setting-desc">Push-Benachrichtigungen fur neue Vorschlage</span>
+                <span className="setting-desc">Push-Benachrichtigungen für neue Vorschläge</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -379,12 +379,12 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
           </div>
 
           <div className="settings-section liquid-glass neuro-stagger-item">
-            <h3>Vorschlags-Haufigkeit</h3>
+            <h3>Vorschlags-Häufigkeit</h3>
             <div className="frequency-options neuro-flow-list">
               {[
-                { id: 'low', label: 'Wenig', desc: 'Nur wichtige Vorschlage' },
+                { id: 'low', label: 'Wenig', desc: 'Nur wichtige Vorschläge' },
                 { id: 'medium', label: 'Mittel', desc: 'Ausgewogene Menge' },
-                { id: 'high', label: 'Viel', desc: 'Alle moglichen Vorschlage' },
+                { id: 'high', label: 'Viel', desc: 'Alle möglichen Vorschläge' },
               ].map(option => (
                 <button
                   key={option.id}

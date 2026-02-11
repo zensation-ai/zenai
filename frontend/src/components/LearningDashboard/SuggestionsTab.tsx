@@ -12,8 +12,8 @@ export function SuggestionsTab({ suggestions, onRespondToSuggestion }: Suggestio
       {suggestions.length === 0 ? (
         <div className="empty-state neuro-empty-state">
           <span className="neuro-empty-icon">💡</span>
-          <h3 className="neuro-empty-title">Keine aktiven Vorschlage</h3>
-          <p className="neuro-empty-description">Die KI analysiert deine Aktivitaten und macht bald Vorschlage.</p>
+          <h3 className="neuro-empty-title">Keine aktiven Vorschläge</h3>
+          <p className="neuro-empty-description">Die KI analysiert deine Aktivitäten und macht bald Vorschläge.</p>
         </div>
       ) : (
         <div className="suggestions-list neuro-flow-list">

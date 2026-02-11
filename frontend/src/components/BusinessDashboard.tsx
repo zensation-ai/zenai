@@ -1,7 +1,7 @@
 /**
  * BusinessDashboard - AI Business Manager
  *
- * Tab-basiertes Dashboard fuer Business Intelligence:
+ * Tab-basiertes Dashboard für Business Intelligence:
  * - Overview: KPI-Cards mit Sparklines
  * - Revenue: Stripe MRR, Subscriptions, Payments
  * - Traffic: GA4 Users, Sessions, Sources
@@ -37,7 +37,7 @@ interface BusinessDashboardProps {
 }
 
 const TABS: { id: BusinessTab; label: string; icon: string; description: string }[] = [
-  { id: 'overview', label: 'Uebersicht', icon: '📊', description: 'KPI-Dashboard' },
+  { id: 'overview', label: 'Übersicht', icon: '📊', description: 'KPI-Dashboard' },
   { id: 'revenue', label: 'Revenue', icon: '💰', description: 'Umsatz und Subscriptions' },
   { id: 'traffic', label: 'Traffic', icon: '🌐', description: 'Besucher und Analytics' },
   { id: 'seo', label: 'SEO', icon: '🔍', description: 'Suchmaschinen-Performance' },
@@ -125,9 +125,9 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
       <PageHeader
         title="Business Manager"
         icon="💼"
-        subtitle="AI-gesteuerte Geschaeftsanalysen"
+        subtitle="AI-gesteuerte Geschäftsanalysen"
         onBack={onBack}
-        backLabel="Zurueck"
+        backLabel="Zurück"
       />
 
       <nav className="hub-tabs" role="tablist" aria-label="Business Navigation">

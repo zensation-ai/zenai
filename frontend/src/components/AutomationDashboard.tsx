@@ -297,7 +297,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
           </div>
           <div className="stat-item highlight liquid-glass neuro-hover-lift neuro-pulse-interactive">
             <span className="stat-value">{stats.pending_suggestions}</span>
-            <span className="stat-label">Vorschlage</span>
+            <span className="stat-label">Vorschläge</span>
           </div>
         </div>
       )}
@@ -317,7 +317,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
           type="button"
           className={`tab ${activeTab === 'suggestions' ? 'active' : ''}`}
           onClick={() => setActiveTab('suggestions')}
-          aria-label="Vorschlage anzeigen"
+          aria-label="Vorschläge anzeigen"
           aria-current={activeTab === 'suggestions' ? 'page' : undefined}
         >
           Vorschläge ({suggestions.length})
@@ -341,7 +341,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
               <div className="empty-state neuro-empty-state">
                 <span className="neuro-empty-icon">🤖</span>
                 <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.personalization.title}</h3>
-                <p className="neuro-empty-description">Schau dir die Vorschlage an - das System erkennt Muster in deiner Nutzung.</p>
+                <p className="neuro-empty-description">Schau dir die Vorschläge an - das System erkennt Muster in deiner Nutzung.</p>
                 <p className="neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.personalization.encouragement}</p>
               </div>
             ) : (
@@ -447,24 +447,24 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
           <div className="suggestions-section">
             <div className="suggestions-header liquid-glass">
               <p className="suggestions-intro">
-                Basierend auf deinen Nutzungsmustern schlagt die KI folgende Automationen vor:
+                Basierend auf deinen Nutzungsmustern schlägt die KI folgende Automationen vor:
               </p>
               <button
                 type="button"
                 className="generate-btn neuro-button"
                 onClick={handleGenerateSuggestions}
                 disabled={generating}
-                aria-label="Neue Automations-Vorschlage generieren"
+                aria-label="Neue Automations-Vorschläge generieren"
               >
-                {generating ? 'Analysiere...' : '🔄 Neue Vorschlage generieren'}
+                {generating ? 'Analysiere...' : '🔄 Neue Vorschläge generieren'}
               </button>
             </div>
 
             {suggestions.length === 0 ? (
               <div className="empty-state neuro-empty-state">
                 <span className="neuro-empty-icon">✨</span>
-                <h3 className="neuro-empty-title">Keine offenen Vorschlage</h3>
-                <p className="neuro-empty-description">Das System analysiert kontinuierlich deine Nutzung und schlagt passende Automationen vor.</p>
+                <h3 className="neuro-empty-title">Keine offenen Vorschläge</h3>
+                <p className="neuro-empty-description">Das System analysiert kontinuierlich deine Nutzung und schlägt passende Automationen vor.</p>
               </div>
             ) : (
               <div className="suggestions-list neuro-flow-list">

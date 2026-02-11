@@ -20,7 +20,7 @@ export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearc
         <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
           <div className="stat-icon">💡</div>
           <div className="stat-value">{data.suggestions.active.length}</div>
-          <div className="stat-label">Offene Vorschlage</div>
+          <div className="stat-label">Offene Vorschläge</div>
         </div>
         <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
           <div className="stat-icon">🔍</div>

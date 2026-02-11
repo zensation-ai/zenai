@@ -263,7 +263,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
           type="button"
           className={`tab-button ${activeTab === 'suggestions' ? 'active' : ''}`}
           onClick={() => setActiveTab('suggestions')}
-          aria-label="Vorschlage anzeigen"
+          aria-label="Vorschläge anzeigen"
           aria-current={activeTab === 'suggestions' ? 'page' : undefined}
         >
           Vorschläge ({data.suggestions.active.length})

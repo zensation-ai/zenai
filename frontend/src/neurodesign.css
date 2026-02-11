@@ -331,7 +331,7 @@
     var(--neuro-anticipation) 100%
   );
   transform-origin: left;
-  z-index: 9999;
+  z-index: var(--z-toast);
   transition: transform 0.1s linear;
   box-shadow: 0 0 10px var(--neuro-reward-glow);
 }
@@ -406,7 +406,7 @@
   transition:
     opacity var(--neuro-timing-quick) ease,
     transform var(--neuro-timing-quick) ease;
-  z-index: 10001;
+  z-index: var(--z-command-palette);
 }
 
 .neuro-anticipate::after {
@@ -420,7 +420,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--neuro-timing-quick) ease;
-  z-index: 10001;
+  z-index: var(--z-command-palette);
 }
 
 .neuro-anticipate:hover::before,
@@ -856,7 +856,7 @@
   width: 200px;
   height: 200px;
   pointer-events: none;
-  z-index: 9999;
+  z-index: var(--z-toast);
 }
 
 .neuro-celebration-burst {
@@ -1974,7 +1974,7 @@
   top: 50%;
   left: 50%;
   pointer-events: none;
-  z-index: 9999;
+  z-index: var(--z-toast);
 }
 
 .neuro-confetti-piece {

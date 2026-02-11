@@ -26,7 +26,7 @@ const ArtifactPanel = lazy(() => import('../ArtifactPanel').then(m => ({ default
 // Lazy-load VoiceChat overlay
 const VoiceChatOverlay = lazy(() => import('../VoiceChat').then(m => ({ default: m.VoiceChat })));
 
-export function GeneralChat({ context, isCompact = false, assistantMode = false, fullPage = false }: GeneralChatProps) {
+export function GeneralChat({ context, isCompact = false, assistantMode = false, fullPage = false, initialSessionId, onSessionChange }: GeneralChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -55,7 +55,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   // AbortController ref to prevent memory leaks on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Load last session on mount
+  // Load session on mount, context change, or initialSessionId change
   useEffect(() => {
     // Abort any previous request
     abortControllerRef.current?.abort();
@@ -67,7 +67,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     return () => {
       abortControllerRef.current?.abort();
     };
-  }, [context]);
+  }, [context, initialSessionId]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -95,6 +95,13 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const loadLastSession = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
+
+      // If initialSessionId is provided, load that session directly
+      if (initialSessionId) {
+        await loadSession(initialSessionId, signal);
+        return;
+      }
+
       // Get list of sessions for current context
       const typeFilter = assistantMode ? '&type=assistant' : '';
       const res = await axios.get(`/api/chat/sessions?context=${context}&limit=1${typeFilter}`, { signal });
@@ -121,6 +128,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       if (session) {
         setSessionId(session.id);
         setMessages(session.messages || []);
+        onSessionChange?.(session.id);
       }
     } catch (err) {
       // Don't update state if request was aborted
@@ -138,6 +146,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       if (session) {
         setSessionId(session.id);
         setMessages([]);
+        onSessionChange?.(session.id);
         return session.id;
       }
       return null;
@@ -307,7 +316,6 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                   } catch (parseError) {
                     // Skip malformed JSON
                     if (line.slice(6).trim() !== '') {
-                      console.warn('Failed to parse SSE data:', line);
                     }
                   }
                 }
@@ -488,44 +496,105 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         );
       }
 
-      // Process inline formatting safely using React elements
-      const renderInlineFormatting = (text: string): React.ReactNode[] => {
+      // Process block-level formatting (headings, lists) then inline
+      const renderBlockFormatting = (text: string): React.ReactNode[] => {
+        const lines = text.split('\n');
         const result: React.ReactNode[] = [];
-        // Combined regex for bold, italic, inline code
-        const inlineRegex = /(\*\*.*?\*\*|\*.*?\*|`[^`]+`|\n)/g;
+        let keyIndex = 0;
+        let listItems: string[] = [];
+        let listType: 'ul' | 'ol' | null = null;
+
+        const flushList = () => {
+          if (listItems.length > 0 && listType) {
+            const Tag = listType;
+            result.push(
+              <Tag key={`list-${keyIndex++}`} className="chat-list">
+                {listItems.map((item, li) => (
+                  <li key={li}>{renderInline(item)}</li>
+                ))}
+              </Tag>
+            );
+            listItems = [];
+            listType = null;
+          }
+        };
+
+        for (const line of lines) {
+          // Headings
+          const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
+          if (headingMatch) {
+            flushList();
+            const level = headingMatch[1].length;
+            const Tag = `h${Math.min(level + 2, 6)}` as keyof JSX.IntrinsicElements;
+            result.push(<Tag key={`h-${keyIndex++}`} className="chat-heading">{renderInline(headingMatch[2])}</Tag>);
+            continue;
+          }
+
+          // Unordered list
+          const ulMatch = line.match(/^[\s]*[-*+]\s+(.+)$/);
+          if (ulMatch) {
+            if (listType === 'ol') flushList();
+            listType = 'ul';
+            listItems.push(ulMatch[1]);
+            continue;
+          }
+
+          // Ordered list
+          const olMatch = line.match(/^[\s]*\d+[.)]\s+(.+)$/);
+          if (olMatch) {
+            if (listType === 'ul') flushList();
+            listType = 'ol';
+            listItems.push(olMatch[1]);
+            continue;
+          }
+
+          // Regular line
+          flushList();
+          if (line.trim() === '') {
+            result.push(<br key={`br-${keyIndex++}`} />);
+          } else {
+            result.push(<span key={`p-${keyIndex++}`}>{renderInline(line)}<br /></span>);
+          }
+        }
+        flushList();
+        return result;
+      };
+
+      // Inline formatting: bold, italic, inline code, links
+      const renderInline = (text: string): React.ReactNode[] => {
+        const result: React.ReactNode[] = [];
+        const inlineRegex = /(\*\*.*?\*\*|\*.*?\*|`[^`]+`|\[([^\]]+)\]\(([^)]+)\))/g;
         let lastIndex = 0;
         let match;
-        let keyIndex = 0;
+        let ki = 0;
 
         while ((match = inlineRegex.exec(text)) !== null) {
-          // Add text before match
           if (match.index > lastIndex) {
             result.push(text.slice(lastIndex, match.index));
           }
 
           const matched = match[0];
-          if (matched === '\n') {
-            result.push(<br key={`br-${keyIndex++}`} />);
+          if (match[2] && match[3]) {
+            // Link: [text](url)
+            result.push(<a key={`a-${ki++}`} href={match[3]} target="_blank" rel="noopener noreferrer" className="chat-link">{match[2]}</a>);
           } else if (matched.startsWith('**') && matched.endsWith('**')) {
-            result.push(<strong key={`strong-${keyIndex++}`}>{matched.slice(2, -2)}</strong>);
+            result.push(<strong key={`b-${ki++}`}>{matched.slice(2, -2)}</strong>);
           } else if (matched.startsWith('*') && matched.endsWith('*')) {
-            result.push(<em key={`em-${keyIndex++}`}>{matched.slice(1, -1)}</em>);
+            result.push(<em key={`i-${ki++}`}>{matched.slice(1, -1)}</em>);
           } else if (matched.startsWith('`') && matched.endsWith('`')) {
-            result.push(<code key={`code-${keyIndex++}`} className="inline-code">{matched.slice(1, -1)}</code>);
+            result.push(<code key={`c-${ki++}`} className="inline-code">{matched.slice(1, -1)}</code>);
           }
 
           lastIndex = match.index + matched.length;
         }
 
-        // Add remaining text
         if (lastIndex < text.length) {
           result.push(text.slice(lastIndex));
         }
-
         return result;
       };
 
-      return <span key={i}>{renderInlineFormatting(part)}</span>;
+      return <span key={i}>{renderBlockFormatting(part)}</span>;
     });
   };
 

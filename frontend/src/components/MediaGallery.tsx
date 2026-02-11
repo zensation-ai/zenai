@@ -39,7 +39,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
   const loadMedia = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/all-media');
+      const res = await axios.get(`/api/${context}/media`);
       setMedia(res.data.media || []);
     } catch (err) {
       logError('MediaGallery:loadMedia', err);

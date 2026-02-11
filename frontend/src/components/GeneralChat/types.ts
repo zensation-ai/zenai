@@ -28,4 +28,8 @@ export interface GeneralChatProps {
   isCompact?: boolean;
   assistantMode?: boolean;
   fullPage?: boolean;
+  /** Load a specific session by ID (from session sidebar) */
+  initialSessionId?: string | null;
+  /** Callback when session changes (new session created or loaded) */
+  onSessionChange?: (sessionId: string | null) => void;
 }

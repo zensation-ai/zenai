@@ -387,10 +387,10 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
           <button
             className="back-button neuro-hover-lift neuro-anticipate"
             onClick={onBack}
-            data-anticipate="Zurueck zur Uebersicht"
-            aria-label="Zurueck zur Hauptseite"
+            data-anticipate="Zurück zur Übersicht"
+            aria-label="Zurück zur Hauptseite"
           >
-            ← Zurueck
+            ← Zurück
           </button>
           <div className="header-title">
             <h1 className="neuro-greeting-adaptive">

@@ -4,9 +4,9 @@
  * Tabs:
  * - Profil: Benutzerprofil und Business-Profil
  * - Allgemein: Erscheinungsbild, Sprache, Startseite
- * - KI: Modell-Praeferenzen, Antwort-Stil, Tool-Einstellungen
- * - Datenschutz: Daten-Kontrolle, Loeschen, Export-Hinweis
- * - Automationen: Workflows und AI-Vorschlaege
+ * - KI: Modell-Präferenzen, Antwort-Stil, Tool-Einstellungen
+ * - Datenschutz: Daten-Kontrolle, Löschen, Export-Hinweis
+ * - Automationen: Workflows und AI-Vorschläge
  * - Integrationen: OAuth, API Keys, Webhooks
  * - Daten: Export + Sync kombiniert
  */
@@ -38,8 +38,8 @@ const TABS: { id: SettingsTab; label: string; icon: string; description: string 
   { id: 'profile', label: 'Profil', icon: '👤', description: 'Benutzerprofil und Business-Daten' },
   { id: 'general', label: 'Allgemein', icon: '⚙️', description: 'Erscheinungsbild und Verhalten' },
   { id: 'ai', label: 'KI', icon: '🧠', description: 'KI-Modell und Antwort-Stil' },
-  { id: 'privacy', label: 'Datenschutz', icon: '🔒', description: 'Daten-Kontrolle und Privatsphaere' },
-  { id: 'automations', label: 'Automationen', icon: '⚡', description: 'Workflows und AI-Vorschlaege' },
+  { id: 'privacy', label: 'Datenschutz', icon: '🔒', description: 'Daten-Kontrolle und Privatsphäre' },
+  { id: 'automations', label: 'Automationen', icon: '⚡', description: 'Workflows und AI-Vorschläge' },
   { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
   { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
@@ -189,7 +189,7 @@ export const SettingsDashboard = memo(({
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Aktives Modell</span>
-                  <span className="settings-item-desc">Primaeres Sprachmodell fuer Antworten</span>
+                  <span className="settings-item-desc">Primäres Sprachmodell für Antworten</span>
                 </div>
                 <SettingsSelect
                   value={settings.aiModel}
@@ -215,13 +215,13 @@ export const SettingsDashboard = memo(({
               <h3 className="settings-group-title">Verhalten</h3>
               <div className="settings-item">
                 <div className="settings-item-info">
-                  <span className="settings-item-label">Proaktive Vorschlaege</span>
-                  <span className="settings-item-desc">KI schlaegt eigenstaendig Ideen vor</span>
+                  <span className="settings-item-label">Proaktive Vorschläge</span>
+                  <span className="settings-item-desc">KI schlägt eigenständig Ideen vor</span>
                 </div>
                 <ToggleSwitch
                   checked={settings.proactiveSuggestions}
                   onChange={(val) => updateSetting('proactiveSuggestions', val)}
-                  label="Proaktive Vorschlaege"
+                  label="Proaktive Vorschläge"
                 />
               </div>
               <div className="settings-item">
@@ -299,7 +299,7 @@ export const SettingsDashboard = memo(({
         icon="⚙️"
         subtitle="App-Konfiguration und Datenschutz"
         onBack={onBack}
-        backLabel="Zurueck"
+        backLabel="Zurück"
         onNavigate={(page) => onNavigate(page)}
       />
 

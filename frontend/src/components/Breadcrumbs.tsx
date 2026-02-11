@@ -98,7 +98,7 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   'proactive': [
     ROOT,
     { label: 'Werkstatt', page: 'workshop', icon: '🧪' },
-    { label: 'Vorschlaege', page: 'proactive', icon: '✨' },
+    { label: 'Vorschläge', page: 'proactive', icon: '✨' },
   ],
   'evolution': [
     ROOT,

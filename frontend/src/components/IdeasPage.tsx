@@ -320,6 +320,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
             <SmartIdeaList
               ideas={archivedIdeas}
               viewMode={viewMode}
+              onIdeaClick={onIdeaClick}
               onDelete={onDeleteIdea}
               onRestore={onRestore}
               isArchived={true}

@@ -228,7 +228,7 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
           <span className={`context-indicator ${context}`}>
-            {context === 'personal' ? 'Persönlich' : 'Arbeit'}
+            {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] || context}
           </span>
           <button
             type="button"

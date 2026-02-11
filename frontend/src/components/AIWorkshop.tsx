@@ -35,9 +35,9 @@ interface AIWorkshopProps {
 }
 
 const TABS: { id: WorkshopTab; label: string; icon: string; description: string }[] = [
-  { id: 'proactive', label: 'Vorschlaege', icon: '✨', description: 'KI-generierte Ideen und Routinen' },
+  { id: 'proactive', label: 'Vorschläge', icon: '✨', description: 'KI-generierte Ideen und Routinen' },
   { id: 'evolution', label: 'Entwicklung', icon: '🌱', description: 'Wie deine Gedanken sich entwickeln' },
-  { id: 'agent-teams', label: 'Agenten', icon: '👥', description: 'Multi-Agenten fuer komplexe Aufgaben' },
+  { id: 'agent-teams', label: 'Agenten', icon: '👥', description: 'Multi-Agenten für komplexe Aufgaben' },
 ];
 
 const TabLoader = () => (
@@ -106,7 +106,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
       <PageHeader
         title="Werkstatt"
         icon="🧪"
-        subtitle="KI-Tools die fuer dich arbeiten"
+        subtitle="KI-Tools die für dich arbeiten"
         onBack={onBack}
         backLabel="Zurück"
       />

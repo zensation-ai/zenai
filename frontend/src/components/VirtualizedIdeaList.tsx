@@ -121,7 +121,8 @@ function VirtualizedIdeaListComponent({
       ref={parentRef}
       className={`virtualized-list-container virtualized-${viewMode}`}
       style={{
-        height: '600px', // Fixed height for virtualization container
+        height: 'calc(100vh - 300px)',
+        minHeight: '400px',
         overflow: 'auto',
       }}
     >

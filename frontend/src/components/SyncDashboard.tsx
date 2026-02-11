@@ -207,7 +207,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
           <span className={`context-indicator ${context}`}>
-            {context === 'personal' ? 'Persönlich' : 'Arbeit'}
+            {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] || context}
           </span>
         </div>
       )}

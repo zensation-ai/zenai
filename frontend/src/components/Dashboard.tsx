@@ -86,7 +86,7 @@ const QUICK_START_ITEMS: QuickStartItem[] = [
   { icon: '💬', label: 'Chat starten', description: 'KI-Konversation', page: 'chat', colorClass: 'qs-chat' },
   { icon: '📚', label: 'Wissensbasis', description: 'Dokumente durchsuchen', page: 'documents', colorClass: 'qs-documents' },
   { icon: '📊', label: 'Insights', description: 'Trends entdecken', page: 'insights', colorClass: 'qs-insights' },
-  { icon: '🧪', label: 'Werkstatt', description: 'KI-Vorschlaege', page: 'workshop', colorClass: 'qs-workshop' },
+  { icon: '🧪', label: 'Werkstatt', description: 'KI-Vorschläge', page: 'workshop', colorClass: 'qs-workshop' },
   { icon: '🤖', label: 'Meine KI', description: 'KI personalisieren', page: 'my-ai', colorClass: 'qs-myai' },
 ];
 
