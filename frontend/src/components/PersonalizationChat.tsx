@@ -44,8 +44,9 @@ interface UserSummary {
 }
 
 interface PersonalizationChatProps {
-  onBack: () => void;
+  onBack?: () => void;
   context: string;
+  embedded?: boolean;
 }
 
 const categoryLabels: Record<string, { label: string; icon: string }> = {
@@ -59,7 +60,7 @@ const categoryLabels: Record<string, { label: string; icon: string }> = {
   skills: { label: 'Fähigkeiten', icon: '🛠️' },
 };
 
-export function PersonalizationChat({ onBack, context }: PersonalizationChatProps) {
+export function PersonalizationChat({ onBack, context, embedded }: PersonalizationChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [facts, setFacts] = useState<LearnedFact[]>([]);
   const [progress, setProgress] = useState<LearningProgress[]>([]);
@@ -214,9 +215,11 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
     return '#9ca3af';
   };
 
+  const rootClass = `personalization-chat neuro-page-enter${embedded ? ' personalization-embedded' : ''}`;
+
   if (loading) {
     return (
-      <div className="personalization-chat neuro-page-enter">
+      <div className={rootClass}>
         <div className="neuro-loading-contextual">
           <div className="neuro-loading-spinner" />
           <p className="neuro-loading-message">Lade Personalisierung...</p>
@@ -227,16 +230,18 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
   }
 
   return (
-    <div className="personalization-chat neuro-page-enter">
-      <div className="chat-header">
-        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zurück
-        </button>
-        <h1>{AI_AVATAR.emoji} {AI_PERSONALITY.name} lernt dich kennen</h1>
-        <span className={`context-indicator ${context}`}>
-          {getContextLabel(context)}
-        </span>
-      </div>
+    <div className={rootClass}>
+      {!embedded && (
+        <div className="chat-header">
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+            ← Zurück
+          </button>
+          <h1>{AI_AVATAR.emoji} {AI_PERSONALITY.name} lernt dich kennen</h1>
+          <span className={`context-indicator ${context}`}>
+            {getContextLabel(context)}
+          </span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="chat-tabs">
@@ -287,45 +292,66 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
             </div>
           )}
 
+          {/* Empty state when no messages */}
+          {messages.length === 0 && !sending && (
+            <div className="chat-empty-state neuro-empty-state">
+              <div className="empty-avatar neuro-breathing">{AI_AVATAR.emoji}</div>
+              <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.personalization.title}</h3>
+              <p className="neuro-empty-description">{EMPTY_STATE_MESSAGES.personalization.description}</p>
+              <div className="chat-empty-categories">
+                {Object.entries(categoryLabels).map(([key, { label, icon }]) => (
+                  <span key={key} className="chat-empty-category-tag">
+                    {icon} {label}
+                  </span>
+                ))}
+              </div>
+              <span className="empty-encouragement neuro-motivational">
+                {EMPTY_STATE_MESSAGES.personalization.encouragement}
+              </span>
+            </div>
+          )}
+
           {/* Messages */}
-          <div className="messages-container neuro-flow-list">
-            {messages.map(message => (
-              <div
-                key={message.id}
-                className={`message ${message.role} neuro-human-fade-in`}
-              >
-                <div className="message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}>
-                  {message.role === 'assistant' ? AI_AVATAR.emoji : '👤'}
-                </div>
-                <div className="message-content">
-                  <div className="message-header">
-                    <span className="message-name">
-                      {message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}
-                    </span>
-                    <span className="message-time">{formatTime(message.timestamp)}</span>
+          {(messages.length > 0 || sending) && (
+            <div className="messages-container neuro-flow-list">
+              {messages.map(message => (
+                <div
+                  key={message.id}
+                  className={`message ${message.role} neuro-human-fade-in`}
+                >
+                  <div className="message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}>
+                    {message.role === 'assistant' ? AI_AVATAR.emoji : '👤'}
                   </div>
-                  <p>{message.content}</p>
-                </div>
-              </div>
-            ))}
-            {sending && (
-              <div className="message assistant neuro-human-fade-in">
-                <div className="message-avatar" title={AI_PERSONALITY.name}>{AI_AVATAR.thinkingEmoji}</div>
-                <div className="message-content">
-                  <div className="message-header">
-                    <span className="message-name">{AI_PERSONALITY.name}</span>
-                    <span className="message-status neuro-motivational">{getRandomMessage('learning')}</span>
-                  </div>
-                  <div className="neuro-typing">
-                    <span className="neuro-typing-dot"></span>
-                    <span className="neuro-typing-dot"></span>
-                    <span className="neuro-typing-dot"></span>
+                  <div className="message-content">
+                    <div className="message-header">
+                      <span className="message-name">
+                        {message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}
+                      </span>
+                      <span className="message-time">{formatTime(message.timestamp)}</span>
+                    </div>
+                    <p>{message.content}</p>
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              ))}
+              {sending && (
+                <div className="message assistant neuro-human-fade-in">
+                  <div className="message-avatar" title={AI_PERSONALITY.name}>{AI_AVATAR.thinkingEmoji}</div>
+                  <div className="message-content">
+                    <div className="message-header">
+                      <span className="message-name">{AI_PERSONALITY.name}</span>
+                      <span className="message-status neuro-motivational">{getRandomMessage('learning')}</span>
+                    </div>
+                    <div className="neuro-typing">
+                      <span className="neuro-typing-dot"></span>
+                      <span className="neuro-typing-dot"></span>
+                      <span className="neuro-typing-dot"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
 
           {/* Input */}
           <div className="chat-input-container">

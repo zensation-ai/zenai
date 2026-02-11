@@ -58,7 +58,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
             <div className="hub-tab-content">
               <PersonalizationChat
                 context={context}
-                onBack={() => handleTabChange('personalize')}
+                embedded
               />
             </div>
           </Suspense>

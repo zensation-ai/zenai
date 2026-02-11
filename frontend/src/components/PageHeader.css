@@ -63,7 +63,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--dark-text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -140,7 +140,7 @@
 
 .page-subtitle {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
   margin: 0.2rem 0 0;
   white-space: nowrap;
   overflow: hidden;

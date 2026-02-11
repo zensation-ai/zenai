@@ -168,8 +168,14 @@ textarea::placeholder {
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-item-active-bg: linear-gradient(135deg, rgba(255, 107, 53, 0.18) 0%, rgba(255, 90, 42, 0.10) 100%);
   --sidebar-item-hover-bg: rgba(255, 255, 255, 0.06);
-  --sidebar-section-label: rgba(255, 255, 255, 0.55);
+  --sidebar-section-label: var(--dark-text-secondary);
   --topbar-height: 52px;
+
+  /* Dark-Background Text (Sidebar, TopBar, PageHeader, Breadcrumbs) - WCAG AA */
+  --dark-text: rgba(255, 255, 255, 0.95);
+  --dark-text-secondary: rgba(255, 255, 255, 0.75);
+  --dark-text-muted: rgba(255, 255, 255, 0.55);
+  --dark-text-icon: rgba(255, 255, 255, 0.65);
   --bottombar-height: 64px;
   --bottombar-bg: rgba(12, 28, 36, 0.95);
   --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);

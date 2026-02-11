@@ -110,7 +110,7 @@
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm, 8px);
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--dark-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   margin-left: auto;
@@ -118,7 +118,7 @@
 
 .sidebar-collapse-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--dark-text);
 }
 
 .sidebar.collapsed .sidebar-header {
@@ -228,7 +228,7 @@
 }
 
 .sidebar-section-header:hover {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--dark-text);
 }
 
 .sidebar-section-header:focus-visible {
@@ -237,7 +237,7 @@
 }
 
 .sidebar-section.has-active .sidebar-section-header {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dark-text-secondary);
 }
 
 .sidebar-section-chevron {
@@ -283,7 +283,7 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--dark-text);
   font-size: 0.85rem;
   font-weight: 450;
   cursor: pointer;
@@ -299,7 +299,7 @@
 
 .sidebar-item:hover {
   background: var(--sidebar-item-hover-bg);
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--dark-text);
 }
 
 .sidebar-item.active {
@@ -349,7 +349,7 @@
 .sidebar-item-description {
   font-size: 0.68rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dark-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -357,11 +357,11 @@
 }
 
 .sidebar-item:hover .sidebar-item-description {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--dark-text-secondary);
 }
 
 .sidebar-item.active .sidebar-item-description {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dark-text-secondary);
 }
 
 .sidebar-item-badge {
@@ -413,7 +413,7 @@
   background: transparent;
   border: none;
   border-radius: var(--radius-xs, 4px);
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dark-text-muted);
   cursor: pointer;
   font-size: 0.7rem;
   opacity: 0;
@@ -489,7 +489,7 @@
 
 .sidebar-status-text {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dark-text-secondary);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -519,7 +519,7 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--dark-text-secondary);
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -529,11 +529,11 @@
 
 .sidebar-footer-item:hover {
   background: var(--sidebar-item-hover-bg);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--dark-text);
 }
 
 .sidebar-footer-item.active {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--dark-text);
   background: var(--sidebar-item-active-bg);
 }
 
