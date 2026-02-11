@@ -101,7 +101,7 @@ class ReportGenerator {
   }
 
   private aggregateMetrics(snapshots: Array<Record<string, unknown>>): Record<string, unknown> {
-    if (snapshots.length === 0) return {};
+    if (snapshots.length === 0) { return {}; }
 
     const first = snapshots[0];
     const last = snapshots[snapshots.length - 1];
@@ -154,7 +154,7 @@ Antworte im JSON-Format:
 
       const text = response.content[0].type === 'text' ? response.content[0].text : '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) return { summary: '', recommendations: [] };
+      if (!jsonMatch) { return { summary: '', recommendations: [] }; }
 
       const parsed = JSON.parse(jsonMatch[0]);
       return {

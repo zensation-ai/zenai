@@ -113,7 +113,7 @@ class StripeConnector implements BusinessConnector {
     for (const sub of subscriptions) {
       for (const item of sub.items.data) {
         const price = item.price;
-        if (!price.unit_amount) continue;
+        if (!price.unit_amount) { continue; }
 
         const amount = price.unit_amount / 100;
         const quantity = item.quantity ?? 1;

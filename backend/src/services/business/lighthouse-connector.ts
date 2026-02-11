@@ -43,7 +43,7 @@ class LighthouseConnector implements BusinessConnector {
 
   async collectMetrics(): Promise<Record<string, unknown>> {
     const urls = await this.getConfiguredUrls();
-    if (urls.length === 0) return {};
+    if (urls.length === 0) { return {}; }
 
     const scores = await this.getScores(urls[0]);
     return scores as unknown as Record<string, unknown>;
@@ -121,7 +121,7 @@ class LighthouseConnector implements BusinessConnector {
       ? await pool.query(query, [url])
       : await pool.query(query);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) { return null; }
 
     const row = result.rows[0];
     return {

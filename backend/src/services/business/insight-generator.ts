@@ -67,7 +67,7 @@ class InsightGenerator {
     const currMRR = (current.mrr as number) ?? 0;
     const prevMRR = (previous.mrr as number) ?? 0;
 
-    if (prevMRR === 0) return;
+    if (prevMRR === 0) { return; }
 
     const change = (currMRR - prevMRR) / prevMRR;
 
@@ -98,7 +98,7 @@ class InsightGenerator {
     const currUsers = (current.users as number) ?? 0;
     const prevUsers = (previous.users as number) ?? 0;
 
-    if (prevUsers === 0) return;
+    if (prevUsers === 0) { return; }
 
     const change = (currUsers - prevUsers) / prevUsers;
 
@@ -148,7 +148,7 @@ class InsightGenerator {
   }
 
   private async generateAIRecommendations(current: Record<string, unknown>, previous: Record<string, unknown>): Promise<void> {
-    if (!this.anthropic) return;
+    if (!this.anthropic) { return; }
 
     try {
       const prompt = `Analysiere folgende Business-Metriken und gib 2-3 konkrete, actionable Empfehlungen auf Deutsch:
@@ -167,7 +167,7 @@ Antworte im JSON-Format: [{"title": "...", "description": "...", "priority": "hi
 
       const text = response.content[0].type === 'text' ? response.content[0].text : '';
       const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) return;
+      if (!jsonMatch) { return; }
 
       const recommendations = JSON.parse(jsonMatch[0]) as Array<{ title: string; description: string; priority: string }>;
 
@@ -204,7 +204,7 @@ Antworte im JSON-Format: [{"title": "...", "description": "...", "priority": "hi
         LIMIT 1
       `, [insight.title]);
 
-      if (existing.rows.length > 0) return;
+      if (existing.rows.length > 0) { return; }
 
       await pool.query(`
         INSERT INTO business_insights (insight_type, severity, title, description, data_source, related_metrics, action_items)
