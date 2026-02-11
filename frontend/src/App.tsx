@@ -568,10 +568,6 @@ function App() {
             <AIWorkshop
               context={context}
               onBack={() => navigateToPage('home')}
-              onIdeaCreated={() => {
-                loadIdeas();
-                navigateToPage('ideas');
-              }}
               initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams'}
             />
           </Suspense>
@@ -636,7 +632,6 @@ function App() {
           <Suspense fallback={<PageLoader />}>
             <SettingsDashboard
               context={context}
-              currentPage={currentPage}
               onBack={() => navigateToPage('home')}
               onNavigate={(page) => navigateToPage(page as Page)}
               initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'integrations' | 'data'}

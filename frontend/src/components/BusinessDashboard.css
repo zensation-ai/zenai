@@ -1,83 +1,17 @@
 /**
  * BusinessDashboard Styles
- * AI Business Manager Interface with Tab Navigation
+ *
+ * Shared tab styles come from shared-tabs.css (hub-* classes).
+ * This file contains only Business-specific styles.
  */
 
-.business-dashboard {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--background-gradient);
-}
-
-/* Tab Navigation */
-.business-tabs {
-  display: flex;
-  gap: 0.25rem;
-  padding: 0.5rem 1.5rem;
-  margin: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(20, 30, 42, 0.3);
-}
-
-.business-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.business-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.1rem;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.business-tab:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.business-tab:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
-}
-
-.business-tab.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: var(--shadow-glow);
-}
-
-.business-tab-icon {
-  font-size: 1.1rem;
-}
-
-.business-tab-label {
-  font-weight: 500;
-}
-
-/* Tab Content */
+/* Tab Content (custom padding for business layout) */
 .business-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
   overflow-y: auto;
-}
-
-.business-tab-loader {
-  padding: 1.5rem;
 }
 
 /* KPI Cards Grid */
@@ -352,10 +286,6 @@
 
   .business-kpi-value {
     font-size: 1.4rem;
-  }
-
-  .business-tabs {
-    padding: 0.5rem 1rem;
   }
 
   .business-connector-grid {

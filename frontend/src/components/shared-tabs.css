@@ -1,11 +1,11 @@
 /**
- * Shared Tab Styles
+ * Shared Hub Page Styles
  *
  * Gemeinsame Tab-Navigation und Layout-Styles,
- * verwendet von InsightsDashboard, MyAIPage u.a.
+ * verwendet von InsightsDashboard, MyAIPage, AIWorkshop, BusinessDashboard.
  */
 
-.insights-dashboard {
+.hub-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -13,7 +13,7 @@
 }
 
 /* Tab Navigation */
-.insights-tabs {
+.hub-tabs {
   display: flex;
   gap: 0.25rem;
   padding: 0.5rem 1.5rem;
@@ -25,11 +25,11 @@
   background: rgba(20, 30, 42, 0.3);
 }
 
-.insights-tabs::-webkit-scrollbar {
+.hub-tabs::-webkit-scrollbar {
   display: none;
 }
 
-.insights-tab {
+.hub-tab {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -45,36 +45,36 @@
   font-weight: 500;
 }
 
-.insights-tab:hover {
+.hub-tab:hover {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.85);
 }
 
-.insights-tab:focus-visible {
+.hub-tab:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
 }
 
-.insights-tab.active {
+.hub-tab.active {
   background: var(--primary);
   color: white;
   box-shadow: var(--shadow-glow);
 }
 
-.insights-tab.active:focus-visible {
+.hub-tab.active:focus-visible {
   box-shadow: var(--shadow-glow), 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
 }
 
-.insights-tab-icon {
+.hub-tab-icon {
   font-size: 1.1rem;
 }
 
-.insights-tab-label {
+.hub-tab-label {
   font-weight: 500;
 }
 
 /* Tab Content */
-.insights-content {
+.hub-content {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -82,27 +82,27 @@
   overflow: hidden;
 }
 
-.insights-tab-content {
+.hub-tab-content {
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
 }
 
-.insights-tab-content.insights-tab-fullwidth {
+.hub-tab-content.hub-tab-fullwidth {
   padding: 0;
 }
 
-.insights-tab-content.insights-tab-fullwidth > * {
+.hub-tab-content.hub-tab-fullwidth > * {
   border-radius: 0;
 }
 
-.insights-tab-content.insights-tab-fullheight {
+.hub-tab-content.hub-tab-fullheight {
   padding: 0;
   overflow: hidden;
 }
 
 /* Tab Loader */
-.insights-tab-loader {
+.hub-tab-loader {
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -111,36 +111,36 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .insights-tabs {
+  .hub-tabs {
     margin: 0 0.5rem;
     padding: 0.5rem 1rem;
   }
 
-  .insights-tab {
+  .hub-tab {
     padding: 0.6rem 1rem;
     font-size: 0.85rem;
   }
 
-  .insights-tab-label {
+  .hub-tab-label {
     display: none;
   }
 
-  .insights-tab.active .insights-tab-label {
+  .hub-tab.active .hub-tab-label {
     display: inline;
   }
 
-  .insights-tab-icon {
+  .hub-tab-icon {
     font-size: 1.2rem;
   }
 }
 
 @media (max-width: 480px) {
-  .insights-tabs {
+  .hub-tabs {
     gap: 0.25rem;
     justify-content: space-around;
   }
 
-  .insights-tab {
+  .hub-tab {
     flex: 1;
     justify-content: center;
     padding: 0.75rem 0.5rem;

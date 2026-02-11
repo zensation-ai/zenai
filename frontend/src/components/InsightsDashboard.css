@@ -7,17 +7,17 @@
 @import './shared-tabs.css';
 
 /* Override child component headers when embedded */
-.insights-tab-content .dashboard-home,
-.insights-tab-content .analytics-dashboard,
-.insights-tab-content .digest-dashboard,
-.insights-tab-content .knowledge-graph-page,
-.insights-tab-content .prod-dashboard {
+.hub-tab-content .dashboard-home,
+.hub-tab-content .analytics-dashboard,
+.hub-tab-content .digest-dashboard,
+.hub-tab-content .knowledge-graph-page,
+.hub-tab-content .prod-dashboard {
   min-height: auto;
 }
 
-.insights-tab-content .dashboard-home > .page-header,
-.insights-tab-content .analytics-dashboard > header,
-.insights-tab-content .digest-dashboard > header,
-.insights-tab-content .knowledge-graph-page > header {
+.hub-tab-content .dashboard-home > .page-header,
+.hub-tab-content .analytics-dashboard > header,
+.hub-tab-content .digest-dashboard > header,
+.hub-tab-content .knowledge-graph-page > header {
   display: none;
 }

@@ -29,7 +29,6 @@ type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'i
 
 interface SettingsDashboardProps {
   context: AIContext;
-  currentPage: string;
   onBack: () => void;
   onNavigate: (page: string) => void;
   initialTab?: SettingsTab;
@@ -312,7 +311,7 @@ export const SettingsDashboard = memo(({
             role="tab"
             className={`settings-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => handleTabChange(tab.id)}
-            aria-selected={activeTab === tab.id ? true : undefined}
+            aria-selected={activeTab === tab.id}
             aria-controls={`tabpanel-${tab.id}`}
             title={tab.description}
           >

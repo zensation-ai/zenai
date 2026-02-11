@@ -18,6 +18,7 @@ import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import type { BusinessTab } from '../types/business';
 import '../neurodesign.css';
+import './shared-tabs.css';
 import './BusinessDashboard.css';
 
 const BusinessOverview = lazy(() => import('./business/BusinessOverview').then(m => ({ default: m.BusinessOverview })));
@@ -47,7 +48,7 @@ const TABS: { id: BusinessTab; label: string; icon: string; description: string 
 ];
 
 const TabLoader = () => (
-  <div className="business-tab-loader">
+  <div className="hub-tab-loader">
     <SkeletonLoader type="card" count={3} />
   </div>
 );
@@ -120,7 +121,7 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
   };
 
   return (
-    <div className="business-dashboard" data-context={context}>
+    <div className="hub-page" data-context={context}>
       <PageHeader
         title="Business Manager"
         icon="💼"
@@ -129,21 +130,21 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
         backLabel="Zurueck"
       />
 
-      <nav className="business-tabs" role="tablist" aria-label="Business Navigation">
+      <nav className="hub-tabs" role="tablist" aria-label="Business Navigation">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             id={`biz-tab-${tab.id}`}
             type="button"
             role="tab"
-            className={`business-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
+            className={`hub-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => handleTabChange(tab.id)}
             aria-selected={activeTab === tab.id}
             aria-controls={`biz-tabpanel-${tab.id}`}
             aria-label={`${tab.label}: ${tab.description}`}
           >
-            <span className="business-tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="business-tab-label">{tab.label}</span>
+            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
+            <span className="hub-tab-label">{tab.label}</span>
           </button>
         ))}
       </nav>

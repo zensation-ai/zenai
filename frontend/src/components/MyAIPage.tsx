@@ -32,7 +32,7 @@ const TABS: { id: MyAITab; label: string; icon: string; description: string }[] 
 ];
 
 const TabLoader = () => (
-  <div className="insights-tab-loader">
+  <div className="hub-tab-loader">
     <SkeletonLoader type="card" count={3} />
   </div>
 );
@@ -55,7 +55,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
       case 'personalize':
         return (
           <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content">
+            <div className="hub-tab-content">
               <PersonalizationChat
                 context={context}
                 onBack={() => handleTabChange('personalize')}
@@ -67,7 +67,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
       case 'memory':
         return (
           <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content">
+            <div className="hub-tab-content">
               <MemoryTransparency context={context} />
             </div>
           </Suspense>
@@ -76,7 +76,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
       case 'voice-chat':
         return (
           <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content">
+            <div className="hub-tab-content">
               <VoiceChat
                 context={context}
                 apiUrl={import.meta.env.VITE_API_URL || ''}
@@ -93,7 +93,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
   };
 
   return (
-    <div className="insights-dashboard" data-context={context}>
+    <div className="hub-page" data-context={context}>
       <PageHeader
         title="Meine KI"
         icon="🤖"
@@ -102,25 +102,33 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
         backLabel="Zurueck"
       />
 
-      <div className="insights-tabs" role="tablist" aria-label="Meine KI Navigation">
+      <nav className="hub-tabs" role="tablist" aria-label="Meine KI Navigation">
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            id={`tab-${tab.id}`}
+            type="button"
             role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`insights-tab ${activeTab === tab.id ? 'active' : ''}`}
+            className={`hub-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => handleTabChange(tab.id)}
-            title={tab.description}
+            aria-selected={activeTab === tab.id}
+            aria-controls={`tabpanel-${tab.id}`}
+            aria-label={`${tab.label}: ${tab.description}`}
           >
-            <span className="insights-tab-icon">{tab.icon}</span>
-            <span className="insights-tab-label">{tab.label}</span>
+            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
+            <span className="hub-tab-label">{tab.label}</span>
           </button>
         ))}
-      </div>
+      </nav>
 
-      <div className="insights-content" role="tabpanel">
+      <main
+        id={`tabpanel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${activeTab}`}
+        className="hub-content"
+      >
         {renderTabContent()}
-      </div>
+      </main>
     </div>
   );
 };

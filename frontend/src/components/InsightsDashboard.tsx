@@ -42,7 +42,7 @@ const TABS: { id: InsightsTab; label: string; icon: string; description: string 
 ];
 
 const TabLoader = () => (
-  <div className="insights-tab-loader">
+  <div className="hub-tab-loader">
     <SkeletonLoader type="card" count={3} />
   </div>
 );
@@ -71,7 +71,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
       case 'analytics':
         return (
           <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content insights-tab-fullwidth">
+            <div className="hub-tab-content hub-tab-fullwidth">
               <AnalyticsDashboard
                 context={context}
                 onBack={() => handleTabChange('analytics')}
@@ -83,7 +83,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
       case 'digest':
         return (
           <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content insights-tab-fullwidth">
+            <div className="hub-tab-content hub-tab-fullwidth">
               <DigestDashboard
                 context={context}
                 onBack={() => handleTabChange('analytics')}
@@ -95,7 +95,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
       case 'connections':
         return (
           <Suspense fallback={<TabLoader />}>
-            <div className="insights-tab-content insights-tab-fullheight">
+            <div className="hub-tab-content hub-tab-fullheight">
               <KnowledgeGraphPage
                 context={context}
                 onBack={() => handleTabChange('analytics')}
@@ -111,7 +111,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
   };
 
   return (
-    <div className="insights-dashboard" data-context={context}>
+    <div className="hub-page" data-context={context}>
       <PageHeader
         title="Insights"
         icon="📊"
@@ -121,21 +121,21 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
       />
 
       {/* Tab Navigation */}
-      <nav className="insights-tabs" role="tablist" aria-label="Insights Navigation">
+      <nav className="hub-tabs" role="tablist" aria-label="Insights Navigation">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             id={`tab-${tab.id}`}
             type="button"
             role="tab"
-            className={`insights-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
+            className={`hub-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => handleTabChange(tab.id)}
             aria-selected={activeTab === tab.id}
             aria-controls={`tabpanel-${tab.id}`}
             aria-label={`${tab.label}: ${tab.description}`}
           >
-            <span className="insights-tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="insights-tab-label">{tab.label}</span>
+            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
+            <span className="hub-tab-label">{tab.label}</span>
           </button>
         ))}
       </nav>
@@ -145,7 +145,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
         id={`tabpanel-${activeTab}`}
         role="tabpanel"
         aria-labelledby={`tab-${activeTab}`}
-        className="insights-content"
+        className="hub-content"
       >
         {renderTabContent()}
       </main>
