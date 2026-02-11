@@ -15,7 +15,8 @@ import './EvolutionDashboard.css';
 
 interface EvolutionDashboardProps {
   context: AIContext;
-  onBack: () => void;
+  onBack?: () => void;
+  embedded?: boolean;
 }
 
 interface Snapshot {
@@ -73,7 +74,7 @@ interface ContextDepthBreakdown {
   description: string;
 }
 
-export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps) {
+export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [data, setData] = useState<EvolutionData | null>(null);
   const [contextDepth, setContextDepth] = useState<ContextDepthBreakdown[]>([]);
@@ -184,14 +185,16 @@ export function EvolutionDashboard({ context, onBack }: EvolutionDashboardProps)
 
   return (
     <div className="evolution-dashboard neuro-page-enter">
-      <header className="evolution-header liquid-glass-nav">
-        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} KI-Evolution</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
-        </div>
-        <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
-      </header>
+      {!embedded && (
+        <header className="evolution-header liquid-glass-nav">
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} KI-Evolution</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+          </div>
+          <span className="context-badge">{{ personal: '🏠 Persönlich', work: '💼 Arbeit', learning: '📚 Lernen', creative: '🎨 Kreativ' }[context]}</span>
+        </header>
+      )}
 
       {/* Hero Stats */}
       <div className="hero-stats liquid-glass neuro-stagger-item">

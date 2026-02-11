@@ -52,10 +52,11 @@ const ROLE_CONFIG: Record<string, { icon: string; label: string }> = {
 
 interface AgentTeamsPageProps {
   context: string;
-  onBack: () => void;
+  onBack?: () => void;
+  embedded?: boolean;
 }
 
-export function AgentTeamsPage({ context, onBack }: AgentTeamsPageProps) {
+export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProps) {
   const greeting = getTimeBasedGreeting();
   const [task, setTask] = useState('');
   const [strategy, setStrategy] = useState<Strategy>('research_write_review');
@@ -159,17 +160,19 @@ export function AgentTeamsPage({ context, onBack }: AgentTeamsPageProps) {
 
   return (
     <div className="agent-teams-page neuro-page-enter">
-      <div className="agent-teams-header liquid-glass-nav">
-        <button className="back-button neuro-hover-lift" onClick={onBack} type="button">
-          ← Zurück
-        </button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} Agent Teams</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">
-            Multi-Agent Aufgaben orchestrieren
-          </span>
+      {!embedded && (
+        <div className="agent-teams-header liquid-glass-nav">
+          <button className="back-button neuro-hover-lift" onClick={onBack} type="button">
+            ← Zurück
+          </button>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} Agent Teams</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">
+              Multi-Agent Aufgaben orchestrieren
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Task Input */}
       <div className="agent-teams-section liquid-glass neuro-stagger-item">

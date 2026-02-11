@@ -66,7 +66,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
             <div className="hub-tab-content hub-tab-fullwidth">
               <ProactiveDashboard
                 context={context}
-                onBack={() => handleTabChange('proactive')}
+                embedded
               />
             </div>
           </Suspense>
@@ -78,7 +78,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
             <div className="hub-tab-content hub-tab-fullwidth">
               <EvolutionDashboard
                 context={context}
-                onBack={() => handleTabChange('proactive')}
+                embedded
               />
             </div>
           </Suspense>
@@ -90,7 +90,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
             <div className="hub-tab-content hub-tab-fullwidth">
               <AgentTeamsPage
                 context={context}
-                onBack={() => handleTabChange('proactive')}
+                embedded
               />
             </div>
           </Suspense>

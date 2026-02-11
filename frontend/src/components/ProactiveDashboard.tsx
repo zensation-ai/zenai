@@ -33,11 +33,12 @@ interface ProactiveStats {
 }
 
 interface ProactiveDashboardProps {
-  onBack: () => void;
+  onBack?: () => void;
   context: string;
+  embedded?: boolean;
 }
 
-export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps) {
+export function ProactiveDashboard({ onBack, context, embedded }: ProactiveDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [activeTab, setActiveTab] = useState<'suggestions' | 'routines' | 'settings'>('suggestions');
   const [loading, setLoading] = useState(true);
@@ -188,18 +189,20 @@ export function ProactiveDashboard({ onBack, context }: ProactiveDashboardProps)
 
   return (
     <div className="proactive-dashboard neuro-page-enter">
-      <div className="proactive-header liquid-glass-nav">
-        <button className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zurück
-        </button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} Proaktive AI</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+      {!embedded && (
+        <div className="proactive-header liquid-glass-nav">
+          <button className="back-button neuro-hover-lift" onClick={onBack}>
+            ← Zurück
+          </button>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} Proaktive AI</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+          </div>
+          <span className={`context-indicator ${context}`}>
+            {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] || context}
+          </span>
         </div>
-        <span className={`context-indicator ${context}`}>
-          {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] || context}
-        </span>
-      </div>
+      )}
 
       <div className="proactive-tabs liquid-glass">
         <button
