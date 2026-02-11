@@ -574,8 +574,7 @@
     display: none;
   }
 
-  .sidebar:not(:hover) .sidebar-favorites,
-  .sidebar:not(:hover) .sidebar-recents {
+  .sidebar:not(:hover) .sidebar-favorites {
     display: none;
   }
 

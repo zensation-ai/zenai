@@ -26,7 +26,6 @@ interface SidebarProps {
   isAIActive: boolean;
   archivedCount: number;
   notificationCount: number;
-  recentPages?: Page[];
   favoritePages?: Page[];
   toggleFavorite?: (page: Page) => void;
   isFavorited?: (page: Page) => boolean;
@@ -41,7 +40,6 @@ export const Sidebar = memo(function Sidebar({
   isAIActive,
   archivedCount,
   notificationCount,
-  recentPages,
   favoritePages,
   toggleFavorite,
   isFavorited,
@@ -205,45 +203,6 @@ export const Sidebar = memo(function Sidebar({
                       </button>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Recents Section */}
-        {!collapsed && recentPages && recentPages.length > 0 && (
-          <div className="sidebar-section sidebar-recents">
-            <button
-              type="button"
-              className="sidebar-section-header neuro-focus-ring"
-              onClick={() => toggleSection('recents')}
-              aria-expanded={expandedSections.has('recents')}
-            >
-              <span className="sidebar-section-label">Zuletzt besucht</span>
-              <svg
-                className={`sidebar-section-chevron ${expandedSections.has('recents') ? 'expanded' : ''}`}
-                width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
-              >
-                <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <div className={`sidebar-section-items ${expandedSections.has('recents') ? 'expanded' : ''}`}>
-              {recentPages.map(page => {
-                const navItem = getNavItemByPage(page);
-                if (!navItem) return null;
-                const isActive = currentPage === page;
-                return (
-                  <button
-                    key={`recent-${page}`}
-                    type="button"
-                    className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
-                    onClick={() => handleNavigate(page)}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <span className="sidebar-item-icon" aria-hidden="true">{navItem.icon}</span>
-                    <span className="sidebar-item-label">{navItem.label}</span>
-                  </button>
                 );
               })}
             </div>

@@ -29,7 +29,6 @@ interface AppLayoutProps {
   notificationCount: number;
   onOpenSearch: () => void;
   onRefresh: () => void;
-  recentPages?: Page[];
   favoritePages?: Page[];
   toggleFavorite?: (page: Page) => void;
   isFavorited?: (page: Page) => boolean;
@@ -49,7 +48,6 @@ export function AppLayout({
   notificationCount,
   onOpenSearch,
   onRefresh,
-  recentPages,
   favoritePages,
   toggleFavorite,
   isFavorited,
@@ -155,7 +153,6 @@ export function AppLayout({
         isAIActive={isAIActive}
         archivedCount={archivedCount}
         notificationCount={notificationCount}
-        recentPages={recentPages}
         favoritePages={favoritePages}
         toggleFavorite={toggleFavorite}
         isFavorited={isFavorited}
@@ -205,10 +202,8 @@ export function AppLayout({
         archivedCount={archivedCount}
         notificationCount={notificationCount}
         isAIActive={isAIActive}
-        recentPages={recentPages}
         favoritePages={favoritePages}
         toggleFavorite={toggleFavorite}
-        isFavorited={isFavorited}
       />
 
       {/* Floating AI Assistant */}

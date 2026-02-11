@@ -27,7 +27,6 @@ interface MobileSidebarDrawerProps {
   archivedCount: number;
   notificationCount: number;
   isAIActive: boolean;
-  recentPages?: Page[];
   favoritePages?: Page[];
   toggleFavorite?: (page: Page) => void;
   isFavorited?: (page: Page) => boolean;
@@ -45,7 +44,6 @@ export function MobileSidebarDrawer({
   archivedCount,
   notificationCount,
   isAIActive,
-  recentPages,
   favoritePages,
   toggleFavorite,
 }: MobileSidebarDrawerProps) {
@@ -249,48 +247,6 @@ export function MobileSidebarDrawer({
                         </button>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Recents */}
-          {recentPages && recentPages.length > 0 && (
-            <div className={`msd-section ${expandedSections.has('recents') ? 'expanded' : ''}`}>
-              <button
-                type="button"
-                className="msd-section-header neuro-focus-ring"
-                onClick={() => toggleSection('recents')}
-                aria-expanded={expandedSections.has('recents')}
-              >
-                <span className="msd-section-icon">🕐</span>
-                <span className="msd-section-label">Zuletzt besucht</span>
-                <span className="msd-section-count">{recentPages.length}</span>
-                <svg
-                  className={`msd-section-chevron ${expandedSections.has('recents') ? 'rotated' : ''}`}
-                  width="12" height="12" viewBox="0 0 12 12" fill="currentColor"
-                >
-                  <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <div className={`msd-section-items ${expandedSections.has('recents') ? 'visible' : ''}`}>
-                {recentPages.map(page => {
-                  const navItem = getNavItemByPage(page);
-                  if (!navItem) return null;
-                  const isActive = currentPage === page;
-                  return (
-                    <button
-                      key={`recent-${page}`}
-                      type="button"
-                      className={`msd-item nested neuro-focus-ring ${isActive ? 'active' : ''}`}
-                      onClick={() => handleNavigate(page)}
-                      aria-current={isActive ? 'page' : undefined}
-                    >
-                      <span className="msd-item-icon">{navItem.icon}</span>
-                      <span className="msd-item-label">{navItem.label}</span>
-                      {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
-                    </button>
                   );
                 })}
               </div>

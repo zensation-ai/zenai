@@ -684,7 +684,6 @@ function App() {
         notificationCount={notificationCount}
         onOpenSearch={commandPalette.open}
         onRefresh={() => loadIdeas()}
-        recentPages={pageHistory.recentPages}
         favoritePages={pageHistory.favoritePages}
         toggleFavorite={pageHistory.toggleFavorite}
         isFavorited={pageHistory.isFavorited}
