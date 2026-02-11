@@ -143,6 +143,31 @@
 }
 
 /* ============================================
+   Chat Link (Prominent)
+   ============================================ */
+
+.msd-chat {
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.msd-chat-item {
+  background: rgba(255, 165, 0, 0.06);
+  border: 1px solid rgba(255, 165, 0, 0.12);
+}
+
+.msd-chat-item:hover,
+.msd-chat-item:active {
+  background: rgba(255, 165, 0, 0.12);
+  border-color: rgba(255, 165, 0, 0.2);
+}
+
+.msd-chat-item.active {
+  background: rgba(255, 165, 0, 0.15);
+  border-color: var(--accent-primary, #f39c12);
+}
+
+/* ============================================
    Content (Scrollable)
    ============================================ */
 

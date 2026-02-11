@@ -144,6 +144,34 @@
 }
 
 /* ============================================
+   Chat Link (Prominent)
+   ============================================ */
+
+.sidebar-chat {
+  padding: 0 12px 4px;
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-chat {
+  padding: 0 8px 4px;
+}
+
+.sidebar-chat-item {
+  background: rgba(255, 165, 0, 0.06);
+  border: 1px solid rgba(255, 165, 0, 0.12);
+}
+
+.sidebar-chat-item:hover {
+  background: rgba(255, 165, 0, 0.12);
+  border-color: rgba(255, 165, 0, 0.2);
+}
+
+.sidebar-chat-item.active {
+  background: rgba(255, 165, 0, 0.15);
+  border-color: var(--accent-primary, #f39c12);
+}
+
+/* ============================================
    Scrollable Navigation
    ============================================ */
 

@@ -5,7 +5,8 @@
  * Contains: Hero section, CommandCenter, search/filters, ideas list, detail modal.
  */
 
-import { lazy, Suspense, useMemo, memo, useState } from 'react';
+import { lazy, Suspense, useMemo, memo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { StructuredIdea } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import type { AdvancedFilters } from './SearchFilterBar';
@@ -36,6 +37,7 @@ import './IdeasPage.css';
 
 const IdeaDetail = lazy(() => import('./IdeaDetail').then(m => ({ default: m.IdeaDetail })));
 const InboxTriage = lazy(() => import('./InboxTriage').then(m => ({ default: m.InboxTriage })));
+const IncubatorPage = lazy(() => import('./IncubatorPage').then(m => ({ default: m.IncubatorPage })));
 
 interface IdeasPageProps {
   context: AIContext;
@@ -77,9 +79,11 @@ interface IdeasPageProps {
   onRestore?: (id: string) => void;
   // Triage integration
   onTriageComplete?: () => void;
+  initialTab?: IdeasTab;
+  onIdeaCreated?: () => void;
 }
 
-type IdeasTab = 'ideas' | 'archive' | 'triage';
+type IdeasTab = 'ideas' | 'incubator' | 'archive' | 'triage';
 
 const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   context,
@@ -118,8 +122,24 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   archivedCount = 0,
   onRestore,
   onTriageComplete,
+  initialTab = 'ideas',
 }) => {
-  const [activeIdeasTab, setActiveIdeasTab] = useState<IdeasTab>('ideas');
+  const navigate = useNavigate();
+  const [activeIdeasTab, setActiveIdeasTab] = useState<IdeasTab>(initialTab || 'ideas');
+
+  useEffect(() => {
+    const VALID_TABS: IdeasTab[] = ['ideas', 'incubator', 'archive', 'triage'];
+    setActiveIdeasTab(VALID_TABS.includes(initialTab as IdeasTab) ? initialTab as IdeasTab : 'ideas');
+  }, [initialTab]);
+
+  const handleTabChange = (tab: IdeasTab) => {
+    setActiveIdeasTab(tab);
+    if (tab === 'ideas') {
+      navigate('/ideas', { replace: true });
+    } else {
+      navigate(`/ideas/${tab}`, { replace: true });
+    }
+  };
   const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
 
   const humanGreeting = useMemo(() => {
@@ -222,16 +242,25 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
           role="tab"
           aria-current={activeIdeasTab === 'ideas' ? 'true' : undefined}
           className={`ideas-tab ${activeIdeasTab === 'ideas' ? 'active' : ''}`}
-          onClick={() => setActiveIdeasTab('ideas')}
+          onClick={() => handleTabChange('ideas')}
         >
           <span>💭</span> Gedanken
         </button>
         <button
           type="button"
           role="tab"
+          aria-current={activeIdeasTab === 'incubator' ? 'true' : undefined}
+          className={`ideas-tab ${activeIdeasTab === 'incubator' ? 'active' : ''}`}
+          onClick={() => handleTabChange('incubator')}
+        >
+          <span>🧫</span> Inkubator
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-current={activeIdeasTab === 'archive' ? 'true' : undefined}
           className={`ideas-tab ${activeIdeasTab === 'archive' ? 'active' : ''}`}
-          onClick={() => setActiveIdeasTab('archive')}
+          onClick={() => handleTabChange('archive')}
         >
           <span>📥</span> Archiv
           {archivedCount > 0 && <span className="ideas-tab-badge">{archivedCount}</span>}
@@ -241,11 +270,18 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
           role="tab"
           aria-current={activeIdeasTab === 'triage' ? 'true' : undefined}
           className={`ideas-tab ${activeIdeasTab === 'triage' ? 'active' : ''}`}
-          onClick={() => setActiveIdeasTab('triage')}
+          onClick={() => handleTabChange('triage')}
         >
           <span>📋</span> Sortieren
         </button>
       </div>
+
+      {/* Incubator Tab */}
+      {activeIdeasTab === 'incubator' && (
+        <Suspense fallback={<SkeletonLoader type="card" count={3} />}>
+          <IncubatorPage onBack={() => handleTabChange('ideas')} embedded />
+        </Suspense>
+      )}
 
       {/* Archive Tab */}
       {activeIdeasTab === 'archive' && (
@@ -263,7 +299,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
               <span className="empty-icon">📭</span>
               <h3>Archiv ist leer</h3>
               <p>Archivierte Gedanken erscheinen hier.</p>
-              <button type="button" className="empty-state-cta" onClick={() => setActiveIdeasTab('ideas')}>
+              <button type="button" className="empty-state-cta" onClick={() => handleTabChange('ideas')}>
                 Zu deinen Gedanken
               </button>
             </div>
@@ -286,10 +322,10 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
           <InboxTriage
             context={context}
             apiBase="/api"
-            onBack={() => setActiveIdeasTab('ideas')}
+            onBack={() => handleTabChange('ideas')}
             onComplete={() => {
               if (onTriageComplete) onTriageComplete();
-              setActiveIdeasTab('ideas');
+              handleTabChange('ideas');
             }}
             showToast={showToast}
           />

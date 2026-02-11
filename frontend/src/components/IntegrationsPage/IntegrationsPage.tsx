@@ -18,7 +18,7 @@ import { IntegrationsTab } from './IntegrationsTab';
 import { ApiKeysTab } from './ApiKeysTab';
 import { WebhooksTab } from './WebhooksTab';
 
-export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
+export function IntegrationsPage({ onBack, embedded }: IntegrationsPageProps) {
   const [activeTab, setActiveTab] = useState<'integrations' | 'apikeys' | 'webhooks'>('integrations');
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -215,17 +215,19 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
   if (loading) {
     return (
       <div className="page integrations-page neuro-page-enter">
-        <header className="page-header">
-          <button
-            type="button"
-            className="back-button neuro-hover-lift"
-            onClick={onBack}
-            aria-label="Zurück zur Übersicht"
-          >
-            ← Zurück
-          </button>
-          <h1>⚙️ Integrationen</h1>
-        </header>
+        {!embedded && (
+          <header className="page-header">
+            <button
+              type="button"
+              className="back-button neuro-hover-lift"
+              onClick={onBack}
+              aria-label="Zurück zur Übersicht"
+            >
+              ← Zurück
+            </button>
+            <h1>⚙️ Integrationen</h1>
+          </header>
+        )}
         <div className="neuro-loading-contextual">
           <div className="neuro-loading-spinner" />
           <p className="neuro-loading-message">Lade Integrationen...</p>
@@ -237,17 +239,19 @@ export function IntegrationsPage({ onBack }: IntegrationsPageProps) {
 
   return (
     <div className="page integrations-page neuro-page-enter">
-      <header className="page-header">
-        <button
-          type="button"
-          className="back-button neuro-hover-lift"
-          onClick={onBack}
-          aria-label="Zurück zur Übersicht"
-        >
-          ← Zurück
-        </button>
-        <h1>⚙️ Integrationen</h1>
-      </header>
+      {!embedded && (
+        <header className="page-header">
+          <button
+            type="button"
+            className="back-button neuro-hover-lift"
+            onClick={onBack}
+            aria-label="Zurück zur Übersicht"
+          >
+            ← Zurück
+          </button>
+          <h1>⚙️ Integrationen</h1>
+        </header>
+      )}
 
       {error && (
         <div className="error-banner" role="alert">

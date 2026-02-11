@@ -27,10 +27,10 @@ const DEFAULT_ACTIONS: QuickAction[] = [
 ];
 
 const PAGE_ACTIONS: Partial<Record<Page, QuickAction[]>> = {
-  meetings: [
-    { icon: '\u{1F4C5}', label: 'Neues Meeting', prompt: 'Erstelle ein Meeting ' },
+  chat: [
+    { icon: '\u{1F4A1}', label: 'Idee', prompt: 'Neue Idee: ' },
     { icon: '\u{1F50D}', label: 'Suche', prompt: 'Suche nach ' },
-    { icon: '\u{2753}', label: 'Hilfe', prompt: 'Wie funktioniert die Meeting-Seite?' },
+    { icon: '\u{1F4DD}', label: 'Zusammenfassung', prompt: 'Fasse zusammen: ' },
   ],
   ideas: [
     { icon: '\u{1F4A1}', label: 'Neue Idee', prompt: 'Neue Idee: ' },
@@ -44,7 +44,20 @@ const PAGE_ACTIONS: Partial<Record<Page, QuickAction[]>> = {
   documents: [
     { icon: '\u{1F4C4}', label: 'Dokument', prompt: 'Analysiere mein Dokument ' },
     { icon: '\u{1F50D}', label: 'Suche', prompt: 'Suche in meinen Dokumenten nach ' },
-    { icon: '\u{2753}', label: 'Hilfe', prompt: 'Wie funktioniert die Dokumente-Seite?' },
+    { icon: '\u{2753}', label: 'Hilfe', prompt: 'Wie funktioniert die Wissensbasis?' },
+  ],
+  workshop: [
+    { icon: '\u{2728}', label: 'Vorschläge', prompt: 'Was schlägst du vor?' },
+    { icon: '\u{1F916}', label: 'Agent', prompt: 'Starte einen Agent-Task: ' },
+    { icon: '\u{2753}', label: 'Hilfe', prompt: 'Wie funktioniert die Werkstatt?' },
+  ],
+  learning: [
+    { icon: '\u{1F4DA}', label: 'Lernziel', prompt: 'Neues Lernziel: ' },
+    { icon: '\u{2753}', label: 'Hilfe', prompt: 'Wie funktioniert die Lern-Seite?' },
+  ],
+  business: [
+    { icon: '\u{1F4C8}', label: 'Bericht', prompt: 'Erstelle einen Business-Bericht ' },
+    { icon: '\u{2753}', label: 'Hilfe', prompt: 'Wie funktioniert die Business-Seite?' },
   ],
 };
 

@@ -33,45 +33,46 @@ export interface ApiStatus {
 // Note: Filters type is defined in SearchFilterBar.tsx to match component requirements
 
 /**
- * Page Types - Radikale Navigation 2026
+ * Page Types - Navigation Reorganisation 2026
  *
- * 4 Sektionen:
- * - Gedanken: ideas (inkl. Archiv-Tab + Triage-Modus), incubator
- * - KI-Assistenz: ai-workshop, learning, my-ai
- * - Wissen & Inhalte: insights, documents (inkl. Canvas + Medien), meetings
- * - System: automations, integrations, export, sync
+ * 3 Sektionen:
+ * - Denken: ideas (Aktiv + Inkubator + Archiv + Sortieren), workshop (Proaktiv + Evolution + Agenten)
+ * - Entdecken: insights (Analytics + Digest + Verbindungen), documents (Dokumente + Editor + Medien + Meetings), business
+ * - Wachsen: learning, my-ai (Personalisierung + KI-Wissen + Sprach-Chat)
  *
- * Footer: profile, notifications, settings
- * Dashboard: home (Startseite via Logo-Klick)
+ * Chat: chat (eigene Seite + Floating-Bubble)
+ * Footer: settings (Profil + Allgemein + KI + Datenschutz + Automationen + Integrationen + Daten), notifications
+ * Dashboard: home (Startseite)
  */
 export type Page =
-  // Dashboard (Startseite)
+  // Dashboard
   | 'home'
-  // Gedanken
+  // Chat (eigene Seite)
+  | 'chat'
+  // Denken
   | 'ideas'
-  | 'incubator'
-  // KI-Assistenz
-  | 'ai-workshop'
-  | 'learning'
-  | 'my-ai'
-  // Wissen & Inhalte
+  | 'workshop'
+  // Entdecken
   | 'insights'
   | 'documents'
-  | 'meetings'
-  // Business
   | 'business'
-  // System
-  | 'automations'
-  | 'integrations'
-  | 'export'
-  | 'sync'
+  // Wachsen
+  | 'learning'
+  | 'my-ai'
   // Footer
-  | 'profile'
   | 'notifications'
   | 'settings'
-  // Legacy-Seiten (intern weitergeleitet)
-  | 'archive'
-  | 'triage'
+  // Legacy-Seiten (intern weitergeleitet auf neue Routen)
+  | 'incubator'        // → /ideas/incubator
+  | 'ai-workshop'      // → /workshop
+  | 'meetings'         // → /documents/meetings
+  | 'automations'      // → /settings/automations
+  | 'integrations'     // → /settings/integrations
+  | 'export'           // → /settings/data
+  | 'sync'             // → /settings/data
+  | 'profile'          // → /settings/profile
+  | 'archive'          // → /ideas/archive
+  | 'triage'           // → /ideas/triage
   | 'stories'
   | 'media'
   | 'canvas'

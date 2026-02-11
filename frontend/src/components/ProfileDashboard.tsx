@@ -38,6 +38,7 @@ interface Recommendations {
 interface ProfileDashboardProps {
   onBack: () => void;
   context: string;
+  embedded?: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -55,7 +56,7 @@ const typeLabels: Record<string, { label: string; icon: string }> = {
   question: { label: 'Fragen', icon: '❓' },
 };
 
-export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
+export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
@@ -195,12 +196,14 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
   if (!profile) {
     return (
       <div className="profile-dashboard neuro-page-enter">
-        <div className="profile-header liquid-glass-nav">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
-            ← Zurück
-          </button>
-          <h1>Profil</h1>
-        </div>
+        {!embedded && (
+          <div className="profile-header liquid-glass-nav">
+            <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+              ← Zurück
+            </button>
+            <h1>Profil</h1>
+          </div>
+        )}
         <div className="error-state neuro-empty-state">
           <p className="neuro-empty-description">{error || 'Profil konnte nicht geladen werden'}</p>
           <button type="button" className="neuro-button" onClick={handleReload}>Erneut versuchen</button>
@@ -215,26 +218,28 @@ export function ProfileDashboard({ onBack, context }: ProfileDashboardProps) {
 
   return (
     <div className="profile-dashboard neuro-page-enter">
-      <div className="profile-header liquid-glass-nav">
-        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zurück
-        </button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} Dein Profil</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+      {!embedded && (
+        <div className="profile-header liquid-glass-nav">
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+            ← Zurück
+          </button>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} Dein Profil</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+          </div>
+          <span className={`context-indicator ${context}`}>
+            {context === 'personal' ? 'Persönlich' : 'Arbeit'}
+          </span>
+          <button
+            type="button"
+            className="recalculate-btn neuro-hover-lift"
+            onClick={handleRecalculate}
+            disabled={recalculating}
+          >
+            {recalculating ? '...' : 'Aktualisieren'}
+          </button>
         </div>
-        <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? 'Persönlich' : 'Arbeit'}
-        </span>
-        <button
-          type="button"
-          className="recalculate-btn neuro-hover-lift"
-          onClick={handleRecalculate}
-          disabled={recalculating}
-        >
-          {recalculating ? '...' : 'Aktualisieren'}
-        </button>
-      </div>
+      )}
 
       {error && (
         <div className="error-banner neuro-stagger-item">

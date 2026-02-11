@@ -12,7 +12,6 @@ import './MobileBottomBar.css';
 interface MobileBottomBarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
-  onOpenChat: () => void;
   onOpenMore: () => void;
 }
 
@@ -21,27 +20,24 @@ interface BottomTab {
   icon: string;
   label: string;
   page?: Page;
-  isSpecial?: 'chat' | 'more';
+  isSpecial?: 'more';
 }
 
 const BOTTOM_TABS: BottomTab[] = [
   { id: 'home', icon: '🏠', label: 'Home', page: 'home' },
   { id: 'ideas', icon: '💭', label: 'Gedanken', page: 'ideas' },
-  { id: 'chat', icon: '💬', label: 'Chat', isSpecial: 'chat' },
-  { id: 'insights', icon: '📊', label: 'Insights', page: 'insights' },
+  { id: 'chat', icon: '💬', label: 'Chat', page: 'chat' },
+  { id: 'insights', icon: '📊', label: 'Entdecken', page: 'insights' },
   { id: 'more', icon: '☰', label: 'Mehr', isSpecial: 'more' },
 ];
 
 export const MobileBottomBar = memo(function MobileBottomBar({
   currentPage,
   onNavigate,
-  onOpenChat,
   onOpenMore,
 }: MobileBottomBarProps) {
   const handleClick = (tab: BottomTab) => {
-    if (tab.isSpecial === 'chat') {
-      onOpenChat();
-    } else if (tab.isSpecial === 'more') {
+    if (tab.isSpecial === 'more') {
       onOpenMore();
     } else if (tab.page) {
       onNavigate(tab.page);
@@ -60,12 +56,12 @@ export const MobileBottomBar = memo(function MobileBottomBar({
           key={tab.id}
           type="button"
           role="tab"
-          className={`bottom-tab ${isActive(tab) ? 'active' : ''} ${tab.isSpecial === 'chat' ? 'chat-tab' : ''} ${tab.isSpecial === 'more' ? 'more-tab' : ''}`}
+          className={`bottom-tab ${isActive(tab) ? 'active' : ''} ${tab.page === 'chat' ? 'chat-tab' : ''} ${tab.isSpecial === 'more' ? 'more-tab' : ''}`}
           onClick={() => handleClick(tab)}
           aria-selected={isActive(tab)}
           aria-label={tab.label}
         >
-          <span className={`bottom-tab-icon ${tab.isSpecial === 'chat' ? 'chat-icon' : ''}`} aria-hidden="true">
+          <span className={`bottom-tab-icon ${tab.page === 'chat' ? 'chat-icon' : ''}`} aria-hidden="true">
             {tab.isSpecial === 'more' ? (
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

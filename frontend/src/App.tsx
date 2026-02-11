@@ -38,24 +38,18 @@ import './App.css';
 // CommandPalette is statically imported alongside useCommandPalette (line 16)
 
 // Lazy-loaded page components
-const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
-const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ default: m.AIWorkshop })));
-const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
-const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
-const MeetingsPage = lazy(() => import('./components/MeetingsPage').then(m => ({ default: m.MeetingsPage })));
-const ProfileDashboard = lazy(() => import('./components/ProfileDashboard').then(m => ({ default: m.ProfileDashboard })));
-const IntegrationsPage = lazy(() => import('./components/IntegrationsPage').then(m => ({ default: m.IntegrationsPage })));
-const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
-const AutomationDashboard = lazy(() => import('./components/AutomationDashboard').then(m => ({ default: m.AutomationDashboard })));
-const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
-const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
-const ExportDashboard = lazy(() => import('./components/ExportDashboard').then(m => ({ default: m.ExportDashboard })));
-const SyncDashboard = lazy(() => import('./components/SyncDashboard').then(m => ({ default: m.SyncDashboard })));
-const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
 const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
 const IdeasPage = lazy(() => import('./components/IdeasPage').then(m => ({ default: m.IdeasPage })));
-const IncubatorPage = lazy(() => import('./components/IncubatorPage').then(m => ({ default: m.IncubatorPage })));
+const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ default: m.AIWorkshop })));
+const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
+const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
 const BusinessDashboard = lazy(() => import('./components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard })));
+const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
+const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
+const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
+const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
+const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
 
 const PageLoader = () => (
   <div className="page-loader" role="status" aria-live="polite">
@@ -69,70 +63,74 @@ const PageLoader = () => (
 // ============================================
 
 const PAGE_PATHS: Record<Page, string> = {
-  // Primary pages
+  // Primary pages (active routes)
   'home': '/',
+  'chat': '/chat',
   'ideas': '/ideas',
-  'incubator': '/incubator',
-  'ai-workshop': '/ai-workshop',
-  'learning': '/learning',
-  'my-ai': '/my-ai',
+  'workshop': '/workshop',
   'insights': '/insights',
   'documents': '/documents',
-  'meetings': '/meetings',
-  'automations': '/automations',
-  'integrations': '/integrations',
-  'export': '/export',
-  'sync': '/sync',
   'business': '/business',
-  'profile': '/profile',
-  'notifications': '/notifications',
+  'learning': '/learning',
+  'my-ai': '/my-ai',
   'settings': '/settings',
-  // Legacy redirects (old pages -> new locations)
-  'archive': '/ideas',
-  'triage': '/ideas',
+  'notifications': '/notifications',
+  // Legacy pages (redirect to new locations)
+  'incubator': '/ideas/incubator',
+  'ai-workshop': '/workshop',
+  'meetings': '/documents/meetings',
+  'automations': '/settings/automations',
+  'integrations': '/settings/integrations',
+  'export': '/settings/data',
+  'sync': '/settings/data',
+  'profile': '/settings/profile',
+  'archive': '/ideas/archive',
+  'triage': '/ideas/triage',
   'stories': '/insights/connections',
   'media': '/documents',
-  'canvas': '/documents',
+  'canvas': '/documents/editor',
   'personalization': '/my-ai',
-  'proactive': '/ai-workshop/proactive',
-  'evolution': '/ai-workshop/evolution',
+  'proactive': '/workshop/proactive',
+  'evolution': '/workshop/evolution',
   'dashboard': '/insights/analytics',
   'analytics': '/insights/analytics',
   'digest': '/insights/digest',
   'knowledge-graph': '/insights/connections',
   'learning-tasks': '/learning',
-  'voice-chat': '/ai-workshop/voice-chat',
-  'agent-teams': '/ai-workshop/agent-teams',
+  'voice-chat': '/my-ai/voice-chat',
+  'agent-teams': '/workshop/agent-teams',
 };
 
 const PATH_PAGES: Record<string, Page> = {
   // Primary routes
   '/': 'home',
+  '/chat': 'chat',
   '/ideas': 'ideas',
-  '/incubator': 'incubator',
-  '/ai-workshop': 'ai-workshop',
-  '/learning': 'learning',
-  '/my-ai': 'my-ai',
+  '/workshop': 'workshop',
   '/insights': 'insights',
   '/documents': 'documents',
-  '/meetings': 'meetings',
-  '/automations': 'automations',
-  '/integrations': 'integrations',
-  '/export': 'export',
-  '/sync': 'sync',
   '/business': 'business',
-  '/profile': 'profile',
-  '/notifications': 'notifications',
+  '/learning': 'learning',
+  '/my-ai': 'my-ai',
   '/settings': 'settings',
-  // Legacy paths -> redirect to new pages
+  '/notifications': 'notifications',
+  // Legacy paths -> redirect to primary pages
+  '/incubator': 'ideas',
+  '/ai-workshop': 'workshop',
+  '/meetings': 'documents',
+  '/automations': 'settings',
+  '/integrations': 'settings',
+  '/export': 'settings',
+  '/sync': 'settings',
+  '/profile': 'settings',
   '/archive': 'ideas',
   '/triage': 'ideas',
   '/stories': 'insights',
   '/media': 'documents',
   '/canvas': 'documents',
   '/personalization': 'my-ai',
-  '/voice-chat': 'ai-workshop',
-  '/agent-teams': 'ai-workshop',
+  '/voice-chat': 'my-ai',
+  '/agent-teams': 'workshop',
 };
 
 function useUrlNavigation() {
@@ -148,9 +146,14 @@ function useUrlNavigation() {
     }
 
     if (fullPath.startsWith('/insights/')) return 'insights';
-    if (fullPath.startsWith('/ai-workshop/')) return 'ai-workshop';
+    if (fullPath.startsWith('/workshop/')) return 'workshop';
     if (fullPath.startsWith('/documents/')) return 'documents';
     if (fullPath.startsWith('/business/')) return 'business';
+    if (fullPath.startsWith('/ideas/')) return 'ideas';
+    if (fullPath.startsWith('/my-ai/')) return 'my-ai';
+    if (fullPath.startsWith('/settings/')) return 'settings';
+    // Legacy: /ai-workshop/* → workshop
+    if (fullPath.startsWith('/ai-workshop/')) return 'workshop';
 
     return PATH_PAGES[basePath] || 'home';
   }, [location.pathname]);
@@ -167,7 +170,8 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      if (page === 'insights' || page === 'ai-workshop' || page === 'documents') {
+      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business'];
+      if (tabPages.includes(page)) {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
     }
@@ -445,6 +449,7 @@ function App() {
   // LEGACY REDIRECTS
   // ============================================
 
+  // Legacy redirects - all old URLs redirect to new locations
   if (currentPage === 'dashboard' || currentPage === 'analytics' || currentPage === 'digest' || currentPage === 'knowledge-graph') {
     const tab = currentPage === 'analytics' ? 'analytics' :
                 currentPage === 'digest' ? 'digest' :
@@ -453,7 +458,7 @@ function App() {
   }
 
   if (currentPage === 'proactive' || currentPage === 'evolution') {
-    return <Navigate to={`/ai-workshop/${currentPage}`} replace />;
+    return <Navigate to={`/workshop/${currentPage}`} replace />;
   }
 
   // ============================================
@@ -516,21 +521,17 @@ function App() {
                 archivedCount={archivedCount}
                 onRestore={handleRestore}
                 onTriageComplete={() => loadIdeas()}
+                initialTab={(tabParam || 'ideas') as 'ideas' | 'incubator' | 'archive' | 'triage'}
+                onIdeaCreated={() => loadIdeas()}
               />
             </Suspense>
           </NeuroFeedbackProvider>
         );
 
-      case 'incubator':
+      case 'chat':
         return (
           <Suspense fallback={<PageLoader />}>
-            <IncubatorPage
-              onBack={() => navigateToPage('ideas')}
-              onIdeaCreated={() => {
-                loadIdeas();
-                navigateToPage('ideas');
-              }}
-            />
+            <ChatPage context={context} />
           </Suspense>
         );
 
@@ -553,7 +554,7 @@ function App() {
           </Suspense>
         );
 
-      case 'ai-workshop':
+      case 'workshop':
         return (
           <Suspense fallback={<PageLoader />}>
             <AIWorkshop
@@ -564,7 +565,7 @@ function App() {
                 loadIdeas();
                 navigateToPage('ideas');
               }}
-              initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'voice-chat' | 'agent-teams'}
+              initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams'}
             />
           </Suspense>
         );
@@ -585,37 +586,7 @@ function App() {
             <MyAIPage
               context={context}
               onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'meetings':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <MeetingsPage onBack={() => navigateToPage('home')} />
-          </Suspense>
-        );
-
-      case 'profile':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <ProfileDashboard onBack={() => navigateToPage('home')} context={context} />
-          </Suspense>
-        );
-
-      case 'integrations':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <IntegrationsPage onBack={() => navigateToPage('home')} />
-          </Suspense>
-        );
-
-      case 'automations':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <AutomationDashboard
-              context={context}
-              onBack={() => navigateToPage('home')}
+              initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'voice-chat'}
             />
           </Suspense>
         );
@@ -630,26 +601,6 @@ function App() {
           </Suspense>
         );
 
-
-      case 'export':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <ExportDashboard
-              context={context}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'sync':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <SyncDashboard
-              context={context}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
 
       case 'business':
         return (
@@ -668,7 +619,7 @@ function App() {
             <DocumentVaultPage
               context={context}
               onBack={() => navigateToPage('home')}
-              initialTab={tabParam as 'documents' | 'editor' | 'media' | undefined}
+              initialTab={(tabParam || 'documents') as 'documents' | 'editor' | 'media' | 'meetings'}
             />
           </Suspense>
         );
@@ -681,6 +632,7 @@ function App() {
               currentPage={currentPage}
               onBack={() => navigateToPage('home')}
               onNavigate={(page) => navigateToPage(page as Page)}
+              initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'integrations' | 'data'}
             />
           </Suspense>
         );

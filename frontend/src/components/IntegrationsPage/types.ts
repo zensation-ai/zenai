@@ -54,4 +54,5 @@ export interface Webhook {
 
 export interface IntegrationsPageProps {
   onBack: () => void;
+  embedded?: boolean;
 }

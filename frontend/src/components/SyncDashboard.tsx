@@ -32,9 +32,10 @@ interface PendingChange {
 interface SyncDashboardProps {
   onBack: () => void;
   context: string;
+  embedded?: boolean;
 }
 
-export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
+export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [activeTab, setActiveTab] = useState<'status' | 'devices' | 'changes'>('status');
   const [loading, setLoading] = useState(true);
@@ -196,18 +197,20 @@ export function SyncDashboard({ onBack, context }: SyncDashboardProps) {
 
   return (
     <div className="sync-dashboard neuro-page-enter">
-      <div className="sync-header liquid-glass-nav">
-        <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
-          ← Zurück
-        </button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} Synchronisation</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+      {!embedded && (
+        <div className="sync-header liquid-glass-nav">
+          <button type="button" className="back-button neuro-hover-lift" onClick={onBack}>
+            ← Zurück
+          </button>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} Synchronisation</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+          </div>
+          <span className={`context-indicator ${context}`}>
+            {context === 'personal' ? 'Persönlich' : 'Arbeit'}
+          </span>
         </div>
-        <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? 'Persönlich' : 'Arbeit'}
-        </span>
-      </div>
+      )}
 
       <div className="sync-tabs liquid-glass">
         <button

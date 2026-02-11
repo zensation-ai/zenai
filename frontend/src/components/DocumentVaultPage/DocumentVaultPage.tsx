@@ -16,6 +16,7 @@ import '../DocumentVaultPage.css';
 
 const CanvasPage = lazy(() => import('../CanvasPage').then(m => ({ default: m.CanvasPage })));
 const MediaGallery = lazy(() => import('../MediaGallery').then(m => ({ default: m.MediaGallery })));
+const MeetingsPage = lazy(() => import('../MeetingsPage').then(m => ({ default: m.MeetingsPage })));
 
 export function DocumentVaultPage({ onBack, context, initialTab = 'documents' }: DocumentVaultPageProps) {
   const navigate = useNavigate();
@@ -69,6 +70,17 @@ export function DocumentVaultPage({ onBack, context, initialTab = 'documents' }:
         {renderDocTabs()}
         <Suspense fallback={<SkeletonLoader type="card" count={2} />}>
           <MediaGallery context={context} onBack={() => handleDocTabChange('documents')} />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (activeDocTab === 'meetings') {
+    return (
+      <div className="document-vault-page">
+        {renderDocTabs()}
+        <Suspense fallback={<SkeletonLoader type="card" count={2} />}>
+          <MeetingsPage onBack={() => handleDocTabChange('documents')} embedded />
         </Suspense>
       </div>
     );

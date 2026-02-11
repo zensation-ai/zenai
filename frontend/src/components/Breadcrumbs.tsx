@@ -71,10 +71,47 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   // Dashboard root
   'home': [ROOT],
 
-  // Main pages
-  'ideas': [ROOT, { label: 'Gedanken', page: 'ideas', icon: '💭' }],
+  // Chat
+  'chat': [ROOT, { label: 'Chat', page: 'chat', icon: '💬' }],
 
-  // Insights hierarchy
+  // Denken: Gedanken
+  'ideas': [ROOT, { label: 'Gedanken', page: 'ideas', icon: '💭' }],
+  'incubator': [
+    ROOT,
+    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    { label: 'Inkubator', page: 'incubator', icon: '🧫' },
+  ],
+  'archive': [
+    ROOT,
+    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    { label: 'Archiv', page: 'archive', icon: '📥' },
+  ],
+  'triage': [
+    ROOT,
+    { label: 'Gedanken', page: 'ideas', icon: '💭' },
+    { label: 'Sortieren', page: 'triage', icon: '📋' },
+  ],
+
+  // Denken: Werkstatt
+  'workshop': [ROOT, { label: 'Werkstatt', page: 'workshop', icon: '🧪' }],
+  'ai-workshop': [ROOT, { label: 'Werkstatt', page: 'workshop', icon: '🧪' }],
+  'proactive': [
+    ROOT,
+    { label: 'Werkstatt', page: 'workshop', icon: '🧪' },
+    { label: 'Vorschlaege', page: 'proactive', icon: '✨' },
+  ],
+  'evolution': [
+    ROOT,
+    { label: 'Werkstatt', page: 'workshop', icon: '🧪' },
+    { label: 'Entwicklung', page: 'evolution', icon: '🌱' },
+  ],
+  'agent-teams': [
+    ROOT,
+    { label: 'Werkstatt', page: 'workshop', icon: '🧪' },
+    { label: 'Agenten', page: 'agent-teams', icon: '👥' },
+  ],
+
+  // Entdecken: Insights
   'insights': [ROOT, { label: 'Insights', page: 'insights', icon: '📊' }],
   'dashboard': [ROOT, { label: 'Insights', page: 'insights', icon: '📊' }],
   'analytics': [
@@ -93,73 +130,81 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Verbindungen', page: 'knowledge-graph', icon: '🕸️' },
   ],
 
-  // AI Workshop hierarchy
-  'ai-workshop': [ROOT, { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' }],
-  'incubator': [
+  // Entdecken: Wissensbasis
+  'documents': [ROOT, { label: 'Wissensbasis', page: 'documents', icon: '📚' }],
+  'canvas': [
     ROOT,
-    { label: 'Gedanken', page: 'ideas', icon: '💭' },
-    { label: 'Inkubator', page: 'incubator', icon: '🧫' },
+    { label: 'Wissensbasis', page: 'documents', icon: '📚' },
+    { label: 'Editor', page: 'canvas', icon: '✏️' },
   ],
-  'proactive': [
+  'media': [
     ROOT,
-    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
-    { label: 'Vorschläge', page: 'proactive', icon: '💡' },
+    { label: 'Wissensbasis', page: 'documents', icon: '📚' },
+    { label: 'Medien', page: 'media', icon: '🖼️' },
   ],
-  'evolution': [
+  'meetings': [
     ROOT,
-    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
-    { label: 'Entwicklung', page: 'evolution', icon: '🚀' },
+    { label: 'Wissensbasis', page: 'documents', icon: '📚' },
+    { label: 'Meetings', page: 'meetings', icon: '📅' },
   ],
 
-  // Settings
-  'settings': [ROOT, { label: 'Einstellungen', page: 'settings', icon: '⚙️' }],
+  // Entdecken: Business
+  'business': [ROOT, { label: 'Business', page: 'business', icon: '💼' }],
 
-  // Footer items (standalone, not under Settings)
-  'profile': [ROOT, { label: 'Profil', page: 'profile', icon: '👤' }],
-  'notifications': [ROOT, { label: 'Benachrichtigungen', page: 'notifications', icon: '🔔' }],
-
-  // System section
-  'automations': [ROOT, { label: 'Automationen', page: 'automations', icon: '⚡' }],
-  'integrations': [ROOT, { label: 'Integrationen', page: 'integrations', icon: '🔗' }],
-  'export': [ROOT, { label: 'Export', page: 'export', icon: '📤' }],
-  'sync': [ROOT, { label: 'Synchronisierung', page: 'sync', icon: '🔄' }],
-
-  // Learning hierarchy
-  'learning': [ROOT, { label: 'Lernen', page: 'learning', icon: '📚' }],
+  // Wachsen: Lernen
+  'learning': [ROOT, { label: 'Lernen', page: 'learning', icon: '📖' }],
   'learning-tasks': [
     ROOT,
-    { label: 'Lernen', page: 'learning', icon: '📚' },
+    { label: 'Lernen', page: 'learning', icon: '📖' },
     { label: 'Aufgaben', page: 'learning-tasks', icon: '✅' },
   ],
 
-  // Standalone pages
-  'triage': [ROOT, { label: 'Sortieren', page: 'triage', icon: '📋' }],
-  'meetings': [ROOT, { label: 'Meetings', page: 'meetings', icon: '📅' }],
-  'personalization': [ROOT, { label: 'Personalisierung', page: 'personalization', icon: '🎨' }],
-  'documents': [ROOT, { label: 'Dokumente', page: 'documents', icon: '📄' }],
-  'media': [ROOT, { label: 'Medien', page: 'media', icon: '🖼️' }],
-  'stories': [ROOT, { label: 'Stories', page: 'stories', icon: '📖' }],
-  'archive': [ROOT, { label: 'Archiv', page: 'archive', icon: '📥' }],
-  'canvas': [ROOT, { label: 'Dokumente', page: 'documents', icon: '📄' }, { label: 'Canvas', page: 'canvas', icon: '🎨' }],
-  'my-ai': [
+  // Wachsen: Meine KI
+  'my-ai': [ROOT, { label: 'Meine KI', page: 'my-ai', icon: '🤖' }],
+  'personalization': [
     ROOT,
-    { label: 'KI-Assistenz', page: 'ai-workshop', icon: '🧠' },
     { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
+    { label: 'Personalisierung', page: 'personalization', icon: '🎨' },
   ],
   'voice-chat': [
     ROOT,
-    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
-    { label: 'Sprachkonversation', page: 'voice-chat', icon: '🎙️' },
+    { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
+    { label: 'Sprach-Chat', page: 'voice-chat', icon: '🎙️' },
   ],
-  'agent-teams': [
+
+  // Footer: Einstellungen
+  'settings': [ROOT, { label: 'Einstellungen', page: 'settings', icon: '⚙️' }],
+  'profile': [
     ROOT,
-    { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
-    { label: 'Agent Teams', page: 'agent-teams', icon: '🤖' },
+    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
+    { label: 'Profil', page: 'profile', icon: '👤' },
   ],
-  'business': [
+  'automations': [
     ROOT,
-    { label: 'Business Manager', page: 'business', icon: '💼' },
+    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
+    { label: 'Automationen', page: 'automations', icon: '⚡' },
   ],
+  'integrations': [
+    ROOT,
+    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
+    { label: 'Integrationen', page: 'integrations', icon: '🔗' },
+  ],
+  'export': [
+    ROOT,
+    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
+    { label: 'Daten', page: 'export', icon: '📦' },
+  ],
+  'sync': [
+    ROOT,
+    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
+    { label: 'Daten', page: 'sync', icon: '📦' },
+  ],
+
+  // Footer: Benachrichtigungen
+  'notifications': [ROOT, { label: 'Benachrichtigungen', page: 'notifications', icon: '🔔' }],
+
+  // Legacy/Misc
+  'stories': [ROOT, { label: 'Stories', page: 'stories', icon: '📖' }],
 };
 
 /**

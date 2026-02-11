@@ -10,6 +10,7 @@ import './AutomationDashboard.css';
 interface AutomationDashboardProps {
   context: AIContext;
   onBack: () => void;
+  embedded?: boolean;
 }
 
 interface Automation {
@@ -88,7 +89,7 @@ const ACTION_LABELS: Record<string, string> = {
   custom: 'Benutzerdefiniert',
 };
 
-export function AutomationDashboard({ context, onBack }: AutomationDashboardProps) {
+export function AutomationDashboard({ context, onBack, embedded }: AutomationDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [suggestions, setSuggestions] = useState<AutomationSuggestion[]>([]);
@@ -222,10 +223,12 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
   if (loading) {
     return (
       <div className="automation-dashboard neuro-page-enter">
-        <header className="automation-header liquid-glass-nav">
-          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
-          <h1>Automationen</h1>
-        </header>
+        {!embedded && (
+          <header className="automation-header liquid-glass-nav">
+            <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
+            <h1>Automationen</h1>
+          </header>
+        )}
         <div className="loading-state neuro-loading-contextual">
           <div className="neuro-loading-spinner" />
           <p className="neuro-loading-message">Lade Automationen...</p>
@@ -237,13 +240,28 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
 
   return (
     <div className="automation-dashboard neuro-page-enter">
-      <header className="automation-header liquid-glass-nav">
-        <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} Automationen</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
-        </div>
-        <div className="header-actions">
+      {!embedded && (
+        <header className="automation-header liquid-glass-nav">
+          <button type="button" className="back-btn neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} Automationen</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+          </div>
+          <div className="header-actions">
+            <button
+              type="button"
+              className="create-automation-btn neuro-button neuro-hover-lift"
+              onClick={() => { setEditingAutomation(null); setShowFormModal(true); }}
+              aria-label="Neue Automation erstellen"
+            >
+              + Neue Automation
+            </button>
+            <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
+          </div>
+        </header>
+      )}
+      {embedded && (
+        <div className="automation-header-embedded" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <button
             type="button"
             className="create-automation-btn neuro-button neuro-hover-lift"
@@ -252,9 +270,8 @@ export function AutomationDashboard({ context, onBack }: AutomationDashboardProp
           >
             + Neue Automation
           </button>
-          <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
         </div>
-      </header>
+      )}
 
       {error && (
         <div className="error-banner">

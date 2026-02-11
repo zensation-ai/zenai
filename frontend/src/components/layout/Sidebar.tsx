@@ -12,7 +12,7 @@
 
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
-import { NAV_SECTIONS, NAV_FOOTER_ITEMS, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
+import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { safeLocalStorage } from '../../utils/storage';
 import { BrainLogo } from './BrainLogo';
 import './Sidebar.css';
@@ -141,6 +141,20 @@ export const Sidebar = memo(function Sidebar({
         >
           <span className="sidebar-item-icon" aria-hidden="true">🏠</span>
           {!collapsed && <span className="sidebar-item-label">Dashboard</span>}
+        </button>
+      </div>
+
+      {/* Chat - Prominent */}
+      <div className="sidebar-chat">
+        <button
+          type="button"
+          className={`sidebar-item sidebar-chat-item neuro-focus-ring ${currentPage === 'chat' ? 'active' : ''}`}
+          onClick={() => handleNavigate('chat')}
+          title={NAV_CHAT_ITEM.description}
+          aria-current={currentPage === 'chat' ? 'page' : undefined}
+        >
+          <span className="sidebar-item-icon" aria-hidden="true">{NAV_CHAT_ITEM.icon}</span>
+          {!collapsed && <span className="sidebar-item-label">{NAV_CHAT_ITEM.label}</span>}
         </button>
       </div>
 

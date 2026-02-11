@@ -48,9 +48,10 @@ interface MeetingNotes {
 
 interface MeetingsPageProps {
   onBack: () => void;
+  embedded?: boolean;
 }
 
-export function MeetingsPage({ onBack }: MeetingsPageProps) {
+export function MeetingsPage({ onBack, embedded }: MeetingsPageProps) {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -189,25 +190,40 @@ export function MeetingsPage({ onBack }: MeetingsPageProps) {
 
   return (
     <div className="meetings-page neuro-page-enter">
-      <div className="meetings-header">
-        <button
-          type="button"
-          className="back-button neuro-hover-lift"
-          onClick={onBack}
-          aria-label="Zurück zur Übersicht"
-        >
-          ← Zurück
-        </button>
-        <h1>Meetings</h1>
-        <button
-          type="button"
-          className="new-meeting-btn neuro-button"
-          onClick={() => setShowNewMeeting(true)}
-          aria-label="Neues Meeting erstellen"
-        >
-          + Neues Meeting
-        </button>
-      </div>
+      {!embedded && (
+        <div className="meetings-header">
+          <button
+            type="button"
+            className="back-button neuro-hover-lift"
+            onClick={onBack}
+            aria-label="Zurück zur Übersicht"
+          >
+            ← Zurück
+          </button>
+          <h1>Meetings</h1>
+          <button
+            type="button"
+            className="new-meeting-btn neuro-button"
+            onClick={() => setShowNewMeeting(true)}
+            aria-label="Neues Meeting erstellen"
+          >
+            + Neues Meeting
+          </button>
+        </div>
+      )}
+      {embedded && (
+        <div className="meetings-header-embedded">
+          <h2>Meetings</h2>
+          <button
+            type="button"
+            className="new-meeting-btn neuro-button"
+            onClick={() => setShowNewMeeting(true)}
+            aria-label="Neues Meeting erstellen"
+          >
+            + Neues Meeting
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="error-banner">

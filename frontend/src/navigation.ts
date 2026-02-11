@@ -3,6 +3,10 @@
  *
  * Single source of truth for all navigation items, sections, and groupings.
  * Used by Sidebar, MobileSidebarDrawer, MobileBottomBar, and CommandPalette.
+ *
+ * Navigation Reorganisation 2026:
+ * 3 Sektionen (Denken, Entdecken, Wachsen) + Chat + Footer
+ * Aufgabenorientiert statt technisch gruppiert.
  */
 
 import type { Page } from './types';
@@ -26,62 +30,91 @@ export interface NavSection {
 }
 
 /**
+ * Chat item - displayed prominently before sections
+ */
+export const NAV_CHAT_ITEM: NavItem = {
+  page: 'chat',
+  icon: '💬',
+  label: 'Chat',
+  description: 'Chat mit deiner KI',
+};
+
+/**
  * Main navigation sections displayed in sidebar
- * Grouped by functional area, max 4 items per group (Miller's Law)
  *
- * Radikale Umstrukturierung 2026:
- * - Gedanken: Ideas (inkl. Archiv + Triage) + Inkubator
- * - KI-Assistenz: KI-Werkstatt + Lernen + Meine KI
- * - Wissen & Inhalte: Insights + Dokumente (inkl. Canvas + Medien) + Meetings
- * - System: Automationen + Integrationen + Export + Sync
+ * 3 aufgabenorientierte Sektionen:
+ * - Denken: Gedanken erfassen & entwickeln, KI-Werkstatt
+ * - Entdecken: Insights, Wissensbasis, Business
+ * - Wachsen: Lernen, Meine KI personalisieren
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
-    id: 'gedanken',
-    label: 'Gedanken',
+    id: 'denken',
+    label: 'Denken',
     icon: '💭',
     items: [
-      { page: 'ideas', icon: '💭', label: 'Meine Gedanken', description: 'Ideen, Archiv und Sortieren' },
-      { page: 'incubator', icon: '🧫', label: 'Inkubator', description: 'Gedanken reifen lassen' },
+      {
+        page: 'ideas',
+        icon: '💭',
+        label: 'Gedanken',
+        description: 'Ideen erfassen, entwickeln und ordnen',
+        subPages: ['incubator', 'archive', 'triage'],
+      },
+      {
+        page: 'workshop',
+        icon: '🧪',
+        label: 'Werkstatt',
+        description: 'KI-Vorschlaege und Agenten',
+        subPages: ['proactive', 'evolution', 'agent-teams'],
+      },
     ],
   },
   {
-    id: 'ki',
-    label: 'KI-Assistenz',
-    icon: '🧠',
-    items: [
-      { page: 'ai-workshop', icon: '🧪', label: 'KI-Werkstatt', description: 'Proaktiv, Evolution & Agenten', subPages: ['proactive', 'evolution', 'voice-chat', 'agent-teams'] },
-      { page: 'learning', icon: '📚', label: 'Lernen', description: 'Lernziele und Aufgaben', subPages: ['learning-tasks'] },
-      { page: 'my-ai', icon: '🤖', label: 'Meine KI', description: 'Personalisierung & KI-Wissen' },
-    ],
-  },
-  {
-    id: 'wissen',
-    label: 'Wissen & Inhalte',
+    id: 'entdecken',
+    label: 'Entdecken',
     icon: '📊',
     items: [
-      { page: 'insights', icon: '📊', label: 'Insights', description: 'Analytics, Digest & Verbindungen', subPages: ['analytics', 'digest', 'knowledge-graph'] },
-      { page: 'documents', icon: '📚', label: 'Wissensbasis', description: 'Dokumente, Editor & Medien', subPages: ['canvas', 'media'] },
-      { page: 'meetings', icon: '📅', label: 'Meetings', description: 'Meeting-Notizen' },
+      {
+        page: 'insights',
+        icon: '📊',
+        label: 'Insights',
+        description: 'Statistiken, Trends und Verbindungen',
+        subPages: ['analytics', 'digest', 'knowledge-graph'],
+      },
+      {
+        page: 'documents',
+        icon: '📚',
+        label: 'Wissensbasis',
+        description: 'Dokumente, Editor, Medien und Meetings',
+        subPages: ['canvas', 'media', 'meetings'],
+      },
+      {
+        page: 'business',
+        icon: '💼',
+        label: 'Business',
+        description: 'Umsatz, Traffic, SEO und Berichte',
+      },
     ],
   },
   {
-    id: 'business',
-    label: 'Business',
-    icon: '💼',
+    id: 'wachsen',
+    label: 'Wachsen',
+    icon: '🌱',
     items: [
-      { page: 'business', icon: '💼', label: 'Business Manager', description: 'AI-gesteuerte Geschaeftsanalysen' },
-    ],
-  },
-  {
-    id: 'system',
-    label: 'System',
-    icon: '⚙️',
-    items: [
-      { page: 'automations', icon: '⚡', label: 'Automationen', description: 'Workflows automatisieren' },
-      { page: 'integrations', icon: '🔗', label: 'Integrationen', description: 'Externe Dienste verbinden' },
-      { page: 'export', icon: '📤', label: 'Export', description: 'Daten exportieren' },
-      { page: 'sync', icon: '🔄', label: 'Sync', description: 'Geräte synchronisieren' },
+      {
+        page: 'learning',
+        icon: '📖',
+        label: 'Lernen',
+        description: 'Lernziele und Fortschritt',
+        subPages: ['learning-tasks'],
+      },
+      {
+        page: 'my-ai',
+        icon: '🤖',
+        label: 'Meine KI',
+        description: 'Personalisierung, KI-Wissen und Sprach-Chat',
+        subPages: ['voice-chat'],
+      },
     ],
   },
 ];
@@ -90,9 +123,20 @@ export const NAV_SECTIONS: NavSection[] = [
  * Footer items - always visible at sidebar bottom
  */
 export const NAV_FOOTER_ITEMS: NavItem[] = [
-  { page: 'profile', icon: '👤', label: 'Profil', description: 'Dein Nutzerprofil' },
-  { page: 'notifications', icon: '🔔', label: 'Benachrichtigungen', description: 'Benachrichtigungen', badge: 'notifications' },
-  { page: 'settings', icon: '⚙️', label: 'Einstellungen', description: 'App-Konfiguration' },
+  {
+    page: 'settings',
+    icon: '⚙️',
+    label: 'Einstellungen',
+    description: 'Profil, Automationen, Integrationen und mehr',
+    subPages: ['profile', 'automations', 'integrations', 'export', 'sync'],
+  },
+  {
+    page: 'notifications',
+    icon: '🔔',
+    label: 'Benachrichtigungen',
+    description: 'Benachrichtigungen',
+    badge: 'notifications',
+  },
 ];
 
 /**
@@ -117,28 +161,30 @@ export function findSectionForPage(page: Page): NavSection | undefined {
  */
 export function getPageLabel(page: Page): string {
   if (page === 'home') return 'Dashboard';
+  if (page === 'chat') return NAV_CHAT_ITEM.label;
 
   for (const section of NAV_SECTIONS) {
     const item = section.items.find(i => i.page === page || i.subPages?.includes(page));
     if (item) return item.label;
   }
 
-  const footerItem = NAV_FOOTER_ITEMS.find(i => i.page === page);
+  const footerItem = NAV_FOOTER_ITEMS.find(i => i.page === page || i.subPages?.includes(page));
   if (footerItem) return footerItem.label;
 
-  return 'My Brain';
+  return 'ZenAI';
 }
 
 /**
- * Find NavItem by page identifier (searches sections + footer)
+ * Find NavItem by page identifier (searches chat, sections + footer)
  */
 export function getNavItemByPage(page: Page): NavItem | undefined {
   if (page === 'home') return { page: 'home', icon: '🏠', label: 'Dashboard' };
+  if (page === 'chat') return NAV_CHAT_ITEM;
 
   for (const section of NAV_SECTIONS) {
     const item = section.items.find(i => i.page === page || i.subPages?.includes(page));
     if (item) return item;
   }
 
-  return NAV_FOOTER_ITEMS.find(i => i.page === page);
+  return NAV_FOOTER_ITEMS.find(i => i.page === page || i.subPages?.includes(page));
 }

@@ -182,7 +182,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                 <span className="dash-stat-label">Diese Woche</span>
               </div>
             </div>
-            <div className="dash-stat-card ai" role="link" tabIndex={0} title="KI-Werkstatt öffnen" onClick={() => onNavigate('ai-workshop')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ai-workshop')}>
+            <div className="dash-stat-card ai" role="link" tabIndex={0} title="Chat mit ZenAI" onClick={() => onNavigate('chat')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('chat')}>
               <span className="dash-stat-icon" aria-hidden="true">🧠</span>
               <div className="dash-stat-data">
                 <span className={`dash-stat-value ${isAIActive ? 'active' : ''}`}>

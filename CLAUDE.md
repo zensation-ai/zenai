@@ -137,12 +137,24 @@
 ### Frontend
 
 - App: `frontend/src/App.tsx`
-- Chat Component: `frontend/src/components/GeneralChat.tsx`
+- Navigation Config: `frontend/src/navigation.ts` (Single Source of Truth)
+- Page Types: `frontend/src/types/idea.ts` (Page union type)
+- Layout: `frontend/src/components/layout/AppLayout.tsx`
+- Sidebar: `frontend/src/components/layout/Sidebar.tsx`
+- Chat Page: `frontend/src/components/ChatPage.tsx`
+- Ideas Page: `frontend/src/components/IdeasPage.tsx` (4 Tabs)
+- Workshop: `frontend/src/components/AIWorkshop.tsx` (3 Tabs)
+- Insights: `frontend/src/components/InsightsDashboard.tsx` (3 Tabs)
+- Documents: `frontend/src/components/DocumentVaultPage/DocumentVaultPage.tsx` (4 Tabs)
+- Business: `frontend/src/components/BusinessDashboard.tsx` (8 Tabs)
+- Learning: `frontend/src/components/LearningDashboard.tsx`
+- My AI: `frontend/src/components/MyAIPage.tsx` (3 Tabs)
+- Settings: `frontend/src/components/SettingsDashboard.tsx` (7 Tabs)
+- Dashboard: `frontend/src/components/Dashboard.tsx`
+- Chat Component: `frontend/src/components/GeneralChat/GeneralChat.tsx`
 - Image Upload: `frontend/src/components/ImageUpload.tsx`
-- Voice Input: `frontend/src/components/VoiceInput.tsx`
 - Artifact Panel: `frontend/src/components/ArtifactPanel.tsx`
-- Project Context: `frontend/src/components/ProjectContext.tsx`
-- Code Result Component: `frontend/src/components/CodeExecutionResult.tsx`
+- Command Palette: `frontend/src/components/CommandPalette.tsx`
 
 ### Tests
 
@@ -330,7 +342,7 @@ cd backend && npm test -- --coverage
 cd frontend && npm test
 ```
 
-### Test-Status (2026-02-10)
+### Test-Status (2026-02-11)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
@@ -432,6 +444,52 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-02-11: Frontend Navigation & Workspace Reorganisation
+
+**Komplette Neuorganisation der Frontend-Navigation und Arbeitsbereiche.**
+
+**Vorher:** 5 Sektionen, 17 Sidebar-Items, 3 Footer = 20 Klickziele
+**Nachher:** 3 Sektionen, 8 Sidebar-Items, 2 Footer = 12 Klickziele (40% weniger)
+
+**Neue Sidebar-Struktur:**
+
+```text
+Dashboard
+Chat (NEU: eigene Seite)
+─── Denken ───
+  Gedanken (4 Tabs: Aktiv, Inkubator, Archiv, Sortieren)
+  Werkstatt (3 Tabs: Vorschlaege, Entwicklung, Agenten)
+─── Entdecken ───
+  Insights (3 Tabs: Statistiken, Zusammenfassung, Verbindungen)
+  Wissensbasis (4 Tabs: Dokumente, Editor, Medien, Meetings)
+  Business (8 Tabs)
+─── Wachsen ───
+  Lernen
+  Meine KI (3 Tabs: KI anpassen, KI-Wissen, Sprach-Chat)
+─── Footer ───
+  Einstellungen (7 Tabs: Profil, Allgemein, KI, Datenschutz, Automationen, Integrationen, Daten)
+  Benachrichtigungen
+```
+
+**Wichtigste Aenderungen:**
+
+| Aenderung | Details |
+|-----------|---------- |
+| Chat als eigene Seite | `/chat` - Vollbild-Chat, Floating-Bubble bleibt |
+| Inkubator → Gedanken-Tab | `/ideas/incubator` statt `/incubator` |
+| Meetings → Wissensbasis-Tab | `/documents/meetings` statt `/meetings` |
+| Voice-Chat → Meine KI-Tab | `/my-ai/voice-chat` statt in Workshop |
+| Workshop umbenannt | `/workshop` statt `/ai-workshop` |
+| Settings absorbiert | Profil, Automationen, Integrationen, Export, Sync als Tabs |
+| DataManagement.tsx | NEU: Export + Sync kombiniert |
+| Legacy-Redirects | Alle alten URLs redirecten korrekt |
+
+**Geaenderte Dateien (~25):** types/idea.ts, navigation.ts, App.tsx, ChatPage.tsx (NEU), DataManagement.tsx (NEU), IdeasPage.tsx, AIWorkshop.tsx, MyAIPage.tsx, DocumentVaultPage.tsx, SettingsDashboard.tsx, IncubatorPage.tsx, MeetingsPage.tsx, ProfileDashboard.tsx, AutomationDashboard.tsx, IntegrationsPage.tsx, ExportDashboard.tsx, SyncDashboard.tsx, Sidebar.tsx, MobileBottomBar.tsx, MobileSidebarDrawer.tsx, Breadcrumbs.tsx, CommandPalette.tsx, Dashboard.tsx, QuickActions.tsx, AppLayout.tsx
+
+**Tests:** 481 Frontend bestanden, Build clean
+
+---
 
 ### 2026-02-11: Business Connector API Keys Configured (Stripe, GA4, GSC)
 

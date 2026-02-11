@@ -88,10 +88,6 @@ export function AppLayout({
     setMobileChatOpen(false);
   }, [onNavigate]);
 
-  const handleOpenChat = useCallback(() => {
-    setMobileChatOpen(true);
-  }, []);
-
   const handleCloseChat = useCallback(() => {
     setMobileChatOpen(false);
   }, []);
@@ -195,7 +191,6 @@ export function AppLayout({
       <MobileBottomBar
         currentPage={currentPage}
         onNavigate={handleMobileNavigate}
-        onOpenChat={handleOpenChat}
         onOpenMore={handleOpenMobileSidebar}
       />
 

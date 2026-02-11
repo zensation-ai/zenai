@@ -1,20 +1,31 @@
 /**
- * SettingsDashboard - Echte App-Einstellungen
+ * SettingsDashboard - Einstellungen (7 Tabs)
  *
  * Tabs:
+ * - Profil: Benutzerprofil und Business-Profil
  * - Allgemein: Erscheinungsbild, Sprache, Startseite
  * - KI: Modell-Praeferenzen, Antwort-Stil, Tool-Einstellungen
  * - Datenschutz: Daten-Kontrolle, Loeschen, Export-Hinweis
+ * - Automationen: Workflows und AI-Vorschlaege
+ * - Integrationen: OAuth, API Keys, Webhooks
+ * - Daten: Export + Sync kombiniert
  */
 
-import { useState, memo } from 'react';
+import { useState, useEffect, useCallback, memo, Suspense, lazy } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
+import { SkeletonLoader } from './SkeletonLoader';
 import { useSettings } from '../hooks/useSettings';
 import '../neurodesign.css';
 import './SettingsDashboard.css';
 
-type SettingsTab = 'general' | 'ai' | 'privacy';
+const ProfileDashboard = lazy(() => import('./ProfileDashboard').then(m => ({ default: m.ProfileDashboard })));
+const AutomationDashboard = lazy(() => import('./AutomationDashboard').then(m => ({ default: m.AutomationDashboard })));
+const IntegrationsPage = lazy(() => import('./IntegrationsPage').then(m => ({ default: m.IntegrationsPage })));
+const DataManagement = lazy(() => import('./DataManagement').then(m => ({ default: m.DataManagement })));
+
+type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'integrations' | 'data';
 
 interface SettingsDashboardProps {
   context: AIContext;
@@ -24,11 +35,17 @@ interface SettingsDashboardProps {
   initialTab?: SettingsTab;
 }
 
-const TABS = [
-  { id: 'general' as const, label: 'Allgemein', icon: '\u2699\uFE0F', description: 'Erscheinungsbild und Verhalten' },
-  { id: 'ai' as const, label: 'KI', icon: '\uD83E\uDDE0', description: 'KI-Modell und Antwort-Stil' },
-  { id: 'privacy' as const, label: 'Datenschutz', icon: '\uD83D\uDD12', description: 'Daten-Kontrolle und Privatsph\u00E4re' },
+const TABS: { id: SettingsTab; label: string; icon: string; description: string }[] = [
+  { id: 'profile', label: 'Profil', icon: '👤', description: 'Benutzerprofil und Business-Daten' },
+  { id: 'general', label: 'Allgemein', icon: '⚙️', description: 'Erscheinungsbild und Verhalten' },
+  { id: 'ai', label: 'KI', icon: '🧠', description: 'KI-Modell und Antwort-Stil' },
+  { id: 'privacy', label: 'Datenschutz', icon: '🔒', description: 'Daten-Kontrolle und Privatsphaere' },
+  { id: 'automations', label: 'Automationen', icon: '⚡', description: 'Workflows und AI-Vorschlaege' },
+  { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
+  { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
+
+const VALID_TABS: SettingsTab[] = ['profile', 'general', 'ai', 'privacy', 'automations', 'integrations', 'data'];
 
 function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (val: boolean) => void; label: string }) {
   return (
@@ -70,17 +87,45 @@ function SettingsSelect({
   );
 }
 
+const TabLoader = () => (
+  <div className="settings-tab-loader">
+    <SkeletonLoader type="card" count={3} />
+  </div>
+);
+
 export const SettingsDashboard = memo(({
   context,
   onBack,
   onNavigate,
   initialTab = 'general'
 }: SettingsDashboardProps) => {
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const navigate = useNavigate();
+  const validatedTab = VALID_TABS.includes(initialTab as SettingsTab) ? initialTab as SettingsTab : 'general';
+  const [activeTab, setActiveTab] = useState<SettingsTab>(validatedTab);
   const { settings, updateSetting } = useSettings();
+
+  useEffect(() => {
+    setActiveTab(VALID_TABS.includes(initialTab as SettingsTab) ? initialTab as SettingsTab : 'general');
+  }, [initialTab]);
+
+  const handleTabChange = useCallback((tab: SettingsTab) => {
+    setActiveTab(tab);
+    if (tab === 'general') {
+      navigate('/settings', { replace: true });
+    } else {
+      navigate(`/settings/${tab}`, { replace: true });
+    }
+  }, [navigate]);
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'profile':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <ProfileDashboard onBack={() => handleTabChange('general')} context={context} embedded />
+          </Suspense>
+        );
+
       case 'general':
         return (
           <div className="settings-section-content">
@@ -89,7 +134,7 @@ export const SettingsDashboard = memo(({
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Farbschema</span>
-                  <span className="settings-item-desc">Wähle dein bevorzugtes Erscheinungsbild</span>
+                  <span className="settings-item-desc">Waehle dein bevorzugtes Erscheinungsbild</span>
                 </div>
                 <SettingsSelect
                   value={settings.theme}
@@ -145,21 +190,6 @@ export const SettingsDashboard = memo(({
                 <span className="settings-item-value">{context}</span>
               </div>
             </div>
-
-            <div className="settings-group">
-              <h3 className="settings-group-title">Schnellzugriff</h3>
-              <div className="settings-quick-links">
-                <button type="button" className="settings-quick-link" onClick={() => onNavigate('profile')}>
-                  <span>👤</span> Profil bearbeiten
-                </button>
-                <button type="button" className="settings-quick-link" onClick={() => onNavigate('notifications')}>
-                  <span>🔔</span> Benachrichtigungen
-                </button>
-                <button type="button" className="settings-quick-link" onClick={() => onNavigate('integrations')}>
-                  <span>🔗</span> Integrationen
-                </button>
-              </div>
-            </div>
           </div>
         );
 
@@ -171,7 +201,7 @@ export const SettingsDashboard = memo(({
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Aktives Modell</span>
-                  <span className="settings-item-desc">Primäres Sprachmodell für Antworten</span>
+                  <span className="settings-item-desc">Primaeres Sprachmodell fuer Antworten</span>
                 </div>
                 <SettingsSelect
                   value={settings.aiModel}
@@ -197,13 +227,13 @@ export const SettingsDashboard = memo(({
               <h3 className="settings-group-title">Verhalten</h3>
               <div className="settings-item">
                 <div className="settings-item-info">
-                  <span className="settings-item-label">Proaktive Vorschläge</span>
-                  <span className="settings-item-desc">KI schlägt eigenständig Ideen vor</span>
+                  <span className="settings-item-label">Proaktive Vorschlaege</span>
+                  <span className="settings-item-desc">KI schlaegt eigenstaendig Ideen vor</span>
                 </div>
                 <ToggleSwitch
                   checked={settings.proactiveSuggestions}
                   onChange={(val) => updateSetting('proactiveSuggestions', val)}
-                  label="Proaktive Vorschläge"
+                  label="Proaktive Vorschlaege"
                 />
               </div>
               <div className="settings-item">
@@ -216,18 +246,6 @@ export const SettingsDashboard = memo(({
                   onChange={(val) => updateSetting('memorySystem', val)}
                   label="Memory-System"
                 />
-              </div>
-            </div>
-
-            <div className="settings-group">
-              <h3 className="settings-group-title">Schnellzugriff</h3>
-              <div className="settings-quick-links">
-                <button type="button" className="settings-quick-link" onClick={() => onNavigate('my-ai')}>
-                  <span>🤖</span> Meine KI anpassen
-                </button>
-                <button type="button" className="settings-quick-link" onClick={() => onNavigate('automations')}>
-                  <span>⚡</span> Automationen
-                </button>
               </div>
             </div>
           </div>
@@ -257,19 +275,28 @@ export const SettingsDashboard = memo(({
                 <span className="settings-item-value">EU</span>
               </div>
             </div>
-
-            <div className="settings-group">
-              <h3 className="settings-group-title">Aktionen</h3>
-              <div className="settings-quick-links">
-                <button type="button" className="settings-quick-link" onClick={() => onNavigate('export')}>
-                  <span>📤</span> Daten exportieren
-                </button>
-                <button type="button" className="settings-quick-link" onClick={() => onNavigate('sync')}>
-                  <span>🔄</span> Sync verwalten
-                </button>
-              </div>
-            </div>
           </div>
+        );
+
+      case 'automations':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <AutomationDashboard context={context} onBack={() => handleTabChange('general')} embedded />
+          </Suspense>
+        );
+
+      case 'integrations':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <IntegrationsPage onBack={() => handleTabChange('general')} embedded />
+          </Suspense>
+        );
+
+      case 'data':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <DataManagement context={context} />
+          </Suspense>
         );
 
       default:
@@ -284,7 +311,7 @@ export const SettingsDashboard = memo(({
         icon="⚙️"
         subtitle="App-Konfiguration und Datenschutz"
         onBack={onBack}
-        backLabel="Zurück"
+        backLabel="Zurueck"
         onNavigate={(page) => onNavigate(page)}
       />
 
@@ -295,7 +322,7 @@ export const SettingsDashboard = memo(({
             type="button"
             role="tab"
             className={`settings-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
             aria-selected={activeTab === tab.id ? true : undefined}
             aria-controls={`tabpanel-${tab.id}`}
             title={tab.description}

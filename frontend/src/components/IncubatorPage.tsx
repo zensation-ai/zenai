@@ -64,6 +64,7 @@ interface IncubatorStats {
 interface Props {
   onBack: () => void;
   onIdeaCreated?: (ideaId: string) => void;
+  embedded?: boolean;
 }
 
 /**
@@ -99,7 +100,7 @@ function getMoodClass(mood: 'fresh' | 'aging' | 'dormant'): string {
   }
 }
 
-export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
+export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
   const [clusters, setClusters] = useState<ThoughtCluster[]>([]);
   const [stats, setStats] = useState<IncubatorStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -381,34 +382,35 @@ export function IncubatorPage({ onBack, onIdeaCreated }: Props) {
         </div>
       )}
 
-      <header className="incubator-header liquid-glass-dark">
-        <button
-          className="back-button neuro-hover-lift neuro-anticipate"
-          onClick={onBack}
-          data-anticipate="Zurueck zur Uebersicht"
-          aria-label="Zurueck zur Hauptseite"
-        >
-          ← Zurueck
-        </button>
-        <div className="header-title">
-          {/* NEURO-UX: Personalized greeting based on time of day */}
-          <h1 className="neuro-greeting-adaptive">
-            <span className="greeting-emoji" aria-hidden="true">{greeting.emoji}</span>
-            {' '}Gedanken-Inkubator
-          </h1>
-          <span className="subtitle neuro-subtext-emotional">
-            {greeting.subtext}
-          </span>
-        </div>
-        <button
-          className="refresh-button neuro-hover-lift neuro-anticipate"
-          onClick={loadData}
-          data-anticipate="Daten aktualisieren"
-          aria-label="Inkubator aktualisieren"
-        >
-          ↻ Aktualisieren
-        </button>
-      </header>
+      {!embedded && (
+        <header className="incubator-header liquid-glass-dark">
+          <button
+            className="back-button neuro-hover-lift neuro-anticipate"
+            onClick={onBack}
+            data-anticipate="Zurueck zur Uebersicht"
+            aria-label="Zurueck zur Hauptseite"
+          >
+            ← Zurueck
+          </button>
+          <div className="header-title">
+            <h1 className="neuro-greeting-adaptive">
+              <span className="greeting-emoji" aria-hidden="true">{greeting.emoji}</span>
+              {' '}Gedanken-Inkubator
+            </h1>
+            <span className="subtitle neuro-subtext-emotional">
+              {greeting.subtext}
+            </span>
+          </div>
+          <button
+            className="refresh-button neuro-hover-lift neuro-anticipate"
+            onClick={loadData}
+            data-anticipate="Daten aktualisieren"
+            aria-label="Inkubator aktualisieren"
+          >
+            ↻ Aktualisieren
+          </button>
+        </header>
+      )}
 
       {/* NEURO-UX: Quick Input with anticipatory design */}
       <section className="quick-input-section">

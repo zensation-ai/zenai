@@ -19,9 +19,10 @@ interface ExportHistory {
 interface ExportDashboardProps {
   onBack: () => void;
   context: string;
+  embedded?: boolean;
 }
 
-export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
+export function ExportDashboard({ onBack, context, embedded }: ExportDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [activeTab, setActiveTab] = useState<'export' | 'history' | 'backup'>('export');
   const [loading, setLoading] = useState(false);
@@ -161,16 +162,18 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
 
   return (
     <div className="export-dashboard neuro-page-enter">
-      <div className="export-header liquid-glass-nav">
-        <button className="back-button neuro-hover-lift" onClick={onBack} type="button">
-          ← Zurück
-        </button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} Export Center</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+      {!embedded && (
+        <div className="export-header liquid-glass-nav">
+          <button className="back-button neuro-hover-lift" onClick={onBack} type="button">
+            ← Zurück
+          </button>
+          <div className="header-greeting">
+            <h1>{greeting.emoji} Export Center</h1>
+            <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
+          </div>
+          <ExportMenu context={context as AIContext} ideasCount={ideasCount} />
         </div>
-        <ExportMenu context={context as AIContext} ideasCount={ideasCount} />
-      </div>
+      )}
 
       <div className="export-tabs">
         <button
