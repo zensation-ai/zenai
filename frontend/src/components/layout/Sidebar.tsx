@@ -24,6 +24,7 @@ interface SidebarProps {
   onNavigate: (page: Page) => void;
   apiStatus: ApiStatus | null;
   isAIActive: boolean;
+  aiActivityMessage?: string;
   archivedCount: number;
   notificationCount: number;
   favoritePages?: Page[];
@@ -38,6 +39,7 @@ export const Sidebar = memo(function Sidebar({
   onNavigate,
   apiStatus,
   isAIActive,
+  aiActivityMessage,
   archivedCount,
   notificationCount,
   favoritePages,
@@ -106,7 +108,14 @@ export const Sidebar = memo(function Sidebar({
           aria-label="Zum Dashboard"
         >
           <BrainLogo size={32} className="sidebar-logo-svg" />
-          <span className={`sidebar-logo-dot ${isAIActive ? 'active' : ''}`} aria-hidden="true" />
+          <span
+            className={`sidebar-logo-dot ${isAIActive ? 'active' : ''}`}
+            aria-hidden="true"
+            title={isAIActive && aiActivityMessage ? aiActivityMessage : undefined}
+          />
+          {isAIActive && aiActivityMessage && !collapsed && (
+            <span className="sidebar-brain-tooltip">{aiActivityMessage}</span>
+          )}
         </button>
         {!collapsed && <span className="sidebar-logo-text">My Brain</span>}
         <button

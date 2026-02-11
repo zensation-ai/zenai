@@ -25,6 +25,7 @@ interface AppLayoutProps {
   onNavigate: (page: Page) => void;
   apiStatus: ApiStatus | null;
   isAIActive: boolean;
+  aiActivityMessage?: string;
   archivedCount: number;
   notificationCount: number;
   onOpenSearch: () => void;
@@ -44,6 +45,7 @@ export function AppLayout({
   onNavigate,
   apiStatus,
   isAIActive,
+  aiActivityMessage,
   archivedCount,
   notificationCount,
   onOpenSearch,
@@ -151,6 +153,7 @@ export function AppLayout({
         onNavigate={onNavigate}
         apiStatus={apiStatus}
         isAIActive={isAIActive}
+        aiActivityMessage={aiActivityMessage}
         archivedCount={archivedCount}
         notificationCount={notificationCount}
         favoritePages={favoritePages}

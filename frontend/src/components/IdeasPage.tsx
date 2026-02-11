@@ -22,7 +22,7 @@ import { AIBrain } from './AIBrain';
 import { SkeletonLoader } from './SkeletonLoader';
 import { ErrorBoundary } from './ErrorBoundary';
 import { GeneralChat } from './GeneralChat';
-import { AIProcessingOverlay } from './AIProcessingOverlay';
+// AIProcessingOverlay is now rendered globally in App.tsx
 import { CommandCenter } from './CommandCenter';
 import { RateLimitBanner } from './RateLimitBanner';
 import { showToast } from './Toast';
@@ -573,14 +573,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
         </Suspense>
       )}
 
-      {/* AI Processing Overlay */}
-      {aiOverlay?.visible && (
-        <AIProcessingOverlay
-          isVisible={aiOverlay.visible}
-          processType={aiOverlay.type}
-          currentStepIndex={aiOverlay.step}
-        />
-      )}
+      {/* AI Processing Overlay is now rendered globally in App.tsx */}
       </>}
     </div>
   );

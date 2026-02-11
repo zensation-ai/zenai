@@ -1,10 +1,11 @@
 import React, { memo } from 'react';
 import { getStepsForType, getStepProgress } from '../utils/aiSteps';
+import type { ProcessType } from '../utils/aiSteps';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './AIProcessingOverlay.css';
 
-export type ProcessType = 'voice' | 'text' | 'search';
+export type { ProcessType };
 
 interface AIProcessingOverlayProps {
   isVisible: boolean;

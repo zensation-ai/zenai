@@ -15,6 +15,7 @@ import { SkeletonLoader } from './components/SkeletonLoader';
 import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { useCommandPalette, CommandPalette } from './components/CommandPalette';
 import type { ProcessType } from './components/AIProcessingOverlay';
+import { AIProcessingOverlay } from './components/AIProcessingOverlay';
 import type { InputMode } from './components/CommandCenter';
 import type { AdvancedFilters } from './components/SearchFilterBar';
 import { safeLocalStorage } from './utils/storage';
@@ -22,7 +23,9 @@ import { getErrorMessage } from './utils/errors';
 import { safeParseResponse, IdeaCreationResponseSchema, SearchResponseSchema, ProgressiveSearchResponseSchema } from './utils/apiSchemas';
 import { GeneralChat } from './components/GeneralChat';
 import { ContextNudge } from './components/ContextNudge';
+import { AIQuestionBubble } from './components/AIQuestionBubble';
 import { useIdeasData } from './hooks/useIdeasData';
+import { useAIQuestions } from './hooks/useAIQuestions';
 
 // Neurodesign System
 import { NeuroFeedbackProvider } from './components/NeuroFeedback';
@@ -261,6 +264,22 @@ function App() {
 
   const isAIActive = processing || isSearching || isRecording || loading;
   const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
+  const aiActivityMessage = useMemo(() => {
+    if (!isAIActive) return undefined;
+    if (isRecording) return 'Transkribiere...';
+    if (isSearching) return 'Suche...';
+    if (processing) return 'Verarbeite Gedanken...';
+    if (loading) return 'Lade Daten...';
+    return undefined;
+  }, [isAIActive, isRecording, isSearching, processing, loading]);
+
+  // Proactive AI questions
+  const aiQuestions = useAIQuestions({
+    currentPage,
+    ideasCount: ideas.length,
+    ideas,
+    onNavigate: navigateToPage,
+  });
 
   // Clear search/selection when context changes (data reset handled by useIdeasData)
   useEffect(() => {
@@ -680,6 +699,7 @@ function App() {
         onNavigate={navigateToPage}
         apiStatus={apiStatus}
         isAIActive={isAIActive}
+        aiActivityMessage={aiActivityMessage}
         archivedCount={archivedCount}
         notificationCount={notificationCount}
         onOpenSearch={commandPalette.open}
@@ -698,6 +718,14 @@ function App() {
 
       <ToastContainer />
 
+      {aiOverlay?.visible && (
+        <AIProcessingOverlay
+          isVisible={aiOverlay.visible}
+          processType={aiOverlay.type}
+          currentStepIndex={aiOverlay.step}
+        />
+      )}
+
       {contextNudge && (
         <ContextNudge
           currentContext={context}
@@ -707,6 +735,18 @@ function App() {
           confidence={contextNudge.confidence}
           onMove={handleContextNudgeMove}
           onDismiss={() => setContextNudge(null)}
+        />
+      )}
+
+      {aiQuestions.currentQuestion && !contextNudge && !aiOverlay?.visible && (
+        <AIQuestionBubble
+          question={aiQuestions.currentQuestion.question}
+          emoji={aiQuestions.currentQuestion.emoji}
+          category={aiQuestions.currentQuestion.category}
+          actionLabel={aiQuestions.currentQuestion.actionLabel}
+          dismissLabel={aiQuestions.currentQuestion.dismissLabel}
+          onAction={aiQuestions.currentQuestion.action}
+          onDismiss={aiQuestions.dismiss}
         />
       )}
 
