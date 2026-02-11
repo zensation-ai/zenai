@@ -232,6 +232,59 @@ ${question}`;
 }));
 
 // ===========================================
+// Get Conversation History
+// ===========================================
+
+/**
+ * GET /api/personalization/history
+ * Load conversation history for a session (or most recent session)
+ */
+personalizationChatRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { session_id } = req.query;
+
+  let result;
+
+  if (session_id && typeof session_id === 'string') {
+    // Validate UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(session_id)) {
+      throw new ValidationError('Invalid session_id format');
+    }
+    result = await query(`
+      SELECT role, message, created_at
+      FROM personalization_conversations
+      WHERE session_id = $1
+      ORDER BY created_at ASC
+    `, [session_id]);
+  } else {
+    // Load most recent session
+    result = await query(`
+      SELECT pc.role, pc.message, pc.created_at, pc.session_id
+      FROM personalization_conversations pc
+      WHERE pc.session_id = (
+        SELECT session_id FROM personalization_conversations
+        ORDER BY created_at DESC LIMIT 1
+      )
+      ORDER BY pc.created_at ASC
+    `);
+  }
+
+  const sessionId = result.rows[0]?.session_id || session_id || null;
+
+  res.json({
+    success: true,
+    data: {
+      session_id: sessionId,
+      messages: result.rows.map(r => ({
+        role: r.role === 'ai' ? 'assistant' : r.role,
+        content: r.message,
+        created_at: r.created_at,
+      })),
+    },
+  });
+}));
+
+// ===========================================
 // Get Learned Facts
 // ===========================================
 

@@ -60,8 +60,13 @@ const categoryLabels: Record<string, { label: string; icon: string }> = {
   skills: { label: 'Fähigkeiten', icon: '🛠️' },
 };
 
+const SESSION_STORAGE_KEY = 'zenai_personalization_session';
+
 export function PersonalizationChat({ onBack, context, embedded }: PersonalizationChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(
+    () => localStorage.getItem(SESSION_STORAGE_KEY)
+  );
   const [facts, setFacts] = useState<LearnedFact[]>([]);
   const [progress, setProgress] = useState<LearningProgress[]>([]);
   const [summary, setSummary] = useState<UserSummary | null>(null);
@@ -76,24 +81,71 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
   // AbortController ref to prevent memory leaks on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const persistSessionId = useCallback((id: string) => {
+    setSessionId(id);
+    localStorage.setItem(SESSION_STORAGE_KEY, id);
+  }, []);
+
+  const startNewConversation = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const startRes = await axios.get('/api/personalization/start', { signal });
+      const data = startRes.data?.data || startRes.data;
+      if (data?.sessionId) {
+        persistSessionId(data.sessionId);
+      }
+      if (data?.message) {
+        setMessages([{
+          id: 'initial',
+          role: 'assistant',
+          content: data.message,
+          timestamp: new Date().toISOString(),
+        }]);
+      }
+    } catch (err) {
+      if (axios.isCancel(err)) return;
+      logError('PersonalizationChat:startNew', err);
+    }
+  }, [persistSessionId]);
+
   const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const [startRes, factsRes, progressRes, summaryRes] = await Promise.all([
-        axios.get('/api/personalization/start', { signal }).catch(() => ({ data: { question: null } })),
+
+      // Load facts, progress, summary in parallel
+      const [factsRes, progressRes, summaryRes] = await Promise.all([
         axios.get('/api/personalization/facts', { signal }).catch(() => ({ data: { facts: [] } })),
         axios.get('/api/personalization/progress', { signal }).catch(() => ({ data: { progress: [] } })),
         axios.get('/api/personalization/summary', { signal }).catch(() => ({ data: { summary: null } })),
       ]);
 
-      // Add initial AI message if no messages yet
-      if (startRes.data.question && messages.length === 0) {
-        setMessages([{
-          id: 'initial',
-          role: 'assistant',
-          content: startRes.data.question,
-          timestamp: new Date().toISOString(),
-        }]);
+      // Try loading existing conversation history
+      const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (storedSessionId) {
+        try {
+          const historyRes = await axios.get('/api/personalization/history', {
+            params: { session_id: storedSessionId },
+            signal,
+          });
+          const history = historyRes.data?.data?.messages || [];
+          if (history.length > 0) {
+            setMessages(history.map((m: { role: string; content: string; created_at: string }, i: number) => ({
+              id: `hist-${i}`,
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+              timestamp: m.created_at,
+            })));
+            setSessionId(storedSessionId);
+          } else {
+            // Session exists but empty — start fresh
+            await startNewConversation(signal);
+          }
+        } catch {
+          // History load failed — start fresh
+          await startNewConversation(signal);
+        }
+      } else {
+        // No stored session — start fresh
+        await startNewConversation(signal);
       }
 
       setFacts(factsRes.data.facts || []);
@@ -106,7 +158,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
     } finally {
       setLoading(false);
     }
-  }, [messages.length]);
+  }, [startNewConversation]);
 
   useEffect(() => {
     // Abort any previous request
@@ -144,24 +196,33 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
 
     try {
       const res = await axios.post('/api/personalization/chat', {
+        sessionId,
         message: userMessage.content,
         context,
       });
 
+      const responseData = res.data?.data || res.data;
+
+      // Persist sessionId from response if we didn't have one
+      if (responseData?.sessionId && !sessionId) {
+        persistSessionId(responseData.sessionId);
+      }
+
       const aiMessage: ChatMessage = {
         id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: res.data.response,
+        content: responseData?.response || res.data.response,
         timestamp: new Date().toISOString(),
       };
 
       setMessages(prev => [...prev, aiMessage]);
 
       // Refresh facts if new ones were learned
-      if (res.data.new_facts && res.data.new_facts.length > 0) {
-        setFacts(prev => [...res.data.new_facts, ...prev]);
+      const newFacts = responseData?.newFacts || res.data.new_facts;
+      if (newFacts && newFacts.length > 0) {
+        setFacts(prev => [...newFacts, ...prev]);
         const reaction = FEEDBACK_REACTIONS.positive[Math.floor(Math.random() * FEEDBACK_REACTIONS.positive.length)];
-        showToast(`${res.data.new_facts.length} neue(s) Fakt(en) gelernt! ${reaction}`, 'success');
+        showToast(`${newFacts.length} neue(s) Fakt(en) gelernt! ${reaction}`, 'success');
       }
     } catch (err) {
       const message = axios.isAxiosError(err)
@@ -373,7 +434,23 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
               {sending ? '...' : '→'}
             </button>
           </div>
-          <p className="chat-hint">Enter zum Senden, Shift+Enter für neue Zeile</p>
+          <div className="chat-footer">
+            <p className="chat-hint">Enter zum Senden, Shift+Enter für neue Zeile</p>
+            {messages.length > 2 && (
+              <button
+                type="button"
+                className="new-conversation-btn"
+                onClick={async () => {
+                  localStorage.removeItem(SESSION_STORAGE_KEY);
+                  setMessages([]);
+                  setSessionId(null);
+                  await startNewConversation();
+                }}
+              >
+                Neues Gespräch
+              </button>
+            )}
+          </div>
         </div>
       )}
 

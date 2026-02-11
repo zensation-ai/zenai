@@ -359,11 +359,33 @@
   cursor: not-allowed;
 }
 
+.chat-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
 .chat-hint {
-  text-align: center;
   font-size: 0.8rem;
   color: var(--text-muted);
-  margin-top: 8px;
+}
+
+.new-conversation-btn {
+  background: none;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.new-conversation-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 /* Facts Container */
