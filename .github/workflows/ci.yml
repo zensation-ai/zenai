@@ -28,6 +28,8 @@ jobs:
       - name: Run ESLint
         working-directory: backend
         run: npm run lint
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
   test-backend:
     runs-on: ubuntu-latest
