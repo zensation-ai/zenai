@@ -168,6 +168,16 @@ export function useKeyboardShortcutsModal() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip when typing in input fields, textareas, or contenteditable elements
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
       // Open with ? (without modifiers) or Cmd+/
       if (
         (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) ||

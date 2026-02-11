@@ -22,7 +22,7 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(20, 30, 42, 0.3);
+  background: rgba(20, 30, 42, 0.5);
 }
 
 .hub-tabs::-webkit-scrollbar {

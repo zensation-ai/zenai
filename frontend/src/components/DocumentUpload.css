@@ -61,7 +61,7 @@
 
 .dropzone-text .secondary {
   font-size: 0.9rem;
-  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.7));
   margin: 0;
 }
 
@@ -69,7 +69,7 @@
   display: flex;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.4));
+  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.65));
 }
 
 /* File List */
@@ -184,7 +184,7 @@
 
 .file-meta {
   font-size: 0.8rem;
-  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.7));
 }
 
 .file-error {
@@ -216,7 +216,7 @@
   background: rgba(255, 255, 255, 0.1);
   border: none;
   border-radius: 50%;
-  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.7));
   cursor: pointer;
   flex-shrink: 0;
   transition: all var(--neuro-timing-quick, 0.15s);

@@ -343,7 +343,7 @@
 }
 
 :root.dark-mode .command-palette-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 :root.dark-mode .command-palette-group-header {
@@ -373,7 +373,7 @@
 }
 
 :root.dark-mode .command-palette-hint {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 :root.dark-mode .command-palette-shortcut-hint,

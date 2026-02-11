@@ -28,7 +28,7 @@
 .voice-chat-close {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
   font-size: 16px;
   cursor: pointer;
   padding: 4px 8px;
@@ -54,7 +54,7 @@
 
 .voice-chat-empty {
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dark-text-muted);
   font-size: 14px;
   padding: 40px 20px;
   line-height: 1.6;
@@ -89,7 +89,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dark-text-muted);
   margin-bottom: 4px;
 }
 
@@ -148,7 +148,7 @@
 
 .voice-chat-status-label {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
 }
 
 .voice-chat-button {

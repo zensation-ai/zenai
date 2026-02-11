@@ -79,7 +79,7 @@
 
 .business-kpi-label {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -113,7 +113,7 @@
   text-align: left;
   padding: 0.75rem;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -150,7 +150,7 @@
 .business-empty {
   text-align: center;
   padding: 3rem 1.5rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
 }
 
 .business-empty-icon {
@@ -271,7 +271,7 @@
 
 .business-connector-meta {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
 }
 
 /* Responsive */

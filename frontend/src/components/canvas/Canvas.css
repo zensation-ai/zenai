@@ -50,7 +50,7 @@
 .canvas-empty-content p {
   margin: 0 0 24px;
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
   line-height: 1.5;
 }
 
@@ -109,7 +109,7 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -157,7 +157,7 @@
   background: none;
   border: 1px solid transparent;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
@@ -241,7 +241,7 @@
   background: none;
   border: none;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -264,7 +264,7 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.60);
   padding: 0 4px;
   white-space: nowrap;
 }
@@ -318,7 +318,7 @@
 }
 
 .canvas-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.40);
 }
 
 /* Preview Pane */
@@ -437,7 +437,7 @@
 }
 
 .canvas-preview-empty {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.55);
   font-style: italic;
   padding: 20px 0;
 }
@@ -496,7 +496,7 @@
 .canvas-doc-list-close {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.65);
   font-size: 16px;
   cursor: pointer;
   padding: 4px 8px;
@@ -530,7 +530,7 @@
 }
 
 .canvas-doc-list-search input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.50);
 }
 
 .canvas-doc-list-new {
@@ -559,7 +559,7 @@
 .canvas-doc-list-empty {
   text-align: center;
   padding: 24px 16px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.60);
   font-size: 13px;
 }
 
@@ -612,13 +612,13 @@
 
 .canvas-doc-list-item-meta {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.60);
 }
 
 .canvas-doc-list-item-delete {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.50);
   font-size: 14px;
   cursor: pointer;
   padding: 4px 6px;

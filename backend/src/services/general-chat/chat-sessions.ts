@@ -124,11 +124,27 @@ export interface VisionMessageResult {
 export async function createSession(context: 'personal' | 'work' | 'learning' | 'creative' = 'personal', sessionType: 'general' | 'assistant' = 'general'): Promise<ChatSession> {
   const id = uuidv4();
 
-  const result = await query(`
-    INSERT INTO general_chat_sessions (id, context, session_type)
-    VALUES ($1, $2, $3)
-    RETURNING id, context, title, created_at, updated_at
-  `, [id, context, sessionType]);
+  let result;
+  try {
+    result = await query(`
+      INSERT INTO general_chat_sessions (id, context, session_type)
+      VALUES ($1, $2, $3)
+      RETURNING id, context, title, created_at, updated_at
+    `, [id, context, sessionType]);
+  } catch (err: unknown) {
+    // Fallback if session_type column doesn't exist yet (migration not applied)
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('session_type')) {
+      logger.warn('session_type column missing, falling back to basic insert');
+      result = await query(`
+        INSERT INTO general_chat_sessions (id, context)
+        VALUES ($1, $2)
+        RETURNING id, context, title, created_at, updated_at
+      `, [id, context]);
+    } else {
+      throw err;
+    }
+  }
 
   const row = result.rows[0];
 

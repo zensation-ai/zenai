@@ -94,13 +94,18 @@ CREATE INDEX IF NOT EXISTS idx_pers_conv_created ON personalization_conversation
 CREATE TABLE IF NOT EXISTS general_chat_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     context VARCHAR(20) NOT NULL DEFAULT 'personal',
+    session_type VARCHAR(20) DEFAULT 'general',
     title VARCHAR(255),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Ensure session_type column exists for existing installations
+ALTER TABLE general_chat_sessions ADD COLUMN IF NOT EXISTS session_type VARCHAR(20) DEFAULT 'general';
+
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_context ON general_chat_sessions(context);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_updated ON general_chat_sessions(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_type ON general_chat_sessions(session_type);
 
 -- =====================================================
 -- 5. GENERAL_CHAT_MESSAGES TABLE

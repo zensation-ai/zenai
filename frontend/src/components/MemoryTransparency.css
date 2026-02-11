@@ -16,7 +16,7 @@
 
 .mem-section-subtitle {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--dark-text-muted);
   margin: 0 0 1.25rem;
 }
 
@@ -47,7 +47,7 @@
 .mem-stat-label {
   display: block;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dark-text-muted);
   margin-top: 0.15rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -108,7 +108,7 @@
 
 .mem-learning-date {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .mem-learning-content {
@@ -123,7 +123,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .mem-confidence-dot {
@@ -138,7 +138,7 @@
 .mem-confidence-dot.confidence-low { background: #94a3b8; }
 
 .mem-learning-source {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dark-text-muted);
 }
 
 .mem-learning-occurrences {
@@ -167,7 +167,7 @@
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
   flex-shrink: 0;
 }
 
@@ -194,7 +194,7 @@
 
 .mem-health-label {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
 }
 
 .mem-health-value {
@@ -227,7 +227,7 @@
 
 .mem-compact-count {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--dark-text-muted);
 }
 
 .mem-compact .mem-stats {
@@ -246,7 +246,7 @@
 .mem-error {
   text-align: center;
   padding: 2rem 1rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--dark-text-muted);
 }
 
 .mem-retry-btn {

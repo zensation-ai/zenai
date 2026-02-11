@@ -97,7 +97,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.5));
+  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.65));
   margin-top: auto;
 }
 
@@ -147,7 +147,7 @@
 
 .document-card.list-view .card-summary {
   font-size: 0.85rem;
-  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.7));
   margin: 0.25rem 0 0;
   white-space: nowrap;
   overflow: hidden;
@@ -160,7 +160,7 @@
   align-items: flex-end;
   gap: 0.125rem;
   font-size: 0.8rem;
-  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.5));
+  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.65));
   flex-shrink: 0;
   min-width: 80px;
 }
@@ -217,7 +217,7 @@
 
 .keyword-more {
   font-size: 0.75rem;
-  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.5));
+  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.65));
 }
 
 /* Selection Checkbox */
@@ -307,5 +307,5 @@
 
 /* Separator */
 .separator {
-  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.3));
+  color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.50));
 }
