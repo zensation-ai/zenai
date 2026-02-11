@@ -36,7 +36,7 @@ export const NAV_CHAT_ITEM: NavItem = {
   page: 'chat',
   icon: '💬',
   label: 'Chat',
-  description: 'Direkte KI-Konversation',
+  description: 'Direkt mit der KI sprechen',
 };
 
 /**
@@ -57,14 +57,14 @@ export const NAV_SECTIONS: NavSection[] = [
         page: 'ideas',
         icon: '💡',
         label: 'Gedanken',
-        description: 'Ideen erfassen, entwickeln und ordnen',
+        description: 'Deine Ideen sammeln & ordnen',
         subPages: ['incubator', 'archive', 'triage'],
       },
       {
         page: 'workshop',
         icon: '🧪',
         label: 'Werkstatt',
-        description: 'KI-Vorschlaege und Agenten',
+        description: 'KI entwickelt deine Ideen weiter',
         subPages: ['proactive', 'evolution', 'agent-teams'],
       },
     ],
@@ -78,21 +78,21 @@ export const NAV_SECTIONS: NavSection[] = [
         page: 'insights',
         icon: '📊',
         label: 'Insights',
-        description: 'Statistiken, Trends und Verbindungen',
+        description: 'Muster & Trends in deinen Gedanken',
         subPages: ['analytics', 'digest', 'knowledge-graph'],
       },
       {
         page: 'documents',
         icon: '📚',
         label: 'Wissensbasis',
-        description: 'Dokumente, Editor, Medien und Meetings',
+        description: 'Dokumente, Notizen & Meetings',
         subPages: ['canvas', 'media', 'meetings'],
       },
       {
         page: 'business',
         icon: '💼',
         label: 'Business',
-        description: 'Umsatz, Traffic, SEO und Berichte',
+        description: 'Geschaeftszahlen & Berichte',
       },
     ],
   },
@@ -105,14 +105,14 @@ export const NAV_SECTIONS: NavSection[] = [
         page: 'learning',
         icon: '📖',
         label: 'Lernen',
-        description: 'Lernziele und Fortschritt',
+        description: 'Lernziele setzen & verfolgen',
         subPages: ['learning-tasks'],
       },
       {
         page: 'my-ai',
         icon: '🤖',
         label: 'Meine KI',
-        description: 'Personalisierung, KI-Wissen und Sprach-Chat',
+        description: 'KI auf dich abstimmen',
         subPages: ['voice-chat'],
       },
     ],
@@ -127,7 +127,7 @@ export const NAV_FOOTER_ITEMS: NavItem[] = [
     page: 'settings',
     icon: '⚙️',
     label: 'Einstellungen',
-    description: 'Profil, Automationen, Integrationen und mehr',
+    description: 'Profil & App konfigurieren',
     subPages: ['profile', 'automations', 'integrations', 'export', 'sync'],
   },
   {
@@ -187,4 +187,12 @@ export function getNavItemByPage(page: Page): NavItem | undefined {
   }
 
   return NAV_FOOTER_ITEMS.find(i => i.page === page || i.subPages?.includes(page));
+}
+
+/**
+ * Get page description for display (e.g. in TopBar subtitle)
+ */
+export function getPageDescription(page: Page): string | undefined {
+  const item = getNavItemByPage(page);
+  return item?.description;
 }

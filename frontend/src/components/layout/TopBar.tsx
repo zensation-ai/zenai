@@ -13,7 +13,7 @@ import type { Page, ApiStatus } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { ContextSwitcher } from '../ContextSwitcher';
 import { ThemeToggle } from '../ThemeToggle';
-import { getPageLabel } from '../../navigation';
+import { getPageLabel, getPageDescription } from '../../navigation';
 import './TopBar.css';
 
 interface TopBarProps {
@@ -40,6 +40,7 @@ export const TopBar = memo(function TopBar({
   onToggleFavorite,
 }: TopBarProps) {
   const pageLabel = getPageLabel(currentPage);
+  const pageDescription = getPageDescription(currentPage);
 
   return (
     <header className="topbar" role="banner">
@@ -57,6 +58,9 @@ export const TopBar = memo(function TopBar({
             </svg>
           </button>
           <h1 className="topbar-title">{pageLabel}</h1>
+          {pageDescription && (
+            <span className="topbar-subtitle">{pageDescription}</span>
+          )}
           {onToggleFavorite && currentPage !== 'home' && (
             <button
               type="button"

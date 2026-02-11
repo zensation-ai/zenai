@@ -358,8 +358,31 @@
   flex-shrink: 0;
 }
 
-.msd-item-label {
+.msd-item-text {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.msd-item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msd-item-description {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.msd-item.active .msd-item-description {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .msd-item-badge {

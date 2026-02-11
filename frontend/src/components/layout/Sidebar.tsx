@@ -302,7 +302,12 @@ export const Sidebar = memo(function Sidebar({
                         <span className="sidebar-item-icon" aria-hidden="true">{item.icon}</span>
                         {!collapsed && (
                           <>
-                            <span className="sidebar-item-label">{item.label}</span>
+                            <span className="sidebar-item-text">
+                              <span className="sidebar-item-label">{item.label}</span>
+                              {item.description && (
+                                <span className="sidebar-item-description">{item.description}</span>
+                              )}
+                            </span>
                             {badge !== undefined && (
                               <span className="sidebar-item-badge" aria-label={`${badge} Einträge`}>{badge}</span>
                             )}

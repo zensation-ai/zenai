@@ -71,6 +71,15 @@
   margin: 0;
 }
 
+.topbar-subtitle {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ============================================
    Center: Search Trigger
    ============================================ */
@@ -239,6 +248,10 @@
   }
 
   .topbar-status {
+    display: none;
+  }
+
+  .topbar-subtitle {
     display: none;
   }
 

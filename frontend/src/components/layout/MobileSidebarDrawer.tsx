@@ -338,7 +338,12 @@ export function MobileSidebarDrawer({
                         style={{ '--item-delay': `${idx * STAGGER_DELAY}ms` } as CSSProperties}
                       >
                         <span className="msd-item-icon">{item.icon}</span>
-                        <span className="msd-item-label">{item.label}</span>
+                        <span className="msd-item-text">
+                          <span className="msd-item-label">{item.label}</span>
+                          {item.description && (
+                            <span className="msd-item-description">{item.description}</span>
+                          )}
+                        </span>
                         {badge !== undefined && <span className="msd-item-badge">{badge}</span>}
                         {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
                       </button>
