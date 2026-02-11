@@ -28,7 +28,6 @@ import { RateLimitBanner } from './RateLimitBanner';
 import { showToast } from './Toast';
 import {
   AI_PERSONALITY,
-  AI_AVATAR,
   getTimeBasedGreeting,
   EMPTY_STATE_MESSAGES,
   getContextAwareGreeting,
@@ -538,25 +537,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
                   </div>
                 </>
               ) : (
-                <>
-                  <div className="empty-avatar">{AI_AVATAR.emoji}</div>
-                  <h3>{EMPTY_STATE_MESSAGES.ideas.title}</h3>
-                  <p>{EMPTY_STATE_MESSAGES.ideas.description}</p>
-                  <span className="empty-encouragement">{EMPTY_STATE_MESSAGES.ideas.encouragement}</span>
-                  <div className="empty-ai-name">
-                    <span>Ich bin {AI_PERSONALITY.name}, dein KI-Begleiter</span>
-                  </div>
-                  <div className="empty-state-actions">
-                    <div className="empty-state-hint">
-                      <span className="hint-icon">⌨️</span>
-                      <span>Tippen &amp; <span className="hint-key">⌘</span><span className="hint-key">↵</span> zum Absenden</span>
-                    </div>
-                    <div className="empty-state-hint">
-                      <span className="hint-icon">🎙️</span>
-                      <span>Oder einfach sprechen</span>
-                    </div>
-                  </div>
-                </>
+                <p className="empty-state-minimal">Nutze das Eingabefeld oben, um deinen ersten Gedanken festzuhalten.</p>
               )}
             </div>
           ) : (

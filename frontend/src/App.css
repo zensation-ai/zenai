@@ -1745,6 +1745,14 @@
   box-shadow: var(--shadow-md);
 }
 
+.empty-state-minimal {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  color: var(--text-muted, #6b7c8a);
+  font-size: 0.9rem;
+  margin: 1rem auto;
+}
+
 /* Footer - Modern My Brain Footer with Navigation */
 /* ============================================
    FOOTER - Minimal & Clean 2026
