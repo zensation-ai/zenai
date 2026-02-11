@@ -423,6 +423,24 @@
   }
 }
 
+/* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+:root.light-mode .action-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+:root.light-mode .spinner-small {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-top-color: var(--text);
+}
+
+:root.light-mode .retry-btn {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .document-detail-modal {

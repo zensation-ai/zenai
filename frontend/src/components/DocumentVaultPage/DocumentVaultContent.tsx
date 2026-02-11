@@ -430,7 +430,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
       <header className="vault-header">
         <div className="header-left">
           <button type="button" className="back-button" onClick={onBack} aria-label="Zur\u00fcck">
-            \u2190
+            ←
           </button>
           <h1>Wissensbasis</h1>
           <span className="context-badge">{context}</span>
@@ -472,7 +472,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
               onClick={() => setViewMode('grid')}
               aria-label="Grid-Ansicht"
             >
-              \u229e
+              ⊞
             </button>
             <button
               type="button"
@@ -480,7 +480,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
               onClick={() => setViewMode('list')}
               aria-label="Listen-Ansicht"
             >
-              \u2630
+              ☰
             </button>
           </div>
 

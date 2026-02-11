@@ -633,6 +633,22 @@
 }
 
 /* ============================================
+   Light Mode Overrides - Keep editor dark but ensure contrast
+   ============================================ */
+
+:root.light-mode .canvas-page {
+  background: rgba(15, 15, 25, 0.95);
+}
+
+:root.light-mode .canvas-toolbar {
+  background: rgba(15, 15, 25, 0.95);
+}
+
+:root.light-mode .canvas-doc-list {
+  background: rgba(20, 20, 35, 0.98);
+}
+
+/* ============================================
    Mobile Responsive
    ============================================ */
 

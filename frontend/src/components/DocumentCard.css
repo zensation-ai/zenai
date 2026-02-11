@@ -305,6 +305,19 @@
   }
 }
 
+/* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+:root.light-mode .action-button:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .spinner-small {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-top-color: var(--text);
+}
+
 /* Separator */
 .separator {
   color: var(--neuro-text-tertiary, rgba(255, 255, 255, 0.50));

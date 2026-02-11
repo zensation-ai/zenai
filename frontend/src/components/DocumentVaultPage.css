@@ -783,6 +783,54 @@
   cursor: not-allowed;
 }
 
+/* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+:root.light-mode .vault-doc-tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:root.light-mode .folder-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:root.light-mode .folder-count {
+  background: var(--bg-secondary);
+}
+
+:root.light-mode .back-button:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .search-input:focus {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+:root.light-mode .view-toggle button:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .create-folder-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .load-more-button:hover:not(:disabled) {
+  background: var(--hover-bg);
+}
+
+:root.light-mode .modal-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .folder-drawer-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .cancel-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
 /* Batch Action Bar */
 .batch-action-bar {
   display: flex;

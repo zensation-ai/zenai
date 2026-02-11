@@ -329,6 +329,26 @@
   margin-top: 0.25rem;
 }
 
+/* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+:root.light-mode .remove-button {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .document-upload-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .file-progress {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+:root.light-mode .file-icon .spinner {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
 /* Animations */
 @keyframes spin {
   to {

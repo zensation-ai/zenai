@@ -69,6 +69,14 @@
     0 8px 32px rgba(0, 0, 0, 0.08),
     0 2px 8px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* Neuro Text Colors - Theme-aware (used by Document, Settings, Upload components) */
+  --neuro-text-primary: var(--text, #0f1f2a);
+  --neuro-text-secondary: var(--text-secondary, #3a4d5a);
+  --neuro-text-tertiary: var(--text-muted, #2a3d4d);
+  --neuro-border: var(--border, rgba(20, 50, 70, 0.15));
+  --neuro-bg-primary: var(--background, #dce5eb);
+  --neuro-bg-secondary: var(--surface, rgba(240, 245, 248, 0.8));
 }
 
 /* ============================================
@@ -941,6 +949,14 @@
       rgba(40, 160, 180, 0.02) 40%,
       transparent 60%
     );
+
+    /* Neuro Text - Dark mode values */
+    --neuro-text-primary: var(--text, #f5f9fc);
+    --neuro-text-secondary: var(--text-secondary, #c0d4e0);
+    --neuro-text-tertiary: var(--text-muted, #dce8f0);
+    --neuro-border: var(--border, rgba(60, 150, 170, 0.18));
+    --neuro-bg-primary: var(--background, #0a1a24);
+    --neuro-bg-secondary: var(--surface, rgba(22, 50, 62, 0.82));
   }
 }
 

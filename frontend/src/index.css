@@ -1189,6 +1189,10 @@ select:focus-visible {
   --neuro-border: var(--border);
   --neuro-bg-primary: var(--background);
   --neuro-bg-secondary: var(--surface);
+
+  /* Glass 2026 - Light mode */
+  --glass-2026-bg: rgba(255, 255, 255, 0.72);
+  --glass-2026-bg-hover: rgba(255, 255, 255, 0.82);
 }
 
 /* Force Dark Mode - Apply dark theme regardless of system preference */
@@ -1274,4 +1278,8 @@ select:focus-visible {
   --neuro-border: var(--border);
   --neuro-bg-primary: var(--background);
   --neuro-bg-secondary: var(--surface);
+
+  /* Glass 2026 - Dark mode */
+  --glass-2026-bg: rgba(18, 36, 42, 0.82);
+  --glass-2026-bg-hover: rgba(22, 42, 52, 0.88);
 }

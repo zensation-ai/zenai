@@ -429,6 +429,49 @@
 }
 
 /* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+:root.light-mode .settings-group {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .settings-item {
+  border-top-color: var(--border-light);
+}
+
+:root.light-mode .settings-item-value {
+  background: var(--bg-secondary);
+}
+
+:root.light-mode .settings-quick-link {
+  border-color: var(--border);
+  background: var(--glass-bg);
+}
+
+:root.light-mode .settings-quick-link:hover {
+  background: rgba(255, 107, 53, 0.08);
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+:root.light-mode .settings-select {
+  background: var(--glass-bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.light-mode .settings-select option {
+  background: #fff;
+  color: var(--text);
+}
+
+:root.light-mode .settings-toggle-slider {
+  background-color: rgba(0, 0, 0, 0.12);
+  border-color: var(--border);
+}
+
+/* ============================================
    Mobile Optimizations
    ============================================ */
 
