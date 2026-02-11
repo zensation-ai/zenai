@@ -286,10 +286,13 @@ router.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), async
         ideaId: id,
         detail,
       });
+      const pgCode = (error as unknown as Record<string, unknown>).pgCode;
       res.status(500).json({
         success: false,
         error: 'Database schema mismatch between contexts. Please run the fix_idea_move_schema.sql migration.',
         code: 'SCHEMA_MISMATCH',
+        detail,
+        pgCode,
       });
       return;
     }
