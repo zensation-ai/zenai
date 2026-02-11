@@ -71,6 +71,10 @@ export async function moveIdea(
   const idea = sourceResult.rows[0];
   const hasExtendedColumns = 'raw_transcript' in idea;
 
+  // JSONB columns must be stringified before INSERT — the pg driver
+  // serializes JS arrays as PostgreSQL array literals {a,b} instead of JSON ["a","b"]
+  const jsonb = (val: unknown) => val != null ? JSON.stringify(val) : null;
+
   // 2. Insert into target schema (try extended columns, fallback to core if target schema differs)
   let insertResult;
   if (hasExtendedColumns) {
@@ -94,9 +98,9 @@ export async function moveIdea(
         idea.summary,
         idea.raw_input,
         idea.raw_transcript,
-        idea.next_steps,
-        idea.context_needed,
-        idea.keywords,
+        jsonb(idea.next_steps),
+        jsonb(idea.context_needed),
+        jsonb(idea.keywords),
         idea.embedding,
         idea.is_archived,
         targetContext,
@@ -129,9 +133,9 @@ export async function moveIdea(
           idea.priority,
           idea.summary,
           idea.raw_input,
-          idea.next_steps,
-          idea.context_needed,
-          idea.keywords,
+          jsonb(idea.next_steps),
+          jsonb(idea.context_needed),
+          jsonb(idea.keywords),
           idea.embedding,
           idea.is_archived,
           targetContext,
@@ -170,9 +174,9 @@ export async function moveIdea(
         idea.priority,
         idea.summary,
         idea.raw_input,
-        idea.next_steps,
-        idea.context_needed,
-        idea.keywords,
+        jsonb(idea.next_steps),
+        jsonb(idea.context_needed),
+        jsonb(idea.keywords),
         idea.embedding,
         idea.is_archived,
         targetContext,
