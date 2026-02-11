@@ -93,3 +93,11 @@ export function getApiPath(context: AIContext, endpoint: string) {
 export function getContextConfig(context: AIContext) {
   return CONTEXT_CONFIG[context];
 }
+
+/**
+ * Get display label with icon for a context (e.g. "🏠 Privat")
+ */
+export function getContextLabel(context: string): string {
+  const config = CONTEXT_CONFIG[context as AIContext];
+  return config ? `${config.icon} ${config.label}` : context;
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getRandomReward } from '../utils/aiPersonality';
+import { getContextLabel } from './ContextSwitcher';
 import './NotificationsPage.css';
 import '../neurodesign.css';
 
@@ -250,7 +251,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
         </button>
         <h1>🔔 Benachrichtigungen</h1>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+          {getContextLabel(context)}
         </span>
       </div>
 

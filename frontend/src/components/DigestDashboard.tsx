@@ -3,6 +3,7 @@ import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
+import { getContextLabel } from './ContextSwitcher';
 import '../neurodesign.css';
 import './DigestDashboard.css';
 
@@ -200,7 +201,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
           <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
         </div>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+          {getContextLabel(context)}
         </span>
         <div className="generate-buttons">
           <button

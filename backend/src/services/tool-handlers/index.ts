@@ -40,6 +40,13 @@ import {
   TOOL_CREATE_MEETING,
   TOOL_NAVIGATE_TO,
   TOOL_APP_HELP,
+  TOOL_GET_REVENUE_METRICS,
+  TOOL_GET_TRAFFIC_ANALYTICS,
+  TOOL_GET_SEO_PERFORMANCE,
+  TOOL_GET_SYSTEM_HEALTH,
+  TOOL_GENERATE_BUSINESS_REPORT,
+  TOOL_IDENTIFY_ANOMALIES,
+  TOOL_COMPARE_PERIODS,
   ToolExecutionContext,
 } from '../claude/tool-use';
 import { createMeeting } from '../meetings';
@@ -56,6 +63,15 @@ import { handleGitHubSearch, handleGitHubCreateIssue, handleGitHubRepoInfo, hand
 import { handleAnalyzeProject, handleProjectSummary, handleListProjectFiles } from './project-tools';
 import { handleExecuteCode } from './code-tools';
 import { handleSearchDocuments, handleAnalyzeDocument, handleSynthesizeKnowledge } from './document-tools';
+import {
+  handleGetRevenueMetrics,
+  handleGetTrafficAnalytics,
+  handleGetSeoPerformance,
+  handleGetSystemHealth,
+  handleGenerateBusinessReport,
+  handleIdentifyAnomalies,
+  handleComparePeriods,
+} from './business-tools';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -666,6 +682,15 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_NAVIGATE_TO, handleNavigateTo);
   toolRegistry.register(TOOL_APP_HELP, handleAppHelp);
 
+  // Business Manager tools (Phase 34)
+  toolRegistry.register(TOOL_GET_REVENUE_METRICS, handleGetRevenueMetrics);
+  toolRegistry.register(TOOL_GET_TRAFFIC_ANALYTICS, handleGetTrafficAnalytics);
+  toolRegistry.register(TOOL_GET_SEO_PERFORMANCE, handleGetSeoPerformance);
+  toolRegistry.register(TOOL_GET_SYSTEM_HEALTH, handleGetSystemHealth);
+  toolRegistry.register(TOOL_GENERATE_BUSINESS_REPORT, handleGenerateBusinessReport);
+  toolRegistry.register(TOOL_IDENTIFY_ANOMALIES, handleIdentifyAnomalies);
+  toolRegistry.register(TOOL_COMPARE_PERIODS, handleComparePeriods);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -691,6 +716,13 @@ export function registerAllToolHandlers(): void {
       'create_meeting',
       'navigate_to',
       'app_help',
+      'get_revenue_metrics',
+      'get_traffic_analytics',
+      'get_seo_performance',
+      'get_system_health',
+      'generate_business_report',
+      'identify_anomalies',
+      'compare_periods',
     ],
   });
 }

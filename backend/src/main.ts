@@ -71,6 +71,9 @@ import projectContextRouter from './routes/project-context';
 import { documentAnalysisRouter } from './routes/document-analysis';
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
 import documentsRouter from './routes/documents';
+// Phase 34: Business Manager - AI Business Intelligence
+import { businessRouter } from './routes/business';
+import { initializeBusinessConnectors } from './services/business';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Phase 9: Cache-Control & ETag Support
@@ -281,6 +284,9 @@ app.use('/api/documents', documentAnalysisRouter);
 // Phase 33: Agent Teams - Multi-Agent Orchestration
 import { agentTeamsRouter } from './routes/agent-teams';
 app.use('/api/agents', agentTeamsRouter);
+
+// Phase 34: Business Manager - Must be before context-aware routes
+app.use('/api/business', businessRouter);
 
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);
@@ -728,6 +734,13 @@ Phase 4 APIs:
     logger.error('AI Tool Handlers registration failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
   }
 
+  // Phase 34: Initialize Business Connectors (Stripe, GSC, GA4, Uptime, Lighthouse)
+  try {
+    await initializeBusinessConnectors();
+    logger.info('Business Connectors initialized successfully', { operation: 'startup' });
+  } catch (error) {
+    logger.error('Business Connectors initialization failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+  }
 
   // Phase 9: Deferred non-critical initialization
   // Memory Scheduler and index creation run in background to speed up cold starts.

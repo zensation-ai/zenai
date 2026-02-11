@@ -58,6 +58,8 @@ export type Page =
   | 'insights'
   | 'documents'
   | 'meetings'
+  // Business
+  | 'business'
   // System
   | 'automations'
   | 'integrations'

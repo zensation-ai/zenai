@@ -308,14 +308,9 @@ export function ExportDashboard({ onBack, context }: ExportDashboardProps) {
                       {formatDate(item.created_at)} • {formatFileSize(item.size)}
                     </span>
                   </div>
-                  <button
-                    className="download-btn"
-                    type="button"
-                    onClick={() => window.open(`/api/export/download/${item.id}`, '_blank')}
-                    title="Download"
-                  >
-                    ⬇️
-                  </button>
+                  <span className="history-format-badge" title={`Format: ${item.format.toUpperCase()}`}>
+                    {item.format.toUpperCase()}
+                  </span>
                 </div>
               ))}
             </div>

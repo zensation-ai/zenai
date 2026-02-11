@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { QuickFeedback, DraftFeedbackForm, FeedbackPrompt } from './DraftFeedback';
-import { AIContext, useContextState } from './ContextSwitcher';
+import { AIContext, useContextState, getContextLabel } from './ContextSwitcher';
 import { ContextPickerDialog } from './ContextPickerDialog';
 import { logError } from '../utils/errors';
 import '../neurodesign.css';
@@ -342,10 +342,7 @@ Details: ${idea.summary}`,
         `/api/${context}/ideas/${idea.id}/move`,
         { targetContext }
       );
-      const contextLabels: Record<string, string> = {
-        personal: 'Privat', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ'
-      };
-      showToast(`Verschoben nach ${contextLabels[targetContext] || targetContext}`, 'success');
+      showToast(`Verschoben nach ${getContextLabel(targetContext)}`, 'success');
       if (onMove) onMove(idea.id, targetContext);
       onClose();
     } catch (err) {

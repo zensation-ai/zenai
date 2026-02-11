@@ -131,6 +131,24 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
   { pattern: /öffne\s+(die|das|den)/i, tools: ['navigate_to'], weight: 0.85 },
   { pattern: /bring\s+mich\s+(zu|nach|auf)/i, tools: ['navigate_to'], weight: 0.9 },
 
+  // Business Manager patterns (Phase 34)
+  { pattern: /\b(mrr|arr|revenue|umsatz|einnahmen)\b/i, tools: ['get_revenue_metrics'], weight: 0.95 },
+  { pattern: /\b(churn|abwanderung|subscription|abonnement)\b/i, tools: ['get_revenue_metrics'], weight: 0.9 },
+  { pattern: /wie\s+(viel|hoch)\s+(verdienen|umsatz|einnahmen)/i, tools: ['get_revenue_metrics'], weight: 0.95 },
+  { pattern: /\b(traffic|besucher|seitenaufrufe|pageviews|sessions)\b/i, tools: ['get_traffic_analytics'], weight: 0.9 },
+  { pattern: /wie\s+viele\s+(besucher|nutzer|user)/i, tools: ['get_traffic_analytics'], weight: 0.95 },
+  { pattern: /\b(seo|ranking|suchergebnis|suchmaschine|google\s+search)\b/i, tools: ['get_seo_performance'], weight: 0.9 },
+  { pattern: /\b(impressionen|klicks|ctr|suchposition)\b/i, tools: ['get_seo_performance'], weight: 0.9 },
+  { pattern: /\b(uptime|verfügbarkeit|antwortzeit|response\s+time)\b/i, tools: ['get_system_health'], weight: 0.9 },
+  { pattern: /\b(lighthouse|performance\s+score|web\s+vitals|lcp|cls)\b/i, tools: ['get_system_health'], weight: 0.9 },
+  { pattern: /\b(website|seite)\s+(läuft|online|erreichbar|schnell|langsam)/i, tools: ['get_system_health'], weight: 0.85 },
+  { pattern: /\b(geschäfts|business|wochen|monats)(bericht|report|zusammenfassung)\b/i, tools: ['generate_business_report'], weight: 0.95 },
+  { pattern: /\b(bericht|report)\s+(erstellen|generieren|zeigen)/i, tools: ['generate_business_report'], weight: 0.9 },
+  { pattern: /\b(auffälligkeiten|anomalien|probleme|ungewöhnlich)\b/i, tools: ['identify_anomalies'], weight: 0.9 },
+  { pattern: /was\s+(stimmt|läuft)\s+nicht/i, tools: ['identify_anomalies'], weight: 0.85 },
+  { pattern: /\b(vergleich|vergleiche|gegenüber|vs\.?)\b.*\b(vormonat|vorwoche|letzte|period)/i, tools: ['compare_periods'], weight: 0.9 },
+  { pattern: /wie\s+hat\s+sich\s+.{2,20}\s+(entwickelt|verändert|geändert)/i, tools: ['compare_periods'], weight: 0.9 },
+
   // App help patterns
   { pattern: /wie\s+funktioniert/i, tools: ['app_help'], weight: 0.9 },
   { pattern: /was\s+kann\s+(ich|man|die\s+app)/i, tools: ['app_help'], weight: 0.85 },
@@ -460,9 +478,9 @@ function analyzeKeywordsForTools(message: string): string[] {
 export function getDefaultToolsForMode(mode: ChatMode): string[] {
   switch (mode) {
     case 'tool_assisted':
-      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help'];
+      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
     case 'agent':
-      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help'];
+      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
     case 'rag_enhanced':
       return ['search_ideas', 'recall'];
     default:

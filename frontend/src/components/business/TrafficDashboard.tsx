@@ -1,0 +1,151 @@
+/**
+ * TrafficDashboard - GA4 Traffic Analytics
+ */
+
+import React, { useState, useEffect } from 'react';
+import { AIContext } from '../ContextSwitcher';
+import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
+import type { TrafficMetrics } from '../../types/business';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
+interface TrafficDashboardProps {
+  context: AIContext;
+}
+
+export const TrafficDashboard: React.FC<TrafficDashboardProps> = () => {
+  const [metrics, setMetrics] = useState<TrafficMetrics | null>(null);
+  const [timeline, setTimeline] = useState<Array<{ date: string; users: number; sessions: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const headers = getApiFetchHeaders();
+      const base = getApiBaseUrl();
+      try {
+        const [metricsRes, timelineRes] = await Promise.all([
+          fetch(`${base}/api/business/traffic`, { headers }),
+          fetch(`${base}/api/business/traffic/timeline`, { headers }),
+        ]);
+        const [mData, tData] = await Promise.all([metricsRes.json(), timelineRes.json()]);
+        if (mData.success) setMetrics(mData.traffic);
+        if (tData.success) setTimeline(tData.timeline ?? []);
+      } catch {
+        // Keep defaults
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="business-empty"><div className="business-empty-icon">🌐</div><div className="business-empty-text">Traffic-Daten werden geladen...</div></div>;
+  }
+
+  if (!metrics) {
+    return (
+      <div className="business-empty">
+        <div className="business-empty-icon">🌐</div>
+        <div className="business-empty-title">Keine Traffic-Daten</div>
+        <div className="business-empty-text">Google Analytics 4 ist nicht konfiguriert. Verbinde deinen GA4-Account unter Connectors.</div>
+      </div>
+    );
+  }
+
+  const chartData = timeline.map(p => ({
+    date: new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+    users: p.users,
+    sessions: p.sessions,
+  }));
+
+  return (
+    <div>
+      <div className="business-kpi-grid">
+        <div className="business-kpi-card">
+          <div className="business-kpi-header">
+            <span className="business-kpi-icon">👥</span>
+            {metrics.usersGrowth !== 0 && (
+              <span className={`business-kpi-badge ${metrics.usersGrowth >= 0 ? 'positive' : 'negative'}`}>
+                {metrics.usersGrowth >= 0 ? '+' : ''}{(metrics.usersGrowth * 100).toFixed(1)}%
+              </span>
+            )}
+          </div>
+          <div className="business-kpi-value">{metrics.users.toLocaleString('de-DE')}</div>
+          <div className="business-kpi-label">Besucher</div>
+        </div>
+        <div className="business-kpi-card">
+          <div className="business-kpi-header"><span className="business-kpi-icon">📊</span></div>
+          <div className="business-kpi-value">{metrics.sessions.toLocaleString('de-DE')}</div>
+          <div className="business-kpi-label">Sessions</div>
+        </div>
+        <div className="business-kpi-card">
+          <div className="business-kpi-header"><span className="business-kpi-icon">📄</span></div>
+          <div className="business-kpi-value">{metrics.pageviews.toLocaleString('de-DE')}</div>
+          <div className="business-kpi-label">Seitenaufrufe</div>
+        </div>
+        <div className="business-kpi-card">
+          <div className="business-kpi-header"><span className="business-kpi-icon">↩️</span></div>
+          <div className="business-kpi-value">{(metrics.bounceRate * 100).toFixed(1)}%</div>
+          <div className="business-kpi-label">Bounce Rate</div>
+        </div>
+      </div>
+
+      {chartData.length > 0 && (
+        <div className="business-section">
+          <div className="business-section-title">📊 Traffic-Verlauf</div>
+          <div className="business-chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.4)" fontSize={12} />
+                <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} />
+                <Tooltip
+                  contentStyle={{ background: 'rgba(20,30,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
+                  labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
+                />
+                <Bar dataKey="users" fill="#818cf8" name="Besucher" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="sessions" fill="#34d399" name="Sessions" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {metrics.topPages && metrics.topPages.length > 0 && (
+        <div className="business-section">
+          <div className="business-section-title">📄 Top Seiten</div>
+          <table className="business-table">
+            <thead><tr><th>Seite</th><th>Aufrufe</th><th>Bounce Rate</th></tr></thead>
+            <tbody>
+              {metrics.topPages.map((p) => (
+                <tr key={p.page}>
+                  <td>{p.page}</td>
+                  <td>{p.views}</td>
+                  <td>{(p.bounceRate * 100).toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {metrics.trafficSources && metrics.trafficSources.length > 0 && (
+        <div className="business-section">
+          <div className="business-section-title">🔗 Traffic-Quellen</div>
+          <table className="business-table">
+            <thead><tr><th>Quelle</th><th>Besucher</th><th>Sessions</th></tr></thead>
+            <tbody>
+              {metrics.trafficSources.map((s) => (
+                <tr key={s.source}>
+                  <td>{s.source}</td>
+                  <td>{s.users}</td>
+                  <td>{s.sessions}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};

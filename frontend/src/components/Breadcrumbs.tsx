@@ -156,6 +156,10 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'KI-Werkstatt', page: 'ai-workshop', icon: '🧠' },
     { label: 'Agent Teams', page: 'agent-teams', icon: '🤖' },
   ],
+  'business': [
+    ROOT,
+    { label: 'Business Manager', page: 'business', icon: '💼' },
+  ],
 };
 
 /**

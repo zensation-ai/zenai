@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { getContextLabel } from './ContextSwitcher';
 import './MediaGallery.css';
 import '../neurodesign.css';
 import { logError } from '../utils/errors';
@@ -122,7 +123,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
         </button>
         <h1>🖼️ Medien</h1>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+          {getContextLabel(context)}
         </span>
         <div className="upload-section">
           <input

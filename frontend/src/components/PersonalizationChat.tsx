@@ -8,6 +8,7 @@ import {
   getRandomMessage,
   FEEDBACK_REACTIONS,
 } from '../utils/aiPersonality';
+import { getContextLabel } from './ContextSwitcher';
 import './PersonalizationChat.css';
 import '../neurodesign.css';
 import { logError } from '../utils/errors';
@@ -233,7 +234,7 @@ export function PersonalizationChat({ onBack, context }: PersonalizationChatProp
         </button>
         <h1>{AI_AVATAR.emoji} {AI_PERSONALITY.name} lernt dich kennen</h1>
         <span className={`context-indicator ${context}`}>
-          {context === 'personal' ? '🏠 Privat' : '💼 Arbeit'}
+          {getContextLabel(context)}
         </span>
       </div>
 

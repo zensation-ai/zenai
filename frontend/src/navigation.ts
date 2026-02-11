@@ -66,6 +66,14 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    id: 'business',
+    label: 'Business',
+    icon: '💼',
+    items: [
+      { page: 'business', icon: '💼', label: 'Business Manager', description: 'AI-gesteuerte Geschaeftsanalysen' },
+    ],
+  },
+  {
     id: 'system',
     label: 'System',
     icon: '⚙️',

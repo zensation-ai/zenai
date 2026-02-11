@@ -734,6 +734,112 @@ export const TOOL_APP_HELP: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 34: Business Manager Tools
+// ===========================================
+
+export const TOOL_GET_REVENUE_METRICS: ToolDefinition = {
+  name: 'get_revenue_metrics',
+  description: 'Ruft aktuelle Revenue-Metriken ab (MRR, ARR, Churn Rate, Subscriptions, letzte Zahlungen). Nutze dies wenn der Nutzer nach Umsatz, Revenue, MRR oder Zahlungen fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      period: {
+        type: 'string',
+        description: 'Zeitraum (z.B. "30d", "7d", "90d"). Standard: 30d',
+      },
+    },
+    required: [],
+  },
+};
+
+export const TOOL_GET_TRAFFIC_ANALYTICS: ToolDefinition = {
+  name: 'get_traffic_analytics',
+  description: 'Ruft Traffic-Analysen ab (Besucher, Sessions, Seitenaufrufe, Bounce Rate, Top Seiten, Traffic-Quellen). Nutze dies wenn der Nutzer nach Website-Traffic, Besuchern oder Analytics fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      period: {
+        type: 'string',
+        description: 'Zeitraum (z.B. "28d", "7d", "90d"). Standard: 28d',
+      },
+    },
+    required: [],
+  },
+};
+
+export const TOOL_GET_SEO_PERFORMANCE: ToolDefinition = {
+  name: 'get_seo_performance',
+  description: 'Ruft SEO-Performance-Daten ab (Impressionen, Klicks, CTR, Rankings, Top Suchanfragen). Nutze dies wenn der Nutzer nach SEO, Rankings, Suchmaschinen oder Google-Ergebnissen fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      period: {
+        type: 'string',
+        description: 'Zeitraum (z.B. "28d", "7d", "90d"). Standard: 28d',
+      },
+    },
+    required: [],
+  },
+};
+
+export const TOOL_GET_SYSTEM_HEALTH: ToolDefinition = {
+  name: 'get_system_health',
+  description: 'Prüft System-Health: Uptime, Antwortzeiten, Lighthouse-Performance-Scores, Core Web Vitals. Nutze dies wenn der Nutzer nach Uptime, Performance, Website-Geschwindigkeit oder System-Status fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      include_performance: {
+        type: 'boolean',
+        description: 'Ob Lighthouse-Performance-Daten einbezogen werden sollen. Standard: true',
+      },
+    },
+    required: [],
+  },
+};
+
+export const TOOL_GENERATE_BUSINESS_REPORT: ToolDefinition = {
+  name: 'generate_business_report',
+  description: 'Ruft den neuesten Business-Bericht ab (Wochen- oder Monatsbericht mit Zusammenfassung, Kennzahlen und Empfehlungen). Nutze dies wenn der Nutzer nach einem Bericht, Report oder einer Geschäftszusammenfassung fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      type: {
+        type: 'string',
+        enum: ['weekly', 'monthly'],
+        description: 'Art des Berichts. Standard: weekly',
+      },
+    },
+    required: [],
+  },
+};
+
+export const TOOL_IDENTIFY_ANOMALIES: ToolDefinition = {
+  name: 'identify_anomalies',
+  description: 'Identifiziert aktuelle Auffälligkeiten und Anomalien in den Business-Metriken (MRR-Einbrüche, Traffic-Drops, Uptime-Probleme). Nutze dies wenn der Nutzer nach Problemen, Auffälligkeiten oder ungewöhnlichen Trends fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {},
+    required: [],
+  },
+};
+
+export const TOOL_COMPARE_PERIODS: ToolDefinition = {
+  name: 'compare_periods',
+  description: 'Vergleicht Business-Metriken zwischen zwei Zeiträumen (Revenue, Traffic, SEO). Nutze dies wenn der Nutzer Zeiträume vergleichen will oder nach Veränderungen/Trends fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      metric: {
+        type: 'string',
+        enum: ['all', 'revenue', 'traffic', 'seo'],
+        description: 'Welche Metrik verglichen werden soll. Standard: all',
+      },
+    },
+    required: [],
+  },
+};
+
+// ===========================================
 // Tool Registry
 // ===========================================
 

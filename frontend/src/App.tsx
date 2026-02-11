@@ -54,6 +54,7 @@ const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').th
 const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
 const IdeasPage = lazy(() => import('./components/IdeasPage').then(m => ({ default: m.IdeasPage })));
 const IncubatorPage = lazy(() => import('./components/IncubatorPage').then(m => ({ default: m.IncubatorPage })));
+const BusinessDashboard = lazy(() => import('./components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard })));
 
 const PageLoader = () => (
   <div className="page-loader" role="status" aria-live="polite">
@@ -81,6 +82,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'integrations': '/integrations',
   'export': '/export',
   'sync': '/sync',
+  'business': '/business',
   'profile': '/profile',
   'notifications': '/notifications',
   'settings': '/settings',
@@ -117,6 +119,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/integrations': 'integrations',
   '/export': 'export',
   '/sync': 'sync',
+  '/business': 'business',
   '/profile': 'profile',
   '/notifications': 'notifications',
   '/settings': 'settings',
@@ -146,6 +149,7 @@ function useUrlNavigation() {
     if (fullPath.startsWith('/insights/')) return 'insights';
     if (fullPath.startsWith('/ai-workshop/')) return 'ai-workshop';
     if (fullPath.startsWith('/documents/')) return 'documents';
+    if (fullPath.startsWith('/business/')) return 'business';
 
     return PATH_PAGES[basePath] || 'home';
   }, [location.pathname]);
@@ -806,6 +810,16 @@ function App() {
           </Suspense>
         );
 
+      case 'business':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <BusinessDashboard
+              context={context}
+              onBack={() => navigateToPage('home')}
+              initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | undefined}
+            />
+          </Suspense>
+        );
 
       case 'documents':
         return (
