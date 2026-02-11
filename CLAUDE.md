@@ -253,6 +253,22 @@ REDIS_URL=redis://default:password@redis.railway.internal:6379  # Falls nicht ge
 
 # Optional - GitHub Integration
 GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...     # Für github_* Tools
+
+# Optional - Stripe (Phase 34 Business Manager)
+STRIPE_SECRET_KEY=sk_live_...            # Stripe Secret Key
+STRIPE_WEBHOOK_SECRET=whsec_...          # Stripe Webhook Signing Secret
+
+# Optional - Google Analytics 4 (Phase 34 Business Manager)
+GA4_PROPERTY_ID=123456789                # GA4 Property ID
+GA4_API_SECRET=...                       # GA4 Measurement Protocol API Secret
+GOOGLE_SERVICE_ACCOUNT_EMAIL=...@...iam.gserviceaccount.com
+GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}  # Full JSON key
+
+# Optional - Google Search Console (Phase 34 Business Manager)
+GOOGLE_CLIENT_ID=...apps.googleusercontent.com  # OAuth2 Client ID
+GOOGLE_CLIENT_SECRET=GOCSPX-...          # OAuth2 Client Secret
+GOOGLE_REDIRECT_URI=https://ki-ab-production.up.railway.app/api/business/connectors/google/callback
+GSC_SITE_URL=https://zensation.ai        # Verified GSC site
 ```
 
 ## Railway Environment Variables (Production)
@@ -266,6 +282,16 @@ GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...     # Für github_* Tools
 | `BRAVE_SEARCH_API_KEY` | Backend | Gesetzt | Brave Web Search API |
 | `JUDGE0_API_KEY` | Backend | Gesetzt | RapidAPI Judge0 Code Execution |
 | `NODE_ENV` | Backend | `production` | Environment Flag |
+| `STRIPE_SECRET_KEY` | Backend | Gesetzt | Stripe Payment Integration |
+| `STRIPE_WEBHOOK_SECRET` | Backend | Gesetzt | Stripe Webhook Signing |
+| `GA4_PROPERTY_ID` | Backend | Gesetzt | Google Analytics 4 Property |
+| `GA4_API_SECRET` | Backend | Gesetzt | GA4 Measurement Protocol Secret |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Backend | Gesetzt | GA4 Service Account |
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | Backend | Gesetzt | GA4 Service Account JSON Key |
+| `GOOGLE_CLIENT_ID` | Backend | Gesetzt | Google OAuth2 Client ID |
+| `GOOGLE_CLIENT_SECRET` | Backend | Gesetzt | Google OAuth2 Client Secret |
+| `GOOGLE_REDIRECT_URI` | Backend | Gesetzt | Google OAuth2 Callback URL |
+| `GSC_SITE_URL` | Backend | Gesetzt | Google Search Console Site |
 
 **Health Check:** `GET /api/health/detailed` zeigt Status aller Services (4 DBs, Claude, Redis, Brave, Judge0).
 
@@ -406,6 +432,34 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-02-11: Business Connector API Keys Configured (Stripe, GA4, GSC)
+
+**Alle API-Credentials für Phase 34 Business Manager konfiguriert.**
+
+| Connector | Status | Details |
+|-----------|--------|---------|
+| **Stripe** | Aktiv | Secret Key + Webhook Secret konfiguriert |
+| **Google Analytics 4** | Aktiv | Service Account erstellt, Betrachter-Zugriff auf GA4 Property |
+| **Google Search Console** | Bereit | OAuth2 Client konfiguriert, API aktiviert, Redirect URI gesetzt |
+| **Lighthouse** | Aktiv | Ohne API Key (rate-limited) |
+| **UptimeRobot** | Deaktiviert | API Key nicht konfiguriert |
+
+**Konfigurierte Environment Variables (lokal + Railway):**
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `GA4_PROPERTY_ID`, `GA4_API_SECRET`
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY`
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `GSC_SITE_URL`
+
+**Google Cloud Setup:**
+- Google Analytics Data API aktiviert
+- Google Search Console API aktiviert
+- Service Account `zenai-analytics` erstellt + JSON Key generiert
+- OAuth Client "Zensation Web" mit Railway Redirect URI erweitert
+
+**Verifiziert:** Backend startet erfolgreich, Stripe + GA4 Connectors initialisieren korrekt.
+
+---
 
 ### 2026-02-10: Frontend-Backend Integration Review, Dead Code Removal & Production Config
 
