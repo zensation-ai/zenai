@@ -20,6 +20,8 @@
   position: relative;
   z-index: 2;
   flex-shrink: 0;
+  background: rgba(20, 30, 42, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .ideas-tab {
@@ -28,8 +30,8 @@
   gap: 0.4rem;
   padding: 0.5rem 1rem;
   border: none;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--neuro-text-secondary, rgba(255, 255, 255, 0.6));
+  background: transparent;
+  color: var(--dark-text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -38,14 +40,19 @@
 }
 
 .ideas-tab:hover {
-  color: var(--neuro-text-primary, #fff);
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--dark-text);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .ideas-tab.active {
-  color: var(--neuro-accent, #ff6b35);
+  color: var(--primary, #ff6b35);
   background: rgba(255, 107, 53, 0.1);
-  border-bottom: 2px solid var(--neuro-accent, #ff6b35);
+  border-bottom: 2px solid var(--primary, #ff6b35);
+}
+
+/* Light Mode - ensure dark tab bar stays opaque */
+:root.light-mode .ideas-tab-bar {
+  background: rgba(20, 30, 42, 0.92);
 }
 
 .ideas-tab-badge {

@@ -192,6 +192,11 @@
   }
 }
 
+/* Light Mode - ensure dark header stays opaque for readable white text */
+:root.light-mode .page-header {
+  background: rgba(20, 34, 48, 0.94);
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .page-header,

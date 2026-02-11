@@ -172,10 +172,10 @@ textarea::placeholder {
   --topbar-height: 52px;
 
   /* Dark-Background Text (Sidebar, TopBar, PageHeader, Breadcrumbs) - WCAG AA */
-  --dark-text: rgba(255, 255, 255, 0.95);
-  --dark-text-secondary: rgba(255, 255, 255, 0.75);
-  --dark-text-muted: rgba(255, 255, 255, 0.65);
-  --dark-text-icon: rgba(255, 255, 255, 0.70);
+  --dark-text: rgba(255, 255, 255, 0.97);
+  --dark-text-secondary: rgba(255, 255, 255, 0.85);
+  --dark-text-muted: rgba(255, 255, 255, 0.78);
+  --dark-text-icon: rgba(255, 255, 255, 0.82);
   --bottombar-height: 64px;
   --bottombar-bg: rgba(12, 28, 36, 0.95);
   --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1112,6 +1112,7 @@ select:focus-visible {
   --primary: #ff6b35;
   --primary-dark: #e85a2a;
   --primary-light: #ff8c5a;
+  --primary-lighter: #ffb08a;
   --primary-glow: rgba(255, 107, 53, 0.35);
 
   /* Background - Light theme */
@@ -1130,19 +1131,64 @@ select:focus-visible {
   /* Surfaces - Light glass morphism */
   --surface: rgba(240, 245, 248, 0.8);
   --surface-solid: #edf2f5;
+  --surface-light: rgba(235, 242, 248, 0.65);
+  --surface-hover: rgba(242, 248, 252, 0.88);
+  --surface-warm: rgba(255, 245, 238, 0.8);
+  --surface-petrol: rgba(220, 235, 245, 0.75);
   --glass-bg: rgba(238, 244, 250, 0.78);
+  --glass-bg-warm: rgba(252, 245, 238, 0.75);
+  --glass-bg-petrol: rgba(225, 240, 248, 0.75);
   --glass-border: rgba(180, 205, 225, 0.55);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
   --glass-shadow: rgba(20, 50, 70, 0.15);
+  --glass-warm: rgba(255, 235, 220, 0.55);
 
   /* Text Colors - Dark for light backgrounds (WCAG AAA optimiert) */
   --text: #0f1f2a;
   --text-muted: #2a3d4d;
   --text-secondary: #3a4d5a;
   --text-placeholder: #1a2a38;
+  --text-primary: #0f1f2a;
 
   /* Borders */
   --border: rgba(20, 50, 70, 0.15);
   --border-light: rgba(20, 50, 70, 0.08);
+  --border-warm: rgba(255, 107, 53, 0.2);
+  --border-glow: rgba(255, 107, 53, 0.5);
+
+  /* Shadows - Light mode */
+  --shadow-sm: 0 1px 3px rgba(20, 50, 70, 0.08), 0 1px 2px rgba(20, 50, 70, 0.06);
+  --shadow-md: 0 4px 16px rgba(20, 50, 70, 0.1), 0 2px 6px rgba(20, 50, 70, 0.06);
+  --shadow-lg: 0 12px 40px rgba(20, 50, 70, 0.15), 0 4px 12px rgba(20, 50, 70, 0.08);
+  --shadow-glow: 0 4px 24px rgba(255, 107, 53, 0.35);
+  --shadow-card: 0 2px 12px rgba(20, 50, 70, 0.08), 0 1px 3px rgba(20, 50, 70, 0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  --shadow-glass: 0 8px 32px rgba(20, 50, 70, 0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+
+  /* Card & Hover - Light mode */
+  --card-bg: var(--glass-bg);
+  --hover-bg: rgba(238, 245, 252, 0.88);
+  --bg-secondary: rgba(20, 60, 80, 0.08);
+  --bg-tertiary: rgba(255, 107, 53, 0.07);
+
+  /* Command Center */
+  --command-bg: linear-gradient(165deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 252, 248, 0.88) 100%);
+  --command-border: rgba(255, 107, 53, 0.2);
+  --command-shadow: 0 12px 48px rgba(20, 50, 70, 0.12);
+
+  /* Dashboard */
+  --dashboard-card-bg: rgba(255, 255, 255, 0.75);
+
+  /* Code Block */
+  --code-inline-bg: rgba(0, 0, 0, 0.08);
+  --code-inline-text: #c7254e;
+
+  /* Neuro Text - Force light values */
+  --neuro-text-primary: var(--text);
+  --neuro-text-secondary: var(--text-secondary);
+  --neuro-text-tertiary: var(--text-muted);
+  --neuro-border: var(--border);
+  --neuro-bg-primary: var(--background);
+  --neuro-bg-secondary: var(--surface);
 }
 
 /* Force Dark Mode - Apply dark theme regardless of system preference */
@@ -1151,6 +1197,7 @@ select:focus-visible {
   --primary: #ff7a4a;
   --primary-dark: #ff6b35;
   --primary-light: #ff9a70;
+  --primary-lighter: #ffbb99;
   --primary-glow: rgba(255, 122, 74, 0.4);
 
   /* Background - Midnight Dark Petrol Theme */
@@ -1168,27 +1215,63 @@ select:focus-visible {
   /* Surfaces - Dark glass morphism with petrol depth */
   --surface: rgba(22, 50, 62, 0.82);
   --surface-solid: #183642;
+  --surface-light: rgba(28, 60, 72, 0.68);
+  --surface-hover: rgba(32, 72, 85, 0.88);
+  --surface-warm: rgba(40, 30, 25, 0.8);
+  --surface-petrol: rgba(22, 56, 68, 0.78);
   --glass-bg: rgba(18, 46, 56, 0.85);
+  --glass-bg-warm: rgba(35, 28, 25, 0.8);
+  --glass-bg-petrol: rgba(18, 52, 62, 0.82);
   --glass-border: rgba(60, 150, 170, 0.18);
+  --glass-highlight: rgba(80, 180, 200, 0.06);
   --glass-shadow: rgba(5, 20, 30, 0.45);
+  --glass-warm: rgba(80, 50, 35, 0.4);
 
   /* Text Colors - Light for dark backgrounds (WCAG AAA optimiert für beste Lesbarkeit) */
   --text: #f5f9fc;            /* Sehr hell für maximale Lesbarkeit - ~12:1 Kontrast */
   --text-muted: #dce8f0;      /* Deutlich heller für gute Lesbarkeit - ~8:1 Kontrast */
   --text-secondary: #c0d4e0;  /* Heller für klare Lesbarkeit - ~6:1 Kontrast */
   --text-placeholder: #b0c4d0; /* Deutlich sichtbar für Placeholder im Dark Mode */
+  --text-primary: #f5f9fc;
 
   /* Borders - Petrol-tinted */
   --border: rgba(60, 150, 170, 0.18);
   --border-light: rgba(60, 150, 170, 0.1);
+  --border-warm: rgba(255, 122, 74, 0.25);
+  --border-glow: rgba(255, 122, 74, 0.5);
 
   /* Shadows - petrol undertone */
   --shadow-sm: 0 1px 3px rgba(5, 20, 30, 0.35), 0 1px 2px rgba(5, 20, 30, 0.25);
   --shadow-md: 0 4px 16px rgba(5, 20, 30, 0.4), 0 2px 6px rgba(5, 20, 30, 0.3);
   --shadow-lg: 0 12px 40px rgba(5, 20, 30, 0.5), 0 4px 12px rgba(5, 20, 30, 0.35);
   --shadow-glow: 0 4px 24px rgba(255, 122, 74, 0.4);
+  --shadow-glow-petrol: 0 4px 24px rgba(30, 120, 150, 0.35);
+  --shadow-card: 0 2px 12px rgba(5, 20, 30, 0.35), 0 1px 3px rgba(5, 20, 30, 0.25), inset 0 1px 0 rgba(80, 180, 200, 0.04);
+  --shadow-glass: 0 8px 32px rgba(5, 20, 30, 0.4), inset 0 1px 0 rgba(80, 180, 200, 0.05);
 
-  /* Card specific */
+  /* Card & Hover specific */
   --card-bg: var(--glass-bg);
   --hover-bg: rgba(32, 72, 85, 0.88);
+  --bg-secondary: rgba(40, 85, 105, 0.2);
+  --bg-tertiary: rgba(255, 122, 74, 0.12);
+
+  /* Command Center - Dark mode */
+  --command-bg: linear-gradient(165deg, rgba(22, 50, 62, 0.95) 0%, rgba(18, 46, 56, 0.92) 100%);
+  --command-border: rgba(255, 122, 74, 0.25);
+  --command-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+
+  /* Dashboard - Dark mode */
+  --dashboard-card-bg: rgba(22, 50, 62, 0.78);
+
+  /* Code Block */
+  --code-inline-bg: rgba(255, 255, 255, 0.08);
+  --code-inline-text: #ff6b6b;
+
+  /* Neuro Text - Force dark values */
+  --neuro-text-primary: var(--text);
+  --neuro-text-secondary: var(--text-secondary);
+  --neuro-text-tertiary: var(--text-muted);
+  --neuro-border: var(--border);
+  --neuro-bg-primary: var(--background);
+  --neuro-bg-secondary: var(--surface);
 }

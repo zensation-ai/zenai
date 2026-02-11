@@ -75,6 +75,11 @@
   user-select: none;
 }
 
+/* Light Mode - ensure dark breadcrumbs stay opaque for readable white text */
+:root.light-mode .breadcrumbs {
+  background: rgba(20, 30, 42, 0.92);
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .breadcrumbs {

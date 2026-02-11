@@ -109,6 +109,11 @@
   gap: 1rem;
 }
 
+/* Light Mode - ensure dark tab bar stays opaque for readable white text */
+:root.light-mode .hub-tabs {
+  background: rgba(20, 30, 42, 0.92);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .hub-tabs {

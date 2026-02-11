@@ -298,3 +298,85 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   Light Mode Overrides
+   Swap dark-background colors to theme-aware values
+   ============================================ */
+
+:root.light-mode .business-kpi-card {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .business-kpi-value {
+  color: var(--text);
+}
+
+:root.light-mode .business-kpi-label {
+  color: var(--text-muted);
+}
+
+:root.light-mode .business-section {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .business-section-title {
+  color: var(--text);
+}
+
+:root.light-mode .business-table th {
+  color: var(--text-muted);
+  border-bottom-color: var(--border);
+}
+
+:root.light-mode .business-table td {
+  color: var(--text-secondary);
+  border-bottom-color: var(--border-light);
+}
+
+:root.light-mode .business-empty {
+  color: var(--text-muted);
+}
+
+:root.light-mode .business-empty-title {
+  color: var(--text-secondary);
+}
+
+:root.light-mode .business-btn {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+:root.light-mode .business-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+:root.light-mode .business-insight-card {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .business-insight-title {
+  color: var(--text);
+}
+
+:root.light-mode .business-insight-desc {
+  color: var(--text-muted);
+}
+
+:root.light-mode .business-connector-card {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .business-connector-name {
+  color: var(--text);
+}
+
+:root.light-mode .business-connector-meta {
+  color: var(--text-muted);
+}

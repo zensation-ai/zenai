@@ -445,6 +445,50 @@ mockQueryContext
 
 ## Changelog
 
+### 2026-02-11: Bug Fixes, Feature Audit & PersonalizationChat Persistence
+
+**Umfassende Funktionspruefung + 4 Bug-Fixes + 1 neues Feature.**
+
+**Bug-Fixes:**
+
+| Fix | Problem | Loesung |
+|-----|---------|---------|
+| Chat-Bubble Fehler | `session_type`-Spalte fehlte in `general_chat_sessions` | Spalte zur Tabellen-Definition + Fallback-INSERT ohne Spalte |
+| `?`-Taste Shortcut | KeyboardShortcutsModal interceptete `?` global, auch in Eingabefeldern | Input/Textarea/ContentEditable werden jetzt ignoriert |
+| Redundanter Empty-State | Gedanken-Seite zeigte 2x Brain-Avatar bei 0 Ideen | Unterer Empty-State durch minimalen Hinweis ersetzt |
+| Initiale Begruessung | PersonalizationChat las falsches Response-Feld (`question` statt `data.message`) | Korrekter Zugriff auf verschachtelte Response-Struktur |
+
+**Neues Feature: PersonalizationChat Session-Persistenz**
+
+| Aenderung | Details |
+|-----------|---------|
+| Neuer Backend-Endpoint | `GET /api/personalization/history?session_id=xxx` - Laedt Konversations-History |
+| localStorage Session-ID | `zenai_personalization_session` - Session ueberlebt Page-Refresh |
+| History-Load on Mount | Beim Oeffnen wird bestehende Konversation geladen statt neu gestartet |
+| "Neues Gespraech"-Button | Startet frische Session, loescht localStorage |
+
+**Feature-Audit Ergebnis:**
+
+| Pruefung | Ergebnis |
+|----------|----------|
+| Backend-Frontend Alignment | 99.5% - 0 Luecken, 250+ Routes, 170+ Frontend-Calls |
+| Knowledge Graph | Vollstaendig implementiert unter Insights → Verbindungen (`/insights/connections`) |
+| Chat-Varianten | 7 Interfaces identifiziert, 3 nutzen GeneralChat (korrekt), 3 spezialisiert (begruendet) |
+
+**Geaenderte Dateien (~8):**
+- `backend/src/routes/personalization-chat.ts` (neuer History-Endpoint)
+- `backend/src/services/general-chat/chat-sessions.ts` (session_type Fallback)
+- `backend/sql/migrations/fix_public_schema_tables.sql` (session_type Spalte)
+- `frontend/src/components/PersonalizationChat.tsx` (Session-Persistenz)
+- `frontend/src/components/PersonalizationChat.css` (Neues-Gespraech-Button)
+- `frontend/src/components/KeyboardShortcutsModal.tsx` (?-Shortcut Fix)
+- `frontend/src/components/IdeasPage.tsx` (Empty-State vereinfacht)
+- Diverse CSS-Dateien (Dark-Mode Kontrast + Light-Mode Overrides)
+
+**Tests:** 1,999 Backend + 481 Frontend bestanden, Build clean
+
+---
+
 ### 2026-02-11: Frontend Navigation & Workspace Reorganisation
 
 **Komplette Neuorganisation der Frontend-Navigation und Arbeitsbereiche.**

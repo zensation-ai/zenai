@@ -260,6 +260,102 @@
   font-size: 0.85rem;
 }
 
+/* ============================================
+   Light Mode Overrides
+   ============================================ */
+
+:root.light-mode .mem-section-title {
+  color: var(--text);
+}
+
+:root.light-mode .mem-section-subtitle {
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-stat {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .mem-stat-value {
+  color: var(--text);
+}
+
+:root.light-mode .mem-stat-label {
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-subsection-title {
+  color: var(--text-secondary);
+}
+
+:root.light-mode .mem-learning-item {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .mem-learning-item:hover {
+  border-color: var(--border);
+}
+
+:root.light-mode .mem-learning-date {
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-learning-content {
+  color: var(--text-secondary);
+}
+
+:root.light-mode .mem-learning-meta {
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-learning-source {
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-pattern-item {
+  background: var(--glass-bg);
+}
+
+:root.light-mode .mem-pattern-type {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-pattern-text {
+  color: var(--text-secondary);
+}
+
+:root.light-mode .mem-health-item {
+  background: var(--glass-bg);
+}
+
+:root.light-mode .mem-health-label {
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-health-value {
+  color: var(--text);
+}
+
+:root.light-mode .mem-compact {
+  background: var(--glass-bg);
+  border-color: var(--border);
+}
+
+:root.light-mode .mem-compact-title {
+  color: var(--text);
+}
+
+:root.light-mode .mem-compact-count {
+  color: var(--text-muted);
+}
+
+:root.light-mode .mem-error {
+  color: var(--text-muted);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .mem-stats {

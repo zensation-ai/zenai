@@ -655,6 +655,11 @@
   }
 }
 
+/* Light Mode - keep sidebar dark and fully opaque */
+:root.light-mode .sidebar {
+  background: linear-gradient(180deg, rgba(12, 28, 36, 0.99) 0%, rgba(16, 38, 48, 0.98) 100%);
+}
+
 /* ============================================
    Print
    ============================================ */

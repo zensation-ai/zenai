@@ -294,6 +294,15 @@
   }
 }
 
+/* Light Mode - ensure dark nav stays opaque so white text stays readable */
+:root.light-mode .topbar {
+  background: linear-gradient(
+    180deg,
+    rgba(12, 28, 36, 0.98) 0%,
+    rgba(16, 36, 44, 0.97) 100%
+  );
+}
+
 /* ============================================
    Print
    ============================================ */
