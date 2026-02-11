@@ -4,6 +4,7 @@
  * Manage data source connections (add, remove, test, OAuth callbacks).
  */
 
+import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../../middleware/errorHandler';
@@ -123,7 +124,16 @@ connectorsRouter.post('/collect', apiKeyAuth, asyncHandler(async (_req: Request,
  * Start Google OAuth flow (for GSC + GA4)
  */
 connectorsRouter.get('/google/authorize', apiKeyAuth, asyncHandler(async (_req: Request, res: Response) => {
-  const url = gscConnector.getAuthorizeUrl();
+  const state = crypto.randomBytes(16).toString('hex');
+  // Store state for validation in callback (expires in 10 minutes)
+  await pool.query(`
+    INSERT INTO business_data_sources (source_type, display_name, credentials, config, status)
+    VALUES ('oauth_state', 'OAuth State', $1, '{}', 'pending')
+    ON CONFLICT (source_type) WHERE source_type = 'oauth_state' DO UPDATE SET
+      credentials = $1, updated_at = NOW()
+  `, [JSON.stringify({ state, expires: Date.now() + 10 * 60 * 1000 })]);
+
+  const url = gscConnector.getAuthorizeUrl(state);
   res.json({ success: true, authorizeUrl: url });
 }));
 
@@ -133,9 +143,30 @@ connectorsRouter.get('/google/authorize', apiKeyAuth, asyncHandler(async (_req: 
  */
 connectorsRouter.get('/google/callback', asyncHandler(async (req: Request, res: Response) => {
   const code = req.query.code as string;
+  const state = req.query.state as string;
+
   if (!code) {
     throw new ValidationError('Missing authorization code');
   }
+  if (!state) {
+    throw new ValidationError('Missing OAuth state parameter');
+  }
+
+  // Validate state to prevent CSRF
+  const stateResult = await pool.query(`
+    SELECT credentials FROM business_data_sources
+    WHERE source_type = 'oauth_state' AND status = 'pending'
+    LIMIT 1
+  `);
+  const storedState = stateResult.rows[0]?.credentials;
+  if (!storedState || storedState.state !== state || Date.now() > storedState.expires) {
+    // Clean up expired state
+    await pool.query(`DELETE FROM business_data_sources WHERE source_type = 'oauth_state'`);
+    throw new ValidationError('Invalid or expired OAuth state');
+  }
+
+  // Clean up used state
+  await pool.query(`DELETE FROM business_data_sources WHERE source_type = 'oauth_state'`);
 
   await gscConnector.exchangeCode(code);
 

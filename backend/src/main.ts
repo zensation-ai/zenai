@@ -242,7 +242,13 @@ app.use((req, res, next) => {
 app.use(rateLimiter);
 
 // Body parsers with reasonable limits (10MB default, routes can override)
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: express.Request, _res, buf) => {
+    // Preserve raw body for webhook signature verification (Stripe, Slack, etc.)
+    (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+  },
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Phase Security Sprint 3: Cookie parser for CSRF protection
@@ -469,6 +475,17 @@ function validateEnvironmentVariables(): void {
   // Validate Slack signing secret in production if Slack is configured
   if (isProduction && process.env.SLACK_CLIENT_ID && !process.env.SLACK_SIGNING_SECRET) {
     warnings.push('SLACK_SIGNING_SECRET is required in production when Slack integration is enabled');
+  }
+
+  // Validate Business Manager (Phase 34) - warn if partially configured
+  if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_WEBHOOK_SECRET) {
+    warnings.push('STRIPE_WEBHOOK_SECRET recommended when STRIPE_SECRET_KEY is set');
+  }
+  if (process.env.GA4_PROPERTY_ID && !process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+    warnings.push('GOOGLE_SERVICE_ACCOUNT_KEY required for GA4 analytics when GA4_PROPERTY_ID is set');
+  }
+  if (process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_SECRET) {
+    warnings.push('GOOGLE_CLIENT_SECRET required when GOOGLE_CLIENT_ID is set');
   }
 
   // Log all warnings

@@ -58,6 +58,8 @@ revenueRouter.post('/webhook', asyncHandler(async (req: Request, res: Response) 
     throw new ValidationError('Missing stripe-signature header');
   }
 
-  await stripeConnector.handleWebhook(req.body, signature);
+  // Use raw body for Stripe signature verification (express.json() preserves it via verify callback)
+  const rawBody = (req as Request & { rawBody?: Buffer }).rawBody || JSON.stringify(req.body);
+  await stripeConnector.handleWebhook(rawBody, signature);
   res.json({ success: true, received: true });
 }));

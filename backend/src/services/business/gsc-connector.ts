@@ -75,12 +75,13 @@ class GSCConnector implements BusinessConnector {
   // OAuth Flow
   // ============================================
 
-  getAuthorizeUrl(): string {
+  getAuthorizeUrl(state?: string): string {
     if (!this.oauth2Client) throw new Error('OAuth client not initialized');
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: ['https://www.googleapis.com/auth/webmasters.readonly'],
       prompt: 'consent',
+      state,
     });
   }
 
