@@ -110,6 +110,48 @@ export async function moveIdea(
         targetContext,
         error: insertError instanceof Error ? insertError.message : String(insertError),
       });
+      try {
+        insertResult = await queryContext(targetContext, `
+          INSERT INTO ideas (
+            title, type, category, priority, summary, raw_input,
+            next_steps, context_needed, keywords, embedding, is_archived,
+            context, created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6,
+            $7, $8, $9, $10, $11,
+            $12, $13, NOW()
+          )
+          RETURNING id
+        `, [
+          idea.title,
+          idea.type,
+          idea.category,
+          idea.priority,
+          idea.summary,
+          idea.raw_input,
+          idea.next_steps,
+          idea.context_needed,
+          idea.keywords,
+          idea.embedding,
+          idea.is_archived,
+          targetContext,
+          idea.created_at,
+        ]);
+      } catch (fallbackError) {
+        const pgCode = (fallbackError as Record<string, unknown>)?.code;
+        logger.error('Fallback INSERT into target schema also failed', fallbackError instanceof Error ? fallbackError : undefined, {
+          operation: 'moveIdea',
+          targetContext,
+          pgCode,
+        });
+        const err = new Error('SCHEMA_MISMATCH');
+        (err as unknown as Record<string, unknown>).pgCode = pgCode;
+        (err as unknown as Record<string, unknown>).detail = `INSERT into ${targetContext}.ideas failed (pg code: ${pgCode}). Run fix_idea_move_schema.sql migration.`;
+        throw err;
+      }
+    }
+  } else {
+    try {
       insertResult = await queryContext(targetContext, `
         INSERT INTO ideas (
           title, type, category, priority, summary, raw_input,
@@ -136,34 +178,18 @@ export async function moveIdea(
         targetContext,
         idea.created_at,
       ]);
+    } catch (insertError) {
+      const pgCode = (insertError as Record<string, unknown>)?.code;
+      logger.error('Basic INSERT into target schema failed', insertError instanceof Error ? insertError : undefined, {
+        operation: 'moveIdea',
+        targetContext,
+        pgCode,
+      });
+      const err = new Error('SCHEMA_MISMATCH');
+      (err as unknown as Record<string, unknown>).pgCode = pgCode;
+      (err as unknown as Record<string, unknown>).detail = `INSERT into ${targetContext}.ideas failed (pg code: ${pgCode}). Run fix_idea_move_schema.sql migration.`;
+      throw err;
     }
-  } else {
-    insertResult = await queryContext(targetContext, `
-      INSERT INTO ideas (
-        title, type, category, priority, summary, raw_input,
-        next_steps, context_needed, keywords, embedding, is_archived,
-        context, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, $11,
-        $12, $13, NOW()
-      )
-      RETURNING id
-    `, [
-      idea.title,
-      idea.type,
-      idea.category,
-      idea.priority,
-      idea.summary,
-      idea.raw_input,
-      idea.next_steps,
-      idea.context_needed,
-      idea.keywords,
-      idea.embedding,
-      idea.is_archived,
-      targetContext,
-      idea.created_at,
-    ]);
   }
 
   const newIdeaId = insertResult.rows[0].id;

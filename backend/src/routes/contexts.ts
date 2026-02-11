@@ -277,6 +277,22 @@ router.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), async
     if (error instanceof Error && error.message === 'IDEA_NOT_FOUND') {
       throw new NotFoundError('Idea');
     }
+    if (error instanceof Error && error.message === 'SCHEMA_MISMATCH') {
+      const detail = (error as unknown as Record<string, unknown>).detail || 'Schema column mismatch between contexts';
+      logger.error('Idea move failed due to schema mismatch', error, {
+        operation: 'moveIdea',
+        sourceContext: context,
+        targetContext,
+        ideaId: id,
+        detail,
+      });
+      res.status(500).json({
+        success: false,
+        error: 'Database schema mismatch between contexts. Please run the fix_idea_move_schema.sql migration.',
+        code: 'SCHEMA_MISMATCH',
+      });
+      return;
+    }
     logger.error('Idea move failed', error instanceof Error ? error : undefined, {
       operation: 'moveIdea',
       sourceContext: context,
