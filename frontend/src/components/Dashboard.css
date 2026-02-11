@@ -69,6 +69,21 @@
   color: var(--text-secondary);
 }
 
+.dash-context-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--glass-border, rgba(255, 200, 170, 0.2));
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .dash-welcome-action {
   flex-shrink: 0;
   display: flex;
@@ -212,12 +227,12 @@
 }
 
 /* ============================================
-   Quick Stats
+   Quick Stats (5 cards)
    ============================================ */
 
 .dash-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
 }
 
@@ -242,6 +257,7 @@
 .dash-stat-card:nth-child(2) { animation-delay: 50ms; }
 .dash-stat-card:nth-child(3) { animation-delay: 100ms; }
 .dash-stat-card:nth-child(4) { animation-delay: 150ms; }
+.dash-stat-card:nth-child(5) { animation-delay: 200ms; }
 
 @keyframes dashCardIn {
   from { opacity: 0; transform: translateY(12px); }
@@ -280,6 +296,10 @@
   border-color: rgba(255, 107, 53, 0.25);
 }
 
+.dash-stat-card.streak:hover {
+  border-color: rgba(255, 180, 0, 0.3);
+}
+
 .dash-stat-card.ai:hover {
   border-color: rgba(139, 92, 246, 0.25);
 }
@@ -312,6 +332,35 @@
   font-size: 0.75rem;
   color: var(--text-secondary);
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================
+   Sparkline (7-day trend)
+   ============================================ */
+
+.dash-sparkline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--surface-warm, var(--surface));
+  border: 1px solid var(--glass-border, rgba(255, 200, 170, 0.15));
+  border-radius: 10px;
+}
+
+.dash-sparkline-svg {
+  flex: 1;
+  height: 32px;
+  max-width: 240px;
+}
+
+.dash-sparkline-label {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -491,11 +540,41 @@
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 260px;
+}
+
+.dash-empty-cta {
+  margin-top: 4px;
+  padding: 8px 16px;
+  background: var(--primary, #ff6b35);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dash-empty-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.dash-empty-cta:active {
+  transform: translateY(0);
 }
 
 /* ============================================
    Responsive
    ============================================ */
+
+@media (max-width: 1024px) {
+  .dash-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 @media (max-width: 768px) {
   .dashboard {
@@ -515,6 +594,11 @@
 
   .dash-greeting {
     font-size: 1.15rem;
+  }
+
+  .dash-context-badge {
+    order: -1;
+    align-self: flex-start;
   }
 
   .dash-welcome-action {
@@ -548,6 +632,10 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
+
+  .dash-sparkline {
+    padding: 6px 12px;
+  }
 }
 
 @media (max-width: 400px) {
@@ -580,7 +668,9 @@
   }
 
   .dash-welcome-action,
-  .dash-see-all {
+  .dash-see-all,
+  .dash-empty-cta,
+  .dash-context-badge {
     display: none;
   }
 
@@ -593,5 +683,9 @@
 
   .dash-quickstart {
     break-inside: avoid;
+  }
+
+  .dash-sparkline {
+    display: none;
   }
 }

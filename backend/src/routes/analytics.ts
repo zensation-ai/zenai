@@ -13,6 +13,7 @@ import { queryContext, AIContext, isValidContext } from '../utils/database-conte
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toInt } from '../utils/validation';
+import { getRecentAIActivities } from '../services/ai-activity-logger';
 
 export const analyticsRouter = Router();
 
@@ -342,3 +343,96 @@ function generateInsights(
 
   return insights;
 }
+
+// ===========================================
+// Dashboard Summary (aggregated endpoint)
+// ===========================================
+
+/**
+ * GET /api/:context/analytics/dashboard-summary
+ * Aggregated data for the Dashboard page — single call instead of 3 parallel ones.
+ * Returns: stats, streak, 7-day trend, recent ideas, AI activity
+ */
+analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const ctx = context as AIContext;
+
+  const [statsResult, streakResult, trendResult, recentIdeasResult, activities] = await Promise.all([
+    // Stats: total, thisWeek, highPriority, todayCount
+    queryContext(ctx, `
+      SELECT
+        COUNT(*) FILTER (WHERE is_archived = false) as total,
+        COUNT(*) FILTER (WHERE is_archived = false AND created_at > NOW() - INTERVAL '7 days') as this_week,
+        COUNT(*) FILTER (WHERE is_archived = false AND created_at > NOW() - INTERVAL '24 hours') as today,
+        COUNT(*) FILTER (WHERE is_archived = false AND priority = 'high') as high_priority
+      FROM ideas
+    `),
+
+    // Streak: consecutive days with at least 1 idea
+    queryContext(ctx, `
+      WITH daily AS (
+        SELECT DISTINCT DATE(created_at) as date
+        FROM ideas
+        WHERE created_at > NOW() - INTERVAL '90 days'
+        ORDER BY date DESC
+      ),
+      streak AS (
+        SELECT date,
+               date - (ROW_NUMBER() OVER (ORDER BY date DESC))::int AS grp
+        FROM daily
+      )
+      SELECT COUNT(*) as streak_days
+      FROM streak
+      WHERE grp = (SELECT grp FROM streak ORDER BY date DESC LIMIT 1)
+    `),
+
+    // 7-day trend (count per day)
+    queryContext(ctx, `
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*) as count
+      FROM ideas
+      WHERE created_at > NOW() - INTERVAL '7 days'
+        AND is_archived = false
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `),
+
+    // Recent 6 ideas
+    queryContext(ctx, `
+      SELECT id, title, type, priority, created_at
+      FROM ideas
+      WHERE is_archived = false
+      ORDER BY created_at DESC
+      LIMIT 6
+    `),
+
+    // Recent 5 AI activities
+    getRecentAIActivities(ctx, 5),
+  ]);
+
+  const stats = statsResult.rows[0];
+
+  res.json({
+    success: true,
+    stats: {
+      total: toInt(stats?.total),
+      thisWeek: toInt(stats?.this_week),
+      todayCount: toInt(stats?.today),
+      highPriority: toInt(stats?.high_priority),
+    },
+    streak: toInt(streakResult.rows[0]?.streak_days),
+    trend: trendResult.rows.map((r: { date: string; count: string }) => ({
+      date: r.date,
+      count: toInt(r.count),
+    })),
+    recentIdeas: recentIdeasResult.rows,
+    activities,
+    context,
+  });
+}));

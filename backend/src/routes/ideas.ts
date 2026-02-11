@@ -1038,15 +1038,27 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
 
   try {
     const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-      queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
+      queryContext(ctx, `
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as this_week,
+          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as last_month,
+          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as today
+        FROM ideas WHERE is_archived = false
+      `),
       queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
       queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
       queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
     ]);
 
+    const totals = totalResult.rows[0];
+
     res.json({
       success: true,
-      total: parseInt(totalResult.rows[0]?.total ?? '0'),
+      total: parseInt(totals?.total ?? '0'),
+      thisWeek: parseInt(totals?.this_week ?? '0'),
+      lastMonth: parseInt(totals?.last_month ?? '0'),
+      todayCount: parseInt(totals?.today ?? '0'),
       byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
       byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
       byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
@@ -1060,6 +1072,9 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
     res.json({
       success: true,
       total: 0,
+      thisWeek: 0,
+      lastMonth: 0,
+      todayCount: 0,
       byType: {},
       byCategory: {},
       byPriority: {},
