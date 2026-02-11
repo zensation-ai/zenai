@@ -26,7 +26,7 @@ const ArtifactPanel = lazy(() => import('../ArtifactPanel').then(m => ({ default
 // Lazy-load VoiceChat overlay
 const VoiceChatOverlay = lazy(() => import('../VoiceChat').then(m => ({ default: m.VoiceChat })));
 
-export function GeneralChat({ context, isCompact = false, assistantMode = false }: GeneralChatProps) {
+export function GeneralChat({ context, isCompact = false, assistantMode = false, fullPage = false }: GeneralChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -553,7 +553,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
 
   if (loading) {
     return (
-      <div className={`general-chat ${isCompact ? 'compact' : ''}`} role="status" aria-live="polite">
+      <div className={`general-chat ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`} role="status" aria-live="polite">
         <div className="chat-loading neuro-loading-contextual">
           <div className="loading-spinner neuro-loading-spinner" aria-label="Chat wird geladen" />
         </div>
@@ -562,7 +562,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
   }
 
   return (
-    <div className={`general-chat liquid-glass ${isCompact ? 'compact' : ''}`}>
+    <div className={`general-chat liquid-glass ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`}>
       {/* Messages Area */}
       <ChatMessageList
         messages={messages}

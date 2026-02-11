@@ -18,6 +18,29 @@
   max-height: 400px;
 }
 
+/* ---- Full-Page Mode (ChatPage) ---- */
+
+.chat-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 24px 16px;
+}
+
+.general-chat.full-page {
+  max-width: 860px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.general-chat.full-page .chat-messages {
+  max-height: none;
+  flex: 1;
+  min-height: 300px;
+}
+
 /* Loading State */
 .chat-loading {
   display: flex;
@@ -509,6 +532,19 @@
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+  .chat-page {
+    padding: 12px 8px 8px;
+  }
+
+  .general-chat.full-page {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .general-chat.full-page .chat-messages {
+    min-height: 200px;
+  }
+
   .chat-messages {
     min-height: 150px;
     max-height: 280px;

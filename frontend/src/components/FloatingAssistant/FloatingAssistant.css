@@ -48,11 +48,7 @@
 }
 
 .assistant-bubble.open .assistant-bubble-icon {
-  transform: rotate(45deg);
-}
-
-.assistant-bubble-close {
-  font-size: 1.4rem;
+  color: white;
 }
 
 /* Unread Badge */

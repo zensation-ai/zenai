@@ -96,6 +96,122 @@
 }
 
 /* ============================================
+   Quick Start Grid
+   ============================================ */
+
+.dash-quickstart-title {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dash-quickstart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.dash-qs-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface-warm, var(--surface));
+  border: 1px solid var(--glass-border, rgba(255, 200, 170, 0.2));
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  transition: all 0.2s ease;
+  animation: dashCardIn 0.4s ease both;
+  overflow: hidden;
+}
+
+.dash-qs-card:nth-child(1) { animation-delay: 0ms; }
+.dash-qs-card:nth-child(2) { animation-delay: 60ms; }
+.dash-qs-card:nth-child(3) { animation-delay: 120ms; }
+.dash-qs-card:nth-child(4) { animation-delay: 180ms; }
+.dash-qs-card:nth-child(5) { animation-delay: 240ms; }
+.dash-qs-card:nth-child(6) { animation-delay: 300ms; }
+
+.dash-qs-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.dash-qs-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-glow, rgba(255, 180, 140, 0.35));
+}
+
+.dash-qs-card:hover::before {
+  opacity: 1;
+}
+
+.dash-qs-card:active {
+  transform: translateY(0);
+  transition-duration: 0.08s;
+}
+
+.dash-qs-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Category-specific subtle tints */
+.dash-qs-card.qs-ideas::before    { background: linear-gradient(135deg, rgba(255, 199, 0, 0.08), transparent); }
+.dash-qs-card.qs-chat::before     { background: linear-gradient(135deg, rgba(255, 165, 0, 0.08), transparent); }
+.dash-qs-card.qs-documents::before { background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), transparent); }
+.dash-qs-card.qs-insights::before  { background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent); }
+.dash-qs-card.qs-workshop::before  { background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), transparent); }
+.dash-qs-card.qs-myai::before     { background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), transparent); }
+
+/* Hover: show category border accent */
+.dash-qs-card.qs-ideas:hover    { border-color: rgba(255, 199, 0, 0.35); }
+.dash-qs-card.qs-chat:hover     { border-color: rgba(255, 165, 0, 0.35); }
+.dash-qs-card.qs-documents:hover { border-color: rgba(59, 130, 246, 0.3); }
+.dash-qs-card.qs-insights:hover  { border-color: rgba(16, 185, 129, 0.3); }
+.dash-qs-card.qs-workshop:hover  { border-color: rgba(139, 92, 246, 0.3); }
+.dash-qs-card.qs-myai:hover     { border-color: rgba(236, 72, 153, 0.3); }
+
+.dash-qs-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.dash-qs-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-qs-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.dash-qs-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* ============================================
    Quick Stats
    ============================================ */
 
@@ -406,6 +522,15 @@
     justify-content: center;
   }
 
+  .dash-quickstart-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .dash-qs-card {
+    padding: 12px 14px;
+  }
+
   .dash-stats {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -438,7 +563,8 @@
 @media (prefers-reduced-motion: reduce) {
   .dashboard,
   .dash-stat-card,
-  .dash-welcome-action {
+  .dash-welcome-action,
+  .dash-qs-card {
     animation: none !important;
     transition-duration: 0.01ms !important;
   }
@@ -459,8 +585,13 @@
   }
 
   .dash-stat-card,
-  .dash-column {
+  .dash-column,
+  .dash-qs-card {
     border: 1px solid #ddd;
+    break-inside: avoid;
+  }
+
+  .dash-quickstart {
     break-inside: avoid;
   }
 }

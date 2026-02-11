@@ -36,7 +36,7 @@ export const NAV_CHAT_ITEM: NavItem = {
   page: 'chat',
   icon: '💬',
   label: 'Chat',
-  description: 'Chat mit deiner KI',
+  description: 'Direkte KI-Konversation',
 };
 
 /**
@@ -51,11 +51,11 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     id: 'denken',
     label: 'Denken',
-    icon: '💭',
+    icon: '🧠',
     items: [
       {
         page: 'ideas',
-        icon: '💭',
+        icon: '💡',
         label: 'Gedanken',
         description: 'Ideen erfassen, entwickeln und ordnen',
         subPages: ['incubator', 'archive', 'triage'],

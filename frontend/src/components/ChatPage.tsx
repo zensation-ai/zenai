@@ -17,9 +17,9 @@ interface ChatPageProps {
 
 const ChatPageComponent: React.FC<ChatPageProps> = ({ context }) => {
   return (
-    <div className="chat-page" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="chat-page">
       <Suspense fallback={<SkeletonLoader type="card" count={3} />}>
-        <GeneralChat context={context} isCompact={false} />
+        <GeneralChat context={context} isCompact={false} fullPage={true} />
       </Suspense>
     </div>
   );

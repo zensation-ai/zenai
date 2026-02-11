@@ -17,6 +17,7 @@ import { ErrorBoundary } from '../ErrorBoundary';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { safeLocalStorage } from '../../utils/storage';
 import { QuickActions } from './QuickActions';
+import { CloseIcon } from '../icons/CloseIcon';
 import './FloatingAssistant.css';
 
 interface FloatingAssistantProps {
@@ -127,7 +128,7 @@ export function FloatingAssistant({ context, currentPage, onNavigate }: Floating
         aria-haspopup="dialog"
       >
         <span className="assistant-bubble-icon" aria-hidden="true">
-          {isOpen ? '\u2715' : '\u{1F9E0}'}
+          {isOpen ? <CloseIcon size={20} /> : '\u{1F9E0}'}
         </span>
       </button>
 
@@ -140,7 +141,7 @@ export function FloatingAssistant({ context, currentPage, onNavigate }: Floating
             onClick={dismissTooltip}
             aria-label="Hinweis schließen"
           >
-            \u2715
+            <CloseIcon size={12} />
           </button>
           <p className="assistant-tooltip-text">
             Ich bin Zen, dein KI-Assistent. Frag mich alles zur App!

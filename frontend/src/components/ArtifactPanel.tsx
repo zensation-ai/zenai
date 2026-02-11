@@ -14,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import { SyntaxHighlighter, oneDark } from '../utils/syntaxHighlighter';
 import { showToast } from './Toast';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { CloseIcon } from './icons/CloseIcon';
 import type { Artifact } from '../types/artifacts';
 import { getArtifactFilename } from '../types/artifacts';
 import './ArtifactPanel.css';
@@ -301,7 +302,7 @@ export function ArtifactPanel({
               title="Schließen (Esc)"
               aria-label="Panel schließen"
             >
-              ✕
+              <CloseIcon size={16} />
             </button>
           </div>
         </div>

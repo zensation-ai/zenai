@@ -57,6 +57,23 @@ const ACTIVITY_ICONS: Record<string, string> = {
   draft_generated: '📝', pattern_detected: '💡', suggestion_made: '💬',
 };
 
+interface QuickStartItem {
+  icon: string;
+  label: string;
+  description: string;
+  page: Page;
+  colorClass: string;
+}
+
+const QUICK_START_ITEMS: QuickStartItem[] = [
+  { icon: '💡', label: 'Neuer Gedanke', description: 'Idee erfassen', page: 'ideas', colorClass: 'qs-ideas' },
+  { icon: '💬', label: 'Chat starten', description: 'KI-Konversation', page: 'chat', colorClass: 'qs-chat' },
+  { icon: '📚', label: 'Wissensbasis', description: 'Dokumente durchsuchen', page: 'documents', colorClass: 'qs-documents' },
+  { icon: '📊', label: 'Insights', description: 'Trends entdecken', page: 'insights', colorClass: 'qs-insights' },
+  { icon: '🧪', label: 'Werkstatt', description: 'KI-Vorschlaege', page: 'workshop', colorClass: 'qs-workshop' },
+  { icon: '🤖', label: 'Meine KI', description: 'KI personalisieren', page: 'my-ai', colorClass: 'qs-myai' },
+];
+
 const DashboardComponent: React.FC<DashboardProps> = ({
   context,
   onNavigate,
@@ -150,9 +167,30 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           className="dash-welcome-action neuro-focus-ring"
           onClick={() => onNavigate('ideas')}
         >
-          <span aria-hidden="true">💭</span>
+          <span aria-hidden="true">💡</span>
           Neuer Gedanke
         </button>
+      </section>
+
+      {/* Quick Start Grid */}
+      <section className="dash-quickstart" aria-label="Schnellstart">
+        <h3 className="dash-quickstart-title">Schnellstart</h3>
+        <div className="dash-quickstart-grid">
+          {QUICK_START_ITEMS.map((item) => (
+            <button
+              key={item.page}
+              type="button"
+              className={`dash-qs-card ${item.colorClass} neuro-focus-ring`}
+              onClick={() => onNavigate(item.page)}
+            >
+              <span className="dash-qs-icon" aria-hidden="true">{item.icon}</span>
+              <div className="dash-qs-text">
+                <span className="dash-qs-label">{item.label}</span>
+                <span className="dash-qs-desc">{item.description}</span>
+              </div>
+            </button>
+          ))}
+        </div>
       </section>
 
       {/* Quick Stats */}
@@ -162,7 +200,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         ) : (
           <>
             <button type="button" className="dash-stat-card" title="Alle Gedanken anzeigen" onClick={() => onNavigate('ideas')}>
-              <span className="dash-stat-icon" aria-hidden="true">💭</span>
+              <span className="dash-stat-icon" aria-hidden="true">💡</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.total}</span>
                 <span className="dash-stat-label">Gesamt</span>
@@ -210,7 +248,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
               <SkeletonLoader type="card" count={4} />
             ) : recentIdeas.length === 0 ? (
               <div className="dash-empty">
-                <span>💭</span>
+                <span>💡</span>
                 <p>Noch keine Gedanken. Starte jetzt!</p>
               </div>
             ) : (
