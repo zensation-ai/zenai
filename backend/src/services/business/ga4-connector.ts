@@ -75,7 +75,7 @@ class GA4Connector implements BusinessConnector {
   // ============================================
 
   async getTrafficMetrics(period: string): Promise<TrafficMetrics> {
-    if (!this.client || !this.propertyId) throw new Error('GA4 not initialized');
+    if (!this.client || !this.propertyId) {throw new Error('GA4 not initialized');}
 
     const days = period === '1d' ? 1 : period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 7;
     const startDate = `${days}daysAgo`;

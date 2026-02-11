@@ -83,7 +83,7 @@ class DataAggregatorService {
   // ============================================
 
   async collectHourlyMetrics(): Promise<void> {
-    if (!this.isRunning) return;
+    if (!this.isRunning) {return;}
     logger.info('[DataAggregator] Starting hourly metrics collection');
 
     const metrics: Record<string, unknown> = {};
@@ -95,7 +95,7 @@ class DataAggregatorService {
     ];
 
     for (const { name, connector } of collectors) {
-      if (!connector.isAvailable()) continue;
+      if (!connector.isAvailable()) {continue;}
       try {
         metrics[name] = await connector.collectMetrics();
       } catch (error) {
@@ -117,7 +117,7 @@ class DataAggregatorService {
   // ============================================
 
   async collectDailyMetrics(): Promise<void> {
-    if (!this.isRunning) return;
+    if (!this.isRunning) {return;}
     logger.info('[DataAggregator] Starting daily metrics collection');
 
     const metrics: Record<string, unknown> = {};
@@ -130,7 +130,7 @@ class DataAggregatorService {
     ];
 
     for (const { name, connector } of collectors) {
-      if (!connector.isAvailable()) continue;
+      if (!connector.isAvailable()) {continue;}
       try {
         metrics[name] = await connector.collectMetrics();
         await this.updateConnectorSync(name);
@@ -191,7 +191,7 @@ class DataAggregatorService {
     ];
 
     for (const { name, connector } of collectors) {
-      if (!connector.isAvailable()) continue;
+      if (!connector.isAvailable()) {continue;}
       try {
         metrics[name] = await connector.collectMetrics();
         sources.push(name);

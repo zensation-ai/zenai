@@ -66,7 +66,7 @@ class GSCConnector implements BusinessConnector {
 
   async collectMetrics(): Promise<Record<string, unknown>> {
     const siteUrl = process.env.GSC_SITE_URL;
-    if (!siteUrl) return {};
+    if (!siteUrl) {return {};}
     const metrics = await this.getSearchMetrics(siteUrl, '28d');
     return metrics as unknown as Record<string, unknown>;
   }
@@ -76,7 +76,7 @@ class GSCConnector implements BusinessConnector {
   // ============================================
 
   getAuthorizeUrl(state?: string): string {
-    if (!this.oauth2Client) throw new Error('OAuth client not initialized');
+    if (!this.oauth2Client) {throw new Error('OAuth client not initialized');}
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: ['https://www.googleapis.com/auth/webmasters.readonly'],
@@ -86,7 +86,7 @@ class GSCConnector implements BusinessConnector {
   }
 
   async exchangeCode(code: string): Promise<void> {
-    if (!this.oauth2Client) throw new Error('OAuth client not initialized');
+    if (!this.oauth2Client) {throw new Error('OAuth client not initialized');}
 
     const { tokens } = await this.oauth2Client.getToken(code);
     this.oauth2Client.setCredentials(tokens);
@@ -111,7 +111,7 @@ class GSCConnector implements BusinessConnector {
   // ============================================
 
   async getSearchMetrics(siteUrl: string, period: string): Promise<SEOMetrics> {
-    if (!this.searchConsole) throw new Error('GSC not authenticated');
+    if (!this.searchConsole) {throw new Error('GSC not authenticated');}
 
     const days = period === '7d' ? 7 : period === '28d' ? 28 : period === '90d' ? 90 : 28;
     const endDate = new Date();
