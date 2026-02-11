@@ -61,17 +61,31 @@ class StripeConnector implements BusinessConnector {
       throw new Error('Stripe not initialized');
     }
 
-    const [subscriptions, customers, recentCharges] = await Promise.all([
+    const results = await Promise.allSettled([
       this.stripe.subscriptions.list({ status: 'active', limit: 100, expand: ['data.items.data.price'] }),
       this.stripe.customers.list({ limit: 1 }),
       this.stripe.charges.list({ limit: 10 }),
     ]);
 
-    const mrr = this.calculateMRR(subscriptions.data);
+    const subscriptions = results[0].status === 'fulfilled' ? results[0].value : null;
+    const customers = results[1].status === 'fulfilled' ? results[1].value : null;
+    const recentCharges = results[2].status === 'fulfilled' ? results[2].value : null;
+
+    // Log any individual failures without breaking the entire metrics response
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].status === 'rejected') {
+        const names = ['subscriptions', 'customers', 'charges'];
+        logger.warn(`[StripeConnector] Failed to fetch ${names[i]}`, {
+          error: (results[i] as PromiseRejectedResult).reason?.message ?? 'Unknown error',
+        });
+      }
+    }
+
+    const mrr = subscriptions ? this.calculateMRR(subscriptions.data) : 0;
     const churnRate = await this.calculateChurnRate();
     const mrrGrowth = await this.calculateMRRGrowth(mrr);
 
-    const recentPayments: RecentPayment[] = recentCharges.data
+    const recentPayments: RecentPayment[] = (recentCharges?.data ?? [])
       .filter(c => c.status === 'succeeded')
       .map(c => ({
         id: c.id,
@@ -85,10 +99,10 @@ class StripeConnector implements BusinessConnector {
     return {
       mrr,
       arr: mrr * 12,
-      activeSubscriptions: subscriptions.data.length,
+      activeSubscriptions: subscriptions?.data.length ?? 0,
       churnRate,
       mrrGrowth,
-      totalCustomers: customers.data.length > 0 ? (customers as Stripe.ApiList<Stripe.Customer>).data.length : 0,
+      totalCustomers: customers?.data.length ?? 0,
       recentPayments,
     };
   }

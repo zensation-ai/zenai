@@ -199,6 +199,11 @@ export const SearchResponseSchema = z.object({
   ideas: z.array(StructuredIdeaSchema).default([]),
 }).passthrough();
 
+export const ProgressiveSearchResponseSchema = z.object({
+  keyword: z.object({ ideas: z.array(StructuredIdeaSchema).default([]) }).passthrough().optional(),
+  semantic: z.object({ ideas: z.array(StructuredIdeaSchema).default([]) }).passthrough().optional(),
+}).passthrough();
+
 // ---------------------------------------------------------------------------
 // Meetings API
 // ---------------------------------------------------------------------------

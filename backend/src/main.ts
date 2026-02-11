@@ -82,7 +82,7 @@ import { cacheControlMiddleware } from './middleware/cache-control';
 import { errorHandler } from './middleware/errorHandler';
 import { logger, requestLogger } from './utils/logger';
 // Phase 30: Memory Scheduler (HiMeS Consolidation & Decay)
-import { startMemoryScheduler, stopMemoryScheduler } from './services/memory';
+import { startMemoryScheduler, stopMemoryScheduler, workingMemory } from './services/memory';
 // Phase 31: AI Capabilities Enhancement
 import { registerAllToolHandlers } from './services/tool-handlers';
 
@@ -407,10 +407,12 @@ const rateLimitCleanupInterval = setInterval(() => {
 process.once('SIGTERM', () => {
   clearInterval(rateLimitCleanupInterval);
   stopMemoryScheduler();
+  workingMemory.stopCleanupInterval();
 });
 process.once('SIGINT', () => {
   clearInterval(rateLimitCleanupInterval);
   stopMemoryScheduler();
+  workingMemory.stopCleanupInterval();
 });
 
 // 404 Handler for undefined routes

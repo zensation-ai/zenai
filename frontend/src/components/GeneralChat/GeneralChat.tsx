@@ -39,6 +39,9 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
   const [thinkingContent, setThinkingContent] = useState<string>('');
   // Inline error message for assistant mode (toast is hidden behind panel)
   const [inlineError, setInlineError] = useState<string | null>(null);
+  // RAF-based throttle for streaming content updates (caps at ~60fps instead of per-token)
+  const streamingRafRef = useRef<number | null>(null);
+  const pendingStreamContentRef = useRef<string>('');
   // Thinking partner mode state (Phase 32C-1)
   const [thinkingMode, setThinkingMode] = useState<'assist' | 'challenge' | 'coach' | 'synthesize'>('assist');
   // Voice chat overlay state
@@ -285,7 +288,14 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
                     // Handle different event types based on data content
                     if (data.content !== undefined) {
                       accumulatedContent += data.content;
-                      setStreamingContent(accumulatedContent);
+                      // Throttle DOM updates to animation frame rate (~60fps)
+                      pendingStreamContentRef.current = accumulatedContent;
+                      if (!streamingRafRef.current) {
+                        streamingRafRef.current = requestAnimationFrame(() => {
+                          setStreamingContent(pendingStreamContentRef.current);
+                          streamingRafRef.current = null;
+                        });
+                      }
                     }
                     if (data.thinking !== undefined) {
                       // Accumulate thinking deltas (backend now streams chunks)
@@ -324,6 +334,12 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false 
             return [...filtered, realUserMessage, finalAssistantMessage];
           });
         } finally {
+          // Cancel any pending RAF and reset streaming state
+          if (streamingRafRef.current) {
+            cancelAnimationFrame(streamingRafRef.current);
+            streamingRafRef.current = null;
+          }
+          pendingStreamContentRef.current = '';
           setIsStreaming(false);
           setStreamingContent('');
           setThinkingContent('');

@@ -9,6 +9,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../../middleware/errorHandler';
 import { pool } from '../../utils/database';
+import { logger } from '../../utils/logger';
 import {
   stripeConnector,
   gscConnector,
@@ -23,6 +24,37 @@ import type { BusinessSourceType } from '../../types/business';
 export const connectorsRouter = Router();
 
 const VALID_SOURCE_TYPES: BusinessSourceType[] = ['stripe', 'gsc', 'ga4', 'uptime', 'lighthouse', 'email'];
+
+// ===========================================
+// OAuth State Store (in-memory, ephemeral)
+// ===========================================
+const OAUTH_STATE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+const oauthStateStore = new Map<string, { createdAt: number }>();
+
+function storeOAuthState(state: string): void {
+  // Clean up expired states
+  const now = Date.now();
+  for (const [key, value] of oauthStateStore.entries()) {
+    if (now - value.createdAt > OAUTH_STATE_EXPIRY_MS) {
+      oauthStateStore.delete(key);
+    }
+  }
+  oauthStateStore.set(state, { createdAt: now });
+}
+
+function validateAndConsumeOAuthState(state: string): boolean {
+  const stored = oauthStateStore.get(state);
+  if (!stored) {
+    logger.warn('OAuth state not found', { state: state.substring(0, 8) });
+    return false;
+  }
+  oauthStateStore.delete(state);
+  if (Date.now() - stored.createdAt > OAUTH_STATE_EXPIRY_MS) {
+    logger.warn('OAuth state expired', { state: state.substring(0, 8) });
+    return false;
+  }
+  return true;
+}
 
 /**
  * GET /api/business/connectors
@@ -125,13 +157,7 @@ connectorsRouter.post('/collect', apiKeyAuth, asyncHandler(async (_req: Request,
  */
 connectorsRouter.get('/google/authorize', apiKeyAuth, asyncHandler(async (_req: Request, res: Response) => {
   const state = crypto.randomBytes(16).toString('hex');
-  // Store state for validation in callback (expires in 10 minutes)
-  await pool.query(`
-    INSERT INTO business_data_sources (source_type, display_name, credentials, config, status)
-    VALUES ('oauth_state', 'OAuth State', $1, '{}', 'pending')
-    ON CONFLICT (source_type) WHERE source_type = 'oauth_state' DO UPDATE SET
-      credentials = $1, updated_at = NOW()
-  `, [JSON.stringify({ state, expires: Date.now() + 10 * 60 * 1000 })]);
+  storeOAuthState(state);
 
   const url = gscConnector.getAuthorizeUrl(state);
   res.json({ success: true, authorizeUrl: url });
@@ -139,7 +165,7 @@ connectorsRouter.get('/google/authorize', apiKeyAuth, asyncHandler(async (_req: 
 
 /**
  * GET /api/business/connectors/google/callback
- * Google OAuth callback
+ * Google OAuth callback (no apiKeyAuth - called by Google redirect)
  */
 connectorsRouter.get('/google/callback', asyncHandler(async (req: Request, res: Response) => {
   const code = req.query.code as string;
@@ -152,21 +178,10 @@ connectorsRouter.get('/google/callback', asyncHandler(async (req: Request, res: 
     throw new ValidationError('Missing OAuth state parameter');
   }
 
-  // Validate state to prevent CSRF
-  const stateResult = await pool.query(`
-    SELECT credentials FROM business_data_sources
-    WHERE source_type = 'oauth_state' AND status = 'pending'
-    LIMIT 1
-  `);
-  const storedState = stateResult.rows[0]?.credentials;
-  if (!storedState || storedState.state !== state || Date.now() > storedState.expires) {
-    // Clean up expired state
-    await pool.query(`DELETE FROM business_data_sources WHERE source_type = 'oauth_state'`);
+  // Validate state to prevent CSRF (one-time use)
+  if (!validateAndConsumeOAuthState(state)) {
     throw new ValidationError('Invalid or expired OAuth state');
   }
-
-  // Clean up used state
-  await pool.query(`DELETE FROM business_data_sources WHERE source_type = 'oauth_state'`);
 
   await gscConnector.exchangeCode(code);
 

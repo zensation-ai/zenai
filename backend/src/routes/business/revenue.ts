@@ -8,6 +8,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler, ValidationError } from '../../middleware/errorHandler';
 import { stripeConnector } from '../../services/business';
+import { logger } from '../../utils/logger';
 
 export const revenueRouter = Router();
 
@@ -59,7 +60,10 @@ revenueRouter.post('/webhook', asyncHandler(async (req: Request, res: Response) 
   }
 
   // Use raw body for Stripe signature verification (express.json() preserves it via verify callback)
-  const rawBody = (req as Request & { rawBody?: Buffer }).rawBody || JSON.stringify(req.body);
-  await stripeConnector.handleWebhook(rawBody, signature);
+  const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
+  if (!rawBody) {
+    logger.warn('[Webhook] rawBody not available - signature verification may fail', { operation: 'stripeWebhook' });
+  }
+  await stripeConnector.handleWebhook(rawBody ?? JSON.stringify(req.body), signature);
   res.json({ success: true, received: true });
 }));
