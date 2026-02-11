@@ -55,8 +55,8 @@ class DataAggregatorService {
 
   stop(): void {
     this.isRunning = false;
-    if (this.hourlyTimer) clearInterval(this.hourlyTimer);
-    if (this.dailyTimer) clearInterval(this.dailyTimer);
+    if (this.hourlyTimer) { clearInterval(this.hourlyTimer); }
+    if (this.dailyTimer) { clearInterval(this.dailyTimer); }
     logger.info('[DataAggregator] Business metrics collection stopped');
   }
 
@@ -65,7 +65,7 @@ class DataAggregatorService {
     const targetHour = 4; // 04:00
     const next = new Date(now);
     next.setHours(targetHour, 0, 0, 0);
-    if (next <= now) next.setDate(next.getDate() + 1);
+    if (next <= now) { next.setDate(next.getDate() + 1); }
 
     const msUntilNext = next.getTime() - now.getTime();
 

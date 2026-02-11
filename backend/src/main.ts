@@ -535,7 +535,7 @@ async function startServer(): Promise<void> {
   validateEnvironmentVariables();
 
   // Start server after secrets are validated
-  const server = app.listen(PORT, async () => {
+  app.listen(PORT, async () => {
     // Get secrets health status for startup display
     const secretsHealth = secretsManager.getHealthSummary();
   const secretsDbStatus = secretsManager.getDatabaseStatus();

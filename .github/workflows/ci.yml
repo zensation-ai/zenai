@@ -54,18 +54,20 @@ jobs:
 
       - name: Run unit tests
         working-directory: backend
-        run: npm test -- --testPathPatterns="unit" --forceExit --detectOpenHandles
+        run: npm test -- --testPathPatterns="unit" --forceExit --detectOpenHandles --maxWorkers=2
         timeout-minutes: 5
         env:
           NODE_ENV: test
+          NODE_OPTIONS: --max-old-space-size=4096
           SKIP_EXTERNAL_SERVICES: true
 
       - name: Run integration tests (mocked DB)
         working-directory: backend
-        run: npm test -- --testPathPatterns="(integration|github|project-context)" --forceExit --detectOpenHandles
+        run: npm test -- --testPathPatterns="(integration|github|project-context)" --forceExit --detectOpenHandles --maxWorkers=2
         timeout-minutes: 5
         env:
           NODE_ENV: test
+          NODE_OPTIONS: --max-old-space-size=4096
           CI: true
           SKIP_EXTERNAL_SERVICES: true
 

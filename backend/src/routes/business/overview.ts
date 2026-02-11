@@ -39,7 +39,7 @@ overviewRouter.get('/', apiKeyAuth, asyncHandler(async (_req: Request, res: Resp
         activeSubscriptions: metrics.activeSubscriptions,
         churnRate: metrics.churnRate,
       };
-    } catch (e) {
+    } catch {
       errors.push('stripe');
     }
   }
@@ -53,7 +53,7 @@ overviewRouter.get('/', apiKeyAuth, asyncHandler(async (_req: Request, res: Resp
         sessions: metrics.sessions,
         bounceRate: metrics.bounceRate,
       };
-    } catch (e) {
+    } catch {
       errors.push('ga4');
     }
   }
@@ -68,7 +68,7 @@ overviewRouter.get('/', apiKeyAuth, asyncHandler(async (_req: Request, res: Resp
         ctr: metrics.ctr,
         avgPosition: metrics.avgPosition,
       };
-    } catch (e) {
+    } catch {
       errors.push('gsc');
     }
   }
@@ -81,7 +81,7 @@ overviewRouter.get('/', apiKeyAuth, asyncHandler(async (_req: Request, res: Resp
         activeIncidents: status.incidents.length,
         avgResponseTime: status.avgResponseTime,
       };
-    } catch (e) {
+    } catch {
       errors.push('uptime');
     }
   }
@@ -97,7 +97,7 @@ overviewRouter.get('/', apiKeyAuth, asyncHandler(async (_req: Request, res: Resp
         cls: scores.cls,
       };
     }
-  } catch (e) {
+  } catch {
     errors.push('lighthouse');
   }
 

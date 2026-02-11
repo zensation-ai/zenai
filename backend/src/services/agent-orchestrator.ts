@@ -417,7 +417,7 @@ export async function executeTeamTask(task: TeamTask): Promise<TeamResult> {
 /**
  * Aggregate results from all agents into a final output
  */
-function aggregateResults(results: AgentOutput[], pipeline: AgentRole[]): string {
+function aggregateResults(results: AgentOutput[], _pipeline: AgentRole[]): string {
   // If there's a reviewer result, use that (it's the refined version)
   const reviewerResult = results.find(r => r.role === 'reviewer' && r.success);
   if (reviewerResult) {
