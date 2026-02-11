@@ -5,7 +5,7 @@
  * Contains: Hero section, CommandCenter, search/filters, ideas list, detail modal.
  */
 
-import { lazy, Suspense, useMemo, memo, useState, useEffect } from 'react';
+import { lazy, Suspense, useMemo, memo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { StructuredIdea } from '../types';
 import type { AIContext } from './ContextSwitcher';
@@ -61,8 +61,21 @@ interface IdeasPageProps {
   onArchiveIdea: (id: string) => void;
   onMoveIdea?: (id: string, targetContext: AIContext) => void;
   onRecordingChange: (recording: boolean) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onRecordProcessed: (result: any) => void;
+  onRecordProcessed: (result: {
+    ideaId: string;
+    structured: {
+      title?: string;
+      type?: string;
+      category?: string;
+      priority?: string;
+      summary?: string;
+      next_steps?: string[];
+      context_needed?: string[];
+      keywords?: string[];
+    };
+    suggestedContext?: AIContext;
+    contextConfidence?: number;
+  }) => void;
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
   searchResults: StructuredIdea[] | null;
@@ -132,14 +145,14 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
     setActiveIdeasTab(VALID_TABS.includes(initialTab as IdeasTab) ? initialTab as IdeasTab : 'ideas');
   }, [initialTab]);
 
-  const handleTabChange = (tab: IdeasTab) => {
+  const handleTabChange = useCallback((tab: IdeasTab) => {
     setActiveIdeasTab(tab);
     if (tab === 'ideas') {
       navigate('/ideas', { replace: true });
     } else {
       navigate(`/ideas/${tab}`, { replace: true });
     }
-  };
+  }, [navigate]);
   const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
 
   const humanGreeting = useMemo(() => {

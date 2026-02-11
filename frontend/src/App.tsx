@@ -418,7 +418,16 @@ function App() {
 
   const handleRecordProcessed = useCallback((result: {
     ideaId: string;
-    structured: Partial<StructuredIdea>;
+    structured: {
+      title?: string;
+      type?: string;
+      category?: string;
+      priority?: string;
+      summary?: string;
+      next_steps?: string[];
+      context_needed?: string[];
+      keywords?: string[];
+    };
     suggestedContext?: 'personal' | 'work' | 'learning' | 'creative';
     contextConfidence?: number;
   }) => {
@@ -541,7 +550,6 @@ function App() {
             <InsightsDashboard
               context={context}
               onBack={() => navigateToPage('home')}
-              onNavigate={(page) => navigateToPage(page as Page)}
               onSelectIdea={(ideaId) => {
                 const idea = ideas.find(i => i.id === ideaId);
                 if (idea) {
@@ -560,7 +568,6 @@ function App() {
             <AIWorkshop
               context={context}
               onBack={() => navigateToPage('home')}
-              onNavigate={(page) => navigateToPage(page as Page)}
               onIdeaCreated={() => {
                 loadIdeas();
                 navigateToPage('ideas');

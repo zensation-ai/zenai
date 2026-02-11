@@ -12,11 +12,11 @@
  * - Einheitliches Interface für alle KI-Features
  */
 
-import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'react';
+import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
-import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
+import { useTabNavigation } from '../hooks/useTabNavigation';
 import '../neurodesign.css';
 import './AIWorkshop.css';
 
@@ -30,7 +30,6 @@ type WorkshopTab = 'proactive' | 'evolution' | 'agent-teams';
 interface AIWorkshopProps {
   context: AIContext;
   onBack: () => void;
-  onNavigate?: (page: string) => void;
   onIdeaCreated?: (ideaId: string) => void;
   initialTab?: WorkshopTab;
 }
@@ -50,25 +49,15 @@ const TabLoader = () => (
 const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
   context,
   onBack,
-  onNavigate,
   onIdeaCreated: _onIdeaCreated,
   initialTab = 'proactive',
 }) => {
-  const navigate = useNavigate();
-  const VALID_TABS: WorkshopTab[] = ['proactive', 'evolution', 'agent-teams'];
-  const validatedTab = VALID_TABS.includes(initialTab as WorkshopTab) ? initialTab as WorkshopTab : 'proactive';
-  const [activeTab, setActiveTab] = useState<WorkshopTab>(validatedTab);
-
-  // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
-  useEffect(() => {
-    setActiveTab(VALID_TABS.includes(initialTab as WorkshopTab) ? initialTab as WorkshopTab : 'proactive');
-  }, [initialTab]);
-
-  // Update URL when tab changes (for browser history support)
-  const handleTabChange = useCallback((tab: WorkshopTab) => {
-    setActiveTab(tab);
-    navigate(`/workshop/${tab}`, { replace: true });
-  }, [navigate]);
+  const { activeTab, handleTabChange } = useTabNavigation<WorkshopTab>({
+    initialTab,
+    validTabs: ['proactive', 'evolution', 'agent-teams'],
+    defaultTab: 'proactive',
+    basePath: '/workshop',
+  });
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -121,7 +110,6 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
         subtitle="KI-Tools die fuer dich arbeiten"
         onBack={onBack}
         backLabel="Zurück"
-        onNavigate={onNavigate ? (page) => onNavigate(page) : undefined}
       />
 
       {/* Tab Navigation */}

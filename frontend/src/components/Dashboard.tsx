@@ -161,28 +161,28 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           <SkeletonLoader type="card" count={4} />
         ) : (
           <>
-            <div className="dash-stat-card" role="link" tabIndex={0} title="Alle Gedanken anzeigen" onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
+            <button type="button" className="dash-stat-card" title="Alle Gedanken anzeigen" onClick={() => onNavigate('ideas')}>
               <span className="dash-stat-icon" aria-hidden="true">💭</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.total}</span>
                 <span className="dash-stat-label">Gesamt</span>
               </div>
-            </div>
-            <div className="dash-stat-card priority" role="link" tabIndex={0} title="Wichtige Gedanken anzeigen" onClick={() => onNavigate('ideas')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('ideas')}>
+            </button>
+            <button type="button" className="dash-stat-card priority" title="Wichtige Gedanken anzeigen" onClick={() => onNavigate('ideas')}>
               <span className="dash-stat-icon" aria-hidden="true">🔥</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.highPriority}</span>
                 <span className="dash-stat-label">Hohe Prioritat</span>
               </div>
-            </div>
-            <div className="dash-stat-card" role="link" tabIndex={0} title="Triage starten" onClick={() => onNavigate('triage')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('triage')}>
+            </button>
+            <button type="button" className="dash-stat-card" title="Triage starten" onClick={() => onNavigate('triage')}>
               <span className="dash-stat-icon" aria-hidden="true">📋</span>
               <div className="dash-stat-data">
                 <span className="dash-stat-value">{stats.thisWeek}</span>
                 <span className="dash-stat-label">Diese Woche</span>
               </div>
-            </div>
-            <div className="dash-stat-card ai" role="link" tabIndex={0} title="Chat mit ZenAI" onClick={() => onNavigate('chat')} onKeyDown={(e) => e.key === 'Enter' && onNavigate('chat')}>
+            </button>
+            <button type="button" className="dash-stat-card ai" title="Chat mit ZenAI" onClick={() => onNavigate('chat')}>
               <span className="dash-stat-icon" aria-hidden="true">🧠</span>
               <div className="dash-stat-data">
                 <span className={`dash-stat-value ${isAIActive ? 'active' : ''}`}>
@@ -190,7 +190,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                 </span>
                 <span className="dash-stat-label">KI-Status</span>
               </div>
-            </div>
+            </button>
           </>
         )}
       </section>

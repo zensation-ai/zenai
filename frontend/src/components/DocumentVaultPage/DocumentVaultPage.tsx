@@ -7,9 +7,9 @@
  * - Medien: Image/video gallery
  */
 
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { lazy, Suspense, memo } from 'react';
 import { SkeletonLoader } from '../SkeletonLoader';
+import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { DocumentsTab, DocumentVaultPageProps, DOC_TABS } from './types';
 import { DocumentVaultContent } from './DocumentVaultContent';
 import '../DocumentVaultPage.css';
@@ -18,25 +18,17 @@ const CanvasPage = lazy(() => import('../CanvasPage').then(m => ({ default: m.Ca
 const MediaGallery = lazy(() => import('../MediaGallery').then(m => ({ default: m.MediaGallery })));
 const MeetingsPage = lazy(() => import('../MeetingsPage').then(m => ({ default: m.MeetingsPage })));
 
-export function DocumentVaultPage({ onBack, context, initialTab = 'documents' }: DocumentVaultPageProps) {
-  const navigate = useNavigate();
-  const [activeDocTab, setActiveDocTab] = useState<DocumentsTab>(initialTab);
-
-  useEffect(() => {
-    setActiveDocTab(initialTab || 'documents');
-  }, [initialTab]);
-
-  const handleDocTabChange = (tab: DocumentsTab) => {
-    setActiveDocTab(tab);
-    if (tab === 'documents') {
-      navigate('/documents', { replace: true });
-    } else {
-      navigate(`/documents/${tab}`, { replace: true });
-    }
-  };
+function DocumentVaultPageComponent({ onBack, context, initialTab = 'documents' }: DocumentVaultPageProps) {
+  const { activeTab: activeDocTab, handleTabChange: handleDocTabChange } = useTabNavigation<DocumentsTab>({
+    initialTab,
+    validTabs: DOC_TABS.map(t => t.id),
+    defaultTab: 'documents',
+    basePath: '/documents',
+    rootTab: 'documents',
+  });
 
   const renderDocTabs = () => (
-    <div className="vault-doc-tabs" role="tablist">
+    <div className="vault-doc-tabs" role="tablist" aria-label="Wissensbasis Navigation">
       {DOC_TABS.map((tab) => (
         <button
           type="button"
@@ -90,4 +82,5 @@ export function DocumentVaultPage({ onBack, context, initialTab = 'documents' }:
   return <DocumentVaultContent onBack={onBack} context={context} activeDocTab={activeDocTab} onDocTabChange={handleDocTabChange} />;
 }
 
+export const DocumentVaultPage = memo(DocumentVaultPageComponent);
 export default DocumentVaultPage;

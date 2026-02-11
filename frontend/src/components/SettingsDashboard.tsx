@@ -11,12 +11,12 @@
  * - Daten: Export + Sync kombiniert
  */
 
-import { useState, useEffect, useCallback, memo, Suspense, lazy } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { memo, Suspense, lazy } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useSettings } from '../hooks/useSettings';
+import { useTabNavigation } from '../hooks/useTabNavigation';
 import '../neurodesign.css';
 import './SettingsDashboard.css';
 
@@ -44,8 +44,6 @@ const TABS: { id: SettingsTab; label: string; icon: string; description: string 
   { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
   { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
-
-const VALID_TABS: SettingsTab[] = ['profile', 'general', 'ai', 'privacy', 'automations', 'integrations', 'data'];
 
 function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (val: boolean) => void; label: string }) {
   return (
@@ -99,23 +97,14 @@ export const SettingsDashboard = memo(({
   onNavigate,
   initialTab = 'general'
 }: SettingsDashboardProps) => {
-  const navigate = useNavigate();
-  const validatedTab = VALID_TABS.includes(initialTab as SettingsTab) ? initialTab as SettingsTab : 'general';
-  const [activeTab, setActiveTab] = useState<SettingsTab>(validatedTab);
+  const { activeTab, handleTabChange } = useTabNavigation<SettingsTab>({
+    initialTab,
+    validTabs: TABS.map(t => t.id),
+    defaultTab: 'general',
+    basePath: '/settings',
+    rootTab: 'general',
+  });
   const { settings, updateSetting } = useSettings();
-
-  useEffect(() => {
-    setActiveTab(VALID_TABS.includes(initialTab as SettingsTab) ? initialTab as SettingsTab : 'general');
-  }, [initialTab]);
-
-  const handleTabChange = useCallback((tab: SettingsTab) => {
-    setActiveTab(tab);
-    if (tab === 'general') {
-      navigate('/settings', { replace: true });
-    } else {
-      navigate(`/settings/${tab}`, { replace: true });
-    }
-  }, [navigate]);
 
   const renderTabContent = () => {
     switch (activeTab) {

@@ -1,103 +1,10 @@
 /**
  * InsightsDashboard Styles
- * Konsolidiertes Insights-Interface mit Tab-Navigation
+ *
+ * Shared tab styles imported from shared-tabs.css.
+ * This file contains only InsightsDashboard-specific overrides.
  */
-
-.insights-dashboard {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--background-gradient);
-}
-
-/* Tab Navigation */
-.insights-tabs {
-  display: flex;
-  gap: 0.25rem;
-  padding: 0.5rem 1.5rem;
-  margin: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(20, 30, 42, 0.3);
-}
-
-.insights-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.insights-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.1rem;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.insights-tab:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.insights-tab:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
-}
-
-.insights-tab.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: var(--shadow-glow);
-}
-
-.insights-tab.active:focus-visible {
-  box-shadow: var(--shadow-glow), 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
-}
-
-.insights-tab-icon {
-  font-size: 1.1rem;
-}
-
-.insights-tab-label {
-  font-weight: 500;
-}
-
-/* Tab Content */
-.insights-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-}
-
-.insights-tab-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-}
-
-.insights-tab-content.insights-tab-fullwidth {
-  padding: 0;
-}
-
-.insights-tab-content.insights-tab-fullwidth > * {
-  border-radius: 0;
-}
-
-.insights-tab-content.insights-tab-fullheight {
-  padding: 0;
-  overflow: hidden;
-}
+@import './shared-tabs.css';
 
 /* Override child component headers when embedded */
 .insights-tab-content .dashboard-home,
@@ -113,50 +20,4 @@
 .insights-tab-content .digest-dashboard > header,
 .insights-tab-content .knowledge-graph-page > header {
   display: none;
-}
-
-/* Tab Loader */
-.insights-tab-loader {
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .insights-tabs {
-    margin: 0 0.5rem;
-    padding: 0.5rem 1rem;
-  }
-
-  .insights-tab {
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
-  }
-
-  .insights-tab-label {
-    display: none;
-  }
-
-  .insights-tab.active .insights-tab-label {
-    display: inline;
-  }
-
-  .insights-tab-icon {
-    font-size: 1.2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .insights-tabs {
-    gap: 0.25rem;
-    justify-content: space-around;
-  }
-
-  .insights-tab {
-    flex: 1;
-    justify-content: center;
-    padding: 0.75rem 0.5rem;
-  }
 }

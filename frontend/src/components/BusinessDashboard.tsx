@@ -11,11 +11,11 @@
  * - Connectors: Datenquellen verwalten
  */
 
-import React, { useState, useEffect, Suspense, lazy, useCallback, memo } from 'react';
+import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
-import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
+import { useTabNavigation } from '../hooks/useTabNavigation';
 import type { BusinessTab } from '../types/business';
 import '../neurodesign.css';
 import './BusinessDashboard.css';
@@ -46,8 +46,6 @@ const TABS: { id: BusinessTab; label: string; icon: string; description: string 
   { id: 'connectors', label: 'Connectors', icon: '🔗', description: 'Datenquellen verwalten' },
 ];
 
-const VALID_TABS: BusinessTab[] = TABS.map(t => t.id);
-
 const TabLoader = () => (
   <div className="business-tab-loader">
     <SkeletonLoader type="card" count={3} />
@@ -59,18 +57,12 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
   onBack,
   initialTab = 'overview',
 }) => {
-  const navigate = useNavigate();
-  const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'overview';
-  const [activeTab, setActiveTab] = useState<BusinessTab>(validatedTab);
-
-  useEffect(() => {
-    setActiveTab(VALID_TABS.includes(initialTab) ? initialTab : 'overview');
-  }, [initialTab]);
-
-  const handleTabChange = useCallback((tab: BusinessTab) => {
-    setActiveTab(tab);
-    navigate(`/business/${tab}`, { replace: true });
-  }, [navigate]);
+  const { activeTab, handleTabChange } = useTabNavigation<BusinessTab>({
+    initialTab,
+    validTabs: TABS.map(t => t.id),
+    defaultTab: 'overview',
+    basePath: '/business',
+  });
 
   const renderTabContent = () => {
     switch (activeTab) {

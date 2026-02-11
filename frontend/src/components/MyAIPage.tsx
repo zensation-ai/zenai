@@ -5,13 +5,13 @@
  * in einer Seite mit Tab-Navigation.
  */
 
-import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { Suspense, lazy, memo } from 'react';
 import type { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
+import { useTabNavigation } from '../hooks/useTabNavigation';
 import '../neurodesign.css';
-import './InsightsDashboard.css'; // Reuse tab styles
+import './shared-tabs.css';
 
 const PersonalizationChat = lazy(() => import('./PersonalizationChat').then(m => ({ default: m.PersonalizationChat })));
 const MemoryTransparency = lazy(() => import('./MemoryTransparency').then(m => ({ default: m.MemoryTransparency })));
@@ -20,7 +20,7 @@ const VoiceChat = lazy(() => import('./VoiceChat').then(m => ({ default: m.Voice
 type MyAITab = 'personalize' | 'memory' | 'voice-chat';
 
 interface MyAIPageProps {
-  context: string;
+  context: AIContext;
   onBack: () => void;
   initialTab?: MyAITab;
 }
@@ -42,23 +42,13 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
   onBack,
   initialTab = 'personalize',
 }) => {
-  const navigate = useNavigate();
-  const VALID_TABS: MyAITab[] = ['personalize', 'memory', 'voice-chat'];
-  const validatedTab = VALID_TABS.includes(initialTab) ? initialTab : 'personalize';
-  const [activeTab, setActiveTab] = useState<MyAITab>(validatedTab);
-
-  useEffect(() => {
-    setActiveTab(VALID_TABS.includes(initialTab as MyAITab) ? initialTab as MyAITab : 'personalize');
-  }, [initialTab]);
-
-  const handleTabChange = useCallback((tab: MyAITab) => {
-    setActiveTab(tab);
-    if (tab === 'personalize') {
-      navigate('/my-ai', { replace: true });
-    } else {
-      navigate(`/my-ai/${tab}`, { replace: true });
-    }
-  }, [navigate]);
+  const { activeTab, handleTabChange } = useTabNavigation<MyAITab>({
+    initialTab,
+    validTabs: ['personalize', 'memory', 'voice-chat'],
+    defaultTab: 'personalize',
+    basePath: '/my-ai',
+    rootTab: 'personalize',
+  });
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -78,7 +68,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="insights-tab-content">
-              <MemoryTransparency context={context as AIContext} />
+              <MemoryTransparency context={context} />
             </div>
           </Suspense>
         );

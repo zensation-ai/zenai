@@ -96,6 +96,7 @@
     left: 0;
     right: 0;
     top: 10vh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--surface-solid, #edf2f5);
     border-radius: 16px 16px 0 0;
     display: flex;

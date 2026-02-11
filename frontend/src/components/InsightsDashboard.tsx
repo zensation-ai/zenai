@@ -13,11 +13,11 @@
  * - Einheitliches Design für bessere Orientierung
  */
 
-import React, { useState, useEffect, Suspense, lazy, memo, useCallback } from 'react';
+import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
-import { useNavigate } from 'react-router-dom';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
+import { useTabNavigation } from '../hooks/useTabNavigation';
 import '../neurodesign.css';
 import './InsightsDashboard.css';
 
@@ -31,7 +31,6 @@ type InsightsTab = 'analytics' | 'digest' | 'connections';
 interface InsightsDashboardProps {
   context: AIContext;
   onBack: () => void;
-  onNavigate?: (page: string) => void;
   onSelectIdea?: (ideaId: string) => void;
   initialTab?: InsightsTab;
 }
@@ -51,26 +50,15 @@ const TabLoader = () => (
 const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
   context,
   onBack,
-  onNavigate,
   onSelectIdea,
   initialTab = 'analytics',
 }) => {
-  const navigate = useNavigate();
-  const VALID_TABS: InsightsTab[] = ['analytics', 'digest', 'connections'];
-  const validatedTab = VALID_TABS.includes(initialTab as InsightsTab) ? initialTab as InsightsTab : 'analytics';
-  const [activeTab, setActiveTab] = useState<InsightsTab>(validatedTab);
-
-  // Sync activeTab when initialTab prop changes (e.g., from URL navigation)
-  useEffect(() => {
-    setActiveTab(VALID_TABS.includes(initialTab as InsightsTab) ? initialTab as InsightsTab : 'analytics');
-  }, [initialTab]);
-
-  // Update URL when tab changes (for browser history support)
-  const handleTabChange = useCallback((tab: InsightsTab) => {
-    setActiveTab(tab);
-    // Update URL to reflect current tab (e.g., /insights/analytics)
-    navigate(`/insights/${tab}`, { replace: true });
-  }, [navigate]);
+  const { activeTab, handleTabChange } = useTabNavigation<InsightsTab>({
+    initialTab,
+    validTabs: ['analytics', 'digest', 'connections'],
+    defaultTab: 'analytics',
+    basePath: '/insights',
+  });
 
   const handleSelectIdea = (ideaId: string) => {
     if (onSelectIdea) {
@@ -86,7 +74,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
             <div className="insights-tab-content insights-tab-fullwidth">
               <AnalyticsDashboard
                 context={context}
-                onBack={() => setActiveTab('analytics')}
+                onBack={() => handleTabChange('analytics')}
               />
             </div>
           </Suspense>
@@ -98,7 +86,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
             <div className="insights-tab-content insights-tab-fullwidth">
               <DigestDashboard
                 context={context}
-                onBack={() => setActiveTab('analytics')}
+                onBack={() => handleTabChange('analytics')}
               />
             </div>
           </Suspense>
@@ -110,7 +98,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
             <div className="insights-tab-content insights-tab-fullheight">
               <KnowledgeGraphPage
                 context={context}
-                onBack={() => setActiveTab('analytics')}
+                onBack={() => handleTabChange('analytics')}
                 onSelectIdea={handleSelectIdea}
               />
             </div>
@@ -130,7 +118,6 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
         subtitle="Deine Gedanken im Überblick"
         onBack={onBack}
         backLabel="Zurück"
-        onNavigate={onNavigate ? (page) => onNavigate(page) : undefined}
       />
 
       {/* Tab Navigation */}
