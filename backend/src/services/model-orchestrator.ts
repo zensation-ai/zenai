@@ -177,7 +177,7 @@ export function classifyComplexity(
     /vergleiche\s+.{10,}\s+mit\s+/i,
     /erstelle\s+.{10,}\s+(bericht|analyse|strategie|plan)/i,
     /synthes(e|iere)/i,
-    /fasse\s+(alles\s+)?zusammen/i,
+    /fasse\s+(?:alles )?zusammen/i,
   ];
 
   if (complexPatterns.some(p => p.test(message))) {

@@ -58,7 +58,7 @@ class UptimeConnector implements BusinessConnector {
   // ============================================
 
   async getUptimeStatus(): Promise<UptimeStatus> {
-    if (!this.apiKey) throw new Error('UptimeRobot not initialized');
+    if (!this.apiKey) { throw new Error('UptimeRobot not initialized'); }
 
     const response = await axios.post(`${UPTIMEROBOT_API}/getMonitors`, {
       api_key: this.apiKey,

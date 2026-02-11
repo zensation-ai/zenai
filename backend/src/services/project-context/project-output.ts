@@ -5,7 +5,6 @@
 import * as path from 'path';
 import { logger } from '../../utils/logger';
 import {
-  ProjectType,
   ProjectDependency,
   ProjectInfo,
   ProjectContext,

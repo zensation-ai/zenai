@@ -73,7 +73,7 @@ export async function moveIdea(
 
   // JSONB columns must be stringified before INSERT — the pg driver
   // serializes JS arrays as PostgreSQL array literals {a,b} instead of JSON ["a","b"]
-  const jsonb = (val: unknown) => val != null ? JSON.stringify(val) : null;
+  const jsonb = (val: unknown) => val !== null && val !== undefined ? JSON.stringify(val) : null;
 
   // 2. Insert into target schema (try extended columns, fallback to core if target schema differs)
   let insertResult;

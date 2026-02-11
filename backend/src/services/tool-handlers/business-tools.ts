@@ -260,10 +260,10 @@ export async function handleGenerateBusinessReport(
           : report.metrics_summary;
 
         parts.push('**Kennzahlen:**');
-        if (metrics.mrr !== undefined) parts.push(`- MRR: €${(metrics.mrr / 100).toFixed(2)}`);
-        if (metrics.users !== undefined) parts.push(`- Besucher: ${metrics.users}`);
-        if (metrics.impressions !== undefined) parts.push(`- SEO Impressionen: ${metrics.impressions}`);
-        if (metrics.uptime !== undefined) parts.push(`- Uptime: ${metrics.uptime}%`);
+        if (metrics.mrr !== undefined) { parts.push(`- MRR: €${(metrics.mrr / 100).toFixed(2)}`); }
+        if (metrics.users !== undefined) { parts.push(`- Besucher: ${metrics.users}`); }
+        if (metrics.impressions !== undefined) { parts.push(`- SEO Impressionen: ${metrics.impressions}`); }
+        if (metrics.uptime !== undefined) { parts.push(`- Uptime: ${metrics.uptime}%`); }
       }
 
       if (report.recommendations) {
@@ -366,7 +366,7 @@ export async function handleComparePeriods(
     ];
 
     const compareValue = (label: string, curr: number | undefined, prev: number | undefined, unit = '', divisor = 1) => {
-      if (curr === undefined || prev === undefined) return;
+      if (curr === undefined || prev === undefined) { return; }
       const c = curr / divisor;
       const p = prev / divisor;
       const change = p !== 0 ? ((c - p) / p) * 100 : 0;

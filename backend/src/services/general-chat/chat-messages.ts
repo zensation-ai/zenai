@@ -21,7 +21,6 @@ import {
   ResponseMetadata,
   EnhancedResponse,
   SendMessageResult,
-  ChatMessage,
   addMessage,
   updateSessionTitle,
 } from './chat-sessions';

@@ -415,12 +415,12 @@ Structure your response:
  */
 export function isSynthesisQuery(message: string): boolean {
   const patterns = [
-    /fasse?\s+(alles\s+)?zusammen\s+was\s+(ich|du|wir)/i,
-    /was\s+weiß\s+(ich|du)\s+(alles\s+)?(über|zu|von)/i,
-    /überblick\s+über\s+(alle|meine|das\s+thema)/i,
-    /synthes(e|iere|ize)/i,
-    /verbinde\s+(alle\s+)?(meine\s+)?(ideen?|gedanken|notizen)/i,
-    /zeig\s+(mir\s+)?(den\s+)?zusammenhang/i,
+    /fasse?\s+(?:alles )?zusammen\s+was\s+(?:ich|du|wir)/i,
+    /was\s+weiß\s+(?:ich|du)\s+(?:alles )?(?:über|zu|von)/i,
+    /überblick\s+über\s+(?:alle|meine|das\s+thema)/i,
+    /synthes(?:e|iere|ize)/i,
+    /verbinde\s+(?:alle )?(?:meine )?(?:ideen?|gedanken|notizen)/i,
+    /zeig\s+(?:mir )?(?:den )?zusammenhang/i,
     /wie\s+hängt\s+alles\s+zusammen/i,
     /gesamtbild\s+(zu|über|von)/i,
     /summarize\s+(all|my|everything)/i,

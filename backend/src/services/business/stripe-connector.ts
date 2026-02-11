@@ -139,7 +139,7 @@ class StripeConnector implements BusinessConnector {
   }
 
   private async calculateChurnRate(): Promise<number> {
-    if (!this.stripe) return 0;
+    if (!this.stripe) { return 0; }
 
     try {
       const now = Math.floor(Date.now() / 1000);
@@ -176,10 +176,10 @@ class StripeConnector implements BusinessConnector {
         LIMIT 1
       `);
 
-      if (result.rows.length === 0 || !result.rows[0].mrr) return 0;
+      if (result.rows.length === 0 || !result.rows[0].mrr) { return 0; }
 
       const previousMRR = result.rows[0].mrr;
-      if (previousMRR === 0) return currentMRR > 0 ? 100 : 0;
+      if (previousMRR === 0) { return currentMRR > 0 ? 100 : 0; }
 
       return Math.round(((currentMRR - previousMRR) / previousMRR) * 100 * 100) / 100;
     } catch {
@@ -230,10 +230,10 @@ class StripeConnector implements BusinessConnector {
   // ============================================
 
   async handleWebhook(payload: string | Buffer, signature: string): Promise<void> {
-    if (!this.stripe) throw new Error('Stripe not initialized');
+    if (!this.stripe) { throw new Error('Stripe not initialized'); }
 
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!webhookSecret) throw new Error('STRIPE_WEBHOOK_SECRET not configured');
+    if (!webhookSecret) { throw new Error('STRIPE_WEBHOOK_SECRET not configured'); }
 
     const event = this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
 
