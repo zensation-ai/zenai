@@ -158,7 +158,7 @@ function detectWithHeuristics(text: string): DetectedDraftNeed {
 
     // Smart Content: Research (Recherche, Herausfinden, Nachschlagen)
     { pattern: /recherchier|herausfind|nachschlag|nachforsch/i, type: 'research', confidence: 0.85 },
-    { pattern: /informier.*über|erkundig|in\s+erfahrung\s+bring/i, type: 'research', confidence: 0.8 },
+    { pattern: /informier.*über|über.*informier|erkundig|in\s+erfahrung\s+bring/i, type: 'research', confidence: 0.8 },
     { pattern: /such.*nach.*information|finde.*heraus/i, type: 'research', confidence: 0.75 },
 
     // Smart Content: Learning (Lernen, Verstehen, Üben)

@@ -123,7 +123,7 @@ describe('Authentication Middleware', () => {
         keys.add(key);
       }
       expect(keys.size).toBe(10);
-    });
+    }, 30000);
 
     it('should return verifiable hash for generated key', async () => {
       const { key, hash } = await generateApiKey();

@@ -374,8 +374,8 @@ function buildSmartContentUserPrompt(
     case 'reading':
       prompt = `Der Nutzer möchte folgendes lesen:\n\n`;
       prompt += `AUFGABE: ${trigger.title}\n`;
-      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
-      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      if (trigger.summary) { prompt += `KONTEXT: ${trigger.summary}\n`; }
+      if (draftNeed.extractedTopic) { prompt += `THEMA: ${draftNeed.extractedTopic}\n`; }
       prompt += `\nBitte stelle den Inhalt bereit:
 - Falls es ein kurzes Werk ist (Gedicht, Kurztext): Gib den vollständigen Text wieder
 - Falls es ein längeres Werk ist: Zusammenfassung + wichtigste Passagen
@@ -386,8 +386,8 @@ function buildSmartContentUserPrompt(
     case 'research':
       prompt = `Der Nutzer möchte folgendes recherchieren:\n\n`;
       prompt += `AUFGABE: ${trigger.title}\n`;
-      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
-      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      if (trigger.summary) { prompt += `KONTEXT: ${trigger.summary}\n`; }
+      if (draftNeed.extractedTopic) { prompt += `THEMA: ${draftNeed.extractedTopic}\n`; }
       prompt += `\nErstelle eine kompakte Recherche-Zusammenfassung:
 1. Kurze Zusammenfassung (2-3 Sätze)
 2. Wichtigste Fakten (Bullet Points)
@@ -398,8 +398,8 @@ function buildSmartContentUserPrompt(
     case 'learning':
       prompt = `Der Nutzer möchte folgendes lernen/verstehen:\n\n`;
       prompt += `AUFGABE: ${trigger.title}\n`;
-      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
-      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      if (trigger.summary) { prompt += `KONTEXT: ${trigger.summary}\n`; }
+      if (draftNeed.extractedTopic) { prompt += `THEMA: ${draftNeed.extractedTopic}\n`; }
       prompt += `\nErstelle Lernmaterial:
 1. Einfache Erklärung (für Einsteiger verständlich)
 2. Kernkonzepte (nummeriert)
@@ -410,8 +410,8 @@ function buildSmartContentUserPrompt(
     case 'plan':
       prompt = `Der Nutzer möchte folgendes planen/organisieren:\n\n`;
       prompt += `AUFGABE: ${trigger.title}\n`;
-      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
-      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      if (trigger.summary) { prompt += `KONTEXT: ${trigger.summary}\n`; }
+      if (draftNeed.extractedTopic) { prompt += `THEMA: ${draftNeed.extractedTopic}\n`; }
       prompt += `\nErstelle einen strukturierten Plan:
 1. Ziel (1 Satz)
 2. Nummerierte Schritte mit: Aktion + geschätzte Dauer + benötigte Ressourcen
@@ -422,8 +422,8 @@ function buildSmartContentUserPrompt(
     case 'analysis':
       prompt = `Der Nutzer möchte folgendes analysieren/bewerten:\n\n`;
       prompt += `AUFGABE: ${trigger.title}\n`;
-      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
-      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      if (trigger.summary) { prompt += `KONTEXT: ${trigger.summary}\n`; }
+      if (draftNeed.extractedTopic) { prompt += `THEMA: ${draftNeed.extractedTopic}\n`; }
       prompt += `\nErstelle eine strukturierte Analyse:
 1. Einordnung/Überblick (2-3 Sätze)
 2. Pro/Contra oder Stärken/Schwächen
@@ -433,7 +433,7 @@ function buildSmartContentUserPrompt(
 
     default:
       prompt = `AUFGABE: ${trigger.title}\n`;
-      if (trigger.summary) prompt += `DETAILS: ${trigger.summary}\n`;
+      if (trigger.summary) { prompt += `DETAILS: ${trigger.summary}\n`; }
       prompt += `\nBereite den Inhalt vor:`;
   }
 

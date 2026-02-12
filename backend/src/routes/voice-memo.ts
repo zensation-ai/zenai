@@ -251,12 +251,12 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
       const intentContext: AIContext = (structured.suggested_context as AIContext) || 'personal';
       const results = await dispatchIntents(intentContext, intentResult.intents, transcript);
       actionsTaken = results
-        .filter(r => r.success && r.created_resource)
+        .filter((r): r is typeof r & { created_resource: NonNullable<typeof r.created_resource> } => r.success && r.created_resource !== undefined && r.created_resource !== null)
         .map(r => ({
           type: r.intent_type,
-          id: r.created_resource!.id,
-          summary: r.created_resource!.summary,
-          data: r.created_resource!.data,
+          id: r.created_resource.id,
+          summary: r.created_resource.summary,
+          data: r.created_resource.data,
         }));
     }
   } catch (intentErr) {
@@ -375,12 +375,12 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
       const intentContext: AIContext = (structured.suggested_context as AIContext) || 'personal';
       const results = await dispatchIntents(intentContext, intentResult.intents, text);
       actionsTaken = results
-        .filter(r => r.success && r.created_resource)
+        .filter((r): r is typeof r & { created_resource: NonNullable<typeof r.created_resource> } => r.success && r.created_resource !== undefined && r.created_resource !== null)
         .map(r => ({
           type: r.intent_type,
-          id: r.created_resource!.id,
-          summary: r.created_resource!.summary,
-          data: r.created_resource!.data,
+          id: r.created_resource.id,
+          summary: r.created_resource.summary,
+          data: r.created_resource.data,
         }));
     }
   } catch (intentErr) {

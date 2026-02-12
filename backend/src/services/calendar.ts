@@ -308,7 +308,9 @@ export async function updateCalendarEvent(
     paramIdx++;
   }
 
-  if (setClauses.length === 0) return null;
+  if (setClauses.length === 0) {
+    return null;
+  }
 
   setClauses.push(`updated_at = NOW()`);
 
@@ -319,7 +321,9 @@ export async function updateCalendarEvent(
     RETURNING *
   `, [...params, id]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {
+    return null;
+  }
 
   const event = mapRowToEvent(result.rows[0]);
 
@@ -429,7 +433,9 @@ export function expandRecurringEvent(
   rangeStart: Date,
   rangeEnd: Date
 ): CalendarEvent[] {
-  if (!event.rrule) return [event];
+  if (!event.rrule) {
+    return [event];
+  }
 
   try {
     const rule = RRule.fromString(event.rrule);
@@ -460,7 +466,9 @@ export function expandRecurringEvent(
  * Generate reminders for a calendar event
  */
 async function generateReminders(context: AIContext, event: CalendarEvent): Promise<void> {
-  if (!event.reminder_minutes || event.reminder_minutes.length === 0) return;
+  if (!event.reminder_minutes || event.reminder_minutes.length === 0) {
+    return;
+  }
 
   const eventStart = new Date(event.start_time);
 
@@ -468,7 +476,9 @@ async function generateReminders(context: AIContext, event: CalendarEvent): Prom
     const remindAt = new Date(eventStart.getTime() - minutes * 60 * 1000);
 
     // Skip if reminder time is in the past
-    if (remindAt <= new Date()) continue;
+    if (remindAt <= new Date()) {
+      continue;
+    }
 
     await queryContext(context, `
       INSERT INTO calendar_reminders (id, event_id, remind_at, type, context)
@@ -531,7 +541,9 @@ export async function markReminderSent(context: AIContext, reminderId: string): 
 // ============================================================
 
 function parseJsonbSafe<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
+  if (value === null || value === undefined) {
+    return fallback;
+  }
   if (typeof value === 'string') {
     try { return JSON.parse(value) as T; } catch { return fallback; }
   }
@@ -590,7 +602,9 @@ export async function linkMeetingToEvent(
     RETURNING *
   `, [meetingId, eventId]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {
+    return null;
+  }
 
   logger.info('Meeting linked to calendar event', {
     eventId, meetingId, context, operation: 'linkMeetingToEvent'

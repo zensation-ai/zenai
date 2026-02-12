@@ -10,6 +10,7 @@
 
 import { Router, Request, Response } from 'express';
 import { memoryScheduler, longTermMemory, episodicMemory, memoryGovernance } from '../services/memory';
+import type { MemoryLayer } from '../services/memory/memory-governance';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
@@ -414,7 +415,7 @@ router.delete('/erase/:context/:layer', apiKeyAuth, requireScope('admin'), async
     throw new ValidationError(`Invalid layer. Use one of: ${validLayers.join(', ')}`);
   }
 
-  const deleted = await memoryGovernance.eraseLayer(context as AIContext, layer as any);
+  const deleted = await memoryGovernance.eraseLayer(context as AIContext, layer as MemoryLayer);
 
   res.json({
     success: true,
@@ -479,7 +480,7 @@ router.get('/audit/:context', apiKeyAuth, requireScope('read'), asyncHandler(asy
 
   const trail = await memoryGovernance.getAuditTrail(context as AIContext, {
     limit: Math.min(limit, 200),
-    layer: layer as any,
+    layer: layer as MemoryLayer | undefined,
     action,
   });
 
