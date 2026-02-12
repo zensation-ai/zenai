@@ -2,7 +2,8 @@
 
 .personalization-chat {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: var(--bg-primary, var(--surface-solid, #fff));
+  color: var(--text, #0f1f2a);
   padding: 2rem;
   padding-top: 0;
   max-width: 800px;
@@ -15,6 +16,7 @@
 .personalization-chat.personalization-embedded {
   min-height: auto;
   padding: 0;
+  padding-bottom: 80px; /* Space for FloatingAssistant bubble */
   max-width: none;
   margin: 0;
 }
@@ -118,25 +120,32 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0; /* Allow flex shrinking in nested containers */
 }
 
 /* Progress Overview */
 .progress-overview {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 16px;
-  padding: 12px;
+  padding: 10px 12px;
   background: var(--surface);
   border-radius: 12px;
   border: 1px solid var(--border);
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.progress-overview::-webkit-scrollbar {
+  display: none;
 }
 
 .progress-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 100px;
+  gap: 6px;
+  min-width: 90px;
+  flex-shrink: 0;
 }
 
 .progress-icon {
@@ -215,6 +224,7 @@
   padding: 12px 16px;
   border-radius: 16px;
   background: var(--surface-light);
+  color: var(--text, #0f1f2a);
 }
 
 .message.assistant .message-content {
@@ -263,6 +273,7 @@
   font-size: 0.95rem;
   line-height: 1.5;
   white-space: pre-wrap;
+  color: inherit;
 }
 
 .message-time {
@@ -365,6 +376,8 @@
   justify-content: space-between;
   margin-top: 8px;
   padding: 0 4px;
+  /* Avoid overlap with FloatingAssistant bubble (56px + 24px right) */
+  padding-right: 80px;
 }
 
 .chat-hint {

@@ -50,14 +50,25 @@ interface PersonalizationChatProps {
 }
 
 const categoryLabels: Record<string, { label: string; icon: string }> = {
+  // Backend topic keys (from personalization_topics table)
+  basic_info: { label: 'Grundlegendes', icon: '👤' },
   personality: { label: 'Persönlichkeit', icon: '🧠' },
-  preferences: { label: 'Präferenzen', icon: '⭐' },
-  work_style: { label: 'Arbeitsstil', icon: '💼' },
-  communication: { label: 'Kommunikation', icon: '💬' },
+  work_life: { label: 'Arbeit & Beruf', icon: '💼' },
+  goals_dreams: { label: 'Ziele & Träume', icon: '🎯' },
+  interests_hobbies: { label: 'Interessen', icon: '❤️' },
+  communication_style: { label: 'Kommunikation', icon: '💬' },
+  decision_making: { label: 'Entscheidungen', icon: '🤔' },
+  daily_routines: { label: 'Tagesablauf', icon: '⏰' },
+  values_beliefs: { label: 'Werte', icon: '⭐' },
+  challenges: { label: 'Herausforderungen', icon: '💪' },
+  // Fact category keys (from personal_facts table)
+  preferences: { label: 'Präferenzen', icon: '🎨' },
+  work_style: { label: 'Arbeitsstil', icon: '🔧' },
   goals: { label: 'Ziele', icon: '🎯' },
   interests: { label: 'Interessen', icon: '❤️' },
   background: { label: 'Hintergrund', icon: '📚' },
   skills: { label: 'Fähigkeiten', icon: '🛠️' },
+  communication: { label: 'Kommunikation', icon: '💬' },
 };
 
 const SESSION_STORAGE_KEY = 'zenai_personalization_session';

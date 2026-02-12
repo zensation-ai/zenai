@@ -254,6 +254,21 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
   return (
     <div className="dashboard" data-context={context}>
+      {/* Animated Organic Background - Rising Bubbles */}
+      <div className="dash-ambient" aria-hidden="true">
+        <div className="blob-1" />
+        <div className="blob-2" />
+        <div className="blob-3" />
+        <div className="particle particle-1" />
+        <div className="particle particle-2" />
+        <div className="particle particle-3" />
+        <div className="particle particle-4" />
+        <div className="particle particle-5" />
+        <div className="particle particle-6" />
+        <div className="particle particle-7" />
+        <div className="particle particle-8" />
+      </div>
+
       {/* Welcome Banner */}
       <section className="dash-welcome">
         <div className="dash-welcome-brain">
