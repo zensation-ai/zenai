@@ -191,10 +191,12 @@
 .dash-qs-card.qs-insights::before  { background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent); }
 .dash-qs-card.qs-workshop::before  { background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), transparent); }
 .dash-qs-card.qs-myai::before     { background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), transparent); }
+.dash-qs-card.qs-calendar::before { background: linear-gradient(135deg, rgba(74, 144, 217, 0.08), transparent); }
 
 /* Hover: show category border accent */
 .dash-qs-card.qs-ideas:hover    { border-color: rgba(255, 199, 0, 0.35); }
 .dash-qs-card.qs-chat:hover     { border-color: rgba(255, 165, 0, 0.35); }
+.dash-qs-card.qs-calendar:hover { border-color: rgba(74, 144, 217, 0.3); }
 .dash-qs-card.qs-documents:hover { border-color: rgba(59, 130, 246, 0.3); }
 .dash-qs-card.qs-insights:hover  { border-color: rgba(16, 185, 129, 0.3); }
 .dash-qs-card.qs-workshop:hover  { border-color: rgba(139, 92, 246, 0.3); }
@@ -515,6 +517,83 @@
 .dash-activity-time {
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+/* ============================================
+   Upcoming Events Widget
+   ============================================ */
+
+.dash-upcoming {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.6));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+  border-radius: 16px;
+  padding: 16px 20px;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.dash-upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-upcoming-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.dash-upcoming-item:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.03));
+  border-color: var(--glass-border, rgba(255, 255, 255, 0.15));
+}
+
+.dash-upcoming-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.dash-upcoming-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dash-upcoming-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-upcoming-time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.dash-upcoming-ai {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent, #4A90D9);
+  background: rgba(74, 144, 217, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 /* ============================================

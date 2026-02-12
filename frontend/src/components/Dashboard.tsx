@@ -84,11 +84,28 @@ interface QuickStartItem {
 const QUICK_START_ITEMS: QuickStartItem[] = [
   { icon: '💡', label: 'Neuer Gedanke', description: 'Idee erfassen', page: 'ideas', colorClass: 'qs-ideas' },
   { icon: '💬', label: 'Chat starten', description: 'KI-Konversation', page: 'chat', colorClass: 'qs-chat' },
+  { icon: '\uD83D\uDCC5', label: 'Kalender', description: 'Termine verwalten', page: 'calendar', colorClass: 'qs-calendar' },
   { icon: '📚', label: 'Wissensbasis', description: 'Dokumente durchsuchen', page: 'documents', colorClass: 'qs-documents' },
   { icon: '📊', label: 'Insights', description: 'Trends entdecken', page: 'insights', colorClass: 'qs-insights' },
   { icon: '🧪', label: 'Werkstatt', description: 'KI-Vorschläge', page: 'workshop', colorClass: 'qs-workshop' },
-  { icon: '🤖', label: 'Meine KI', description: 'KI personalisieren', page: 'my-ai', colorClass: 'qs-myai' },
 ];
+
+interface UpcomingEvent {
+  id: string;
+  title: string;
+  event_type: string;
+  start_time: string;
+  location?: string;
+  ai_generated: boolean;
+}
+
+const EVENT_ICONS: Record<string, string> = {
+  appointment: '\uD83D\uDCC5',
+  reminder: '\u23F0',
+  deadline: '\u26A0\uFE0F',
+  travel_block: '\uD83D\uDE97',
+  focus_time: '\uD83C\uDFAF',
+};
 
 /** SVG Sparkline for 7-day trend */
 const Sparkline: React.FC<{ data: TrendPoint[] }> = memo(({ data }) => {
@@ -161,6 +178,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [recentIdeas, setRecentIdeas] = useState<RecentIdea[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const hasFetched = useRef(false);
 
@@ -188,6 +206,11 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         setRecentIdeas((d.recentIdeas || []).slice(0, 6));
         setActivity((d.activities || []).slice(0, 5));
       }
+
+      // Fetch upcoming calendar events (next 48 hours)
+      axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 5 } })
+        .then(r => { if (r.data?.success) setUpcomingEvents(r.data.data || []); })
+        .catch(() => { /* Calendar might not be set up yet */ });
 
       // If response came back null, retry once after a short delay
       if (!res.data && !hasFetched.current) {
@@ -323,6 +346,42 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
       {/* Sparkline Trend */}
       {!loading && <Sparkline data={trend} />}
+
+      {/* Upcoming Events */}
+      {!loading && upcomingEvents.length > 0 && (
+        <section className="dash-upcoming" aria-label="Naechste Termine">
+          <div className="dash-column-header">
+            <h3>{'\uD83D\uDCC5'} Naechste Termine</h3>
+            <button type="button" className="dash-see-all neuro-focus-ring" onClick={() => onNavigate('calendar')}>
+              Kalender {'\u2192'}
+            </button>
+          </div>
+          <div className="dash-upcoming-list">
+            {upcomingEvents.map((evt) => {
+              const startDate = new Date(evt.start_time);
+              const timeStr = startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+              const dayStr = startDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+              return (
+                <button
+                  key={evt.id}
+                  type="button"
+                  className="dash-upcoming-item neuro-focus-ring"
+                  onClick={() => onNavigate('calendar')}
+                >
+                  <span className="dash-upcoming-icon" aria-hidden="true">
+                    {EVENT_ICONS[evt.event_type] || '\uD83D\uDCC5'}
+                  </span>
+                  <div className="dash-upcoming-content">
+                    <span className="dash-upcoming-title">{evt.title}</span>
+                    <span className="dash-upcoming-time">{dayStr}, {timeStr}{evt.location ? ` \u2022 ${evt.location}` : ''}</span>
+                  </div>
+                  {evt.ai_generated && <span className="dash-upcoming-ai" title="KI-generiert">KI</span>}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Two Column: Recent Ideas + Activity */}
       <section className="dash-columns">

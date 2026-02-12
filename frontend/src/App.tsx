@@ -48,6 +48,7 @@ const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ def
 const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
 const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
 const BusinessDashboard = lazy(() => import('./components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard })));
+const CalendarPage = lazy(() => import('./components/CalendarPage/CalendarPage').then(m => ({ default: m.CalendarPage })));
 const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
 const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
 const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
@@ -73,6 +74,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'workshop': '/workshop',
   'insights': '/insights',
   'documents': '/documents',
+  'calendar': '/calendar',
   'business': '/business',
   'learning': '/learning',
   'my-ai': '/my-ai',
@@ -112,6 +114,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/workshop': 'workshop',
   '/insights': 'insights',
   '/documents': 'documents',
+  '/calendar': 'calendar',
   '/business': 'business',
   '/learning': 'learning',
   '/my-ai': 'my-ai',
@@ -151,6 +154,7 @@ function useUrlNavigation() {
     if (fullPath.startsWith('/insights/')) return 'insights';
     if (fullPath.startsWith('/workshop/')) return 'workshop';
     if (fullPath.startsWith('/documents/')) return 'documents';
+    if (fullPath.startsWith('/calendar/')) return 'calendar';
     if (fullPath.startsWith('/business/')) return 'business';
     if (fullPath.startsWith('/ideas/')) return 'ideas';
     if (fullPath.startsWith('/my-ai/')) return 'my-ai';
@@ -623,6 +627,13 @@ function App() {
           </Suspense>
         );
 
+
+      case 'calendar':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <CalendarPage context={context} />
+          </Suspense>
+        );
 
       case 'business':
         return (

@@ -6,13 +6,27 @@
  * thoughts, and surfaces emerging themes when they're ready.
  */
 
-import { getPool, AIContext } from '../utils/database-context';
+import { getPool, AIContext, isValidContext } from '../utils/database-context';
 import { PoolClient } from '../utils/database';
 import { generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
 import { learnFromThought } from './learning-engine';
 import { logger } from '../utils/logger';
+
+/**
+ * Get a pool client with search_path set to the correct context schema.
+ * CRITICAL: Without this, queries hit the default public schema in production.
+ */
+async function getClient(context: AIContext): Promise<PoolClient> {
+  if (!isValidContext(context)) {
+    throw new Error(`Invalid context: ${context}`);
+  }
+  const pool = getPool(context);
+  const client = await pool.connect();
+  await client.query(`SET search_path TO ${context}, public`);
+  return client;
+}
 
 // Types
 export interface LooseThought {
@@ -182,8 +196,7 @@ export async function addLooseThought(
   userId: string = 'default',
   context: AIContext = 'personal'
 ): Promise<LooseThought> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
   const id = uuidv4();
 
   try {
@@ -225,8 +238,7 @@ export async function addLooseThought(
  * Analyze a single thought and assign to existing or new cluster
  */
 async function analyzeAndAssignCluster(thoughtId: string, context: AIContext = 'personal'): Promise<void> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
   const startTime = Date.now();
 
   try {
@@ -402,8 +414,7 @@ export async function getLooseThoughts(
   includeProcessed: boolean = true,
   context: AIContext = 'personal'
 ): Promise<LooseThought[]> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -426,8 +437,7 @@ export async function getLooseThoughts(
  * Get clusters ready for presentation
  */
 export async function getReadyClusters(userId: string = 'default', context: AIContext = 'personal'): Promise<ThoughtCluster[]> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -463,8 +473,7 @@ export async function getAllClusters(
   includeThoughts: boolean = true,
   context: AIContext = 'personal'
 ): Promise<ThoughtCluster[]> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     if (includeThoughts) {
@@ -517,8 +526,7 @@ export async function generateClusterSummary(clusterId: string, context: AIConte
   suggested_type: string;
   suggested_category: string;
 }> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     // Get all thoughts in cluster
@@ -588,8 +596,7 @@ export async function consolidateCluster(
   },
   context: AIContext = 'personal'
 ): Promise<string> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     // Start transaction
@@ -687,8 +694,7 @@ export async function consolidateCluster(
  * Dismiss a cluster (user decides it's not useful)
  */
 export async function dismissCluster(clusterId: string, context: AIContext = 'personal'): Promise<void> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     await client.query(
@@ -704,8 +710,7 @@ export async function dismissCluster(clusterId: string, context: AIContext = 'pe
  * Mark a cluster as presented to the user
  */
 export async function markClusterPresented(clusterId: string, context: AIContext = 'personal'): Promise<void> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     await client.query(
@@ -728,8 +733,7 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
   clusters_updated: number;
   clusters_ready: number;
 }> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
   const startTime = Date.now();
 
   try {
@@ -814,8 +818,7 @@ export async function getIncubatorStats(userId: string = 'default', context: AIC
   growing_clusters: number;
   consolidated_clusters: number;
 }> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -851,8 +854,7 @@ export async function backfillEmbeddings(
   userId: string = 'default',
   context: AIContext = 'personal'
 ): Promise<{ processed: number; failed: number; skipped: number }> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     // Get thoughts without embeddings

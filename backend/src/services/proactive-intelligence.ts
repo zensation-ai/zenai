@@ -12,10 +12,12 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import axios from 'axios';
 import { queryContext, AIContext } from '../utils/database-context';
 import { queryOllamaJSON } from '../utils/ollama';
 import { logger } from '../utils/logger';
+import { searchWeb } from './web-search';
+import { fetchUrl } from './url-fetch';
+import type { DomainFocus, DocumentSource } from './domain-focus';
 
 // ===========================================
 // Types
@@ -433,7 +435,7 @@ export async function executeProactiveResearch(
 }
 
 /**
- * Web-Recherche durchführen
+ * Web-Recherche durchführen (via Brave Search API mit DuckDuckGo Fallback)
  */
 async function performWebSearch(
   query: string,
@@ -441,82 +443,31 @@ async function performWebSearch(
 ): Promise<ResearchResult[]> {
   const results: ResearchResult[] = [];
 
-  // Nutze DuckDuckGo Instant Answers API (kostenlos, kein API Key nötig)
   if (sources.includes('web')) {
     try {
-      const ddgResults = await searchDuckDuckGo(query);
-      results.push(...ddgResults);
-    } catch (error) {
-      logger.warn('DuckDuckGo search failed', { error });
-    }
-  }
-
-  // SAP API Integration (optional enterprise feature)
-  // Requires: SAP_API_KEY environment variable
-  // Endpoint: SAP API Business Hub (https://api.sap.com)
-  if (sources.includes('sap')) {
-    if (process.env.SAP_API_KEY) {
-      // SAP API Hub search implementation would go here
-      logger.debug('SAP API integration available but not yet implemented');
-    } else {
-      logger.debug('SAP search skipped - no API key configured');
-    }
-  }
-
-  return results;
-}
-
-/**
- * DuckDuckGo Instant Answers API
- */
-async function searchDuckDuckGo(query: string): Promise<ResearchResult[]> {
-  try {
-    const response = await axios.get('https://api.duckduckgo.com/', {
-      params: {
-        q: query,
-        format: 'json',
-        no_html: 1,
-        skip_disambig: 1,
-      },
-      timeout: 10000,
-    });
-
-    const data = response.data;
-    const results: ResearchResult[] = [];
-
-    // Abstract (Hauptergebnis)
-    if (data.Abstract) {
-      results.push({
-        source: 'DuckDuckGo',
-        title: data.Heading || query,
-        url: data.AbstractURL,
-        snippet: data.Abstract,
-        relevance_score: 1.0,
-        fetched_at: new Date().toISOString(),
+      const searchResponse = await searchWeb(query, {
+        count: 8,
+        timeout: 15000,
       });
-    }
 
-    // Related Topics
-    if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-      for (const topic of data.RelatedTopics.slice(0, 5)) {
-        if (topic.Text) {
+      if (searchResponse.success) {
+        for (const sr of searchResponse.results) {
           results.push({
-            source: 'DuckDuckGo',
-            title: topic.Text.split(' - ')[0] || topic.Text.substring(0, 50),
-            url: topic.FirstURL,
-            snippet: topic.Text,
-            relevance_score: 0.7,
+            source: 'Web Search',
+            title: sr.title,
+            url: sr.url,
+            snippet: sr.description,
+            relevance_score: 1.0 - (sr.position - 1) * 0.1,
             fetched_at: new Date().toISOString(),
           });
         }
       }
+    } catch (error) {
+      logger.warn('Web search failed', { error });
     }
-
-    return results;
-  } catch (error) {
-    logger.warn('DuckDuckGo API error', { error });
-    return [];
   }
+
+  return results;
 }
 
 /**
@@ -811,4 +762,163 @@ export async function triggerManualResearch(
     sources,
     context
   );
+}
+
+// ===========================================
+// Focus Topic Research
+// ===========================================
+
+/**
+ * Recherchiert ein spezifisches Fokusthema via Web Search und Document Sources.
+ * Speichert Ergebnisse in proactive_research und aktualisiert domain_focus.
+ */
+export async function researchFocusTopic(
+  focus: DomainFocus,
+  context: AIContext
+): Promise<ProactiveResearch | null> {
+  const researchId = uuidv4();
+
+  // Such-Query aus Fokus-Metadaten bauen
+  const queryParts = [focus.name];
+  if (focus.description) queryParts.push(focus.description);
+  if (focus.learning_goals.length > 0) {
+    queryParts.push(focus.learning_goals.slice(0, 2).join(' '));
+  }
+  queryParts.push('aktuelle Entwicklungen');
+  const researchQuery = queryParts.join(' ').substring(0, 200);
+
+  try {
+    // 1. Recherche-Eintrag mit Fokus-Verknüpfung erstellen
+    await queryContext(context,
+      `INSERT INTO proactive_research
+        (id, context, trigger_focus_id, trigger_type, trigger_text, research_query, status)
+       VALUES ($1, $2, $3, 'scheduled', $4, $5, 'researching')`,
+      [researchId, context, focus.id, `Focus: ${focus.name}`, researchQuery]
+    );
+
+    // 2. Web-Recherche
+    const webResults = await performWebSearch(researchQuery, ['web']);
+
+    // 3. Document Sources abrufen
+    const docResults = await fetchDocumentSources(focus.document_sources || []);
+    const allResults = [...webResults, ...docResults];
+
+    // 4. Zusammenfassung generieren
+    const { summary, keyInsights, teaserTitle, teaserText } =
+      await generateResearchSummary(researchQuery, allResults, context);
+
+    // 5. Konfidenz berechnen
+    const confidenceScore = calculateConfidence(allResults, summary);
+
+    // 6. Recherche-Eintrag aktualisieren
+    await queryContext(context,
+      `UPDATE proactive_research SET
+        research_results = $1, summary = $2, key_insights = $3,
+        teaser_title = $4, teaser_text = $5, confidence_score = $6,
+        status = 'completed', completed_at = NOW()
+       WHERE id = $7`,
+      [JSON.stringify(allResults), summary, keyInsights, teaserTitle, teaserText, confidenceScore, researchId]
+    );
+
+    // 7. Fokusthema mit Recherche-Ergebnissen aktualisieren
+    await queryContext(context,
+      `UPDATE domain_focus SET
+        last_researched_at = NOW(),
+        research_summary = $1,
+        updated_at = NOW()
+       WHERE id = $2`,
+      [summary, focus.id]
+    );
+
+    logger.info('Focus topic research completed', {
+      focusId: focus.id,
+      focusName: focus.name,
+      resultsCount: allResults.length,
+      confidence: confidenceScore,
+    });
+
+    return {
+      id: researchId,
+      trigger_idea_id: null,
+      trigger_type: 'scheduled',
+      trigger_text: `Focus: ${focus.name}`,
+      research_query: researchQuery,
+      research_results: allResults,
+      summary,
+      key_insights: keyInsights,
+      teaser_title: teaserTitle,
+      teaser_text: teaserText,
+      status: 'completed',
+      confidence_score: confidenceScore,
+    };
+  } catch (error) {
+    logger.error('Focus topic research failed', error instanceof Error ? error : undefined, {
+      focusId: focus.id,
+      focusName: focus.name,
+    });
+
+    // Als fehlgeschlagen markieren
+    try {
+      await queryContext(context,
+        `UPDATE proactive_research SET status = 'failed' WHERE id = $1`,
+        [researchId]
+      );
+    } catch {
+      // Nicht kritisch
+    }
+
+    return null;
+  }
+}
+
+/**
+ * Holt Inhalte von konfigurierten Document Sources
+ */
+async function fetchDocumentSources(
+  sources: DocumentSource[]
+): Promise<ResearchResult[]> {
+  const results: ResearchResult[] = [];
+  const urlSources = sources.filter(s => s.type === 'url' && s.path);
+
+  for (const source of urlSources.slice(0, 3)) {
+    try {
+      const fetched = await fetchUrl(source.path, { timeout: 10000 });
+      if (fetched.success && fetched.content) {
+        results.push({
+          source: `Document: ${source.name || fetched.domain}`,
+          title: fetched.title || source.name || fetched.domain,
+          url: source.path,
+          snippet: fetched.content.substring(0, 1000),
+          relevance_score: 0.85,
+          fetched_at: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      logger.debug('Document source fetch failed', { url: source.path, error });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Prüft ob ein Fokusthema jetzt recherchiert werden sollte
+ */
+export function shouldResearchNow(focus: DomainFocus): boolean {
+  const schedule = (focus as DomainFocus & { research_schedule?: string }).research_schedule || 'weekly';
+  if (schedule === 'manual') return false;
+
+  const lastResearchedAt = (focus as DomainFocus & { last_researched_at?: string | null }).last_researched_at;
+  if (!lastResearchedAt) return true;
+
+  const lastResearch = new Date(lastResearchedAt).getTime();
+  const daysSince = (Date.now() - lastResearch) / (1000 * 60 * 60 * 24);
+
+  switch (schedule) {
+    case 'daily': return daysSince >= 1;
+    case 'weekly': return daysSince >= 7;
+    case 'biweekly': return daysSince >= 14;
+    case 'monthly': return daysSince >= 30;
+    default: return daysSince >= 7;
+  }
 }

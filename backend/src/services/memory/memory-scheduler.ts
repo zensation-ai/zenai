@@ -13,6 +13,8 @@ import { AIContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { longTermMemory, ConsolidationResult } from './long-term-memory';
 import { episodicMemory, EpisodicConsolidationResult } from './episodic-memory';
+import { getAllDomainFocus } from '../domain-focus';
+import { researchFocusTopic, shouldResearchNow } from '../proactive-intelligence';
 
 // ===========================================
 // Types & Interfaces
@@ -64,10 +66,14 @@ const CONFIG = {
   /** Memory Stats logging schedule (default: every hour) */
   STATS_SCHEDULE: process.env.STATS_SCHEDULE || '0 * * * *',
 
+  /** Focus Topic Research schedule (default: Sundays at 4:00 AM) */
+  FOCUS_RESEARCH_SCHEDULE: process.env.FOCUS_RESEARCH_SCHEDULE || '0 4 * * 0',
+
   /** Enable/disable individual tasks via environment */
   ENABLE_CONSOLIDATION: process.env.ENABLE_MEMORY_CONSOLIDATION !== 'false',
   ENABLE_DECAY: process.env.ENABLE_MEMORY_DECAY !== 'false',
   ENABLE_STATS_LOGGING: process.env.ENABLE_MEMORY_STATS !== 'false',
+  ENABLE_FOCUS_RESEARCH: process.env.ENABLE_FOCUS_RESEARCH !== 'false',
 
   /** Contexts to process (all by default) */
   CONTEXTS: ['personal', 'work', 'learning', 'creative'] as AIContext[],
@@ -350,6 +356,15 @@ class MemorySchedulerService {
       );
     }
 
+    // Schedule Focus Topic Research
+    if (CONFIG.ENABLE_FOCUS_RESEARCH) {
+      this.scheduler.schedule(
+        'focus-topic-research',
+        CONFIG.FOCUS_RESEARCH_SCHEDULE,
+        () => this.runFocusResearch()
+      );
+    }
+
     // Start the scheduler
     this.scheduler.start();
 
@@ -522,6 +537,67 @@ class MemorySchedulerService {
           operation: 'memoryStatsError',
         });
       }
+    }
+  }
+
+  /**
+   * Run Focus Topic Research for all contexts
+   */
+  async runFocusResearch(): Promise<{ topicsResearched: number; duration: number }> {
+    const start = Date.now();
+    this.stats.totalRuns++;
+    let topicsResearched = 0;
+
+    logger.info('Starting scheduled focus topic research', {
+      contexts: CONFIG.CONTEXTS,
+      operation: 'focusResearchStart',
+    });
+
+    for (const context of CONFIG.CONTEXTS) {
+      try {
+        const activeFocusTopics = await getAllDomainFocus(context, true);
+
+        for (const focus of activeFocusTopics) {
+          if (shouldResearchNow(focus)) {
+            await researchFocusTopic(focus, context);
+            topicsResearched++;
+            // Rate-Limit: 5 Sekunden Pause zwischen Topics
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+        }
+      } catch (error) {
+        logger.error(`Focus research failed for context: ${context}`, error instanceof Error ? error : undefined, {
+          context,
+          operation: 'focusResearchError',
+        });
+        this.stats.lastError = error instanceof Error ? error.message : String(error);
+      }
+    }
+
+    const duration = Date.now() - start;
+
+    logger.info('Scheduled focus topic research complete', {
+      topicsResearched,
+      duration,
+      operation: 'focusResearchComplete',
+    });
+
+    return { topicsResearched, duration };
+  }
+
+  /**
+   * Manually trigger focus research (for testing or admin API)
+   */
+  async triggerFocusResearch(context?: AIContext): Promise<{ topicsResearched: number; duration: number }> {
+    const contexts = context ? [context] : CONFIG.CONTEXTS;
+    const originalContexts = CONFIG.CONTEXTS;
+
+    (CONFIG as { CONTEXTS: AIContext[] }).CONTEXTS = contexts;
+
+    try {
+      return await this.runFocusResearch();
+    } finally {
+      (CONFIG as { CONTEXTS: AIContext[] }).CONTEXTS = originalContexts;
     }
   }
 

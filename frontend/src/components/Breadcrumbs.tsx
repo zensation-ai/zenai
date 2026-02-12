@@ -148,6 +148,9 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Meetings', page: 'meetings', icon: '📅' },
   ],
 
+  // Entdecken: Kalender
+  'calendar': [ROOT, { label: 'Kalender', page: 'calendar', icon: '\uD83D\uDCC5' }],
+
   // Entdecken: Business
   'business': [ROOT, { label: 'Business', page: 'business', icon: '💼' }],
 

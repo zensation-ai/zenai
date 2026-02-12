@@ -74,6 +74,8 @@ import documentsRouter from './routes/documents';
 // Phase 34: Business Manager - AI Business Intelligence
 import { businessRouter } from './routes/business';
 import { initializeBusinessConnectors } from './services/business';
+// Phase 35: AI Calendar System
+import { calendarRouter } from './routes/calendar';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Phase 9: Cache-Control & ETag Support
@@ -293,6 +295,9 @@ app.use('/api/agents', agentTeamsRouter);
 
 // Phase 34: Business Manager - Must be before context-aware routes
 app.use('/api/business', businessRouter);
+
+// Phase 35: AI Calendar - Context-aware: /api/:context/calendar/*
+app.use('/api', calendarRouter);
 
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);

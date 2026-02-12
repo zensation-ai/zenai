@@ -16,6 +16,9 @@ import { logger } from '../utils/logger';
 // Note: learning-engine and user-profile modules removed - functionality integrated in business-profile-learning.ts
 // Phase 3 (Vision): Automation suggestions
 import { generateAutomationSuggestions, AutomationSuggestion } from './automation-registry';
+// Phase 36: Focus Topic awareness
+import { getAllDomainFocus, matchesFocusKeywords } from './domain-focus';
+import type { DomainFocus } from './domain-focus';
 
 // ===========================================
 // Types
@@ -98,6 +101,9 @@ export async function runDailyLearning(
       preferenceUpdates,
       context
     );
+
+    // 6b. Fokus-Themen-Aktivität analysieren (Phase 36 - TODO)
+    // analyzeFocusTopicActivity(todaysIdeas, context);
 
     // 7. Speichere Lern-Log
     await saveDailyLearningLog(
