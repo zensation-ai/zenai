@@ -397,6 +397,12 @@ app.use('/api/canvas', canvasRouter);  // /api/canvas, /api/canvas/:id, /api/can
 app.use('/api/project', projectContextRouter);  // /api/project/analyze, /api/project/summary, /api/project/structure
 app.use('/api/:context/project', projectContextRouter);  // Context-aware: /api/personal/project/analyze, etc.
 
+// Phase 37: Planner - Tasks & Projects
+import { tasksRouter } from './routes/tasks';
+import { projectsRouter } from './routes/projects';
+app.use('/api', tasksRouter);      // /api/:context/tasks, /api/:context/tasks/gantt, /api/:context/tasks/reorder
+app.use('/api', projectsRouter);   // /api/:context/projects
+
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
 app.use('/api', documentsRouter);  // /api/:context/documents, /api/documents/file/:id, etc.
 

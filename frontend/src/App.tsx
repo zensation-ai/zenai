@@ -49,7 +49,7 @@ const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ def
 const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
 const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
 const BusinessDashboard = lazy(() => import('./components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard })));
-const CalendarPage = lazy(() => import('./components/CalendarPage/CalendarPage').then(m => ({ default: m.CalendarPage })));
+const PlannerPage = lazy(() => import('./components/PlannerPage/PlannerPage').then(m => ({ default: m.PlannerPage })));
 const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
 const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
 const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
@@ -84,7 +84,10 @@ const PAGE_PATHS: Record<Page, string> = {
   // Legacy pages (redirect to new locations)
   'incubator': '/ideas/incubator',
   'ai-workshop': '/workshop',
-  'meetings': '/documents/meetings',
+  'meetings': '/calendar/meetings',
+  'tasks': '/calendar/tasks',
+  'kanban': '/calendar/kanban',
+  'gantt': '/calendar/gantt',
   'automations': '/settings/automations',
   'integrations': '/settings/integrations',
   'export': '/settings/data',
@@ -124,7 +127,7 @@ const PATH_PAGES: Record<string, Page> = {
   // Legacy paths -> redirect to primary pages
   '/incubator': 'ideas',
   '/ai-workshop': 'workshop',
-  '/meetings': 'documents',
+  '/meetings': 'calendar',
   '/automations': 'settings',
   '/integrations': 'settings',
   '/export': 'settings',
@@ -178,7 +181,7 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business'];
+      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar'];
       if (tabPages.includes(page)) {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
@@ -634,12 +637,17 @@ function App() {
         );
 
 
-      case 'calendar':
+      case 'calendar': {
+        const calendarTabMap: Record<string, 'calendar' | 'tasks' | 'projects' | 'meetings'> = {
+          'tasks': 'tasks', 'kanban': 'tasks', 'gantt': 'projects', 'meetings': 'meetings',
+        };
+        const plannerTab = tabParam ? calendarTabMap[tabParam] || 'calendar' : 'calendar';
         return (
           <Suspense fallback={<PageLoader />}>
-            <CalendarPage context={context} />
+            <PlannerPage context={context} initialTab={plannerTab} />
           </Suspense>
         );
+      }
 
       case 'business':
         return (
@@ -658,7 +666,7 @@ function App() {
             <DocumentVaultPage
               context={context}
               onBack={() => navigateToPage('home')}
-              initialTab={(tabParam || 'documents') as 'documents' | 'editor' | 'media' | 'meetings'}
+              initialTab={(tabParam || 'documents') as 'documents' | 'editor' | 'media'}
             />
           </Suspense>
         );

@@ -45,6 +45,7 @@ export interface CalendarEvent {
   metadata: Record<string, unknown>;
   ai_generated: boolean;
   ai_confidence?: number;
+  meeting_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -564,7 +565,49 @@ function mapRowToEvent(row: Record<string, unknown>): CalendarEvent {
     metadata: parseJsonbSafe<Record<string, unknown>>(row.metadata, {}),
     ai_generated: row.ai_generated as boolean,
     ai_confidence: row.ai_confidence as number | undefined,
+    meeting_id: row.meeting_id as string | undefined,
     created_at: (row.created_at as Date).toISOString?.() ?? row.created_at as string,
     updated_at: (row.updated_at as Date).toISOString?.() ?? row.updated_at as string,
   };
+}
+
+// ============================================================
+// Meeting Integration (Phase 37)
+// ============================================================
+
+/**
+ * Link an existing meeting to a calendar event
+ */
+export async function linkMeetingToEvent(
+  context: AIContext,
+  eventId: string,
+  meetingId: string
+): Promise<CalendarEvent | null> {
+  const result = await queryContext(context, `
+    UPDATE calendar_events
+    SET meeting_id = $1, updated_at = NOW()
+    WHERE id = $2
+    RETURNING *
+  `, [meetingId, eventId]);
+
+  if (result.rows.length === 0) return null;
+
+  logger.info('Meeting linked to calendar event', {
+    eventId, meetingId, context, operation: 'linkMeetingToEvent'
+  });
+  return mapRowToEvent(result.rows[0]);
+}
+
+/**
+ * Get the meeting_id associated with a calendar event
+ */
+export async function getEventMeetingId(
+  context: AIContext,
+  eventId: string
+): Promise<string | null> {
+  const result = await queryContext(context, `
+    SELECT meeting_id FROM calendar_events WHERE id = $1
+  `, [eventId]);
+
+  return result.rows.length > 0 ? (result.rows[0].meeting_id as string | null) : null;
 }
