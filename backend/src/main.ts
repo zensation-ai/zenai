@@ -300,6 +300,10 @@ app.use('/api/agents', agentTeamsRouter);
 // Phase 34: Business Manager - Must be before context-aware routes
 app.use('/api/business', businessRouter);
 
+// Phase 29: General Chat - Must be before context-aware routes
+// to avoid /:context/sessions pattern in interactionsRouter catching /api/chat/sessions
+app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessions/:id/messages, /api/chat/quick
+
 // Phase 35: AI Calendar - Context-aware: /api/:context/calendar/*
 app.use('/api', calendarRouter);
 
@@ -372,9 +376,6 @@ app.use('/api', draftsRouter);  // /api/:context/ideas/:id/draft, /api/:context/
 
 // Phase 27: Proactive Intelligence System - "KI macht proaktive Vorschläge"
 app.use('/api/proactive', proactiveRouter);  // /api/proactive/suggestions, /api/proactive/routines, etc.
-
-// Phase 29: General Chat - ChatGPT-like interface
-app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessions/:id/messages, /api/chat/quick
 
 // Phase 30: Memory Admin - HiMeS Memory Management
 app.use('/api/memory', memoryAdminRouter);  // /api/memory/status, /api/memory/consolidate, /api/memory/decay, etc.
@@ -625,9 +626,9 @@ Phase 28 APIs:
   - Full Metrics:        GET /api/:context/evolution/metrics
 
 Phase 27 APIs:
-  - Suggestions:     GET /api/:context/proactive/suggestions
-  - Accept/Dismiss:  POST /api/:context/proactive/suggestions/:id/accept|dismiss
-  - Routines:        GET /api/:context/proactive/routines
+  - Suggestions:     GET /api/proactive/suggestions?context=personal
+  - Accept/Dismiss:  POST /api/proactive/suggestions/:id/accept|dismiss
+  - Routines:        GET /api/proactive/routines?context=personal
   - Analyze:         POST /api/:context/proactive/routines/analyze
   - Log Action:      POST /api/:context/proactive/actions
   - Settings:        GET/PUT /api/:context/proactive/settings
