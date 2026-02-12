@@ -10,6 +10,14 @@
   display: flex;
   flex-direction: column;
   background: var(--background-gradient);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Content above rising bubbles */
+.hub-page > *:not(.rising-bubbles) {
+  position: relative;
+  z-index: 1;
 }
 
 /* Tab Navigation */

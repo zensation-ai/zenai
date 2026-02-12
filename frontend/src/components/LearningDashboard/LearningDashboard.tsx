@@ -6,6 +6,7 @@ import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../../utils/aiPerson
 import '../../neurodesign.css';
 import '../LearningDashboard.css';
 import { logError } from '../../utils/errors';
+import { RisingBubbles } from '../RisingBubbles';
 import { LearningDashboardProps, DashboardData, ProfileData } from './types';
 import { OverviewTab } from './OverviewTab';
 import { FocusTab } from './FocusTab';
@@ -229,6 +230,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
 
   return (
     <div className="learning-dashboard neuro-page-enter">
+      <RisingBubbles variant="subtle" />
       <div className="learning-header liquid-glass-nav">
         <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
         <div className="header-greeting">

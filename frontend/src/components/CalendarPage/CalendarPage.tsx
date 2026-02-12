@@ -10,6 +10,7 @@ import type { CalendarView, CalendarEvent, CreateEventInput } from './types';
 import { useCalendarData } from './useCalendarData';
 import { CalendarEventForm } from './CalendarEventForm';
 import { SkeletonLoader } from '../SkeletonLoader';
+import { RisingBubbles } from '../RisingBubbles';
 import './CalendarPage.css';
 
 const CalendarMonthView = lazy(() => import('./CalendarMonthView').then(m => ({ default: m.CalendarMonthView })));
@@ -163,6 +164,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
 
   return (
     <div className={`calendar-page ${embedded ? 'calendar-page--embedded' : ''}`}>
+      <RisingBubbles variant="subtle" />
       {!embedded && (
         <div className="calendar-page__header">
           <h1>Kalender</h1>

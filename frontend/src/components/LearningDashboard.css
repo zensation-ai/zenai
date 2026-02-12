@@ -3,6 +3,13 @@
   padding-top: 0;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.learning-dashboard > *:not(.rising-bubbles) {
+  position: relative;
+  z-index: 1;
 }
 
 .learning-header {

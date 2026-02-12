@@ -8,6 +8,13 @@
   height: 100%;
   background: var(--neuro-bg-primary, #0c1e28);
   color: var(--neuro-text-primary, #fff);
+  position: relative;
+  overflow: hidden;
+}
+
+.document-vault-page > *:not(.rising-bubbles) {
+  position: relative;
+  z-index: 1;
 }
 
 /* Document Tabs (Dokumente / Editor / Medien) */

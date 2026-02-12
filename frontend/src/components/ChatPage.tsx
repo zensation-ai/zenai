@@ -8,6 +8,7 @@
 import { memo, Suspense, lazy, useState, useCallback } from 'react';
 import type { AIContext } from './ContextSwitcher';
 import { ChatSessionSidebar } from './ChatSessionSidebar';
+import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { safeLocalStorage } from '../utils/storage';
 
@@ -47,6 +48,7 @@ const ChatPageComponent: React.FC<ChatPageProps> = ({ context }) => {
 
   return (
     <div className="chat-page">
+      <RisingBubbles variant="subtle" />
       <ChatSessionSidebar
         context={context}
         activeSessionId={activeSessionId}

@@ -9,6 +9,7 @@
 
 import { lazy, Suspense, memo } from 'react';
 import { SkeletonLoader } from '../SkeletonLoader';
+import { RisingBubbles } from '../RisingBubbles';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { DocumentsTab, DocumentVaultPageProps, DOC_TABS } from './types';
 import { DocumentVaultContent } from './DocumentVaultContent';
@@ -47,6 +48,7 @@ function DocumentVaultPageComponent({ onBack, context, initialTab = 'documents' 
   if (activeDocTab === 'editor') {
     return (
       <div className="document-vault-page">
+        <RisingBubbles variant="subtle" />
         {renderDocTabs()}
         <Suspense fallback={<SkeletonLoader type="card" count={2} />}>
           <CanvasPage context={context} onNavigate={() => {}} />
@@ -58,6 +60,7 @@ function DocumentVaultPageComponent({ onBack, context, initialTab = 'documents' 
   if (activeDocTab === 'media') {
     return (
       <div className="document-vault-page">
+        <RisingBubbles variant="subtle" />
         {renderDocTabs()}
         <Suspense fallback={<SkeletonLoader type="card" count={2} />}>
           <MediaGallery context={context} onBack={() => handleDocTabChange('documents')} />

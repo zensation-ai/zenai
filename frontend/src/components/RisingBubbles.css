@@ -1,0 +1,389 @@
+/* ============================================
+   RisingBubbles - Shared ambient rising bubbles
+   Wiederverwendbare aufsteigende Luftblasen
+   ============================================ */
+
+/* Container: absolute fill, no pointer events */
+.rising-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* ---- Ambient Blobs ---- */
+
+.rb-blob {
+  position: absolute;
+  filter: blur(50px);
+  will-change: transform;
+}
+
+.rb-blob-1 {
+  top: -15%;
+  right: -10%;
+  width: 50vw;
+  height: 50vw;
+  max-width: 600px;
+  max-height: 600px;
+  background: radial-gradient(
+    ellipse at 30% 30%,
+    rgba(255, 107, 53, 0.18) 0%,
+    rgba(255, 140, 90, 0.1) 30%,
+    transparent 65%
+  );
+  border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%;
+  animation: blobFloat1 25s ease-in-out infinite;
+}
+
+.rb-blob-2 {
+  bottom: -20%;
+  left: -10%;
+  width: 40vw;
+  height: 40vw;
+  max-width: 500px;
+  max-height: 500px;
+  background: radial-gradient(
+    ellipse at 60% 60%,
+    rgba(26, 58, 74, 0.15) 0%,
+    rgba(40, 90, 120, 0.08) 35%,
+    transparent 65%
+  );
+  border-radius: 40% 60% 30% 70% / 60% 40% 70% 30%;
+  animation: blobFloat2 30s ease-in-out infinite;
+}
+
+.rb-blob-3 {
+  top: 40%;
+  left: 30%;
+  width: 30vw;
+  height: 30vw;
+  max-width: 400px;
+  max-height: 400px;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 107, 53, 0.1) 0%,
+    rgba(255, 140, 90, 0.05) 40%,
+    transparent 65%
+  );
+  border-radius: 50%;
+  animation: blobFloat3 35s ease-in-out infinite;
+}
+
+/* Subtle variant: smaller, less opaque blobs */
+.rising-bubbles--subtle .rb-blob-1 {
+  max-width: 400px;
+  max-height: 400px;
+  opacity: 0.7;
+}
+
+.rising-bubbles--subtle .rb-blob-2 {
+  max-width: 350px;
+  max-height: 350px;
+  opacity: 0.6;
+}
+
+/* ---- Rising Bubble Keyframes ---- */
+
+/* Primary rise: bottom → top with gentle sway */
+@keyframes rbBubbleRise {
+  0% {
+    bottom: -5%;
+    opacity: 0;
+    transform: translateX(0) scale(0.6);
+  }
+  5% {
+    opacity: 0.7;
+    transform: translateX(2px) scale(0.85);
+  }
+  15% {
+    transform: translateX(-6px) scale(1);
+  }
+  30% {
+    opacity: 0.85;
+    transform: translateX(8px) scale(1.05);
+  }
+  50% {
+    transform: translateX(-4px) scale(1);
+  }
+  70% {
+    opacity: 0.6;
+    transform: translateX(6px) scale(0.95);
+  }
+  85% {
+    opacity: 0.3;
+    transform: translateX(-3px) scale(0.9);
+  }
+  100% {
+    bottom: 105%;
+    opacity: 0;
+    transform: translateX(0) scale(0.7);
+  }
+}
+
+/* Alternate sway pattern for variety */
+@keyframes rbBubbleRise2 {
+  0% {
+    bottom: -5%;
+    opacity: 0;
+    transform: translateX(0) scale(0.5);
+  }
+  5% {
+    opacity: 0.6;
+    transform: translateX(-3px) scale(0.9);
+  }
+  20% {
+    transform: translateX(7px) scale(1);
+  }
+  40% {
+    opacity: 0.8;
+    transform: translateX(-8px) scale(1.08);
+  }
+  60% {
+    transform: translateX(5px) scale(0.98);
+  }
+  80% {
+    opacity: 0.35;
+    transform: translateX(-5px) scale(0.92);
+  }
+  100% {
+    bottom: 105%;
+    opacity: 0;
+    transform: translateX(2px) scale(0.6);
+  }
+}
+
+/* Neural pulse animation during AI activity */
+@keyframes rbBubbleNeural {
+  0% {
+    bottom: -5%;
+    opacity: 0;
+    transform: translateX(0) scale(0.7);
+    filter: blur(0px);
+  }
+  3% {
+    opacity: 0.85;
+    transform: translateX(3px) scale(1.1);
+  }
+  10% {
+    transform: translateX(-5px) scale(1.2);
+    filter: blur(0px);
+  }
+  15% {
+    box-shadow: 0 0 12px currentColor;
+    filter: blur(0.5px);
+  }
+  25% {
+    opacity: 0.95;
+    transform: translateX(8px) scale(1.05);
+  }
+  35% {
+    box-shadow: 0 0 6px currentColor;
+    transform: translateX(-10px) scale(1.15);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(6px) scale(1);
+    filter: blur(0px);
+  }
+  65% {
+    box-shadow: 0 0 10px currentColor;
+    transform: translateX(-7px) scale(1.1);
+  }
+  80% {
+    opacity: 0.4;
+    transform: translateX(4px) scale(0.95);
+  }
+  100% {
+    bottom: 105%;
+    opacity: 0;
+    transform: translateX(0) scale(0.7);
+    filter: blur(0px);
+    box-shadow: none;
+  }
+}
+
+@keyframes rbNeuralPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ---- Base Bubble Style ---- */
+
+.rb-bubble {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  will-change: bottom, transform, opacity;
+  animation: rbBubbleRise linear infinite;
+  /* Glass-like bubble */
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    transparent 70%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ---- Individual Bubble Definitions ---- */
+
+.rb-bubble-1 {
+  width: 8px; height: 8px;
+  left: 7%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.4), rgba(255,107,53,0.3) 60%, transparent 80%);
+  border-color: rgba(255,107,53,0.2);
+  animation-duration: 14s;
+  animation-delay: 0s;
+}
+
+.rb-bubble-2 {
+  width: 12px; height: 12px;
+  left: 18%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.5), rgba(26,80,120,0.25) 60%, transparent 80%);
+  border-color: rgba(26,80,120,0.15);
+  animation-name: rbBubbleRise2;
+  animation-duration: 18s;
+  animation-delay: 2s;
+}
+
+.rb-bubble-3 {
+  width: 6px; height: 6px;
+  left: 32%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45), rgba(255,140,90,0.35) 60%, transparent 80%);
+  border-color: rgba(255,140,90,0.2);
+  animation-duration: 11s;
+  animation-delay: 5s;
+}
+
+.rb-bubble-4 {
+  width: 10px; height: 10px;
+  left: 45%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.5), rgba(45,90,120,0.25) 60%, transparent 80%);
+  border-color: rgba(45,90,120,0.15);
+  animation-name: rbBubbleRise2;
+  animation-duration: 16s;
+  animation-delay: 1s;
+}
+
+.rb-bubble-5 {
+  width: 7px; height: 7px;
+  left: 58%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.4), rgba(255,107,53,0.3) 60%, transparent 80%);
+  border-color: rgba(255,107,53,0.2);
+  animation-duration: 13s;
+  animation-delay: 7s;
+}
+
+.rb-bubble-6 {
+  width: 14px; height: 14px;
+  left: 72%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.5), rgba(255,160,100,0.2) 60%, transparent 80%);
+  border-color: rgba(255,160,100,0.15);
+  animation-name: rbBubbleRise2;
+  animation-duration: 20s;
+  animation-delay: 3s;
+}
+
+.rb-bubble-7 {
+  width: 9px; height: 9px;
+  left: 85%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45), rgba(139,92,246,0.25) 60%, transparent 80%);
+  border-color: rgba(139,92,246,0.15);
+  animation-duration: 15s;
+  animation-delay: 9s;
+}
+
+.rb-bubble-8 {
+  width: 5px; height: 5px;
+  left: 93%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.4), rgba(45,90,110,0.3) 60%, transparent 80%);
+  border-color: rgba(45,90,110,0.2);
+  animation-duration: 10s;
+  animation-delay: 4s;
+}
+
+.rb-bubble-9 {
+  width: 11px; height: 11px;
+  left: 25%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.5), rgba(255,107,53,0.2) 60%, transparent 80%);
+  border-color: rgba(255,107,53,0.12);
+  animation-name: rbBubbleRise2;
+  animation-duration: 17s;
+  animation-delay: 6s;
+}
+
+.rb-bubble-10 {
+  width: 7px; height: 7px;
+  left: 62%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45), rgba(26,80,120,0.3) 60%, transparent 80%);
+  border-color: rgba(26,80,120,0.15);
+  animation-duration: 12s;
+  animation-delay: 10s;
+}
+
+/* ---- AI Active State ---- */
+/* Parent must have .ai-active class for neural mode */
+
+.ai-active .rb-bubble {
+  animation-name: rbBubbleNeural;
+}
+
+/* Speed up + add glow color for neural pulse */
+.ai-active .rb-bubble-1 { animation-duration: 8s; color: rgba(255,107,53,0.6); }
+.ai-active .rb-bubble-2 { animation-duration: 10s; color: rgba(26,80,120,0.5); }
+.ai-active .rb-bubble-3 { animation-duration: 6s; color: rgba(255,140,90,0.6); }
+.ai-active .rb-bubble-4 { animation-duration: 9s; color: rgba(45,90,120,0.5); }
+.ai-active .rb-bubble-5 { animation-duration: 7s; color: rgba(255,107,53,0.6); }
+.ai-active .rb-bubble-6 { animation-duration: 12s; color: rgba(255,160,100,0.5); }
+.ai-active .rb-bubble-7 { animation-duration: 9s; color: rgba(139,92,246,0.5); }
+.ai-active .rb-bubble-8 { animation-duration: 6s; color: rgba(45,90,110,0.6); }
+.ai-active .rb-bubble-9 { animation-duration: 10s; color: rgba(255,107,53,0.5); }
+.ai-active .rb-bubble-10 { animation-duration: 7s; color: rgba(26,80,120,0.5); }
+
+/* Neural glow pulse at bottom of container */
+.ai-active .rising-bubbles::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 80%,
+    rgba(255, 107, 53, 0.06) 0%,
+    transparent 60%
+  );
+  animation: rbNeuralPulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+  /* Hide extra bubbles on mobile */
+  .rb-bubble-7,
+  .rb-bubble-8,
+  .rb-bubble-9,
+  .rb-bubble-10 {
+    display: none;
+  }
+
+  .rb-blob {
+    opacity: 0.6;
+  }
+}
+
+/* ---- Reduced Motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rising-bubbles {
+    display: none;
+  }
+}
+
+/* ---- Print ---- */
+
+@media print {
+  .rising-bubbles {
+    display: none;
+  }
+}

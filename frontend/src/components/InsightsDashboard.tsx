@@ -16,6 +16,7 @@
 import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
+import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import '../neurodesign.css';
@@ -112,6 +113,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 
   return (
     <div className="hub-page" data-context={context}>
+      <RisingBubbles variant="subtle" />
       <PageHeader
         title="Insights"
         icon="📊"

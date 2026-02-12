@@ -14,6 +14,7 @@
 import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
+import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import type { BusinessTab } from '../types/business';
@@ -122,6 +123,7 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
 
   return (
     <div className="hub-page" data-context={context}>
+      <RisingBubbles variant="subtle" />
       <PageHeader
         title="Business Manager"
         icon="💼"

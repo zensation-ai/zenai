@@ -4,6 +4,13 @@
   padding: 0 1rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.calendar-page > *:not(.rising-bubbles) {
+  position: relative;
+  z-index: 1;
 }
 
 .calendar-page--embedded {

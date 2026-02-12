@@ -15,99 +15,8 @@
   overflow: hidden;
 }
 
-/* ============================================
-   Ambient Background - Rising Bubbles
-   Dashboard-scoped particles and blobs
-   ============================================ */
-
-.dash-ambient {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.dash-ambient .blob-1,
-.dash-ambient .blob-2,
-.dash-ambient .blob-3 {
-  position: absolute;
-  filter: blur(50px);
-  will-change: transform;
-}
-
-.dash-ambient .blob-1 {
-  top: -15%;
-  right: -10%;
-  width: 50vw;
-  height: 50vw;
-  max-width: 600px;
-  max-height: 600px;
-  background: radial-gradient(
-    ellipse at 30% 30%,
-    rgba(255, 107, 53, 0.18) 0%,
-    rgba(255, 140, 90, 0.1) 30%,
-    transparent 65%
-  );
-  border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%;
-  animation: blobFloat1 25s ease-in-out infinite;
-}
-
-.dash-ambient .blob-2 {
-  bottom: -20%;
-  left: -10%;
-  width: 40vw;
-  height: 40vw;
-  max-width: 500px;
-  max-height: 500px;
-  background: radial-gradient(
-    ellipse at 60% 60%,
-    rgba(26, 58, 74, 0.15) 0%,
-    rgba(40, 90, 120, 0.08) 35%,
-    transparent 65%
-  );
-  border-radius: 40% 60% 30% 70% / 60% 40% 70% 30%;
-  animation: blobFloat2 30s ease-in-out infinite;
-}
-
-.dash-ambient .blob-3 {
-  top: 40%;
-  left: 30%;
-  width: 30vw;
-  height: 30vw;
-  max-width: 400px;
-  max-height: 400px;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 107, 53, 0.1) 0%,
-    rgba(255, 140, 90, 0.05) 40%,
-    transparent 65%
-  );
-  border-radius: 50%;
-  animation: blobFloat3 35s ease-in-out infinite;
-}
-
-/* Dashboard particles are slightly larger and more visible */
-.dash-ambient .particle {
-  position: absolute;
-  bottom: 0;
-  border-radius: 50%;
-  opacity: 0;
-  animation: particleFloat linear infinite;
-  will-change: transform, opacity;
-}
-
-.dash-ambient .particle-1 { width: 6px; height: 6px; background: rgba(255, 107, 53, 0.6); left: 8%; animation-duration: 18s; animation-delay: 0s; }
-.dash-ambient .particle-2 { width: 8px; height: 8px; background: rgba(26, 80, 120, 0.45); left: 22%; animation-duration: 23s; animation-delay: 4s; }
-.dash-ambient .particle-3 { width: 5px; height: 5px; background: rgba(255, 140, 90, 0.65); left: 38%; animation-duration: 16s; animation-delay: 1s; }
-.dash-ambient .particle-4 { width: 7px; height: 7px; background: rgba(45, 90, 120, 0.4); left: 52%; animation-duration: 20s; animation-delay: 7s; }
-.dash-ambient .particle-5 { width: 6px; height: 6px; background: rgba(255, 107, 53, 0.55); left: 68%; animation-duration: 22s; animation-delay: 2s; }
-.dash-ambient .particle-6 { width: 9px; height: 9px; background: rgba(255, 160, 100, 0.4); left: 82%; animation-duration: 26s; animation-delay: 9s; }
-.dash-ambient .particle-7 { width: 7px; height: 7px; background: rgba(255, 107, 53, 0.5); left: 15%; animation-duration: 24s; animation-delay: 5s; }
-.dash-ambient .particle-8 { width: 5px; height: 5px; background: rgba(45, 90, 110, 0.4); left: 92%; animation-duration: 19s; animation-delay: 11s; }
-
-/* All dashboard content above the ambient layer */
-.dashboard > *:not(.dash-ambient) {
+/* All dashboard content above the ambient bubble layer */
+.dashboard > *:not(.rising-bubbles) {
   position: relative;
   z-index: 1;
 }
@@ -903,19 +812,6 @@
     padding: 6px 12px;
   }
 
-  /* Mobile: fewer particles, smaller blobs */
-  .dash-ambient .particle-6,
-  .dash-ambient .particle-7,
-  .dash-ambient .particle-8 {
-    display: none;
-  }
-
-  .dash-ambient .blob-1,
-  .dash-ambient .blob-2,
-  .dash-ambient .blob-3 {
-    opacity: 0.6;
-  }
-
   .dash-welcome-brain {
     transform: scale(1.1);
   }
@@ -940,10 +836,6 @@
   .dash-welcome::after {
     animation: none !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .dash-ambient {
-    display: none;
   }
 }
 
@@ -975,10 +867,6 @@
   }
 
   .dash-sparkline {
-    display: none;
-  }
-
-  .dash-ambient {
     display: none;
   }
 }

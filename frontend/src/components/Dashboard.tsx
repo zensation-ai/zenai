@@ -14,6 +14,7 @@ import axios from 'axios';
 import type { Page, ApiStatus } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import { AIBrain } from './AIBrain';
+import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { logError } from '../utils/errors';
@@ -253,21 +254,8 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   }, [ideasCount, streak, stats.todayCount]);
 
   return (
-    <div className="dashboard" data-context={context}>
-      {/* Animated Organic Background - Rising Bubbles */}
-      <div className="dash-ambient" aria-hidden="true">
-        <div className="blob-1" />
-        <div className="blob-2" />
-        <div className="blob-3" />
-        <div className="particle particle-1" />
-        <div className="particle particle-2" />
-        <div className="particle particle-3" />
-        <div className="particle particle-4" />
-        <div className="particle particle-5" />
-        <div className="particle particle-6" />
-        <div className="particle particle-7" />
-        <div className="particle particle-8" />
-      </div>
+    <div className={`dashboard${isAIActive ? ' ai-active' : ''}`} data-context={context}>
+      <RisingBubbles variant="full" />
 
       {/* Welcome Banner */}
       <section className="dash-welcome">

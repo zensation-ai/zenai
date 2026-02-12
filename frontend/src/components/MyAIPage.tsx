@@ -8,6 +8,7 @@
 import React, { Suspense, lazy, memo } from 'react';
 import type { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
+import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import '../neurodesign.css';
@@ -94,6 +95,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
 
   return (
     <div className="hub-page" data-context={context}>
+      <RisingBubbles variant="subtle" />
       <PageHeader
         title="Meine KI"
         icon="🤖"

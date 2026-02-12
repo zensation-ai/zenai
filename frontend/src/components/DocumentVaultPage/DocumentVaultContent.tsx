@@ -8,6 +8,7 @@ import { logError } from '../../utils/errors';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { RisingBubbles } from '../RisingBubbles';
 import { DocumentUpload } from '../DocumentUpload';
 import { DocumentCard } from '../DocumentCard';
 import { DocumentDetailModal } from '../DocumentDetailModal';
@@ -409,6 +410,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
 
   return (
     <div className="document-vault-page">
+      <RisingBubbles variant="subtle" />
       {/* Document Tabs */}
       <div className="vault-doc-tabs" role="tablist">
         {DOC_TABS.map((tab) => (

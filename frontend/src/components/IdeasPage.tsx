@@ -19,6 +19,7 @@ import { SearchFilterBar } from './SearchFilterBar';
 import { ActiveFiltersBar } from './ActiveFiltersBar';
 import { QuickStats } from './QuickStats';
 import { AIBrain } from './AIBrain';
+import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { ErrorBoundary } from './ErrorBoundary';
 import { GeneralChat } from './GeneralChat';
@@ -234,18 +235,8 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   }, [ideas, searchResults, filters]);
 
   return (
-    <div className="ideas-page" data-context={context}>
-      {/* Animated Organic Background */}
-      <div className="ambient-background" aria-hidden="true">
-        <div className="blob-1" />
-        <div className="blob-2" />
-        <div className="blob-3" />
-        <div className="particle particle-1" />
-        <div className="particle particle-2" />
-        <div className="particle particle-3" />
-        <div className="particle particle-4" />
-        <div className="particle particle-5" />
-      </div>
+    <div className={`ideas-page${isAIActive ? ' ai-active' : ''}`} data-context={context}>
+      <RisingBubbles variant="full" />
 
       {/* Ideas Tab Navigation */}
       <div className="ideas-tab-bar" role="tablist" aria-label="Gedanken-Ansicht">

@@ -15,6 +15,7 @@
 import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
+import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import '../neurodesign.css';
@@ -103,6 +104,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
 
   return (
     <div className="hub-page" data-context={context}>
+      <RisingBubbles variant="subtle" />
       <PageHeader
         title="Werkstatt"
         icon="🧪"
