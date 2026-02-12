@@ -226,8 +226,78 @@ WICHTIGE REGELN:
 - Wichtige Hinweise
 - FAQ (falls relevant)`;
       break;
+
+    // Smart Content Typen
+    case 'reading':
+      basePrompt = `Du bist ein literarischer Assistent. Du bereitest Leseempfehlungen vor und stellst Inhalte bereit.
+
+WICHTIGE REGELN:
+- Liefere den vollständigen Text wenn es sich um ein kurzes Werk handelt (Gedicht, Kurztext, Zitat)
+- Bei längeren Werken: Zusammenfassung + Schlüsselpassagen + Kontext
+- Gib immer Hintergrund zum Autor und Werk (Entstehungszeit, Epoche, Bedeutung)
+- Formatiere übersichtlich mit Abschnitten
+- Sprache: Deutsch, aber Originaltexte in Originalsprache belassen`;
+      break;
+    case 'research':
+      basePrompt = `Du bist ein Recherche-Assistent. Du recherchierst Themen gründlich und stellst eine kompakte Zusammenfassung bereit.
+
+WICHTIGE REGELN:
+- Strukturiere die Recherche in klare Abschnitte
+- Beginne mit einer kurzen Zusammenfassung (2-3 Sätze)
+- Dann: Wichtigste Fakten als Bullet Points
+- Dann: Tiefergehende Details wenn relevant
+- Beende mit "Weiterführend:" und 2-3 Aspekte die man vertiefen könnte
+- Sei faktenbasiert und nenne Quellen/Hintergründe wo möglich
+- Sprache: Deutsch`;
+      break;
+    case 'learning':
+      basePrompt = `Du bist ein Lern-Assistent. Du bereitest Lernmaterial verständlich und strukturiert auf.
+
+WICHTIGE REGELN:
+- Beginne mit einer einfachen Erklärung (ELI5-Stil)
+- Dann: Kernkonzepte als nummerierte Liste
+- Dann: Ein konkretes Beispiel
+- Beende mit 2-3 Verständnisfragen zum Selbsttest
+- Verwende Analogien um komplexe Konzepte greifbar zu machen
+- Sprache: Deutsch, Fachbegriffe erklärt`;
+      break;
+    case 'plan':
+      basePrompt = `Du bist ein Planungs-Assistent. Du erstellst strukturierte, umsetzbare Pläne.
+
+WICHTIGE REGELN:
+- Beginne mit dem Ziel (1 Satz)
+- Dann: Nummerierte Schritte mit konkreten Aktionen
+- Jeder Schritt hat: Was tun + geschätzte Dauer + benötigte Ressourcen
+- Markiere kritische Schritte mit [!]
+- Beende mit einer Checkliste zum Abhaken
+- Sprache: Deutsch, knapp und actionable`;
+      break;
+    case 'analysis':
+      basePrompt = `Du bist ein Analyse-Assistent. Du erstellst strukturierte, objektive Analysen.
+
+WICHTIGE REGELN:
+- Beginne mit einer Einordnung/Überblick (2-3 Sätze)
+- Dann: Pro/Contra oder Stärken/Schwächen als Gegenüberstellung
+- Dann: Vergleich mit Alternativen wenn relevant
+- Beende mit einer Empfehlung/Einschätzung
+- Sei objektiv und faktenbasiert
+- Sprache: Deutsch`;
+      break;
     default:
       basePrompt += `\n\nErstelle einen gut strukturierten Text.`;
+  }
+
+  // Personalisierung für Smart Content Typen anwenden
+  if (isSmartContentType(draftType)) {
+    if (contextData.profile) {
+      const profile = contextData.profile;
+      if (profile.role) {
+        basePrompt += `\n\nDer Nutzer ist ${profile.role}.`;
+      }
+      if (profile.industry) {
+        basePrompt += ` Branche: ${profile.industry}.`;
+      }
+    }
   }
 
   return basePrompt;
@@ -239,6 +309,12 @@ function buildUserPrompt(
   draftNeed: DetectedDraftNeed,
   contextData: DraftContext
 ): string {
+  // Smart Content Typen haben spezialisierte Prompts
+  if (isSmartContentType(draftType)) {
+    return buildSmartContentUserPrompt(draftType, trigger, draftNeed, contextData);
+  }
+
+  // Original: Writing-Typen
   let prompt = `Bitte erstelle einen Entwurf für folgende Aufgabe:\n\n`;
   prompt += `AUFGABE: ${trigger.title}\n`;
 
@@ -272,6 +348,102 @@ function buildUserPrompt(
   }
 
   prompt += `\nErstelle jetzt den ${draftType === 'email' ? 'E-Mail-Entwurf' : 'Entwurf'}:`;
+
+  return prompt;
+}
+
+/**
+ * Prüft ob ein DraftType ein Smart Content Typ ist
+ */
+function isSmartContentType(draftType: DraftType): boolean {
+  return ['reading', 'research', 'learning', 'plan', 'analysis'].includes(draftType);
+}
+
+/**
+ * Baut spezialisierte User-Prompts für Smart Content Typen
+ */
+function buildSmartContentUserPrompt(
+  draftType: DraftType,
+  trigger: DraftTrigger,
+  draftNeed: DetectedDraftNeed,
+  contextData: DraftContext
+): string {
+  let prompt = '';
+
+  switch (draftType) {
+    case 'reading':
+      prompt = `Der Nutzer möchte folgendes lesen:\n\n`;
+      prompt += `AUFGABE: ${trigger.title}\n`;
+      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
+      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      prompt += `\nBitte stelle den Inhalt bereit:
+- Falls es ein kurzes Werk ist (Gedicht, Kurztext): Gib den vollständigen Text wieder
+- Falls es ein längeres Werk ist: Zusammenfassung + wichtigste Passagen
+- Gib Kontext zum Werk (Autor, Entstehung, Epoche, Bedeutung)
+- Formatiere übersichtlich`;
+      break;
+
+    case 'research':
+      prompt = `Der Nutzer möchte folgendes recherchieren:\n\n`;
+      prompt += `AUFGABE: ${trigger.title}\n`;
+      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
+      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      prompt += `\nErstelle eine kompakte Recherche-Zusammenfassung:
+1. Kurze Zusammenfassung (2-3 Sätze)
+2. Wichtigste Fakten (Bullet Points)
+3. Tiefergehende Details
+4. Weiterführende Aspekte zum Vertiefen`;
+      break;
+
+    case 'learning':
+      prompt = `Der Nutzer möchte folgendes lernen/verstehen:\n\n`;
+      prompt += `AUFGABE: ${trigger.title}\n`;
+      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
+      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      prompt += `\nErstelle Lernmaterial:
+1. Einfache Erklärung (für Einsteiger verständlich)
+2. Kernkonzepte (nummeriert)
+3. Konkretes Beispiel
+4. 2-3 Verständnisfragen zum Selbsttest`;
+      break;
+
+    case 'plan':
+      prompt = `Der Nutzer möchte folgendes planen/organisieren:\n\n`;
+      prompt += `AUFGABE: ${trigger.title}\n`;
+      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
+      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      prompt += `\nErstelle einen strukturierten Plan:
+1. Ziel (1 Satz)
+2. Nummerierte Schritte mit: Aktion + geschätzte Dauer + benötigte Ressourcen
+3. Kritische Schritte mit [!] markieren
+4. Abschließende Checkliste`;
+      break;
+
+    case 'analysis':
+      prompt = `Der Nutzer möchte folgendes analysieren/bewerten:\n\n`;
+      prompt += `AUFGABE: ${trigger.title}\n`;
+      if (trigger.summary) prompt += `KONTEXT: ${trigger.summary}\n`;
+      if (draftNeed.extractedTopic) prompt += `THEMA: ${draftNeed.extractedTopic}\n`;
+      prompt += `\nErstelle eine strukturierte Analyse:
+1. Einordnung/Überblick (2-3 Sätze)
+2. Pro/Contra oder Stärken/Schwächen
+3. Vergleich mit Alternativen (falls relevant)
+4. Empfehlung/Einschätzung`;
+      break;
+
+    default:
+      prompt = `AUFGABE: ${trigger.title}\n`;
+      if (trigger.summary) prompt += `DETAILS: ${trigger.summary}\n`;
+      prompt += `\nBereite den Inhalt vor:`;
+  }
+
+  // Kontext aus ähnlichen Ideen (für alle Smart Content Typen)
+  if (contextData.relatedIdeas.length > 0) {
+    prompt += `\n\nRELEVANTER KONTEXT aus früheren Notizen des Nutzers:\n`;
+    for (const idea of contextData.relatedIdeas.slice(0, 3)) {
+      prompt += `- ${idea.title}: ${idea.summary || ''}\n`;
+    }
+  }
 
   return prompt;
 }

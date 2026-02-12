@@ -445,6 +445,42 @@ mockQueryContext
 
 ## Changelog
 
+### 2026-02-12: Smart Content - Intelligente Aufgaben-Vorbereitung
+
+**Neue Feature: KI bereitet kontextabhängige Inhalte für Aufgaben vor.**
+
+Bisher zeigte die Aufgaben-Detailansicht nur für Schreibaufgaben (E-Mail, Artikel) einen Entwurf. Jetzt erkennt die KI automatisch 5 weitere Aufgabentypen und bereitet passende Inhalte vor.
+
+**Neue Smart Content Typen:**
+
+| Typ | Erkennung (Beispiele) | KI-Ausgabe |
+|-----|----------------------|------------|
+| **Leseinhalt** | "Gedicht lesen", "Buch lesen", "durchlesen" | Volltext (kurze Werke), Zusammenfassung + Kontext (lange Werke) |
+| **Recherche** | "recherchieren", "herausfinden", "informieren" | Kompakte Zusammenfassung + Fakten + weiterführende Aspekte |
+| **Lernmaterial** | "lernen wie", "verstehen", "Tutorial" | ELI5-Erklärung + Kernkonzepte + Beispiel + Verständnisfragen |
+| **Plan** | "planen", "Roadmap", "Checkliste" | Ziel + nummerierte Schritte mit Dauer + Checkliste |
+| **Analyse** | "analysieren", "vergleichen", "Pro Contra" | Überblick + Pro/Contra + Alternativen + Empfehlung |
+
+**Backend-Änderungen:**
+
+| Datei | Änderung |
+|-------|----------|
+| `draft-detection.ts` | `DraftType` erweitert um 5 neue Typen, 15+ neue Regex-Patterns in Heuristik, 8 neue Default-Patterns |
+| `draft-content.ts` | 5 neue System-Prompts (literarischer/Recherche/Lern/Planungs/Analyse-Assistent), spezialisierte User-Prompts, `isSmartContentType()` Helper |
+
+**Frontend-Änderungen:**
+
+| Datei | Änderung |
+|-------|----------|
+| `IdeaDetail.tsx` | Dynamische Section-Titel pro Typ, On-Demand-Generierung, Regenerieren-Button, Smart Content für alle Aufgaben |
+| `IdeaDetail.css` | 5 typ-spezifische Farbverläufe (Lila/Blau/Orange/Grün/Rot), Regenerate-Button, Generate-Button, Loading-States |
+
+**Tests:** 25 neue Tests in `draft-detection.test.ts` (Reading 4, Research 3, Learning 3, Plan 4, Analysis 4, Non-Task 3, Edge Cases 5, Completeness 1)
+
+**Keine DB-Migration nötig:** `draft_type` ist VARCHAR(50) ohne CHECK-Constraint.
+
+---
+
 ### 2026-02-11: Bug Fixes, Feature Audit & PersonalizationChat Persistence
 
 **Umfassende Funktionspruefung + 4 Bug-Fixes + 1 neues Feature.**
