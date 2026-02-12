@@ -113,9 +113,9 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
 
       // Load facts, progress, summary in parallel
       const [factsRes, progressRes, summaryRes] = await Promise.all([
-        axios.get('/api/personalization/facts', { signal }).catch(() => ({ data: { facts: [] } })),
-        axios.get('/api/personalization/progress', { signal }).catch(() => ({ data: { progress: [] } })),
-        axios.get('/api/personalization/summary', { signal }).catch(() => ({ data: { summary: null } })),
+        axios.get('/api/personalization/facts', { signal }).catch(() => ({ data: { data: { factsByCategory: {} } } })),
+        axios.get('/api/personalization/progress', { signal }).catch(() => ({ data: { data: { topics: [] } } })),
+        axios.get('/api/personalization/summary', { signal }).catch(() => ({ data: { data: { summary: null } } })),
       ]);
 
       // Try loading existing conversation history
@@ -148,9 +148,43 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
         await startNewConversation(signal);
       }
 
-      setFacts(factsRes.data.facts || []);
-      setProgress(progressRes.data.progress || []);
-      setSummary(summaryRes.data.summary);
+      // Backend returns { success, data: { factsByCategory: { category: [fact, ...] }, totalFacts } }
+      const factsData = factsRes.data?.data || factsRes.data;
+      const allFacts: LearnedFact[] = [];
+      if (factsData?.factsByCategory) {
+        for (const [category, categoryFacts] of Object.entries(factsData.factsByCategory)) {
+          for (const f of categoryFacts as Array<{ id: string; key: string; value: string; confidence: number; source: string; createdAt: string }>) {
+            allFacts.push({
+              id: f.id,
+              category,
+              fact: f.value,
+              confidence: f.confidence,
+              source: f.source,
+              created_at: f.createdAt,
+            });
+          }
+        }
+      }
+      setFacts(allFacts);
+
+      // Backend wraps in { success, data: { topics, overallProgress, totalFactsLearned } }
+      const progressData = progressRes.data?.data || progressRes.data;
+      const progressItems: LearningProgress[] = (progressData?.topics || []).map((t: { topic: string; factsLearned: number; completionLevel: number }) => ({
+        category: t.topic,
+        facts_count: t.factsLearned,
+        completeness: t.completionLevel,
+      }));
+      setProgress(progressItems);
+
+      // Backend wraps in { success, data: { summary, factCount } }
+      const summaryData = summaryRes.data?.data || summaryRes.data;
+      setSummary(summaryData?.summary ? {
+        summary: summaryData.summary,
+        key_traits: summaryData.key_traits || [],
+        interests: summaryData.interests || [],
+        communication_style: summaryData.communication_style || '',
+        generated_at: summaryData.generated_at || new Date().toISOString(),
+      } : null);
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
@@ -220,7 +254,16 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
       // Refresh facts if new ones were learned
       const newFacts = responseData?.newFacts || res.data.new_facts;
       if (newFacts && newFacts.length > 0) {
-        setFacts(prev => [...newFacts, ...prev]);
+        // Backend returns {category, key, value} — map to LearnedFact shape
+        const mappedFacts: LearnedFact[] = newFacts.map((f: { category: string; key: string; value: string }, i: number) => ({
+          id: `new-${Date.now()}-${i}`,
+          category: f.category,
+          fact: f.value,
+          confidence: 0.8,
+          source: 'chat',
+          created_at: new Date().toISOString(),
+        }));
+        setFacts(prev => [...mappedFacts, ...prev]);
         const reaction = FEEDBACK_REACTIONS.positive[Math.floor(Math.random() * FEEDBACK_REACTIONS.positive.length)];
         showToast(`${newFacts.length} neue(s) Fakt(en) gelernt! ${reaction}`, 'success');
       }

@@ -282,6 +282,10 @@ app.use(csrfProtection);
 // Phase 12: API Documentation
 setupSwagger(app);
 
+// Phase 37: Global Search - Must be before context-aware routes
+import { globalSearchRouter } from './routes/global-search';
+app.use('/api/search', globalSearchRouter);
+
 // Phase 31: Code Execution - Must be before context-aware routes
 // to avoid /:context pattern conflicts with routes like /api/:context/...
 app.use('/api/code', codeExecutionRouter);
@@ -393,6 +397,12 @@ app.use('/api/canvas', canvasRouter);  // /api/canvas, /api/canvas/:id, /api/can
 // Phase 31: Project Context - Codebase Analysis
 app.use('/api/project', projectContextRouter);  // /api/project/analyze, /api/project/summary, /api/project/structure
 app.use('/api/:context/project', projectContextRouter);  // Context-aware: /api/personal/project/analyze, etc.
+
+// Phase 37: Planner - Tasks & Projects
+import { tasksRouter } from './routes/tasks';
+import { projectsRouter } from './routes/projects';
+app.use('/api', tasksRouter);      // /api/:context/tasks, /api/:context/tasks/gantt, /api/:context/tasks/reorder
+app.use('/api', projectsRouter);   // /api/:context/projects
 
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
 app.use('/api', documentsRouter);  // /api/:context/documents, /api/documents/file/:id, etc.

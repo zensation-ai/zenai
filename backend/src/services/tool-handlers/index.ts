@@ -23,6 +23,7 @@ import {
   TOOL_CALCULATE,
   TOOL_REMEMBER,
   TOOL_RECALL,
+  TOOL_MEMORY_INTROSPECT,
   TOOL_WEB_SEARCH,
   TOOL_FETCH_URL,
   TOOL_GITHUB_SEARCH,
@@ -61,7 +62,7 @@ import { enhancedRAG } from '../enhanced-rag';
 import { queryContext } from '../../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
 import { generateEmbedding } from '../ai';
-import { longTermMemory, episodicMemory } from '../memory';
+import { longTermMemory, episodicMemory, workingMemory, crossContextSharing } from '../memory';
 
 // Sub-module imports
 import { handleWebSearch, handleFetchUrl } from './web-tools';
@@ -523,6 +524,108 @@ Dies kann bedeuten:
 }
 
 /**
+ * Memory Introspect handler - AI inspects its own memory state
+ * Mem0 "Memory-as-a-Tool" pattern for on-demand memory access
+ */
+async function handleMemoryIntrospect(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const aspect = (input.aspect as string) || 'overview';
+  const topicFilter = input.topic_filter as string | undefined;
+  const context = execContext.aiContext;
+  const sessionId = execContext.sessionId;
+
+  logger.debug('Tool: memory_introspect', { aspect, topicFilter, context });
+
+  try {
+    const sections: string[] = [];
+
+    // Facts
+    if (aspect === 'facts' || aspect === 'overview') {
+      const facts = await longTermMemory.getFacts(context);
+      const filtered = topicFilter
+        ? facts.filter(f => f.content.toLowerCase().includes(topicFilter.toLowerCase()))
+        : facts;
+
+      if (filtered.length > 0) {
+        sections.push(`**Langzeitgedaechtnis (${filtered.length} Fakten):**`);
+        const grouped: Record<string, typeof filtered> = {};
+        for (const f of filtered.slice(0, 20)) {
+          if (!grouped[f.factType]) grouped[f.factType] = [];
+          grouped[f.factType].push(f);
+        }
+        for (const [type, typeFacts] of Object.entries(grouped)) {
+          sections.push(`  _${type}_:`);
+          for (const f of typeFacts) {
+            const conf = f.confidence >= 0.8 ? 'hoch' : f.confidence >= 0.5 ? 'mittel' : 'niedrig';
+            sections.push(`  - ${f.content} (Konfidenz: ${conf}, ${f.occurrences}x bestaetigt)`);
+          }
+        }
+      } else {
+        sections.push('**Langzeitgedaechtnis:** Keine Fakten gespeichert.');
+      }
+    }
+
+    // Episodes
+    if (aspect === 'episodes' || aspect === 'overview') {
+      const query = topicFilter || 'recent';
+      const episodes = await episodicMemory.retrieve(query, context, { limit: 5, minStrength: 0.1 });
+
+      if (episodes.length > 0) {
+        sections.push(`\n**Episodisches Gedaechtnis (${episodes.length} Episoden):**`);
+        for (const ep of episodes) {
+          const timeAgo = formatTimeAgo(ep.timestamp);
+          sections.push(`  - ${timeAgo}: "${ep.trigger.substring(0, 80)}..." (Staerke: ${ep.retrievalStrength.toFixed(2)})`);
+        }
+      } else {
+        sections.push('\n**Episodisches Gedaechtnis:** Keine relevanten Episoden.');
+      }
+    }
+
+    // Working Memory
+    if (aspect === 'working_memory' || aspect === 'overview') {
+      const wmState = sessionId ? workingMemory.getState(sessionId) : null;
+      if (wmState) {
+        sections.push(`\n**Arbeitsgedaechtnis (${wmState.slots.length}/${wmState.capacity} Slots):**`);
+        sections.push(`  Aktuelles Ziel: ${wmState.currentGoal}`);
+        for (const slot of wmState.slots) {
+          sections.push(`  - [${slot.type}] ${slot.content} (Aktivierung: ${slot.activation.toFixed(2)})`);
+        }
+      } else {
+        sections.push('\n**Arbeitsgedaechtnis:** Keine aktive Session.');
+      }
+    }
+
+    // Cross-Context
+    if (aspect === 'cross_context' || aspect === 'overview') {
+      const shared = await crossContextSharing.getSharedFacts(context);
+      if (shared.length > 0) {
+        sections.push(`\n**Kontextuebergreifende Insights (${shared.length}):**`);
+        for (const f of shared.slice(0, 10)) {
+          sections.push(`  - ${f.content}`);
+        }
+      } else {
+        sections.push('\n**Kontextuebergreifende Insights:** Keine geteilten Fakten.');
+      }
+    }
+
+    // Stats summary for overview
+    if (aspect === 'overview') {
+      const wmStats = workingMemory.getStats();
+      sections.push(`\n**Zusammenfassung:**`);
+      sections.push(`  - Aktive WM-Sessions: ${wmStats.activeSessions}`);
+      sections.push(`  - Durchschnittliche Slots/Session: ${wmStats.avgSlotsPerSession}`);
+    }
+
+    return sections.join('\n');
+  } catch (error) {
+    logger.error('Tool memory_introspect failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Inspizieren des Gedaechtniszustands.';
+  }
+}
+
+/**
  * Format timestamp as relative time ago
  */
 function formatTimeAgo(date: Date): string {
@@ -794,6 +897,7 @@ export function registerAllToolHandlers(): void {
   // Memory tools (HiMeS integration)
   toolRegistry.register(TOOL_REMEMBER, handleRemember);
   toolRegistry.register(TOOL_RECALL, handleRecall);
+  toolRegistry.register(TOOL_MEMORY_INTROSPECT, handleMemoryIntrospect);
 
   // Web tools (Internet access)
   toolRegistry.register(TOOL_WEB_SEARCH, handleWebSearch);
@@ -851,6 +955,7 @@ export function registerAllToolHandlers(): void {
       'calculate',
       'remember',
       'recall',
+      'memory_introspect',
       'web_search',
       'fetch_url',
       'github_search',

@@ -57,6 +57,9 @@ export type Page =
   | 'documents'
   | 'business'
   | 'calendar'
+  | 'tasks'
+  | 'kanban'
+  | 'gantt'
   // Wachsen
   | 'learning'
   | 'my-ai'

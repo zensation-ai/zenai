@@ -59,7 +59,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
     }
   }, [view, currentDate]);
 
-  const { events, loading, error, refetch, createEvent, deleteEvent } = useCalendarData(
+  const { events, loading, error, refetch, createEvent, updateEvent, deleteEvent } = useCalendarData(
     context,
     rangeStart,
     rangeEnd
@@ -109,6 +109,21 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
     }
     return result;
   }, [createEvent]);
+
+  const handleSaveEvent = useCallback(async (input: CreateEventInput) => {
+    if (selectedEvent) {
+      // Edit mode: update existing event
+      const result = await updateEvent(selectedEvent.id, input);
+      if (result) {
+        setShowEventForm(false);
+        setSelectedEvent(null);
+        setPrefilledStart(null);
+      }
+      return result;
+    }
+    // Create mode
+    return handleCreateEvent(input);
+  }, [selectedEvent, updateEvent, handleCreateEvent]);
 
   const handleDeleteEvent = useCallback(async (id: string) => {
     const success = await deleteEvent(id);
@@ -238,7 +253,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
         <CalendarEventForm
           event={selectedEvent}
           prefilledStart={prefilledStart}
-          onSave={handleCreateEvent}
+          onSave={handleSaveEvent}
           onDelete={selectedEvent ? () => handleDeleteEvent(selectedEvent.id) : undefined}
           onClose={handleCloseForm}
         />

@@ -2,7 +2,7 @@
  * Document Vault Page - Types, Interfaces & Constants
  */
 
-export type DocumentsTab = 'documents' | 'editor' | 'media' | 'meetings';
+export type DocumentsTab = 'documents' | 'editor' | 'media';
 
 export type ViewMode = 'grid' | 'list';
 
@@ -30,5 +30,4 @@ export const DOC_TABS: { id: DocumentsTab; label: string; icon: string }[] = [
   { id: 'documents', label: 'Dokumente', icon: '📄' },
   { id: 'editor', label: 'Editor', icon: '✏️' },
   { id: 'media', label: 'Medien', icon: '🖼️' },
-  { id: 'meetings', label: 'Meetings', icon: '📅' },
 ];

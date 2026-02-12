@@ -285,16 +285,28 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
               const lines = buffer.split('\n');
               buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
+              let currentEventType = '';
               for (const line of lines) {
                 if (line.startsWith('event: ')) {
-                  // Event type line - handled with next data line
+                  // Track event type for the next data line
+                  currentEventType = line.slice(7).trim();
                   continue;
                 }
                 if (line.startsWith('data: ')) {
                   try {
                     const data = JSON.parse(line.slice(6));
 
-                    // Handle different event types based on data content
+                    // Skip non-delta events that contain full content (would duplicate)
+                    if (currentEventType === 'done' || currentEventType === 'compaction_info' || currentEventType === 'thinking_end') {
+                      currentEventType = '';
+                      continue;
+                    }
+
+                    if (data.error) {
+                      throw new Error(data.error);
+                    }
+
+                    // Handle delta events
                     if (data.content !== undefined) {
                       accumulatedContent += data.content;
                       // Throttle DOM updates to animation frame rate (~60fps)
@@ -310,15 +322,16 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                       // Accumulate thinking deltas (backend now streams chunks)
                       setThinkingContent(prev => prev + data.thinking);
                     }
-                    if (data.error) {
-                      throw new Error(data.error);
-                    }
                   } catch (parseError) {
                     // Skip malformed JSON
                     if (line.slice(6).trim() !== '') {
+                      // intentionally empty
                     }
                   }
+                  currentEventType = '';
                 }
+                // Reset event type after processing data line
+                currentEventType = '';
               }
             }
           }

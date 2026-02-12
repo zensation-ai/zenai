@@ -7,6 +7,7 @@ import { logger } from '../../utils/logger';
 import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable } from '../claude';
 import { getUnifiedContext } from '../business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../memory';
+import { implicitFeedback } from '../memory/implicit-feedback';
 import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode } from '../chat-modes';
 import { classifyIntent, intentToRetrievalConfig } from '../query-intent-classifier';
 import { ThinkingMode, applyThinkingMode } from '../thinking-partner';
@@ -124,11 +125,14 @@ export async function generateEnhancedResponse(
 
   try {
     // Use HiMeS memory coordinator for enhanced context
+    // Enable serendipity for agent mode or creative context (2-hop graph expansion)
+    const enableSerendipity = modeResult.mode === 'agent' || contextType === 'creative';
+
     const enhancedContext = await memoryCoordinator.prepareEnhancedContext(
       sessionId,
       userMessage,
       contextType,
-      { maxContextTokens: 2000, includeEpisodic: true, includeLongTerm: true }
+      { maxContextTokens: 2000, includeEpisodic: true, includeLongTerm: true, enableSerendipity }
     );
 
     memoryStats = enhancedContext.stats;
@@ -531,6 +535,17 @@ export async function sendMessage(
   // Record as episodic memory (non-blocking, fire-and-forget)
   recordEpisode(sessionId, userMessage, aiResponse, contextType).catch(error => {
     logger.warn('Failed to record episodic memory - conversation may not be remembered', { sessionId, error });
+  });
+
+  // Analyze implicit feedback signals (non-blocking)
+  implicitFeedback.analyzeInteraction(
+    sessionId,
+    contextType,
+    userMessage,
+    aiResponse,
+    [] // Previous messages loaded internally via session tracking
+  ).catch(error => {
+    logger.debug('Implicit feedback analysis failed', { sessionId, error });
   });
 
   logger.info('Chat message exchange complete', {

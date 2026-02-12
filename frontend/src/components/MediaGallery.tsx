@@ -39,8 +39,20 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
   const loadMedia = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`/api/${context}/media`);
-      setMedia(res.data.media || []);
+      const res = await axios.get(`/api/all-media?context=${context}`);
+      // Backend returns { id, media_type, filename, caption, ... } - map to MediaItem
+      const items: MediaItem[] = (res.data.media || []).map((m: Record<string, unknown>) => ({
+        id: m.id as string,
+        type: (m.media_type === 'photo' ? 'image' : m.media_type === 'video' ? 'video' : 'image') as 'image' | 'video',
+        filename: m.filename as string,
+        url: `/api/media-file/${m.id}`,
+        thumbnail_url: m.thumbnail_path ? `/api/media/${m.id}/thumbnail` : undefined,
+        analysis: (m.caption || m.ai_analysis) as string | undefined,
+        tags: [],
+        idea_id: m.idea_id as string | undefined,
+        created_at: m.created_at as string,
+      }));
+      setMedia(items);
     } catch (err) {
       logError('MediaGallery:loadMedia', err);
       showToast('Hmm, deine Medien konnten nicht geladen werden. Prüf deine Verbindung und versuch es noch mal.', 'error');
@@ -55,14 +67,23 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
 
     const file = files[0];
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('media', file);
 
     try {
       setUploading(true);
       const res = await axios.post(`/api/${context}/media`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setMedia(prev => [res.data.media, ...prev]);
+      // Backend returns { mediaId, mediaType, filename, ... } - construct MediaItem
+      const uploaded: MediaItem = {
+        id: res.data.mediaId,
+        type: res.data.mediaType === 'photo' ? 'image' : 'video',
+        filename: res.data.filename || file.name,
+        url: `/api/media-file/${res.data.mediaId}`,
+        tags: [],
+        created_at: new Date().toISOString(),
+      };
+      setMedia(prev => [uploaded, ...prev]);
       showToast('Datei hochgeladen!', 'success');
     } catch (err) {
       showToast('Der Upload hat leider nicht geklappt. Ist die Datei vielleicht zu groß?', 'error');
@@ -78,11 +99,17 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
     try {
       setAnalyzing(mediaId);
       const res = await axios.post(`/api/${context}/media/analyze-existing`, { mediaId });
+      // Backend returns analysis as object { description, tags, ... } - extract description string
+      const analysisResult = res.data.analysis;
+      const analysisText = typeof analysisResult === 'string'
+        ? analysisResult
+        : (analysisResult?.description || JSON.stringify(analysisResult));
+      const analysisTags = res.data.tags || analysisResult?.tags || [];
       setMedia(prev => prev.map(m =>
-        m.id === mediaId ? { ...m, analysis: res.data.analysis, tags: res.data.tags || m.tags } : m
+        m.id === mediaId ? { ...m, analysis: analysisText, tags: analysisTags || m.tags } : m
       ));
       if (selectedMedia?.id === mediaId) {
-        setSelectedMedia(prev => prev ? { ...prev, analysis: res.data.analysis, tags: res.data.tags || prev.tags } : null);
+        setSelectedMedia(prev => prev ? { ...prev, analysis: analysisText, tags: analysisTags || prev.tags } : null);
       }
       showToast('Analyse abgeschlossen!', 'success');
     } catch (err) {

@@ -9,10 +9,14 @@
  * Uses node-cron for reliable scheduling with timezone support.
  */
 
-import { AIContext } from '../../utils/database-context';
+import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { longTermMemory, ConsolidationResult } from './long-term-memory';
 import { episodicMemory, EpisodicConsolidationResult } from './episodic-memory';
+import { crossContextSharing } from './cross-context-sharing';
+import { reflectionEngine } from './reflection-engine';
+import { proactiveDigest } from '../proactive-digest';
+import { memoryGovernance } from './memory-governance';
 import { getAllDomainFocus } from '../domain-focus';
 import { researchFocusTopic, shouldResearchNow } from '../proactive-intelligence';
 
@@ -449,12 +453,95 @@ class MemorySchedulerService {
         // Continue with next context even if this one fails
       }
 
+      // Temporal Hierarchy Merge (weekly/monthly episode merging)
+      try {
+        const mergeResult = await episodicMemory.temporalMerge(context);
+        if (mergeResult.episodesRemoved > 0) {
+          logger.info(`Temporal merge for context: ${context}`, {
+            context,
+            ...mergeResult,
+            operation: 'temporalMerge',
+          });
+        }
+      } catch (error) {
+        logger.debug(`Temporal merge failed for context: ${context}`, { error });
+      }
+
       logger.info(`Consolidation complete for context: ${context}`, {
         context,
         longTerm: ltResult,
         episodic: epResult,
         operation: 'consolidationContext',
       });
+    }
+
+    // Cross-context insight sharing (after all contexts are consolidated)
+    try {
+      const sharingResult = await crossContextSharing.shareAll();
+      logger.info('Cross-context sharing during consolidation', {
+        ...sharingResult,
+        operation: 'crossContextSharing',
+      });
+    } catch (error) {
+      logger.debug('Cross-context sharing failed during consolidation', { error });
+    }
+
+    // Activity log learning: extract behavioral patterns from activity logs
+    try {
+      const activityResult = await this.learnFromActivityLogs();
+      if (activityResult.patternsDetected > 0) {
+        logger.info('Activity log learning during consolidation', {
+          ...activityResult,
+          operation: 'activityLogLearning',
+        });
+      }
+    } catch (error) {
+      logger.debug('Activity log learning failed during consolidation', { error });
+    }
+
+    // Cleanup old reflection insights (keep max 200 per context)
+    try {
+      for (const context of CONFIG.CONTEXTS) {
+        await this.pruneOldReflections(context);
+      }
+    } catch (error) {
+      logger.debug('Reflection insight cleanup failed', { error });
+    }
+
+    // Generate daily digests for all contexts
+    try {
+      for (const context of CONFIG.CONTEXTS) {
+        const digest = await proactiveDigest.generateDailyDigest(context);
+        if (digest) {
+          logger.info('Daily digest generated during consolidation', {
+            context,
+            digestId: digest.id,
+            sections: digest.sections.length,
+            operation: 'dailyDigest',
+          });
+        }
+      }
+    } catch (error) {
+      logger.debug('Daily digest generation failed', { error });
+    }
+
+    // Generate weekly digests on Sundays
+    if (new Date().getDay() === 0) {
+      try {
+        for (const context of CONFIG.CONTEXTS) {
+          const digest = await proactiveDigest.generateWeeklyDigest(context);
+          if (digest) {
+            logger.info('Weekly digest generated during consolidation', {
+              context,
+              digestId: digest.id,
+              sections: digest.sections.length,
+              operation: 'weeklyDigest',
+            });
+          }
+        }
+      } catch (error) {
+        logger.debug('Weekly digest generation failed', { error });
+      }
     }
 
     results.duration = Date.now() - start;
@@ -468,25 +555,28 @@ class MemorySchedulerService {
   }
 
   /**
-   * Run Episodic Memory Decay for all contexts
+   * Run Memory Decay for all contexts (episodic + long-term facts)
    */
-  async runDecay(): Promise<{ totalAffected: number; duration: number }> {
+  async runDecay(): Promise<{ totalAffected: number; factsDecayed: number; factsPruned: number; duration: number }> {
     const start = Date.now();
     this.stats.totalRuns++;
 
-    logger.info('Starting scheduled episodic memory decay', {
+    logger.info('Starting scheduled memory decay (episodic + fact decay)', {
       contexts: CONFIG.CONTEXTS,
       operation: 'decayStart',
     });
 
     let totalAffected = 0;
+    let factsDecayed = 0;
+    let factsPruned = 0;
 
     for (const context of CONFIG.CONTEXTS) {
+      // Episodic decay
       try {
         const affected = await episodicMemory.applyDecay(context);
         totalAffected += affected;
 
-        logger.info(`Decay applied for context: ${context}`, {
+        logger.info(`Episodic decay applied for context: ${context}`, {
           context,
           affectedEpisodes: affected,
           operation: 'decayContext',
@@ -495,22 +585,62 @@ class MemorySchedulerService {
         const errorMsg = error instanceof Error ? error.message : String(error);
         this.stats.lastError = errorMsg;
 
-        logger.error(`Decay failed for context: ${context}`, error instanceof Error ? error : undefined, {
+        logger.error(`Episodic decay failed for context: ${context}`, error instanceof Error ? error : undefined, {
           context,
           operation: 'decayError',
         });
+      }
+
+      // Long-term fact decay (importance-weighted)
+      try {
+        const factResult = await longTermMemory.applyFactDecay(context);
+        factsDecayed += factResult.decayed;
+        factsPruned += factResult.pruned;
+
+        if (factResult.decayed > 0 || factResult.pruned > 0) {
+          logger.info(`Fact decay applied for context: ${context}`, {
+            context,
+            factsDecayed: factResult.decayed,
+            factsPruned: factResult.pruned,
+            operation: 'factDecayContext',
+          });
+        }
+      } catch (error) {
+        logger.error(`Fact decay failed for context: ${context}`, error instanceof Error ? error : undefined, {
+          context,
+          operation: 'factDecayError',
+        });
+      }
+    }
+
+    // Apply GDPR retention policies
+    for (const context of CONFIG.CONTEXTS) {
+      try {
+        const retentionDeleted = await memoryGovernance.applyRetention(context);
+        if (retentionDeleted > 0) {
+          totalAffected += retentionDeleted;
+          logger.info(`Retention policy applied for ${context}`, {
+            context,
+            deleted: retentionDeleted,
+            operation: 'retentionPolicy',
+          });
+        }
+      } catch (error) {
+        logger.debug(`Retention policy failed for ${context}`, { error });
       }
     }
 
     const duration = Date.now() - start;
 
-    logger.info('Scheduled episodic memory decay complete', {
+    logger.info('Scheduled memory decay complete', {
       totalAffected,
+      factsDecayed,
+      factsPruned,
       duration,
       operation: 'decayComplete',
     });
 
-    return { totalAffected, duration };
+    return { totalAffected, factsDecayed, factsPruned, duration };
   }
 
   /**
@@ -647,6 +777,141 @@ class MemorySchedulerService {
       totalRuns: this.stats.totalRuns,
       lastError: this.stats.lastError,
     };
+  }
+
+  /**
+   * Prune old reflection insights per context (keep max 200)
+   */
+  private async pruneOldReflections(context: AIContext): Promise<void> {
+    try {
+      // Count current insights
+      const countResult = await queryContext(
+        context,
+        `SELECT COUNT(*) as cnt FROM reflection_insights WHERE context = $1`,
+        [context]
+      );
+      const count = Number(countResult.rows[0]?.cnt || 0);
+
+      if (count > 200) {
+        // Delete oldest beyond 200, but never delete unapplied action items
+        await queryContext(
+          context,
+          `DELETE FROM reflection_insights
+           WHERE id IN (
+             SELECT id FROM reflection_insights
+             WHERE context = $1 AND (applied = true OR action_item IS NULL)
+             ORDER BY created_at ASC
+             LIMIT $2
+           )`,
+          [context, count - 200]
+        );
+        logger.debug(`Pruned ${count - 200} old reflection insights for ${context}`);
+      }
+    } catch (error) {
+      // Table might not exist yet - that's fine
+      if (error instanceof Error && error.message.includes('does not exist')) return;
+      logger.debug(`Failed to prune reflection insights for ${context}`, {
+        error: error instanceof Error ? error.message : 'Unknown',
+      });
+    }
+  }
+
+  /**
+   * Learn behavioral patterns from AI activity logs.
+   *
+   * Analyzes recent activity to detect:
+   * - Time-of-day patterns (user is most active in the morning)
+   * - Feature usage patterns (user frequently creates ideas)
+   * - Topic clustering (user focuses on X topics)
+   */
+  private async learnFromActivityLogs(): Promise<{ patternsDetected: number }> {
+    let patternsDetected = 0;
+
+    for (const context of CONFIG.CONTEXTS) {
+      try {
+        // Get activity counts by type from last 7 days
+        const activityStats = await queryContext(
+          context,
+          `SELECT activity_type, COUNT(*) as count,
+                  EXTRACT(HOUR FROM created_at) as hour
+           FROM ai_activity_log
+           WHERE created_at > NOW() - INTERVAL '7 days'
+           GROUP BY activity_type, EXTRACT(HOUR FROM created_at)
+           ORDER BY count DESC
+           LIMIT 50`,
+          []
+        );
+
+        if (activityStats.rows.length === 0) continue;
+
+        // Detect time-of-day patterns
+        const hourCounts = new Map<number, number>();
+        for (const row of activityStats.rows) {
+          const hour = Number(row.hour);
+          hourCounts.set(hour, (hourCounts.get(hour) || 0) + Number(row.count));
+        }
+
+        // Find peak activity hours
+        let peakHour = 0;
+        let peakCount = 0;
+        for (const [hour, count] of hourCounts) {
+          if (count > peakCount) {
+            peakCount = count;
+            peakHour = hour;
+          }
+        }
+
+        if (peakCount >= 5) {
+          const timeLabel = peakHour < 12 ? 'morgens' : peakHour < 17 ? 'nachmittags' : 'abends';
+          await longTermMemory.addFact(context, {
+            factType: 'behavior',
+            content: `Nutzer ist am aktivsten ${timeLabel} (Peak: ${peakHour}:00 Uhr)`,
+            confidence: Math.min(0.8, peakCount / 20),
+            source: 'inferred' as const,
+          });
+          patternsDetected++;
+        }
+
+        // Detect most-used features
+        const featureCounts = new Map<string, number>();
+        for (const row of activityStats.rows) {
+          const type = row.activity_type as string;
+          featureCounts.set(type, (featureCounts.get(type) || 0) + Number(row.count));
+        }
+
+        // Top 2 most used features
+        const sortedFeatures = [...featureCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 2);
+
+        for (const [feature, count] of sortedFeatures) {
+          if (count >= 3) {
+            const featureLabels: Record<string, string> = {
+              idea_created: 'Ideen erstellen',
+              search_performed: 'Suchen',
+              draft_generated: 'Entwuerfe generieren',
+              pattern_detected: 'Muster-Erkennung',
+              suggestion_made: 'Vorschlaege',
+              idea_structured: 'Ideen strukturieren',
+            };
+            const label = featureLabels[feature] || feature;
+            await longTermMemory.addFact(context, {
+              factType: 'behavior',
+              content: `Nutzer nutzt haeufig: ${label} (${count}x in 7 Tagen)`,
+              confidence: Math.min(0.75, count / 15),
+              source: 'inferred' as const,
+            });
+            patternsDetected++;
+          }
+        }
+      } catch (error) {
+        logger.debug(`Activity log learning failed for context: ${context}`, {
+          error: error instanceof Error ? error.message : 'Unknown',
+        });
+      }
+    }
+
+    return { patternsDetected };
   }
 
   /**

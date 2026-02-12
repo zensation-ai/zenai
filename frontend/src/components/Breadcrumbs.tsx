@@ -144,12 +144,27 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   ],
   'meetings': [
     ROOT,
-    { label: 'Wissensbasis', page: 'documents', icon: '📚' },
+    { label: 'Planer', page: 'calendar', icon: '📋' },
     { label: 'Meetings', page: 'meetings', icon: '📅' },
   ],
 
-  // Entdecken: Kalender
-  'calendar': [ROOT, { label: 'Kalender', page: 'calendar', icon: '\uD83D\uDCC5' }],
+  // Entdecken: Planer
+  'calendar': [ROOT, { label: 'Planer', page: 'calendar', icon: '📋' }],
+  'tasks': [
+    ROOT,
+    { label: 'Planer', page: 'calendar', icon: '📋' },
+    { label: 'Aufgaben', page: 'tasks', icon: '✅' },
+  ],
+  'kanban': [
+    ROOT,
+    { label: 'Planer', page: 'calendar', icon: '📋' },
+    { label: 'Kanban', page: 'kanban', icon: '📊' },
+  ],
+  'gantt': [
+    ROOT,
+    { label: 'Planer', page: 'calendar', icon: '📋' },
+    { label: 'Gantt', page: 'gantt', icon: '📈' },
+  ],
 
   // Entdecken: Business
   'business': [ROOT, { label: 'Business', page: 'business', icon: '💼' }],

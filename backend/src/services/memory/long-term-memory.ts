@@ -144,6 +144,16 @@ const CONFIG = {
   MAX_INTERACTIONS: 50,
   /** Relevance threshold for retrieval */
   RETRIEVAL_THRESHOLD: 0.5,
+  /** Minimum confidence before a fact is pruned */
+  MIN_FACT_PRUNE_CONFIDENCE: 0.3,
+  /** Fact decay rates by type (per month of inactivity) */
+  FACT_DECAY_RATES: {
+    goal: 0.9995,       // Goals persist nearly forever (~2% loss per year)
+    preference: 0.999,  // Preferences are stable (~3% loss per month)
+    knowledge: 0.998,   // Knowledge is durable (~6% loss per month)
+    behavior: 0.995,    // Behaviors can change (~15% loss per month)
+    context: 0.990,     // Context info ages fastest (~26% loss per month)
+  } as Record<string, number>,
 };
 
 // ===========================================
@@ -921,10 +931,34 @@ Antworte als JSON:
     const memory = this.memories.get(context);
     if (!memory) {return;}
 
+    // Contradiction detection: check if new fact conflicts with existing ones
+    const contradiction = this.detectContradiction(memory.facts, fact);
+    if (contradiction) {
+      logger.warn('Contradiction detected in long-term memory', {
+        context,
+        newFact: fact.content.substring(0, 100),
+        existingFact: contradiction.existingFact.content.substring(0, 100),
+        resolution: contradiction.resolution,
+      });
+
+      if (contradiction.resolution === 'replace') {
+        // Lower confidence of existing contradicting fact
+        contradiction.existingFact.confidence = Math.max(0.1,
+          contradiction.existingFact.confidence * 0.5
+        );
+        // Persist the reduced confidence
+        await this.persistFact(context, contradiction.existingFact);
+      } else if (contradiction.resolution === 'skip') {
+        // Existing fact is more reliable, skip the new one
+        return;
+      }
+      // 'add_both': fall through and add both
+    }
+
     const fullFact: PersonalizationFact = {
       id: uuidv4(),
       ...fact,
-      source: 'explicit',
+      source: fact.source || 'explicit',
       firstSeen: new Date(),
       lastConfirmed: new Date(),
       occurrences: 1,
@@ -934,6 +968,74 @@ Antworte als JSON:
     await this.persistFact(context, fullFact);
 
     logger.info('Explicit fact added', { context, factType: fact.factType });
+  }
+
+  /**
+   * Detect contradictions between a new fact and existing facts.
+   *
+   * Uses heuristic approach:
+   * 1. Same fact type + high word overlap + negation patterns = contradiction
+   * 2. Same fact type + very high word overlap + different values = update
+   *
+   * Returns null if no contradiction found.
+   */
+  private detectContradiction(
+    existingFacts: PersonalizationFact[],
+    newFact: Omit<PersonalizationFact, 'id' | 'firstSeen' | 'lastConfirmed' | 'occurrences'>
+  ): { existingFact: PersonalizationFact; resolution: 'replace' | 'skip' | 'add_both' } | null {
+    const NEGATION_PATTERNS = [
+      /\bnicht\b/i, /\bkein[e]?\b/i, /\bnever\b/i, /\bnot\b/i,
+      /\bno\b/i, /\bhasse?\b/i, /\bhate\b/i, /\bnie\b/i,
+      /\bnichts\b/i, /\bablehne?\b/i, /\bdislike\b/i,
+    ];
+
+    const newWords = new Set(
+      newFact.content.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+    );
+    const newHasNegation = NEGATION_PATTERNS.some(p => p.test(newFact.content));
+
+    for (const existing of existingFacts) {
+      // Only compare same fact types
+      if (existing.factType !== newFact.factType) continue;
+
+      const existingWords = new Set(
+        existing.content.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+      );
+
+      // Calculate word overlap
+      let overlap = 0;
+      for (const word of newWords) {
+        if (existingWords.has(word)) overlap++;
+      }
+      const overlapRatio = overlap / Math.max(1, Math.min(newWords.size, existingWords.size));
+
+      // High overlap (>50%) with opposing negation = contradiction
+      if (overlapRatio >= 0.5) {
+        const existingHasNegation = NEGATION_PATTERNS.some(p => p.test(existing.content));
+
+        if (newHasNegation !== existingHasNegation) {
+          // Opposing negation: "mag Kaffee" vs "mag keinen Kaffee"
+          // Resolution: newer fact wins if explicit, otherwise reduce both
+          if (newFact.source === 'explicit') {
+            return { existingFact: existing, resolution: 'replace' };
+          } else if (existing.source === 'explicit' && existing.confidence > 0.7) {
+            return { existingFact: existing, resolution: 'skip' };
+          }
+          return { existingFact: existing, resolution: 'replace' };
+        }
+
+        // Very high overlap (>80%) same direction = possible duplicate/update
+        if (overlapRatio >= 0.8 && newHasNegation === existingHasNegation) {
+          // Boost existing fact instead of adding duplicate
+          existing.occurrences++;
+          existing.lastConfirmed = new Date();
+          existing.confidence = Math.min(1.0, existing.confidence + 0.05);
+          return { existingFact: existing, resolution: 'skip' };
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -956,6 +1058,109 @@ Antworte als JSON:
       lastConsolidation: memory?.lastConsolidation || null,
       hasProfileEmbedding: (memory?.profileEmbedding?.length || 0) > 0,
     };
+  }
+
+  /**
+   * Apply importance-weighted decay to facts (monthly cron job)
+   *
+   * Different fact types decay at different rates:
+   * - goal: near-permanent (0.9995/day) ~2% loss per year
+   * - preference: very slow (0.999/day) ~3% loss per month
+   * - knowledge: slow (0.998/day) ~6% loss per month
+   * - behavior: moderate (0.995/day) ~15% loss per month
+   * - context: fast (0.990/day) ~26% loss per month
+   *
+   * Facts with confidence below MIN_FACT_PRUNE_CONFIDENCE are pruned.
+   * Explicit facts (from user) decay 50% slower than inferred ones.
+   */
+  async applyFactDecay(context: AIContext): Promise<{ decayed: number; pruned: number }> {
+    await this.initialize(context);
+    const memory = this.memories.get(context);
+    if (!memory) { return { decayed: 0, pruned: 0 }; }
+
+    const now = new Date();
+    let decayed = 0;
+    let pruned = 0;
+
+    for (const fact of memory.facts) {
+      const daysSinceConfirmed = (now.getTime() - fact.lastConfirmed.getTime()) / (1000 * 60 * 60 * 24);
+
+      // Skip recently confirmed facts (within last 7 days)
+      if (daysSinceConfirmed < 7) { continue; }
+
+      // Get type-specific decay rate
+      const baseDecayRate = CONFIG.FACT_DECAY_RATES[fact.factType] || 0.995;
+
+      // Explicit facts from user decay 50% slower
+      const sourceMultiplier = fact.source === 'explicit' ? 0.5 : 1.0;
+
+      // High-occurrence facts decay slower (logarithmic dampening)
+      const occurrenceDampening = 1.0 / (1.0 + Math.log(Math.max(1, fact.occurrences)));
+
+      // Effective decay: base^(days * sourceMultiplier * occurrenceDampening)
+      const effectiveDays = daysSinceConfirmed * sourceMultiplier * occurrenceDampening;
+      const decayFactor = Math.pow(baseDecayRate, effectiveDays);
+
+      fact.confidence = fact.confidence * decayFactor;
+      decayed++;
+    }
+
+    // Prune facts below minimum confidence threshold
+    const beforeLength = memory.facts.length;
+    memory.facts = memory.facts.filter(f => f.confidence >= CONFIG.MIN_FACT_PRUNE_CONFIDENCE);
+    pruned = beforeLength - memory.facts.length;
+
+    // Persist confidence changes to database
+    if (decayed > 0) {
+      try {
+        await queryContext(
+          context,
+          `UPDATE personalization_facts
+           SET confidence = GREATEST($1, confidence * (
+             CASE fact_type
+               WHEN 'goal' THEN $2
+               WHEN 'preference' THEN $3
+               WHEN 'knowledge' THEN $4
+               WHEN 'behavior' THEN $5
+               ELSE $6
+             END
+           ))
+           WHERE context = $7
+             AND is_active = true
+             AND last_confirmed < NOW() - INTERVAL '7 days'`,
+          [
+            CONFIG.MIN_FACT_PRUNE_CONFIDENCE,
+            CONFIG.FACT_DECAY_RATES.goal,
+            CONFIG.FACT_DECAY_RATES.preference,
+            CONFIG.FACT_DECAY_RATES.knowledge,
+            CONFIG.FACT_DECAY_RATES.behavior,
+            CONFIG.FACT_DECAY_RATES.context,
+            context,
+          ]
+        );
+      } catch (error) {
+        logger.debug('Fact decay DB update failed, in-memory decay applied', { error });
+      }
+    }
+
+    // Prune from database
+    if (pruned > 0) {
+      try {
+        await queryContext(
+          context,
+          `UPDATE personalization_facts
+           SET is_active = false
+           WHERE context = $1
+             AND confidence < $2`,
+          [context, CONFIG.MIN_FACT_PRUNE_CONFIDENCE]
+        );
+      } catch (error) {
+        logger.debug('Fact pruning DB update failed', { error });
+      }
+    }
+
+    logger.info('Long-term fact decay applied', { context, decayed, pruned });
+    return { decayed, pruned };
   }
 }
 
