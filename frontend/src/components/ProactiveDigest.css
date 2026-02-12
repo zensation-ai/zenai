@@ -1,0 +1,275 @@
+/* ============================================
+   PROACTIVE DIGEST - AI-generated summaries
+   ============================================ */
+
+.digest-card {
+  background: var(--glass-bg, rgba(20, 42, 54, 0.85));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.digest-card.unread {
+  border-color: rgba(255, 107, 53, 0.25);
+  box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.08), 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.digest-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.digest-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.digest-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.digest-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.digest-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.digest-type-badge {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--primary, #ff6b35);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.digest-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.digest-new-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  background: rgba(255, 107, 53, 0.2);
+  color: var(--primary, #ff6b35);
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.digest-dismiss {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.digest-dismiss:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================
+   Summary
+   ============================================ */
+
+.digest-summary {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* ============================================
+   Expand Button
+   ============================================ */
+
+.digest-expand {
+  align-self: flex-start;
+  padding: 5px 12px;
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 8px;
+  color: var(--primary, #ff6b35);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.digest-expand:hover {
+  background: rgba(255, 107, 53, 0.18);
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+/* ============================================
+   Sections
+   ============================================ */
+
+.digest-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: digestExpand 0.25s ease;
+}
+
+@keyframes digestExpand {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.digest-section {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.digest-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.digest-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.digest-section-relevance {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.digest-section-content {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.digest-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.digest-action {
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--primary, #ff6b35);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.digest-action:hover {
+  background: rgba(255, 107, 53, 0.1);
+}
+
+/* ============================================
+   Light Mode
+   ============================================ */
+
+:root.light-mode .digest-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:root.light-mode .digest-card.unread {
+  border-color: rgba(255, 107, 53, 0.25);
+  box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.06), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .digest-title {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+:root.light-mode .digest-summary {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+:root.light-mode .digest-section {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .digest-section-title {
+  color: rgba(0, 0, 0, 0.75);
+}
+
+:root.light-mode .digest-section-content {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root.light-mode .digest-dismiss {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+:root.light-mode .digest-dismiss:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 640px) {
+  .digest-card {
+    padding: 14px 16px;
+  }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .digest-sections {
+    animation: none;
+  }
+}

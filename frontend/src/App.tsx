@@ -24,6 +24,7 @@ import { safeParseResponse, IdeaCreationResponseSchema, SearchResponseSchema, Pr
 import { GeneralChat } from './components/GeneralChat';
 import { ContextNudge } from './components/ContextNudge';
 import { AIQuestionBubble } from './components/AIQuestionBubble';
+import { GlobalSearch } from './components/GlobalSearch';
 import { useIdeasData } from './hooks/useIdeasData';
 import { useAIQuestions } from './hooks/useAIQuestions';
 
@@ -245,6 +246,11 @@ function App() {
   } | null>(null);
 
   const pageHistory = usePageHistory();
+
+  // Global Search state
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const openGlobalSearch = useCallback(() => setGlobalSearchOpen(true), []);
+  const closeGlobalSearch = useCallback(() => setGlobalSearchOpen(false), []);
 
   // Track page visits for recents
   useEffect(() => {
@@ -713,7 +719,7 @@ function App() {
         aiActivityMessage={aiActivityMessage}
         archivedCount={archivedCount}
         notificationCount={notificationCount}
-        onOpenSearch={commandPalette.open}
+        onOpenSearch={openGlobalSearch}
         onRefresh={() => loadIdeas()}
         favoritePages={pageHistory.favoritePages}
         toggleFavorite={pageHistory.toggleFavorite}
@@ -767,6 +773,15 @@ function App() {
           onClose={commandPalette.close}
           commands={commandPalette.commands}
           recentPages={pageHistory.recentPages}
+        />
+      )}
+
+      {globalSearchOpen && (
+        <GlobalSearch
+          isOpen={globalSearchOpen}
+          onClose={closeGlobalSearch}
+          context={context}
+          onNavigate={(page) => { navigateToPage(page as Page); closeGlobalSearch(); }}
         />
       )}
 
