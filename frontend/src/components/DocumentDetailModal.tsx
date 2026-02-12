@@ -108,14 +108,14 @@ export function DocumentDetailModal({
 
   // Download file
   const handleDownload = useCallback(() => {
-    window.open(`${API_URL}/api/${context}/documents/${doc.id}/file?key=${API_KEY}`, '_blank');
-  }, [API_URL, API_KEY, context, doc.id]);
+    window.open(`${API_URL}/api/documents/file/${doc.id}?key=${API_KEY}`, '_blank');
+  }, [API_URL, API_KEY, doc.id]);
 
   // Reprocess document
   const handleReprocess = useCallback(async () => {
     try {
       await fetch(
-        `${API_URL}/api/${context}/documents/${doc.id}/reprocess`,
+        `${API_URL}/api/documents/${doc.id}/reprocess`,
         {
           method: 'POST',
           headers: getApiFetchHeaders(),
@@ -126,7 +126,7 @@ export function DocumentDetailModal({
     } catch (error) {
       console.error('Failed to reprocess:', error);
     }
-  }, [API_URL, API_KEY, doc.id]);
+  }, [API_URL, doc.id]);
 
   // Delete document
   const handleDelete = useCallback(async () => {
@@ -265,13 +265,13 @@ export function DocumentDetailModal({
           <div className="preview-section">
             {isImage ? (
               <img
-                src={`${API_URL}/api/${context}/documents/${doc.id}/preview`}
+                src={`${API_URL}/api/documents/preview/${doc.id}`}
                 alt={doc.title || doc.originalFilename}
                 className="preview-image"
               />
             ) : isPdf ? (
               <iframe
-                src={`${API_URL}/api/${context}/documents/${doc.id}/file?key=${API_KEY}`}
+                src={`${API_URL}/api/documents/file/${doc.id}?key=${API_KEY}`}
                 className="preview-pdf"
                 title="PDF Preview"
               />

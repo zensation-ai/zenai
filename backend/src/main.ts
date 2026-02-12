@@ -371,7 +371,7 @@ app.use('/api', evolutionRouter);  // /api/:context/evolution, /api/:context/evo
 app.use('/api', draftsRouter);  // /api/:context/ideas/:id/draft, /api/:context/drafts
 
 // Phase 27: Proactive Intelligence System - "KI macht proaktive Vorschläge"
-app.use('/api', proactiveRouter);  // /api/:context/proactive/suggestions, /api/:context/proactive/routines, etc.
+app.use('/api/proactive', proactiveRouter);  // /api/proactive/suggestions, /api/proactive/routines, etc.
 
 // Phase 29: General Chat - ChatGPT-like interface
 app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessions/:id/messages, /api/chat/quick

@@ -288,6 +288,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
               let currentEventType = '';
               for (const line of lines) {
                 if (line.startsWith('event: ')) {
+                  // Track event type for the next data line
                   currentEventType = line.slice(7).trim();
                   continue;
                 }
@@ -295,9 +296,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                   try {
                     const data = JSON.parse(line.slice(6));
 
-                    // Skip done event - it contains the full accumulated content which
-                    // would duplicate what we already collected from content_delta events
-                    if (currentEventType === 'done') {
+                    // Skip non-delta events that contain full content (would duplicate)
+                    if (currentEventType === 'done' || currentEventType === 'compaction_info' || currentEventType === 'thinking_end') {
                       currentEventType = '';
                       continue;
                     }
@@ -306,7 +306,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                       throw new Error(data.error);
                     }
 
-                    // Handle content deltas (content_delta events)
+                    // Handle delta events
                     if (data.content !== undefined) {
                       accumulatedContent += data.content;
                       // Throttle DOM updates to animation frame rate (~60fps)
@@ -328,6 +328,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                       // intentionally empty
                     }
                   }
+                  currentEventType = '';
                 }
                 // Reset event type after processing data line
                 currentEventType = '';
