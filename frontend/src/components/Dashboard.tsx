@@ -17,6 +17,7 @@ import { AIBrain } from './AIBrain';
 import { SkeletonLoader } from './SkeletonLoader';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { logError } from '../utils/errors';
+import { ProactiveDigest } from './ProactiveDigest';
 import '../neurodesign.css';
 import './Dashboard.css';
 
@@ -296,6 +297,9 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           ))}
         </div>
       </section>
+
+      {/* AI Digest */}
+      <ProactiveDigest context={context} onNavigate={onNavigate} />
 
       {/* Quick Stats */}
       <section className="dash-stats" aria-label="Statistiken">

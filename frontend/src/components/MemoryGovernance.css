@@ -1,0 +1,632 @@
+/* ============================================
+   MEMORY GOVERNANCE - GDPR Privacy Controls
+   ============================================ */
+
+.memgov {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: memgovFadeIn 0.3s ease;
+}
+
+@keyframes memgovFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.memgov-loading {
+  padding: 16px 0;
+}
+
+.memgov-context-info {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary, #ff6b35);
+}
+
+/* ============================================
+   Groups
+   ============================================ */
+
+.memgov-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.memgov-group-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================
+   Memory Overview Grid
+   ============================================ */
+
+.memgov-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.memgov-layer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  transition: border-color 0.15s ease;
+}
+
+.memgov-layer-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.memgov-layer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memgov-layer-icon {
+  font-size: 1.1rem;
+}
+
+.memgov-layer-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.memgov-layer-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary, #ff6b35);
+}
+
+.memgov-layer-desc {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
+}
+
+.memgov-layer-erase {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 3px 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.memgov-layer-erase:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.memgov-overview-totals {
+  display: flex;
+  gap: 16px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================
+   Privacy Settings
+   ============================================ */
+
+.memgov-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.memgov-setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.memgov-setting-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.memgov-setting-desc {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Toggle Switch */
+.memgov-toggle {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.memgov-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.memgov-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.memgov-toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.memgov-toggle input:checked + .memgov-toggle-slider {
+  background: var(--primary, #ff6b35);
+}
+
+.memgov-toggle input:checked + .memgov-toggle-slider::before {
+  transform: translateX(20px);
+  background: white;
+}
+
+.memgov-toggle input:disabled + .memgov-toggle-slider {
+  opacity: 0.5;
+}
+
+/* Select */
+.memgov-select {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.82rem;
+  font-family: inherit;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.memgov-select option {
+  background: #1a2a36;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ============================================
+   GDPR Actions
+   ============================================ */
+
+.memgov-gdpr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memgov-gdpr-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.memgov-gdpr-card.danger {
+  border-color: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.memgov-gdpr-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.memgov-gdpr-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.memgov-gdpr-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  display: block;
+}
+
+.memgov-gdpr-desc {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  display: block;
+  margin-top: 2px;
+}
+
+.memgov-gdpr-btn {
+  padding: 7px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.memgov-gdpr-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.memgov-gdpr-btn.export {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.memgov-gdpr-btn.export:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.memgov-gdpr-btn.danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.memgov-gdpr-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.memgov-gdpr-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Audit Trail
+   ============================================ */
+
+.memgov-audit {
+  animation: memgovFadeIn 0.2s ease;
+}
+
+.memgov-audit-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 10px;
+}
+
+.memgov-audit-empty {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: 16px;
+}
+
+.memgov-audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.memgov-audit-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  font-size: 0.76rem;
+}
+
+.memgov-audit-action {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.memgov-audit-details {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memgov-audit-time {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Confirm Dialog
+   ============================================ */
+
+.memgov-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: memgovFadeIn 0.15s ease;
+}
+
+.memgov-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.memgov-confirm-dialog {
+  position: relative;
+  width: min(400px, calc(100vw - 32px));
+  padding: 24px;
+  background: rgba(20, 38, 50, 0.98);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.memgov-confirm-icon {
+  font-size: 2rem;
+}
+
+.memgov-confirm-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.memgov-confirm-text {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.memgov-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.memgov-confirm-cancel,
+.memgov-confirm-delete {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.memgov-confirm-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.memgov-confirm-cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.memgov-confirm-delete {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.memgov-confirm-delete:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   Light Mode
+   ============================================ */
+
+:root.light-mode .memgov-context-info {
+  background: rgba(0, 0, 0, 0.03);
+  color: rgba(0, 0, 0, 0.55);
+}
+
+:root.light-mode .memgov-group-title {
+  color: rgba(0, 0, 0, 0.8);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+:root.light-mode .memgov-layer-card {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .memgov-layer-label {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+:root.light-mode .memgov-layer-desc {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+:root.light-mode .memgov-setting {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .memgov-setting-label {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+:root.light-mode .memgov-setting-desc {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+:root.light-mode .memgov-toggle-slider {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+:root.light-mode .memgov-toggle-slider::before {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root.light-mode .memgov-select {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+:root.light-mode .memgov-gdpr-card {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .memgov-gdpr-label {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+:root.light-mode .memgov-gdpr-desc {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+:root.light-mode .memgov-gdpr-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+:root.light-mode .memgov-confirm-dialog {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+:root.light-mode .memgov-confirm-title {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+:root.light-mode .memgov-confirm-text {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+:root.light-mode .memgov-confirm-cancel {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+:root.light-mode .memgov-overview-totals {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+:root.light-mode .memgov-audit-entry {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+:root.light-mode .memgov-audit-action {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+:root.light-mode .memgov-audit-details {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root.light-mode .memgov-audit-time {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 640px) {
+  .memgov-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .memgov-gdpr-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .memgov-gdpr-btn {
+    text-align: center;
+  }
+
+  .memgov-setting {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .memgov,
+  .memgov-audit,
+  .memgov-confirm-overlay {
+    animation: none;
+  }
+}
