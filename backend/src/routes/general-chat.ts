@@ -53,6 +53,8 @@ import {
   ImageMediaType,
 } from '../services/claude-vision';
 import { CHAT } from '../config/constants';
+import { memoryCoordinator, episodicMemory, workingMemory } from '../services/memory';
+import { getUnifiedContext } from '../services/business-context';
 
 export const generalChatRouter = Router();
 
@@ -529,6 +531,16 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
   // Store user message first (already trimmed by Zod schema)
   await addMessage(id, 'user', message);
 
+  // Get context type from session for memory integration
+  const contextType = (session.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
+
+  // Add user interaction to short-term memory (non-blocking)
+  try {
+    await memoryCoordinator.addInteraction(id, 'user', message);
+  } catch (error) {
+    logger.debug('Failed to add user interaction to memory (stream)', { sessionId: id, error });
+  }
+
   // Get conversation history
   const historyResult = await query(`
     SELECT role, content
@@ -555,6 +567,60 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
   // Apply thinking partner mode (Phase 32C-1)
   if (thinkingMode !== 'assist') {
     systemPrompt = applyThinkingMode(systemPrompt, thinkingMode);
+  }
+
+  // === Memory Enhancement (HiMeS 4-Layer) ===
+  // Enhance system prompt with memory context so the AI remembers past conversations
+  try {
+    const enhancedContext = await memoryCoordinator.prepareEnhancedContext(
+      id,
+      message,
+      contextType,
+      { maxContextTokens: 2000, includeEpisodic: true, includeLongTerm: true }
+    );
+
+    if (enhancedContext.systemEnhancement) {
+      systemPrompt += `\n\n${enhancedContext.systemEnhancement}`;
+    }
+
+    const wmContextString = workingMemory.generateContextString(id);
+    if (wmContextString) {
+      systemPrompt += `\n\n${wmContextString}`;
+    }
+
+    if (enhancedContext.episodicMemory?.emotionalTone) {
+      const tone = enhancedContext.episodicMemory.emotionalTone;
+      if (tone.dominantMood !== 'neutral') {
+        systemPrompt += `\n\n[EMOTIONALER KONTEXT]\nBisherige Stimmung: ${tone.dominantMood === 'positive' ? 'positiv' : 'negativ'}. Passe deinen Ton entsprechend an.`;
+      }
+    }
+
+    logger.debug('Stream memory context prepared', {
+      sessionId: id,
+      memoryStats: enhancedContext.stats,
+    });
+  } catch (error) {
+    logger.warn('Stream memory enhancement failed, using fallback', { sessionId: id, error });
+    try {
+      const unifiedContext = await getUnifiedContext(contextType);
+      if (unifiedContext.contextDepthScore > 20) {
+        const contextParts: string[] = [];
+        if (unifiedContext.profile?.role) {
+          contextParts.push(`Der Benutzer ist ${unifiedContext.profile.role}.`);
+        }
+        if (unifiedContext.profile?.industry) {
+          contextParts.push(`Branche: ${unifiedContext.profile.industry}.`);
+        }
+        if (unifiedContext.recentTopics.length > 0) {
+          contextParts.push(`Aktuelle Themen: ${unifiedContext.recentTopics.slice(0, 5).join(', ')}.`);
+        }
+        if (contextParts.length > 0) {
+          systemPrompt += `\n\n[BENUTZER-KONTEXT]\n${contextParts.join('\n')}\nBerücksichtige diesen Kontext wenn relevant.`;
+        }
+      }
+    } catch {
+      // Continue without any context enhancement
+    }
   }
 
   if (modeResult.mode === 'agent' || modeResult.mode === 'rag_enhanced') {
@@ -711,11 +777,26 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
     // Store assistant response after stream completes
     if (fullResponse) {
       await addMessage(id, 'assistant', fullResponse);
+
+      // Add assistant interaction to short-term memory (non-blocking)
+      try {
+        await memoryCoordinator.addInteraction(id, 'assistant', fullResponse);
+      } catch (error) {
+        logger.debug('Failed to add assistant interaction to memory (stream)', { sessionId: id, error });
+      }
+
+      // Record as episodic memory (non-blocking, fire-and-forget)
+      episodicMemory.store(message, fullResponse, id, contextType).catch(error => {
+        logger.warn('Failed to record episodic memory from stream - conversation may not be remembered', { sessionId: id, error });
+      });
+
       logger.info('Streaming chat complete', {
         sessionId: id,
         responseLength: fullResponse.length,
         hadThinking: thinkingContent.length > 0,
       });
+    } else {
+      logger.warn('Stream completed with no content - assistant message not stored', { sessionId: id });
     }
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
