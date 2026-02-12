@@ -840,6 +840,71 @@ export const TOOL_COMPARE_PERIODS: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 35: Calendar, Email Draft & Travel Tools
+// ===========================================
+
+export const TOOL_CREATE_CALENDAR_EVENT: ToolDefinition = {
+  name: 'create_calendar_event',
+  description: 'Erstellt einen Kalender-Eintrag. Nutze dies wenn der Nutzer einen Termin, Deadline, Erinnerung oder Meeting erstellen moechte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Titel des Ereignisses' },
+      start_time: { type: 'string', description: 'Startzeit im ISO 8601 Format (z.B. 2026-02-15T14:00:00)' },
+      end_time: { type: 'string', description: 'Endzeit im ISO 8601 Format (optional, Standard: +1 Stunde)' },
+      event_type: { type: 'string', enum: ['appointment', 'reminder', 'deadline', 'focus_time'], description: 'Art des Ereignisses' },
+      location: { type: 'string', description: 'Ort (optional)' },
+      participants: { type: 'array', items: { type: 'string' }, description: 'Teilnehmer (optional)' },
+      description: { type: 'string', description: 'Beschreibung (optional)' },
+    },
+    required: ['title', 'start_time'],
+  },
+};
+
+export const TOOL_LIST_CALENDAR_EVENTS: ToolDefinition = {
+  name: 'list_calendar_events',
+  description: 'Listet Kalender-Eintraege fuer einen Zeitraum. Nutze dies wenn der Nutzer nach Terminen fragt oder seinen Kalender sehen will.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      start: { type: 'string', description: 'Startdatum im ISO 8601 Format' },
+      end: { type: 'string', description: 'Enddatum im ISO 8601 Format' },
+      event_type: { type: 'string', enum: ['appointment', 'reminder', 'deadline', 'travel_block', 'focus_time'], description: 'Typ-Filter (optional)' },
+    },
+    required: ['start', 'end'],
+  },
+};
+
+export const TOOL_DRAFT_EMAIL: ToolDefinition = {
+  name: 'draft_email',
+  description: 'Erstellt einen E-Mail-Entwurf basierend auf einer Beschreibung. Der Nutzer kann den Entwurf dann kopieren und in seinem Mail-Programm verwenden.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      recipient: { type: 'string', description: 'Empfaenger (Name oder E-Mail)' },
+      subject: { type: 'string', description: 'Betreff' },
+      key_points: { type: 'array', items: { type: 'string' }, description: 'Kernpunkte die in der E-Mail enthalten sein sollen' },
+      tone: { type: 'string', enum: ['formal', 'informal', 'friendly'], description: 'Ton der E-Mail (Standard: formal)' },
+    },
+    required: ['key_points'],
+  },
+};
+
+export const TOOL_ESTIMATE_TRAVEL: ToolDefinition = {
+  name: 'estimate_travel',
+  description: 'Schaetzt die Reisezeit zwischen zwei Orten. Nutze dies wenn der Nutzer nach Fahrzeiten, Entfernungen oder Anreise fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      origin: { type: 'string', description: 'Startort (Adresse oder Ortsname)' },
+      destination: { type: 'string', description: 'Zielort (Adresse oder Ortsname)' },
+      mode: { type: 'string', enum: ['driving', 'transit', 'walking', 'cycling'], description: 'Transportmittel (Standard: driving)' },
+    },
+    required: ['origin', 'destination'],
+  },
+};
+
+// ===========================================
 // Tool Registry
 // ===========================================
 

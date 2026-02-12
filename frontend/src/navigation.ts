@@ -89,6 +89,12 @@ export const NAV_SECTIONS: NavSection[] = [
         subPages: ['canvas', 'media', 'meetings'],
       },
       {
+        page: 'calendar',
+        icon: '\uD83D\uDCC5',
+        label: 'Kalender',
+        description: 'Termine, Deadlines & Erinnerungen',
+      },
+      {
         page: 'business',
         icon: '💼',
         label: 'Business',

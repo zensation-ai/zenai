@@ -17,6 +17,9 @@ import type { StructuredIdea } from '../types';
 import { VoiceMemoTextSchema, validateBody } from '../utils/schemas';
 // Phase 24: Cache Invalidation - CRITICAL for ideas to appear after refresh
 import { invalidateCacheForContext } from '../middleware/response-cache';
+// Phase 35: Smart Intent Detection
+import { detectIntents } from '../services/intent-detector';
+import { dispatchIntents } from '../services/intent-handlers';
 
 export const voiceMemoRouter = Router();
 
@@ -237,6 +240,29 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     ),
   ]);
 
+  // Phase 35: Detect intents and dispatch handlers (fire-and-forget for non-blocking)
+  let detectedIntents: unknown[] = [];
+  let actionsTaken: unknown[] = [];
+  try {
+    const intentResult = await detectIntents(transcript);
+    detectedIntents = intentResult.intents;
+
+    if (intentResult.intents.length > 0 && intentResult.primary_intent !== 'idea') {
+      const intentContext: AIContext = (structured.suggested_context as AIContext) || 'personal';
+      const results = await dispatchIntents(intentContext, intentResult.intents, transcript);
+      actionsTaken = results
+        .filter(r => r.success && r.created_resource)
+        .map(r => ({
+          type: r.intent_type,
+          id: r.created_resource!.id,
+          summary: r.created_resource!.summary,
+          data: r.created_resource!.data,
+        }));
+    }
+  } catch (intentErr) {
+    logger.warn('Intent detection failed, continuing without', { error: (intentErr as Error).message });
+  }
+
   res.json({
     success: true,
     ideaId,
@@ -246,6 +272,8 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     contextConfidence: structured.suggested_context ? 0.7 : 0,
     appliedLearning,
     learningConfidence: learnedSuggestion?.confidence || 0,
+    detected_intents: detectedIntents,
+    actions_taken: actionsTaken,
     performance: {
       totalMs: totalTime,
       transcriptionMs: transcriptionTime,
@@ -336,6 +364,29 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
     ),
   ]);
 
+  // Phase 35: Detect intents and dispatch handlers
+  let detectedIntents: unknown[] = [];
+  let actionsTaken: unknown[] = [];
+  try {
+    const intentResult = await detectIntents(text);
+    detectedIntents = intentResult.intents;
+
+    if (intentResult.intents.length > 0 && intentResult.primary_intent !== 'idea') {
+      const intentContext: AIContext = (structured.suggested_context as AIContext) || 'personal';
+      const results = await dispatchIntents(intentContext, intentResult.intents, text);
+      actionsTaken = results
+        .filter(r => r.success && r.created_resource)
+        .map(r => ({
+          type: r.intent_type,
+          id: r.created_resource!.id,
+          summary: r.created_resource!.summary,
+          data: r.created_resource!.data,
+        }));
+    }
+  } catch (intentErr) {
+    logger.warn('Intent detection failed, continuing without', { error: (intentErr as Error).message });
+  }
+
   res.json({
     success: true,
     ideaId,
@@ -346,6 +397,8 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
     suggestedPriority: suggestedPrio,
     appliedLearning,
     learningConfidence: learnedSuggestion?.confidence || 0,
+    detected_intents: detectedIntents,
+    actions_taken: actionsTaken,
     processingTime: Date.now() - startTime,
   });
 }));

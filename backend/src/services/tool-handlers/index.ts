@@ -47,9 +47,15 @@ import {
   TOOL_GENERATE_BUSINESS_REPORT,
   TOOL_IDENTIFY_ANOMALIES,
   TOOL_COMPARE_PERIODS,
+  TOOL_CREATE_CALENDAR_EVENT,
+  TOOL_LIST_CALENDAR_EVENTS,
+  TOOL_DRAFT_EMAIL,
+  TOOL_ESTIMATE_TRAVEL,
   ToolExecutionContext,
 } from '../claude/tool-use';
 import { createMeeting } from '../meetings';
+import { createCalendarEvent, getCalendarEvents } from '../calendar';
+import { estimateTravelDuration } from '../travel-estimator';
 import { getFeatureHelp } from '../assistant-knowledge';
 import { enhancedRAG } from '../enhanced-rag';
 import { queryContext } from '../../utils/database-context';
@@ -629,6 +635,146 @@ async function handleAppHelp(
 }
 
 // ===========================================
+// Phase 35: Calendar, Email, Travel Handlers
+// ===========================================
+
+async function handleCreateCalendarEvent(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const title = input.title as string;
+  const startTime = input.start_time as string;
+
+  if (!title || !startTime) {
+    return 'Fehler: Titel und Startzeit sind erforderlich.';
+  }
+
+  try {
+    const endTime = input.end_time as string | undefined;
+    const event = await createCalendarEvent(execContext.aiContext, {
+      title,
+      start_time: startTime,
+      end_time: endTime || new Date(new Date(startTime).getTime() + 60 * 60 * 1000).toISOString(),
+      event_type: (input.event_type as 'appointment' | 'reminder' | 'deadline' | 'focus_time') || 'appointment',
+      location: input.location as string | undefined,
+      participants: input.participants as string[] | undefined,
+      description: input.description as string | undefined,
+      ai_generated: true,
+    });
+
+    const dateFormatted = new Date(event.start_time).toLocaleString('de-DE', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+
+    const parts = [`Kalender-Eintrag erstellt: "${event.title}" am ${dateFormatted}.`];
+    if (event.location) parts.push(`Ort: ${event.location}.`);
+    if (event.participants.length > 0) parts.push(`Teilnehmer: ${event.participants.join(', ')}.`);
+    return parts.join(' ');
+  } catch (error) {
+    logger.error('Tool create_calendar_event failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Erstellen des Kalender-Eintrags: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
+async function handleListCalendarEvents(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const start = input.start as string;
+  const end = input.end as string;
+
+  if (!start || !end) {
+    return 'Fehler: Start- und Enddatum sind erforderlich.';
+  }
+
+  try {
+    const events = await getCalendarEvents(execContext.aiContext, {
+      start,
+      end,
+      event_type: input.event_type as 'appointment' | 'reminder' | 'deadline' | 'travel_block' | 'focus_time' | undefined,
+    });
+
+    if (events.length === 0) {
+      return 'Keine Kalender-Eintraege in diesem Zeitraum gefunden.';
+    }
+
+    const lines = events.map(e => {
+      const date = new Date(e.start_time).toLocaleString('de-DE', {
+        weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+      });
+      const parts = [`- ${date}: ${e.title}`];
+      if (e.location) parts.push(`(${e.location})`);
+      if (e.event_type !== 'appointment') parts.push(`[${e.event_type}]`);
+      return parts.join(' ');
+    });
+
+    return `${events.length} Kalender-Eintraege gefunden:\n${lines.join('\n')}`;
+  } catch (error) {
+    logger.error('Tool list_calendar_events failed', error instanceof Error ? error : undefined);
+    return `Fehler beim Abrufen der Kalender-Eintraege: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
+async function handleDraftEmail(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const keyPoints = input.key_points as string[];
+  if (!keyPoints || keyPoints.length === 0) {
+    return 'Fehler: Mindestens ein Kernpunkt ist erforderlich.';
+  }
+
+  const recipient = (input.recipient as string) || '[Empfaenger]';
+  const subject = (input.subject as string) || '';
+  const tone = (input.tone as string) || 'formal';
+
+  // Build the email draft using a simple template
+  const greeting = tone === 'formal' ? 'Sehr geehrte/r' : (tone === 'friendly' ? 'Liebe/r' : 'Hallo');
+  const closing = tone === 'formal' ? 'Mit freundlichen Gruessen' : (tone === 'friendly' ? 'Herzliche Gruesse' : 'Viele Gruesse');
+
+  const body = keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n');
+
+  const email = `An: ${recipient}
+Betreff: ${subject || 'Kein Betreff'}
+
+${greeting} ${recipient},
+
+${body}
+
+${closing}`;
+
+  return `E-Mail-Entwurf erstellt:\n\n${email}\n\n---\nDu kannst den Entwurf kopieren und in deinem Mail-Programm verwenden.`;
+}
+
+async function handleEstimateTravel(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const origin = input.origin as string;
+  const destination = input.destination as string;
+
+  if (!origin || !destination) {
+    return 'Fehler: Start- und Zielort sind erforderlich.';
+  }
+
+  try {
+    const mode = (input.mode as 'driving' | 'transit' | 'walking' | 'cycling') || 'driving';
+    const estimate = await estimateTravelDuration(origin, destination, mode);
+
+    const hours = Math.floor(estimate.duration_minutes / 60);
+    const minutes = estimate.duration_minutes % 60;
+    const durationStr = hours > 0 ? `${hours} Stunden ${minutes} Minuten` : `${minutes} Minuten`;
+    const modeLabels: Record<string, string> = { driving: 'Auto', transit: 'OEPNV', walking: 'zu Fuss', cycling: 'Fahrrad' };
+
+    return `Reisezeit-Schaetzung:\n- Von: ${estimate.origin}\n- Nach: ${estimate.destination}\n- Dauer: ${durationStr}\n- Entfernung: ${estimate.distance_km} km\n- Transportmittel: ${modeLabels[estimate.mode] || estimate.mode}\n- Quelle: ${estimate.source === 'openrouteservice' ? 'OpenRouteService' : 'Schaetzung'}`;
+  } catch (error) {
+    logger.error('Tool estimate_travel failed', error instanceof Error ? error : undefined);
+    return `Fehler bei der Reisezeit-Schaetzung: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`;
+  }
+}
+
+// ===========================================
 // Registration
 // ===========================================
 
@@ -691,6 +837,12 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_IDENTIFY_ANOMALIES, handleIdentifyAnomalies);
   toolRegistry.register(TOOL_COMPARE_PERIODS, handleComparePeriods);
 
+  // Phase 35: Calendar, Email, Travel tools
+  toolRegistry.register(TOOL_CREATE_CALENDAR_EVENT, handleCreateCalendarEvent);
+  toolRegistry.register(TOOL_LIST_CALENDAR_EVENTS, handleListCalendarEvents);
+  toolRegistry.register(TOOL_DRAFT_EMAIL, handleDraftEmail);
+  toolRegistry.register(TOOL_ESTIMATE_TRAVEL, handleEstimateTravel);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -723,6 +875,10 @@ export function registerAllToolHandlers(): void {
       'generate_business_report',
       'identify_anomalies',
       'compare_periods',
+      'create_calendar_event',
+      'list_calendar_events',
+      'draft_email',
+      'estimate_travel',
     ],
   });
 }

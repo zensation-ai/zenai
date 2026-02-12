@@ -56,6 +56,7 @@ export type Page =
   | 'insights'
   | 'documents'
   | 'business'
+  | 'calendar'
   // Wachsen
   | 'learning'
   | 'my-ai'

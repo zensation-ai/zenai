@@ -117,11 +117,32 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
 
   // Meeting creation patterns
   { pattern: /meeting\s+(erstell|anlegen|einrichten|planen)/i, tools: ['create_meeting'], weight: 0.95 },
-  { pattern: /termin\s+(am|um|für|mit|erstell|anlegen)/i, tools: ['create_meeting'], weight: 0.9 },
   { pattern: /besprechung\s+(am|um|für|mit|planen|erstell)/i, tools: ['create_meeting'], weight: 0.9 },
-  { pattern: /ich\s+habe?\s+(ein|einen?)\s+(meeting|termin|besprechung|treffen)/i, tools: ['create_meeting'], weight: 0.95 },
-  { pattern: /erstell(e|en?)?\s+(ein|einen?)\s+(meeting|termin)/i, tools: ['create_meeting'], weight: 0.95 },
-  { pattern: /trag\s+(ein|einen?)\s+(meeting|termin)\s+ein/i, tools: ['create_meeting'], weight: 0.95 },
+
+  // Phase 35: Calendar event patterns
+  { pattern: /termin\s+(am|um|für|mit|erstell|anlegen|eintragen)/i, tools: ['create_calendar_event'], weight: 0.95 },
+  { pattern: /ich\s+habe?\s+(ein|einen?)\s+(meeting|termin|besprechung|treffen)/i, tools: ['create_calendar_event'], weight: 0.95 },
+  { pattern: /erstell(e|en?)?\s+(ein|einen?)\s+(termin|kalender|event)/i, tools: ['create_calendar_event'], weight: 0.95 },
+  { pattern: /trag\s+(in\s+)?(den\s+)?kalender\s+ein/i, tools: ['create_calendar_event'], weight: 0.95 },
+  { pattern: /erinner(e|t)?\s+mich\s+(an|um|in|morgen|übermorgen)/i, tools: ['create_calendar_event'], weight: 0.9 },
+  { pattern: /deadline\s+(ist|am|um|für|bis)/i, tools: ['create_calendar_event'], weight: 0.9 },
+  { pattern: /wann\s+(ist|habe?\s+ich)\s+(mein\s+)?(nächster?|der)\s+(termin|meeting)/i, tools: ['list_calendar_events'], weight: 0.9 },
+  { pattern: /zeig(e?)\s+mir\s+(meine?\s+)?(termine|kalender|events)/i, tools: ['list_calendar_events'], weight: 0.9 },
+  { pattern: /was\s+steht\s+(heute|morgen|diese\s+woche)\s+(an|im\s+kalender)/i, tools: ['list_calendar_events'], weight: 0.95 },
+
+  // Phase 35: Email draft patterns
+  { pattern: /schreib(e|en?)?\s+(eine?\s+)?(e-?mail|mail|nachricht)\s+(an\s+)?/i, tools: ['draft_email'], weight: 0.95 },
+  { pattern: /e-?mail\s+(an|schreiben|verfassen|erstellen|entwurf)/i, tools: ['draft_email'], weight: 0.95 },
+  { pattern: /antwort(e|en?)?\s+(auf\s+)?(die\s+)?(e-?mail|mail|nachricht)/i, tools: ['draft_email'], weight: 0.9 },
+  { pattern: /mail\s+an\s+/i, tools: ['draft_email'], weight: 0.9 },
+
+  // Phase 35: Travel estimation patterns
+  { pattern: /wie\s+lange\s+brauche?\s+ich\s+(nach|zu|von|bis|zum|zur)/i, tools: ['estimate_travel'], weight: 0.95 },
+  { pattern: /fahrt?\s+nach\s+/i, tools: ['estimate_travel'], weight: 0.85 },
+  { pattern: /fahrzeit\s+(nach|von|zu)/i, tools: ['estimate_travel'], weight: 0.95 },
+  { pattern: /reisezeit\s+(nach|von|zu)/i, tools: ['estimate_travel'], weight: 0.95 },
+  { pattern: /entfernung\s+(nach|von|zu|zwischen)/i, tools: ['estimate_travel'], weight: 0.9 },
+  { pattern: /anreise\s+(nach|zu|zum|zur)/i, tools: ['estimate_travel'], weight: 0.9 },
 
   // Navigation patterns
   { pattern: /wo\s+finde\s+ich/i, tools: ['navigate_to', 'app_help'], weight: 0.9 },

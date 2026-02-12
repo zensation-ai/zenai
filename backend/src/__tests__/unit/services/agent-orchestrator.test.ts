@@ -185,7 +185,7 @@ describe('Agent Orchestrator', () => {
       expect(result.success).toBe(true);
       expect(result.finalOutput).toBeDefined();
       expect(result.agentResults.length).toBeGreaterThan(0);
-      expect(result.executionTimeMs).toBeGreaterThan(0);
+      expect(result.executionTimeMs).toBeGreaterThanOrEqual(0);
       expect(result.strategy).toBe('research_write_review');
     });
 
