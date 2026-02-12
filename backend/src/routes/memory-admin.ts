@@ -9,10 +9,10 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { memoryScheduler, longTermMemory, episodicMemory } from '../services/memory';
+import { memoryScheduler, longTermMemory, episodicMemory, memoryGovernance } from '../services/memory';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -330,6 +330,182 @@ router.get('/transparency/:context', apiKeyAuth, asyncHandler(async (req: Reques
         confidence: p.confidence,
       })),
     },
+  });
+}));
+
+// ===========================================
+// Memory Governance & GDPR Endpoints (Phase 37)
+// ===========================================
+
+/**
+ * GET /api/memory/privacy/:context
+ * Get memory privacy settings for a context
+ */
+router.get('/privacy/:context', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const settings = await memoryGovernance.getPrivacySettings(context as AIContext);
+
+  res.json({
+    success: true,
+    data: settings,
+  });
+}));
+
+/**
+ * PUT /api/memory/privacy/:context
+ * Update memory privacy settings
+ */
+router.put('/privacy/:context', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const settings = await memoryGovernance.updatePrivacySettings(context as AIContext, req.body);
+
+  res.json({
+    success: true,
+    data: settings,
+    message: 'Privacy settings updated',
+  });
+}));
+
+/**
+ * DELETE /api/memory/erase/:context
+ * Right to Erasure (Art. 17 DSGVO): Delete all memory data for a context
+ */
+router.delete('/erase/:context', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  logger.info('Memory erasure requested', { context, operation: 'memoryErasure' });
+
+  const result = await memoryGovernance.eraseAllMemory(context as AIContext);
+
+  res.json({
+    success: true,
+    data: result,
+    message: `All memory data for "${context}" has been permanently deleted.`,
+  });
+}));
+
+/**
+ * DELETE /api/memory/erase/:context/:layer
+ * Delete all data from a specific memory layer
+ */
+router.delete('/erase/:context/:layer', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { context, layer } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const validLayers = ['working', 'episodic', 'short_term', 'long_term', 'procedural', 'reflection'];
+  if (!validLayers.includes(layer)) {
+    throw new ValidationError(`Invalid layer. Use one of: ${validLayers.join(', ')}`);
+  }
+
+  const deleted = await memoryGovernance.eraseLayer(context as AIContext, layer as any);
+
+  res.json({
+    success: true,
+    data: { layer, deleted },
+    message: `Memory layer "${layer}" erased: ${deleted} items deleted.`,
+  });
+}));
+
+/**
+ * DELETE /api/memory/facts/:context/:factId
+ * Delete a specific learned fact
+ */
+router.delete('/facts/:context/:factId', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { context, factId } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const deleted = await memoryGovernance.deleteFact(context as AIContext, factId);
+
+  res.json({
+    success: true,
+    deleted,
+    message: deleted ? 'Fact deleted' : 'Fact not found',
+  });
+}));
+
+/**
+ * GET /api/memory/export/:context
+ * Data Portability (Art. 20 DSGVO): Export all memory data
+ */
+router.get('/export/:context', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const memoryExport = await memoryGovernance.exportMemory(context as AIContext);
+
+  res.json({
+    success: true,
+    data: memoryExport,
+  });
+}));
+
+/**
+ * GET /api/memory/audit/:context
+ * Get memory audit trail
+ */
+router.get('/audit/:context', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const limit = parseInt(req.query.limit as string) || 50;
+  const layer = req.query.layer as string | undefined;
+  const action = req.query.action as string | undefined;
+
+  const trail = await memoryGovernance.getAuditTrail(context as AIContext, {
+    limit: Math.min(limit, 200),
+    layer: layer as any,
+    action,
+  });
+
+  res.json({
+    success: true,
+    data: trail,
+    count: trail.length,
+  });
+}));
+
+/**
+ * GET /api/memory/overview/:context
+ * Comprehensive memory overview for transparency
+ */
+router.get('/overview/:context', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const overview = await memoryGovernance.getMemoryOverview(context as AIContext);
+
+  res.json({
+    success: true,
+    data: overview,
   });
 }));
 

@@ -483,6 +483,32 @@ export const TOOL_RECALL: ToolDefinition = {
 };
 
 /**
+ * Memory introspect tool - AI inspects its own memory state
+ * Mem0 "Memory-as-a-Tool" pattern: AI queries memory on-demand
+ * instead of relying solely on pre-loaded context.
+ */
+export const TOOL_MEMORY_INTROSPECT: ToolDefinition = {
+  name: 'memory_introspect',
+  description:
+    'Inspiziert den eigenen Gedaechtniszustand. Zeigt aktive Arbeitsspeicher-Slots, langfristige Fakten, Episoden-Statistiken und kontextuebergreifende Insights. Nutze dies um besser zu verstehen was du ueber den Nutzer weisst, bevor du Annahmen triffst.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      aspect: {
+        type: 'string',
+        description: 'Welcher Aspekt des Gedaechtnisses soll inspiziert werden?',
+        enum: ['facts', 'episodes', 'working_memory', 'cross_context', 'overview'],
+      },
+      topic_filter: {
+        type: 'string',
+        description: 'Optionaler Themenfllter fuer gezieltere Ergebnisse',
+      },
+    },
+    required: ['aspect'],
+  },
+};
+
+/**
  * Analyze project tool - comprehensive project analysis
  */
 export const TOOL_ANALYZE_PROJECT: ToolDefinition = {

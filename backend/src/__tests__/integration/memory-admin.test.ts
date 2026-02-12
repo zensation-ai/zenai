@@ -20,6 +20,7 @@ jest.mock('../../middleware/auth', () => ({
     _req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
     next();
   }),
+  requireScope: jest.fn(() => (_req: any, _res: any, next: any) => next()),
   rateLimiter: jest.fn((_req: any, _res: any, next: any) => next()),
 }));
 
@@ -139,6 +140,52 @@ jest.mock('../../services/memory', () => ({
   },
   episodicMemory: {
     getStats: mockGetEpStats,
+  },
+  memoryGovernance: {
+    getPrivacySettings: jest.fn().mockResolvedValue({
+      context: 'personal',
+      enabledLayers: ['working', 'episodic', 'short_term', 'long_term'],
+      enableImplicitFeedback: true,
+      enableCrossContextSharing: true,
+      enableProactiveSuggestions: true,
+      retentionDays: 0,
+      autoDeleteExpired: false,
+      updatedAt: new Date(),
+    }),
+    updatePrivacySettings: jest.fn().mockResolvedValue({
+      context: 'personal',
+      enabledLayers: ['working', 'long_term'],
+      enableImplicitFeedback: false,
+      enableCrossContextSharing: true,
+      enableProactiveSuggestions: true,
+      retentionDays: 90,
+      autoDeleteExpired: true,
+      updatedAt: new Date(),
+    }),
+    eraseAllMemory: jest.fn().mockResolvedValue({
+      context: 'personal',
+      factsDeleted: 10,
+      episodesDeleted: 5,
+      patternsDeleted: 3,
+      proceduresDeleted: 0,
+      reflectionsDeleted: 0,
+      conversationsDeleted: 2,
+      totalDeleted: 20,
+    }),
+    eraseLayer: jest.fn().mockResolvedValue(5),
+    deleteFact: jest.fn().mockResolvedValue(true),
+    exportMemory: jest.fn().mockResolvedValue({
+      exportedAt: new Date().toISOString(),
+      context: 'personal',
+      facts: [],
+      episodes: [],
+      patterns: [],
+      procedures: [],
+      reflections: [],
+      settings: {},
+    }),
+    getAuditTrail: jest.fn().mockResolvedValue([]),
+    getMemoryOverview: jest.fn().mockResolvedValue({ context: 'personal', facts: 0 }),
   },
 }));
 
