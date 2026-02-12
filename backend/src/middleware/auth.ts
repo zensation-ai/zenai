@@ -374,7 +374,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
   } catch (error) {
     // Distinguish transient DB errors (503) from actual failures (500)
     const pgError = error as { code?: string };
-    const transientCodes = ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE', '57P01', '57P03'];
+    const transientCodes = ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE', '57P01', '57P03', '53300'];
     const isTransient = pgError.code && transientCodes.includes(pgError.code);
 
     if (isTransient) {
