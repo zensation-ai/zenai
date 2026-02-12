@@ -285,16 +285,28 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
               const lines = buffer.split('\n');
               buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
+              let currentEventType = '';
               for (const line of lines) {
                 if (line.startsWith('event: ')) {
-                  // Event type line - handled with next data line
+                  currentEventType = line.slice(7).trim();
                   continue;
                 }
                 if (line.startsWith('data: ')) {
                   try {
                     const data = JSON.parse(line.slice(6));
 
-                    // Handle different event types based on data content
+                    // Skip done event - it contains the full accumulated content which
+                    // would duplicate what we already collected from content_delta events
+                    if (currentEventType === 'done') {
+                      currentEventType = '';
+                      continue;
+                    }
+
+                    if (data.error) {
+                      throw new Error(data.error);
+                    }
+
+                    // Handle content deltas (content_delta events)
                     if (data.content !== undefined) {
                       accumulatedContent += data.content;
                       // Throttle DOM updates to animation frame rate (~60fps)
@@ -310,15 +322,15 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                       // Accumulate thinking deltas (backend now streams chunks)
                       setThinkingContent(prev => prev + data.thinking);
                     }
-                    if (data.error) {
-                      throw new Error(data.error);
-                    }
                   } catch (parseError) {
                     // Skip malformed JSON
                     if (line.slice(6).trim() !== '') {
+                      // intentionally empty
                     }
                   }
                 }
+                // Reset event type after processing data line
+                currentEventType = '';
               }
             }
           }
