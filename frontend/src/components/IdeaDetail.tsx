@@ -90,12 +90,19 @@ const relationLabels: Record<string, string> = {
   part_of: 'Teil von',
 };
 
-const draftTypeLabels: Record<string, { label: string; icon: string }> = {
-  email: { label: 'E-Mail', icon: '📧' },
-  article: { label: 'Artikel', icon: '📝' },
-  proposal: { label: 'Angebot', icon: '📋' },
-  document: { label: 'Dokument', icon: '📄' },
-  generic: { label: 'Text', icon: '📃' },
+const draftTypeLabels: Record<string, { label: string; icon: string; sectionTitle: string }> = {
+  // Writing-Typen
+  email: { label: 'E-Mail', icon: '📧', sectionTitle: 'Entwurf' },
+  article: { label: 'Artikel', icon: '📝', sectionTitle: 'Entwurf' },
+  proposal: { label: 'Angebot', icon: '📋', sectionTitle: 'Entwurf' },
+  document: { label: 'Dokument', icon: '📄', sectionTitle: 'Entwurf' },
+  generic: { label: 'Text', icon: '📃', sectionTitle: 'Entwurf' },
+  // Smart Content Typen
+  reading: { label: 'Leseinhalt', icon: '📚', sectionTitle: 'Vorbereitet von deiner KI' },
+  research: { label: 'Recherche', icon: '🔬', sectionTitle: 'Recherche-Ergebnis' },
+  learning: { label: 'Lernmaterial', icon: '🎓', sectionTitle: 'Lernmaterial' },
+  plan: { label: 'Plan', icon: '📋', sectionTitle: 'Plan' },
+  analysis: { label: 'Analyse', icon: '📊', sectionTitle: 'Analyse' },
 };
 
 export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenInChat, onMarkComplete, onMove }: IdeaDetailProps) {
@@ -110,11 +117,12 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
   const [isMoving, setIsMoving] = useState(false);
   const [showContextPicker, setShowContextPicker] = useState(false);
 
-  // Phase 25: Draft Support
+  // Phase 25: Draft / Smart Content Support
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [draftExpanded, setDraftExpanded] = useState(false);
   const [draftCopied, setDraftCopied] = useState(false);
+  const [generatingDraft, setGeneratingDraft] = useState(false);
 
   // Phase 5: Draft Feedback
   const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
@@ -155,10 +163,8 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
 
     loadRelations(signal);
     loadSuggestions(signal);
-    // Load draft for tasks
-    if (idea.type === 'task') {
-      loadDraft(signal);
-    }
+    // Load draft / smart content for all task types
+    loadDraft(signal);
 
     return () => {
       // Abort all pending requests on cleanup
@@ -243,6 +249,45 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
       }
     } catch (error) {
       showToast('Der Text konnte nicht kopiert werden. Versuch es noch mal.', 'error');
+    }
+  };
+
+  // Smart Content generieren (On-Demand oder Regenerieren)
+  const generateSmartContent = async (forceRegenerate = false) => {
+    setGeneratingDraft(true);
+    const signal = abortControllerRef.current?.signal;
+    try {
+      const response = await axios.post(
+        `/api/${context}/ideas/${idea.id}/draft`,
+        {
+          forceRegenerate,
+          title: idea.title,
+          summary: idea.summary,
+          rawTranscript: idea.raw_transcript,
+          keywords: idea.keywords,
+          type: idea.type,
+          category: idea.category,
+        },
+        { signal }
+      );
+      if (!signal?.aborted && response.data.draft) {
+        setDraft(response.data.draft);
+        setDraftExpanded(false);
+        if (forceRegenerate) {
+          showToast('Inhalt wurde neu generiert', 'success');
+        }
+      } else if (!signal?.aborted && !response.data.success) {
+        showToast('Für diese Aufgabe konnte kein Inhalt generiert werden.', 'info');
+      }
+    } catch (error) {
+      if (!axios.isCancel(error)) {
+        logError('IdeaDetail:generateSmartContent', error);
+        showToast('Generierung fehlgeschlagen. Versuch es gleich noch mal.', 'error');
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setGeneratingDraft(false);
+      }
     }
   };
 
@@ -539,14 +584,32 @@ Details: ${idea.summary}`,
           <p id="idea-detail-summary" className="detail-summary">{idea.summary}</p>
         </div>
 
-        {/* Phase 25: Draft Section for Tasks */}
-        {idea.type === 'task' && (
-          <div className="detail-section draft-section">
-            <h3>
-              {loadingDraft ? '⏳' : draft ? '✨' : '📝'} Entwurf
-            </h3>
-            {loadingDraft ? (
-              <div className="loading-indicator">Lade Entwurf...</div>
+        {/* Smart Content / Draft Section - alle Typen */}
+        {(draft || loadingDraft || generatingDraft || idea.type === 'task') && (
+          <div className={`detail-section draft-section ${draft ? `draft-type-${draft.draftType}` : ''}`}>
+            <div className="smart-content-header">
+              <h3>
+                {(loadingDraft || generatingDraft) ? '⏳' : draft ? (draftTypeLabels[draft.draftType]?.icon || '✨') : '📝'}{' '}
+                {draft ? (draftTypeLabels[draft.draftType]?.sectionTitle || 'Entwurf') : 'Vorbereitet von deiner KI'}
+              </h3>
+              {draft && (
+                <button
+                  type="button"
+                  className="regenerate-button neuro-button neuro-focus-ring"
+                  onClick={() => generateSmartContent(true)}
+                  disabled={generatingDraft}
+                  aria-label="Inhalt neu generieren"
+                  title="Inhalt neu generieren"
+                >
+                  {generatingDraft ? '⏳' : '⟳'} Neu
+                </button>
+              )}
+            </div>
+            {(loadingDraft || generatingDraft) ? (
+              <div className="loading-indicator">
+                <div className="loading-spinner neuro-loading-spinner" />
+                {generatingDraft ? 'Deine KI bereitet Inhalte vor...' : 'Lade...'}
+              </div>
             ) : draft ? (
               <div className="draft-content">
                 <div className="draft-header">
@@ -570,7 +633,7 @@ Details: ${idea.summary}`,
                       className="expand-button neuro-press-effect neuro-focus-ring neuro-hover-lift"
                       onClick={() => setDraftExpanded(!draftExpanded)}
                       aria-expanded={draftExpanded}
-                      aria-label={draftExpanded ? 'Entwurf einklappen' : 'Entwurf vollstaendig anzeigen'}
+                      aria-label={draftExpanded ? 'Einklappen' : 'Vollstaendig anzeigen'}
                     >
                       {draftExpanded ? 'Weniger anzeigen' : 'Mehr anzeigen'}
                     </button>
@@ -584,7 +647,7 @@ Details: ${idea.summary}`,
                   </button>
                 </div>
 
-                {/* Phase 5: Feedback Section */}
+                {/* Feedback Section */}
                 {!feedbackGiven ? (
                   <>
                     <QuickFeedback
@@ -605,7 +668,17 @@ Details: ${idea.summary}`,
                 )}
               </div>
             ) : (
-              <p className="no-draft">Kein Entwurf verfügbar für diese Aufgabe.</p>
+              <div className="no-draft-container">
+                <p className="no-draft">Deine KI hat noch nichts vorbereitet.</p>
+                <button
+                  type="button"
+                  className="generate-button neuro-button neuro-focus-ring"
+                  onClick={() => generateSmartContent(false)}
+                  disabled={generatingDraft}
+                >
+                  {generatingDraft ? '⏳ Wird generiert...' : '✨ Jetzt vorbereiten lassen'}
+                </button>
+              </div>
             )}
           </div>
         )}

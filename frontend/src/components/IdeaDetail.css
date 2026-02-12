@@ -558,13 +558,118 @@
   color: var(--text-secondary);
 }
 
-/* Draft Section - Phase 25 */
+/* Smart Content / Draft Section */
 .draft-section {
   background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
   border: 1px solid rgba(52, 199, 89, 0.2);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
+}
+
+/* Smart Content Typ-spezifische Farben */
+.draft-section.draft-type-reading {
+  background: linear-gradient(135deg, rgba(88, 86, 214, 0.08) 0%, rgba(88, 86, 214, 0.04) 100%);
+  border-color: rgba(88, 86, 214, 0.2);
+}
+
+.draft-section.draft-type-research {
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.08) 0%, rgba(0, 122, 255, 0.04) 100%);
+  border-color: rgba(0, 122, 255, 0.2);
+}
+
+.draft-section.draft-type-learning {
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.08) 0%, rgba(255, 149, 0, 0.04) 100%);
+  border-color: rgba(255, 149, 0, 0.2);
+}
+
+.draft-section.draft-type-plan {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
+  border-color: rgba(52, 199, 89, 0.2);
+}
+
+.draft-section.draft-type-analysis {
+  background: linear-gradient(135deg, rgba(255, 59, 48, 0.06) 0%, rgba(255, 149, 0, 0.04) 100%);
+  border-color: rgba(255, 59, 48, 0.15);
+}
+
+/* Smart Content Header mit Regenerate-Button */
+.smart-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.smart-content-header h3 {
+  margin: 0;
+}
+
+.regenerate-button {
+  padding: 6px 12px;
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.regenerate-button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.regenerate-button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* No-Draft Container mit Generate-Button */
+.no-draft-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.generate-button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--primary, #ff6b35) 0%, #ff8c42 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.generate-button:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transform: translateY(-1px);
+}
+
+.generate-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Loading indicator mit Spinner */
+.draft-section .loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 
 .draft-header {
@@ -588,6 +693,13 @@
   color: #34c759;
   margin: 0 0 2px 0;
 }
+
+/* Typ-spezifische Draft-Type Farben */
+.draft-type-reading .draft-type { color: #5856d6; }
+.draft-type-research .draft-type { color: #007aff; }
+.draft-type-learning .draft-type { color: #ff9500; }
+.draft-type-plan .draft-type { color: #34c759; }
+.draft-type-analysis .draft-type { color: #ff3b30; }
 
 .draft-word-count {
   font-size: 12px;
@@ -691,9 +803,7 @@
   color: var(--text-secondary);
   font-size: 14px;
   text-align: center;
-  padding: 16px;
-  background: var(--surface-light);
-  border-radius: 8px;
+  margin: 0;
 }
 
 @media (max-width: 600px) {

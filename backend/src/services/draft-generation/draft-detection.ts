@@ -2,7 +2,8 @@
  * Draft Detection & Types
  *
  * Shared types for the draft generation system and
- * detection logic for identifying writing tasks.
+ * detection logic for identifying writing tasks and
+ * smart content types (reading, research, learning, plan, analysis).
  */
 
 import { queryContext, AIContext } from '../../utils/database-context';
@@ -35,7 +36,9 @@ export interface GeneratedDraft {
   relatedIdeaIds: string[];
 }
 
-export type DraftType = 'email' | 'article' | 'proposal' | 'document' | 'generic';
+export type DraftType =
+  | 'email' | 'article' | 'proposal' | 'document' | 'generic'
+  | 'research' | 'reading' | 'learning' | 'plan' | 'analysis';
 
 export interface TriggerPattern {
   id: string;
@@ -137,13 +140,43 @@ export async function detectDraftNeed(
 
 /**
  * Einfache Heuristik-basierte Erkennung
+ * Erweitert um Smart Content Typen: research, reading, learning, plan, analysis
  */
 function detectWithHeuristics(text: string): DetectedDraftNeed {
   const patterns: Array<{ pattern: RegExp; type: DraftType; confidence: number }> = [
+    // Writing-Typen (Original)
     { pattern: /e-?mail|mail\s+an|antwort\s+schreib/i, type: 'email', confidence: 0.8 },
     { pattern: /artikel|blogpost|beitrag|text\s+verfass/i, type: 'article', confidence: 0.8 },
     { pattern: /angebot|vorschlag|pitch|präsentation/i, type: 'proposal', confidence: 0.7 },
     { pattern: /dokumentation|anleitung|prozess\s+beschreib/i, type: 'document', confidence: 0.7 },
+
+    // Smart Content: Reading (Lesen, Gedichte, Bücher, Texte)
+    { pattern: /gedicht.*lesen|lese.*gedicht|lies.*gedicht/i, type: 'reading', confidence: 0.9 },
+    { pattern: /buch.*lesen|lese.*buch|lies.*buch/i, type: 'reading', confidence: 0.85 },
+    { pattern: /text.*lesen|lese.*text|artikel.*lesen/i, type: 'reading', confidence: 0.8 },
+    { pattern: /(?:lesen|lektüre|durchlesen|anschauen)\b/i, type: 'reading', confidence: 0.7 },
+
+    // Smart Content: Research (Recherche, Herausfinden, Nachschlagen)
+    { pattern: /recherchier|herausfind|nachschlag|nachforsch/i, type: 'research', confidence: 0.85 },
+    { pattern: /informier.*über|erkundig|in\s+erfahrung\s+bring/i, type: 'research', confidence: 0.8 },
+    { pattern: /such.*nach.*information|finde.*heraus/i, type: 'research', confidence: 0.75 },
+
+    // Smart Content: Learning (Lernen, Verstehen, Üben)
+    { pattern: /lern.*(?:wie|was|warum)|versteh.*(?:wie|was|warum)/i, type: 'learning', confidence: 0.85 },
+    { pattern: /(?:lernen|üben|trainier|studier)\b/i, type: 'learning', confidence: 0.75 },
+    { pattern: /kurs|tutorial|weiterbildung|fortbildung/i, type: 'learning', confidence: 0.7 },
+
+    // Smart Content: Plan (Planen, Organisieren, Vorbereiten)
+    { pattern: /plan.*(?:erstell|mach|aufstell)/i, type: 'plan', confidence: 0.85 },
+    { pattern: /(?:planen|organisier|vorbereiten|struktur)\b/i, type: 'plan', confidence: 0.75 },
+    { pattern: /zeitplan|roadmap|ablauf|checkliste/i, type: 'plan', confidence: 0.8 },
+
+    // Smart Content: Analysis (Analysieren, Vergleichen, Bewerten)
+    { pattern: /analysier|vergleich|bewert|evaluier/i, type: 'analysis', confidence: 0.8 },
+    { pattern: /untersu.*(?:vor|nach)|pro.*contra|(?:stärk|schwäch).*analys/i, type: 'analysis', confidence: 0.75 },
+    { pattern: /(?:gegenüberstellung|einschätzung|audit)\b/i, type: 'analysis', confidence: 0.7 },
+
+    // Fallback: Generic writing
     { pattern: /schreib|verfass|erstell.*text/i, type: 'generic', confidence: 0.5 },
   ];
 
@@ -242,11 +275,21 @@ async function getActivePatterns(context: AIContext): Promise<TriggerPattern[]> 
 
 function getDefaultPatterns(_context: AIContext): TriggerPattern[] {
   return [
+    // Writing patterns (Original)
     { id: '1', draftType: 'email', patternText: 'e-mail schreiben', patternType: 'phrase', isActive: true },
     { id: '2', draftType: 'email', patternText: 'mail an', patternType: 'phrase', isActive: true },
     { id: '3', draftType: 'article', patternText: 'artikel schreiben', patternType: 'phrase', isActive: true },
     { id: '4', draftType: 'article', patternText: 'blogpost', patternType: 'keyword', isActive: true },
     { id: '5', draftType: 'proposal', patternText: 'angebot erstellen', patternType: 'phrase', isActive: true },
     { id: '6', draftType: 'document', patternText: 'dokumentation', patternType: 'keyword', isActive: true },
+    // Smart Content patterns
+    { id: '7', draftType: 'reading', patternText: 'gedicht', patternType: 'keyword', isActive: true },
+    { id: '8', draftType: 'reading', patternText: 'lesen', patternType: 'keyword', isActive: true },
+    { id: '9', draftType: 'research', patternText: 'recherchieren', patternType: 'keyword', isActive: true },
+    { id: '10', draftType: 'research', patternText: 'herausfinden', patternType: 'keyword', isActive: true },
+    { id: '11', draftType: 'learning', patternText: 'lernen', patternType: 'keyword', isActive: true },
+    { id: '12', draftType: 'plan', patternText: 'planen', patternType: 'keyword', isActive: true },
+    { id: '13', draftType: 'analysis', patternText: 'analysieren', patternType: 'keyword', isActive: true },
+    { id: '14', draftType: 'analysis', patternText: 'vergleichen', patternType: 'keyword', isActive: true },
   ];
 }
