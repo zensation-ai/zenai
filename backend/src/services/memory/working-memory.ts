@@ -17,6 +17,7 @@ import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
 import { cosineSimilarity } from '../../utils/embedding';
+import { longTermMemory } from './long-term-memory';
 
 // ===========================================
 // Types & Interfaces
@@ -65,6 +66,20 @@ const CONFIG = {
   SESSION_TIMEOUT_MS: 30 * 60 * 1000,
   /** Maximum sessions in memory */
   MAX_SESSIONS: 100,
+  /** Minimum activation for a slot to be promoted to long-term memory */
+  PROMOTION_MIN_ACTIVATION: 0.3,
+  /** Minimum priority for a slot to be promoted */
+  PROMOTION_MIN_PRIORITY: 0.4,
+  /** Slot types eligible for long-term promotion */
+  PROMOTABLE_TYPES: ['fact', 'goal', 'constraint'] as SlotType[],
+  /** Map SlotType to PersonalizationFact factType */
+  SLOT_TO_FACT_TYPE: {
+    goal: 'goal',
+    fact: 'knowledge',
+    constraint: 'preference',
+    hypothesis: 'knowledge',
+    intermediate_result: 'context',
+  } as Record<SlotType, string>,
 };
 
 // ===========================================
@@ -696,25 +711,91 @@ export class WorkingMemoryService {
   }
 
   /**
-   * Cleanup expired sessions
+   * Cleanup expired sessions with knowledge extraction
+   *
+   * Before deleting expired sessions, promotes high-activation slots
+   * to long-term memory. This ensures valuable working memory insights
+   * survive session expiry (WM → LT Pipeline).
    */
   private cleanupExpiredSessions(): void {
     const now = Date.now();
-    const expiredIds: string[] = [];
+    const expiredStates: WorkingMemoryState[] = [];
 
-    for (const [id, state] of this.states) {
+    for (const [_id, state] of this.states) {
       if (now - state.lastActivity.getTime() > CONFIG.SESSION_TIMEOUT_MS) {
-        expiredIds.push(id);
+        expiredStates.push(state);
       }
     }
 
-    for (const id of expiredIds) {
-      this.states.delete(id);
+    // Extract knowledge before deletion (non-blocking)
+    for (const state of expiredStates) {
+      this.promoteToLongTerm(state).catch(error => {
+        logger.debug('Failed to promote working memory to long-term', {
+          sessionId: state.sessionId,
+          error: error instanceof Error ? error.message : 'Unknown',
+        });
+      });
+      this.states.delete(state.sessionId);
     }
 
-    if (expiredIds.length > 0) {
-      logger.info('Cleaned up expired working memory sessions', { count: expiredIds.length });
+    if (expiredStates.length > 0) {
+      logger.info('Cleaned up expired working memory sessions', { count: expiredStates.length });
     }
+  }
+
+  /**
+   * Promote high-value Working Memory slots to Long-Term Memory
+   *
+   * Called when a session expires. Extracts slots with high activation
+   * and priority as persistent facts so knowledge isn't lost.
+   */
+  private async promoteToLongTerm(state: WorkingMemoryState): Promise<number> {
+    let promoted = 0;
+
+    // Filter slots eligible for promotion
+    const candidates = state.slots.filter(slot =>
+      CONFIG.PROMOTABLE_TYPES.includes(slot.type) &&
+      slot.activation >= CONFIG.PROMOTION_MIN_ACTIVATION &&
+      slot.priority >= CONFIG.PROMOTION_MIN_PRIORITY
+    );
+
+    if (candidates.length === 0) {
+      return 0;
+    }
+
+    for (const slot of candidates) {
+      try {
+        const factType = CONFIG.SLOT_TO_FACT_TYPE[slot.type] || 'knowledge';
+        // Confidence derived from activation * priority (both 0-1)
+        const confidence = Math.min(0.9, slot.activation * slot.priority);
+
+        await longTermMemory.addFact(state.context, {
+          factType: factType as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
+          content: slot.content,
+          confidence,
+          source: 'inferred' as const,
+        });
+
+        promoted++;
+      } catch (error) {
+        logger.debug('Failed to promote slot to long-term memory', {
+          slotId: slot.id,
+          slotType: slot.type,
+          error: error instanceof Error ? error.message : 'Unknown',
+        });
+      }
+    }
+
+    if (promoted > 0) {
+      logger.info('Promoted working memory slots to long-term', {
+        sessionId: state.sessionId,
+        context: state.context,
+        promoted,
+        candidates: candidates.length,
+      });
+    }
+
+    return promoted;
   }
 
   /**

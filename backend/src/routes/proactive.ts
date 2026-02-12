@@ -25,6 +25,7 @@ import {
   processWorkflowBoundary,
   BoundaryTrigger,
 } from '../services/workflow-boundary-detector';
+import { proactiveDigest } from '../services/proactive-digest';
 
 const router = Router();
 
@@ -394,6 +395,65 @@ router.post('/boundary', apiKeyAuth, requireScope('read'), asyncHandler(async (r
   res.json({
     success: true,
     suggestion, // null if no suggestion (frequency limits, quiet hours, etc.)
+  });
+}));
+
+// ===========================================
+// Digest Endpoints (Phase 37)
+// ===========================================
+
+/**
+ * GET /api/proactive/digest/latest
+ * Get the latest unviewed digest for a context
+ */
+router.get('/digest/latest', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const digest = await proactiveDigest.getLatestUnviewed(context as AIContext);
+
+  res.json({
+    success: true,
+    digest, // null if no unviewed digest
+  });
+}));
+
+/**
+ * GET /api/proactive/digest/recent
+ * Get recent digests
+ */
+router.get('/digest/recent', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const limit = toIntBounded(req.query.limit as string, 7, 1, 30);
+  const digests = await proactiveDigest.getRecent(context as AIContext, limit);
+
+  res.json({
+    success: true,
+    digests,
+  });
+}));
+
+/**
+ * POST /api/proactive/digest/:id/viewed
+ * Mark a digest as viewed
+ */
+router.post('/digest/:id/viewed', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  await proactiveDigest.markViewed(context as AIContext, req.params.id);
+
+  res.json({
+    success: true,
+    message: 'Digest marked as viewed',
   });
 }));
 
