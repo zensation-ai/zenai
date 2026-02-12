@@ -111,10 +111,10 @@ const baseConfig = useConnectionString && databaseUrl
 
 const POOL_CONFIG = {
   ...baseConfig,
-  // Connection pool settings - Phase 31 Optimized for Memory Consolidation
-  // Increased pool size for parallel context consolidation (personal + work)
-  max: parseInt(process.env.DB_POOL_SIZE || '30'), // Increased from 20 to 30
-  min: parseInt(process.env.DB_POOL_MIN || '5'),   // Maintain warm connections
+  // Connection pool settings - Phase 36 Optimized for Supabase limits
+  // 5 pools total (4 context + 1 global) share ~60 Supabase connections
+  max: parseInt(process.env.DB_POOL_SIZE || '8'),
+  min: parseInt(process.env.DB_POOL_MIN || '2'),
   idleTimeoutMillis: 60000, // 60s to reduce reconnections
   connectionTimeoutMillis: 10000, // 10s for Supabase latency
   // Statement timeout to prevent long-running queries
@@ -133,7 +133,7 @@ const RETRY_CONFIG = {
   initialDelayMs: 100,
   maxDelayMs: 2000,
   // Error codes that should trigger a retry
-  retryableErrors: ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE', '57P01', '57P03'],
+  retryableErrors: ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE', '57P01', '57P03', '53300'],
 };
 
 /**

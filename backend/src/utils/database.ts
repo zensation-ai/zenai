@@ -37,9 +37,9 @@ function getPoolConfig() {
       password: parsed.password,
       database: parsed.pathname.slice(1),
       ssl: sslConfig,
-      // Pool configuration consistent with database-context.ts (Phase 31 Optimized)
-      max: parseInt(process.env.DB_POOL_SIZE || '30'),
-      min: parseInt(process.env.DB_POOL_MIN || '5'),
+      // Pool configuration consistent with database-context.ts (Phase 36 Optimized)
+      max: parseInt(process.env.DB_POOL_SIZE || '8'),
+      min: parseInt(process.env.DB_POOL_MIN || '2'),
       idleTimeoutMillis: 60000, // 60s to reduce reconnections
       connectionTimeoutMillis: 10000, // 10s for production latency
       statement_timeout: 30000, // 30s to prevent long-running queries
@@ -68,9 +68,9 @@ function getPoolConfig() {
     database: process.env.DB_NAME || 'ai_brain',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'localpass',
-    // Pool size consistent with database-context.ts (Phase 31 Optimized)
-    max: parseInt(process.env.DB_POOL_SIZE || '30'),
-    min: parseInt(process.env.DB_POOL_MIN || '5'),
+    // Pool size consistent with database-context.ts (Phase 36 Optimized)
+    max: parseInt(process.env.DB_POOL_SIZE || '8'),
+    min: parseInt(process.env.DB_POOL_MIN || '2'),
     idleTimeoutMillis: 60000, // 60s to reduce reconnections
     connectionTimeoutMillis: 10000, // 10s for better reliability
     statement_timeout: 30000, // 30s to prevent long-running queries
