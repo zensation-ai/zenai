@@ -94,12 +94,27 @@ const CONFIG = {
   DEFAULT_MIN_STRENGTH: 0.1,
   /** Default retrieval limit */
   DEFAULT_LIMIT: 5,
-  /** Decay rate per day of inactivity */
+  /** Base decay rate per day of inactivity */
   DECAY_RATE: 0.995,
+  /** Minimum decay rate (for very important episodes) */
+  MIN_DECAY_RATE: 0.999,
+  /** Maximum decay rate (for mundane episodes) */
+  MAX_DECAY_RATE: 0.990,
   /** Minimum retrieval count for consolidation */
   MIN_RETRIEVAL_FOR_CONSOLIDATION: 3,
   /** Minimum strength for consolidation */
   MIN_STRENGTH_FOR_CONSOLIDATION: 0.5,
+  /** Age thresholds for temporal hierarchy merging (in days) */
+  TEMPORAL_MERGE: {
+    /** Episodes older than this become weekly summaries */
+    WEEKLY_THRESHOLD_DAYS: 14,
+    /** Episodes older than this become monthly summaries */
+    MONTHLY_THRESHOLD_DAYS: 60,
+    /** Minimum episodes in a time window to trigger merge */
+    MIN_EPISODES_FOR_MERGE: 3,
+    /** Maximum strength for episodes eligible for merge (strong episodes preserved) */
+    MAX_STRENGTH_FOR_MERGE: 0.4,
+  },
 };
 
 // ===========================================
@@ -598,7 +613,168 @@ export class EpisodicMemoryService {
   }
 
   /**
-   * Apply decay to all episodes (daily cron job)
+   * Temporal Hierarchy Merge
+   *
+   * Merges old, weak episodes into summary episodes to reduce storage
+   * while preserving the gist. Like human memory: recent events are
+   * detailed, old events become "that week when I worked on X".
+   *
+   * Hierarchy:
+   * - < 14 days: individual episodes (full detail)
+   * - 14-60 days: weekly summaries
+   * - > 60 days: monthly summaries
+   */
+  async temporalMerge(context: AIContext): Promise<{ weeklyMerged: number; monthlyMerged: number; episodesRemoved: number }> {
+    const result = { weeklyMerged: 0, monthlyMerged: 0, episodesRemoved: 0 };
+
+    try {
+      // 1. Find old, weak episodes eligible for weekly merge
+      const weeklyEligible = await queryContext(
+        context,
+        `SELECT id, trigger, response, emotional_valence, emotional_arousal,
+                created_at, retrieval_strength, context
+         FROM episodic_memories
+         WHERE context = $1
+           AND created_at < NOW() - INTERVAL '${CONFIG.TEMPORAL_MERGE.WEEKLY_THRESHOLD_DAYS} days'
+           AND created_at >= NOW() - INTERVAL '${CONFIG.TEMPORAL_MERGE.MONTHLY_THRESHOLD_DAYS} days'
+           AND retrieval_strength <= $2
+           AND trigger NOT LIKE '[weekly summary]%'
+           AND trigger NOT LIKE '[monthly summary]%'
+         ORDER BY created_at ASC`,
+        [context, CONFIG.TEMPORAL_MERGE.MAX_STRENGTH_FOR_MERGE]
+      );
+
+      // Group by ISO week
+      const weeklyGroups = new Map<string, Array<Record<string, unknown>>>();
+      for (const row of weeklyEligible.rows) {
+        const date = new Date(row.created_at as string);
+        // ISO week key: YYYY-Wnn
+        const jan1 = new Date(date.getFullYear(), 0, 1);
+        const weekNum = Math.ceil(((date.getTime() - jan1.getTime()) / 86400000 + jan1.getDay() + 1) / 7);
+        const weekKey = `${date.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+
+        if (!weeklyGroups.has(weekKey)) weeklyGroups.set(weekKey, []);
+        weeklyGroups.get(weekKey)!.push(row);
+      }
+
+      // Merge each week group
+      for (const [weekKey, episodes] of weeklyGroups) {
+        if (episodes.length < CONFIG.TEMPORAL_MERGE.MIN_EPISODES_FOR_MERGE) continue;
+
+        // Create summary from triggers
+        const triggerSummaries = episodes
+          .map(ep => (ep.trigger as string).substring(0, 80))
+          .join(' | ');
+        const summaryTrigger = `[weekly summary] ${weekKey}: ${triggerSummaries.substring(0, 300)}`;
+
+        // Average emotional values
+        const avgValence = episodes.reduce((sum, ep) => sum + ((ep.emotional_valence as number) || 0), 0) / episodes.length;
+        const avgArousal = episodes.reduce((sum, ep) => sum + ((ep.emotional_arousal as number) || 0), 0) / episodes.length;
+        const maxStrength = Math.max(...episodes.map(ep => (ep.retrieval_strength as number) || 0));
+
+        // Insert summary episode
+        await queryContext(
+          context,
+          `INSERT INTO episodic_memories
+           (id, context, trigger, response, emotional_valence, emotional_arousal,
+            retrieval_strength, retrieval_count, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8)`,
+          [
+            uuidv4(), context, summaryTrigger,
+            `Zusammenfassung von ${episodes.length} Interaktionen in KW ${weekKey}`,
+            avgValence, avgArousal,
+            Math.min(0.6, maxStrength + 0.1), // Slight boost for summaries
+            new Date(episodes[0].created_at as string),
+          ]
+        );
+
+        // Delete merged episodes
+        const idsToDelete: string[] = episodes.map(ep => ep.id as string);
+        await queryContext(
+          context,
+          `DELETE FROM episodic_memories WHERE id = ANY($1)`,
+          [idsToDelete]
+        );
+
+        result.weeklyMerged++;
+        result.episodesRemoved += episodes.length;
+      }
+
+      // 2. Find old weekly summaries eligible for monthly merge
+      const monthlyEligible = await queryContext(
+        context,
+        `SELECT id, trigger, response, emotional_valence, emotional_arousal,
+                created_at, retrieval_strength, context
+         FROM episodic_memories
+         WHERE context = $1
+           AND created_at < NOW() - INTERVAL '${CONFIG.TEMPORAL_MERGE.MONTHLY_THRESHOLD_DAYS} days'
+           AND retrieval_strength <= $2
+           AND trigger NOT LIKE '[monthly summary]%'
+         ORDER BY created_at ASC`,
+        [context, CONFIG.TEMPORAL_MERGE.MAX_STRENGTH_FOR_MERGE]
+      );
+
+      // Group by month
+      const monthlyGroups = new Map<string, Array<Record<string, unknown>>>();
+      for (const row of monthlyEligible.rows) {
+        const date = new Date(row.created_at as string);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        if (!monthlyGroups.has(monthKey)) monthlyGroups.set(monthKey, []);
+        monthlyGroups.get(monthKey)!.push(row);
+      }
+
+      // Merge each month group
+      for (const [monthKey, episodes] of monthlyGroups) {
+        if (episodes.length < CONFIG.TEMPORAL_MERGE.MIN_EPISODES_FOR_MERGE) continue;
+
+        const summaryTrigger = `[monthly summary] ${monthKey}: ${episodes.length} Interaktionen`;
+        const avgValence = episodes.reduce((sum, ep) => sum + ((ep.emotional_valence as number) || 0), 0) / episodes.length;
+        const maxStrength = Math.max(...episodes.map(ep => (ep.retrieval_strength as number) || 0));
+
+        await queryContext(
+          context,
+          `INSERT INTO episodic_memories
+           (id, context, trigger, response, emotional_valence, emotional_arousal,
+            retrieval_strength, retrieval_count, created_at)
+           VALUES ($1, $2, $3, $4, $5, 0.3, $6, 0, $7)`,
+          [
+            uuidv4(), context, summaryTrigger,
+            `Monatszusammenfassung ${monthKey}: ${episodes.length} Interaktionen, Durchschnitts-Stimmung: ${avgValence.toFixed(2)}`,
+            avgValence, Math.min(0.5, maxStrength),
+            new Date(episodes[0].created_at as string),
+          ]
+        );
+
+        const idsToDelete: string[] = episodes.map(ep => ep.id as string);
+        await queryContext(context, `DELETE FROM episodic_memories WHERE id = ANY($1)`, [idsToDelete]);
+
+        result.monthlyMerged++;
+        result.episodesRemoved += episodes.length;
+      }
+
+      if (result.episodesRemoved > 0) {
+        logger.info('Temporal hierarchy merge complete', {
+          context,
+          ...result,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Temporal merge failed', error instanceof Error ? error : undefined, { context });
+      return result;
+    }
+  }
+
+  /**
+   * Apply importance-weighted decay to all episodes (daily cron job)
+   *
+   * Decay rate varies by episode importance:
+   * - High emotional significance (|valence| > 0.5 or arousal > 0.6): slower decay (0.999/day)
+   * - Frequently retrieved (count >= 3): slower decay (0.998/day)
+   * - Mundane episodes: faster decay (0.990/day)
+   * - Default: standard decay (0.995/day)
    */
   async applyDecay(context: AIContext): Promise<number> {
     try {
@@ -616,15 +792,34 @@ export class EpisodicMemoryService {
 
       return affectedCount;
     } catch {
-      // Fallback if function doesn't exist
+      // Importance-weighted decay: different rates based on episode significance
+      // 1. High emotional episodes decay slowest (important memories persist)
+      // 2. Frequently retrieved episodes decay slower (spacing effect)
+      // 3. Mundane episodes decay fastest (natural forgetting)
       const result = await queryContext(
         context,
         `UPDATE episodic_memories
-         SET retrieval_strength = GREATEST(0.05, retrieval_strength * $1)
-         WHERE context = $2
+         SET retrieval_strength = GREATEST(0.05, retrieval_strength * (
+           CASE
+             -- Emotionally significant: near-permanent (identity-forming memories)
+             WHEN ABS(COALESCE(emotional_valence, 0)) > 0.5
+               OR COALESCE(emotional_arousal, 0) > 0.6
+             THEN $1
+             -- Frequently retrieved: slow decay (spacing effect reward)
+             WHEN COALESCE(retrieval_count, 0) >= 3
+             THEN $2
+             -- Mundane episodes: faster forgetting
+             WHEN ABS(COALESCE(emotional_valence, 0)) < 0.2
+               AND COALESCE(retrieval_count, 0) <= 1
+             THEN $3
+             -- Default decay
+             ELSE $4
+           END
+         ))
+         WHERE context = $5
            AND updated_at < NOW() - INTERVAL '1 day'
            AND retrieval_strength > 0.05`,
-        [CONFIG.DECAY_RATE, context]
+        [CONFIG.MIN_DECAY_RATE, 0.998, CONFIG.MAX_DECAY_RATE, CONFIG.DECAY_RATE, context]
       );
 
       return result.rowCount || 0;

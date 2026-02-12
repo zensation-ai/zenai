@@ -969,6 +969,31 @@ export class MemoryCoordinator {
   }
 
   /**
+   * Calculate importance score for three-factor retrieval
+   * Based on source layer priority and content characteristics
+   * Range: 0.3 - 1.0 (never zero to prevent score collapse)
+   */
+  private getImportanceScore(part: ContextPart): number {
+    // Source-based importance (from memory layer priority)
+    const sourceImportance: Record<ContextPart['source'], number> = {
+      working: 1.0,         // Active task = highest importance
+      episodic: 0.8,        // Concrete past experiences
+      short_term: 0.75,     // Current session context
+      long_term: 0.7,       // Persistent knowledge
+      pre_retrieved: 0.55,  // Related documents
+      knowledge_graph: 0.6, // Graph-expanded context
+    };
+    const baseImportance = sourceImportance[part.source] || 0.5;
+
+    // Content length bonus: longer, more detailed content slightly more important
+    const contentLength = part.content.length;
+    const lengthBonus = contentLength > 200 ? 1.1 : contentLength > 50 ? 1.0 : 0.9;
+
+    // Ensure minimum importance (prevent score collapse in multiplicative formula)
+    return Math.max(0.3, Math.min(1.0, baseImportance * lengthBonus));
+  }
+
+  /**
    * Apply type-based relevance boost
    * Some context types are inherently more important
    */
@@ -1032,20 +1057,26 @@ export class MemoryCoordinator {
             // Later parts are slightly less important to avoid context overflow
             const positionPenalty = 1.0; // Could be based on part index if needed
 
-            // Combined relevance calculation
-            // Base relevance (40%) + Semantic similarity (40%) + Type boost (20%)
-            // Then apply decay
-            const baseScore = part.relevance * 0.35 + similarity * 0.45 + typeBoost * 0.2;
-            const decayedScore = baseScore * decay * positionPenalty;
+            // Three-Factor Retrieval Scoring (Stanford Generative Agents pattern)
+            // Multiplicative: recency * importance * relevance
+            // A single low factor properly suppresses the score
+            const recency = decay; // Already exponential time-based decay
+            const importance = this.getImportanceScore(part);
+            const relevance = (similarity * 0.6 + part.relevance * 0.4); // Semantic-weighted relevance
+
+            // Multiplicative three-factor score with type boost
+            const threeFactorScore = recency * importance * relevance * typeBoost;
 
             return {
               ...part,
-              relevance: decayedScore,
+              relevance: threeFactorScore,
               metadata: {
                 originalRelevance: part.relevance,
                 semanticSimilarity: similarity,
                 typeBoost,
                 decay,
+                importance,
+                recency,
               }
             };
           } catch {

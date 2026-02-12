@@ -67,7 +67,10 @@ healthRouter.get('/performance', apiKeyAuth, asyncHandler(async (req: Request, r
     ? await pool.query(query, [url, days])
     : await pool.query(query, [days]);
 
-  res.json({ success: true, timeline: result.rows, period: `${days} days` });
+  // Also include latest scores for the frontend PerformanceMetrics display
+  const latestScores = await lighthouseConnector.getLatestScores();
+
+  res.json({ success: true, performance: latestScores, timeline: result.rows, period: `${days} days` });
 }));
 
 /**

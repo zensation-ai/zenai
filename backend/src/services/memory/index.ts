@@ -64,3 +64,45 @@ export {
   SchedulerStats,
   ConsolidationStats,
 } from './memory-scheduler';
+
+// Implicit feedback tracking (learning from user behavior)
+export {
+  implicitFeedback,
+  ImplicitFeedbackEvent,
+  FeedbackSignal,
+  SessionFeedbackStats,
+} from './implicit-feedback';
+
+// Cross-context insight sharing
+export {
+  crossContextSharing,
+  SharedInsight,
+  SharingResult,
+} from './cross-context-sharing';
+
+// Procedural memory (learned workflows & skills)
+export {
+  proceduralMemory,
+  Procedure,
+  ProcedureStep,
+  ProcedureMatch,
+  ProcedureType,
+} from './procedural-memory';
+
+// Reflection & Metacognition
+export {
+  reflectionEngine,
+  ReflectionInsight,
+  ReflectionType,
+  SessionReflection,
+} from './reflection-engine';
+
+// Memory Governance & GDPR
+export {
+  memoryGovernance,
+  MemoryPrivacySettings,
+  MemoryDeletionResult,
+  MemoryExport,
+  MemoryAuditEntry,
+  MemoryLayer,
+} from './memory-governance';

@@ -14,6 +14,7 @@ interface UseCalendarDataReturn {
   error: string | null;
   refetch: () => void;
   createEvent: (input: CreateEventInput) => Promise<CalendarEvent | null>;
+  updateEvent: (id: string, input: CreateEventInput) => Promise<CalendarEvent | null>;
   deleteEvent: (id: string) => Promise<boolean>;
 }
 
@@ -70,6 +71,23 @@ export function useCalendarData(
     }
   }, [context]);
 
+  const updateEvent = useCallback(async (id: string, input: CreateEventInput): Promise<CalendarEvent | null> => {
+    try {
+      const res = await axios.put(`/api/${context}/calendar/events/${id}`, input);
+      if (res.data.success) {
+        const updated = res.data.data as CalendarEvent;
+        setEvents(prev => prev.map(e => e.id === id ? updated : e).sort(
+          (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+        ));
+        return updated;
+      }
+      return null;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
+      return null;
+    }
+  }, [context]);
+
   const deleteEvent = useCallback(async (id: string): Promise<boolean> => {
     try {
       const res = await axios.delete(`/api/${context}/calendar/events/${id}`);
@@ -83,5 +101,5 @@ export function useCalendarData(
     }
   }, [context]);
 
-  return { events, loading, error, refetch: fetchEvents, createEvent, deleteEvent };
+  return { events, loading, error, refetch: fetchEvents, createEvent, updateEvent, deleteEvent };
 }

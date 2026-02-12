@@ -362,8 +362,8 @@ Details: ${idea.summary}`,
         { signal }
       );
 
-      if (!signal?.aborted && response.data?.response) {
-        setResearchResult(response.data.response);
+      if (!signal?.aborted && response.data?.assistantMessage) {
+        setResearchResult(response.data.assistantMessage.content);
       }
     } catch (error) {
       if (!axios.isCancel(error)) {

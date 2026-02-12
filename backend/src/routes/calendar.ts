@@ -14,7 +14,10 @@ import {
   deleteCalendarEvent,
   getUpcomingEvents,
   searchCalendarEvents,
+  linkMeetingToEvent,
+  getEventMeetingId,
 } from '../services/calendar';
+import { createMeeting, getMeeting, getMeetingNotes, processMeetingNotes } from '../services/meetings';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
@@ -239,5 +242,125 @@ calendarRouter.delete('/:context/calendar/events/:id', apiKeyAuth, requireScope(
   res.json({
     success: true,
     message: 'Event cancelled',
+  });
+}));
+
+// ============================================================
+// Meeting Protocol Integration (Phase 37)
+// ============================================================
+
+/**
+ * POST /api/:context/calendar/events/:id/start-meeting
+ * Create a meeting from a calendar event and link them
+ */
+calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const context = getContextFromParams(req.params.context);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
+  }
+
+  // Get the calendar event
+  const event = await getCalendarEvent(context, id);
+  if (!event) {
+    throw new NotFoundError('Calendar event not found');
+  }
+
+  // Check if already linked
+  if (event.meeting_id) {
+    const existing = await getMeeting(event.meeting_id);
+    if (existing) {
+      return res.json({ success: true, data: existing, message: 'Meeting already linked' });
+    }
+  }
+
+  // Create meeting from event data
+  const meeting = await createMeeting({
+    title: event.title,
+    date: event.start_time,
+    duration_minutes: event.end_time
+      ? Math.round((new Date(event.end_time).getTime() - new Date(event.start_time).getTime()) / 60000)
+      : undefined,
+    participants: event.participants,
+    location: event.location,
+    meeting_type: 'other',
+  });
+
+  // Link meeting to event
+  await linkMeetingToEvent(context, id, meeting.id);
+
+  logger.info('Meeting created from calendar event', {
+    eventId: id, meetingId: meeting.id, context, operation: 'startMeetingFromEvent'
+  });
+
+  res.status(201).json({
+    success: true,
+    data: meeting,
+  });
+}));
+
+/**
+ * GET /api/:context/calendar/events/:id/meeting
+ * Get meeting + notes for a calendar event
+ */
+calendarRouter.get('/:context/calendar/events/:id/meeting', apiKeyAuth, asyncHandler(async (req, res) => {
+  const context = getContextFromParams(req.params.context);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
+  }
+
+  const meetingId = await getEventMeetingId(context, id);
+  if (!meetingId) {
+    return res.json({ success: true, data: null, message: 'No meeting linked to this event' });
+  }
+
+  const [meeting, notes] = await Promise.all([
+    getMeeting(meetingId),
+    getMeetingNotes(meetingId),
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      meeting,
+      notes,
+    },
+  });
+}));
+
+/**
+ * POST /api/:context/calendar/events/:id/meeting/notes
+ * Add transcript/notes to the meeting linked to a calendar event
+ */
+calendarRouter.post('/:context/calendar/events/:id/meeting/notes', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const context = getContextFromParams(req.params.context);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
+  }
+
+  const meetingId = await getEventMeetingId(context, id);
+  if (!meetingId) {
+    throw new NotFoundError('No meeting linked to this event. Start a meeting first.');
+  }
+
+  const { transcript } = req.body;
+  if (!transcript || typeof transcript !== 'string' || transcript.trim().length === 0) {
+    throw new ValidationError('Transcript is required', { transcript: 'must be a non-empty string' });
+  }
+
+  const notes = await processMeetingNotes(meetingId, transcript.trim());
+
+  logger.info('Meeting notes processed from calendar event', {
+    eventId: id, meetingId, context, operation: 'processMeetingNotesFromEvent'
+  });
+
+  res.status(201).json({
+    success: true,
+    data: notes,
   });
 }));

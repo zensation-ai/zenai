@@ -299,7 +299,9 @@ notificationsRouter.get('/notifications/history', apiKeyAuth, asyncHandler(async
     // Try query matching complete_schema_init.sql columns
     const result = await queryContext(
       ctx,
-      `SELECT id, notification_type AS type, title, body, data, sent_at, read_at AS opened_at
+      `SELECT id, notification_type AS type, title, body, data, sent_at,
+              read_at AS opened_at,
+              COALESCE(status, CASE WHEN read_at IS NOT NULL THEN 'opened' WHEN sent_at IS NOT NULL THEN 'sent' ELSE 'pending' END) AS status
        FROM notification_history
        ORDER BY sent_at DESC
        LIMIT $1`,

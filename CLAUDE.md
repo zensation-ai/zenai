@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 31
+## Current Phase: 37
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -133,6 +133,10 @@
 - Enhanced RAG: `backend/src/services/enhanced-rag.ts`
 - Topic Enhancement: `backend/src/services/topic-enhancement.ts`
 - Streaming: `backend/src/services/claude/streaming.ts`
+- Tasks Service: `backend/src/services/tasks.ts`
+- Tasks Routes: `backend/src/routes/tasks.ts`
+- Projects Service: `backend/src/services/projects.ts`
+- Projects Routes: `backend/src/routes/projects.ts`
 
 ### Frontend
 
@@ -145,7 +149,8 @@
 - Ideas Page: `frontend/src/components/IdeasPage.tsx` (4 Tabs)
 - Workshop: `frontend/src/components/AIWorkshop.tsx` (3 Tabs)
 - Insights: `frontend/src/components/InsightsDashboard.tsx` (3 Tabs)
-- Documents: `frontend/src/components/DocumentVaultPage/DocumentVaultPage.tsx` (4 Tabs)
+- Planner: `frontend/src/components/PlannerPage/PlannerPage.tsx` (4 Tabs)
+- Documents: `frontend/src/components/DocumentVaultPage/DocumentVaultPage.tsx` (3 Tabs)
 - Business: `frontend/src/components/BusinessDashboard.tsx` (8 Tabs)
 - Learning: `frontend/src/components/LearningDashboard.tsx`
 - My AI: `frontend/src/components/MyAIPage.tsx` (3 Tabs)
@@ -161,7 +166,41 @@
 - Backend: `backend/src/__tests__/`
 - Frontend: `frontend/src/__tests__/` and `frontend/src/components/__tests__/`
 
-## API Endpoints (Phase 31)
+## API Endpoints (Phase 37)
+
+### Tasks API (Phase 37)
+
+```
+GET    /api/:context/tasks                    - List tasks (filter: project_id, status, priority, due_before, due_after)
+GET    /api/:context/tasks/gantt              - Gantt data (tasks + dependencies + projects)
+GET    /api/:context/tasks/:id                - Single task with dependencies
+POST   /api/:context/tasks                    - Create task
+PUT    /api/:context/tasks/:id                - Update task
+DELETE /api/:context/tasks/:id                - Cancel task
+POST   /api/:context/tasks/reorder            - Kanban reorder (body: { status, taskIds })
+GET    /api/:context/tasks/:id/dependencies   - Get dependencies
+POST   /api/:context/tasks/:id/dependencies   - Add dependency
+DELETE /api/:context/tasks/:id/dependencies/:depId - Remove dependency
+POST   /api/:context/tasks/from-idea/:ideaId  - Convert idea to task
+```
+
+### Projects API (Phase 37)
+
+```
+GET    /api/:context/projects         - List with task counts
+GET    /api/:context/projects/:id     - Project with task summary
+POST   /api/:context/projects         - Create project
+PUT    /api/:context/projects/:id     - Update project
+DELETE /api/:context/projects/:id     - Archive project
+```
+
+### Calendar-Meeting API (Phase 37)
+
+```
+POST /api/:context/calendar/events/:id/start-meeting  - Create meeting + link to event
+GET  /api/:context/calendar/events/:id/meeting         - Get meeting + notes for event
+POST /api/:context/calendar/events/:id/meeting/notes   - Add audio/transcript → AI structures
+```
 
 ### Vision API
 
@@ -342,13 +381,13 @@ cd backend && npm test -- --coverage
 cd frontend && npm test
 ```
 
-### Test-Status (2026-02-11)
+### Test-Status (2026-02-12)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 1914 | 24 | 0 |
-| **Frontend** | 481 | 0 | 0 |
-| **Gesamt** | 2395 | 24 | 0 |
+| **Backend** | 2004+ | 24 | 0 |
+| **Frontend** | 522 | 0 | 0 |
+| **Gesamt** | 2526+ | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -478,6 +517,42 @@ Bisher zeigte die Aufgaben-Detailansicht nur für Schreibaufgaben (E-Mail, Artik
 **Tests:** 25 neue Tests in `draft-detection.test.ts` (Reading 4, Research 3, Learning 3, Plan 4, Analysis 4, Non-Task 3, Edge Cases 5, Completeness 1)
 
 **Keine DB-Migration nötig:** `draft_type` ist VARCHAR(50) ohne CHECK-Constraint.
+
+---
+
+### 2026-02-12: Phase 37 - Planer mit Aufgaben, Projekten, Kanban, Gantt & Meeting-Protokoll
+
+**Kalender-Seite zur zentralen Planungs-Hub erweitert mit 4 Tabs.**
+
+**Neue Features:**
+
+| Feature | Details |
+|---------|---------|
+| **PlannerPage** | Tab-Container: Kalender, Aufgaben, Projekte, Meetings |
+| **KanbanBoard** | 4 Spalten (Backlog/Todo/In Arbeit/Erledigt), HTML5 Drag-and-Drop, Projekt-Filter |
+| **GanttChart** | Custom SVG, 3 Zoom-Stufen (Tag/Woche/Monat), Projekt-Gruppierung, Today-Line |
+| **TaskForm** | Modal fuer Task-Erstellung/-Bearbeitung mit Projekt-Zuweisung |
+| **MeetingProtocol** | VoiceInput + AI-Strukturierung (Zusammenfassung, Entscheidungen, Action Items) |
+| **Tasks CRUD** | Backend-Service + Routes mit Dependencies, Reorder, Idea-Konvertierung |
+| **Projects CRUD** | Backend-Service + Routes mit Task-Counts, Archivierung |
+| **Calendar-Meeting-Link** | Events mit Meetings verknuepfen, Live-Protokollierung |
+
+**Navigation:**
+
+| Aenderung | Details |
+|-----------|---------|
+| Kalender → Planer | Sidebar-Label und Navigation umbenannt |
+| Meetings verschoben | Von Wissensbasis (4 Tabs → 3) zu Planer (neuer Meetings-Tab) |
+| Neue Sub-Routes | `/calendar/tasks`, `/calendar/kanban`, `/calendar/gantt`, `/calendar/meetings` |
+| Breadcrumbs | Erweitert fuer tasks/kanban/gantt Sub-Routes |
+
+**DB Migration:** `phase37_planner.sql` — `projects`, `tasks`, `task_dependencies` in 4 Schemas + `meeting_id` auf `calendar_events`
+
+**Geaenderte Dateien (~33):**
+- Backend: 2 neue Services, 2 neue Routes, 1 SQL Migration, 3 Testdateien, calendar.ts + main.ts modifiziert
+- Frontend: 10 neue Komponenten (PlannerPage/), 3 Testdateien, App.tsx + navigation.ts + Breadcrumbs.tsx + DocumentVaultPage + types modifiziert
+
+**Tests:** 2004+ Backend + 522 Frontend bestanden, Build clean
 
 ---
 

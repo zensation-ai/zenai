@@ -24,6 +24,7 @@ const ProfileDashboard = lazy(() => import('./ProfileDashboard').then(m => ({ de
 const AutomationDashboard = lazy(() => import('./AutomationDashboard').then(m => ({ default: m.AutomationDashboard })));
 const IntegrationsPage = lazy(() => import('./IntegrationsPage').then(m => ({ default: m.IntegrationsPage })));
 const DataManagement = lazy(() => import('./DataManagement').then(m => ({ default: m.DataManagement })));
+const MemoryGovernance = lazy(() => import('./MemoryGovernance').then(m => ({ default: m.MemoryGovernance })));
 
 type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'integrations' | 'data';
 
@@ -241,29 +242,9 @@ export const SettingsDashboard = memo(({
 
       case 'privacy':
         return (
-          <div className="settings-section-content">
-            <div className="settings-group">
-              <h3 className="settings-group-title">Daten</h3>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <span className="settings-item-label">Datenverarbeitung</span>
-                  <span className="settings-item-desc">KI-Analyse deiner Gedanken</span>
-                </div>
-                <ToggleSwitch
-                  checked={settings.dataProcessing}
-                  onChange={(val) => updateSetting('dataProcessing', val)}
-                  label="Datenverarbeitung"
-                />
-              </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <span className="settings-item-label">Speicherort</span>
-                  <span className="settings-item-desc">Supabase (PostgreSQL + pgvector)</span>
-                </div>
-                <span className="settings-item-value">EU</span>
-              </div>
-            </div>
-          </div>
+          <Suspense fallback={<TabLoader />}>
+            <MemoryGovernance context={context} />
+          </Suspense>
         );
 
       case 'automations':

@@ -275,7 +275,25 @@ class EnhancedRAGService {
   }
 
   /**
+   * Contextual Chunk Enrichment (Anthropic pattern)
+   *
+   * Prepends document context before the content/summary to improve
+   * re-ranking accuracy. This reduces retrieval failures by ~49%
+   * according to Anthropic's research.
+   *
+   * Pattern: "[Document: {title}] {summary_or_content}"
+   */
+  private enrichWithContext(title: string, summary: string, content?: string): { enrichedSummary: string; enrichedContent?: string } {
+    const contextPrefix = title ? `[Document: ${title}] ` : '';
+    return {
+      enrichedSummary: `${contextPrefix}${summary}`,
+      enrichedContent: content ? `${contextPrefix}${content}` : undefined,
+    };
+  }
+
+  /**
    * Merge results from HyDE and Agentic RAG
+   * Applies Contextual Chunk Enrichment for better re-ranking
    */
   private mergeAllResults(
     hydeResults: HyDERetrievalResult[],
@@ -288,13 +306,16 @@ class EnhancedRAGService {
     const HYDE_WEIGHT = 0.4;
     const AGENTIC_WEIGHT = 0.6;
 
-    // Add HyDE results
+    // Add HyDE results with contextual enrichment
     for (const result of hydeResults) {
+      const { enrichedSummary, enrichedContent } = this.enrichWithContext(
+        result.title, result.summary, result.content
+      );
       merged.set(result.id, {
         id: result.id,
         title: result.title,
-        summary: result.summary,
-        content: result.content,
+        summary: enrichedSummary,
+        content: enrichedContent,
         score: result.score * HYDE_WEIGHT,
         scores: {
           hyde: result.hydeScore,
@@ -304,7 +325,7 @@ class EnhancedRAGService {
       });
     }
 
-    // Add/merge Agentic results
+    // Add/merge Agentic results with contextual enrichment
     for (const result of agenticResults) {
       const existing = merged.get(result.id);
       if (existing) {
@@ -314,11 +335,14 @@ class EnhancedRAGService {
         existing.scores.agentic = result.score;
         existing.sources.push('agentic');
       } else {
+        const { enrichedSummary, enrichedContent } = this.enrichWithContext(
+          result.title, result.summary, result.content
+        );
         merged.set(result.id, {
           id: result.id,
           title: result.title,
-          summary: result.summary,
-          content: result.content,
+          summary: enrichedSummary,
+          content: enrichedContent,
           score: result.score * AGENTIC_WEIGHT,
           scores: {
             agentic: result.score,
