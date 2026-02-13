@@ -74,7 +74,7 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   // Chat
   'chat': [ROOT, { label: 'Chat', page: 'chat', icon: '💬' }],
 
-  // Denken: Gedanken
+  // Ideen: Gedanken
   'ideas': [ROOT, { label: 'Gedanken', page: 'ideas', icon: '💭' }],
   'incubator': [
     ROOT,
@@ -92,7 +92,7 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Sortieren', page: 'triage', icon: '📋' },
   ],
 
-  // Denken: Werkstatt
+  // Ideen: Werkstatt
   'workshop': [ROOT, { label: 'Werkstatt', page: 'workshop', icon: '🧪' }],
   'ai-workshop': [ROOT, { label: 'Werkstatt', page: 'workshop', icon: '🧪' }],
   'proactive': [
@@ -111,7 +111,7 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Agenten', page: 'agent-teams', icon: '👥' },
   ],
 
-  // Entdecken: Insights
+  // Auswerten: Insights
   'insights': [ROOT, { label: 'Insights', page: 'insights', icon: '📊' }],
   'dashboard': [ROOT, { label: 'Insights', page: 'insights', icon: '📊' }],
   'analytics': [
@@ -130,7 +130,7 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Verbindungen', page: 'knowledge-graph', icon: '🕸️' },
   ],
 
-  // Entdecken: Wissensbasis
+  // Organisieren: Wissensbasis
   'documents': [ROOT, { label: 'Wissensbasis', page: 'documents', icon: '📚' }],
   'canvas': [
     ROOT,
@@ -148,7 +148,7 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Meetings', page: 'meetings', icon: '📅' },
   ],
 
-  // Entdecken: Planer
+  // Organisieren: Planer
   'calendar': [ROOT, { label: 'Planer', page: 'calendar', icon: '📋' }],
   'tasks': [
     ROOT,
@@ -166,10 +166,10 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Gantt', page: 'gantt', icon: '📈' },
   ],
 
-  // Entdecken: Business
+  // Auswerten: Business
   'business': [ROOT, { label: 'Business', page: 'business', icon: '💼' }],
 
-  // Wachsen: Lernen
+  // KI & Lernen: Lernen
   'learning': [ROOT, { label: 'Lernen', page: 'learning', icon: '📖' }],
   'learning-tasks': [
     ROOT,
@@ -177,7 +177,7 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Aufgaben', page: 'learning-tasks', icon: '✅' },
   ],
 
-  // Wachsen: Meine KI
+  // KI & Lernen: Meine KI
   'my-ai': [ROOT, { label: 'Meine KI', page: 'my-ai', icon: '🤖' }],
   'personalization': [
     ROOT,

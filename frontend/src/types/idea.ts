@@ -35,10 +35,11 @@ export interface ApiStatus {
 /**
  * Page Types - Navigation Reorganisation 2026
  *
- * 3 Sektionen:
- * - Denken: ideas (Aktiv + Inkubator + Archiv + Sortieren), workshop (Proaktiv + Evolution + Agenten)
- * - Entdecken: insights (Analytics + Digest + Verbindungen), documents (Dokumente + Editor + Medien + Meetings), business
- * - Wachsen: learning, my-ai (Personalisierung + KI-Wissen + Sprach-Chat)
+ * 4 Sektionen:
+ * - Ideen: ideas (Aktiv + Inkubator + Archiv + Sortieren), workshop (Proaktiv + Evolution + Agenten)
+ * - Organisieren: calendar (Kalender + Aufgaben + Kanban + Gantt), documents (Dokumente + Editor + Medien)
+ * - Auswerten: insights (Analytics + Digest + Verbindungen), business
+ * - KI & Lernen: my-ai (Personalisierung + KI-Wissen + Sprach-Chat), learning
  *
  * Chat: chat (eigene Seite + Floating-Bubble)
  * Footer: settings (Profil + Allgemein + KI + Datenschutz + Automationen + Integrationen + Daten), notifications
@@ -49,20 +50,21 @@ export type Page =
   | 'home'
   // Chat (eigene Seite)
   | 'chat'
-  // Denken
+  // Ideen
   | 'ideas'
   | 'workshop'
-  // Entdecken
-  | 'insights'
-  | 'documents'
-  | 'business'
+  // Organisieren
   | 'calendar'
   | 'tasks'
   | 'kanban'
   | 'gantt'
-  // Wachsen
-  | 'learning'
+  | 'documents'
+  // Auswerten
+  | 'insights'
+  | 'business'
+  // KI & Lernen
   | 'my-ai'
+  | 'learning'
   // Footer
   | 'notifications'
   | 'settings'

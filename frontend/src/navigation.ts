@@ -5,8 +5,8 @@
  * Used by Sidebar, MobileSidebarDrawer, MobileBottomBar, and CommandPalette.
  *
  * Navigation Reorganisation 2026:
- * 3 Sektionen (Denken, Entdecken, Wachsen) + Chat + Footer
- * Aufgabenorientiert statt technisch gruppiert.
+ * 4 Sektionen (Ideen, Organisieren, Auswerten, KI & Lernen) + Chat + Footer
+ * Funktional gruppiert statt abstrakt.
  */
 
 import type { Page } from './types';
@@ -42,16 +42,17 @@ export const NAV_CHAT_ITEM: NavItem = {
 /**
  * Main navigation sections displayed in sidebar
  *
- * 3 aufgabenorientierte Sektionen:
- * - Denken: Gedanken erfassen & entwickeln, KI-Werkstatt
- * - Entdecken: Insights, Wissensbasis, Business
- * - Wachsen: Lernen, Meine KI personalisieren
+ * 4 funktionale Sektionen:
+ * - Ideen: Gedanken erfassen & entwickeln, KI-Werkstatt
+ * - Organisieren: Planer, Wissensbasis
+ * - Auswerten: Insights, Business
+ * - KI & Lernen: Meine KI personalisieren, Lernen
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
-    id: 'denken',
-    label: 'Denken',
-    icon: '🧠',
+    id: 'ideen',
+    label: 'Ideen',
+    icon: '💡',
     items: [
       {
         page: 'ideas',
@@ -70,8 +71,29 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    id: 'entdecken',
-    label: 'Entdecken',
+    id: 'organisieren',
+    label: 'Organisieren',
+    icon: '📋',
+    items: [
+      {
+        page: 'calendar',
+        icon: '📋',
+        label: 'Planer',
+        description: 'Kalender, Aufgaben & Projekte',
+        subPages: ['tasks', 'kanban', 'gantt'],
+      },
+      {
+        page: 'documents',
+        icon: '📚',
+        label: 'Wissensbasis',
+        description: 'Dokumente, Notizen & Medien',
+        subPages: ['canvas', 'media'],
+      },
+    ],
+  },
+  {
+    id: 'auswerten',
+    label: 'Auswerten',
     icon: '📊',
     items: [
       {
@@ -82,20 +104,6 @@ export const NAV_SECTIONS: NavSection[] = [
         subPages: ['analytics', 'digest', 'knowledge-graph'],
       },
       {
-        page: 'documents',
-        icon: '📚',
-        label: 'Wissensbasis',
-        description: 'Dokumente, Notizen & Medien',
-        subPages: ['canvas', 'media'],
-      },
-      {
-        page: 'calendar',
-        icon: '\uD83D\uDCCB',
-        label: 'Planer',
-        description: 'Kalender, Aufgaben & Projekte',
-        subPages: ['tasks', 'kanban', 'gantt'],
-      },
-      {
         page: 'business',
         icon: '💼',
         label: 'Business',
@@ -104,23 +112,23 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    id: 'wachsen',
-    label: 'Wachsen',
-    icon: '🌱',
+    id: 'ki-lernen',
+    label: 'KI & Lernen',
+    icon: '🤖',
     items: [
-      {
-        page: 'learning',
-        icon: '📖',
-        label: 'Lernen',
-        description: 'Lernziele setzen & verfolgen',
-        subPages: ['learning-tasks'],
-      },
       {
         page: 'my-ai',
         icon: '🤖',
         label: 'Meine KI',
         description: 'KI auf dich abstimmen',
         subPages: ['voice-chat'],
+      },
+      {
+        page: 'learning',
+        icon: '📖',
+        label: 'Lernen',
+        description: 'Lernziele setzen & verfolgen',
+        subPages: ['learning-tasks'],
       },
     ],
   },

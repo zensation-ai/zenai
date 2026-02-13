@@ -27,7 +27,7 @@ const BOTTOM_TABS: BottomTab[] = [
   { id: 'home', icon: '🏠', label: 'Home', page: 'home' },
   { id: 'ideas', icon: '💡', label: 'Gedanken', page: 'ideas' },
   { id: 'chat', icon: '💬', label: 'Chat', page: 'chat' },
-  { id: 'insights', icon: '📊', label: 'Entdecken', page: 'insights' },
+  { id: 'insights', icon: '📊', label: 'Insights', page: 'insights' },
   { id: 'more', icon: '☰', label: 'Mehr', isSpecial: 'more' },
 ];
 

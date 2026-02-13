@@ -501,7 +501,7 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
       action: () => navigateTo('settings'),
     },
 
-    // === Denken ===
+    // === Ideen ===
     {
       id: 'incubator',
       label: 'Inkubator',
@@ -553,7 +553,7 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
       action: () => navigateTo('agent-teams'),
     },
 
-    // === Wachsen ===
+    // === KI & Lernen ===
     {
       id: 'learning',
       label: 'Lernen',
