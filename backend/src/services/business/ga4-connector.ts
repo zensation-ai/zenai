@@ -66,8 +66,16 @@ class GA4Connector implements BusinessConnector {
   }
 
   async collectMetrics(): Promise<Record<string, unknown>> {
-    const metrics = await this.getTrafficMetrics('7d');
-    return metrics as unknown as Record<string, unknown>;
+    try {
+      const metrics = await this.getTrafficMetrics('7d');
+      return metrics as unknown as Record<string, unknown>;
+    } catch (error) {
+      logger.warn('[GA4Connector] Failed to collect metrics', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Return empty metrics instead of throwing
+      return {};
+    }
   }
 
   // ============================================

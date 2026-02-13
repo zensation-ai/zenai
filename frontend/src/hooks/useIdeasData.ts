@@ -150,7 +150,7 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
 
   const loadNotificationCount = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await axios.get(`/api/notifications/history?context=${context}&limit=1`, { signal });
+      const response = await axios.get(`/api/${context}/notifications/history?limit=1`, { signal });
       const total = response.data?.total ?? response.data?.notifications?.length ?? 0;
       setNotificationCount(total);
     } catch {

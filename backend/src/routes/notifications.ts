@@ -50,6 +50,9 @@ interface RegisterTokenRequest {
 /**
  * POST /api/notifications/register
  * Register a push notification token
+ *
+ * @deprecated Use POST /api/:context/notifications/device instead
+ * Legacy route for backwards compatibility - infers context from header/query
  */
 notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
@@ -106,6 +109,9 @@ notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(asy
 /**
  * DELETE /api/notifications/unregister
  * Unregister a push notification token
+ *
+ * @deprecated Use DELETE /api/:context/notifications/device instead
+ * Legacy route for backwards compatibility - infers context from header/query
  */
 notificationsRouter.delete('/notifications/unregister', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
@@ -140,6 +146,9 @@ interface NotificationPreferences {
 /**
  * GET /api/notifications/preferences
  * Get notification preferences
+ *
+ * @deprecated Use GET /api/:context/notifications/preferences/:deviceId instead
+ * Legacy route for backwards compatibility - infers context from header/query
  */
 notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
@@ -179,6 +188,9 @@ notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(a
 /**
  * PUT /api/notifications/preferences
  * Update notification preferences
+ *
+ * @deprecated Use PUT /api/:context/notifications/preferences/:deviceId instead
+ * Legacy route for backwards compatibility - infers context from header/query
  */
 notificationsRouter.put('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
@@ -233,6 +245,9 @@ interface NotificationPayload {
 /**
  * POST /api/notifications/send (internal use / testing)
  * Trigger a notification
+ *
+ * @deprecated Use POST /api/:context/notifications/push instead
+ * Legacy route for backwards compatibility - infers context from header/query
  */
 notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
@@ -286,11 +301,18 @@ notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'
 }));
 
 /**
- * GET /api/notifications/history
- * Get notification history
+ * GET /api/:context/notifications/history
+ * Get notification history (context-aware)
  */
-notificationsRouter.get('/notifications/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const ctx = getContext(req);
+notificationsRouter.get('/:context/notifications/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const { context } = req.params;
+
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const ctx = context as AIContext;
+
   // Validate and constrain limit to prevent excessive queries
   const parsedLimit = parseInt(req.query.limit as string, 10);
   const limit = Number.isNaN(parsedLimit) ? 20 : Math.min(Math.max(parsedLimit, 1), 100);

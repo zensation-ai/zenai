@@ -48,8 +48,16 @@ class StripeConnector implements BusinessConnector {
   }
 
   async collectMetrics(): Promise<Record<string, unknown>> {
-    const metrics = await this.getMetrics();
-    return metrics as unknown as Record<string, unknown>;
+    try {
+      const metrics = await this.getMetrics();
+      return metrics as unknown as Record<string, unknown>;
+    } catch (error) {
+      logger.warn('[StripeConnector] Failed to collect metrics', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Return empty metrics instead of throwing
+      return {};
+    }
   }
 
   // ============================================

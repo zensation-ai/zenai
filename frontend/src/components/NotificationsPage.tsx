@@ -97,7 +97,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       const [statusRes, devicesRes, historyRes, statsRes] = await Promise.all([
         axios.get(`/api/${context}/notifications/status`).catch(() => ({ data: { configured: false } })),
         axios.get(`/api/${context}/notifications/devices`).catch(() => ({ data: { devices: [] } })),
-        axios.get(`/api/notifications/history?context=${context}&limit=50`).catch(() => ({ data: { notifications: [] } })),
+        axios.get(`/api/${context}/notifications/history?limit=50`).catch(() => ({ data: { notifications: [] } })),
         axios.get(`/api/${context}/notifications/stats`).catch(() => ({ data: null })),
       ]);
 
