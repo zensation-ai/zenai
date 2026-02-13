@@ -1171,3 +1171,150 @@ ideasContextRouter.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('
 
   res.json({ success: true, restoredId: id, idea: result.rows[0] });
 }));
+
+/**
+ * GET /api/:context/ideas
+ * List all ideas with pagination - context-aware version
+ */
+ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+
+  const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
+  if (!paginationResult.success) {
+    throw new ValidationError('Invalid pagination');
+  }
+  const { limit, offset } = paginationResult.data ?? { limit: 20, offset: 0 };
+
+  const typeResult = validateIdeaType(req.query.type);
+  if (!typeResult.success) {
+    throw new ValidationError('Invalid type filter');
+  }
+
+  const categoryResult = validateCategory(req.query.category);
+  if (!categoryResult.success) {
+    throw new ValidationError('Invalid category filter');
+  }
+
+  const priorityResult = validatePriority(req.query.priority);
+  if (!priorityResult.success) {
+    throw new ValidationError('Invalid priority filter');
+  }
+
+  let whereClause = '';
+  const params: (string | number | boolean)[] = [];
+  let paramIndex = 1;
+
+  if (typeResult.data) {
+    whereClause += ` AND type = $${paramIndex++}`;
+    params.push(typeResult.data);
+  }
+  if (categoryResult.data) {
+    whereClause += ` AND category = $${paramIndex++}`;
+    params.push(categoryResult.data);
+  }
+  if (priorityResult.data) {
+    whereClause += ` AND priority = $${paramIndex++}`;
+    params.push(priorityResult.data);
+  }
+
+  const result = await queryContext(
+    ctx,
+    `SELECT id, title, type, category, priority, summary,
+            next_steps, context_needed, keywords, context, created_at, updated_at
+     FROM ideas
+     WHERE is_archived = false ${whereClause}
+     ORDER BY created_at DESC
+     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    [...params, limit, offset]
+  );
+
+  const countResult = await queryContext(
+    ctx,
+    `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false ${whereClause}`,
+    params
+  );
+
+  res.json({
+    success: true,
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
+    pagination: {
+      total: parseInt(countResult.rows[0].total),
+      limit,
+      offset,
+      hasMore: offset + limit < parseInt(countResult.rows[0].total),
+    },
+  });
+}));
+
+/**
+ * GET /api/:context/ideas/archived
+ * List archived ideas - context-aware version
+ */
+ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+
+  const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
+  if (!paginationResult.success) {
+    throw new ValidationError('Invalid pagination');
+  }
+  const pagination = paginationResult.data ?? { limit: 20, offset: 0 };
+
+  const result = await queryContext(
+    ctx,
+    `SELECT id, title, type, category, priority, summary,
+            next_steps, context_needed, keywords, context, created_at, updated_at
+     FROM ideas
+     WHERE is_archived = true
+     ORDER BY updated_at DESC
+     LIMIT $1 OFFSET $2`,
+    [pagination.limit, pagination.offset]
+  );
+
+  const countResult = await queryContext(
+    ctx,
+    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true'
+  );
+
+  res.json({
+    success: true,
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
+    pagination: {
+      total: parseInt(countResult.rows[0].total),
+      limit: pagination.limit,
+      offset: pagination.offset,
+      hasMore: pagination.offset + pagination.limit < parseInt(countResult.rows[0].total),
+    },
+  });
+}));
+
+/**
+ * DELETE /api/:context/ideas/:id
+ * Delete an idea - context-aware version
+ */
+ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid idea ID format');
+  }
+
+  const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 RETURNING id', [id]);
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  trackInteraction({
+    idea_id: id,
+    interaction_type: 'archive',
+    metadata: { action: 'delete', context: ctx },
+  }).catch((err) => logger.debug('Background delete tracking skipped', { error: err.message }));
+
+  triggerWebhook('idea.deleted', {
+    id,
+    context: ctx,
+  }).catch((err) => logger.debug('Background webhook skipped', { error: err.message }));
+
+  res.json({ success: true, deletedId: id });
+}));

@@ -72,6 +72,12 @@ tasksRouter.post('/:context/tasks/reorder', apiKeyAuth, requireScope('write'), a
     throw new ValidationError('taskIds must be a non-empty array');
   }
 
+  for (const tid of taskIds) {
+    if (!isValidUUID(tid)) {
+      throw new ValidationError('All taskIds must be valid UUIDs');
+    }
+  }
+
   await reorderTasks(context, status, taskIds);
 
   res.json({

@@ -71,7 +71,7 @@ export type Page =
   // Legacy-Seiten (intern weitergeleitet auf neue Routen)
   | 'incubator'        // → /ideas/incubator
   | 'ai-workshop'      // → /workshop
-  | 'meetings'         // → /documents/meetings
+  | 'meetings'         // → /calendar/meetings
   | 'automations'      // → /settings/automations
   | 'integrations'     // → /settings/integrations
   | 'export'           // → /settings/data

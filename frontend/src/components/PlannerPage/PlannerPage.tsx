@@ -31,7 +31,7 @@ const TaskForm = lazy(() =>
 );
 
 interface PlannerPageProps {
-  context: string;
+  context: 'personal' | 'work' | 'learning' | 'creative';
   initialTab?: PlannerTab;
 }
 
