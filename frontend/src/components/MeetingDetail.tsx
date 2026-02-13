@@ -140,8 +140,11 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('de-DE', {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '–';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '–';
+    return date.toLocaleDateString('de-DE', {
       weekday: 'long',
       day: '2-digit',
       month: 'long',

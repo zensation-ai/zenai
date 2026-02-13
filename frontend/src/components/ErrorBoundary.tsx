@@ -65,8 +65,8 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="error-boundary-message">
               Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.
             </p>
-            {this.state.error && (
-              <pre className="error-boundary-details" role="alert" style={{ fontSize: '11px', maxHeight: '200px', overflow: 'auto', textAlign: 'left', background: '#1a1a2e', color: '#e94560', padding: '12px', borderRadius: '8px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {import.meta.env.DEV && this.state.error && (
+              <pre className="error-boundary-details" role="alert">
                 {this.state.error.message}
                 {'\n\n'}
                 {this.state.error.stack}
