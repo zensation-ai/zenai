@@ -5,9 +5,8 @@
 -- ===========================================
 -- Personal Schema
 -- ===========================================
-SET search_path TO personal_ai, public;
 
-CREATE TABLE IF NOT EXISTS episodic_memories (
+CREATE TABLE IF NOT EXISTS personal.episodic_memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type VARCHAR(50) NOT NULL,
   content TEXT NOT NULL,
@@ -20,16 +19,18 @@ CREATE TABLE IF NOT EXISTS episodic_memories (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_created_at ON episodic_memories(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_retrieval_strength ON episodic_memories(retrieval_strength DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_embedding ON episodic_memories USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_personal_episodic_created_at
+  ON personal.episodic_memories(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_personal_episodic_retrieval
+  ON personal.episodic_memories(retrieval_strength DESC);
+CREATE INDEX IF NOT EXISTS idx_personal_episodic_embedding
+  ON personal.episodic_memories USING ivfflat (embedding vector_cosine_ops);
 
 -- ===========================================
 -- Work Schema
 -- ===========================================
-SET search_path TO work_ai, public;
 
-CREATE TABLE IF NOT EXISTS episodic_memories (
+CREATE TABLE IF NOT EXISTS work.episodic_memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type VARCHAR(50) NOT NULL,
   content TEXT NOT NULL,
@@ -42,16 +43,18 @@ CREATE TABLE IF NOT EXISTS episodic_memories (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_created_at ON episodic_memories(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_retrieval_strength ON episodic_memories(retrieval_strength DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_embedding ON episodic_memories USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_work_episodic_created_at
+  ON work.episodic_memories(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_work_episodic_retrieval
+  ON work.episodic_memories(retrieval_strength DESC);
+CREATE INDEX IF NOT EXISTS idx_work_episodic_embedding
+  ON work.episodic_memories USING ivfflat (embedding vector_cosine_ops);
 
 -- ===========================================
 -- Learning Schema
 -- ===========================================
-SET search_path TO learning_ai, public;
 
-CREATE TABLE IF NOT EXISTS episodic_memories (
+CREATE TABLE IF NOT EXISTS learning.episodic_memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type VARCHAR(50) NOT NULL,
   content TEXT NOT NULL,
@@ -64,16 +67,18 @@ CREATE TABLE IF NOT EXISTS episodic_memories (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_created_at ON episodic_memories(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_retrieval_strength ON episodic_memories(retrieval_strength DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_embedding ON episodic_memories USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_learning_episodic_created_at
+  ON learning.episodic_memories(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_learning_episodic_retrieval
+  ON learning.episodic_memories(retrieval_strength DESC);
+CREATE INDEX IF NOT EXISTS idx_learning_episodic_embedding
+  ON learning.episodic_memories USING ivfflat (embedding vector_cosine_ops);
 
 -- ===========================================
 -- Creative Schema
 -- ===========================================
-SET search_path TO creative_ai, public;
 
-CREATE TABLE IF NOT EXISTS episodic_memories (
+CREATE TABLE IF NOT EXISTS creative.episodic_memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type VARCHAR(50) NOT NULL,
   content TEXT NOT NULL,
@@ -86,9 +91,9 @@ CREATE TABLE IF NOT EXISTS episodic_memories (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_created_at ON episodic_memories(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_retrieval_strength ON episodic_memories(retrieval_strength DESC);
-CREATE INDEX IF NOT EXISTS idx_episodic_memories_embedding ON episodic_memories USING ivfflat (embedding vector_cosine_ops);
-
--- Reset to default search path
-SET search_path TO public;
+CREATE INDEX IF NOT EXISTS idx_creative_episodic_created_at
+  ON creative.episodic_memories(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_creative_episodic_retrieval
+  ON creative.episodic_memories(retrieval_strength DESC);
+CREATE INDEX IF NOT EXISTS idx_creative_episodic_embedding
+  ON creative.episodic_memories USING ivfflat (embedding vector_cosine_ops);
