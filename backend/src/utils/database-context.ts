@@ -111,10 +111,12 @@ const baseConfig = useConnectionString && databaseUrl
 
 const POOL_CONFIG = {
   ...baseConfig,
-  // Connection pool settings - Phase 36 Optimized for Supabase limits
-  // 5 pools total (4 context + 1 global) share ~60 Supabase connections
-  max: parseInt(process.env.DB_POOL_SIZE || '8'),
-  min: parseInt(process.env.DB_POOL_MIN || '2'),
+  // Connection pool settings - Optimized for Supabase connection limits
+  // CRITICAL: Supabase Free Tier has ~15-20 max connections
+  // We use 1 shared pool for all contexts (schema-isolated via search_path)
+  // instead of 4 separate pools to stay within limits
+  max: parseInt(process.env.DB_POOL_SIZE || '3'), // Reduced from 8 to 3
+  min: parseInt(process.env.DB_POOL_MIN || '1'), // Reduced from 2 to 1
   idleTimeoutMillis: 60000, // 60s to reduce reconnections
   connectionTimeoutMillis: 10000, // 10s for Supabase latency
   // Statement timeout to prevent long-running queries
@@ -155,18 +157,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// For Railway/Supabase (single database), all contexts use the same connection config
-// but are separated by PostgreSQL schemas. For local dev, separate databases can be used.
-const sharedPoolConfig = useConnectionString
-  ? { ...POOL_CONFIG }
-  : { ...POOL_CONFIG, database: 'personal_ai' };
+// CRITICAL FIX: Use single shared pool for all contexts to avoid Supabase connection limit
+// Supabase Free Tier: ~15-20 max connections
+// Previous approach (4 separate pools × 8 max = 32 connections) exceeded limit
+// New approach: 1 shared pool × 3 max = 3 connections, schema-isolated via search_path
+const sharedPool = new Pool({ ...POOL_CONFIG });
 
-// Connection pools for each context
+// Connection pools for each context - all point to the same shared pool
 const pools: Record<AIContext, Pool> = {
-  personal: new Pool(useConnectionString ? { ...POOL_CONFIG } : { ...POOL_CONFIG, database: 'personal_ai' }),
-  work: new Pool(useConnectionString ? { ...POOL_CONFIG } : { ...POOL_CONFIG, database: 'work_ai' }),
-  learning: new Pool(sharedPoolConfig),
-  creative: new Pool(sharedPoolConfig),
+  personal: sharedPool,
+  work: sharedPool,
+  learning: sharedPool,
+  creative: sharedPool,
 };
 
 // Track pool stats for monitoring
@@ -177,22 +179,18 @@ const poolStats: Record<AIContext, { queries: number; errors: number; slowQuerie
   creative: { queries: 0, errors: 0, slowQueries: 0 },
 };
 
-// Log pool errors with detailed PostgreSQL diagnostics
-(VALID_CONTEXTS).forEach((ctx) => {
-  pools[ctx].on('error', (err) => {
-    const pgError = err as { code?: string; detail?: string; hint?: string; severity?: string; constraint?: string };
-    logger.error(`Pool error [${ctx}]`, err, {
-      context: ctx,
-      operation: 'poolError',
-      pgCode: pgError.code,
-      pgDetail: pgError.detail,
-      pgHint: pgError.hint,
-      pgSeverity: pgError.severity,
-      pgConstraint: pgError.constraint,
-      poolSize: POOL_CONFIG.max,
-      errorMessage: err.message,
-    });
-    poolStats[ctx].errors++;
+// Log pool errors with detailed PostgreSQL diagnostics (register once for shared pool)
+sharedPool.on('error', (err) => {
+  const pgError = err as { code?: string; detail?: string; hint?: string; severity?: string; constraint?: string };
+  logger.error('Pool error [shared]', err, {
+    operation: 'poolError',
+    pgCode: pgError.code,
+    pgDetail: pgError.detail,
+    pgHint: pgError.hint,
+    pgSeverity: pgError.severity,
+    pgConstraint: pgError.constraint,
+    poolSize: POOL_CONFIG.max,
+    errorMessage: err.message,
   });
 });
 
@@ -349,14 +347,12 @@ export function isValidContext(context: string): context is AIContext {
  * Gracefully close all database connections
  */
 export async function closeAllPools(): Promise<void> {
-  logger.info('Closing database connections...', { operation: 'shutdown' });
+  logger.info('Closing database connection (shared pool)...', { operation: 'shutdown' });
   try {
-    await Promise.all(
-      VALID_CONTEXTS.map(ctx => pools[ctx].end())
-    );
-    logger.info('All database pools closed', { operation: 'shutdown' });
+    await sharedPool.end();
+    logger.info('Database pool closed', { operation: 'shutdown' });
   } catch (error) {
-    logger.error('Error closing database pools', error instanceof Error ? error : undefined, { operation: 'shutdown' });
+    logger.error('Error closing database pool', error instanceof Error ? error : undefined, { operation: 'shutdown' });
     throw error;
   }
 }
@@ -405,14 +401,12 @@ export function setupGracefulShutdown(): void {
 
 /**
  * Ensure all context schemas exist in the database.
- * Uses the personal pool directly (all pools share the same DATABASE_URL).
- * Safe to call multiple times (CREATE SCHEMA IF NOT EXISTS).
+ * Uses the shared pool. Safe to call multiple times (CREATE SCHEMA IF NOT EXISTS).
  */
 export async function ensureSchemas(): Promise<void> {
-  const pool = pools.personal;
   for (const ctx of VALID_CONTEXTS) {
     try {
-      await pool.query(`CREATE SCHEMA IF NOT EXISTS ${ctx}`);
+      await sharedPool.query(`CREATE SCHEMA IF NOT EXISTS ${ctx}`);
       logger.debug(`Schema ${ctx} ensured`, { operation: 'ensureSchemas' });
     } catch (error) {
       // Non-fatal: schema likely already exists or DDL is restricted (e.g. Supabase)
@@ -460,6 +454,7 @@ export async function testConnections(): Promise<Record<AIContext, boolean>> {
 
 /**
  * Get pool statistics for monitoring
+ * Note: All contexts share the same pool, so pool metrics are identical
  */
 export function getPoolStats(): Record<AIContext, {
   queries: number;
@@ -470,12 +465,15 @@ export function getPoolStats(): Record<AIContext, {
   waitingCount: number;
 }> {
   const stats = {} as Record<AIContext, { queries: number; errors: number; slowQueries: number; poolSize: number; idleCount: number; waitingCount: number }>;
+  const sharedPoolMetrics = {
+    poolSize: sharedPool.totalCount,
+    idleCount: sharedPool.idleCount,
+    waitingCount: sharedPool.waitingCount,
+  };
   for (const ctx of VALID_CONTEXTS) {
     stats[ctx] = {
       ...poolStats[ctx],
-      poolSize: pools[ctx].totalCount,
-      idleCount: pools[ctx].idleCount,
-      waitingCount: pools[ctx].waitingCount,
+      ...sharedPoolMetrics, // All contexts share the same pool
     };
   }
   return stats;
@@ -512,9 +510,8 @@ export function startConnectionHealthCheck(intervalMs: number = 5 * 60 * 1000): 
   healthCheckInterval = setInterval(async () => {
     try {
       const start = Date.now();
-      await Promise.all(
-        VALID_CONTEXTS.map(ctx => pools[ctx].query('SELECT 1'))
-      );
+      // Test shared pool once (all contexts use the same pool)
+      await sharedPool.query('SELECT 1');
       const duration = Date.now() - start;
 
       // Reset failure counter on success
@@ -657,8 +654,8 @@ export function isPgVectorAvailable(): boolean {
 }
 
 // Backward compatibility: Keep the old single pool export
-// This points to personal_ai by default for existing code
-export const pool = pools.personal;
+// Now points to shared pool (all contexts use the same pool)
+export const pool = sharedPool;
 
 // Keep the old query function for existing code (uses personal context)
 export async function query(text: string, params?: QueryParam[]): Promise<QueryResult> {
@@ -671,7 +668,7 @@ export async function query(text: string, params?: QueryParam[]): Promise<QueryR
  * that are NOT context-specific and should always be in the public schema.
  */
 export async function queryPublic(text: string, params?: QueryParam[]): Promise<QueryResult> {
-  const client = await pools.personal.connect();
+  const client = await sharedPool.connect();
   try {
     await client.query('SET search_path TO public');
     const result = await client.query(text, params);
