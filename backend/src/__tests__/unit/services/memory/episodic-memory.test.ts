@@ -285,10 +285,14 @@ describe('Episodic Memory Service', () => {
       expect(stats.recentEpisodes).toBe(25);
     });
 
-    it('should throw on database error', async () => {
+    it('should return zero stats on database error (graceful degradation)', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      await expect(service.getStats(testContext)).rejects.toThrow('DB error');
+      const stats = await service.getStats(testContext);
+      expect(stats.totalEpisodes).toBe(0);
+      expect(stats.avgRetrievalStrength).toBe(0);
+      expect(stats.strongEpisodes).toBe(0);
+      expect(stats.recentEpisodes).toBe(0);
     });
   });
 
