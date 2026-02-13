@@ -9,7 +9,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { query } from '../utils/database';
+import { getPool } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { generateOpenAIResponse, isOpenAIAvailable } from '../services/openai';
@@ -21,6 +21,14 @@ import { recordLearningEvent } from '../services/evolution-analytics';
 export const personalizationChatRouter = Router();
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+
+// Helper: Execute query on public schema
+// Personalization tables (personalization_*, personal_facts) are in public schema
+async function query(sql: string, params?: unknown[]) {
+  const pool = getPool('personal'); // Use any pool - these tables are in public
+  const result = await pool.query(sql, params);
+  return result;
+}
 
 // ===========================================
 // Types
