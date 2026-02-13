@@ -346,6 +346,26 @@ GSC_SITE_URL=https://zensation.ai        # Verified GSC site
 
 **Health Check:** `GET /api/health/detailed` zeigt Status aller Services (4 DBs, Claude, Redis, Brave, Judge0).
 
+## Supabase Configuration (CRITICAL)
+
+**Connection Ports:**
+- Port **5432** = Session Mode (Direct Connection) - Max ~1 connection, **DO NOT USE**
+- Port **6543** = Transaction Mode (Pooler) - Supports connection pooling, **ALWAYS USE THIS**
+
+**Schema Names:**
+- Supabase schemas: `personal`, `work`, `learning`, `creative` (NO `_ai` suffix)
+- Backend uses `SET search_path TO {context}` for schema isolation
+- SQL Editor: Use fully qualified names (`personal.table_name`), `SET search_path` doesn't work
+
+**SQL Editor Limitations:**
+- No `\d`, `\dt`, or PostgreSQL meta-commands - use `information_schema` queries instead
+- Example: `SELECT * FROM pg_tables WHERE schemaname = 'personal'`
+
+**Connection Pool:**
+- Shared pool architecture: 1 pool for all 4 contexts (see `database-context.ts`)
+- Pool size: max=3, min=1 (optimized for Supabase Free Tier ~15-20 connection limit)
+- Previous 4 separate pools (32 connections) exceeded limit → startup crash
+
 ## API Key Scopes
 
 Der konfigurierte API-Key (`VITE_API_KEY` im Frontend) benötigt folgende Scopes für vollständige Funktionalität:
@@ -483,6 +503,39 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-02-13: Critical Production Fix - Supabase Connection Pool Exhaustion
+
+**Problem:** Backend crashed on startup with `MaxClientsInSessionMode: max clients reached`
+- 4 separate pools × 8 max = 32 connections exceeded Supabase Free Tier limit (~15-20)
+- All 4 context databases failed to connect → backend shutdown
+
+**Root Cause:**
+- Port 5432 = Supabase Session Mode (max ~1 connection per session)
+- testConnections() opened 4 parallel connections → limit exceeded
+
+**Solutions Implemented:**
+
+1. **DATABASE_URL Port Change:** 5432 → 6543 (Session Mode → Transaction Mode Pooler)
+2. **Shared Pool Architecture:** 1 pool for all contexts (schema-isolated via `SET search_path`)
+3. **Reduced Pool Size:** max 8→3, min 2→1
+4. **episodic_memories Migration:** Created table in all 4 schemas with correct names (`personal` not `personal_ai`)
+5. **Notifications API Fix:** Added context-aware route `/:context/notifications/history`
+6. **Business Connector Error Handling:** Graceful try-catch in Stripe/GA4 collectMetrics()
+
+**Files Changed:**
+- `backend/src/utils/database-context.ts` - Shared pool architecture
+- `backend/src/routes/notifications.ts` - Context-aware routes
+- `backend/src/services/memory/episodic-memory.ts` - Fixed getStats()
+- `backend/src/services/business/ga4-connector.ts` - Error handling
+- `backend/src/services/business/stripe-connector.ts` - Error handling
+- `backend/sql/migrations/create_episodic_memories_table.sql` - New migration
+- `frontend/src/hooks/useIdeasData.ts` - Fixed API route
+- `frontend/src/components/NotificationsPage.tsx` - Fixed API route
+
+**Result:** ✅ All 4 databases connected, backend stable, health check OK, 2526+ tests passing
+
+---
 
 ### 2026-02-12: Smart Content - Intelligente Aufgaben-Vorbereitung
 
