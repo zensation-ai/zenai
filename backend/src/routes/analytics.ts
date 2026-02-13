@@ -9,11 +9,13 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { QueryResult } from 'pg';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toInt } from '../utils/validation';
 import { getRecentAIActivities } from '../services/ai-activity-logger';
+import { logger } from '../utils/logger';
 
 export const analyticsRouter = Router();
 
@@ -362,19 +364,29 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
 
   const ctx = context as AIContext;
 
+  // Wrap each query to be resilient - one failure shouldn't crash the whole dashboard
+  const safeQuery = async (query: Promise<QueryResult>, fallback: QueryResult): Promise<QueryResult> => {
+    try { return await query; } catch (err) {
+      logger.warn('Dashboard summary query failed', { context: ctx, error: err instanceof Error ? err.message : String(err) });
+      return fallback;
+    }
+  };
+
+  const emptyResult: QueryResult = { rows: [], command: '', rowCount: 0, oid: 0, fields: [] };
+
   const [statsResult, streakResult, trendResult, recentIdeasResult, activities] = await Promise.all([
     // Stats: total, thisWeek, highPriority, todayCount
-    queryContext(ctx, `
+    safeQuery(queryContext(ctx, `
       SELECT
         COUNT(*) FILTER (WHERE is_archived = false) as total,
         COUNT(*) FILTER (WHERE is_archived = false AND created_at > NOW() - INTERVAL '7 days') as this_week,
         COUNT(*) FILTER (WHERE is_archived = false AND created_at > NOW() - INTERVAL '24 hours') as today,
         COUNT(*) FILTER (WHERE is_archived = false AND priority = 'high') as high_priority
       FROM ideas
-    `),
+    `), emptyResult),
 
     // Streak: consecutive days with at least 1 idea
-    queryContext(ctx, `
+    safeQuery(queryContext(ctx, `
       WITH daily AS (
         SELECT DISTINCT DATE(created_at) as date
         FROM ideas
@@ -389,10 +401,10 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
       SELECT COUNT(*) as streak_days
       FROM streak
       WHERE grp = (SELECT grp FROM streak ORDER BY date DESC LIMIT 1)
-    `),
+    `), emptyResult),
 
     // 7-day trend (count per day)
-    queryContext(ctx, `
+    safeQuery(queryContext(ctx, `
       SELECT
         DATE(created_at) as date,
         COUNT(*) as count
@@ -401,16 +413,16 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
         AND is_archived = false
       GROUP BY DATE(created_at)
       ORDER BY date ASC
-    `),
+    `), emptyResult),
 
     // Recent 6 ideas
-    queryContext(ctx, `
+    safeQuery(queryContext(ctx, `
       SELECT id, title, type, priority, created_at
       FROM ideas
       WHERE is_archived = false
       ORDER BY created_at DESC
       LIMIT 6
-    `),
+    `), emptyResult),
 
     // Recent 5 AI activities
     getRecentAIActivities(ctx, 5),

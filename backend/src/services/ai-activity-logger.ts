@@ -135,18 +135,13 @@ export async function getRecentAIActivities(
 
     return result.rows;
   } catch (error) {
-    // Table might not exist yet
-    if (
-      error instanceof Error &&
-      error.message.includes('does not exist')
-    ) {
-      logger.warn(
-        'AI activity log table does not exist. Run migrations to enable activity feed.'
-      );
-      return [];
+    // Gracefully handle any database errors (table missing, schema issues, XX000 etc.)
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('does not exist')) {
+      logger.warn('AI activity log table does not exist. Run migrations to enable activity feed.');
+    } else {
+      logger.warn('Failed to get AI activities', { error: msg, context });
     }
-
-    logger.error('Failed to get AI activities', error instanceof Error ? error : undefined);
     return [];
   }
 }
