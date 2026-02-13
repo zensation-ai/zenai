@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Meeting } from './MeetingCard';
+import type { Meeting } from './MeetingCard';
 import type { IdeaPriority } from '../types/idea';
+import { formatDateLong, formatDuration } from '../utils/dateUtils';
+import { getErrorMessage } from '../utils/errors';
 import './MeetingDetail.css';
 import '../neurodesign.css';
 
@@ -39,20 +41,20 @@ interface MeetingDetailProps {
   onNotesAdded: (notes: MeetingNotes) => void;
 }
 
-const sentimentIcons: Record<string, string> = {
+const SENTIMENT_ICONS: Record<string, string> = {
   positive: '😊',
   neutral: '😐',
   negative: '😟',
   mixed: '🤔',
 };
 
-const priorityColors: Record<string, string> = {
+const PRIORITY_COLORS: Record<string, string> = {
   high: '#ef4444',
   medium: '#f59e0b',
   low: '#64748b',
 };
 
-export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: MeetingDetailProps) {
+export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: MeetingDetailProps): JSX.Element {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -60,27 +62,27 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
-  // ESC key handler for closing modal
+  const canClose = !isRecording && !processing;
+  const hasInput = transcript.trim().length > 0 || audioChunks.length > 0;
+
   useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isRecording && !processing) {
+    function handleEscKey(event: KeyboardEvent): void {
+      if (event.key === 'Escape' && canClose) {
         onClose();
       }
-    };
+    }
     document.addEventListener('keydown', handleEscKey);
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-    };
-  }, [onClose, isRecording, processing]);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, [onClose, canClose]);
 
-  const startRecording = async () => {
+  const startRecording = async (): Promise<void> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
-      recorder.ondataavailable = (e) => {
-        chunks.push(e.data);
+      recorder.ondataavailable = (event) => {
+        chunks.push(event.data);
         setAudioChunks([...chunks]);
       };
 
@@ -88,21 +90,20 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
       setMediaRecorder(recorder);
       setIsRecording(true);
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Mikrofon-Zugriff fehlgeschlagen');
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach((track) => track.stop());
-      setIsRecording(false);
-    }
+  const stopRecording = (): void => {
+    if (!mediaRecorder) return;
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+    setIsRecording(false);
   };
 
-  const processNotes = async () => {
-    if (!transcript.trim() && audioChunks.length === 0) {
+  const processNotes = async (): Promise<void> => {
+    if (!hasInput) {
       setError('Bitte Text eingeben oder Audio aufnehmen');
       return;
     }
@@ -123,7 +124,7 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
         });
       } else {
         response = await axios.post(`/api/meetings/${meeting.id}/notes`, {
-          transcript: transcript,
+          transcript,
         });
       }
 
@@ -131,27 +132,10 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
       setTranscript('');
       setAudioChunks([]);
     } catch (err: unknown) {
-      const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Verarbeitung fehlgeschlagen'
-        : 'Verarbeitung fehlgeschlagen';
-      setError(message);
+      setError(getErrorMessage(err, 'Verarbeitung fehlgeschlagen'));
     } finally {
       setProcessing(false);
     }
-  };
-
-  const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '–';
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return '–';
-    return date.toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   return (
@@ -161,7 +145,7 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
 
         <div className="detail-header">
           <h2>{meeting.title}</h2>
-          <span className="detail-date">{formatDate(meeting.date)}</span>
+          <span className="detail-date">{formatDateLong(meeting.date)}</span>
         </div>
 
         {/* Meeting Info */}
@@ -178,7 +162,7 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
           )}
           {meeting.duration_minutes && (
             <div className="meta-item">
-              <strong>Dauer:</strong> {meeting.duration_minutes} Minuten
+              <strong>Dauer:</strong> {formatDuration(meeting.duration_minutes) ?? `${meeting.duration_minutes} Minuten`}
             </div>
           )}
         </div>
@@ -189,7 +173,7 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
             <div className="notes-header">
               <h3>Meeting Notizen</h3>
               <span className="sentiment">
-                {sentimentIcons[notes.sentiment]} {notes.sentiment}
+                {SENTIMENT_ICONS[notes.sentiment]} {notes.sentiment}
               </span>
             </div>
 
@@ -202,8 +186,8 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
               <div className="notes-section neuro-stagger-item">
                 <h4>Besprochene Themen</h4>
                 <ul className="topics-list">
-                  {notes.topics_discussed.map((topic, i) => (
-                    <li key={i} className="neuro-stagger-item">{topic}</li>
+                  {notes.topics_discussed.map((topic, index) => (
+                    <li key={index} className="neuro-stagger-item">{topic}</li>
                   ))}
                 </ul>
               </div>
@@ -213,8 +197,8 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
               <div className="notes-section neuro-stagger-item">
                 <h4>Entscheidungen</h4>
                 <ul className="decisions-list">
-                  {notes.key_decisions.map((decision, i) => (
-                    <li key={i} className="neuro-stagger-item">
+                  {notes.key_decisions.map((decision, index) => (
+                    <li key={index} className="neuro-stagger-item">
                       <span className="decision-icon neuro-reward-badge">✓</span>
                       {decision}
                     </li>
@@ -227,12 +211,12 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
               <div className="notes-section">
                 <h4>Aktionspunkte</h4>
                 <div className="action-items-list">
-                  {notes.action_items.map((item, i) => (
-                    <div key={i} className="action-item">
+                  {notes.action_items.map((item, index) => (
+                    <div key={index} className="action-item">
                       <div className="action-item-header">
                         <span
                           className="priority-dot"
-                          style={{ backgroundColor: priorityColors[item.priority] }}
+                          style={{ backgroundColor: PRIORITY_COLORS[item.priority] }}
                         />
                         <span className="action-task">{item.task}</span>
                       </div>
@@ -249,10 +233,10 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
               <div className="notes-section">
                 <h4>Follow-ups</h4>
                 <ul className="follow-ups-list">
-                  {notes.follow_ups.map((fu, i) => (
-                    <li key={i}>
-                      <strong>{fu.topic}</strong>
-                      {fu.responsible && ` - ${fu.responsible}`}
+                  {notes.follow_ups.map((followUp, index) => (
+                    <li key={index}>
+                      <strong>{followUp.topic}</strong>
+                      {followUp.responsible && ` - ${followUp.responsible}`}
                     </li>
                   ))}
                 </ul>
@@ -300,7 +284,7 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
                   type="button"
                   className="process-button neuro-button"
                   onClick={processNotes}
-                  disabled={processing || (!transcript.trim() && audioChunks.length === 0)}
+                  disabled={processing || !hasInput}
                 >
                   {processing ? (
                     <span className="loading-spinner" />
