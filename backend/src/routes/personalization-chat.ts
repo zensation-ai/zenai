@@ -16,6 +16,7 @@ import { generateOpenAIResponse, isOpenAIAvailable } from '../services/openai';
 import axios from 'axios';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+import { recordLearningEvent } from '../services/evolution-analytics';
 
 export const personalizationChatRouter = Router();
 
@@ -167,6 +168,17 @@ personalizationChatRouter.post('/chat', apiKeyAuth, asyncHandler(async (req: Req
     INSERT INTO personalization_conversations (session_id, role, message, facts_extracted)
     VALUES ($1, 'ai', $2, $3)
   `, [currentSessionId, aiResponse, JSON.stringify(extractedFacts)]);
+
+  // Record learning event for evolution timeline (non-blocking)
+  if (extractedFacts.length > 0) {
+    recordLearningEvent('personal', 'profile_enriched',
+      `Profil erweitert: ${extractedFacts.length} neue Fakten`, {
+        description: extractedFacts.map(f => `${f.category}: ${f.factKey}`).join(', '),
+        impact_score: Math.min(0.3 + extractedFacts.length * 0.1, 0.8),
+        metadata: { factsCount: extractedFacts.length, sessionId: currentSessionId },
+      }
+    ).catch(() => {});
+  }
 
   res.json({
     success: true,

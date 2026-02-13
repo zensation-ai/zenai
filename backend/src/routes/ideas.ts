@@ -19,6 +19,7 @@ import {
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
+import { trackActivity } from '../services/activity-tracker';
 
 // ===========================================
 // Type-safe row interfaces for aggregate queries
@@ -709,6 +710,19 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
     id: req.params.id,
     ...result.rows[0]
   }).catch((err) => logger.debug('Background webhook skipped', { error: err.message }));
+
+  // Track activity for evolution timeline + suggestions (non-blocking)
+  trackActivity(ctx, {
+    eventType: hasTypeChange || hasCategoryChange ? 'accuracy_improved' : 'preference_updated',
+    title: `Gedanke bearbeitet: ${(title || result.rows[0].title || '').substring(0, 50)}`,
+    description: hasTypeChange || hasCategoryChange || hasPriorityChange
+      ? 'Korrektur der KI-Klassifizierung' : 'Inhalt aktualisiert',
+    impact_score: hasTypeChange || hasCategoryChange ? 0.7 : 0.3,
+    related_entity_type: 'idea',
+    related_entity_id: req.params.id,
+    actionType: 'idea_updated',
+    actionData: { ideaId: req.params.id, hasCorrection: hasTypeChange || hasCategoryChange || hasPriorityChange },
+  }).catch(() => {});
 
   res.json({ success: true, idea: parseIdeaRow(result.rows[0] as IdeaDatabaseRow) });
 }));

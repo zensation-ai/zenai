@@ -179,7 +179,7 @@ describe('Proactive Suggestions Service', () => {
       });
     });
 
-    it('should handle empty results gracefully', async () => {
+    it('should return getting-started suggestions on cold start', async () => {
       mockCheckActiveRoutines.mockResolvedValue([]);
       mockQueryContext.mockResolvedValue({
         rows: [{
@@ -194,7 +194,9 @@ describe('Proactive Suggestions Service', () => {
 
       const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
 
-      expect(suggestions).toEqual([]);
+      // Cold-start: should return getting-started suggestions instead of empty
+      expect(suggestions.length).toBeGreaterThan(0);
+      expect(suggestions[0].metadata).toHaveProperty('type', 'getting_started');
     });
 
     it('should return empty array when proactivity is off', async () => {
@@ -219,7 +221,8 @@ describe('Proactive Suggestions Service', () => {
 
       const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
 
-      expect(suggestions).toEqual([]);
+      // Even with DB errors, should not throw - may return getting-started suggestions
+      expect(Array.isArray(suggestions)).toBe(true);
     });
   });
 

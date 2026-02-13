@@ -17,6 +17,7 @@ import {
   SubPersonaId,
 } from '../config/personas';
 import { normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
+import { trackActivity } from '../services/activity-tracker';
 import { generateEmbedding } from '../services/ai';
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
@@ -251,6 +252,18 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         false, // is_archived - explicitly set to avoid NULL
       ]
     );
+
+    // Track activity for evolution timeline + suggestions (non-blocking)
+    trackActivity(context as AIContext, {
+      eventType: 'topic_recognized',
+      title: `Neuer Gedanke: ${structured.title.substring(0, 50)}`,
+      description: `Typ: ${structured.type}, Kategorie: ${structured.category}`,
+      impact_score: 0.4,
+      related_entity_type: 'idea',
+      related_entity_id: ideaId,
+      actionType: 'idea_created',
+      actionData: { ideaId, type: structured.type, category: structured.category },
+    }).catch(() => {});
 
     // Phase 24: Invalidate ideas cache so new idea appears immediately
     // This is critical - without this, GET /api/:context/ideas returns stale cached data
