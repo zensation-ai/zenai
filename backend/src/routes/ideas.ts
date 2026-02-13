@@ -1318,3 +1318,87 @@ ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write
 
   res.json({ success: true, deletedId: id });
 }));
+
+/**
+ * POST /api/:context/ideas/:id/move
+ * Move an idea from one context to another
+ */
+ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const sourceContext = getContextFromParams(req);
+  const { id } = req.params;
+  const { targetContext } = req.body;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid idea ID format');
+  }
+
+  if (!targetContext || !isValidContext(targetContext)) {
+    throw new ValidationError('Invalid targetContext. Use "personal", "work", "learning", or "creative".');
+  }
+
+  if (sourceContext === targetContext) {
+    throw new ValidationError('Source and target context are the same.');
+  }
+
+  // 1. Read the idea from source context
+  const sourceResult = await queryContext(
+    sourceContext,
+    `SELECT id, title, raw_text, type, category, priority, tags, source, mood,
+            energy_level, is_actionable, is_archived, ai_enhanced_title,
+            ai_summary, ai_category, ai_tags, ai_priority, ai_sentiment,
+            ai_confidence, keywords, embedding, related_ideas
+     FROM ideas WHERE id = $1`,
+    [id]
+  );
+
+  if (sourceResult.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  const idea = sourceResult.rows[0];
+
+  // 2. Insert into target context
+  await queryContext(
+    targetContext as AIContext,
+    `INSERT INTO ideas (id, title, raw_text, type, category, priority, tags, source, mood,
+                        energy_level, is_actionable, is_archived, ai_enhanced_title,
+                        ai_summary, ai_category, ai_tags, ai_priority, ai_sentiment,
+                        ai_confidence, keywords, embedding, related_ideas, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW())`,
+    [
+      idea.id, idea.title, idea.raw_text, idea.type, idea.category,
+      idea.priority, idea.tags, idea.source, idea.mood, idea.energy_level,
+      idea.is_actionable, idea.is_archived, idea.ai_enhanced_title,
+      idea.ai_summary, idea.ai_category, idea.ai_tags, idea.ai_priority,
+      idea.ai_sentiment, idea.ai_confidence, idea.keywords, idea.embedding,
+      idea.related_ideas,
+    ]
+  );
+
+  // 3. Delete from source context
+  await queryContext(
+    sourceContext,
+    'DELETE FROM ideas WHERE id = $1',
+    [id]
+  );
+
+  logger.info('Idea moved between contexts', {
+    ideaId: id,
+    from: sourceContext,
+    to: targetContext,
+  });
+
+  // Track interaction
+  trackInteraction({
+    idea_id: id,
+    interaction_type: 'edit',
+    metadata: { action: 'move', from: sourceContext, to: targetContext },
+  }).catch((err) => logger.debug('Background move tracking skipped', { error: err.message }));
+
+  res.json({
+    success: true,
+    movedId: id,
+    from: sourceContext,
+    to: targetContext,
+  });
+}));

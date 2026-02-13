@@ -344,6 +344,10 @@ app.use('/api/export', exportRouter);  // Export routes: /api/export/ideas/pdf, 
 // Phase 19: Push Notifications (Context-Aware APNs)
 app.use('/api', notificationsRouter);  // Context-aware: /api/:context/notifications/device, etc.
 
+// Phase 27: Proactive Intelligence System - "KI macht proaktive Vorschläge"
+// MUST be before digestRouter to prevent /:context/digest/* from catching /proactive/digest/*
+app.use('/api/proactive', proactiveRouter);  // /api/proactive/suggestions, /api/proactive/routines, /api/proactive/digest/latest, etc.
+
 // Phase 20: Digest
 app.use('/api', digestRouter);  // Digest routes: /api/:context/digest/*
 // Advanced analytics routes (dashboard, productivity-score, patterns, comparison)
@@ -374,8 +378,7 @@ app.use('/api', evolutionRouter);  // /api/:context/evolution, /api/:context/evo
 // Phase 25: Proactive Draft Generation - "KI bereitet Entwürfe vor"
 app.use('/api', draftsRouter);  // /api/:context/ideas/:id/draft, /api/:context/drafts
 
-// Phase 27: Proactive Intelligence System - "KI macht proaktive Vorschläge"
-app.use('/api/proactive', proactiveRouter);  // /api/proactive/suggestions, /api/proactive/routines, etc.
+// Phase 27: Proactive Intelligence System - moved above digestRouter to prevent route conflict
 
 // Phase 30: Memory Admin - HiMeS Memory Management
 app.use('/api/memory', memoryAdminRouter);  // /api/memory/status, /api/memory/consolidate, /api/memory/decay, etc.
