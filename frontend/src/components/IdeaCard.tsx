@@ -63,7 +63,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArc
 
     setIsDeleting(true);
     try {
-      await axios.delete(`/api/ideas/${idea.id}`);
+      await axios.delete(`/api/${context}/ideas/${idea.id}`);
       onDelete?.(idea.id);
       showToast('Gedanke gelöscht', 'success');
     } catch (error: unknown) {

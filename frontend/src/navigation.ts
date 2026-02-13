@@ -80,7 +80,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: '📋',
         label: 'Planer',
         description: 'Kalender, Aufgaben & Projekte',
-        subPages: ['tasks', 'kanban', 'gantt'],
+        subPages: ['tasks', 'kanban', 'gantt', 'meetings'],
       },
       {
         page: 'documents',
