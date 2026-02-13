@@ -504,6 +504,26 @@ mockQueryContext
 
 ## Changelog
 
+### 2026-02-13: Null-Safe Date Formatting & Code Polish
+
+**Problem:** `/ideas` Seite crashte nach ~20s mit `Cannot read properties of null (reading 'toLocaleDateString')`. Ideas mit `null`-Datumsfeldern aus der Datenbank lösten beim Rendern einen TypeError aus → React ErrorBoundary ersetzte die gesamte Seite.
+
+**Root Cause:** `dateUtils.ts` und `MeetingDetail.tsx` formatDate-Funktionen hatten keine Null-Checks. `null.toLocaleDateString()` → TypeError → Crash.
+
+**Fixes:**
+
+| Datei | Änderung |
+|-------|----------|
+| `dateUtils.ts` | Shared `parseDate()` Helper extrahiert, `DateInput` Type Alias, alle 8 Funktionen null-safe, neue `formatDateLong()` und `formatDuration()` |
+| `MeetingDetail.tsx` | Lokale `formatDate` durch `formatDateLong` aus dateUtils ersetzt, `getErrorMessage()` statt inline Axios-Fehlerbehandlung, `canClose`/`hasInput` derived state, SCREAMING_CASE Konstanten |
+| `ErrorBoundary.tsx` | Interface-Rename zu `ErrorBoundaryProps`/`ErrorBoundaryState`, Early-Return-Pattern, expliziter Return-Type auf HOC, redundante Kommentare entfernt |
+
+**Branch Cleanup:** 101 stale Branches gelöscht (91 gemergt + 10 ungemergt), nur `main` verbleibt.
+
+**Tests:** 522 Frontend + 2004+ Backend bestanden, Build clean.
+
+---
+
 ### 2026-02-13: Critical Production Fix - Supabase Connection Pool Exhaustion
 
 **Problem:** Backend crashed on startup with `MaxClientsInSessionMode: max clients reached`
