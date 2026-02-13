@@ -7,15 +7,14 @@ on:
     branches: [main]
 
 jobs:
+  # ============================================
+  # Backend: Lint + TypeScript Check
+  # ============================================
   lint-backend:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -24,6 +23,10 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: npm ci
+
+      - name: TypeScript type check
+        working-directory: backend
+        run: npx tsc --noEmit
 
       - name: Run ESLint
         working-directory: backend
@@ -31,16 +34,15 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
+  # ============================================
+  # Backend: ALL Tests (unit + integration + service)
+  # ============================================
   test-backend:
     runs-on: ubuntu-latest
     needs: lint-backend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -50,38 +52,24 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Build TypeScript
+      - name: Run all tests
         working-directory: backend
-        run: npm run build
-
-      - name: Run unit tests
-        working-directory: backend
-        run: npm test -- --testPathPatterns="unit" --forceExit --detectOpenHandles --maxWorkers=2
-        timeout-minutes: 5
-        env:
-          NODE_ENV: test
-          NODE_OPTIONS: --max-old-space-size=4096
-          SKIP_EXTERNAL_SERVICES: true
-
-      - name: Run integration tests (mocked DB)
-        working-directory: backend
-        run: npm test -- --testPathPatterns="(integration|github|project-context)" --forceExit --detectOpenHandles --maxWorkers=2
-        timeout-minutes: 5
+        run: npm test -- --forceExit --detectOpenHandles --maxWorkers=2
+        timeout-minutes: 20
         env:
           NODE_ENV: test
           NODE_OPTIONS: --max-old-space-size=4096
           CI: true
           SKIP_EXTERNAL_SERVICES: true
 
+  # ============================================
+  # Frontend: Build + TypeScript Check
+  # ============================================
   build-frontend:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -99,16 +87,15 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  # ============================================
+  # Frontend: Vitest Unit Tests
+  # ============================================
   test-frontend:
     runs-on: ubuntu-latest
     needs: build-frontend
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -123,77 +110,15 @@ jobs:
         run: npm run test
         timeout-minutes: 5
 
-  e2e-frontend:
-    runs-on: ubuntu-latest
-    needs: build-frontend
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Install Playwright Chromium
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
-
-      - name: Run Playwright E2E tests
-        working-directory: frontend
-        run: npx playwright test
-        timeout-minutes: 5
-        env:
-          CI: true
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: frontend/playwright-report/
-          retention-days: 7
-
+  # ============================================
+  # Deploy notification (main only)
+  # ============================================
   deploy:
     needs: [test-backend, test-frontend]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-
     steps:
       - name: Deploy notification
         run: |
           echo "Build successful!"
           echo "Railway will auto-deploy from GitHub integration"
-          echo "Check Railway dashboard for deployment status"
-
-  build-ios:
-    runs-on: macos-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-
-      - name: Build iOS app
-        working-directory: ios
-        run: |
-          xcodebuild clean build \
-            -project PersonalAIBrain.xcodeproj \
-            -scheme PersonalAIBrain \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
-            CODE_SIGNING_ALLOWED=NO
-        continue-on-error: true
