@@ -26,6 +26,7 @@ import {
   BoundaryTrigger,
 } from '../services/workflow-boundary-detector';
 import { proactiveDigest } from '../services/proactive-digest';
+import { recordLearningEvent } from '../services/evolution-analytics';
 
 const router = Router();
 
@@ -81,6 +82,13 @@ router.post('/suggestions/:id/accept', apiKeyAuth, requireScope('write'), asyncH
     actionType: 'suggestion_accepted',
     actionData: { suggestionId: id },
   });
+
+  // Record learning event for evolution timeline (non-blocking)
+  recordLearningEvent(context as AIContext, 'preference_updated', 'Vorschlag angenommen', {
+    description: 'Ein proaktiver Vorschlag wurde akzeptiert',
+    impact_score: 0.5,
+    metadata: { suggestionId: id },
+  }).catch(() => {});
 
   res.json({
     success: true,

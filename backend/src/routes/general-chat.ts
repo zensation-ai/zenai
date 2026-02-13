@@ -30,6 +30,7 @@ import { getAssistantSystemPrompt } from '../services/assistant-knowledge';
 import { isValidUUID, toIntBounded } from '../utils/validation';
 import { isValidContext } from '../utils/database-context';
 import { validateBody } from '../utils/schemas';
+import { trackActivity } from '../services/activity-tracker';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
 import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
 import { detectChatMode } from '../services/chat-modes';
@@ -221,6 +222,18 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMe
     includeMetadata,
     thinkingMode
   );
+
+  // Track activity for evolution timeline + suggestions (non-blocking)
+  trackActivity(session.context as 'personal' | 'work' | 'learning' | 'creative', {
+    eventType: 'behavior_adapted',
+    title: `Chat: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
+    description: `Chat-Nachricht in Session ${id}`,
+    impact_score: 0.3,
+    related_entity_type: 'chat_session',
+    related_entity_id: id,
+    actionType: 'chat_message_sent',
+    actionData: { sessionId: id, messageLength: message.length },
+  }).catch(() => {});
 
   // Build response data
   const responseData: Record<string, unknown> = {

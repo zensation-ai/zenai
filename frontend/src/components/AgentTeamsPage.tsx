@@ -35,6 +35,20 @@ interface TeamResult {
   };
 }
 
+interface HistoryEntry {
+  id: string;
+  teamId: string;
+  task: string;
+  strategy: string;
+  finalOutput: string;
+  agents: AgentResult[];
+  executionTimeMs: number;
+  tokens: number;
+  success: boolean;
+  savedAsIdeaId?: string;
+  createdAt: string;
+}
+
 type Strategy = 'research_write_review' | 'research_only' | 'write_only' | 'custom';
 
 const STRATEGIES: { id: Strategy; label: string; icon: string; desc: string }[] = [
@@ -66,9 +80,30 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
   const [classifiedStrategy, setClassifiedStrategy] = useState<string | null>(null);
   const [result, setResult] = useState<TeamResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
+  const [savingIdeaId, setSavingIdeaId] = useState<string | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/agents/history', {
+        params: { context, limit: 10 },
+      });
+      if (res.data.success) {
+        setHistory(res.data.executions);
+      }
+    } catch (err) {
+      logError('AgentTeamsPage:loadHistory', err);
+    }
+  }, [context]);
+
+  // Load history on mount and context change
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -137,6 +172,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
 
       if (res.data.success) {
         setResult(res.data);
+        loadHistory(); // Refresh history
         // Scroll to results
         setTimeout(() => {
           resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -156,6 +192,22 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`;
     return `${(ms / 1000).toFixed(1)}s`;
+  };
+
+  const handleSaveAsIdea = async (executionId: string) => {
+    setSavingIdeaId(executionId);
+    try {
+      const res = await axios.post(`/api/agents/history/${executionId}/save-as-idea`, { context });
+      if (res.data.success) {
+        showToast('Als Gedanke gespeichert', 'success');
+        loadHistory();
+      }
+    } catch (err) {
+      logError('AgentTeamsPage:saveAsIdea', err);
+      showToast('Speichern fehlgeschlagen', 'error');
+    } finally {
+      setSavingIdeaId(null);
+    }
   };
 
   return (
@@ -344,6 +396,59 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           >
             + Neue Aufgabe
           </button>
+        </div>
+      )}
+
+      {/* History Section */}
+      {history.length > 0 && (
+        <div className="agent-history-section neuro-stagger-item">
+          <h3>Verlauf</h3>
+          <div className="history-list">
+            {history.map((entry) => (
+              <div
+                key={entry.id}
+                className={`history-card liquid-glass neuro-hover-lift ${expandedHistoryId === entry.id ? 'expanded' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="history-card-header"
+                  onClick={() => setExpandedHistoryId(expandedHistoryId === entry.id ? null : entry.id)}
+                >
+                  <span className={`history-status ${entry.success ? 'success' : 'failed'}`}>
+                    {entry.success ? '✓' : '✗'}
+                  </span>
+                  <span className="history-task">{entry.task.substring(0, 80)}{entry.task.length > 80 ? '...' : ''}</span>
+                  <span className="history-meta">
+                    {STRATEGIES.find(s => s.id === entry.strategy)?.icon || '🤖'}{' '}
+                    {formatDuration(entry.executionTimeMs)}
+                  </span>
+                  <span className="history-date">
+                    {new Date(entry.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </button>
+                {expandedHistoryId === entry.id && (
+                  <div className="history-card-body">
+                    <div className="history-output">{entry.finalOutput}</div>
+                    <div className="history-actions">
+                      {!entry.savedAsIdeaId && (
+                        <button
+                          type="button"
+                          className="save-idea-btn neuro-hover-lift"
+                          onClick={() => handleSaveAsIdea(entry.id)}
+                          disabled={savingIdeaId === entry.id}
+                        >
+                          {savingIdeaId === entry.id ? 'Speichere...' : '💡 Als Gedanke speichern'}
+                        </button>
+                      )}
+                      {entry.savedAsIdeaId && (
+                        <span className="saved-badge">💡 Gespeichert</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -165,6 +165,13 @@ export class ProactiveSuggestionEngine {
       const remainingQuota = Math.max(0, settings.maxSuggestionsPerDay - dailySuggestionCount);
       const limitedSuggestions = rankedSuggestions.slice(0, Math.min(limit, remainingQuota));
 
+      // Cold-start: if no suggestions at all, show getting-started suggestions
+      if (limitedSuggestions.length === 0 && dailySuggestionCount === 0) {
+        const gettingStarted = this.getGettingStartedSuggestions();
+        logger.info('Returning getting-started suggestions (cold start)', { context });
+        return gettingStarted.slice(0, limit);
+      }
+
       logger.info('Proactive suggestions generated', {
         context,
         total: suggestions.length,
@@ -654,6 +661,57 @@ export class ProactiveSuggestionEngine {
   // ===========================================
   // Helpers
   // ===========================================
+
+  /**
+   * Cold-start getting-started suggestions for new users
+   */
+  private getGettingStartedSuggestions(): ProactiveSuggestion[] {
+    const now = new Date();
+    return [
+      {
+        id: `gs-profile-${now.getTime()}`,
+        type: 'insight' as SuggestionType,
+        title: 'Profil vervollständigen',
+        description: 'Erzähle der KI mehr über dich, damit sie bessere Vorschläge machen kann.',
+        action: { actionType: 'navigate' as ActionType, params: { path: '/my-ai' }, quickActionLabel: 'Profil öffnen' },
+        confidence: 1,
+        relevanceScore: 1,
+        expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+        metadata: { type: 'getting_started' },
+        source: 'context_analysis' as SuggestionSource,
+        priority: 'high',
+        createdAt: now,
+      },
+      {
+        id: `gs-idea-${now.getTime()}`,
+        type: 'draft' as SuggestionType,
+        title: 'Ersten Gedanken erfassen',
+        description: 'Halte deinen ersten Gedanken fest – per Text oder Sprache.',
+        action: { actionType: 'create_idea' as ActionType, params: {}, quickActionLabel: 'Gedanke erstellen' },
+        confidence: 1,
+        relevanceScore: 0.9,
+        expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+        metadata: { type: 'getting_started' },
+        source: 'context_analysis' as SuggestionSource,
+        priority: 'medium',
+        createdAt: now,
+      },
+      {
+        id: `gs-chat-${now.getTime()}`,
+        type: 'insight' as SuggestionType,
+        title: 'Chat ausprobieren',
+        description: 'Stelle der KI eine Frage oder diskutiere eine Idee im Chat.',
+        action: { actionType: 'navigate' as ActionType, params: { path: '/chat' }, quickActionLabel: 'Chat öffnen' },
+        confidence: 1,
+        relevanceScore: 0.8,
+        expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+        metadata: { type: 'getting_started' },
+        source: 'context_analysis' as SuggestionSource,
+        priority: 'medium',
+        createdAt: now,
+      },
+    ];
+  }
 
   /**
    * Rank suggestions by relevance and confidence

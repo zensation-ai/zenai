@@ -396,6 +396,136 @@
   color: var(--text-primary);
 }
 
+/* History Section */
+.agent-history-section {
+  margin-top: 2rem;
+}
+
+.agent-history-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.history-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.history-status {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.history-status.success {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+}
+
+.history-status.failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+}
+
+.history-task {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-meta {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.history-date {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.history-card-body {
+  padding: 0 1rem 1rem;
+}
+
+.history-output {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.03));
+}
+
+.history-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 0.75rem;
+}
+
+.save-idea-btn {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.save-idea-btn:hover:not(:disabled) {
+  border-color: var(--accent-primary, #f97316);
+  background: var(--glass-bg);
+}
+
+.save-idea-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.saved-badge {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--color-success);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .agent-teams-page {

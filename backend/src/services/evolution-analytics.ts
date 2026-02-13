@@ -555,6 +555,33 @@ export async function updateMilestoneProgress(
   }
 }
 
+// Default milestones for auto-seeding
+const DEFAULT_MILESTONES: { type: string; level: number; title: string; threshold: number; icon: string }[] = [
+  { type: 'ideas_count', level: 1, title: 'Erster Gedanke', threshold: 1, icon: '💡' },
+  { type: 'ideas_count', level: 2, title: '10 Gedanken', threshold: 10, icon: '🧠' },
+  { type: 'ideas_count', level: 3, title: '50 Gedanken', threshold: 50, icon: '🌟' },
+  { type: 'ideas_count', level: 4, title: '100 Gedanken', threshold: 100, icon: '🏆' },
+  { type: 'streak_days', level: 1, title: '3-Tage-Serie', threshold: 3, icon: '🔥' },
+  { type: 'streak_days', level: 2, title: '7-Tage-Serie', threshold: 7, icon: '⚡' },
+  { type: 'streak_days', level: 3, title: '30-Tage-Serie', threshold: 30, icon: '🌈' },
+  { type: 'automations_count', level: 1, title: 'Erste Automation', threshold: 1, icon: '⚙️' },
+  { type: 'automations_count', level: 2, title: '5 Automationen', threshold: 5, icon: '🤖' },
+  { type: 'patterns_learned', level: 1, title: 'Erstes Muster', threshold: 1, icon: '🔗' },
+  { type: 'patterns_learned', level: 2, title: '10 Muster', threshold: 10, icon: '🧩' },
+  { type: 'profile_complete', level: 1, title: 'Profil 50%', threshold: 50, icon: '👤' },
+  { type: 'profile_complete', level: 2, title: 'Profil 100%', threshold: 100, icon: '🎯' },
+];
+
+async function seedDefaultMilestones(context: AIContext): Promise<void> {
+  for (const m of DEFAULT_MILESTONES) {
+    await queryContext(context, `
+      INSERT INTO evolution_milestones (id, context, milestone_type, milestone_level, title, threshold_value, icon, current_value, progress_percent, achieved)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 0, false)
+      ON CONFLICT DO NOTHING
+    `, [uuidv4(), context, m.type, m.level, m.title, m.threshold, m.icon]);
+  }
+}
+
 /**
  * Gets all milestones
  */
@@ -564,11 +591,21 @@ export async function getMilestones(context: AIContext): Promise<{
   all: Milestone[];
 }> {
   try {
-    const result = await queryContext(context, `
+    let result = await queryContext(context, `
       SELECT * FROM evolution_milestones
       WHERE context = $1
       ORDER BY milestone_type, milestone_level
     `, [context]);
+
+    // Auto-seed if no milestones exist
+    if (result.rows.length === 0) {
+      await seedDefaultMilestones(context);
+      result = await queryContext(context, `
+        SELECT * FROM evolution_milestones
+        WHERE context = $1
+        ORDER BY milestone_type, milestone_level
+      `, [context]);
+    }
 
     const all = result.rows.map(mapRowToMilestone);
     const achieved = all.filter(m => m.achieved);
@@ -611,6 +648,17 @@ export async function getEvolutionDashboard(context: AIContext): Promise<Evoluti
       getTotalAutomationExecutions(context),
       getTotalPatternsLearned(context),
     ]);
+
+    // Auto-update milestone progress from snapshot data (non-blocking)
+    if (snapshot) {
+      Promise.allSettled([
+        updateMilestoneProgress(context, 'ideas_count', snapshot.total_ideas || 0),
+        updateMilestoneProgress(context, 'streak_days', snapshot.active_days_streak || 0),
+        updateMilestoneProgress(context, 'automations_count', snapshot.automations_active || 0),
+        updateMilestoneProgress(context, 'patterns_learned', totalPatterns),
+        updateMilestoneProgress(context, 'profile_complete', snapshot.profile_completeness || 0),
+      ]).catch(() => {});
+    }
 
     // Calculate accuracy changes
     const accuracyChange7d = calculateAccuracyChange(snapshots30d, 7);
