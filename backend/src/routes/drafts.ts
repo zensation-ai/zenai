@@ -170,7 +170,8 @@ draftsRouter.post(
       context: context as AIContext,
     };
 
-    const draft = await generateProactiveDraft(trigger);
+    // On-demand: User hat explizit geklickt → bei fehlender Detection Fallback verwenden
+    const draft = await generateProactiveDraft(trigger, true);
 
     if (!draft) {
       return res.json({

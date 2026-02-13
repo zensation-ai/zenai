@@ -115,6 +115,13 @@ describe('Draft Detection - Smart Content Types', () => {
       expect(result.draftType).toBe('research');
       expect(result.confidence).toBeGreaterThanOrEqual(0.7);
     });
+
+    it('should detect "Recherche" as noun in title', async () => {
+      const result = await detectDraftNeed('Recherche: Wissensqualität und Erfindungen vor 1960', 'task');
+      expect(result.detected).toBe(true);
+      expect(result.draftType).toBe('research');
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
   });
 
   // ==========================================

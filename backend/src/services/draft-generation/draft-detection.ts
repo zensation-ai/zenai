@@ -157,7 +157,7 @@ function detectWithHeuristics(text: string): DetectedDraftNeed {
     { pattern: /(?:lesen|lektüre|durchlesen|anschauen)\b/i, type: 'reading', confidence: 0.7 },
 
     // Smart Content: Research (Recherche, Herausfinden, Nachschlagen)
-    { pattern: /recherchier|herausfind|nachschlag|nachforsch/i, type: 'research', confidence: 0.85 },
+    { pattern: /recherche\b|recherchier|herausfind|nachschlag|nachforsch/i, type: 'research', confidence: 0.85 },
     { pattern: /informier.*über|über.*informier|erkundig|in\s+erfahrung\s+bring/i, type: 'research', confidence: 0.8 },
     { pattern: /such.*nach.*information|finde.*heraus/i, type: 'research', confidence: 0.75 },
 
@@ -286,6 +286,7 @@ function getDefaultPatterns(_context: AIContext): TriggerPattern[] {
     { id: '7', draftType: 'reading', patternText: 'gedicht', patternType: 'keyword', isActive: true },
     { id: '8', draftType: 'reading', patternText: 'lesen', patternType: 'keyword', isActive: true },
     { id: '9', draftType: 'research', patternText: 'recherchieren', patternType: 'keyword', isActive: true },
+    { id: '9b', draftType: 'research', patternText: 'recherche', patternType: 'keyword', isActive: true },
     { id: '10', draftType: 'research', patternText: 'herausfinden', patternType: 'keyword', isActive: true },
     { id: '11', draftType: 'learning', patternText: 'lernen', patternType: 'keyword', isActive: true },
     { id: '12', draftType: 'plan', patternText: 'planen', patternType: 'keyword', isActive: true },

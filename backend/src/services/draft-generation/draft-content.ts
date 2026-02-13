@@ -454,9 +454,12 @@ function buildSmartContentUserPrompt(
 
 /**
  * Generiert proaktiv einen Draft für eine Idee/Task
+ * @param trigger - Die Trigger-Daten der Idee
+ * @param onDemand - Wenn true, wird bei fehlender Detection ein Research-Fallback verwendet
  */
 export async function generateProactiveDraft(
-  trigger: DraftTrigger
+  trigger: DraftTrigger,
+  onDemand = false
 ): Promise<GeneratedDraft | null> {
   const startTime = Date.now();
   const fullText = `${trigger.title} ${trigger.summary} ${trigger.rawTranscript || ''}`;
@@ -465,6 +468,7 @@ export async function generateProactiveDraft(
     ideaId: trigger.ideaId,
     type: trigger.type,
     context: trigger.context,
+    onDemand,
     textPreview: fullText.substring(0, 100),
     claudeAvailable: isClaudeAvailable(),
   });
@@ -479,7 +483,7 @@ export async function generateProactiveDraft(
   }
 
   // 1. Prüfe ob Draft benötigt wird
-  const draftNeed = await detectDraftNeed(fullText, trigger.type, trigger.context);
+  let draftNeed = await detectDraftNeed(fullText, trigger.type, trigger.context);
 
   logger.info('Draft need detection result', {
     ideaId: trigger.ideaId,
@@ -492,13 +496,28 @@ export async function generateProactiveDraft(
   });
 
   if (!draftNeed.detected || draftNeed.confidence < 0.5) {
-    logger.info('No draft need detected or confidence too low', {
-      ideaId: trigger.ideaId,
-      type: trigger.type,
-      detected: draftNeed.detected,
-      confidence: draftNeed.confidence,
-    });
-    return null;
+    if (onDemand) {
+      // User hat explizit auf "Jetzt vorbereiten lassen" geklickt → Research-Fallback
+      logger.info('On-demand generation: using research fallback', {
+        ideaId: trigger.ideaId,
+        type: trigger.type,
+      });
+      draftNeed = {
+        detected: true,
+        draftType: 'research',
+        confidence: 0.6,
+        matchedPattern: 'on-demand-fallback',
+        extractedTopic: trigger.title,
+      };
+    } else {
+      logger.info('No draft need detected or confidence too low', {
+        ideaId: trigger.ideaId,
+        type: trigger.type,
+        detected: draftNeed.detected,
+        confidence: draftNeed.confidence,
+      });
+      return null;
+    }
   }
 
   logger.info('Draft need detected', {
