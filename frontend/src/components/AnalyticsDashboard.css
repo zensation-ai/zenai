@@ -1,5 +1,5 @@
 .analytics-dashboard {
-  min-height: 100vh;
+  min-height: 0;
   background: var(--bg-secondary, #f5f5f5);
 }
 

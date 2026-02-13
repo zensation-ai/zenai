@@ -11,53 +11,59 @@
 .planner-tabs {
   display: flex;
   gap: 2px;
-  padding: 0 var(--spacing-md, 16px);
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
-  background: var(--bg-primary, #fff);
+  padding: 0 var(--spacing-md, 12px);
+  border-bottom: 1px solid var(--border, rgba(20, 50, 70, 0.15));
+  background: var(--surface, rgba(240, 245, 248, 0.8));
   flex-shrink: 0;
 }
 
 .planner-tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: 0.375rem;
+  padding: 0.625rem 1rem;
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 14px;
-  color: var(--text-secondary, #666);
+  font-size: 0.875rem;
+  color: var(--text-secondary, #3a4d5a);
   border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
+  transition: color var(--transition-fast, 0.15s ease), background var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease);
   white-space: nowrap;
 }
 
 .planner-tab:hover {
-  color: var(--text-primary, #333);
-  background: var(--bg-hover, #f5f5f5);
+  color: var(--text, #0f1f2a);
+  background: var(--hover-bg, rgba(238, 245, 252, 0.88));
+}
+
+.planner-tab:focus-visible {
+  outline: 2px solid var(--primary, #ff6b35);
+  outline-offset: -2px;
+  border-radius: var(--radius-xs, 4px);
 }
 
 .planner-tab--active {
-  color: var(--accent-primary, #4A90D9);
-  border-bottom-color: var(--accent-primary, #4A90D9);
+  color: var(--primary, #ff6b35);
+  border-bottom-color: var(--primary, #ff6b35);
   font-weight: 500;
 }
 
 .planner-tab__icon {
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .planner-tab__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
-  background: var(--accent-primary, #4A90D9);
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--primary, #ff6b35);
   color: white;
-  font-size: 11px;
+  font-size: 0.688rem;
   font-weight: 600;
 }
 
@@ -65,16 +71,31 @@
 .planner-content {
   flex: 1;
   overflow: auto;
-  padding: var(--spacing-md, 16px);
+  padding: var(--spacing-md, 12px);
 }
 
 /* Dark Mode */
-[data-theme="dark"] .planner-tabs {
-  border-bottom-color: var(--border-color-dark, #333);
+@media (prefers-color-scheme: dark) {
+  .planner-tabs {
+    border-bottom-color: var(--border);
+    background: var(--surface);
+  }
+
+  .planner-tab:hover {
+    background: var(--hover-bg);
+  }
 }
 
-[data-theme="dark"] .planner-tab:hover {
-  background: var(--bg-hover-dark, #2a2a2a);
+:root.light-mode .planner-tabs {
+  border-bottom-color: var(--border);
+  background: var(--surface);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .planner-tab {
+    transition: none;
+  }
 }
 
 /* Mobile */
@@ -86,8 +107,8 @@
   }
 
   .planner-tab {
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.813rem;
   }
 
   .planner-tab__label {
@@ -95,7 +116,7 @@
   }
 
   .planner-tab__icon {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
 
   .planner-content {

@@ -1,7 +1,7 @@
 /* MediaGallery - Neuro-UX Enhanced */
 
 .media-gallery {
-  min-height: 100vh;
+  min-height: 0;
   background: var(--bg-primary);
   padding: 2rem;
   padding-top: 0;
@@ -31,7 +31,7 @@
   gap: 20px;
   margin-bottom: 24px;
   padding: 1rem 0;
-  padding-left: 80px;
+  padding-left: 1rem;
   margin-left: -2rem;
   margin-right: -2rem;
   padding-right: 2rem;

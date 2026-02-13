@@ -5,7 +5,7 @@
    ============================================ */
 
 .incubator-page {
-  min-height: 100vh;
+  min-height: 0;
   background: var(--background-gradient);
   color: var(--text);
   padding: 1.5rem;
@@ -21,7 +21,7 @@
   justify-content: space-between;
   margin-bottom: 2rem;
   padding: 1rem 0;
-  padding-left: 80px; /* Platz fuer macOS Traffic Lights */
+  padding-left: 1rem;
   margin-left: -1.5rem;
   margin-right: -1.5rem;
   padding-right: 1.5rem;

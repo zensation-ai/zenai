@@ -1,5 +1,5 @@
 .automation-dashboard {
-  min-height: 100vh;
+  min-height: 0;
   background: var(--bg-primary);
   padding: 20px;
   padding-top: 60px;
@@ -10,7 +10,7 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
-  padding-left: 80px;
+  padding-left: 1rem;
 }
 
 .automation-header h1 {

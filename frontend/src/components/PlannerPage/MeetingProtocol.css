@@ -1,0 +1,255 @@
+/* MeetingProtocol - Phase 37 */
+
+.meeting-protocol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg, 16px);
+}
+
+.meeting-protocol__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.meeting-protocol__loading::before {
+  content: '';
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.5rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+.meeting-protocol__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Recording Controls */
+.meeting-protocol__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md, 12px);
+}
+
+.meeting-protocol__record-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.meeting-protocol__record-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+}
+
+.meeting-protocol__record-btn--active {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger, #ef4444);
+  color: var(--danger, #ef4444);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.meeting-protocol__record-btn--active:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.meeting-protocol__recording-indicator {
+  font-size: 0.8rem;
+  color: var(--danger, #ef4444);
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Transcript Area */
+.meeting-protocol__transcript {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm, 8px);
+}
+
+.meeting-protocol__transcript label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.meeting-protocol__transcript textarea {
+  padding: 0.75rem;
+  border: 1px solid var(--input-border-default, rgba(20, 50, 70, 0.18));
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.meeting-protocol__transcript textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.meeting-protocol__process-btn {
+  align-self: flex-end;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  background: var(--primary, #ff6b35);
+  border-radius: var(--radius-sm, 8px);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.meeting-protocol__process-btn:hover:not(:disabled) {
+  background: var(--primary-dark, #e85a2a);
+  box-shadow: var(--shadow-glow-light);
+}
+
+.meeting-protocol__process-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Error */
+.meeting-protocol__error {
+  padding: 0.75rem 1rem;
+  background: var(--color-error-bg, rgba(239, 68, 68, 0.1));
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--danger, #ef4444);
+  font-size: 0.85rem;
+}
+
+/* Notes Display */
+.meeting-protocol__notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md, 12px);
+}
+
+.meeting-protocol__note {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md, 12px);
+  padding: 1rem 1.25rem;
+  position: relative;
+}
+
+.meeting-protocol__sentiment {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  font-size: 1.25rem;
+}
+
+.meeting-protocol__section {
+  margin-bottom: 1rem;
+}
+
+.meeting-protocol__section:last-child {
+  margin-bottom: 0;
+}
+
+.meeting-protocol__section h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.meeting-protocol__section p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.meeting-protocol__section ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* Action Items */
+.meeting-protocol__actions {
+  list-style: none;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.meeting-protocol__action-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xs, 4px);
+  font-size: 0.85rem;
+}
+
+.meeting-protocol__action-task {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.meeting-protocol__action-assignee {
+  color: var(--primary);
+  font-size: 0.8rem;
+}
+
+.meeting-protocol__action-deadline {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.meeting-protocol__timestamp {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: right;
+  margin-top: 0.5rem;
+}
+
+/* Empty State */
+.meeting-protocol__empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.meeting-protocol__empty p {
+  margin: 0 0 0.25rem;
+}

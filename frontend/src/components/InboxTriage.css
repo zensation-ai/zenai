@@ -4,7 +4,7 @@
    ============================================ */
 
 .triage-page {
-  min-height: 100vh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--background-gradient, linear-gradient(165deg, #fef9f6 0%, #fff5f0 50%, #f0f7fa 100%));

@@ -11,86 +11,121 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
   flex-wrap: wrap;
 }
 
 .gantt-toolbar__left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .gantt-btn {
-  padding: 6px 14px;
-  border: 1px solid var(--border-color, #e5e5e5);
-  border-radius: 6px;
-  background: var(--bg-primary, #fff);
-  font-size: 13px;
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.15));
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface, rgba(240, 245, 248, 0.8));
+  color: var(--text);
+  font-size: 0.813rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color var(--transition-fast, 0.15s ease), color var(--transition-fast, 0.15s ease), background var(--transition-fast, 0.15s ease);
 }
 
 .gantt-btn:hover {
-  border-color: var(--accent-primary, #4A90D9);
-  color: var(--accent-primary, #4A90D9);
+  border-color: var(--primary, #ff6b35);
+  color: var(--primary, #ff6b35);
+}
+
+.gantt-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .gantt-project-form {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .gantt-project-form input {
-  padding: 5px 10px;
-  border: 1px solid var(--border-color, #e5e5e5);
-  border-radius: 4px;
-  font-size: 13px;
+  padding: 0.313rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs, 4px);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.813rem;
   width: 180px;
 }
 
+.gantt-project-form input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
 .gantt-project-form button {
-  padding: 5px 10px;
+  padding: 0.313rem 0.625rem;
   border: none;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--radius-xs, 4px);
+  font-size: 0.75rem;
   cursor: pointer;
+  transition: background var(--transition-fast);
 }
 
 .gantt-project-form button:first-of-type {
-  background: var(--accent-primary, #4A90D9);
+  background: var(--primary, #ff6b35);
   color: white;
 }
 
+.gantt-project-form button:first-of-type:hover {
+  background: var(--primary-dark, #e85a2a);
+}
+
 .gantt-project-form button:last-of-type {
-  background: var(--bg-secondary, #f0f0f0);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.gantt-project-form button:last-of-type:hover {
+  background: var(--hover-bg);
 }
 
 .gantt-zoom {
   display: flex;
-  border: 1px solid var(--border-color, #e5e5e5);
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
   overflow: hidden;
 }
 
 .gantt-zoom__btn {
-  padding: 5px 12px;
+  padding: 0.313rem 0.75rem;
   border: none;
-  background: var(--bg-primary, #fff);
-  font-size: 12px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .gantt-zoom__btn:not(:last-child) {
-  border-right: 1px solid var(--border-color, #e5e5e5);
+  border-right: 1px solid var(--border);
+}
+
+.gantt-zoom__btn:hover {
+  background: var(--hover-bg);
+  color: var(--text);
 }
 
 .gantt-zoom__btn--active {
-  background: var(--accent-primary, #4A90D9);
+  background: var(--primary, #ff6b35);
   color: white;
+}
+
+.gantt-zoom__btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }
 
 /* Chart container */
@@ -98,45 +133,47 @@
   display: flex;
   flex: 1;
   overflow: hidden;
-  border: 1px solid var(--border-color, #e5e5e5);
-  border-radius: 8px;
-  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface);
 }
 
 /* Left panel */
 .gantt-left {
   flex-shrink: 0;
-  border-right: 1px solid var(--border-color, #e5e5e5);
+  border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 
 .gantt-left__header {
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  padding: 0 0.75rem;
   font-weight: 500;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border-color, #e5e5e5);
-  background: var(--bg-secondary, #fafafa);
+  font-size: 0.813rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
 }
 
 .gantt-left__row {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--border-color, #f0f0f0);
-  font-size: 13px;
+  padding: 0 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.813rem;
+  color: var(--text);
 }
 
 .gantt-left__row--project {
-  background: var(--bg-secondary, #fafafa);
+  background: var(--bg-secondary);
   font-weight: 500;
 }
 
 .gantt-left__project {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   width: 100%;
   overflow: hidden;
 }
@@ -145,14 +182,19 @@
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 0.625rem;
   padding: 2px;
-  color: var(--text-secondary, #666);
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.gantt-left__toggle:hover {
+  color: var(--text);
 }
 
 .gantt-left__dot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -166,20 +208,21 @@
 .gantt-left__task {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-left: 20px;
+  gap: 0.375rem;
+  padding-left: 1.25rem;
   cursor: pointer;
   width: 100%;
   overflow: hidden;
+  transition: color var(--transition-fast);
 }
 
 .gantt-left__task:hover {
-  color: var(--accent-primary, #4A90D9);
+  color: var(--primary, #ff6b35);
 }
 
 .gantt-left__priority {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -201,7 +244,7 @@
 }
 
 .gantt-header-text {
-  fill: var(--text-secondary, #666);
+  fill: var(--text-secondary, #3a4d5a);
   user-select: none;
 }
 
@@ -213,6 +256,11 @@
   filter: brightness(1.1);
 }
 
+.gantt-bar:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
 .gantt-bar__text {
   pointer-events: none;
   user-select: none;
@@ -222,21 +270,22 @@
 .gantt-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 8px 0;
-  margin-top: 8px;
-  font-size: 12px;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 .gantt-legend__item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .gantt-legend__dot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
 }
 
@@ -245,31 +294,40 @@
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: var(--text-secondary, #666);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 /* Dark Mode */
-[data-theme="dark"] .gantt-container {
-  border-color: var(--border-color-dark, #333);
+@media (prefers-color-scheme: dark) {
+  .gantt-container {
+    border-color: var(--border);
+    background: var(--surface);
+  }
+
+  .gantt-left__header {
+    background: var(--bg-secondary);
+  }
+
+  .gantt-left__row--project {
+    background: var(--bg-secondary);
+  }
 }
 
-[data-theme="dark"] .gantt-left__header {
-  background: var(--bg-secondary-dark, #1e1e1e);
+:root.light-mode .gantt-container {
+  border-color: var(--border);
+  background: var(--surface);
 }
 
-[data-theme="dark"] .gantt-left__row--project {
-  background: var(--bg-secondary-dark, #1e1e1e);
-}
-
-/* CSS Variables for SVG theming */
-:root {
-  --gantt-weekend-bg: #f8f8f8;
-  --gantt-grid-line: #e5e5e5;
-}
-
-[data-theme="dark"] {
-  --gantt-weekend-bg: #1a1a1a;
-  --gantt-grid-line: #333;
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .gantt-btn,
+  .gantt-zoom__btn,
+  .gantt-left__task,
+  .gantt-left__toggle,
+  .gantt-project-form button {
+    transition: none;
+  }
 }
 
 /* Mobile */

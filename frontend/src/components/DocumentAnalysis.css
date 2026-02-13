@@ -6,7 +6,7 @@
  * =========================================== */
 
 .doc-analysis {
-  min-height: 100vh;
+  min-height: 0;
   background: var(--bg-primary, #f8f9fa);
 }
 

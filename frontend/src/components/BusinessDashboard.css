@@ -3,6 +3,7 @@
  *
  * Shared tab styles come from shared-tabs.css (hub-* classes).
  * This file contains only Business-specific styles.
+ * All colors use theme-aware CSS variables for light/dark mode support.
  */
 
 /* Tab Content (custom padding for business layout) */
@@ -23,17 +24,17 @@
 }
 
 .business-kpi-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
-  transition: all 0.2s ease;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
   cursor: pointer;
 }
 
 .business-kpi-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--surface-hover);
+  border-color: var(--border-warm);
   transform: translateY(-1px);
 }
 
@@ -73,21 +74,21 @@
 .business-kpi-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text);
   margin-bottom: 0.25rem;
 }
 
 .business-kpi-label {
   font-size: 0.8rem;
-  color: var(--dark-text-muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 /* Section Panels */
 .business-section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -96,7 +97,7 @@
 .business-section-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -113,21 +114,21 @@
   text-align: left;
   padding: 0.75rem;
   font-size: 0.8rem;
-  color: var(--dark-text-muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .business-table td {
   padding: 0.75rem;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .business-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--hover-bg);
 }
 
 /* Status Indicators */
@@ -150,7 +151,7 @@
 .business-empty {
   text-align: center;
   padding: 3rem 1.5rem;
-  color: var(--dark-text-muted);
+  color: var(--text-muted);
 }
 
 .business-empty-icon {
@@ -161,7 +162,7 @@
 .business-empty-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
 
@@ -177,18 +178,19 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .business-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--surface-hover);
+  border-color: var(--border-warm);
+  color: var(--text);
 }
 
 .business-btn.primary {
@@ -203,34 +205,34 @@
 
 /* Insight Cards */
 .business-insight-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 1rem;
   margin-bottom: 0.75rem;
 }
 
 .business-insight-card.critical {
-  border-left: 3px solid #f87171;
+  border-left: 3px solid var(--danger, #f87171);
 }
 
 .business-insight-card.warning {
-  border-left: 3px solid #fbbf24;
+  border-left: 3px solid var(--warning, #fbbf24);
 }
 
 .business-insight-card.info {
-  border-left: 3px solid #60a5fa;
+  border-left: 3px solid var(--info, #60a5fa);
 }
 
 .business-insight-title {
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text);
   margin-bottom: 0.25rem;
 }
 
 .business-insight-desc {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-muted);
 }
 
 /* Chart Container */
@@ -248,8 +250,8 @@
 }
 
 .business-connector-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
 }
@@ -263,7 +265,7 @@
 
 .business-connector-name {
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -271,7 +273,7 @@
 
 .business-connector-meta {
   font-size: 0.8rem;
-  color: var(--dark-text-muted);
+  color: var(--text-muted);
 }
 
 /* Responsive */
@@ -299,84 +301,10 @@
   }
 }
 
-/* ============================================
-   Light Mode Overrides
-   Swap dark-background colors to theme-aware values
-   ============================================ */
-
-:root.light-mode .business-kpi-card {
-  background: var(--glass-bg);
-  border-color: var(--border);
-}
-
-:root.light-mode .business-kpi-value {
-  color: var(--text);
-}
-
-:root.light-mode .business-kpi-label {
-  color: var(--text-muted);
-}
-
-:root.light-mode .business-section {
-  background: var(--glass-bg);
-  border-color: var(--border);
-}
-
-:root.light-mode .business-section-title {
-  color: var(--text);
-}
-
-:root.light-mode .business-table th {
-  color: var(--text-muted);
-  border-bottom-color: var(--border);
-}
-
-:root.light-mode .business-table td {
-  color: var(--text-secondary);
-  border-bottom-color: var(--border-light);
-}
-
-:root.light-mode .business-empty {
-  color: var(--text-muted);
-}
-
-:root.light-mode .business-empty-title {
-  color: var(--text-secondary);
-}
-
-:root.light-mode .business-btn {
-  border-color: var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
-}
-
-:root.light-mode .business-btn:hover {
-  background: var(--surface-hover);
-  border-color: var(--border);
-}
-
-:root.light-mode .business-insight-card {
-  background: var(--glass-bg);
-  border-color: var(--border);
-}
-
-:root.light-mode .business-insight-title {
-  color: var(--text);
-}
-
-:root.light-mode .business-insight-desc {
-  color: var(--text-muted);
-}
-
-:root.light-mode .business-connector-card {
-  background: var(--glass-bg);
-  border-color: var(--border);
-}
-
-:root.light-mode .business-connector-name {
-  color: var(--text);
-}
-
-:root.light-mode .business-connector-meta {
-  color: var(--text-muted);
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .business-kpi-card,
+  .business-btn {
+    transition: none;
+  }
 }

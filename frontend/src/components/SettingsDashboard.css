@@ -5,7 +5,7 @@
  */
 
 .settings-dashboard {
-  min-height: 100vh;
+  min-height: 0;
   padding: 2rem;
   background: var(--ambient-bg, linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%));
 }

@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { MeetingProtocol } from './MeetingProtocol';
+import './MeetingsTab.css';
 
 interface Meeting {
   id: string;

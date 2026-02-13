@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Task, TaskStatus, TaskPriority, Project } from './types';
+import './TaskForm.css';
 
 interface TaskFormProps {
   task: Task | null; // null = create new

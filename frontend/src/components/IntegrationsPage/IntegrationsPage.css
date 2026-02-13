@@ -1,6 +1,6 @@
 /* Neuro-UX optimierte Integrations Page */
 .integrations-page {
-  min-height: 100vh;
+  min-height: 0;
   background: var(--bg-primary);
 }
 
@@ -28,7 +28,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 2rem;
-  padding-left: 80px; /* Platz für macOS Traffic Lights */
+  padding-left: 1rem;
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
