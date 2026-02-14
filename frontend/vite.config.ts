@@ -47,39 +47,36 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id) {
           // Vendor chunks - separate large libraries
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-router': ['react-router-dom'],
-          'vendor-axios': ['axios'],
-          // Heavy rendering libs - lazy-loaded with ArtifactPanel (light build ~60KB)
-          'vendor-syntax': ['react-syntax-highlighter'],
-          'vendor-markdown': ['react-markdown', 'remark-gfm'],
-          // ReactFlow - heavy (~200KB), only used on Insights/Connections tab
-          'vendor-reactflow': ['reactflow'],
-          // Validation lib - used across components
-          'vendor-zod': ['zod'],
+          if (id.includes('node_modules/react-dom/')) return 'vendor-react';
+          if (id.includes('node_modules/react/')) return 'vendor-react';
+          if (id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/') || id.includes('node_modules/@remix-run/router/')) return 'vendor-router';
+          if (id.includes('node_modules/axios/')) return 'vendor-axios';
+          if (id.includes('node_modules/react-syntax-highlighter/')) return 'vendor-syntax';
+          if (id.includes('node_modules/react-markdown/') || id.includes('node_modules/remark-gfm/')) return 'vendor-markdown';
+          if (id.includes('node_modules/reactflow/') || id.includes('node_modules/@reactflow/')) return 'vendor-reactflow';
+          if (id.includes('node_modules/zod/')) return 'vendor-zod';
+
+          // Recharts - split into core (state/util) and rendering (chart/cartesian)
+          // to keep each chunk under 250 kB
+          if (id.includes('node_modules/recharts/')) {
+            if (id.includes('/state/') || id.includes('/util/') || id.includes('/context/') || id.includes('/hooks') || id.includes('/container/') || id.includes('/synchronisation/')) {
+              return 'vendor-recharts-core';
+            }
+            return 'vendor-recharts-charts';
+          }
+          // d3 modules used by recharts — separate chunk to keep recharts-core < 250 kB
+          if (id.includes('node_modules/d3-') || id.includes('node_modules/victory-vendor/') || id.includes('node_modules/internmap/')) {
+            return 'vendor-d3';
+          }
 
           // Feature-based chunks for lazy-loaded pages
-          'feature-insights': [
-            './src/components/AnalyticsDashboard.tsx',
-            './src/components/DigestDashboard.tsx',
-          ],
-          'feature-ai': [
-            './src/components/IncubatorPage.tsx',
-            './src/components/ProactiveDashboard.tsx',
-            './src/components/EvolutionDashboard.tsx',
-          ],
-          'feature-learning': [
-            './src/components/LearningDashboard/index.ts',
-          ],
-          'feature-media': [
-            './src/components/MediaGallery.tsx',
-          ],
-          'feature-meetings': [
-            './src/components/MeetingsPage.tsx',
-            './src/components/MeetingDetail.tsx',
-          ],
+          if (id.includes('src/components/AnalyticsDashboard') || id.includes('src/components/DigestDashboard')) return 'feature-insights';
+          if (id.includes('src/components/IncubatorPage') || id.includes('src/components/ProactiveDashboard') || id.includes('src/components/EvolutionDashboard')) return 'feature-ai';
+          if (id.includes('src/components/LearningDashboard')) return 'feature-learning';
+          if (id.includes('src/components/MediaGallery')) return 'feature-media';
+          if (id.includes('src/components/MeetingsPage') || id.includes('src/components/MeetingDetail')) return 'feature-meetings';
         },
       },
     },
