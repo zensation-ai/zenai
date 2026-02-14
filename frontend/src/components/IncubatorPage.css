@@ -510,7 +510,92 @@
   color: var(--text-secondary);
 }
 
-/* Empty State */
+/* Empty State — Redesigned Incubator Empty */
+.incubator-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 2rem 3rem;
+  max-width: 440px;
+  margin: 2rem auto;
+  animation: incubatorEmptyFadeIn 0.6s ease-out both;
+}
+
+@keyframes incubatorEmptyFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.incubator-empty-icon {
+  color: var(--primary, #ff6b35);
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+.incubator-empty-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.incubator-empty-desc {
+  font-size: 0.925rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+}
+
+.incubator-empty-features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.incubator-empty-feature {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+:root.light-mode .incubator-empty-feature {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.incubator-empty-cta {
+  padding: 0.65rem 1.5rem;
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.incubator-empty-cta:hover {
+  background: var(--primary-dark, #e55a2b);
+  transform: translateY(-1px);
+}
+
+.incubator-empty-cta:active {
+  transform: translateY(0);
+}
+
+/* Legacy empty-state overrides (keep for potential reuse) */
 .incubator-page .empty-state {
   text-align: center;
   padding: 4rem 2rem;

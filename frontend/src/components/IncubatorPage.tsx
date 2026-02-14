@@ -20,8 +20,6 @@ import { showToast } from './Toast';
 import {
   getTimeBasedGreeting,
   getRandomReward,
-  getMotivationalMessage,
-  EMPTY_STATE_MESSAGES,
   AI_PERSONALITY,
   DOPAMINE_REWARDS,
 } from '../utils/aiPersonality';
@@ -697,19 +695,38 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
             </section>
           )}
 
-          {/* NEURO-UX: Emotional Empty State with personality */}
+          {/* Empty State — Incubator-specific */}
           {clusters.length === 0 && (
-            <div className="empty-state neuro-empty-state neuro-human-fade-in" role="status">
-              <span className="empty-icon neuro-empty-icon neuro-breathing" aria-hidden="true">🧠</span>
-              <h3 className="neuro-empty-title">{EMPTY_STATE_MESSAGES.ideas.title}</h3>
-              <p className="neuro-empty-description">
-                Gib oben einen schnellen Gedanken ein. {AI_PERSONALITY.name} findet automatisch
-                Muster und gruppiert aehnliche Gedanken zu Themen.
+            <div className="incubator-empty" role="status">
+              <div className="incubator-empty-icon" aria-hidden="true">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="18" y="8" width="28" height="4" rx="2" fill="currentColor" opacity="0.3" />
+                  <path d="M22 12V28C22 28 16 34 16 42C16 50 22 54 32 54C42 54 48 50 48 42C48 34 42 28 42 28V12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+                  <circle cx="28" cy="38" r="2.5" fill="currentColor" opacity="0.4" />
+                  <circle cx="36" cy="34" r="2" fill="currentColor" opacity="0.3" />
+                  <circle cx="32" cy="44" r="3" fill="currentColor" opacity="0.5" />
+                  <path d="M26 54C26 54 26 58 32 58C38 58 38 54 38 54" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+                </svg>
+              </div>
+              <h3 className="incubator-empty-title">Der Inkubator wartet</h3>
+              <p className="incubator-empty-desc">
+                Hier entstehen aus losen Gedanken strukturierte Ideen. Erfasse Gedanken im Tab &bdquo;Gedanken&ldquo; &ndash;
+                {AI_PERSONALITY.name} erkennt automatisch Muster und bildet Cluster.
               </p>
-              {/* NEURO-UX: Motivational message for encouragement */}
-              <p className="neuro-empty-encouragement neuro-inspirational">
-                {getMotivationalMessage('firstTime')}
-              </p>
+              <div className="incubator-empty-features">
+                <span className="incubator-empty-feature">
+                  <span aria-hidden="true">🔍</span> Muster erkennen
+                </span>
+                <span className="incubator-empty-feature">
+                  <span aria-hidden="true">🧩</span> Cluster bilden
+                </span>
+                <span className="incubator-empty-feature">
+                  <span aria-hidden="true">🌱</span> Ideen reifen
+                </span>
+              </div>
+              <button type="button" className="incubator-empty-cta" onClick={onBack}>
+                Gedanken erfassen
+              </button>
             </div>
           )}
         </>
