@@ -223,9 +223,14 @@ export async function addLooseThought(
     const thought = result.rows[0];
 
     // Trigger async cluster analysis (non-blocking)
-    setImmediate(() => analyzeAndAssignCluster(id, context).catch(err =>
-      logger.error('Cluster analysis failed', err instanceof Error ? err : undefined)
-    ));
+    // Only if embedding was generated (requires OpenAI or Ollama)
+    if (embedding.length > 0) {
+      setImmediate(() => analyzeAndAssignCluster(id, context).catch(err =>
+        logger.error('Cluster analysis failed', err instanceof Error ? err : undefined, {
+          thoughtId: id, context, operation: 'analyzeAndAssignCluster',
+        })
+      ));
+    }
 
     return {
       id: thought.id,
@@ -767,7 +772,9 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
       } catch (error) {
         const errMsg = `Thought ${thought.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
         errors.push(errMsg);
-        logger.error(`Cluster analysis failed for thought`, error instanceof Error ? error : undefined);
+        logger.error(`Cluster analysis failed for thought`, error instanceof Error ? error : undefined, {
+          thoughtId: thought.id, context, operation: 'runBatchAnalysis',
+        });
       }
     }
     if (errors.length > 0) {
@@ -892,7 +899,9 @@ export async function backfillEmbeddings(
 
           // Trigger cluster analysis for newly embedded thought
           setImmediate(() => analyzeAndAssignCluster(thought.id, context).catch(err =>
-            logger.error('Cluster analysis failed during backfill', err instanceof Error ? err : undefined)
+            logger.error('Cluster analysis failed during backfill', err instanceof Error ? err : undefined, {
+              thoughtId: thought.id, context, operation: 'backfillEmbeddings',
+            })
           ));
         } else {
           failed++;

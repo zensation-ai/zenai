@@ -363,7 +363,7 @@ GSC_SITE_URL=https://zensation.ai        # Verified GSC site
 
 **Connection Pool:**
 - Shared pool architecture: 1 pool for all 4 contexts (see `database-context.ts`)
-- Pool size: max=3, min=1 (optimized for Supabase Free Tier ~15-20 connection limit)
+- Pool size: max=8, min=2 (optimized for Supabase Transaction Mode Pooler on port 6543)
 - Previous 4 separate pools (32 connections) exceeded limit → startup crash
 
 ## API Key Scopes

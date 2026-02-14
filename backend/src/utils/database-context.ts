@@ -123,12 +123,14 @@ const baseConfig = useConnectionString && databaseUrl
 
 const POOL_CONFIG = {
   ...baseConfig,
-  // Connection pool settings - Optimized for Supabase connection limits
-  // CRITICAL: Supabase Free Tier has ~15-20 max connections
-  // We use 1 shared pool for all contexts (schema-isolated via search_path)
-  // instead of 4 separate pools to stay within limits
-  max: parseInt(process.env.DB_POOL_SIZE || '3', 10), // Reduced from 8 to 3
-  min: parseInt(process.env.DB_POOL_MIN || '1', 10), // Reduced from 2 to 1
+  // Connection pool settings - Optimized for Supabase Transaction Mode Pooler (port 6543)
+  // Supabase Free Tier: ~15-20 direct connections, but Transaction Mode Pooler
+  // multiplexes connections, so the client-side pool can be larger.
+  // We use 1 shared pool for all 4 contexts (schema-isolated via search_path).
+  // max=8 handles parallel dashboard requests (summary + digest + calendar + ideas)
+  // without triggering pool exhaustion warnings.
+  max: parseInt(process.env.DB_POOL_SIZE || '8', 10),
+  min: parseInt(process.env.DB_POOL_MIN || '2', 10),
   idleTimeoutMillis: 60000, // 60s to reduce reconnections
   connectionTimeoutMillis: 10000, // 10s for Supabase latency
   // Statement timeout to prevent long-running queries
