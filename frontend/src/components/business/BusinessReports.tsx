@@ -74,7 +74,7 @@ export const BusinessReports: React.FC<BusinessReportsProps> = () => {
         <div className="business-empty-icon">📋</div>
         <div className="business-empty-title">Noch keine Berichte</div>
         <div className="business-empty-text">
-          Berichte werden automatisch generiert, sobald genuegend Daten gesammelt wurden.
+          Berichte werden automatisch generiert, sobald genügend Daten gesammelt wurden.
           Stelle sicher, dass mindestens ein Connector konfiguriert ist.
         </div>
         <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
@@ -149,7 +149,7 @@ export const BusinessReports: React.FC<BusinessReportsProps> = () => {
             )}
           </>
         ) : (
-          <div className="business-empty-text">Waehle einen Bericht aus.</div>
+          <div className="business-empty-text">Wähle einen Bericht aus.</div>
         )}
       </div>
     </div>

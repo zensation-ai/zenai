@@ -214,7 +214,7 @@ function App() {
     apiStatus,
     loadIdeas,
     lastSubmitTimeRef,
-  } = useIdeasData(context, currentPage);
+  } = useIdeasData(context, currentPage === 'ideas' && tabParam === 'archive' ? 'archive' : currentPage);
 
   // UI State
   const [processing, setProcessing] = useState(false);

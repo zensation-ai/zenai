@@ -92,7 +92,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
       <div className="task-form" role="dialog" aria-label={isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}>
         <div className="task-form__header">
           <h3>{isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}</h3>
-          <button className="task-form__close" onClick={onClose} aria-label="Schliessen">
+          <button className="task-form__close" onClick={onClose} aria-label="Schließen">
             ✕
           </button>
         </div>
@@ -140,7 +140,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
             </div>
 
             <div className="task-form__field">
-              <label htmlFor="task-priority">Prioritaet</label>
+              <label htmlFor="task-priority">Priorität</label>
               <select
                 id="task-priority"
                 value={priority}
@@ -181,7 +181,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
             </div>
 
             <div className="task-form__field">
-              <label htmlFor="task-due">Faelligkeitsdatum</label>
+              <label htmlFor="task-due">Fälligkeitsdatum</label>
               <input
                 id="task-due"
                 type="date"
@@ -194,7 +194,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
           {/* Assignee + Hours row */}
           <div className="task-form__row">
             <div className="task-form__field">
-              <label htmlFor="task-assignee">Zustaendig</label>
+              <label htmlFor="task-assignee">Zuständig</label>
               <input
                 id="task-assignee"
                 type="text"
@@ -205,7 +205,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
             </div>
 
             <div className="task-form__field">
-              <label htmlFor="task-hours">Geschaetzte Stunden</label>
+              <label htmlFor="task-hours">Geschätzte Stunden</label>
               <input
                 id="task-hours"
                 type="number"
