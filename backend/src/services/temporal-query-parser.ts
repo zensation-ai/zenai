@@ -99,7 +99,7 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
   {
     pattern: /\b(?:am\s+)?(\d{1,2})\.\s*(januar|februar|märz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)\b/i,
     parse: (match, now) => {
-      const day = parseInt(match[1]);
+      const day = parseInt(match[1], 10);
       const monthName = match[2].toLowerCase();
       const month = GERMAN_MONTHS[monthName];
       if (month === undefined) {return null;}
@@ -119,9 +119,9 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
   {
     pattern: /\b(?:am\s+)?(\d{1,2})\.(\d{1,2})\.(\d{4})?\b/i,
     parse: (match, now) => {
-      const day = parseInt(match[1]);
-      const month = parseInt(match[2]) - 1;
-      const year = match[3] ? parseInt(match[3]) : now.getFullYear();
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const year = match[3] ? parseInt(match[3], 10) : now.getFullYear();
       const start = new Date(year, month, day, 0, 0, 0);
       const end = new Date(year, month, day, 23, 59, 59);
       if (!match[3] && start > now) {
@@ -192,7 +192,7 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
   {
     pattern: /\bvor\s+(\d+)\s+(stunden?|tage?n?|wochen?|monats?|monaten?|jahren?|jahr)\b/i,
     parse: (match, now) => {
-      const amount = parseInt(match[1]);
+      const amount = parseInt(match[1], 10);
       const rawUnit = match[2].toLowerCase();
       // Normalize: stunden→stund, tagen→tag, wochen→woch, monaten/monat/monats→monat, jahren/jahr→jahr
       const unit = rawUnit.replace(/e?n$/, '').replace(/s$/, '');
@@ -235,7 +235,7 @@ const TEMPORAL_PATTERNS: TemporalPattern[] = [
   {
     pattern: /\b(?:in\s+den\s+)?letzten\s+(\d+)\s+(tagen?|wochen?|monaten?|stunden?)\b/i,
     parse: (match, now) => {
-      const amount = parseInt(match[1]);
+      const amount = parseInt(match[1], 10);
       const unit = match[2].toLowerCase().replace(/e?n$/, '');
       const start = new Date(now);
       switch (unit) {

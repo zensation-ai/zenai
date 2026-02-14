@@ -187,8 +187,8 @@ router.get(
       processingStatus: req.query.status as string,
       isFavorite: req.query.favorites === 'true' ? true : undefined,
       isArchived: req.query.archived === 'true',
-      limit: parseInt(req.query.limit as string) || 50,
-      offset: parseInt(req.query.offset as string) || 0,
+      limit: parseInt(req.query.limit as string, 10) || 50,
+      offset: parseInt(req.query.offset as string, 10) || 0,
       sortBy: req.query.sortBy as DocumentFilters['sortBy'],
       sortOrder: req.query.sortOrder as DocumentFilters['sortOrder'],
     };
@@ -256,7 +256,7 @@ router.get(
     validateContext(context);
     validateDocumentId(id);
 
-    const limit = parseInt(req.query.limit as string) || 5;
+    const limit = parseInt(req.query.limit as string, 10) || 5;
     const results = await documentRAGService.findSimilarDocuments(id, context, limit);
 
     res.json({

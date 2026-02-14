@@ -709,10 +709,10 @@ export async function getGraphEvolutionStats(context: AIContext): Promise<GraphE
   `, [context]);
 
   return {
-    totalNodes: parseInt(stats.total_nodes) || 0,
-    totalEdges: parseInt(stats.total_edges) || 0,
-    activeEdges: parseInt(stats.active_edges) || 0,
-    invalidatedEdges: parseInt(stats.invalidated_edges) || 0,
+    totalNodes: parseInt(stats.total_nodes, 10) || 0,
+    totalEdges: parseInt(stats.total_edges, 10) || 0,
+    activeEdges: parseInt(stats.active_edges, 10) || 0,
+    invalidatedEdges: parseInt(stats.invalidated_edges, 10) || 0,
     avgEdgeStrength: parseFloat(stats.avg_strength) || 0,
     avgDecayRate: parseFloat(stats.avg_decay) || 0,
     mostReinforcedRelations: reinforcedResult.rows.map(r => ({

@@ -115,8 +115,8 @@ const POOL_CONFIG = {
   // CRITICAL: Supabase Free Tier has ~15-20 max connections
   // We use 1 shared pool for all contexts (schema-isolated via search_path)
   // instead of 4 separate pools to stay within limits
-  max: parseInt(process.env.DB_POOL_SIZE || '3'), // Reduced from 8 to 3
-  min: parseInt(process.env.DB_POOL_MIN || '1'), // Reduced from 2 to 1
+  max: parseInt(process.env.DB_POOL_SIZE || '3', 10), // Reduced from 8 to 3
+  min: parseInt(process.env.DB_POOL_MIN || '1', 10), // Reduced from 2 to 1
   idleTimeoutMillis: 60000, // 60s to reduce reconnections
   connectionTimeoutMillis: 10000, // 10s for Supabase latency
   // Statement timeout to prevent long-running queries
@@ -127,7 +127,7 @@ const POOL_CONFIG = {
 };
 
 // Slow query threshold - 300ms is reasonable for Supabase (200-300ms latency)
-const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD || '300');
+const SLOW_QUERY_THRESHOLD_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD || '300', 10);
 
 // Retry configuration for transient connection errors
 const RETRY_CONFIG = {

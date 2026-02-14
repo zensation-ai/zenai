@@ -173,7 +173,7 @@ export async function getRecommendationsWithContext(
   const activeHours = Object.entries(profile.active_hours)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([hour]) => parseInt(hour));
+    .map(([hour]) => parseInt(hour, 10));
 
   // Get focus categories
   const focusCategories = Object.entries(profile.preferred_categories)
@@ -237,8 +237,8 @@ export async function recalculateStatsWithContext(
      WHERE id = $1`,
     [
       profileId,
-      parseInt(ideasCount.rows[0].count),
-      parseInt(meetingsCount.rows[0].count),
+      parseInt(ideasCount.rows[0].count, 10),
+      parseInt(meetingsCount.rows[0].count, 10),
       parseFloat(avgResult.rows[0].avg_per_day) || 0,
     ]
   );
@@ -486,7 +486,7 @@ export async function getRecommendations(profileId: string = 'default'): Promise
   const activeHours = Object.entries(profile.active_hours)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([hour]) => parseInt(hour));
+    .map(([hour]) => parseInt(hour, 10));
 
   // Get focus categories
   const focusCategories = Object.entries(profile.preferred_categories)
@@ -637,8 +637,8 @@ export async function recalculateStats(profileId: string = 'default'): Promise<v
      WHERE id = $1`,
     [
       profileId,
-      parseInt(ideasCount.rows[0].count),
-      parseInt(meetingsCount.rows[0].count),
+      parseInt(ideasCount.rows[0].count, 10),
+      parseInt(meetingsCount.rows[0].count, 10),
       parseFloat(avgResult.rows[0].avg_per_day) || 0,
     ]
   );

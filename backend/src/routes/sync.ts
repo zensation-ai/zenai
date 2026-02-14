@@ -429,8 +429,8 @@ syncRouter.post('/:context/sync/trigger', apiKeyAuth, requireScope('write'), asy
       syncedAt: syncTime,
       context,
       summary: {
-        totalIdeas: parseInt(ideasCount.rows[0]?.total || '0'),
-        archivedIdeas: parseInt(archivedCount.rows[0]?.total || '0'),
+        totalIdeas: parseInt(ideasCount.rows[0]?.total || '0', 10),
+        archivedIdeas: parseInt(archivedCount.rows[0]?.total || '0', 10),
       },
     },
     message: 'Sync completed successfully',

@@ -593,17 +593,17 @@ export async function getInteractionStats(context: AIContext): Promise<Interacti
       ),
     ]);
 
-    const totalInteractions = parseInt(totalResult.rows[0]?.count || '0');
-    const totalCorrections = parseInt(correctionsResult.rows[0]?.count || '0');
+    const totalInteractions = parseInt(totalResult.rows[0]?.count || '0', 10);
+    const totalCorrections = parseInt(correctionsResult.rows[0]?.count || '0', 10);
 
     const byType: Record<string, number> = {};
     byTypeResult.rows.forEach((row: { interaction_type: string; count: string }) => {
-      byType[row.interaction_type] = parseInt(row.count);
+      byType[row.interaction_type] = parseInt(row.count, 10);
     });
 
     const byEntity: Record<string, number> = {};
     byEntityResult.rows.forEach((row: { entity_type: string; count: string }) => {
-      byEntity[row.entity_type] = parseInt(row.count);
+      byEntity[row.entity_type] = parseInt(row.count, 10);
     });
 
     // Calculate correction rate (corrections / edits)
@@ -612,8 +612,8 @@ export async function getInteractionStats(context: AIContext): Promise<Interacti
 
     return {
       total_interactions: totalInteractions,
-      interactions_today: parseInt(todayResult.rows[0]?.count || '0'),
-      interactions_this_week: parseInt(weekResult.rows[0]?.count || '0'),
+      interactions_today: parseInt(todayResult.rows[0]?.count || '0', 10),
+      interactions_this_week: parseInt(weekResult.rows[0]?.count || '0', 10),
       by_type: byType,
       by_entity: byEntity,
       avg_session_duration_ms: 0, // Would need more complex calculation
@@ -653,7 +653,7 @@ export async function getCorrectionStatsByField(
 
     return result.rows.map((row: { field_name: string; count: string; avg_weight: string }) => ({
       field: row.field_name,
-      count: parseInt(row.count),
+      count: parseInt(row.count, 10),
       avgWeight: parseFloat(row.avg_weight) || 1,
     }));
   } catch {
@@ -688,8 +688,8 @@ function mapRowToPattern(row: Record<string, unknown>): CorrectionPattern {
     trigger_condition: row.trigger_condition as Record<string, unknown>,
     correction_value: row.correction_value as string,
     confidence: parseFloat(row.confidence as string) || 0.5,
-    times_applied: parseInt(row.times_applied as string) || 0,
-    times_correct: parseInt(row.times_correct as string) || 0,
+    times_applied: parseInt(row.times_applied as string, 10) || 0,
+    times_correct: parseInt(row.times_correct as string, 10) || 0,
     is_active: row.is_active as boolean,
   };
 }
@@ -699,11 +699,11 @@ function mapRowToSession(row: Record<string, unknown>): LearningSession {
     id: row.id as string,
     context: row.context as AIContext,
     session_token: row.session_token as string,
-    total_interactions: parseInt(row.total_interactions as string) || 0,
-    ideas_created: parseInt(row.ideas_created as string) || 0,
-    ideas_edited: parseInt(row.ideas_edited as string) || 0,
-    corrections_made: parseInt(row.corrections_made as string) || 0,
-    searches_performed: parseInt(row.searches_performed as string) || 0,
+    total_interactions: parseInt(row.total_interactions as string, 10) || 0,
+    ideas_created: parseInt(row.ideas_created as string, 10) || 0,
+    ideas_edited: parseInt(row.ideas_edited as string, 10) || 0,
+    corrections_made: parseInt(row.corrections_made as string, 10) || 0,
+    searches_performed: parseInt(row.searches_performed as string, 10) || 0,
     started_at: (row.started_at as Date).toISOString(),
     last_activity_at: (row.last_activity_at as Date).toISOString(),
     ended_at: row.ended_at ? (row.ended_at as Date).toISOString() : undefined,

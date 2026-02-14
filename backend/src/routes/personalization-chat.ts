@@ -386,7 +386,7 @@ personalizationChatRouter.get('/progress', apiKeyAuth, asyncHandler(async (req: 
 
   const factsCounts: Record<string, number> = {};
   factsCount.rows.forEach(r => {
-    factsCounts[r.category] = parseInt(r.count);
+    factsCounts[r.category] = parseInt(r.count, 10);
   });
 
   const topics = topicsResult.rows.map(t => ({
@@ -597,7 +597,7 @@ async function storeFact(fact: PersonalFact, userResponse: string): Promise<void
     SELECT COUNT(*) FROM personal_facts WHERE category = $1
   `, [fact.category]);
 
-  const count = parseInt(factsInCategory.rows[0].count);
+  const count = parseInt(factsInCategory.rows[0].count, 10);
   const completion = Math.min(1.0, count / 5); // 5 facts = complete
 
   await query(`

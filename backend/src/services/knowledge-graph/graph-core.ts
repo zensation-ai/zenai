@@ -322,15 +322,15 @@ export async function getGraphStats(): Promise<{
     GROUP BY relation_type
   `);
 
-  const totalIdeas = parseInt(ideasCount.rows[0].count);
-  const totalRelations = parseInt(relationsCount.rows[0].count);
+  const totalIdeas = parseInt(ideasCount.rows[0].count, 10);
+  const totalRelations = parseInt(relationsCount.rows[0].count, 10);
 
   return {
     totalIdeas,
     totalRelations,
     avgRelationsPerIdea: totalIdeas > 0 ? totalRelations / totalIdeas : 0,
     relationTypes: relationTypes.rows.reduce((acc, row) => {
-      acc[row.relation_type] = parseInt(row.count);
+      acc[row.relation_type] = parseInt(row.count, 10);
       return acc;
     }, {} as Record<string, number>),
   };

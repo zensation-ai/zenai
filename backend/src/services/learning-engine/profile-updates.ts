@@ -435,8 +435,8 @@ export async function updateLearningConfidence(
     );
 
     const stats = result.rows[0];
-    const totalSamples = parseInt(stats.idea_count) + parseInt(stats.thought_count);
-    const interactions = parseInt(stats.interaction_count);
+    const totalSamples = parseInt(stats.idea_count, 10) + parseInt(stats.thought_count, 10);
+    const interactions = parseInt(stats.interaction_count, 10);
 
     const dataConfidence = Math.min(totalSamples / 30, 1);
     const interactionConfidence = Math.min(interactions / 50, 1);

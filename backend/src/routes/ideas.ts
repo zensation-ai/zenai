@@ -77,10 +77,10 @@ ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    total: parseInt(totalResult.rows[0].total),
-    byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count) }), {} as Record<string, number>),
-    byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count) }), {} as Record<string, number>),
-    byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count) }), {} as Record<string, number>),
+    total: parseInt(totalResult.rows[0].total, 10),
+    byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count, 10) }), {} as Record<string, number>),
+    byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count, 10) }), {} as Record<string, number>),
+    byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count, 10) }), {} as Record<string, number>),
   });
 }));
 
@@ -152,7 +152,7 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
   res.json({
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
-    total: parseInt(countResult.rows[0].total),
+    total: parseInt(countResult.rows[0].total, 10),
     hasMore: result.rows.length === limit,
   });
 }));
@@ -335,10 +335,10 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
-      total: parseInt(countResult.rows[0].total),
+      total: parseInt(countResult.rows[0].total, 10),
       limit,
       offset,
-      hasMore: offset + limit < parseInt(countResult.rows[0].total),
+      hasMore: offset + limit < parseInt(countResult.rows[0].total, 10),
     },
   });
 }));
@@ -908,10 +908,10 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
-      total: parseInt(countResult.rows[0].total),
+      total: parseInt(countResult.rows[0].total, 10),
       limit: pagination.limit,
       offset: pagination.offset,
-      hasMore: pagination.offset + pagination.limit < parseInt(countResult.rows[0].total),
+      hasMore: pagination.offset + pagination.limit < parseInt(countResult.rows[0].total, 10),
     },
   });
 }));
@@ -1069,13 +1069,13 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
 
     res.json({
       success: true,
-      total: parseInt(totals?.total ?? '0'),
-      thisWeek: parseInt(totals?.this_week ?? '0'),
-      lastMonth: parseInt(totals?.last_month ?? '0'),
-      todayCount: parseInt(totals?.today ?? '0'),
-      byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
-      byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
-      byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority || 'unknown']: parseInt(row.count) }), {} as Record<string, number>),
+      total: parseInt(totals?.total ?? '0', 10),
+      thisWeek: parseInt(totals?.this_week ?? '0', 10),
+      lastMonth: parseInt(totals?.last_month ?? '0', 10),
+      todayCount: parseInt(totals?.today ?? '0', 10),
+      byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type || 'unknown']: parseInt(row.count, 10) }), {} as Record<string, number>),
+      byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category || 'unknown']: parseInt(row.count, 10) }), {} as Record<string, number>),
+      byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority || 'unknown']: parseInt(row.count, 10) }), {} as Record<string, number>),
     });
   } catch (error) {
     // Database/schema issue - return empty stats instead of 500
@@ -1238,10 +1238,10 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
-      total: parseInt(countResult.rows[0].total),
+      total: parseInt(countResult.rows[0].total, 10),
       limit,
       offset,
-      hasMore: offset + limit < parseInt(countResult.rows[0].total),
+      hasMore: offset + limit < parseInt(countResult.rows[0].total, 10),
     },
   });
 }));
@@ -1279,10 +1279,10 @@ ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(asyn
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
-      total: parseInt(countResult.rows[0].total),
+      total: parseInt(countResult.rows[0].total, 10),
       limit: pagination.limit,
       offset: pagination.offset,
-      hasMore: pagination.offset + pagination.limit < parseInt(countResult.rows[0].total),
+      hasMore: pagination.offset + pagination.limit < parseInt(countResult.rows[0].total, 10),
     },
   });
 }));

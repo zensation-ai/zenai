@@ -222,7 +222,7 @@ export async function getLearningTasks(
 
     return {
       tasks: result.rows.map(parseTaskRow),
-      total: parseInt(countResult.rows[0].total),
+      total: parseInt(countResult.rows[0].total, 10),
     };
   } finally {
     client.release();
@@ -503,18 +503,18 @@ export async function getLearningStats(
     const stats = result.rows[0];
     const categories: Record<string, number> = {};
     categoryResult.rows.forEach((row: { category: string; count: string }) => {
-      categories[row.category || 'other'] = parseInt(row.count);
+      categories[row.category || 'other'] = parseInt(row.count, 10);
     });
 
     return {
-      total_tasks: parseInt(stats.total_tasks),
-      active_tasks: parseInt(stats.active_tasks),
-      completed_tasks: parseInt(stats.completed_tasks),
-      total_study_minutes: parseInt(stats.total_study_minutes),
-      total_sessions: parseInt(sessionCount.rows[0].count),
+      total_tasks: parseInt(stats.total_tasks, 10),
+      active_tasks: parseInt(stats.active_tasks, 10),
+      completed_tasks: parseInt(stats.completed_tasks, 10),
+      total_study_minutes: parseInt(stats.total_study_minutes, 10),
+      total_sessions: parseInt(sessionCount.rows[0].count, 10),
       categories,
       avg_progress: Math.round(parseFloat(stats.avg_progress)),
-      insights_count: parseInt(insightsResult.rows[0].count),
+      insights_count: parseInt(insightsResult.rows[0].count, 10),
     };
   } finally {
     client.release();
@@ -585,14 +585,14 @@ export async function updateTaskProgress(
     );
 
     const stats = result.rows[0];
-    const sessionCount = parseInt(stats.session_count) || 0;
+    const sessionCount = parseInt(stats.session_count, 10) || 0;
     const avgUnderstanding = parseFloat(stats.avg_understanding) || 0;
 
     // Progress formula: combination of session count, time spent, and understanding
     // Max 100%
     const sessionProgress = Math.min(sessionCount * 10, 40);  // Up to 40% from sessions
     const understandingProgress = (avgUnderstanding / 5) * 40; // Up to 40% from understanding
-    const timeProgress = Math.min((parseInt(stats.total_minutes) || 0) / 60, 20); // Up to 20% from time
+    const timeProgress = Math.min((parseInt(stats.total_minutes, 10) || 0) / 60, 20); // Up to 20% from time
 
     const progress = Math.min(Math.round(sessionProgress + understandingProgress + timeProgress), 100);
 
@@ -731,12 +731,12 @@ export async function getDailyLearningSummary(
     );
 
     const today = todayResult.rows[0];
-    const streak = parseInt(streakResult.rows[0]?.streak) || 0;
+    const streak = parseInt(streakResult.rows[0]?.streak, 10) || 0;
 
     return {
-      tasks_studied_today: parseInt(today.tasks_studied),
-      minutes_today: parseInt(today.total_minutes),
-      sessions_today: parseInt(today.session_count),
+      tasks_studied_today: parseInt(today.tasks_studied, 10),
+      minutes_today: parseInt(today.total_minutes, 10),
+      sessions_today: parseInt(today.session_count, 10),
       streak_days: streak,
       next_recommended_task: nextTaskResult.rows.length > 0
         ? parseTaskRow(nextTaskResult.rows[0])
@@ -763,9 +763,9 @@ function parseTaskRow(row: Record<string, unknown>): LearningTask {
     target_completion_date: row.target_completion_date as Date | undefined,
     completed_date: row.completed_date as Date | undefined,
     last_study_date: row.last_study_date as Date | undefined,
-    study_count: parseInt(row.study_count as string) || 0,
-    total_study_minutes: parseInt(row.total_study_minutes as string) || 0,
-    progress_percent: parseInt(row.progress_percent as string) || 0,
+    study_count: parseInt(row.study_count as string, 10) || 0,
+    total_study_minutes: parseInt(row.total_study_minutes as string, 10) || 0,
+    progress_percent: parseInt(row.progress_percent as string, 10) || 0,
     learning_outline: row.learning_outline as string | undefined,
     key_concepts: (parseJsonb(row.key_concepts) || []) as string[],
     resources: (parseJsonb(row.resources) || []) as LearningResource[],
@@ -784,13 +784,13 @@ function parseSessionRow(row: Record<string, unknown>): LearningSession {
     task_id: row.task_id as string,
     user_id: row.user_id as string,
     session_type: row.session_type as 'study' | 'practice' | 'review' | 'quiz' | 'reflection',
-    duration_minutes: row.duration_minutes ? parseInt(row.duration_minutes as string) : undefined,
+    duration_minutes: row.duration_minutes ? parseInt(row.duration_minutes as string, 10) : undefined,
     notes: row.notes as string | undefined,
     key_learnings: (parseJsonb(row.key_learnings) || []) as string[],
     questions: (parseJsonb(row.questions) || []) as string[],
     ai_summary: row.ai_summary as string | undefined,
     ai_feedback: row.ai_feedback as string | undefined,
-    understanding_level: row.understanding_level ? parseInt(row.understanding_level as string) : undefined,
+    understanding_level: row.understanding_level ? parseInt(row.understanding_level as string, 10) : undefined,
     created_at: row.created_at as Date,
   };
 }

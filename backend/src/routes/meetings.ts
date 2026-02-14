@@ -98,8 +98,8 @@ meetingsRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
     status: status as 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | undefined,
     from_date: from_date as string,
     to_date: to_date as string,
-    limit: limit ? parseInt(limit as string) : undefined,
-    offset: offset ? parseInt(offset as string) : undefined,
+    limit: limit ? parseInt(limit as string, 10) : undefined,
+    offset: offset ? parseInt(offset as string, 10) : undefined,
   });
 
   res.json({
@@ -107,8 +107,8 @@ meetingsRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
     meetings: result.meetings,
     pagination: {
       total: result.total,
-      limit: limit ? parseInt(limit as string) : 20,
-      offset: offset ? parseInt(offset as string) : 0,
+      limit: limit ? parseInt(limit as string, 10) : 20,
+      offset: offset ? parseInt(offset as string, 10) : 0,
     },
   });
 }));

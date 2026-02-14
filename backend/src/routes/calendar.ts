@@ -70,7 +70,7 @@ calendarRouter.post('/:context/calendar/events/search', apiKeyAuth, asyncHandler
 
 calendarRouter.get('/:context/calendar/upcoming', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = getContextFromParams(req.params.context);
-  const hours = Math.min(parseInt(req.query.hours as string) || 24, 168); // Max 7 days
+  const hours = Math.min(parseInt(req.query.hours as string, 10) || 24, 168); // Max 7 days
 
   const events = await getUpcomingEvents(context, hours);
 
@@ -94,8 +94,8 @@ calendarRouter.get('/:context/calendar/events', apiKeyAuth, asyncHandler(async (
     end: req.query.end as string | undefined,
     event_type: req.query.type as EventType | undefined,
     status: req.query.status as EventStatus | undefined,
-    limit: Math.min(parseInt(req.query.limit as string) || 100, 500),
-    offset: parseInt(req.query.offset as string) || 0,
+    limit: Math.min(parseInt(req.query.limit as string, 10) || 100, 500),
+    offset: parseInt(req.query.offset as string, 10) || 0,
   };
 
   // Validate date formats if provided

@@ -149,7 +149,7 @@ export async function getMeetings(filters?: {
 
   return {
     meetings: meetingsResult.rows.map(formatMeeting),
-    total: parseInt(countResult.rows[0].total),
+    total: parseInt(countResult.rows[0].total, 10),
   };
 }
 

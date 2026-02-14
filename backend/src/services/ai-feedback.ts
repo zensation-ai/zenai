@@ -244,7 +244,7 @@ export async function getFeedbackStats(
 
   const ratingsDistribution: Record<number, number> = {};
   for (const row of distributionResult.rows) {
-    ratingsDistribution[row.rating] = parseInt(row.count);
+    ratingsDistribution[row.rating] = parseInt(row.count, 10);
   }
 
   // Statistiken nach Response-Type
@@ -263,14 +263,14 @@ export async function getFeedbackStats(
   );
 
   return {
-    total_feedback: parseInt(stats.total) || 0,
+    total_feedback: parseInt(stats.total, 10) || 0,
     average_rating: parseFloat(stats.avg_rating) || 0,
-    corrections_count: parseInt(stats.corrections) || 0,
-    applied_count: parseInt(stats.applied) || 0,
+    corrections_count: parseInt(stats.corrections, 10) || 0,
+    applied_count: parseInt(stats.applied, 10) || 0,
     ratings_distribution: ratingsDistribution,
     response_type_stats: typeStatsResult.rows.map((row) => ({
       type: row.type,
-      count: parseInt(row.count),
+      count: parseInt(row.count, 10),
       avg_rating: parseFloat(row.avg_rating),
     })),
   };
@@ -307,7 +307,7 @@ export async function analyzeFeedbackPatterns(
       for (const row of problematicTypes.rows) {
         insights.push({
           pattern: `Response-Type "${row.response_type}" hat niedrige Bewertungen`,
-          frequency: parseInt(row.count),
+          frequency: parseInt(row.count, 10),
           suggested_improvement: `Durchschnittliche Bewertung: ${parseFloat(row.avg_rating).toFixed(1)}. Überprüfe Prompts und Logik für diesen Bereich.`,
         });
       }
@@ -331,7 +331,7 @@ export async function analyzeFeedbackPatterns(
       for (const row of commonCorrections.rows) {
         insights.push({
           pattern: 'Häufige Korrektur erkannt',
-          frequency: parseInt(row.frequency),
+          frequency: parseInt(row.frequency, 10),
           suggested_improvement: row.correction.substring(0, 200),
         });
       }

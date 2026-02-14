@@ -223,7 +223,7 @@ function mapRowToProject(row: Record<string, unknown>): Project {
     metadata: parseJsonbSafe<Record<string, unknown>>(row.metadata, {}),
     created_at: (row.created_at as Date)?.toISOString?.() ?? row.created_at as string,
     updated_at: (row.updated_at as Date)?.toISOString?.() ?? row.updated_at as string,
-    task_count: row.task_count !== undefined ? parseInt(row.task_count as string) || 0 : undefined,
-    done_count: row.done_count !== undefined ? parseInt(row.done_count as string) || 0 : undefined,
+    task_count: row.task_count !== undefined ? parseInt(row.task_count as string, 10) || 0 : undefined,
+    done_count: row.done_count !== undefined ? parseInt(row.done_count as string, 10) || 0 : undefined,
   };
 }

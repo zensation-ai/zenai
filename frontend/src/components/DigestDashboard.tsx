@@ -499,7 +499,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
                       type="number"
                       min="0"
                       value={goalForm.daily_ideas_target}
-                      onChange={(e) => setGoalForm({ ...goalForm, daily_ideas_target: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setGoalForm({ ...goalForm, daily_ideas_target: parseInt(e.target.value, 10) || 0 })}
                     />
                   </div>
                   <div className="goal-input-group">
@@ -508,7 +508,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
                       type="number"
                       min="0"
                       value={goalForm.weekly_ideas_target}
-                      onChange={(e) => setGoalForm({ ...goalForm, weekly_ideas_target: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setGoalForm({ ...goalForm, weekly_ideas_target: parseInt(e.target.value, 10) || 0 })}
                     />
                   </div>
                   <div className="goal-input-group">
@@ -517,7 +517,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
                       type="number"
                       min="0"
                       value={goalForm.daily_tasks_target}
-                      onChange={(e) => setGoalForm({ ...goalForm, daily_tasks_target: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setGoalForm({ ...goalForm, daily_tasks_target: parseInt(e.target.value, 10) || 0 })}
                     />
                   </div>
                   <div className="goal-input-group">
@@ -526,7 +526,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
                       type="number"
                       min="0"
                       value={goalForm.weekly_tasks_target}
-                      onChange={(e) => setGoalForm({ ...goalForm, weekly_tasks_target: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setGoalForm({ ...goalForm, weekly_tasks_target: parseInt(e.target.value, 10) || 0 })}
                     />
                   </div>
                 </div>

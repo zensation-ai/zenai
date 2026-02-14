@@ -310,7 +310,7 @@ digestRouter.get('/:context/digest/history', apiKeyAuth, asyncHandler(async (req
   }
 
   query += ` ORDER BY created_at DESC LIMIT $${historyParams.length + 1}`;
-  historyParams.push(parseInt(limit as string));
+  historyParams.push(parseInt(limit as string, 10));
 
   const result = await queryContext(ctx, query, historyParams);
 

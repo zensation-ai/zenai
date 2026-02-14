@@ -93,22 +93,22 @@ router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res:
   }
 
   query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-  params.push(parseInt(limit as string), parseInt(offset as string));
+  params.push(parseInt(limit as string, 10), parseInt(offset as string, 10));
 
   const result = await queryContext(context as AIContext, query, params);
 
   // Get total count
   const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = false');
-  const total = parseInt(countResult.rows[0].count);
+  const total = parseInt(countResult.rows[0].count, 10);
 
   res.json({
     success: true,
     ideas: result.rows,
     pagination: {
       total,
-      limit: parseInt(limit as string),
-      offset: parseInt(offset as string),
-      hasMore: parseInt(offset as string) + result.rows.length < total
+      limit: parseInt(limit as string, 10),
+      offset: parseInt(offset as string, 10),
+      hasMore: parseInt(offset as string, 10) + result.rows.length < total
     },
     context
   });
@@ -126,8 +126,8 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
-  const parsedLimit = parseInt(limit as string) || 50;
-  const parsedOffset = parseInt(offset as string) || 0;
+  const parsedLimit = parseInt(limit as string, 10) || 50;
+  const parsedOffset = parseInt(offset as string, 10) || 0;
 
   let result;
   try {
@@ -157,7 +157,7 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
   }
 
   const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = true');
-  const total = parseInt(countResult.rows[0].count);
+  const total = parseInt(countResult.rows[0].count, 10);
 
   res.json({
     success: true,
@@ -323,7 +323,7 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
   // Simple ILIKE search - more reliable than full-text search
   // Full-text search was causing issues with text search configurations
   const searchPattern = `%${searchQuery}%`;
-  const limitNum = typeof limit === 'number' ? limit : parseInt(String(limit)) || 20;
+  const limitNum = typeof limit === 'number' ? limit : parseInt(String(limit), 10) || 20;
 
   const result = await queryContext(context as AIContext, `
     SELECT
@@ -368,7 +368,7 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
 
   // Build exclusion clause
   let excludeClause = '';
-  const params: (string | number)[] = [parseInt(limit as string)];
+  const params: (string | number)[] = [parseInt(limit as string, 10)];
 
   if (excludeIds.length > 0) {
     excludeClause = ` AND id NOT IN (${excludeIds.map((_, idx) => `$${idx + 2}`).join(',')})`;
@@ -405,8 +405,8 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
   res.json({
     success: true,
     ideas: result.rows,
-    total: parseInt(countResult.rows[0].total),
-    hasMore: result.rows.length === parseInt(limit as string),
+    total: parseInt(countResult.rows[0].total, 10),
+    hasMore: result.rows.length === parseInt(limit as string, 10),
   });
 }));
 
@@ -469,7 +469,7 @@ router.get('/:context/ai-activity', apiKeyAuth, asyncHandler(async (req: Request
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
-  const activities = await getRecentAIActivities(context as AIContext, parseInt(limit as string));
+  const activities = await getRecentAIActivities(context as AIContext, parseInt(limit as string, 10));
   const unreadCount = await getUnreadActivityCount(context as AIContext);
 
   res.json({

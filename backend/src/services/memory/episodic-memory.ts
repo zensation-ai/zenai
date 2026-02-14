@@ -915,10 +915,10 @@ export class EpisodicMemoryService {
       const row = result.rows[0];
 
       return {
-        totalEpisodes: parseInt(row.total) || 0,
+        totalEpisodes: parseInt(row.total, 10) || 0,
         avgRetrievalStrength: parseFloat(row.avg_strength) || 0,
-        strongEpisodes: parseInt(row.strong) || 0,
-        recentEpisodes: parseInt(row.recent) || 0,
+        strongEpisodes: parseInt(row.strong, 10) || 0,
+        recentEpisodes: parseInt(row.recent, 10) || 0,
       };
     } catch (error) {
       // Table may not exist yet - return zero stats

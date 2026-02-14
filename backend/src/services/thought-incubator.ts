@@ -111,7 +111,7 @@ async function _calculateAdvancedMaturity(
   );
 
   const stats = statsResult.rows[0];
-  const thoughtCount = parseInt(stats.thought_count) || 0;
+  const thoughtCount = parseInt(stats.thought_count, 10) || 0;
 
   if (thoughtCount === 0) {
     return { score: 0, factors: {}, isReady: false };
@@ -140,10 +140,10 @@ async function _calculateAdvancedMaturity(
   factors.timeSpan = Math.min(timeSpanDays / 7, 1); // Cap at 1 week
 
   // Factor 4: Source diversity score (different input methods)
-  const sourceCount = parseInt(stats.source_count) || 1;
+  const sourceCount = parseInt(stats.source_count, 10) || 1;
   factors.diversity = Math.min(sourceCount / 3, 1) * (1 + CONFIG.SOURCE_DIVERSITY_BONUS);
   // Bonus for multiple active days
-  const activeDays = parseInt(stats.active_days) || 1;
+  const activeDays = parseInt(stats.active_days, 10) || 1;
   if (activeDays > 1) {
     factors.diversity = Math.min(factors.diversity + (activeDays - 1) * 0.1, 1);
   }
@@ -372,7 +372,7 @@ async function updateClusterMetadata(client: PoolClient, clusterId: string): Pro
   );
 
   const stats = statsResult.rows[0];
-  const thoughtCount = parseInt(stats.thought_count);
+  const thoughtCount = parseInt(stats.thought_count, 10);
 
   // Calculate maturity score
   // Factors: thought count, time span, similarity coherence
@@ -749,7 +749,7 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
       `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
       [userId]
     );
-    const clusterCountBefore = parseInt(beforeCountResult.rows[0].count);
+    const clusterCountBefore = parseInt(beforeCountResult.rows[0].count, 10);
 
     // Process all thoughts
     const errors: string[] = [];
@@ -771,7 +771,7 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
       `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
       [userId]
     );
-    const clusterCountAfter = parseInt(afterCountResult.rows[0].count);
+    const clusterCountAfter = parseInt(afterCountResult.rows[0].count, 10);
 
     // Calculate created vs updated
     const clustersCreated = clusterCountAfter - clusterCountBefore;
@@ -788,7 +788,7 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
       thoughts_analyzed: unprocessed.rows.length,
       clusters_created: clustersCreated,
       clusters_updated: clustersUpdated,
-      clusters_ready: parseInt(readyResult.rows[0].count),
+      clusters_ready: parseInt(readyResult.rows[0].count, 10),
     };
 
     // Log the run
@@ -833,12 +833,12 @@ export async function getIncubatorStats(userId: string = 'default', context: AIC
 
     const stats = result.rows[0];
     return {
-      total_thoughts: parseInt(stats.total_thoughts),
-      unprocessed_thoughts: parseInt(stats.unprocessed_thoughts),
-      total_clusters: parseInt(stats.total_clusters),
-      ready_clusters: parseInt(stats.ready_clusters),
-      growing_clusters: parseInt(stats.growing_clusters),
-      consolidated_clusters: parseInt(stats.consolidated_clusters),
+      total_thoughts: parseInt(stats.total_thoughts, 10),
+      unprocessed_thoughts: parseInt(stats.unprocessed_thoughts, 10),
+      total_clusters: parseInt(stats.total_clusters, 10),
+      ready_clusters: parseInt(stats.ready_clusters, 10),
+      growing_clusters: parseInt(stats.growing_clusters, 10),
+      consolidated_clusters: parseInt(stats.consolidated_clusters, 10),
     };
   } finally {
     client.release();

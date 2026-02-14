@@ -176,7 +176,7 @@ class AIEvolutionAnalytics {
         accuracyScore: parseFloat(row.accuracy_score) || 0.7,
         correctionRate: parseFloat(row.correction_rate) || 0,
         confidenceLevel: parseFloat(row.confidence_level) || 0.7,
-        sampleSize: parseInt(row.sample_size) || 0,
+        sampleSize: parseInt(row.sample_size, 10) || 0,
       }));
     } catch (error) {
       logger.debug('Learning curve calculation failed, using fallback', { error });
@@ -281,7 +281,7 @@ class AIEvolutionAnalytics {
         return {
           domain: row.category || 'Sonstiges',
           strength,
-          sampleCount: parseInt(row.total) || 0,
+          sampleCount: parseInt(row.total, 10) || 0,
           improvementTrend: this.calculateTrend(strength),
           commonCorrections: correctionsMap[row.category || ''] || [],
         };
@@ -350,7 +350,7 @@ class AIEvolutionAnalytics {
       return result.rows.map((row: { date: string; avg_rating: string; feedback_count: string; positive_ratio: string }) => ({
         date: row.date,
         avgRating: parseFloat(row.avg_rating) || 4.0,
-        feedbackCount: parseInt(row.feedback_count) || 0,
+        feedbackCount: parseInt(row.feedback_count, 10) || 0,
         positiveRatio: parseFloat(row.positive_ratio) || 0.8,
       }));
     } catch (error) {
@@ -387,10 +387,10 @@ class AIEvolutionAnalytics {
 
       return result.rows.map((row: { suggestion_type?: string; total_suggestions: string; accepted_count: string; avg_response_seconds: string }) => ({
         suggestionType: row.suggestion_type || 'unknown',
-        totalSuggestions: parseInt(row.total_suggestions) || 0,
+        totalSuggestions: parseInt(row.total_suggestions, 10) || 0,
         acceptanceRate:
-          parseInt(row.total_suggestions) > 0
-            ? (parseInt(row.accepted_count) || 0) / parseInt(row.total_suggestions)
+          parseInt(row.total_suggestions, 10) > 0
+            ? (parseInt(row.accepted_count, 10) || 0) / parseInt(row.total_suggestions, 10)
             : 0,
         avgResponseTime: parseFloat(row.avg_response_seconds) || 0,
       }));
@@ -502,7 +502,7 @@ class AIEvolutionAnalytics {
       return result.rows.map((row: { category?: string; accuracy: string; sample_count: string; avg_confidence: string }) => ({
         category: row.category || 'Sonstiges',
         accuracy: parseFloat(row.accuracy) || 0.7,
-        sampleCount: parseInt(row.sample_count) || 0,
+        sampleCount: parseInt(row.sample_count, 10) || 0,
         avgConfidence: parseFloat(row.avg_confidence) || 0.7,
       }));
     } catch (error) {
@@ -564,7 +564,7 @@ class AIEvolutionAnalytics {
       return result.rows.map((row: { date: string; value: string; count: string }) => ({
         date: row.date,
         value: parseFloat(row.value) || 0,
-        count: parseInt(row.count) || 0,
+        count: parseInt(row.count, 10) || 0,
       }));
     } catch (error) {
       logger.debug('Time series metric query failed', { error, metric });

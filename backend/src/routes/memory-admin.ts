@@ -474,7 +474,7 @@ router.get('/audit/:context', apiKeyAuth, requireScope('read'), asyncHandler(asy
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
-  const limit = parseInt(req.query.limit as string) || 50;
+  const limit = parseInt(req.query.limit as string, 10) || 50;
   const layer = req.query.layer as string | undefined;
   const action = req.query.action as string | undefined;
 

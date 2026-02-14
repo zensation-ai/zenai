@@ -75,7 +75,7 @@ router.post('/thought', apiKeyAuth, requireScope('write'), asyncHandler(async (r
  */
 router.get('/thoughts', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = (req.query.userId as string) || 'default';
-  const limit = parseInt(req.query.limit as string) || 50;
+  const limit = parseInt(req.query.limit as string, 10) || 50;
   const includeProcessed = req.query.includeProcessed !== 'false';
   const context = getContextFromRequest(req);
 
@@ -309,7 +309,7 @@ router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req:
         similarity: t.similarity_to_cluster,
       })),
       thought_count: thoughtsResult.rows.length,
-      cluster_count: parseInt(clustersResult.rows[0].count),
+      cluster_count: parseInt(clustersResult.rows[0].count, 10),
       context,
     });
   } finally {

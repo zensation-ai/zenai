@@ -69,7 +69,7 @@ userProfileRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, r
  */
 userProfileRouter.get('/personalized-ideas', apiKeyAuth, asyncHandler(async (req, res) => {
   const profileId = (req.query.profile_id as string) || 'default';
-  const limit = parseInt(req.query.limit as string) || 10;
+  const limit = parseInt(req.query.limit as string, 10) || 10;
 
   const ideas = await getPersonalizedIdeas(limit, profileId);
 

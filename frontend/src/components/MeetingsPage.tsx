@@ -370,7 +370,7 @@ export function MeetingsPage({ onBack, embedded }: MeetingsPageProps) {
                   type="number"
                   value={newMeeting.duration_minutes}
                   onChange={(e) =>
-                    setNewMeeting({ ...newMeeting, duration_minutes: parseInt(e.target.value) || 60 })
+                    setNewMeeting({ ...newMeeting, duration_minutes: parseInt(e.target.value, 10) || 60 })
                   }
                 />
               </div>
