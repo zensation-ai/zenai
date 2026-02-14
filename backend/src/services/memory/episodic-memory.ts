@@ -465,8 +465,11 @@ export class EpisodicMemoryService {
         `SELECT update_episodic_retrieval_stats($1)`,
         [episodeIds]
       );
-    } catch {
-      // Fallback to manual update if function doesn't exist
+    } catch (fnError) {
+      // Fallback to manual update if database function doesn't exist
+      logger.debug('update_episodic_retrieval_stats function not available, using fallback', {
+        error: fnError instanceof Error ? fnError.message : 'Unknown',
+      });
       await queryContext(
         context,
         `UPDATE episodic_memories

@@ -8,6 +8,7 @@
  */
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { safeLocalStorage } from '../utils/storage';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -29,7 +30,7 @@ function getSystemTheme(): 'light' | 'dark' {
 
 function getStoredTheme(): Theme {
   if (typeof window === 'undefined') return 'system';
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = safeLocalStorage('get', STORAGE_KEY);
   if (stored === 'light' || stored === 'dark' || stored === 'system') {
     return stored;
   }
@@ -83,7 +84,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
+    safeLocalStorage('set', STORAGE_KEY, newTheme);
   }, []);
 
   const toggleTheme = useCallback(() => {
