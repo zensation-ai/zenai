@@ -16,6 +16,8 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID } from '../utils/validation';
+import { validateBody } from '../utils/schemas';
+import { CreateProjectSchema, UpdateProjectSchema } from '../utils/schemas';
 
 export const projectsRouter = Router();
 
@@ -78,22 +80,12 @@ projectsRouter.get('/:context/projects/:id', apiKeyAuth, asyncHandler(async (req
 // POST /api/:context/projects
 // ============================================================
 
-projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), validateBody(CreateProjectSchema), asyncHandler(async (req, res) => {
   const context = getContextFromParams(req.params.context);
   const { name, description, color, icon, status, sort_order, metadata } = req.body;
 
-  if (!name || typeof name !== 'string' || name.trim().length === 0) {
-    throw new ValidationError('Name is required', { name: 'must be a non-empty string' });
-  }
-
   const project = await createProject(context, {
-    name: name.trim(),
-    description,
-    color,
-    icon,
-    status,
-    sort_order,
-    metadata,
+    name, description, color, icon, status, sort_order, metadata,
   });
 
   res.status(201).json({
@@ -106,7 +98,7 @@ projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), asy
 // PUT /api/:context/projects/:id
 // ============================================================
 
-projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), validateBody(UpdateProjectSchema), asyncHandler(async (req, res) => {
   const context = getContextFromParams(req.params.context);
   const { id } = req.params;
 

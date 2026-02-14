@@ -463,6 +463,19 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   'POST:/api/chat/quick': { limit: 20, windowMs: 60 * 1000 }, // 20/min - quick chat
 
   // ===========================================
+  // Expensive AI endpoints - strict limits (cost protection)
+  // ===========================================
+  'POST:/api/vision/analyze': { limit: 10, windowMs: 60 * 1000 }, // 10/min - image analysis
+  'POST:/api/vision/document': { limit: 5, windowMs: 60 * 1000 }, // 5/min - full document processing
+  'POST:/api/vision/extract-text': { limit: 15, windowMs: 60 * 1000 }, // 15/min - OCR
+  'POST:/api/vision/extract-ideas': { limit: 10, windowMs: 60 * 1000 }, // 10/min - idea extraction
+  'POST:/api/vision/compare': { limit: 5, windowMs: 60 * 1000 }, // 5/min - image comparison
+  'POST:/api/code/execute': { limit: 10, windowMs: 60 * 1000 }, // 10/min - code generation + execution
+  'POST:/api/code/run': { limit: 15, windowMs: 60 * 1000 }, // 15/min - code execution only
+  'POST:/api/project/analyze': { limit: 3, windowMs: 60 * 1000 }, // 3/min - full project analysis
+  'POST:/api/project/summary': { limit: 5, windowMs: 60 * 1000 }, // 5/min - quick project summary
+
+  // ===========================================
   // Media uploads - moderate limits (SECURITY Sprint 2)
   // ===========================================
   'POST:/api/media': { limit: 20, windowMs: 60 * 1000 }, // 20/min

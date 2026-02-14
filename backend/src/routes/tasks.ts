@@ -24,6 +24,8 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID } from '../utils/validation';
+import { validateBody } from '../utils/schemas';
+import { CreateTaskSchema, UpdateTaskSchema } from '../utils/schemas';
 
 export const tasksRouter = Router();
 
@@ -160,19 +162,14 @@ tasksRouter.get('/:context/tasks/:id', apiKeyAuth, asyncHandler(async (req, res)
 // POST /api/:context/tasks
 // ============================================================
 
-tasksRouter.post('/:context/tasks', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+tasksRouter.post('/:context/tasks', apiKeyAuth, requireScope('write'), validateBody(CreateTaskSchema), asyncHandler(async (req, res) => {
   const context = getContextFromParams(req.params.context);
   const { title, description, status, priority, project_id, source_idea_id,
     calendar_event_id, due_date, start_date, assignee, estimated_hours,
     labels, metadata } = req.body;
 
-  if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    throw new ValidationError('Title is required', { title: 'must be a non-empty string' });
-  }
-
   const task = await createTask(context, {
-    title: title.trim(),
-    description, status, priority, project_id, source_idea_id,
+    title, description, status, priority, project_id, source_idea_id,
     calendar_event_id, due_date, start_date, assignee, estimated_hours,
     labels, metadata,
   });
@@ -187,7 +184,7 @@ tasksRouter.post('/:context/tasks', apiKeyAuth, requireScope('write'), asyncHand
 // PUT /api/:context/tasks/:id
 // ============================================================
 
-tasksRouter.put('/:context/tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+tasksRouter.put('/:context/tasks/:id', apiKeyAuth, requireScope('write'), validateBody(UpdateTaskSchema), asyncHandler(async (req, res) => {
   const context = getContextFromParams(req.params.context);
   const { id } = req.params;
 

@@ -14,6 +14,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { learnFromThought } from './learning-engine';
 import { logger } from '../utils/logger';
 
+/** Pre-built search_path statements — no string interpolation */
+const SEARCH_PATH_SQL: Record<AIContext, string> = {
+  personal: 'SET search_path TO personal, public',
+  work: 'SET search_path TO work, public',
+  learning: 'SET search_path TO learning, public',
+  creative: 'SET search_path TO creative, public',
+};
+
 /**
  * Get a pool client with search_path set to the correct context schema.
  * CRITICAL: Without this, queries hit the default public schema in production.
@@ -24,7 +32,7 @@ async function getClient(context: AIContext): Promise<PoolClient> {
   }
   const pool = getPool(context);
   const client = await pool.connect();
-  await client.query(`SET search_path TO ${context}, public`);
+  await client.query(SEARCH_PATH_SQL[context]);
   return client;
 }
 

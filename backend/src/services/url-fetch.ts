@@ -9,10 +9,96 @@
 
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { lookup as dnsLookup } from 'dns/promises';
+import { isIP } from 'net';
 import { logger } from '../utils/logger';
 
 // Type alias for Cheerio loaded document
 type CheerioDoc = ReturnType<typeof cheerio.load>;
+
+// ===========================================
+// SSRF Protection
+// ===========================================
+
+/**
+ * Private/internal IP ranges that must never be fetched.
+ * Prevents Server-Side Request Forgery (SSRF) attacks that could
+ * leak cloud metadata, internal services, or database credentials.
+ */
+const BLOCKED_IP_PATTERNS: RegExp[] = [
+  // Loopback
+  /^127\./,
+  /^0\./,
+  /^::1$/,
+  /^0:0:0:0:0:0:0:1$/,
+  // Private RFC 1918
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^192\.168\./,
+  // Link-local
+  /^169\.254\./,
+  /^fe80:/i,
+  // Cloud metadata endpoints
+  /^fd00:/i,
+  // IPv6 private
+  /^fc00:/i,
+  /^fd/i,
+];
+
+/** Hostnames that resolve to dangerous internal services */
+const BLOCKED_HOSTNAMES: string[] = [
+  'metadata.google.internal',
+  'metadata.goog',
+  'instance-data',
+  'kubernetes.default',
+  'kubernetes.default.svc',
+];
+
+/**
+ * Check if an IP address belongs to a private/internal range.
+ */
+function isPrivateIP(ip: string): boolean {
+  return BLOCKED_IP_PATTERNS.some(pattern => pattern.test(ip));
+}
+
+/**
+ * Validate that a hostname does not resolve to a private/internal IP.
+ * Prevents SSRF via DNS rebinding and direct IP access.
+ */
+async function validateHostSSRF(hostname: string): Promise<{ safe: boolean; reason?: string }> {
+  // Block known dangerous hostnames
+  const lowerHost = hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.some(h => lowerHost === h || lowerHost.endsWith('.' + h))) {
+    return { safe: false, reason: `Blocked hostname: ${hostname}` };
+  }
+
+  // Block localhost variants
+  if (lowerHost === 'localhost' || lowerHost === 'localhost.localdomain') {
+    return { safe: false, reason: 'Localhost access not allowed' };
+  }
+
+  // If hostname is already an IP, check directly
+  if (isIP(hostname)) {
+    if (isPrivateIP(hostname)) {
+      return { safe: false, reason: 'Private/internal IP address not allowed' };
+    }
+    return { safe: true };
+  }
+
+  // Resolve hostname to IP and check
+  try {
+    const addresses = await dnsLookup(hostname, { all: true });
+    for (const addr of addresses) {
+      if (isPrivateIP(addr.address)) {
+        return { safe: false, reason: `Hostname resolves to private IP: ${addr.address}` };
+      }
+    }
+    return { safe: true };
+  } catch {
+    // DNS resolution failed — allow fetch to fail naturally with ENOTFOUND
+    return { safe: true };
+  }
+}
 
 // ===========================================
 // Types
@@ -148,6 +234,13 @@ export async function fetchUrl(url: string, options: FetchOptions = {}): Promise
   }
 
   const domain = parsedUrl.hostname;
+
+  // SSRF Protection: Block requests to internal/private networks
+  const ssrfCheck = await validateHostSSRF(domain);
+  if (!ssrfCheck.safe) {
+    logger.warn('SSRF blocked', { url, domain, reason: ssrfCheck.reason });
+    return createErrorResult(url, 'Diese URL kann aus Sicherheitsgründen nicht abgerufen werden.');
+  }
 
   logger.info('Fetching URL', { url, domain });
 
@@ -435,6 +528,9 @@ export function isValidUrl(url: string): boolean {
     return false;
   }
 }
+
+/** Exported for use by other services that need SSRF validation */
+export { validateHostSSRF };
 
 /**
  * Extract domain from URL

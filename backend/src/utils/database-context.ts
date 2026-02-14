@@ -19,6 +19,18 @@ dotenv.config();
 import { AIContext, VALID_CONTEXTS } from '../types';
 export type { AIContext };
 
+/**
+ * Pre-built search_path statements per context.
+ * Using a static map eliminates any string interpolation risk —
+ * only these exact SQL strings can ever be executed.
+ */
+const SEARCH_PATH_SQL: Record<AIContext, string> = {
+  personal: 'SET search_path TO personal, public',
+  work: 'SET search_path TO work, public',
+  learning: 'SET search_path TO learning, public',
+  creative: 'SET search_path TO creative, public',
+};
+
 // ===========================================
 // Pool Configuration (Phase 11 Optimized)
 // ===========================================
@@ -253,8 +265,8 @@ export async function queryContext(
     const client = await pool.connect();
 
     try {
-      // Set search_path to the appropriate schema based on context
-      await client.query(`SET search_path TO ${effectiveContext}, public`);
+      // Set search_path via static lookup — no string interpolation
+      await client.query(SEARCH_PATH_SQL[effectiveContext]);
 
       // Execute query in correct schema
       const result = await client.query(text, params);
@@ -403,10 +415,18 @@ export function setupGracefulShutdown(): void {
  * Ensure all context schemas exist in the database.
  * Uses the shared pool. Safe to call multiple times (CREATE SCHEMA IF NOT EXISTS).
  */
+/** Pre-built CREATE SCHEMA statements — no interpolation */
+const CREATE_SCHEMA_SQL: Record<AIContext, string> = {
+  personal: 'CREATE SCHEMA IF NOT EXISTS personal',
+  work: 'CREATE SCHEMA IF NOT EXISTS work',
+  learning: 'CREATE SCHEMA IF NOT EXISTS learning',
+  creative: 'CREATE SCHEMA IF NOT EXISTS creative',
+};
+
 export async function ensureSchemas(): Promise<void> {
   for (const ctx of VALID_CONTEXTS) {
     try {
-      await sharedPool.query(`CREATE SCHEMA IF NOT EXISTS ${ctx}`);
+      await sharedPool.query(CREATE_SCHEMA_SQL[ctx]);
       logger.debug(`Schema ${ctx} ensured`, { operation: 'ensureSchemas' });
     } catch (error) {
       // Non-fatal: schema likely already exists or DDL is restricted (e.g. Supabase)

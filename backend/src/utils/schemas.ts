@@ -368,7 +368,7 @@ export const CreateChatSessionSchema = z.object({
 export const ChatMessageSchema = z.object({
   message: z.string()
     .min(1, 'Message is required')
-    .max(100000, 'Message must be at most 100000 characters')
+    .max(32000, 'Message must be at most 32000 characters')
     .transform((s: string) => s.trim()),
   include_metadata: z.boolean().optional(),
   thinking_mode: z.string().optional(),
@@ -416,6 +416,47 @@ export const MeetingSearchSchema = z.object({
     .transform((s: string) => s.trim()),
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
+
+// ===========================================
+// Task & Project Schemas (Phase 37)
+// ===========================================
+
+const TaskStatusSchema = z.enum(['backlog', 'todo', 'in_progress', 'done', 'cancelled']);
+const TaskPrioritySchema = z.enum(['low', 'medium', 'high', 'urgent']);
+
+export const CreateTaskSchema = z.object({
+  title: z.string()
+    .transform((s: string) => s.trim())
+    .pipe(z.string().min(1, 'Title is required').max(500, 'Title must be at most 500 characters')),
+  description: z.string().max(10000).optional(),
+  status: TaskStatusSchema.optional(),
+  priority: TaskPrioritySchema.optional(),
+  project_id: z.string().uuid().optional().nullable(),
+  source_idea_id: z.string().uuid().optional().nullable(),
+  calendar_event_id: z.string().uuid().optional().nullable(),
+  due_date: z.string().max(50).optional().nullable(),
+  start_date: z.string().max(50).optional().nullable(),
+  assignee: z.string().max(200).optional().nullable(),
+  estimated_hours: z.number().min(0).max(10000).optional().nullable(),
+  labels: z.array(z.string().max(50)).max(20).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const UpdateTaskSchema = CreateTaskSchema.partial();
+
+export const CreateProjectSchema = z.object({
+  name: z.string()
+    .transform((s: string) => s.trim())
+    .pipe(z.string().min(1, 'Name is required').max(200, 'Name must be at most 200 characters')),
+  description: z.string().max(5000).optional(),
+  color: z.string().max(20).optional(),
+  icon: z.string().max(10).optional(),
+  status: z.enum(['active', 'on_hold', 'paused', 'completed', 'archived']).optional(),
+  sort_order: z.number().int().min(0).max(10000).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const UpdateProjectSchema = CreateProjectSchema.partial();
 
 // ===========================================
 // Type Exports
