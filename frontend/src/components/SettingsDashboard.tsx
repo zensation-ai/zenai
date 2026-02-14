@@ -11,12 +11,13 @@
  * - Daten: Export + Sync kombiniert
  */
 
-import { memo, Suspense, lazy } from 'react';
+import { memo, Suspense, lazy, useCallback } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useSettings } from '../hooks/useSettings';
 import { useTabNavigation } from '../hooks/useTabNavigation';
+import { FEATURE_HINTS, STORAGE_KEY_PREFIX } from '../constants/featureHints';
 import '../neurodesign.css';
 import './SettingsDashboard.css';
 
@@ -106,6 +107,13 @@ export const SettingsDashboard = memo(({
   });
   const { settings, updateSetting } = useSettings();
 
+  const handleResetHints = useCallback(() => {
+    FEATURE_HINTS.forEach(hint => {
+      try { localStorage.removeItem(`${STORAGE_KEY_PREFIX}${hint.id}`); } catch { /* noop */ }
+    });
+    alert('Feature-Hinweise wurden zurückgesetzt. Beim nächsten Seitenbesuch erscheinen sie erneut.');
+  }, []);
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'profile':
@@ -177,6 +185,23 @@ export const SettingsDashboard = memo(({
                   <span className="settings-item-desc">Aktueller Arbeitsbereich</span>
                 </div>
                 <span className="settings-item-value">{context}</span>
+              </div>
+            </div>
+
+            <div className="settings-group">
+              <h3 className="settings-group-title">Hilfe</h3>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <span className="settings-item-label">Feature-Hinweise zurücksetzen</span>
+                  <span className="settings-item-desc">Zeigt die Einführungshinweise auf jeder Seite erneut an</span>
+                </div>
+                <button
+                  type="button"
+                  className="settings-action-btn neuro-press-effect neuro-focus-ring"
+                  onClick={handleResetHints}
+                >
+                  Zurücksetzen
+                </button>
               </div>
             </div>
           </div>

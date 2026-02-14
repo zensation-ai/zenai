@@ -260,6 +260,35 @@
   border-radius: 6px;
 }
 
+.settings-action-btn {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--neuro-text-primary, #fff);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.settings-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--primary);
+}
+
+:root.light-mode .settings-action-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text);
+}
+
+:root.light-mode .settings-action-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: var(--primary);
+}
+
 .settings-quick-links {
   display: flex;
   flex-wrap: wrap;

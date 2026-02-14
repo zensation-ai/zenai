@@ -25,6 +25,7 @@ interface Idea {
   next_steps: string[];
   context_needed: string[];
   keywords: string[];
+  is_favorite?: boolean;
   created_at: string;
   similarity?: number;
 }
@@ -35,11 +36,15 @@ interface IdeaCardProps {
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
   onMove?: (id: string, targetContext: AIContext) => void;
+  onToggleFavorite?: (id: string) => void;
   isArchived?: boolean;
   context?: AIContext;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string, selected: boolean) => void;
 }
 
-function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArchived = false, context = 'personal' }: IdeaCardProps) {
+function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onToggleFavorite, isArchived = false, context = 'personal', selectionMode = false, isSelected = false, onSelect }: IdeaCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
@@ -118,17 +123,39 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, isArc
 
   return (
     <div
-      className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''} ${isNew ? 'is-new' : ''}`}
+      className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''} ${isNew ? 'is-new' : ''} ${isSelected ? 'selected' : ''}`}
       data-type={idea.type}
       role="article"
       aria-label={`${getTypeLabel(idea.type)}: ${idea.title}`}
     >
+      {selectionMode && (
+        <label className="idea-select-checkbox" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onSelect?.(idea.id, e.target.checked)}
+            aria-label={`${idea.title} auswählen`}
+          />
+        </label>
+      )}
       <div className="idea-header">
         <span className="idea-type" aria-label={getTypeLabel(idea.type)} title={getTypeLabel(idea.type)}>
           {getTypeIcon(idea.type)}
         </span>
         <h3 className="idea-title">{idea.title}</h3>
         <div className="idea-actions">
+          {onToggleFavorite && !isArchived && (
+            <button
+              type="button"
+              className={`favorite-button neuro-press-effect neuro-focus-ring ${idea.is_favorite ? 'is-favorite' : ''}`}
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(idea.id); }}
+              title={idea.is_favorite ? 'Favorit entfernen' : 'Favorit'}
+              aria-label={idea.is_favorite ? 'Von Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+              aria-pressed={!!idea.is_favorite}
+            >
+              {idea.is_favorite ? '⭐' : '☆'}
+            </button>
+          )}
           {isArchived ? (
             <button
               type="button"

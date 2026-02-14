@@ -14,6 +14,7 @@ export interface AdvancedFilters {
   types: Set<string>;
   categories: Set<string>;
   priorities: Set<string>;
+  showFavoritesOnly?: boolean;
 }
 
 // Backwards Compatibility Alias
@@ -110,7 +111,7 @@ export const SearchFilterBar = memo(function SearchFilterBar({
   }, [onClearSearch]);
 
   const toggleFilter = useCallback(
-    (key: keyof AdvancedFilters, value: string) => {
+    (key: 'types' | 'categories' | 'priorities', value: string) => {
       const currentSet = new Set(filters[key]);
 
       if (currentSet.has(value)) {
@@ -168,6 +169,18 @@ export const SearchFilterBar = memo(function SearchFilterBar({
             </button>
           )}
         </div>
+
+        {/* Favoriten-Toggle */}
+        <button
+          type="button"
+          className={`sfb-favorites-toggle neuro-press-effect neuro-focus-ring ${filters.showFavoritesOnly ? 'active' : ''}`}
+          onClick={() => onFilterChange({ ...filters, showFavoritesOnly: !filters.showFavoritesOnly })}
+          aria-pressed={!!filters.showFavoritesOnly}
+          aria-label={filters.showFavoritesOnly ? 'Alle Gedanken anzeigen' : 'Nur Favoriten anzeigen'}
+          title={filters.showFavoritesOnly ? 'Alle anzeigen' : 'Nur Favoriten'}
+        >
+          <span aria-hidden="true">{filters.showFavoritesOnly ? '⭐' : '☆'}</span>
+        </button>
 
         {/* Filter-Toggle */}
         <button

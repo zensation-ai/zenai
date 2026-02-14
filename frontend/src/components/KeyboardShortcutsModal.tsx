@@ -58,8 +58,6 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     name: 'Allgemein',
     icon: '\u2328\uFE0F', // keyboard
     shortcuts: [
-      { action: 'R\u00FCckg\u00E4ngig', shortcut: 'Cmd+Z', description: 'Letzte Aktion zur\u00FCcknehmen' },
-      { action: 'Wiederholen', shortcut: 'Cmd+Shift+Z', description: 'R\u00FCckg\u00E4ngig r\u00FCckg\u00E4ngig machen' },
       { action: 'Hilfe', shortcut: 'Cmd+?', description: 'Diese Hilfe anzeigen' },
       { action: 'Schlie\u00DFen', shortcut: 'Escape', description: 'Dialog schlie\u00DFen' },
     ],

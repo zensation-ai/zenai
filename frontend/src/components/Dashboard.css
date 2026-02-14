@@ -607,6 +607,81 @@
   color: var(--text-muted);
 }
 
+/* Unread badge on KI-Aktivität heading */
+.dash-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 8px;
+  background: var(--primary, #ff6b35);
+  color: white;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* Column header with actions */
+.dash-column-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mark-read button */
+.dash-mark-read-btn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.dash-mark-read-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Clickable activity items */
+.dash-activity-item.clickable {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+}
+
+.dash-activity-item.clickable:hover {
+  background: rgba(255, 107, 53, 0.06);
+}
+
+/* Unread activity items */
+.dash-activity-item.unread .dash-activity-message {
+  font-weight: 500;
+}
+
+/* Unread dot indicator */
+.dash-activity-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary, #ff6b35);
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: 4px;
+  align-self: center;
+}
+
 /* ============================================
    Upcoming Events Widget
    ============================================ */

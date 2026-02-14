@@ -464,8 +464,6 @@ export const BUTTON_TOOLTIPS: Record<string, TooltipContent> = {
   // Sonstiges
   help: { label: 'Hilfe', action: 'Tipps & Anleitungen', shortcut: 'Cmd+?' },
   feedback: { label: 'Feedback', action: 'Rückmeldung geben', hint: 'Deine Meinung zählt!' },
-  undo: { label: 'Rückgängig', action: 'Letzte Aktion zurücknehmen', shortcut: 'Cmd+Z' },
-  redo: { label: 'Wiederholen', action: 'Rückgängig rückgängig machen', shortcut: 'Cmd+Shift+Z' },
 };
 
 // ============================================

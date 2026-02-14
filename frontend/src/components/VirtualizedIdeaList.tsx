@@ -26,8 +26,12 @@ interface VirtualizedIdeaListProps {
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
   onMove?: (id: string, targetContext: AIContext) => void;
+  onToggleFavorite?: (id: string) => void;
   isArchived?: boolean;
   context: AIContext;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onSelect?: (id: string, selected: boolean) => void;
 }
 
 // Estimated row heights for virtualization
@@ -47,8 +51,12 @@ function VirtualizedIdeaListComponent({
   onArchive,
   onRestore,
   onMove,
+  onToggleFavorite,
   isArchived = false,
   context,
+  selectionMode = false,
+  selectedIds,
+  onSelect,
 }: VirtualizedIdeaListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -175,8 +183,12 @@ function VirtualizedIdeaListComponent({
                     onArchive={onArchive}
                     onRestore={onRestore}
                     onMove={onMove}
+                    onToggleFavorite={onToggleFavorite}
                     isArchived={isArchived}
                     context={context}
+                    selectionMode={selectionMode}
+                    isSelected={selectedIds?.has(idea.id) ?? false}
+                    onSelect={onSelect}
                   />
                 </div>
               ))}
@@ -201,7 +213,7 @@ export const VIRTUALIZATION_THRESHOLD = 50;
  * Smart list component that auto-selects virtualization based on count
  */
 export function SmartIdeaList(props: VirtualizedIdeaListProps) {
-  const { ideas, viewMode, onIdeaClick, onDelete, onArchive, onRestore, onMove, isArchived, context } = props;
+  const { ideas, viewMode, onIdeaClick, onDelete, onArchive, onRestore, onMove, onToggleFavorite, isArchived, context, selectionMode, selectedIds, onSelect } = props;
 
   // Use virtualization for large lists
   if (ideas.length >= VIRTUALIZATION_THRESHOLD) {
@@ -234,8 +246,12 @@ export function SmartIdeaList(props: VirtualizedIdeaListProps) {
             onArchive={onArchive}
             onRestore={onRestore}
             onMove={onMove}
+            onToggleFavorite={onToggleFavorite}
             isArchived={isArchived}
             context={context}
+            selectionMode={selectionMode}
+            isSelected={selectedIds?.has(idea.id) ?? false}
+            onSelect={onSelect}
           />
         </div>
       ))}

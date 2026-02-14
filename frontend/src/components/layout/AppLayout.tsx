@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { Page, ApiStatus } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { Breadcrumbs, getBreadcrumbs } from '../Breadcrumbs';
@@ -15,6 +16,8 @@ import { MobileBottomBar } from './MobileBottomBar';
 import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { safeLocalStorage } from '../../utils/storage';
 import { FloatingAssistant } from '../FloatingAssistant/FloatingAssistant';
+import { useFeatureHint } from '../../hooks/useFeatureHint';
+import { FeatureHintCard } from '../FeatureHintCard';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -55,6 +58,10 @@ export function AppLayout({
   isFavorited,
   renderChat,
 }: AppLayoutProps) {
+  // Feature discovery hints
+  const location = useLocation();
+  const { activeHint, dismissHint } = useFeatureHint(location.pathname);
+
   // Sidebar collapsed state - persisted to localStorage
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return safeLocalStorage('get', 'sidebar-collapsed') === 'true';
@@ -239,6 +246,11 @@ export function AppLayout({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Feature Discovery Hints */}
+      {activeHint && (
+        <FeatureHintCard hint={activeHint} onDismiss={dismissHint} />
       )}
     </div>
   );

@@ -20,7 +20,7 @@ import {
   convertIdeaToTask,
   TaskStatus,
 } from '../services/tasks';
-import { AIContext, isValidContext } from '../utils/database-context';
+import { AIContext, isValidContext, queryContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID } from '../utils/validation';
@@ -223,6 +223,35 @@ tasksRouter.delete('/:context/tasks/:id', apiKeyAuth, requireScope('write'), asy
   res.json({
     success: true,
     message: 'Task cancelled',
+  });
+}));
+
+// ============================================================
+// PUT /api/:context/tasks/:id/favorite
+// ============================================================
+
+tasksRouter.put('/:context/tasks/:id/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const context = getContextFromParams(req.params.context);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid task ID', { id: 'must be a valid UUID' });
+  }
+
+  const result = await queryContext(
+    context,
+    'UPDATE tasks SET is_favorite = NOT COALESCE(is_favorite, false), updated_at = NOW() WHERE id = $1 AND status != $2 RETURNING id, is_favorite',
+    [id, 'cancelled']
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Task not found');
+  }
+
+  res.json({
+    success: true,
+    id: result.rows[0].id,
+    isFavorite: result.rows[0].is_favorite,
   });
 }));
 

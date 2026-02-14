@@ -1,0 +1,136 @@
+/**
+ * IdeaBatchActionBar Styles
+ *
+ * Floating bar at bottom of ideas section during selection mode.
+ */
+
+.idea-batch-bar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 252, 248, 0.92));
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(20, 50, 70, 0.12),
+    0 4px 16px rgba(20, 50, 70, 0.06);
+  animation: batchBarSlide 0.2s ease-out;
+}
+
+@keyframes batchBarSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.idea-batch-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.idea-batch-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.idea-batch-btn-text {
+  background: none;
+  border: none;
+  color: var(--primary, #ff6b35);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.idea-batch-btn-text:hover {
+  background: rgba(255, 107, 53, 0.08);
+}
+
+.idea-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.idea-batch-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.idea-batch-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.idea-batch-action.favorite:hover {
+  background: #fff8e1;
+  border-color: #f59e0b;
+}
+
+.idea-batch-action.archive:hover {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.idea-batch-action.delete:hover {
+  background: #fce4ec;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .idea-batch-bar {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 14px;
+    bottom: 70px; /* Above mobile bottom nav */
+  }
+
+  .idea-batch-info {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .idea-batch-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+/* Dark mode */
+[data-theme="dark"] .idea-batch-bar {
+  background: linear-gradient(135deg, rgba(30, 35, 45, 0.95), rgba(25, 30, 40, 0.92));
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .idea-batch-action {
+  background: rgba(50, 55, 65, 0.8);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}

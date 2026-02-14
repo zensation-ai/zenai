@@ -313,11 +313,14 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
     whereClause += ` AND priority = $${paramIndex++}`;
     params.push(priorityResult.data);
   }
+  if (req.query.favorites === 'true') {
+    whereClause += ` AND is_favorite = true`;
+  }
 
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary,
-            next_steps, context_needed, keywords, context, created_at, updated_at
+            next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
      WHERE is_archived = false ${whereClause}
      ORDER BY created_at DESC
@@ -891,7 +894,7 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary,
-            next_steps, context_needed, keywords, context, created_at, updated_at
+            next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
      WHERE is_archived = true
      ORDER BY updated_at DESC
@@ -1216,11 +1219,14 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
     whereClause += ` AND priority = $${paramIndex++}`;
     params.push(priorityResult.data);
   }
+  if (req.query.favorites === 'true') {
+    whereClause += ` AND is_favorite = true`;
+  }
 
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary,
-            next_steps, context_needed, keywords, context, created_at, updated_at
+            next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
      WHERE is_archived = false ${whereClause}
      ORDER BY created_at DESC
@@ -1262,7 +1268,7 @@ ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(asyn
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary,
-            next_steps, context_needed, keywords, context, created_at, updated_at
+            next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
      WHERE is_archived = true
      ORDER BY updated_at DESC
@@ -1400,5 +1406,117 @@ ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('wr
     movedId: id,
     from: sourceContext,
     to: targetContext,
+  });
+}));
+
+/**
+ * PUT /api/:context/ideas/:id/favorite
+ * Toggle favorite status on an idea
+ */
+ideasContextRouter.put('/:context/ideas/:id/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) {
+    throw new ValidationError('Invalid idea ID format');
+  }
+
+  const result = await queryContext(
+    ctx,
+    'UPDATE ideas SET is_favorite = NOT COALESCE(is_favorite, false), updated_at = NOW() WHERE id = $1 RETURNING id, is_favorite',
+    [id]
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  res.json({
+    success: true,
+    id: result.rows[0].id,
+    isFavorite: result.rows[0].is_favorite,
+  });
+}));
+
+// ===========================================
+// Batch Operations
+// ===========================================
+
+const MAX_BATCH_SIZE = 100;
+
+function validateBatchIds(ids: unknown): string[] {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new ValidationError('ids must be a non-empty array');
+  }
+  if (ids.length > MAX_BATCH_SIZE) {
+    throw new ValidationError(`Maximum ${MAX_BATCH_SIZE} items per batch operation`);
+  }
+  for (const id of ids) {
+    if (typeof id !== 'string' || !isValidUUID(id)) {
+      throw new ValidationError(`Invalid UUID: ${id}`);
+    }
+  }
+  return ids as string[];
+}
+
+/**
+ * POST /api/:context/ideas/batch/archive
+ * Archive multiple ideas at once
+ */
+ideasContextRouter.post('/:context/ideas/batch/archive', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const ids = validateBatchIds(req.body.ids);
+
+  const result = await queryContext(
+    ctx,
+    `UPDATE ideas SET status = 'archived', updated_at = NOW() WHERE id = ANY($1::uuid[]) AND status != 'archived' RETURNING id`,
+    [ids]
+  );
+
+  res.json({
+    success: true,
+    affected: result.rows.length,
+  });
+}));
+
+/**
+ * POST /api/:context/ideas/batch/delete
+ * Delete multiple ideas at once
+ */
+ideasContextRouter.post('/:context/ideas/batch/delete', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const ids = validateBatchIds(req.body.ids);
+
+  const result = await queryContext(
+    ctx,
+    'DELETE FROM ideas WHERE id = ANY($1::uuid[]) RETURNING id',
+    [ids]
+  );
+
+  res.json({
+    success: true,
+    affected: result.rows.length,
+  });
+}));
+
+/**
+ * POST /api/:context/ideas/batch/favorite
+ * Set or unset favorite for multiple ideas
+ */
+ideasContextRouter.post('/:context/ideas/batch/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = getContextFromParams(req);
+  const ids = validateBatchIds(req.body.ids);
+  const isFavorite = req.body.isFavorite !== false; // default true
+
+  const result = await queryContext(
+    ctx,
+    'UPDATE ideas SET is_favorite = $2, updated_at = NOW() WHERE id = ANY($1::uuid[]) RETURNING id',
+    [ids, isFavorite]
+  );
+
+  res.json({
+    success: true,
+    affected: result.rows.length,
+    isFavorite,
   });
 }));

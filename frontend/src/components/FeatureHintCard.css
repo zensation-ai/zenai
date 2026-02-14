@@ -1,0 +1,164 @@
+/**
+ * FeatureHintCard Styles
+ *
+ * Floating hint card, bottom-right, slide-up animation.
+ */
+
+.feature-hint-card {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  width: 340px;
+  max-width: calc(100vw - 48px);
+  padding: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(255, 252, 248, 0.94) 100%
+  );
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 40px rgba(20, 50, 70, 0.12),
+    0 4px 16px rgba(20, 50, 70, 0.06);
+  animation: hintSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes hintSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fhc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.fhc-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.fhc-title-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fhc-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fhc-shortcut {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.fhc-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 50%;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.fhc-close:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--text);
+}
+
+.fhc-description {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.fhc-tips {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fhc-tips li {
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.fhc-dismiss {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: var(--primary, #ff6b35);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fhc-dismiss:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+/* Dark mode */
+[data-theme="dark"] .feature-hint-card {
+  background: linear-gradient(
+    135deg,
+    rgba(30, 35, 45, 0.96) 0%,
+    rgba(25, 30, 40, 0.94) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .fhc-shortcut {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .feature-hint-card {
+    bottom: 80px; /* Above mobile bottom nav */
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}

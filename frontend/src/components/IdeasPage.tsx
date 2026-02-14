@@ -7,6 +7,7 @@
 
 import { lazy, Suspense, useMemo, memo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import type { StructuredIdea } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import type { AdvancedFilters } from './SearchFilterBar';
@@ -26,6 +27,8 @@ import { GeneralChat } from './GeneralChat';
 // AIProcessingOverlay is now rendered globally in App.tsx
 import { CommandCenter } from './CommandCenter';
 import { RateLimitBanner } from './RateLimitBanner';
+import { IdeaBatchActionBar } from './IdeaBatchActionBar';
+import { useConfirm } from './ConfirmDialog';
 import { showToast } from './Toast';
 import {
   AI_PERSONALITY,
@@ -153,6 +156,114 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
       navigate(`/ideas/${tab}`, { replace: true });
     }
   }, [navigate]);
+
+  // Local favorite overrides for optimistic UI updates
+  const [favoriteOverrides, setFavoriteOverrides] = useState<Map<string, boolean>>(new Map());
+
+  // Reset overrides when ideas change (e.g., after refetch)
+  useEffect(() => {
+    setFavoriteOverrides(new Map());
+  }, [ideas]);
+
+  const handleToggleFavorite = useCallback(async (id: string) => {
+    // Find current state (check override first, then original)
+    const idea = ideas.find(i => i.id === id);
+    const currentFav = favoriteOverrides.has(id) ? favoriteOverrides.get(id) : idea?.is_favorite;
+    const newFav = !currentFav;
+
+    // Optimistic update
+    setFavoriteOverrides(prev => new Map(prev).set(id, newFav));
+
+    try {
+      await axios.put(`/api/${context}/ideas/${id}/favorite`);
+      showToast(newFav ? 'Favorit gesetzt' : 'Favorit entfernt', 'success');
+    } catch {
+      // Revert optimistic update
+      setFavoriteOverrides(prev => {
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
+      showToast('Favorit konnte nicht geändert werden', 'error');
+    }
+  }, [context, ideas, favoriteOverrides]);
+
+  // Selection mode for bulk actions
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const confirm = useConfirm();
+
+  const handleSelectIdea = useCallback((id: string, selected: boolean) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (selected) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode(prev => {
+      if (prev) setSelectedIds(new Set()); // Clear on exit
+      return !prev;
+    });
+  }, []);
+
+  const handleBatchArchive = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await axios.post(`/api/${context}/ideas/batch/archive`, { ids: Array.from(selectedIds) });
+      showToast(`${selectedIds.size} Gedanken archiviert`, 'success');
+      selectedIds.forEach(id => onArchiveIdea(id));
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } catch {
+      showToast('Batch-Archivierung fehlgeschlagen', 'error');
+    }
+  }, [context, selectedIds, onArchiveIdea]);
+
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    const confirmed = await confirm({
+      title: `${selectedIds.size} Gedanken löschen`,
+      message: `Möchtest du wirklich ${selectedIds.size} Gedanken unwiderruflich löschen?`,
+      confirmText: 'Löschen',
+      cancelText: 'Abbrechen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    try {
+      await axios.post(`/api/${context}/ideas/batch/delete`, { ids: Array.from(selectedIds) });
+      showToast(`${selectedIds.size} Gedanken gelöscht`, 'success');
+      selectedIds.forEach(id => onDeleteIdea(id));
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } catch {
+      showToast('Batch-Löschung fehlgeschlagen', 'error');
+    }
+  }, [context, selectedIds, confirm, onDeleteIdea]);
+
+  const handleBatchFavorite = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await axios.post(`/api/${context}/ideas/batch/favorite`, { ids: Array.from(selectedIds), isFavorite: true });
+      showToast(`${selectedIds.size} Gedanken als Favoriten markiert`, 'success');
+      setFavoriteOverrides(prev => {
+        const next = new Map(prev);
+        selectedIds.forEach(id => next.set(id, true));
+        return next;
+      });
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } catch {
+      showToast('Batch-Favoriten fehlgeschlagen', 'error');
+    }
+  }, [context, selectedIds]);
+
   const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
 
   const humanGreeting = useMemo(() => {
@@ -217,10 +328,23 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
     return { types, categories, priorities };
   }, [ideas]);
 
+  // Apply favorite overrides to ideas for rendering
+  const ideasWithFavorites = useMemo(() => {
+    if (favoriteOverrides.size === 0) return ideas;
+    return ideas.map(idea =>
+      favoriteOverrides.has(idea.id)
+        ? { ...idea, is_favorite: favoriteOverrides.get(idea.id) }
+        : idea
+    );
+  }, [ideas, favoriteOverrides]);
+
   // Apply filters
   const filteredIdeas = useMemo(() => {
-    let result = searchResults || ideas;
+    let result = searchResults || ideasWithFavorites;
 
+    if (filters.showFavoritesOnly) {
+      result = result.filter((idea) => idea.is_favorite);
+    }
     if (filters.types.size > 0) {
       result = result.filter((idea) => filters.types.has(idea.type));
     }
@@ -232,7 +356,11 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
     }
 
     return result;
-  }, [ideas, searchResults, filters]);
+  }, [ideasWithFavorites, searchResults, filters]);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredIdeas.map(i => i.id)));
+  }, [filteredIdeas]);
 
   return (
     <div className={`ideas-page${isAIActive ? ' ai-active' : ''}`} data-context={context}>
@@ -473,31 +601,43 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
               {searchResults ? 'Suchergebnisse' : 'Deine Gedanken'}
               <span className="count">{filteredIdeas.length}</span>
             </h2>
-            <div className="view-toggle" role="tablist" aria-label="Ansicht wählen">
+            <div className="view-controls">
               <button
                 type="button"
-                role="tab"
-                className={viewMode === 'grid' ? 'active' : ''}
-                onClick={() => onViewModeChange('grid')}
-                title="Rasteransicht"
-                aria-label="Rasteransicht"
-                aria-selected={viewMode === 'grid'}
-                tabIndex={viewMode === 'grid' ? 0 : -1}
+                className={`selection-toggle neuro-press-effect neuro-focus-ring ${selectionMode ? 'active' : ''}`}
+                onClick={toggleSelectionMode}
+                title={selectionMode ? 'Auswahl beenden' : 'Auswählen'}
+                aria-label={selectionMode ? 'Auswahl beenden' : 'Mehrere auswählen'}
+                aria-pressed={selectionMode}
               >
-                ⊞
+                ☑
               </button>
-              <button
-                type="button"
-                role="tab"
-                className={viewMode === 'list' ? 'active' : ''}
-                onClick={() => onViewModeChange('list')}
-                title="Listenansicht"
-                aria-label="Listenansicht"
-                aria-selected={viewMode === 'list'}
-                tabIndex={viewMode === 'list' ? 0 : -1}
-              >
-                ☰
-              </button>
+              <div className="view-toggle" role="tablist" aria-label="Ansicht wählen">
+                <button
+                  type="button"
+                  role="tab"
+                  className={viewMode === 'grid' ? 'active' : ''}
+                  onClick={() => onViewModeChange('grid')}
+                  title="Rasteransicht"
+                  aria-label="Rasteransicht"
+                  aria-selected={viewMode === 'grid'}
+                  tabIndex={viewMode === 'grid' ? 0 : -1}
+                >
+                  ⊞
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  className={viewMode === 'list' ? 'active' : ''}
+                  onClick={() => onViewModeChange('list')}
+                  title="Listenansicht"
+                  aria-label="Listenansicht"
+                  aria-selected={viewMode === 'list'}
+                  tabIndex={viewMode === 'list' ? 0 : -1}
+                >
+                  ☰
+                </button>
+              </div>
             </div>
           </div>
 
@@ -532,15 +672,30 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
               )}
             </div>
           ) : (
-            <SmartIdeaList
-              ideas={filteredIdeas}
-              viewMode={viewMode}
-              onIdeaClick={onIdeaClick}
-              onDelete={onDeleteIdea}
-              onArchive={onArchiveIdea}
-              onMove={onMoveIdea}
-              context={context}
-            />
+            <>
+              <SmartIdeaList
+                ideas={filteredIdeas}
+                viewMode={viewMode}
+                onIdeaClick={selectionMode ? undefined : onIdeaClick}
+                onDelete={onDeleteIdea}
+                onArchive={onArchiveIdea}
+                onMove={onMoveIdea}
+                onToggleFavorite={handleToggleFavorite}
+                context={context}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onSelect={handleSelectIdea}
+              />
+              <IdeaBatchActionBar
+                selectedCount={selectedIds.size}
+                totalCount={filteredIdeas.length}
+                onSelectAll={handleSelectAll}
+                onClear={handleClearSelection}
+                onBatchArchive={handleBatchArchive}
+                onBatchDelete={handleBatchDelete}
+                onBatchFavorite={handleBatchFavorite}
+              />
+            </>
           )}
         </section>
       </div>

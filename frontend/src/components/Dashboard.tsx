@@ -54,6 +54,8 @@ interface ActivityItem {
   id: string;
   activityType: string;
   message: string;
+  ideaId: string | null;
+  isRead: boolean;
   createdAt: string;
 }
 
@@ -180,6 +182,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [recentIdeas, setRecentIdeas] = useState<RecentIdea[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const hasFetched = useRef(false);
@@ -209,6 +212,16 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         setActivity((d.activities || []).slice(0, 5));
       }
 
+      // Fetch AI activity with unread count
+      axios.get(`/api/${context}/ai-activity`, { params: { limit: 10 } })
+        .then(r => {
+          if (r.data?.success) {
+            setActivity((r.data.activities || []).slice(0, 5));
+            setUnreadCount(r.data.unreadCount || 0);
+          }
+        })
+        .catch(() => { /* Activity feed might not be available */ });
+
       // Fetch upcoming calendar events (next 48 hours)
       axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 5 } })
         .then(r => { if (r.data?.success) setUpcomingEvents(r.data.data || []); })
@@ -224,6 +237,16 @@ const DashboardComponent: React.FC<DashboardProps> = ({
       logError('Dashboard:fetchData', err);
     } finally {
       setLoading(false);
+    }
+  }, [context]);
+
+  const handleMarkAllRead = useCallback(async () => {
+    try {
+      await axios.post(`/api/${context}/ai-activity/mark-read`);
+      setUnreadCount(0);
+      setActivity(prev => prev.map(a => ({ ...a, isRead: true })));
+    } catch (err) {
+      logError('Dashboard:markRead', err);
     }
   }, [context]);
 
@@ -442,10 +465,29 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         {/* AI Activity */}
         <div className="dash-column">
           <div className="dash-column-header">
-            <h3>KI-Aktivität</h3>
-            <button type="button" className="dash-see-all neuro-focus-ring" onClick={() => onNavigate('insights')}>
-              Insights →
-            </button>
+            <h3>
+              KI-Aktivität
+              {unreadCount > 0 && (
+                <span className="dash-unread-badge" aria-label={`${unreadCount} ungelesen`}>
+                  {unreadCount}
+                </span>
+              )}
+            </h3>
+            <div className="dash-column-actions">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  className="dash-mark-read-btn neuro-focus-ring"
+                  onClick={handleMarkAllRead}
+                  aria-label="Alle als gelesen markieren"
+                >
+                  Alle gelesen
+                </button>
+              )}
+              <button type="button" className="dash-see-all neuro-focus-ring" onClick={() => onNavigate('insights')}>
+                Insights →
+              </button>
+            </div>
           </div>
           <div className="dash-activity-list">
             {loading ? (
@@ -456,17 +498,29 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                 <p>Noch keine KI-Aktivität. Starte einen Chat oder erfasse Gedanken, damit die KI für dich arbeiten kann.</p>
               </div>
             ) : (
-              activity.map((item) => (
-                <div key={item.id} className="dash-activity-item">
-                  <span className="dash-activity-icon" aria-hidden="true">
-                    {ACTIVITY_ICONS[item.activityType] || '🔹'}
-                  </span>
-                  <div className="dash-activity-content">
-                    <span className="dash-activity-message">{item.message}</span>
-                    <span className="dash-activity-time">{formatTime(item.createdAt)}</span>
-                  </div>
-                </div>
-              ))
+              activity.map((item) => {
+                const isClickable = !!item.ideaId;
+                const Wrapper = isClickable ? 'button' : 'div';
+                return (
+                  <Wrapper
+                    key={item.id}
+                    className={`dash-activity-item ${!item.isRead ? 'unread' : ''} ${isClickable ? 'clickable' : ''}`}
+                    {...(isClickable && {
+                      type: 'button' as const,
+                      onClick: () => onNavigate('ideas'),
+                    })}
+                  >
+                    <span className="dash-activity-icon" aria-hidden="true">
+                      {ACTIVITY_ICONS[item.activityType] || '🔹'}
+                    </span>
+                    <div className="dash-activity-content">
+                      <span className="dash-activity-message">{item.message}</span>
+                      <span className="dash-activity-time">{formatTime(item.createdAt)}</span>
+                    </div>
+                    {!item.isRead && <span className="dash-activity-dot" aria-hidden="true" />}
+                  </Wrapper>
+                );
+              })
             )}
           </div>
         </div>

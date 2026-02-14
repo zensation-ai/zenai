@@ -665,3 +665,90 @@
     color: #94a3b8;
   }
 }
+
+/* ===========================================
+   FAVORITE BUTTON (Phase 38)
+   =========================================== */
+
+.favorite-button {
+  background: rgba(20, 50, 70, 0.06);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 1rem;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, color 0.2s ease;
+  opacity: 0.5;
+}
+
+.favorite-button.is-favorite {
+  opacity: 1;
+  color: #f59e0b;
+}
+
+.idea-card:hover .favorite-button {
+  opacity: 0.9;
+}
+
+.idea-card .favorite-button:hover {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.favorite-button:active {
+  transform: scale(0.95);
+}
+
+.favorite-button:focus-visible {
+  outline: none;
+  opacity: 1;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35);
+}
+
+@media (pointer: coarse) {
+  .favorite-button {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ===========================================
+   SELECTION MODE (Phase 38 Bulk Actions)
+   =========================================== */
+
+.idea-select-checkbox {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.idea-select-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary, #ff6b35);
+}
+
+.idea-card.selected {
+  border-color: var(--primary, #ff6b35);
+  box-shadow:
+    0 0 0 2px rgba(255, 107, 53, 0.2),
+    0 4px 12px rgba(255, 107, 53, 0.08);
+}
+
+.idea-card:has(.idea-select-checkbox) {
+  position: relative;
+  padding-left: 2.5rem;
+}

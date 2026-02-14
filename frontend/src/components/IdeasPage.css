@@ -107,3 +107,41 @@
     padding: 0 2rem 3rem;
   }
 }
+
+/* ============================================
+   View Controls (selection toggle + view mode)
+   ============================================ */
+
+.view-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selection-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-md, 12px);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selection-toggle:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--primary-light);
+  color: var(--text);
+}
+
+.selection-toggle.active {
+  background: var(--primary, #ff6b35);
+  border-color: var(--primary, #ff6b35);
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}

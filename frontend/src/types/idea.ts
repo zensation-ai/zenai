@@ -19,6 +19,7 @@ export interface StructuredIdea {
   context_needed: string[];
   keywords: string[];
   raw_transcript?: string;
+  is_favorite?: boolean;
   created_at: string;
   updated_at?: string;
   similarity?: number;
