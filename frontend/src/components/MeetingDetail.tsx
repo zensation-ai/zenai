@@ -1,38 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import type { Meeting } from './MeetingCard';
-import type { IdeaPriority } from '../types/idea';
 import { formatDateLong, formatDuration } from '../utils/dateUtils';
 import { getErrorMessage } from '../utils/errors';
+import type { MeetingNotes } from '../types/meeting';
 import './MeetingDetail.css';
 import '../neurodesign.css';
-
-interface MeetingNotes {
-  id: string;
-  meeting_id: string;
-  raw_transcript: string;
-  structured_summary: string;
-  key_decisions: string[];
-  action_items: ActionItem[];
-  topics_discussed: string[];
-  follow_ups: FollowUp[];
-  sentiment: 'positive' | 'neutral' | 'negative' | 'mixed';
-  created_at: string;
-}
-
-interface ActionItem {
-  task: string;
-  assignee?: string;
-  due_date?: string;
-  priority: IdeaPriority;
-  completed: boolean;
-}
-
-interface FollowUp {
-  topic: string;
-  responsible?: string;
-  deadline?: string;
-}
 
 interface MeetingDetailProps {
   meeting: Meeting;

@@ -9,8 +9,9 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 // Database configuration files
+// Note: database.ts is a thin facade that re-exports from database-context.ts
+// SSL configuration lives exclusively in database-context.ts
 const DATABASE_FILES = [
-  'utils/database.ts',
   'utils/database-context.ts',
 ];
 
@@ -55,21 +56,22 @@ describe('SSL Certificate Validation', () => {
   });
 
   describe('SSL Configuration Logic', () => {
-    it('database.ts should have correct SSL config structure', () => {
-      const filePath = join(__dirname, '..', '..', '..', 'utils', 'database.ts');
-      const content = readFileSync(filePath, 'utf-8');
-
-      // Verify the ternary structure:
-      // isInternalRailway ? false : production ? { rejectUnauthorized: true } : undefined
-      expect(content).toMatch(/isInternalRailway[\s\S]*\?\s*false[\s\S]*:\s*process\.env\.NODE_ENV\s*===\s*['"]production['"]/);
-    });
-
     it('database-context.ts should have correct SSL config structure', () => {
       const filePath = join(__dirname, '..', '..', '..', 'utils', 'database-context.ts');
       const content = readFileSync(filePath, 'utf-8');
 
-      // Verify the ternary structure
+      // Verify the ternary structure:
+      // isInternalRailway ? false : production ? { rejectUnauthorized: ... } : undefined
       expect(content).toMatch(/isInternalRailway[\s\S]*\?\s*false[\s\S]*:\s*process\.env\.NODE_ENV\s*===\s*['"]production['"]/);
+    });
+
+    it('database.ts should delegate to database-context.ts (no own pool)', () => {
+      const filePath = join(__dirname, '..', '..', '..', 'utils', 'database.ts');
+      const content = readFileSync(filePath, 'utf-8');
+
+      // database.ts is a thin facade — it must import the shared pool, not create its own
+      expect(content).toMatch(/import.*database-context/);
+      expect(content).not.toMatch(/new Pool/);
     });
   });
 

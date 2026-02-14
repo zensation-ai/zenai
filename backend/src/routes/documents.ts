@@ -307,10 +307,11 @@ router.post(
     const { id } = req.params;
     validateDocumentId(id);
 
-    // Try to find in either context
-    let doc = await documentService.getDocument(id, 'personal');
-    if (!doc) {
-      doc = await documentService.getDocument(id, 'work');
+    // Search all contexts
+    let doc: Document | null = null;
+    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+      doc = await documentService.getDocument(id, ctx);
+      if (doc) break;
     }
 
     if (!doc) {
@@ -341,13 +342,12 @@ router.post(
     const { id } = req.params;
     validateDocumentId(id);
 
-    // Try to find in either context
-    let doc = await documentService.getDocument(id, 'personal');
+    // Search all contexts
+    let doc: Document | null = null;
     let context: AIContext = 'personal';
-
-    if (!doc) {
-      doc = await documentService.getDocument(id, 'work');
-      context = 'work';
+    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+      doc = await documentService.getDocument(id, ctx);
+      if (doc) { context = ctx; break; }
     }
 
     if (!doc) {
@@ -569,26 +569,35 @@ router.get(
     const { id } = req.params;
     validateDocumentId(id);
 
-    // Try to find in either context
-    let doc = await documentService.getDocument(id, 'personal');
-    if (!doc) {
-      doc = await documentService.getDocument(id, 'work');
+    // Search all contexts
+    let doc: Document | null = null;
+    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+      doc = await documentService.getDocument(id, ctx);
+      if (doc) break;
     }
 
     if (!doc) {
       throw new NotFoundError('Document not found');
     }
 
+    // Security: Validate file path to prevent path traversal attacks
+    const uploadDir = path.join(__dirname, '../../uploads');
+    const resolvedPath = path.resolve(doc.filePath);
+    if (!resolvedPath.startsWith(path.resolve(uploadDir))) {
+      logger.warn('Path traversal attempt detected', { filePath: doc.filePath });
+      throw new ValidationError('Access denied');
+    }
+
     // Check if file exists
     try {
-      await fs.access(doc.filePath);
+      await fs.access(resolvedPath);
     } catch {
       throw new NotFoundError('File not found on disk');
     }
 
     res.setHeader('Content-Type', doc.mimeType);
     res.setHeader('Content-Disposition', `attachment; filename="${doc.originalFilename}"`);
-    res.sendFile(doc.filePath);
+    res.sendFile(resolvedPath);
   })
 );
 
@@ -602,10 +611,11 @@ router.get(
     const { id } = req.params;
     validateDocumentId(id);
 
-    // Try to find in either context
-    let doc = await documentService.getDocument(id, 'personal');
-    if (!doc) {
-      doc = await documentService.getDocument(id, 'work');
+    // Search all contexts
+    let doc: Document | null = null;
+    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+      doc = await documentService.getDocument(id, ctx);
+      if (doc) break;
     }
 
     if (!doc) {
@@ -614,8 +624,16 @@ router.get(
 
     // For images, return the image itself
     if (doc.mimeType.startsWith('image/')) {
+      // Security: Validate file path to prevent path traversal attacks
+      const uploadDir = path.join(__dirname, '../../uploads');
+      const resolvedPath = path.resolve(doc.filePath);
+      if (!resolvedPath.startsWith(path.resolve(uploadDir))) {
+        logger.warn('Path traversal attempt detected', { filePath: doc.filePath });
+        throw new ValidationError('Access denied');
+      }
+
       res.setHeader('Content-Type', doc.mimeType);
-      res.sendFile(doc.filePath);
+      res.sendFile(resolvedPath);
       return;
     }
 

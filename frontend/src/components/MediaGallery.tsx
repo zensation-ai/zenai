@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getContextLabel } from './ContextSwitcher';
+import { getApiBaseUrl } from '../utils/apiConfig';
 import './MediaGallery.css';
 import '../neurodesign.css';
 import { logError } from '../utils/errors';
@@ -31,6 +32,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'image' | 'video'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const API_URL = getApiBaseUrl();
 
   useEffect(() => {
     loadMedia();
@@ -45,8 +47,8 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
         id: m.id as string,
         type: (m.media_type === 'photo' ? 'image' : m.media_type === 'video' ? 'video' : 'image') as 'image' | 'video',
         filename: m.filename as string,
-        url: `/api/media-file/${m.id}`,
-        thumbnail_url: m.thumbnail_path ? `/api/media/${m.id}/thumbnail` : undefined,
+        url: `${API_URL}/api/media-file/${m.id}`,
+        thumbnail_url: m.thumbnail_path ? `${API_URL}/api/media/${m.id}/thumbnail` : undefined,
         analysis: (m.caption || m.ai_analysis) as string | undefined,
         tags: [],
         idea_id: m.idea_id as string | undefined,
@@ -79,7 +81,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
         id: res.data.mediaId,
         type: res.data.mediaType === 'photo' ? 'image' : 'video',
         filename: res.data.filename || file.name,
-        url: `/api/media-file/${res.data.mediaId}`,
+        url: `${API_URL}/api/media-file/${res.data.mediaId}`,
         tags: [],
         created_at: new Date().toISOString(),
       };
@@ -92,6 +94,20 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleDelete = async (mediaId: string) => {
+    if (!confirm('Medium wirklich löschen?')) return;
+    try {
+      await axios.delete(`/api/media/${mediaId}`);
+      setMedia(prev => prev.filter(m => m.id !== mediaId));
+      if (selectedMedia?.id === mediaId) {
+        setSelectedMedia(null);
+      }
+      showToast('Medium gelöscht', 'success');
+    } catch {
+      showToast('Löschen fehlgeschlagen', 'error');
     }
   };
 
@@ -294,6 +310,15 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
                   {analyzing === selectedMedia.id ? 'Analysiere...' : '🤖 Mit KI analysieren'}
                 </button>
               )}
+
+              <button
+                type="button"
+                className="delete-media-btn"
+                onClick={() => handleDelete(selectedMedia.id)}
+                aria-label="Medium löschen"
+              >
+                🗑️ Löschen
+              </button>
             </div>
           </div>
         </div>

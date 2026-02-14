@@ -343,6 +343,24 @@
   color: var(--text-muted);
 }
 
+.delete-media-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.delete-media-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .media-gallery { padding: 1rem; padding-top: 0; }

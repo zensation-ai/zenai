@@ -715,6 +715,51 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
 }));
 
 /**
+ * DELETE /api/media/:id
+ * Delete a media item and its file
+ */
+router.delete('/media/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  validateMediaId(id);
+
+  const result = await query(
+    'SELECT id, file_path, thumbnail_path, gif_preview_path FROM media_items WHERE id = $1',
+    [id]
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Media');
+  }
+
+  const mediaItem = result.rows[0];
+
+  // Delete file from disk
+  const filesToDelete = [
+    mediaItem.file_path,
+    mediaItem.thumbnail_path,
+    mediaItem.gif_preview_path,
+  ].filter(Boolean);
+
+  for (const filePath of filesToDelete) {
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      logger.warn('Failed to delete media file', { filePath });
+    }
+  }
+
+  // Delete from database
+  await query('DELETE FROM media_items WHERE id = $1', [id]);
+
+  logger.info('Media deleted', { mediaId: id });
+
+  res.json({
+    success: true,
+    message: 'Media deleted',
+  });
+}));
+
+/**
  * POST /api/:context/media/analyze
  * Analyze an existing media item by its ID (for re-analysis)
  * Body: { mediaId: string }

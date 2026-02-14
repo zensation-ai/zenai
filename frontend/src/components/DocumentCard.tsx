@@ -113,7 +113,7 @@ function DocumentCardComponent({
         <div className="card-preview">
           {document.mimeType.startsWith('image/') ? (
             <img
-              src={`${import.meta.env.VITE_API_URL || ''}/api/documents/preview/${document.id}`}
+              src={`${import.meta.env.VITE_API_URL || ''}/api/documents/preview/${document.id}?t=${document.updatedAt || ''}`}
               alt={document.title || document.originalFilename}
               className="preview-image"
               loading="lazy"

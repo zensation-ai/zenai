@@ -6,7 +6,7 @@ import { logError } from '../../utils/errors';
  * folder sidebar, document grid/list, upload modal, detail modal.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RisingBubbles } from '../RisingBubbles';
 import { DocumentUpload } from '../DocumentUpload';
@@ -64,12 +64,15 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
   const [hasMore, setHasMore] = useState(false);
   const [, setTotal] = useState(0);
 
+  // Debounce timer for search
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const API_URL = getApiBaseUrl();
 
-  // Fetch documents
-  const fetchDocuments = useCallback(async (currentFilters: DocumentFilters) => {
+  // Fetch documents (append=true for load-more pagination)
+  const fetchDocuments = useCallback(async (currentFilters: DocumentFilters, append = false) => {
     setLoading(true);
-    setError(null);
+    if (!append) setError(null);
 
     try {
       const params = new URLSearchParams();
@@ -92,7 +95,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
       const result = await response.json();
 
       if (result.success) {
-        setDocuments(result.data);
+        setDocuments(prev => append ? [...prev, ...result.data] : result.data);
         setHasMore(result.pagination.hasMore);
         setTotal(result.pagination.total);
       } else {
@@ -143,8 +146,16 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     }
   }, [API_URL,context]);
 
-  // Initial load
+  // Initial load + reload on folder/sort changes (but NOT offset changes from loadMore)
+  const prevFolderRef = useRef(filters.folderPath);
+  const prevSortRef = useRef(filters.sortBy);
   useEffect(() => {
+    // Skip if only offset changed (loadMore handles that with append)
+    if (prevFolderRef.current === filters.folderPath && prevSortRef.current === filters.sortBy && (filters.offset || 0) > 0) {
+      return;
+    }
+    prevFolderRef.current = filters.folderPath;
+    prevSortRef.current = filters.sortBy;
     fetchDocuments(filters);
     fetchFolders();
     fetchStats();
@@ -223,12 +234,23 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     setShowMobileFolders(false); // Close mobile drawer on selection
   }, []);
 
-  // Handle search
+  // Handle search with debounce (300ms)
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
 
-    if (query.trim()) {
-      // Use semantic search endpoint
+    // Clear previous debounce timer
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+
+    if (!query.trim()) {
+      // Clear search immediately, reload normal list
+      fetchDocuments(filters);
+      return;
+    }
+
+    // Debounce the actual search
+    searchTimerRef.current = setTimeout(() => {
       fetch(`${API_URL}/api/${context}/documents/search`, {
         method: 'POST',
         headers: {
@@ -239,30 +261,32 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
         .then(res => res.json())
         .then(result => {
           if (result.success) {
-            // Convert search results to document format
-            setDocuments(result.data.map((r: { id: string; title: string; summary: string; mimeType: string; folderPath: string; similarity: number }) => ({
-              ...r,
-              // Search results have less data, fill with defaults
-              originalFilename: r.title,
-              keywords: [],
-              tags: [],
-              processingStatus: 'completed',
-              viewCount: 0,
-              isFavorite: false,
-              isArchived: false,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+            // Convert search results to document format, preserving available data
+            setDocuments(result.data.map((r: Record<string, unknown>) => ({
+              id: r.id,
+              title: r.title || r.originalFilename || 'Untitled',
+              originalFilename: r.originalFilename || r.title || 'Untitled',
+              summary: r.summary || '',
+              mimeType: r.mimeType || 'application/octet-stream',
+              fileSize: r.fileSize || 0,
+              folderPath: r.folderPath || '/',
+              keywords: r.keywords || [],
+              tags: r.tags || [],
+              processingStatus: r.processingStatus || 'completed',
+              viewCount: r.viewCount || 0,
+              isFavorite: r.isFavorite || false,
+              isArchived: r.isArchived || false,
+              createdAt: r.createdAt || r.created_at || new Date().toISOString(),
+              updatedAt: r.updatedAt || r.updated_at || new Date().toISOString(),
+              similarity: r.similarity,
             })));
             setTotal(result.data.length);
             setHasMore(false);
           }
         })
-        .catch((err) => logError('DocumentVault.fetchDocuments', err));
-    } else {
-      // Clear search, reload normal list
-      fetchDocuments(filters);
-    }
-  }, [API_URL,context, filters, fetchDocuments]);
+        .catch((err) => logError('DocumentVault.search', err));
+    }, 300);
+  }, [API_URL, context, filters, fetchDocuments]);
 
   // Handle upload complete
   const handleUploadComplete = useCallback((_result: DocumentUploadResult) => {
@@ -402,11 +426,14 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     }
   }, [API_URL,context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
 
-  // Load more
+  // Load more (append to existing documents)
   const loadMore = useCallback(() => {
     if (!hasMore || loading) { return; }
-    setFilters(prev => ({ ...prev, offset: (prev.offset || 0) + (prev.limit || 50) }));
-  }, [hasMore, loading]);
+    const newOffset = (filters.offset || 0) + (filters.limit || 50);
+    const newFilters = { ...filters, offset: newOffset };
+    setFilters(newFilters);
+    fetchDocuments(newFilters, true);
+  }, [hasMore, loading, filters, fetchDocuments]);
 
   return (
     <div className="document-vault-page">

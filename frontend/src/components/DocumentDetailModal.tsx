@@ -38,7 +38,6 @@ export function DocumentDetailModal({
   const [activeTab, setActiveTab] = useState<'details' | 'content' | 'keywords'>('details');
 
   const API_URL = getApiBaseUrl();
-  const API_KEY = import.meta.env.VITE_API_KEY || '';
 
   // Keyboard handler
   useEffect(() => {
@@ -80,7 +79,7 @@ export function DocumentDetailModal({
     } finally {
       setIsSaving(false);
     }
-  }, [API_URL, API_KEY, context, doc.id, editTitle, editTags, onUpdate]);
+  }, [API_URL, context, doc.id, editTitle, editTags, onUpdate]);
 
   // Toggle favorite
   const handleToggleFavorite = useCallback(async () => {
@@ -104,29 +103,45 @@ export function DocumentDetailModal({
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
     }
-  }, [API_URL, API_KEY, context, doc, onUpdate]);
+  }, [API_URL, context, doc, onUpdate]);
 
-  // Download file
-  const handleDownload = useCallback(() => {
-    window.open(`${API_URL}/api/documents/file/${doc.id}?key=${API_KEY}`, '_blank');
-  }, [API_URL, API_KEY, doc.id]);
+  // Download file — use fetch + blob to avoid leaking API key in URL
+  const handleDownload = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/documents/file/${doc.id}`,
+        { headers: getApiFetchHeaders() }
+      );
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.originalFilename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download:', error);
+    }
+  }, [API_URL, doc.id, doc.originalFilename]);
 
-  // Reprocess document
+  // Reprocess document (context-aware, no page reload)
   const handleReprocess = useCallback(async () => {
     try {
-      await fetch(
+      const response = await fetch(
         `${API_URL}/api/documents/${doc.id}/reprocess`,
         {
           method: 'POST',
           headers: getApiFetchHeaders(),
         }
       );
-      // Refresh after a moment
-      setTimeout(() => window.location.reload(), 1000);
+      const result = await response.json();
+      if (result.success && result.data) {
+        onUpdate({ ...doc, processingStatus: 'processing' });
+      }
     } catch (error) {
       console.error('Failed to reprocess:', error);
     }
-  }, [API_URL, doc.id]);
+  }, [API_URL, doc, onUpdate]);
 
   // Delete document
   const handleDelete = useCallback(async () => {
@@ -154,7 +169,7 @@ export function DocumentDetailModal({
     } finally {
       setIsDeleting(false);
     }
-  }, [API_URL, API_KEY, context, doc.id, onDelete, onClose]);
+  }, [API_URL, context, doc.id, onDelete, onClose]);
 
   const formattedDate = new Date(doc.createdAt).toLocaleDateString('de-DE', {
     day: '2-digit',
@@ -270,11 +285,13 @@ export function DocumentDetailModal({
                 className="preview-image"
               />
             ) : isPdf ? (
-              <iframe
-                src={`${API_URL}/api/documents/file/${doc.id}?key=${API_KEY}`}
-                className="preview-pdf"
-                title="PDF Preview"
-              />
+              <div className="preview-pdf-placeholder">
+                <span className="preview-icon">📑</span>
+                <p>PDF-Dokument</p>
+                <button type="button" className="download-btn" onClick={handleDownload}>
+                  PDF herunterladen
+                </button>
+              </div>
             ) : (
               <div className="preview-placeholder">
                 <span className="preview-icon">📄</span>

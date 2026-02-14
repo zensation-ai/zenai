@@ -4,47 +4,10 @@ import { MeetingCard, Meeting } from './MeetingCard';
 import { MeetingDetail } from './MeetingDetail';
 import { showToast } from './Toast';
 import { getRandomReward } from '../utils/aiPersonality';
-import type { IdeaPriority } from '../types/idea';
+import { getErrorMessage } from '../utils/errors';
+import type { MeetingNotes } from '../types/meeting';
 import './MeetingsPage.css';
 import '../neurodesign.css';
-
-// Type-safe error extraction
-interface ApiError {
-  response?: { data?: { error?: string } };
-  message?: string;
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  const apiError = error as ApiError;
-  return apiError.response?.data?.error || apiError.message || fallback;
-}
-
-interface ActionItem {
-  task: string;
-  assignee?: string;
-  due_date?: string;
-  priority: IdeaPriority;
-  completed: boolean;
-}
-
-interface FollowUp {
-  topic: string;
-  responsible?: string;
-  deadline?: string;
-}
-
-interface MeetingNotes {
-  id: string;
-  meeting_id: string;
-  raw_transcript: string;
-  structured_summary: string;
-  key_decisions: string[];
-  action_items: ActionItem[];
-  topics_discussed: string[];
-  follow_ups: FollowUp[];
-  sentiment: 'positive' | 'neutral' | 'negative' | 'mixed';
-  created_at: string;
-}
 
 interface MeetingsPageProps {
   onBack: () => void;
