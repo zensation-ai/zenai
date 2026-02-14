@@ -120,8 +120,8 @@ tasksRouter.get('/:context/tasks', apiKeyAuth, asyncHandler(async (req, res) => 
     priority: req.query.priority as string | undefined,
     due_before: req.query.due_before as string | undefined,
     due_after: req.query.due_after as string | undefined,
-    limit: Math.min(parseInt(req.query.limit as string) || 200, 500),
-    offset: parseInt(req.query.offset as string) || 0,
+    limit: Math.min(parseInt(req.query.limit as string, 10) || 200, 500),
+    offset: parseInt(req.query.offset as string, 10) || 0,
   };
 
   const tasks = await getTasks(context, filters as Parameters<typeof getTasks>[1]);

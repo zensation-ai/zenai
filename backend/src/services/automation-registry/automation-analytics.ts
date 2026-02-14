@@ -65,8 +65,8 @@ export async function getAutomationStats(
     );
 
     const stats = statsResult.rows[0];
-    const totalRuns = parseInt(stats.total_runs) || 0;
-    const successfulRuns = parseInt(stats.successful_runs) || 0;
+    const totalRuns = parseInt(stats.total_runs, 10) || 0;
+    const successfulRuns = parseInt(stats.successful_runs, 10) || 0;
 
     const automationsByTrigger: Record<TriggerType, number> = {
       webhook: 0,
@@ -77,24 +77,24 @@ export async function getAutomationStats(
     };
 
     for (const row of byTriggerResult.rows) {
-      automationsByTrigger[row.trigger_type as TriggerType] = parseInt(row.count);
+      automationsByTrigger[row.trigger_type as TriggerType] = parseInt(row.count, 10);
     }
 
     return {
-      total_automations: parseInt(stats.total) || 0,
-      active_automations: parseInt(stats.active) || 0,
+      total_automations: parseInt(stats.total, 10) || 0,
+      active_automations: parseInt(stats.active, 10) || 0,
       total_executions: totalRuns,
       successful_executions: successfulRuns,
-      failed_executions: parseInt(stats.failed_runs) || 0,
+      failed_executions: parseInt(stats.failed_runs, 10) || 0,
       success_rate: totalRuns > 0 ? successfulRuns / totalRuns : 0,
       automations_by_trigger: automationsByTrigger,
       top_automations: topResult.rows.map(row => ({
         id: row.id,
         name: row.name,
-        run_count: parseInt(row.run_count),
+        run_count: parseInt(row.run_count, 10),
         success_rate: parseFloat(row.success_rate),
       })),
-      pending_suggestions: parseInt(suggestionsResult.rows[0]?.pending) || 0,
+      pending_suggestions: parseInt(suggestionsResult.rows[0]?.pending, 10) || 0,
     };
   } catch {
     logger.warn('Could not get automation stats');

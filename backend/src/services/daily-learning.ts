@@ -248,12 +248,12 @@ async function analyzePatterns(
   }
 
   const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
-  if (peakHour && parseInt(peakHour[1].toString()) >= 2) {
+  if (peakHour && parseInt(peakHour[1].toString(), 10) >= 2) {
     patterns.push({
       type: 'time',
       description: `Produktivste Stunde heute: ${peakHour[0]}:00 Uhr`,
       confidence: 0.7,
-      data: { peak_hour: parseInt(peakHour[0]), count: peakHour[1] },
+      data: { peak_hour: parseInt(peakHour[0], 10), count: peakHour[1] },
     });
   }
 
@@ -735,13 +735,13 @@ export async function getSuggestionStats(
     );
 
     const row = result.rows[0];
-    const total = parseInt(row.total) || 0;
-    const accepted = parseInt(row.accepted) || 0;
-    const dismissed = parseInt(row.dismissed) || 0;
+    const total = parseInt(row.total, 10) || 0;
+    const accepted = parseInt(row.accepted, 10) || 0;
+    const dismissed = parseInt(row.dismissed, 10) || 0;
 
     return {
       total_suggestions: total,
-      pending_count: parseInt(row.pending) || 0,
+      pending_count: parseInt(row.pending, 10) || 0,
       accepted_count: accepted,
       dismissed_count: dismissed,
       acceptance_rate: (accepted + dismissed) > 0

@@ -69,7 +69,7 @@ interactionsRouter.post(
       entity_id,
       metadata,
       session_id,
-      duration_ms: parseInt(duration_ms) || 0,
+      duration_ms: parseInt(duration_ms, 10) || 0,
     });
 
     res.status(201).json({
@@ -102,7 +102,7 @@ interactionsRouter.post(
       context as AIContext,
       entity_type as EntityType,
       entity_id,
-      parseInt(duration_ms) || undefined,
+      parseInt(duration_ms, 10) || undefined,
       session_id
     );
 
@@ -133,7 +133,7 @@ interactionsRouter.post(
       context as AIContext,
       query,
       result_id,
-      parseInt(position) || 0,
+      parseInt(position, 10) || 0,
       session_id
     );
 

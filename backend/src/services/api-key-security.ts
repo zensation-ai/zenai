@@ -239,8 +239,8 @@ export async function getKeySecuritySummary(): Promise<{
     }
 
     return {
-      totalKeys: parseInt(totalResult.rows[0].count),
-      activeKeys: parseInt(activeResult.rows[0].count),
+      totalKeys: parseInt(totalResult.rows[0].count, 10),
+      activeKeys: parseInt(activeResult.rows[0].count, 10),
       expiringKeys: expiringKeys.length,
       expiredKeys: expiredKeys.length,
       unusedKeys: unusedKeys.length,

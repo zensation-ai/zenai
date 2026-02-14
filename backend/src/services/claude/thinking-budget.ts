@@ -711,14 +711,14 @@ export async function getThinkingStats(context: AIContext): Promise<{
     const byTaskType: Record<string, { count: number; avgQuality: number; avgTokens: number }> = {};
     for (const row of byTypeResult.rows) {
       byTaskType[row.task_type] = {
-        count: parseInt(row.count) || 0,
+        count: parseInt(row.count, 10) || 0,
         avgQuality: parseFloat(row.avg_quality) || 0,
         avgTokens: parseFloat(row.avg_tokens) || 0,
       };
     }
 
     return {
-      totalChains: parseInt(result.rows[0].total) || 0,
+      totalChains: parseInt(result.rows[0].total, 10) || 0,
       avgQuality: parseFloat(result.rows[0].avg_quality) || 0,
       avgTokensUsed: parseFloat(result.rows[0].avg_tokens) || 0,
       byTaskType,

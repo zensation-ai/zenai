@@ -673,10 +673,10 @@ export function checkContext(
 
 /**
  * Simple parseInt with radix 10 and default value
- * Use this for quick migration of parseInt() calls
+ * Use this for quick migration of parseInt(, 10) calls
  *
  * @example
- * // Instead of: parseInt(req.query.limit as string) || 20
+ * // Instead of: parseInt(req.query.limit as string, 10) || 20
  * // Use: toInt(req.query.limit, 20)
  */
 export function toInt(value: string | number | undefined | null, defaultValue: number = 0): number {
@@ -695,7 +695,7 @@ export function toInt(value: string | number | undefined | null, defaultValue: n
  * Ensures the result is within [min, max] range
  *
  * @example
- * // Instead of: Math.min(parseInt(req.query.limit as string) || 20, 100)
+ * // Instead of: Math.min(parseInt(req.query.limit as string, 10) || 20, 100)
  * // Use: toIntBounded(req.query.limit, 20, 1, 100)
  */
 export function toIntBounded(

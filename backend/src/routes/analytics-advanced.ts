@@ -169,36 +169,36 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
   res.json({
     success: true,
     summary: {
-      total: parseInt(summaryRow?.total || '0'),
-      today: parseInt(summaryRow?.today || '0'),
-      thisWeek: parseInt(summaryRow?.this_week || '0'),
-      thisMonth: parseInt(summaryRow?.this_month || '0'),
-      highPriority: parseInt(summaryRow?.high_priority || '0')
+      total: parseInt(summaryRow?.total || '0', 10),
+      today: parseInt(summaryRow?.today || '0', 10),
+      thisWeek: parseInt(summaryRow?.this_week || '0', 10),
+      thisMonth: parseInt(summaryRow?.this_month || '0', 10),
+      highPriority: parseInt(summaryRow?.high_priority || '0', 10)
     },
     goals: {
       daily: {
-        target: parseInt(goalRow?.daily_ideas_target || '3'),
-        current: parseInt(goalRow?.today_count || '0'),
-        progress: Math.min(100, Math.round((parseInt(goalRow?.today_count || '0') / parseInt(goalRow?.daily_ideas_target || '3')) * 100))
+        target: parseInt(goalRow?.daily_ideas_target || '3', 10),
+        current: parseInt(goalRow?.today_count || '0', 10),
+        progress: Math.min(100, Math.round((parseInt(goalRow?.today_count || '0', 10) / parseInt(goalRow?.daily_ideas_target || '3', 10)) * 100))
       },
       weekly: {
-        target: parseInt(goalRow?.weekly_ideas_target || '15'),
-        current: parseInt(goalRow?.week_count || '0'),
-        progress: Math.min(100, Math.round((parseInt(goalRow?.week_count || '0') / parseInt(goalRow?.weekly_ideas_target || '15')) * 100))
+        target: parseInt(goalRow?.weekly_ideas_target || '15', 10),
+        current: parseInt(goalRow?.week_count || '0', 10),
+        progress: Math.min(100, Math.round((parseInt(goalRow?.week_count || '0', 10) / parseInt(goalRow?.weekly_ideas_target || '15', 10)) * 100))
       }
     },
     streaks: {
-      current: parseInt(streakRow.current_streak),
-      longest: parseInt(streakRow.longest_streak)
+      current: parseInt(streakRow.current_streak, 10),
+      longest: parseInt(streakRow.longest_streak, 10)
     },
     trends: {
       weekly: weeklyTrend.rows.map(r => ({
         week: r.week,
-        count: parseInt(r.count)
+        count: parseInt(r.count, 10)
       })),
       monthly: monthlyTrend.rows.map(r => ({
         month: r.month,
-        count: parseInt(r.count)
+        count: parseInt(r.count, 10)
       })),
       byCategory: formatCategoryTrend(categoryTrend.rows)
     },
@@ -267,11 +267,11 @@ analyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncH
       `)
     ]);
 
-  const weeklyCount = parseInt(weeklyStats.rows[0]?.count || '0');
-  const activeDays = parseInt(consistency.rows[0]?.active_days || '0');
-  const categoryCount = parseInt(variety.rows[0]?.categories || '0');
-  const qualityCount = parseInt(quality.rows[0]?.quality_count || '0');
-  const totalCount = parseInt(quality.rows[0]?.total || '1');
+  const weeklyCount = parseInt(weeklyStats.rows[0]?.count || '0', 10);
+  const activeDays = parseInt(consistency.rows[0]?.active_days || '0', 10);
+  const categoryCount = parseInt(variety.rows[0]?.categories || '0', 10);
+  const qualityCount = parseInt(quality.rows[0]?.quality_count || '0', 10);
+  const totalCount = parseInt(quality.rows[0]?.total || '1', 10);
 
   // Calculate scores (0-100)
   const outputScore = Math.min(100, (weeklyCount / 15) * 100);
@@ -393,25 +393,25 @@ analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(asy
     success: true,
     peakTimes: {
       hours: peakHours.rows.map(r => ({
-        hour: parseInt(r.hour),
-        label: `${r.hour}:00 - ${parseInt(r.hour) + 1}:00`,
-        count: parseInt(r.count)
+        hour: parseInt(r.hour, 10),
+        label: `${r.hour}:00 - ${parseInt(r.hour, 10) + 1}:00`,
+        count: parseInt(r.count, 10)
       })),
       days: peakDays.rows.map(r => ({
-        day: parseInt(r.dow),
-        label: dayNames[parseInt(r.dow)],
-        count: parseInt(r.count)
+        day: parseInt(r.dow, 10),
+        label: dayNames[parseInt(r.dow, 10)],
+        count: parseInt(r.count, 10)
       }))
     },
     preferences: {
       categories: categoryPatterns.rows.map(r => ({
         name: r.category,
-        count: parseInt(r.count),
+        count: parseInt(r.count, 10),
         percentage: parseFloat(r.percentage)
       })),
       types: typePatterns.rows.map(r => ({
         name: r.type,
-        count: parseInt(r.count),
+        count: parseInt(r.count, 10),
         percentage: parseFloat(r.percentage)
       }))
     },
@@ -473,8 +473,8 @@ analyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(a
   const previous = previousPeriod.rows[0];
 
   const calcChange = (curr: string, prev: string) => {
-    const c = parseInt(curr || '0');
-    const p = parseInt(prev || '0');
+    const c = parseInt(curr || '0', 10);
+    const p = parseInt(prev || '0', 10);
     if (p === 0) {return c > 0 ? 100 : 0;}
     return Math.round(((c - p) / p) * 100);
   };
@@ -482,18 +482,18 @@ analyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(a
   res.json({
     success: true,
     current: {
-      total: parseInt(current.total),
-      highPriority: parseInt(current.high_priority),
-      tasks: parseInt(current.tasks),
-      ideas: parseInt(current.ideas),
-      activeDays: parseInt(current.active_days)
+      total: parseInt(current.total, 10),
+      highPriority: parseInt(current.high_priority, 10),
+      tasks: parseInt(current.tasks, 10),
+      ideas: parseInt(current.ideas, 10),
+      activeDays: parseInt(current.active_days, 10)
     },
     previous: {
-      total: parseInt(previous.total),
-      highPriority: parseInt(previous.high_priority),
-      tasks: parseInt(previous.tasks),
-      ideas: parseInt(previous.ideas),
-      activeDays: parseInt(previous.active_days)
+      total: parseInt(previous.total, 10),
+      highPriority: parseInt(previous.high_priority, 10),
+      tasks: parseInt(previous.tasks, 10),
+      ideas: parseInt(previous.ideas, 10),
+      activeDays: parseInt(previous.active_days, 10)
     },
     changes: {
       total: calcChange(current.total, previous.total),
@@ -528,7 +528,7 @@ function formatCategoryTrend(rows: CategoryTrendRow[]): Record<string, WeekTrend
     }
     result[category].push({
       week: row.week,
-      count: parseInt(row.count)
+      count: parseInt(row.count, 10)
     });
   });
 
@@ -537,7 +537,7 @@ function formatCategoryTrend(rows: CategoryTrendRow[]): Record<string, WeekTrend
 
 function fillHourlyGaps(rows: HourlyRow[]): { hour: number; count: number }[] {
   const hourMap = new Map<number, number>();
-  rows.forEach(r => hourMap.set(parseInt(r.hour), parseInt(r.count)));
+  rows.forEach(r => hourMap.set(parseInt(r.hour, 10), parseInt(r.count, 10)));
 
   return Array.from({ length: 24 }, (_, hour) => ({
     hour,
@@ -554,12 +554,12 @@ function generatePatternInsights(
   const insights: string[] = [];
 
   if (peakHours.length > 0) {
-    const topHour = parseInt(peakHours[0].hour);
+    const topHour = parseInt(peakHours[0].hour, 10);
     insights.push(`Deine produktivste Zeit ist zwischen ${topHour}:00 und ${topHour + 1}:00 Uhr`);
   }
 
   if (peakDays.length > 0) {
-    const topDay = dayNames[parseInt(peakDays[0].dow)];
+    const topDay = dayNames[parseInt(peakDays[0].dow, 10)];
     insights.push(`${topDay} ist dein aktivster Tag`);
   }
 

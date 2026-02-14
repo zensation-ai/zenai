@@ -205,7 +205,7 @@ export async function detectLearningBias(
     const priorities = priorityResult.rows;
 
     // Calculate concentration metrics
-    const totalIdeas = categories.reduce((sum, c) => sum + parseInt(c.count), 0);
+    const totalIdeas = categories.reduce((sum, c) => sum + parseInt(c.count, 10), 0);
     if (totalIdeas < 10) {
       return {
         detected: false,
@@ -217,16 +217,16 @@ export async function detectLearningBias(
     }
 
     // Check for category dominance bias
-    const categoryMax = Math.max(...categories.map(c => parseInt(c.count)));
+    const categoryMax = Math.max(...categories.map(c => parseInt(c.count, 10)));
     const categoryDominance = categoryMax / totalIdeas;
 
     // Check for type dominance bias
-    const typeMax = Math.max(...types.map(t => parseInt(t.count)));
+    const typeMax = Math.max(...types.map(t => parseInt(t.count, 10)));
     const typeDominance = types.length > 0 ? typeMax / totalIdeas : 0;
 
     // Check for priority skew bias
     const priorityCounts = priorities.reduce((acc, p) => {
-      acc[p.priority] = parseInt(p.count);
+      acc[p.priority] = parseInt(p.count, 10);
       return acc;
     }, {} as Record<string, number>);
     const highPriorityRatio = (priorityCounts['high'] || 0) / totalIdeas;
@@ -239,13 +239,13 @@ export async function detectLearningBias(
     let recommendation = '';
 
     if (categoryDominance > 0.8) {
-      const dominantCategory = categories.find(c => parseInt(c.count) === categoryMax)?.category;
+      const dominantCategory = categories.find(c => parseInt(c.count, 10) === categoryMax)?.category;
       biasType = 'category-dominance';
       severity = categoryDominance > 0.9 ? 'high' : 'medium';
       details = `${Math.round(categoryDominance * 100)}% der Ideen sind in Kategorie "${dominantCategory}"`;
       recommendation = 'Versuche, Ideen aus verschiedenen Lebensbereichen zu erfassen. Das System lernt möglicherweise, alles in diese Kategorie einzuordnen.';
     } else if (typeDominance > 0.7) {
-      const dominantType = types.find(t => parseInt(t.count) === typeMax)?.type;
+      const dominantType = types.find(t => parseInt(t.count, 10) === typeMax)?.type;
       biasType = 'type-dominance';
       severity = typeDominance > 0.85 ? 'high' : 'medium';
       details = `${Math.round(typeDominance * 100)}% der Ideen sind vom Typ "${dominantType}"`;
@@ -274,7 +274,7 @@ export async function detectLearningBias(
        WHERE is_archived = false
          AND created_at > NOW() - INTERVAL '7 days'`
     );
-    const recentCount = parseInt(recentResult.rows[0].recent_count);
+    const recentCount = parseInt(recentResult.rows[0].recent_count, 10);
     const recentRatio = recentCount / totalIdeas;
 
     if (recentRatio > 0.7 && !biasType) {
@@ -325,20 +325,20 @@ export async function getLearningQualityMetrics(
     const totalResult = await client.query(
       `SELECT COUNT(*) as count FROM ideas WHERE is_archived = false`
     );
-    const totalIdeas = parseInt(totalResult.rows[0].count);
+    const totalIdeas = parseInt(totalResult.rows[0].count, 10);
 
     // Get ideas with embeddings (data quality indicator)
     const embeddingResult = await client.query(
       `SELECT COUNT(*) as count FROM ideas WHERE is_archived = false AND embedding IS NOT NULL`
     );
-    const withEmbeddings = parseInt(embeddingResult.rows[0].count);
+    const withEmbeddings = parseInt(embeddingResult.rows[0].count, 10);
     const dataQuality = totalIdeas > 0 ? withEmbeddings / totalIdeas : 0;
 
     // Get category diversity (using Gini coefficient approximation)
     const categoryResult = await client.query(
       `SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category`
     );
-    const categoryDistribution = categoryResult.rows.map(r => parseInt(r.count));
+    const categoryDistribution = categoryResult.rows.map(r => parseInt(r.count, 10));
     const diversityScore = calculateDiversityScore(categoryDistribution);
 
     // Get user profile for learning progress

@@ -38,8 +38,8 @@ projectsRouter.get('/:context/projects', apiKeyAuth, asyncHandler(async (req, re
 
   const filters = {
     status: req.query.status as string | undefined,
-    limit: Math.min(parseInt(req.query.limit as string) || 100, 500),
-    offset: parseInt(req.query.offset as string) || 0,
+    limit: Math.min(parseInt(req.query.limit as string, 10) || 100, 500),
+    offset: parseInt(req.query.offset as string, 10) || 0,
   };
 
   const projects = await getProjects(context, filters as Parameters<typeof getProjects>[1]);

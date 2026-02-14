@@ -523,7 +523,7 @@ class AuditLogger {
         details: row.details,
         metadata: row.metadata,
       })),
-      total: parseInt(countResult.rows[0].count),
+      total: parseInt(countResult.rows[0].count, 10),
     };
   }
 

@@ -118,7 +118,7 @@ export async function suggestFromLearning(
 
   try {
     const countResult = await client.query('SELECT COUNT(*) as count FROM ideas WHERE is_archived = false');
-    const ideaCount = parseInt(countResult.rows[0].count);
+    const ideaCount = parseInt(countResult.rows[0].count, 10);
 
     if (ideaCount < CONFIG.MIN_SAMPLES_FOR_SUGGESTIONS) {
       logger.debug('Learning: Not enough ideas for suggestions', { ideaCount, minRequired: CONFIG.MIN_SAMPLES_FOR_SUGGESTIONS });

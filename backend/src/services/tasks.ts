@@ -101,7 +101,7 @@ export async function createTask(
     SELECT COALESCE(MAX(sort_order), -1) + 1 as next_order
     FROM tasks WHERE status = $1
   `, [status]);
-  const sortOrder = parseInt(maxResult.rows[0]?.next_order) || 0;
+  const sortOrder = parseInt(maxResult.rows[0]?.next_order, 10) || 0;
 
   const result = await queryContext(context, `
     INSERT INTO tasks (

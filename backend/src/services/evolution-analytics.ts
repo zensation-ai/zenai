@@ -195,14 +195,14 @@ export async function createDailySnapshot(context: AIContext): Promise<Evolution
       calculateStreak(context),
     ]);
 
-    const totalIdeas = parseInt(ideasResult.rows[0]?.count || '0');
-    const totalCorrections = parseInt(correctionsResult.rows[0]?.count || '0');
-    const totalInteractions = parseInt(interactionsResult.rows[0]?.count || '0');
-    const automationsActive = parseInt(automationsResult.rows[0]?.count || '0');
-    const patternsCount = parseInt(patternsResult.rows[0]?.count || '0');
-    const profileCompleteness = parseInt(profileResult.rows[0]?.completeness || '0');
-    const ideasToday = parseInt(todayIdeasResult.rows[0]?.count || '0');
-    const feedbackToday = parseInt(todayFeedbackResult.rows[0]?.count || '0');
+    const totalIdeas = parseInt(ideasResult.rows[0]?.count || '0', 10);
+    const totalCorrections = parseInt(correctionsResult.rows[0]?.count || '0', 10);
+    const totalInteractions = parseInt(interactionsResult.rows[0]?.count || '0', 10);
+    const automationsActive = parseInt(automationsResult.rows[0]?.count || '0', 10);
+    const patternsCount = parseInt(patternsResult.rows[0]?.count || '0', 10);
+    const profileCompleteness = parseInt(profileResult.rows[0]?.completeness || '0', 10);
+    const ideasToday = parseInt(todayIdeasResult.rows[0]?.count || '0', 10);
+    const feedbackToday = parseInt(todayFeedbackResult.rows[0]?.count || '0', 10);
 
     // Calculate derived metrics
     const correctionRate = totalIdeas > 0 ? totalCorrections / totalIdeas : 0;
@@ -774,7 +774,7 @@ async function calculateStreak(context: AIContext): Promise<number> {
       WHERE grp = (SELECT grp FROM numbered WHERE activity_date = CURRENT_DATE LIMIT 1)
     `, [context]);
 
-    return parseInt(result.rows[0]?.streak || '0');
+    return parseInt(result.rows[0]?.streak || '0', 10);
   } catch {
     return 0;
   }
@@ -787,7 +787,7 @@ async function getTotalAutomationExecutions(context: AIContext): Promise<number>
       JOIN automation_definitions ad ON ae.automation_id = ad.id
       WHERE ad.context = $1
     `, [context]);
-    return parseInt(result.rows[0]?.count || '0');
+    return parseInt(result.rows[0]?.count || '0', 10);
   } catch {
     return 0;
   }
@@ -799,7 +799,7 @@ async function getTotalPatternsLearned(context: AIContext): Promise<number> {
       SELECT COUNT(*) as count FROM correction_patterns
       WHERE context = $1 AND is_active = true
     `, [context]);
-    return parseInt(result.rows[0]?.count || '0');
+    return parseInt(result.rows[0]?.count || '0', 10);
   } catch {
     return 0;
   }
@@ -812,7 +812,7 @@ async function getTotalActiveDays(context: AIContext): Promise<number> {
       FROM interaction_events
       WHERE context = $1
     `, [context]);
-    return parseInt(result.rows[0]?.count || '0');
+    return parseInt(result.rows[0]?.count || '0', 10);
   } catch {
     return 0;
   }
@@ -872,23 +872,23 @@ function mapRowToSnapshot(row: Record<string, unknown>): EvolutionSnapshot {
     id: row.id as string,
     context: row.context as AIContext,
     snapshot_date: (row.snapshot_date as Date).toISOString().split('T')[0],
-    total_ideas: parseInt(row.total_ideas as string) || 0,
-    total_corrections: parseInt(row.total_corrections as string) || 0,
-    total_interactions: parseInt(row.total_interactions as string) || 0,
-    total_automations: parseInt(row.total_automations as string) || 0,
+    total_ideas: parseInt(row.total_ideas as string, 10) || 0,
+    total_corrections: parseInt(row.total_corrections as string, 10) || 0,
+    total_interactions: parseInt(row.total_interactions as string, 10) || 0,
+    total_automations: parseInt(row.total_automations as string, 10) || 0,
     correction_rate: parseFloat(row.correction_rate as string) || 0,
     ai_accuracy_score: parseFloat(row.ai_accuracy_score as string) || 50,
     context_depth_score: parseFloat(row.context_depth_score as string) || 0,
     profile_completeness: parseFloat(row.profile_completeness as string) || 0,
-    learned_patterns_count: parseInt(row.learned_patterns_count as string) || 0,
-    learned_keywords_count: parseInt(row.learned_keywords_count as string) || 0,
-    automations_active: parseInt(row.automations_active as string) || 0,
-    automations_executed_today: parseInt(row.automations_executed_today as string) || 0,
+    learned_patterns_count: parseInt(row.learned_patterns_count as string, 10) || 0,
+    learned_keywords_count: parseInt(row.learned_keywords_count as string, 10) || 0,
+    automations_active: parseInt(row.automations_active as string, 10) || 0,
+    automations_executed_today: parseInt(row.automations_executed_today as string, 10) || 0,
     automation_success_rate: parseFloat(row.automation_success_rate as string) || 0,
-    estimated_time_saved_minutes: parseInt(row.estimated_time_saved_minutes as string) || 0,
-    active_days_streak: parseInt(row.active_days_streak as string) || 0,
-    ideas_created_today: parseInt(row.ideas_created_today as string) || 0,
-    feedback_given_today: parseInt(row.feedback_given_today as string) || 0,
+    estimated_time_saved_minutes: parseInt(row.estimated_time_saved_minutes as string, 10) || 0,
+    active_days_streak: parseInt(row.active_days_streak as string, 10) || 0,
+    ideas_created_today: parseInt(row.ideas_created_today as string, 10) || 0,
+    feedback_given_today: parseInt(row.feedback_given_today as string, 10) || 0,
     created_at: (row.created_at as Date).toISOString(),
   };
 }
@@ -915,14 +915,14 @@ function mapRowToMilestone(row: Record<string, unknown>): Milestone {
     id: row.id as string,
     context: row.context as AIContext,
     milestone_type: row.milestone_type as string,
-    milestone_level: parseInt(row.milestone_level as string) || 1,
+    milestone_level: parseInt(row.milestone_level as string, 10) || 1,
     title: row.title as string,
     description: row.description as string | undefined,
     icon: row.icon as string || '🏆',
-    threshold_value: parseInt(row.threshold_value as string) || 0,
+    threshold_value: parseInt(row.threshold_value as string, 10) || 0,
     achieved: row.achieved as boolean,
     achieved_at: row.achieved_at ? (row.achieved_at as Date).toISOString() : undefined,
-    current_value: parseInt(row.current_value as string) || 0,
+    current_value: parseInt(row.current_value as string, 10) || 0,
     progress_percent: parseFloat(row.progress_percent as string) || 0,
   };
 }

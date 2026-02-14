@@ -138,18 +138,18 @@ export async function getGraphAnalytics(context: AIContext): Promise<{
   `, [context]);
 
   return {
-    totalIdeas: parseInt(analytics.total_ideas) || 0,
-    totalRelations: parseInt(analytics.total_relations) || 0,
-    totalTopics: parseInt(analytics.total_topics) || 0,
+    totalIdeas: parseInt(analytics.total_ideas, 10) || 0,
+    totalRelations: parseInt(analytics.total_relations, 10) || 0,
+    totalTopics: parseInt(analytics.total_topics, 10) || 0,
     avgRelationsPerIdea: parseFloat(analytics.avg_relations_per_idea) || 0,
-    orphanedIdeas: parseInt(analytics.orphaned_ideas) || 0,
+    orphanedIdeas: parseInt(analytics.orphaned_ideas, 10) || 0,
     mostConnectedIdeas: connectedResult.rows.map(r => ({
       id: r.id,
       title: r.title,
-      connections: parseInt(r.connections),
+      connections: parseInt(r.connections, 10),
     })),
     relationTypeDistribution: typesResult.rows.reduce((acc, r) => {
-      acc[r.relation_type] = parseInt(r.count);
+      acc[r.relation_type] = parseInt(r.count, 10);
       return acc;
     }, {} as Record<string, number>),
   };
@@ -266,12 +266,12 @@ export async function graphEnhancedRetrieval(
 
       const centralityMap = new Map<string, number>();
       const maxCentrality = Math.max(
-        ...centralityResult.rows.map((r: { id: string; degree_centrality: string }) => parseInt(r.degree_centrality) || 0),
+        ...centralityResult.rows.map((r: { id: string; degree_centrality: string }) => parseInt(r.degree_centrality, 10) || 0),
         1
       );
 
       for (const r of centralityResult.rows) {
-        centralityMap.set(r.id, (parseInt(r.degree_centrality) || 0) / maxCentrality);
+        centralityMap.set(r.id, (parseInt(r.degree_centrality, 10) || 0) / maxCentrality);
       }
 
       // Update results with centrality and recalculate score

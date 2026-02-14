@@ -460,14 +460,14 @@ class MultimodalHandler {
     // Parse "vor X tagen/wochen"
     const daysMatch = textLower.match(/vor (\d+) tag/);
     if (daysMatch) {
-      const days = parseInt(daysMatch[1]);
+      const days = parseInt(daysMatch[1], 10);
       start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
       end = new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
     }
 
     const weeksMatch = textLower.match(/vor (\d+) woche/);
     if (weeksMatch) {
-      const weeks = parseInt(weeksMatch[1]);
+      const weeks = parseInt(weeksMatch[1], 10);
       start = new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
     }
 

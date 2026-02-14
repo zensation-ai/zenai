@@ -982,8 +982,8 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
  * Get export history (recent exports)
  */
 exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-  const offset = parseInt(req.query.offset as string) || 0;
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
+  const offset = parseInt(req.query.offset as string, 10) || 0;
 
   const result = await query(
     `SELECT id, export_type, filename, file_size, ideas_count, filters, created_at
@@ -1010,7 +1010,7 @@ exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: 
     success: true,
     exports,
     pagination: {
-      total: parseInt(countResult.rows[0]?.total || '0'),
+      total: parseInt(countResult.rows[0]?.total || '0', 10),
       limit,
       offset,
     },

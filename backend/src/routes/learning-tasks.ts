@@ -541,7 +541,7 @@ router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, asyncHandler(asyn
  */
 router.get('/:context/learning-tasks/review-schedule', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
-  const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 50);
 
   const schedule = await getReviewSchedule(context as AIContext, limit);
 

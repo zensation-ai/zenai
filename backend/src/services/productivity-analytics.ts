@@ -185,14 +185,14 @@ export async function getTimeSavedMetrics(context: AIContext): Promise<TimeSaved
       WHERE context = $1 AND source = 'voice'
     `, [context]);
 
-    const weeklyDrafts = parseInt(draftsResult.rows[0]?.weekly_drafts || '0');
-    const monthlyDrafts = parseInt(draftsResult.rows[0]?.monthly_drafts || '0');
-    const weeklySearches = parseInt(searchesResult.rows[0]?.weekly_searches || '0');
-    const monthlySearches = parseInt(searchesResult.rows[0]?.monthly_searches || '0');
-    const weeklyAuto = parseInt(categoriesResult.rows[0]?.weekly_auto || '0');
-    const monthlyAuto = parseInt(categoriesResult.rows[0]?.monthly_auto || '0');
-    const weeklyVoice = parseInt(voiceResult.rows[0]?.weekly_voice || '0');
-    const monthlyVoice = parseInt(voiceResult.rows[0]?.monthly_voice || '0');
+    const weeklyDrafts = parseInt(draftsResult.rows[0]?.weekly_drafts || '0', 10);
+    const monthlyDrafts = parseInt(draftsResult.rows[0]?.monthly_drafts || '0', 10);
+    const weeklySearches = parseInt(searchesResult.rows[0]?.weekly_searches || '0', 10);
+    const monthlySearches = parseInt(searchesResult.rows[0]?.monthly_searches || '0', 10);
+    const weeklyAuto = parseInt(categoriesResult.rows[0]?.weekly_auto || '0', 10);
+    const monthlyAuto = parseInt(categoriesResult.rows[0]?.monthly_auto || '0', 10);
+    const weeklyVoice = parseInt(voiceResult.rows[0]?.weekly_voice || '0', 10);
+    const monthlyVoice = parseInt(voiceResult.rows[0]?.monthly_voice || '0', 10);
 
     const weeklyHoursSaved = (
       weeklyDrafts * TIME_ESTIMATES.DRAFT_MINUTES +
@@ -268,9 +268,9 @@ export async function getActivityHeatmap(context: AIContext): Promise<ActivityHe
     let totalDataPoints = 0;
 
     for (const row of result.rows) {
-      const day = parseInt(row.day_of_week as string);
-      const hour = parseInt(row.hour_of_day as string);
-      const count = parseInt(row.count as string);
+      const day = parseInt(row.day_of_week as string, 10);
+      const hour = parseInt(row.hour_of_day as string, 10);
+      const count = parseInt(row.count as string, 10);
       grid[day][hour] = count;
       totalDataPoints += count;
 
@@ -314,11 +314,11 @@ export async function getKnowledgeGrowth(context: AIContext): Promise<KnowledgeG
       `, [context]),
     ]);
 
-    const totalIdeas = parseInt(ideasResult.rows[0]?.total || '0');
-    const totalConnections = parseInt(connectionsResult.rows[0]?.total || '0');
-    const totalTopics = parseInt(topicsResult.rows[0]?.total || '0');
-    const ideasLast30Days = parseInt(recentResult.rows[0]?.ideas_30d || '0');
-    const ideasLast7Days = parseInt(recentResult.rows[0]?.ideas_7d || '0');
+    const totalIdeas = parseInt(ideasResult.rows[0]?.total || '0', 10);
+    const totalConnections = parseInt(connectionsResult.rows[0]?.total || '0', 10);
+    const totalTopics = parseInt(topicsResult.rows[0]?.total || '0', 10);
+    const ideasLast30Days = parseInt(recentResult.rows[0]?.ideas_30d || '0', 10);
+    const ideasLast7Days = parseInt(recentResult.rows[0]?.ideas_7d || '0', 10);
 
     // Connections in last 30 days
     let connectionsLast30Days = 0;
@@ -327,7 +327,7 @@ export async function getKnowledgeGrowth(context: AIContext): Promise<KnowledgeG
         SELECT COUNT(*) as total FROM idea_relations
         WHERE context = $1 AND created_at >= NOW() - INTERVAL '30 days'
       `, [context]);
-      connectionsLast30Days = parseInt(recentConnections.rows[0]?.total || '0');
+      connectionsLast30Days = parseInt(recentConnections.rows[0]?.total || '0', 10);
     } catch {
       // idea_relations might not have created_at column
     }
@@ -464,9 +464,9 @@ export async function getWeeklyReport(context: AIContext): Promise<WeeklyReportC
       LIMIT 3
     `, [context, weekStart.toISOString()]);
 
-    const thisWeek = parseInt(ideasResult.rows[0]?.this_week || '0');
-    const lastWeek = parseInt(ideasResult.rows[0]?.last_week || '0');
-    const chatMessages = parseInt(chatResult.rows[0]?.count || '0');
+    const thisWeek = parseInt(ideasResult.rows[0]?.this_week || '0', 10);
+    const lastWeek = parseInt(ideasResult.rows[0]?.last_week || '0', 10);
+    const chatMessages = parseInt(chatResult.rows[0]?.count || '0', 10);
     const topTopics = topicsResult.rows.map((r: Record<string, unknown>) => r.name as string);
 
     // Calculate trend

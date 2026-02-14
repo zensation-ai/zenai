@@ -98,7 +98,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const days = Math.min(parseInt(req.query.days as string) || 30, 365);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -233,7 +233,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const weeks = Math.min(parseInt(req.query.weeks as string) || 12, 52);
+    const weeks = Math.min(parseInt(req.query.weeks as string, 10) || 12, 52);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -482,7 +482,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const days = Math.min(parseInt(req.query.days as string) || 30, 365);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -537,7 +537,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const days = Math.min(parseInt(req.query.days as string) || 30, 365);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -589,7 +589,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const days = Math.min(parseInt(req.query.days as string) || 30, 365);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');

@@ -265,7 +265,7 @@ async function getLearningInsights(context: AIContext): Promise<LearningInsights
       .filter(([_, count]) => (count as number) > 2)
       .sort((a, b) => (b[1] as number) - (a[1] as number))
       .slice(0, 3)
-      .map(([hour]) => parseInt(hour));
+      .map(([hour]) => parseInt(hour, 10));
 
     return {
       preferredCategories,

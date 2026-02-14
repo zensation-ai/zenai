@@ -663,9 +663,9 @@ voiceMemoContextRouter.get('/:context/stats', apiKeyAuth, asyncHandler(async (re
       icon: persona.icon,
     },
     stats: {
-      total_ideas: parseInt(ideasCount.rows[0].count),
-      loose_thoughts: parseInt(thoughtsCount.rows[0].count),
-      ready_clusters: parseInt(clustersCount.rows[0].count),
+      total_ideas: parseInt(ideasCount.rows[0].count, 10),
+      loose_thoughts: parseInt(thoughtsCount.rows[0].count, 10),
+      ready_clusters: parseInt(clustersCount.rows[0].count, 10),
     },
   });
 }));

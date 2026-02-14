@@ -111,7 +111,7 @@ function buildStartTime(data: Record<string, unknown>): Date | null {
       if (timeStr) {
         const timeParts = timeStr.match(/(\d{1,2}):?(\d{2})?/);
         if (timeParts) {
-          date.setHours(parseInt(timeParts[1]), parseInt(timeParts[2] || '0'), 0, 0);
+          date.setHours(parseInt(timeParts[1], 10), parseInt(timeParts[2] || '0', 10), 0, 0);
         }
       }
       return date;
@@ -134,7 +134,7 @@ function buildStartTime(data: Record<string, unknown>): Date | null {
     if (timeStr) {
       const timeParts = timeStr.match(/(\d{1,2}):?(\d{2})?/);
       if (timeParts) {
-        now.setHours(parseInt(timeParts[1]), parseInt(timeParts[2] || '0'), 0, 0);
+        now.setHours(parseInt(timeParts[1], 10), parseInt(timeParts[2] || '0', 10), 0, 0);
       }
     }
     return now;
