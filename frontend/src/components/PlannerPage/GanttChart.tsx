@@ -17,9 +17,6 @@ interface GanttChartProps {
   context: string;
   onEditTask: (task: Task) => void;
   onCreateProject: (input: Partial<Project>) => Promise<Project | null>;
-  onUpdateProject: (id: string, updates: Partial<Project>) => Promise<Project | null>;
-  onDeleteProject: (id: string) => Promise<boolean>;
-  onRefetch: () => void;
 }
 
 type ZoomLevel = 'day' | 'week' | 'month';
@@ -44,8 +41,7 @@ function startOfDay(d: Date): Date {
 }
 
 export function GanttChart({
-  tasks, projects, loading,
-  onEditTask, onCreateProject,
+  tasks, projects, loading, onEditTask, onCreateProject,
 }: GanttChartProps) {
   const [zoom, setZoom] = useState<ZoomLevel>('week');
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());

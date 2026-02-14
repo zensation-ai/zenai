@@ -18,14 +18,13 @@ interface KanbanBoardProps {
   onProjectFilterChange: (projectId: string | undefined) => void;
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
-  onStatusChange: (taskId: string, newStatus: string) => void;
   onReorder: (status: TaskStatus, taskIds: string[]) => Promise<void>;
 }
 
 export function KanbanBoard({
   tasks, projects, loading, projectFilter,
   onProjectFilterChange, onCreateTask, onEditTask,
-  onStatusChange, onReorder,
+  onReorder,
 }: KanbanBoardProps) {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
@@ -85,19 +84,14 @@ export function KanbanBoard({
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    if (task.status !== targetStatus) {
-      // Move to new column
-      await onStatusChange(taskId, targetStatus);
-    }
-
-    // Reorder within column
+    // Reorder handles both status change and ordering in a single call
     const columnTasks = getColumnTasks(targetStatus)
       .filter(t => t.id !== taskId);
     const taskIds = [...columnTasks.map(t => t.id), taskId];
     await onReorder(targetStatus, taskIds);
 
     setDraggedTaskId(null);
-  }, [tasks, draggedTaskId, getColumnTasks, onStatusChange, onReorder]);
+  }, [tasks, draggedTaskId, getColumnTasks, onReorder]);
 
   const getProjectInfo = useCallback((projectId?: string) => {
     if (!projectId) return null;

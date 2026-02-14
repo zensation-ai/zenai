@@ -295,12 +295,20 @@ export async function reorderTasks(
   status: TaskStatus,
   taskIds: string[]
 ): Promise<void> {
-  for (let i = 0; i < taskIds.length; i++) {
-    await queryContext(context, `
-      UPDATE tasks SET sort_order = $1, status = $2, updated_at = NOW()
-      WHERE id = $3
-    `, [i, status, taskIds[i]]);
-  }
+  if (taskIds.length === 0) return;
+
+  // Batch update: single query using unnest instead of N individual updates
+  await queryContext(context, `
+    UPDATE tasks
+    SET sort_order = batch.new_order,
+        status = $1,
+        updated_at = NOW()
+    FROM (
+      SELECT unnest($2::uuid[]) AS id,
+             generate_series(0, $3::int) AS new_order
+    ) AS batch
+    WHERE tasks.id = batch.id
+  `, [status, taskIds, taskIds.length - 1]);
 
   logger.info('Tasks reordered', {
     status, count: taskIds.length, context, operation: 'reorderTasks'

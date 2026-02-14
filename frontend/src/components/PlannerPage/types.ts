@@ -56,6 +56,7 @@ export interface Project {
   created_at: string;
   updated_at: string;
   task_count?: number;
+  done_count?: number;
 }
 
 export interface KanbanColumn {
