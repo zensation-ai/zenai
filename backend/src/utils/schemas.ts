@@ -451,7 +451,7 @@ export const CreateProjectSchema = z.object({
   description: z.string().max(5000).optional(),
   color: z.string().max(20).optional(),
   icon: z.string().max(10).optional(),
-  status: z.enum(['active', 'on_hold', 'paused', 'completed', 'archived']).optional(),
+  status: z.enum(['active', 'on_hold', 'completed', 'archived']).optional(),
   sort_order: z.number().int().min(0).max(10000).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });

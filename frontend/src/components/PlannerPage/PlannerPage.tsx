@@ -49,13 +49,13 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   const {
-    tasks, loading: tasksLoading, refetch: refetchTasks,
+    tasks, loading: tasksLoading,
     createTask, updateTask, reorderTasks,
   } = useTasksData(context, projectFilter ? { project_id: projectFilter } : undefined);
 
   const {
-    projects, loading: projectsLoading, refetch: refetchProjects,
-    createProject, updateProject, deleteProject,
+    projects, loading: projectsLoading,
+    createProject,
   } = useProjectsData(context);
 
   const handleCreateTask = useCallback(() => {
@@ -82,10 +82,6 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
     setShowTaskForm(false);
     setEditingTask(null);
   }, []);
-
-  const handleStatusChange = useCallback(async (taskId: string, newStatus: string) => {
-    await updateTask(taskId, { status: newStatus } as Partial<Task>);
-  }, [updateTask]);
 
   return (
     <div className="planner-page">
@@ -126,7 +122,6 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
               onProjectFilterChange={setProjectFilter}
               onCreateTask={handleCreateTask}
               onEditTask={handleEditTask}
-              onStatusChange={handleStatusChange}
               onReorder={reorderTasks}
             />
           )}
@@ -139,9 +134,6 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
               context={context}
               onEditTask={handleEditTask}
               onCreateProject={createProject}
-              onUpdateProject={updateProject}
-              onDeleteProject={deleteProject}
-              onRefetch={() => { refetchTasks(); refetchProjects(); }}
             />
           )}
 
