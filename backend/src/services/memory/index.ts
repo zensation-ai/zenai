@@ -80,15 +80,6 @@ export {
   SharingResult,
 } from './cross-context-sharing';
 
-// Procedural memory (learned workflows & skills)
-export {
-  proceduralMemory,
-  Procedure,
-  ProcedureStep,
-  ProcedureMatch,
-  ProcedureType,
-} from './procedural-memory';
-
 // Reflection & Metacognition
 export {
   reflectionEngine,

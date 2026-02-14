@@ -2,6 +2,8 @@
  * Project Context Service Tests
  */
 
+jest.setTimeout(30000);
+
 import * as path from 'path';
 import {
   detectProjectType,

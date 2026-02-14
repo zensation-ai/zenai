@@ -11,7 +11,6 @@
  *
  * Sub-modules:
  * - profile-updates: DB helpers for preference/pattern updates
- * - analysis: Feature extraction, bias detection, quality metrics
  *
  * @module services/learning-engine
  */
@@ -35,10 +34,6 @@ import {
   applyPreferenceDecay,
   updateInterestEmbedding,
 } from './profile-updates';
-
-// Re-export sub-modules for external consumers
-export { extractFeatures, detectLearningBias, getLearningQualityMetrics } from './analysis';
-export type { ExtractedFeatures, BiasReport } from './analysis';
 
 // Type definitions for profile data
 interface PriorityKeywords {
