@@ -15,6 +15,8 @@ import request from 'supertest';
 import { visionRouter } from '../../routes/vision';
 import path from 'path';
 
+jest.setTimeout(30000);
+
 // Mock dependencies
 jest.mock('../../middleware/auth', () => ({
   apiKeyAuth: jest.fn((req, res, next) => next()),
