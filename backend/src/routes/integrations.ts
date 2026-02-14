@@ -559,7 +559,7 @@ integrationsRouter.post('/slack/events', asyncHandler(async (req: Request, res: 
     await slack.handleSlackEvent(event);
   }
 
-  res.status(200).send();
+  res.status(200).json({ success: true });
 }));
 
 /**

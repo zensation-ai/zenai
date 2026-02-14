@@ -397,7 +397,7 @@ Zusammenfassung:`;
         if (!row.embedding) {continue;}
 
         const embedding = typeof row.embedding === 'string'
-          ? JSON.parse(row.embedding.replace(/^\[/, '').replace(/\]$/, '').split(',').map(Number))
+          ? row.embedding.replace(/^\[/, '').replace(/\]$/, '').split(',').map(Number)
           : row.embedding;
 
         const similarity = cosineSimilarity(queryEmbedding, embedding);
