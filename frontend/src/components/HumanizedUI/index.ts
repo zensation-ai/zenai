@@ -1,16 +1,16 @@
 /**
  * Humanized UI Components
  *
- * Komponenten fuer humanisierte, emotionale Benutzeroberflaeche:
+ * Komponenten für humanisierte, emotionale Benutzeroberfläche:
  * - EnhancedTooltip: Tooltips mit Aktion, Shortcut und Hilfe
  * - ContextualLoader: Loading-States mit kontextuellen Nachrichten
  * - SkeletonLoader: WCAG-konforme Skeleton-Loader
  * - SuccessAnimation: Erfolgs-Feedback bei Aktionen
  * - AIStatusIndicator: Animierte KI-Status-Anzeige
- * - HumanizedEmptyState: Inspirierende leere Zustaende
+ * - HumanizedEmptyState: Inspirierende leere Zustände
  * - FriendlyError: Freundliche Fehlermeldungen
  * - ProgressToast: Nicht-blockierender Fortschritt
- * - ConnectionStatus: Verstaendliche Verbindungsanzeige
+ * - ConnectionStatus: Verständliche Verbindungsanzeige
  *
  * Basiert auf:
  * - Micro-copy Best Practices (3 C's: Clear, Concise, Consistent)

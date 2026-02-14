@@ -1,6 +1,6 @@
 import React from 'react';
 import { DashboardData } from './types';
-import { getSuggestionIcon, formatDate } from './helpers';
+import { getSuggestionIcon, formatDate, getActivityStatusLabel } from './helpers';
 
 interface OverviewTabProps {
   data: DashboardData;
@@ -129,7 +129,7 @@ export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearc
                 <span className="log-stats">
                   {log.ideas_analyzed} Ideen • {log.patterns_found} Muster • {log.suggestions_generated} Vorschläge
                 </span>
-                <span className={`log-status status-${log.status}`}>{log.status}</span>
+                <span className={`log-status status-${log.status}`}>{getActivityStatusLabel(log.status)}</span>
               </div>
             ))}
           </div>

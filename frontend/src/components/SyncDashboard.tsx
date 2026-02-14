@@ -293,9 +293,9 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
             <h4>So funktioniert die Synchronisation</h4>
             <ul>
               <li>Änderungen werden automatisch alle 30 Sekunden synchronisiert</li>
-              <li>Bei Konflikten gewinnt die neueste Anderung</li>
+              <li>Bei Konflikten gewinnt die neueste Änderung</li>
               <li>Offline-Änderungen werden beim nächsten Online-Status synchronisiert</li>
-              <li>Push-Benachrichtigungen informieren uber wichtige Updates</li>
+              <li>Push-Benachrichtigungen informieren über wichtige Updates</li>
             </ul>
           </div>
         </div>

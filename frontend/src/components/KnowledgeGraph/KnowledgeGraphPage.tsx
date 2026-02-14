@@ -88,11 +88,11 @@ const edgeColors: Record<string, string> = {
 
 // Relation type labels in German
 const relationLabels: Record<string, string> = {
-  similar_to: 'Aehnlich',
+  similar_to: 'Ähnlich',
   builds_on: 'Baut auf',
   contradicts: 'Widerspricht',
-  supports: 'Unterstuetzt',
-  enables: 'Ermoeglicht',
+  supports: 'Unterstützt',
+  enables: 'Ermöglicht',
   part_of: 'Teil von',
   related_tech: 'Verwandte Tech',
 };
@@ -389,7 +389,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
                 <span>{selectedNode.category}</span>
               </div>
               <div className="detail-row">
-                <span className="detail-label">Prioritaet:</span>
+                <span className="detail-label">Priorität:</span>
                 <span className={`priority-${selectedNode.priority}`}>
                   {selectedNode.priority}
                 </span>

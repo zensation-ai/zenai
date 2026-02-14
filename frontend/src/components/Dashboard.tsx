@@ -356,9 +356,9 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
       {/* Upcoming Events */}
       {!loading && upcomingEvents.length > 0 && (
-        <section className="dash-upcoming" aria-label="Naechste Termine">
+        <section className="dash-upcoming" aria-label="Nächste Termine">
           <div className="dash-column-header">
-            <h3>{'\uD83D\uDCC5'} Naechste Termine</h3>
+            <h3>{'\uD83D\uDCC5'} Nächste Termine</h3>
             <button type="button" className="dash-see-all neuro-focus-ring" onClick={() => onNavigate('calendar')}>
               Kalender {'\u2192'}
             </button>

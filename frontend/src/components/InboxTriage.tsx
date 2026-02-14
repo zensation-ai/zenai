@@ -625,11 +625,11 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
           className={'triage-action-btn later neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'later' ? 'neuro-pulse-interactive' : '')}
           onClick={() => handleTriageAction('later')}
           disabled={isAnimating}
-          title="Auf spaeter verschieben"
-          aria-label="Gedanke auf spaeter verschieben"
+          title="Auf später verschieben"
+          aria-label="Gedanke auf später verschieben"
         >
           <span className="action-icon" aria-hidden="true">⏰</span>
-          <span className="action-label">Spaeter</span>
+          <span className="action-label">Später</span>
         </button>
         <button
           className={'triage-action-btn archive neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'archive' ? 'neuro-pulse-interactive' : '')}
@@ -651,17 +651,17 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({
           <span className="action-icon" aria-hidden="true">✓</span>
           <span className="action-label">Behalten</span>
         </button>
-        {/* Neuro-UX: Prioritaet-Button mit besonderer Hervorhebung wenn empfohlen */}
+        {/* Neuro-UX: Priorität-Button mit besonderer Hervorhebung wenn empfohlen */}
         <button
           className={'triage-action-btn priority neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'priority' ? 'neuro-button-glow' : '')}
           onClick={() => handleTriageAction('priority')}
           disabled={isAnimating}
-          title="Als Prioritaet markieren"
-          aria-label="Gedanke als Prioritaet markieren"
+          title="Als Priorität markieren"
+          aria-label="Gedanke als Priorität markieren"
           style={{ position: 'relative' }}
         >
           <span className="action-icon" aria-hidden="true">🔥</span>
-          <span className="action-label">Prioritaet</span>
+          <span className="action-label">Priorität</span>
           {/* Neuro-UX: Empfehlungs-Badge für Decision Fatigue Prevention */}
           {recommendedAction === 'priority' && (
             <span

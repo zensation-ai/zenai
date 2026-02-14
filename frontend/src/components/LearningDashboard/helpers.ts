@@ -22,6 +22,16 @@ export function getSuggestionLabel(type: string): string {
   return labels[type] || type;
 }
 
+export function getActivityStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    completed: 'Abgeschlossen',
+    no_data: 'Keine Daten',
+    running: 'Läuft',
+    failed: 'Fehlgeschlagen',
+  };
+  return labels[status] || status;
+}
+
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString('de-DE', {

@@ -123,7 +123,7 @@ export const SettingsDashboard = memo(({
               <div className="settings-item">
                 <div className="settings-item-info">
                   <span className="settings-item-label">Farbschema</span>
-                  <span className="settings-item-desc">Waehle dein bevorzugtes Erscheinungsbild</span>
+                  <span className="settings-item-desc">Wähle dein bevorzugtes Erscheinungsbild</span>
                 </div>
                 <SettingsSelect
                   value={settings.theme}

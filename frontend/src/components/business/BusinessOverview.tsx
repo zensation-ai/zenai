@@ -109,7 +109,7 @@ export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTa
       </div>
 
       <div className="business-section">
-        <div className="business-section-title">📈 Schnelluebersicht</div>
+        <div className="business-section-title">📈 Schnellübersicht</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           <div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Subscriptions</div>

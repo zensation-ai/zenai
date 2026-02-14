@@ -53,7 +53,7 @@ export function AIFeedback({
       });
       setFeedback('negative');
       setShowCorrection(true);
-      showToast('Feedback gespeichert. Moechtest du korrigieren?', 'info');
+      showToast('Feedback gespeichert. Möchtest du korrigieren?', 'info');
     } catch (error) {
       showToast('Feedback fehlgeschlagen', 'error');
     } finally {
