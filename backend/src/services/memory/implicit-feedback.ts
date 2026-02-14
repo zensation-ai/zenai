@@ -129,7 +129,7 @@ class ImplicitFeedbackService {
     if (!this.sessionHistory.has(sessionId)) {
       this.sessionHistory.set(sessionId, { messages: [], signals: [] });
     }
-    const session = this.sessionHistory.get(sessionId)!;
+    const session = this.sessionHistory.get(sessionId) ?? { messages: [], signals: [] };
 
     // Get previous user message for comparison
     const prevUserMessages = previousMessages

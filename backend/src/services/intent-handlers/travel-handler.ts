@@ -17,7 +17,7 @@ import type { IntentHandlerResult } from './index';
 export async function handleTravelIntent(
   context: AIContext,
   intent: DetectedIntent,
-  originalText: string
+  _originalText: string
 ): Promise<IntentHandlerResult> {
   const data = intent.extracted_data;
 

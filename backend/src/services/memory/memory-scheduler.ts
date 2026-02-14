@@ -14,7 +14,6 @@ import { logger } from '../../utils/logger';
 import { longTermMemory, ConsolidationResult } from './long-term-memory';
 import { episodicMemory, EpisodicConsolidationResult } from './episodic-memory';
 import { crossContextSharing } from './cross-context-sharing';
-import { reflectionEngine } from './reflection-engine';
 import { proactiveDigest } from '../proactive-digest';
 import { memoryGovernance } from './memory-governance';
 import { getAllDomainFocus } from '../domain-focus';
@@ -809,7 +808,7 @@ class MemorySchedulerService {
       }
     } catch (error) {
       // Table might not exist yet - that's fine
-      if (error instanceof Error && error.message.includes('does not exist')) return;
+      if (error instanceof Error && error.message.includes('does not exist')) {return;}
       logger.debug(`Failed to prune reflection insights for ${context}`, {
         error: error instanceof Error ? error.message : 'Unknown',
       });
@@ -842,7 +841,7 @@ class MemorySchedulerService {
           []
         );
 
-        if (activityStats.rows.length === 0) continue;
+        if (activityStats.rows.length === 0) {continue;}
 
         // Detect time-of-day patterns
         const hourCounts = new Map<number, number>();

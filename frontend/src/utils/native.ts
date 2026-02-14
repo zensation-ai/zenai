@@ -199,7 +199,7 @@ export const initializeNative = async () => {
     // Hide splash screen after app is ready
     await splashScreen.hide();
 
-    console.log(`Running on ${Capacitor.getPlatform()} platform`);
+    // Platform info available via Capacitor.getPlatform() if needed
   } catch (error) {
     logError('native:initializeNativeFeatures', error);
   }

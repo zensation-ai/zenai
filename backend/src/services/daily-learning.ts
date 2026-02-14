@@ -16,9 +16,7 @@ import { logger } from '../utils/logger';
 // Note: learning-engine and user-profile modules removed - functionality integrated in business-profile-learning.ts
 // Phase 3 (Vision): Automation suggestions
 import { generateAutomationSuggestions, AutomationSuggestion } from './automation-registry';
-// Phase 36: Focus Topic awareness
-import { getAllDomainFocus, matchesFocusKeywords } from './domain-focus';
-import type { DomainFocus } from './domain-focus';
+// Phase 36: Focus Topic awareness — imports available: getAllDomainFocus, matchesFocusKeywords, DomainFocus
 
 // ===========================================
 // Types

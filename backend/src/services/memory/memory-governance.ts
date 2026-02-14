@@ -299,7 +299,7 @@ class MemoryGovernanceService {
     };
 
     const table = tableMap[layer];
-    if (!table) return 0;
+    if (!table) {return 0;}
 
     try {
       const result = await queryContext(
@@ -535,7 +535,7 @@ class MemoryGovernanceService {
         createdAt: new Date(row.created_at as string),
       }));
     } catch (error) {
-      if (error instanceof Error && error.message.includes('does not exist')) return [];
+      if (error instanceof Error && error.message.includes('does not exist')) {return [];}
       logger.debug('Failed to get audit trail', { context, error });
       return [];
     }
@@ -623,7 +623,7 @@ class MemoryGovernanceService {
   // ===========================================
 
   private parseJsonArray(value: unknown, fallback: unknown[]): unknown[] {
-    if (Array.isArray(value)) return value;
+    if (Array.isArray(value)) {return value;}
     if (typeof value === 'string') {
       try { return JSON.parse(value); } catch { return fallback; }
     }

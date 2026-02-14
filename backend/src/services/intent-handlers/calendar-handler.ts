@@ -94,11 +94,24 @@ export async function handleCalendarIntent(
 // Helpers
 // ============================================================
 
+function parseTimeParts(timeStr: string): [string, string, string] | null {
+  const colonIdx = timeStr.indexOf(':');
+  if (colonIdx !== -1) {
+    const hours = timeStr.substring(colonIdx - 2 < 0 ? 0 : colonIdx - 2, colonIdx).replace(/\D/g, '');
+    const minutes = timeStr.substring(colonIdx + 1, colonIdx + 3).replace(/\D/g, '');
+    if (hours) {return [timeStr, hours, minutes || '0'];}
+  }
+  // No colon — extract first 1-2 digit number as hours
+  const digits = timeStr.match(/\d{1,2}/);
+  if (digits) {return [timeStr, digits[0], '0'];}
+  return null;
+}
+
 function buildStartTime(data: Record<string, unknown>): Date | null {
   // Try direct ISO string
   if (data.start_time && typeof data.start_time === 'string') {
     const d = new Date(data.start_time);
-    if (!isNaN(d.getTime())) return d;
+    if (!isNaN(d.getTime())) {return d;}
   }
 
   // Try date + time combination
@@ -109,7 +122,7 @@ function buildStartTime(data: Record<string, unknown>): Date | null {
     const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       if (timeStr) {
-        const timeParts = timeStr.match(/(\d{1,2}):?(\d{2})?/);
+        const timeParts = parseTimeParts(timeStr);
         if (timeParts) {
           date.setHours(parseInt(timeParts[1], 10), parseInt(timeParts[2] || '0', 10), 0, 0);
         }
@@ -132,7 +145,7 @@ function buildStartTime(data: Record<string, unknown>): Date | null {
     }
 
     if (timeStr) {
-      const timeParts = timeStr.match(/(\d{1,2}):?(\d{2})?/);
+      const timeParts = parseTimeParts(timeStr);
       if (timeParts) {
         now.setHours(parseInt(timeParts[1], 10), parseInt(timeParts[2] || '0', 10), 0, 0);
       }
@@ -155,9 +168,9 @@ function determineEventType(
   }
 
   const lowerText = text.toLowerCase();
-  if (/erinner(e|ung|t)?\s+mich/i.test(lowerText)) return 'reminder';
-  if (/deadline/i.test(lowerText) || /frist/i.test(lowerText) || /bis\s+spätestens/i.test(lowerText)) return 'deadline';
-  if (/fokus|konzentrier/i.test(lowerText)) return 'focus_time';
+  if (/erinner(e|ung|t)?\s+mich/i.test(lowerText)) {return 'reminder';}
+  if (/deadline/i.test(lowerText) || /frist/i.test(lowerText) || /bis\s+spätestens/i.test(lowerText)) {return 'deadline';}
+  if (/fokus|konzentrier/i.test(lowerText)) {return 'focus_time';}
 
   return 'appointment';
 }
@@ -165,7 +178,7 @@ function determineEventType(
 function extractTitle(text: string): string {
   // Take first sentence or first 50 chars
   const firstSentence = text.split(/[.!?]/)[0].trim();
-  if (firstSentence.length <= 80) return firstSentence;
+  if (firstSentence.length <= 80) {return firstSentence;}
   return firstSentence.substring(0, 77) + '...';
 }
 

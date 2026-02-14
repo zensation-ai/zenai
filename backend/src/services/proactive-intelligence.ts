@@ -780,7 +780,7 @@ export async function researchFocusTopic(
 
   // Such-Query aus Fokus-Metadaten bauen
   const queryParts = [focus.name];
-  if (focus.description) queryParts.push(focus.description);
+  if (focus.description) {queryParts.push(focus.description);}
   if (focus.learning_goals.length > 0) {
     queryParts.push(focus.learning_goals.slice(0, 2).join(' '));
   }
@@ -906,10 +906,10 @@ async function fetchDocumentSources(
  */
 export function shouldResearchNow(focus: DomainFocus): boolean {
   const schedule = (focus as DomainFocus & { research_schedule?: string }).research_schedule || 'weekly';
-  if (schedule === 'manual') return false;
+  if (schedule === 'manual') {return false;}
 
   const lastResearchedAt = (focus as DomainFocus & { last_researched_at?: string | null }).last_researched_at;
-  if (!lastResearchedAt) return true;
+  if (!lastResearchedAt) {return true;}
 
   const lastResearch = new Date(lastResearchedAt).getTime();
   const daysSince = (Date.now() - lastResearch) / (1000 * 60 * 60 * 24);

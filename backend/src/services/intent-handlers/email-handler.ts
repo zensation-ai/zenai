@@ -63,12 +63,12 @@ export async function handleEmailIntent(
   // Build prompt for email generation
   const contextParts: string[] = [];
 
-  if (data.recipient) contextParts.push(`Empfaenger: ${data.recipient}`);
-  if (data.subject) contextParts.push(`Betreff-Kontext: ${data.subject}`);
+  if (data.recipient) {contextParts.push(`Empfaenger: ${data.recipient}`);}
+  if (data.subject) {contextParts.push(`Betreff-Kontext: ${data.subject}`);}
   if (data.key_points && Array.isArray(data.key_points)) {
     contextParts.push(`Kernpunkte: ${(data.key_points as string[]).join(', ')}`);
   }
-  if (data.tone) contextParts.push(`Ton: ${data.tone}`);
+  if (data.tone) {contextParts.push(`Ton: ${data.tone}`);}
 
   const prompt = `${EMAIL_DRAFT_PROMPT}
 

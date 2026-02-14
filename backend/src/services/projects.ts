@@ -163,7 +163,7 @@ export async function updateProject(
     paramIdx++;
   }
 
-  if (setClauses.length === 0) return null;
+  if (setClauses.length === 0) {return null;}
 
   setClauses.push('updated_at = NOW()');
 
@@ -174,7 +174,7 @@ export async function updateProject(
     RETURNING *
   `, [...params, id]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
 
   logger.info('Project updated', { id, context, operation: 'updateProject' });
   return mapRowToProject(result.rows[0]);
@@ -203,7 +203,7 @@ export async function deleteProject(
 // ============================================================
 
 function parseJsonbSafe<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
+  if (value === null || value === undefined) {return fallback;}
   if (typeof value === 'string') {
     try { return JSON.parse(value) as T; } catch { return fallback; }
   }

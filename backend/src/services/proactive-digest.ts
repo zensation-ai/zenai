@@ -92,19 +92,19 @@ class ProactiveDigestService {
 
       // 1. Ideas created yesterday
       const ideasSection = await this.buildIdeasSection(context, yesterday, now);
-      if (ideasSection) sections.push(ideasSection);
+      if (ideasSection) {sections.push(ideasSection);}
 
       // 2. Chat activity summary
       const chatSection = await this.buildChatSection(context, yesterday, now);
-      if (chatSection) sections.push(chatSection);
+      if (chatSection) {sections.push(chatSection);}
 
       // 3. Suggestions status
       const suggestionsSection = await this.buildSuggestionsSection(context, yesterday, now);
-      if (suggestionsSection) sections.push(suggestionsSection);
+      if (suggestionsSection) {sections.push(suggestionsSection);}
 
       // 4. Memory insights
       const memorySection = await this.buildMemorySection(context, yesterday, now);
-      if (memorySection) sections.push(memorySection);
+      if (memorySection) {sections.push(memorySection);}
 
       if (sections.length === 0) {
         return null; // Nothing to report
@@ -171,19 +171,19 @@ class ProactiveDigestService {
 
       // 1. Weekly idea count and top topics
       const weeklyIdeasSection = await this.buildWeeklyIdeasSection(context, weekAgo, now);
-      if (weeklyIdeasSection) sections.push(weeklyIdeasSection);
+      if (weeklyIdeasSection) {sections.push(weeklyIdeasSection);}
 
       // 2. Learning progress
       const learningSection = await this.buildLearningSection(context, weekAgo, now);
-      if (learningSection) sections.push(learningSection);
+      if (learningSection) {sections.push(learningSection);}
 
       // 3. Memory growth
       const memoryGrowthSection = await this.buildMemoryGrowthSection(context, weekAgo, now);
-      if (memoryGrowthSection) sections.push(memoryGrowthSection);
+      if (memoryGrowthSection) {sections.push(memoryGrowthSection);}
 
       // 4. Activity patterns
       const patternSection = await this.buildActivityPatternSection(context, weekAgo, now);
-      if (patternSection) sections.push(patternSection);
+      if (patternSection) {sections.push(patternSection);}
 
       if (sections.length === 0) {
         return null;
@@ -236,10 +236,10 @@ class ProactiveDigestService {
         [context]
       );
 
-      if (result.rows.length === 0) return null;
+      if (result.rows.length === 0) {return null;}
       return this.rowToDigest(result.rows[0]);
     } catch (error) {
-      if (error instanceof Error && error.message.includes('does not exist')) return null;
+      if (error instanceof Error && error.message.includes('does not exist')) {return null;}
       logger.debug('Failed to get latest digest', { error });
       return null;
     }
@@ -261,7 +261,7 @@ class ProactiveDigestService {
 
       return result.rows.map(row => this.rowToDigest(row));
     } catch (error) {
-      if (error instanceof Error && error.message.includes('does not exist')) return [];
+      if (error instanceof Error && error.message.includes('does not exist')) {return [];}
       logger.debug('Failed to get recent digests', { error });
       return [];
     }
@@ -302,16 +302,16 @@ class ProactiveDigestService {
       );
 
       const count = Number(result.rows[0]?.count || 0);
-      if (count < CONFIG.MIN_IDEAS_FOR_SECTION) return null;
+      if (count < CONFIG.MIN_IDEAS_FOR_SECTION) {return null;}
 
       const tasks = Number(result.rows[0]?.tasks || 0);
       const notes = Number(result.rows[0]?.notes || 0);
       const ideas = Number(result.rows[0]?.ideas || 0);
 
       const parts: string[] = [];
-      if (ideas > 0) parts.push(`${ideas} Idee${ideas > 1 ? 'n' : ''}`);
-      if (tasks > 0) parts.push(`${tasks} Aufgabe${tasks > 1 ? 'n' : ''}`);
-      if (notes > 0) parts.push(`${notes} Notiz${notes > 1 ? 'en' : ''}`);
+      if (ideas > 0) {parts.push(`${ideas} Idee${ideas > 1 ? 'n' : ''}`);}
+      if (tasks > 0) {parts.push(`${tasks} Aufgabe${tasks > 1 ? 'n' : ''}`);}
+      if (notes > 0) {parts.push(`${notes} Notiz${notes > 1 ? 'en' : ''}`);}
 
       return {
         title: 'Neue Gedanken',
@@ -339,7 +339,7 @@ class ProactiveDigestService {
       const sessions = Number(result.rows[0]?.sessions || 0);
       const messages = Number(result.rows[0]?.messages || 0);
 
-      if (sessions === 0) return null;
+      if (sessions === 0) {return null;}
 
       return {
         title: 'Chat-Aktivitaet',
@@ -368,7 +368,7 @@ class ProactiveDigestService {
       const total = Number(result.rows[0]?.total || 0);
       const accepted = Number(result.rows[0]?.accepted || 0);
 
-      if (total === 0) return null;
+      if (total === 0) {return null;}
 
       const rate = Math.round((accepted / total) * 100);
 
@@ -395,7 +395,7 @@ class ProactiveDigestService {
       );
 
       const newFacts = Number(result.rows[0]?.new_facts || 0);
-      if (newFacts === 0) return null;
+      if (newFacts === 0) {return null;}
 
       return {
         title: 'KI-Gedaechtnis',
@@ -428,7 +428,7 @@ class ProactiveDigestService {
       const total = Number(result.rows[0]?.total || 0);
       const completed = Number(result.rows[0]?.completed_tasks || 0);
 
-      if (total === 0) return null;
+      if (total === 0) {return null;}
 
       let content = `${total} neue Eintraege diese Woche.`;
       if (completed > 0) {
@@ -476,7 +476,7 @@ class ProactiveDigestService {
       );
 
       const completed = Number(result.rows[0]?.completed || 0);
-      if (completed === 0) return null;
+      if (completed === 0) {return null;}
 
       return {
         title: 'Lernfortschritt',
@@ -510,11 +510,11 @@ class ProactiveDigestService {
       const facts = Number(factsResult.rows[0]?.cnt || 0);
       const episodes = Number(episodesResult.rows[0]?.cnt || 0);
 
-      if (facts + episodes === 0) return null;
+      if (facts + episodes === 0) {return null;}
 
       const parts: string[] = [];
-      if (facts > 0) parts.push(`${facts} Fakten`);
-      if (episodes > 0) parts.push(`${episodes} Episoden`);
+      if (facts > 0) {parts.push(`${facts} Fakten`);}
+      if (episodes > 0) {parts.push(`${episodes} Episoden`);}
 
       return {
         title: 'Gedaechtnis-Wachstum',
@@ -541,13 +541,13 @@ class ProactiveDigestService {
         [from, to]
       );
 
-      if (result.rows.length === 0) return null;
+      if (result.rows.length === 0) {return null;}
 
       const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
       const peakDay = dayNames[Number(result.rows[0].dow)] || 'Unbekannt';
       const count = Number(result.rows[0].cnt);
 
-      if (count < CONFIG.MIN_ACTIVITY_FOR_PATTERNS) return null;
+      if (count < CONFIG.MIN_ACTIVITY_FOR_PATTERNS) {return null;}
 
       return {
         title: 'Aktivitaets-Muster',
@@ -595,7 +595,7 @@ class ProactiveDigestService {
     let sections: DigestSection[] = [];
     try {
       const data = typeof row.sections === 'string' ? JSON.parse(row.sections) : row.sections;
-      if (Array.isArray(data)) sections = data as DigestSection[];
+      if (Array.isArray(data)) {sections = data as DigestSection[];}
     } catch {
       sections = [];
     }

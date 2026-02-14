@@ -552,7 +552,7 @@ async function handleMemoryIntrospect(
         sections.push(`**Langzeitgedaechtnis (${filtered.length} Fakten):**`);
         const grouped: Record<string, typeof filtered> = {};
         for (const f of filtered.slice(0, 20)) {
-          if (!grouped[f.factType]) grouped[f.factType] = [];
+          if (!grouped[f.factType]) {grouped[f.factType] = [];}
           grouped[f.factType].push(f);
         }
         for (const [type, typeFacts] of Object.entries(grouped)) {
@@ -771,8 +771,8 @@ async function handleCreateCalendarEvent(
     });
 
     const parts = [`Kalender-Eintrag erstellt: "${event.title}" am ${dateFormatted}.`];
-    if (event.location) parts.push(`Ort: ${event.location}.`);
-    if (event.participants.length > 0) parts.push(`Teilnehmer: ${event.participants.join(', ')}.`);
+    if (event.location) {parts.push(`Ort: ${event.location}.`);}
+    if (event.participants.length > 0) {parts.push(`Teilnehmer: ${event.participants.join(', ')}.`);}
     return parts.join(' ');
   } catch (error) {
     logger.error('Tool create_calendar_event failed', error instanceof Error ? error : undefined);
@@ -807,8 +807,8 @@ async function handleListCalendarEvents(
         weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
       });
       const parts = [`- ${date}: ${e.title}`];
-      if (e.location) parts.push(`(${e.location})`);
-      if (e.event_type !== 'appointment') parts.push(`[${e.event_type}]`);
+      if (e.location) {parts.push(`(${e.location})`);}
+      if (e.event_type !== 'appointment') {parts.push(`[${e.event_type}]`);}
       return parts.join(' ');
     });
 

@@ -170,7 +170,7 @@ class GlobalSearchService {
     const seen = new Set<string>();
     const deduped = sortedResults.filter(r => {
       const key = `${r.type}:${r.id}`;
-      if (seen.has(key)) return false;
+      if (seen.has(key)) {return false;}
       seen.add(key);
       return true;
     });
@@ -422,7 +422,7 @@ class GlobalSearchService {
   // ===========================================
 
   private truncate(text: string, maxLen: number): string {
-    if (text.length <= maxLen) return text;
+    if (text.length <= maxLen) {return text;}
     return text.substring(0, maxLen - 3) + '...';
   }
 }

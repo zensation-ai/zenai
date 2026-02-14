@@ -141,7 +141,7 @@ function sendSSE(res: Response, event: StreamEvent): void {
  * Idempotent: safe to call multiple times (e.g. from route + thinkingStream).
  */
 export function setupSSEHeaders(res: Response): void {
-  if (res.headersSent) return;
+  if (res.headersSent) {return;}
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');

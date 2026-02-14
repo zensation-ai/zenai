@@ -996,7 +996,7 @@ Antworte als JSON:
 
     for (const existing of existingFacts) {
       // Only compare same fact types
-      if (existing.factType !== newFact.factType) continue;
+      if (existing.factType !== newFact.factType) {continue;}
 
       const existingWords = new Set(
         existing.content.toLowerCase().split(/\s+/).filter(w => w.length > 3)
@@ -1005,7 +1005,7 @@ Antworte als JSON:
       // Calculate word overlap
       let overlap = 0;
       for (const word of newWords) {
-        if (existingWords.has(word)) overlap++;
+        if (existingWords.has(word)) {overlap++;}
       }
       const overlapRatio = overlap / Math.max(1, Math.min(newWords.size, existingWords.size));
 

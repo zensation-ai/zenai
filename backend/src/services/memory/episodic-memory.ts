@@ -656,13 +656,14 @@ export class EpisodicMemoryService {
         const weekNum = Math.ceil(((date.getTime() - jan1.getTime()) / 86400000 + jan1.getDay() + 1) / 7);
         const weekKey = `${date.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 
-        if (!weeklyGroups.has(weekKey)) weeklyGroups.set(weekKey, []);
-        weeklyGroups.get(weekKey)!.push(row);
+        if (!weeklyGroups.has(weekKey)) {weeklyGroups.set(weekKey, []);}
+        const weekGroup = weeklyGroups.get(weekKey);
+        if (weekGroup) {weekGroup.push(row);}
       }
 
       // Merge each week group
       for (const [weekKey, episodes] of weeklyGroups) {
-        if (episodes.length < CONFIG.TEMPORAL_MERGE.MIN_EPISODES_FOR_MERGE) continue;
+        if (episodes.length < CONFIG.TEMPORAL_MERGE.MIN_EPISODES_FOR_MERGE) {continue;}
 
         // Create summary from triggers
         const triggerSummaries = episodes
@@ -723,13 +724,14 @@ export class EpisodicMemoryService {
         const date = new Date(row.created_at as string);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-        if (!monthlyGroups.has(monthKey)) monthlyGroups.set(monthKey, []);
-        monthlyGroups.get(monthKey)!.push(row);
+        if (!monthlyGroups.has(monthKey)) {monthlyGroups.set(monthKey, []);}
+        const monthGroup = monthlyGroups.get(monthKey);
+        if (monthGroup) {monthGroup.push(row);}
       }
 
       // Merge each month group
       for (const [monthKey, episodes] of monthlyGroups) {
-        if (episodes.length < CONFIG.TEMPORAL_MERGE.MIN_EPISODES_FOR_MERGE) continue;
+        if (episodes.length < CONFIG.TEMPORAL_MERGE.MIN_EPISODES_FOR_MERGE) {continue;}
 
         const summaryTrigger = `[monthly summary] ${monthKey}: ${episodes.length} Interaktionen`;
         const avgValence = episodes.reduce((sum, ep) => sum + ((ep.emotional_valence as number) || 0), 0) / episodes.length;

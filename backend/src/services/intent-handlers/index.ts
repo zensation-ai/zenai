@@ -101,7 +101,7 @@ export async function dispatchIntents(
   );
 
   return results.map((r, idx) => {
-    if (r.status === 'fulfilled') return r.value;
+    if (r.status === 'fulfilled') {return r.value;}
     return {
       success: false,
       intent_type: intents[idx].type,

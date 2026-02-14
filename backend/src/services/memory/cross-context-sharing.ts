@@ -20,7 +20,6 @@
  */
 
 import { AIContext, queryContext } from '../../utils/database-context';
-import { query } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { longTermMemory, PersonalizationFact } from './long-term-memory';
 

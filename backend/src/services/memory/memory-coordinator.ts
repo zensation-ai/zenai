@@ -1053,10 +1053,6 @@ export class MemoryCoordinator {
             const timestamp = (part as ContextPart & { timestamp?: number }).timestamp || Date.now();
             const decay = this.calculateDecay(timestamp);
 
-            // Calculate position penalty for very long context
-            // Later parts are slightly less important to avoid context overflow
-            const positionPenalty = 1.0; // Could be based on part index if needed
-
             // Three-Factor Retrieval Scoring (Stanford Generative Agents pattern)
             // Multiplicative: recency * importance * relevance
             // A single low factor properly suppresses the score

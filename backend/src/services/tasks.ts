@@ -251,7 +251,7 @@ export async function updateTask(
     setClauses.push(`completed_at = NULL`);
   }
 
-  if (setClauses.length === 0) return null;
+  if (setClauses.length === 0) {return null;}
 
   setClauses.push('updated_at = NOW()');
 
@@ -262,7 +262,7 @@ export async function updateTask(
     RETURNING *
   `, [...params, id]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
 
   logger.info('Task updated', { id, context, operation: 'updateTask' });
   return mapRowToTask(result.rows[0]);
@@ -468,7 +468,7 @@ function mapIdeaPriority(priority: string | null): TaskPriority {
 }
 
 function parseJsonbSafe<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
+  if (value === null || value === undefined) {return fallback;}
   if (typeof value === 'string') {
     try { return JSON.parse(value) as T; } catch { return fallback; }
   }
@@ -476,8 +476,8 @@ function parseJsonbSafe<T>(value: unknown, fallback: T): T {
 }
 
 function toISOString(value: unknown): string | undefined {
-  if (!value) return undefined;
-  if (value instanceof Date) return value.toISOString();
+  if (!value) {return undefined;}
+  if (value instanceof Date) {return value.toISOString();}
   return value as string;
 }
 
