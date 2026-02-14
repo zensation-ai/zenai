@@ -411,7 +411,7 @@ Details: ${idea.summary}`,
           type="button"
           className="close-button neuro-press-effect neuro-focus-ring"
           onClick={onClose}
-          aria-label="Detail-Ansicht schliessen"
+          aria-label="Detail-Ansicht schließen"
         >
           ×
         </button>

@@ -175,7 +175,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
       {/* Toolbar */}
       <div className="calendar-toolbar">
         <div className="calendar-toolbar__nav">
-          <button className="calendar-btn calendar-btn--icon" onClick={goPrev} title="Zurueck">
+          <button className="calendar-btn calendar-btn--icon" onClick={goPrev} title="Zurück">
             &#8249;
           </button>
           <button className="calendar-btn calendar-btn--today" onClick={goToday}>

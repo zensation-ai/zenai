@@ -396,7 +396,7 @@ export function setupGracefulShutdown(): void {
   // Handle uncaught exceptions gracefully
   process.on('uncaughtException', async (error) => {
     logger.error('Uncaught Exception', error, { operation: 'uncaughtException' });
-    await closeAllPools().catch(() => {});
+    await closeAllPools().catch((cleanupErr) => { logger.warn('Pool cleanup failed during uncaughtException', { error: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) }); });
     process.exit(1);
   });
 
@@ -406,7 +406,7 @@ export function setupGracefulShutdown(): void {
       operation: 'unhandledRejection',
     });
     // Critical: Don't leave server in broken state
-    await closeAllPools().catch(() => {});
+    await closeAllPools().catch((cleanupErr) => { logger.warn('Pool cleanup failed during unhandledRejection', { error: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) }); });
     process.exit(1);
   });
 }
@@ -561,7 +561,7 @@ export function startConnectionHealthCheck(intervalMs: number = 5 * 60 * 1000): 
           consecutiveFailures,
           operation: 'circuitBreakerTriggered',
         });
-        await closeAllPools().catch(() => {});
+        await closeAllPools().catch((cleanupErr) => { logger.warn('Pool cleanup failed during circuit breaker shutdown', { error: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) }); });
         process.exit(1);
       }
     }

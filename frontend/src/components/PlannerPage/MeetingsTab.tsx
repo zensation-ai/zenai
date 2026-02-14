@@ -92,7 +92,7 @@ export function MeetingsTab({ context }: MeetingsTabProps) {
           className="meetings-tab__back"
           onClick={() => setSelectedMeeting(null)}
         >
-          &larr; Zurueck zur Liste
+          &larr; Zurück zur Liste
         </button>
         <MeetingProtocol
           meetingId={selectedMeeting.id}

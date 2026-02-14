@@ -308,7 +308,7 @@ syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Req
        WHERE is_active = true
        ORDER BY updated_at DESC
        LIMIT 10`
-    ).catch(() => ({ rows: [] })), // Table might not exist
+    ).catch((err) => { logger.debug('push_tokens query failed (table may not exist)', { error: err instanceof Error ? err.message : String(err) }); return { rows: [] }; }), // Table might not exist
   ]);
 
   // Map devices to frontend expected format

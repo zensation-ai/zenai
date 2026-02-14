@@ -657,7 +657,7 @@ export async function getEvolutionDashboard(context: AIContext): Promise<Evoluti
         updateMilestoneProgress(context, 'automations_count', snapshot.automations_active || 0),
         updateMilestoneProgress(context, 'patterns_learned', totalPatterns),
         updateMilestoneProgress(context, 'profile_complete', snapshot.profile_completeness || 0),
-      ]).catch(() => {});
+      ]).catch((err) => { logger.debug('Milestone update failed (non-critical)', { error: err instanceof Error ? err.message : String(err) }); });
     }
 
     // Calculate accuracy changes

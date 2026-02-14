@@ -145,7 +145,7 @@ class LighthouseConnector implements BusinessConnector {
       if (result.rows.length > 0 && result.rows[0].urls) {
         return JSON.parse(result.rows[0].urls);
       }
-    } catch { /* ignore */ }
+    } catch (err) { logger.debug('Lighthouse URL config not found, using defaults', { error: err instanceof Error ? err.message : String(err) }); }
     // Default URLs
     return ['https://zensation.ai', 'https://frontend-mu-six-93.vercel.app'];
   }

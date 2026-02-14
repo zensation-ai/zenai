@@ -38,7 +38,7 @@ export const FriendlyError = ({
     <div className={`friendly-error ${variant} ${errorType}`} role="alert">
       {/* Dismiss Button */}
       {onDismiss && variant !== 'fullpage' && (
-        <button className="error-dismiss" onClick={onDismiss} aria-label="Schliessen">
+        <button className="error-dismiss" onClick={onDismiss} aria-label="Schließen">
           {'\u00D7'}
         </button>
       )}

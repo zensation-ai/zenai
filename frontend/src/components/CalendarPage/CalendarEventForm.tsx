@@ -88,7 +88,7 @@ export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onC
       <form className="calendar-form" onSubmit={handleSubmit}>
         <div className="calendar-form__header">
           <h3>{isEditing ? 'Termin bearbeiten' : 'Neuer Termin'}</h3>
-          <button type="button" className="calendar-btn calendar-btn--icon" onClick={onClose} aria-label="Schliessen">
+          <button type="button" className="calendar-btn calendar-btn--icon" onClick={onClose} aria-label="Schließen">
             &times;
           </button>
         </div>
@@ -211,7 +211,7 @@ export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onC
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting ? 'Wird geloescht...' : 'Loeschen'}
+              {deleting ? 'Wird gelöscht...' : 'Löschen'}
             </button>
           )}
           <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>

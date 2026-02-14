@@ -275,7 +275,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
       {error && (
         <div className="error-banner">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} aria-label="Fehlermeldung schliessen">×</button>
+          <button type="button" onClick={() => setError(null)} aria-label="Fehlermeldung schließen">×</button>
         </div>
       )}
 
