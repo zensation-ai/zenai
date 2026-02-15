@@ -135,7 +135,7 @@
 .neuro-button {
   position: relative;
   padding: 0.875rem 1.5rem;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: none;
   background: linear-gradient(
     180deg,
@@ -178,7 +178,7 @@
   width: 100px;
   height: 100px;
   background: rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transform: translate(-50%, -50%) scale(0);
   pointer-events: none;
 }
@@ -275,7 +275,7 @@
   background: var(--glass-2026-bg);
   backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
   -webkit-backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--glass-2026-border);
   box-shadow: var(--glass-2026-shadow);
   transition: all var(--neuro-timing-natural) ease;
@@ -365,7 +365,7 @@
   );
   background-size: 200% 100%;
   animation: anticipatoryShimmer 1.8s ease-in-out infinite;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 /* Breathing Animation (Subkonsciente Ruhe) */
@@ -407,7 +407,7 @@
   color: white;
   font-size: 0.75rem;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -500,7 +500,7 @@
 .neuro-step-dot {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -582,7 +582,7 @@
   background: var(--glass-2026-bg);
   backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
   -webkit-backdrop-filter: blur(var(--glass-2026-blur)) saturate(var(--glass-2026-saturation));
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--glass-2026-border);
   box-shadow: var(--glass-2026-shadow);
   position: relative;
@@ -618,7 +618,7 @@
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
   border: 1.5px solid rgba(255, 255, 255, 0.4);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   transition: all var(--neuro-timing-quick) ease;
   box-shadow:
@@ -690,7 +690,7 @@
   width: 6px;
   height: 6px;
   background: var(--neuro-reward);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: typingDot 1.4s ease-in-out infinite;
 }
 
@@ -776,7 +776,7 @@
   color: var(--text-secondary);
   padding: 4px 10px;
   background: rgba(0, 0, 0, 0.04);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .neuro-reading-time::before {
@@ -812,7 +812,7 @@
 
 .neuro-focus-content {
   background: white;
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   padding: 2rem;
   max-width: 600px;
   width: 90%;
@@ -912,7 +912,7 @@
   }
 
   .liquid-glass {
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
   }
 
   /* Reduzierte Animationen für Performance */
@@ -1192,7 +1192,7 @@
 .neuro-status-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   position: relative;
 }
 
@@ -1259,7 +1259,7 @@
   color: white;
   font-size: 0.8125rem;
   font-weight: 500;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
@@ -1381,7 +1381,7 @@
   position: absolute;
   inset: 0;
   border: 3px solid transparent;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .neuro-loading-spinner::before {
@@ -1421,7 +1421,7 @@
   );
   background-size: 200% 100%;
   animation: skeletonGlow 1.5s ease-in-out infinite;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 @keyframes skeletonGlow {
@@ -1484,7 +1484,7 @@
   gap: 8px;
   padding: 6px 12px;
   background: rgba(0, 0, 0, 0.04);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 0.8125rem;
   transition: all var(--neuro-timing-quick) ease;
 }
@@ -1520,7 +1520,7 @@
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.04));
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
@@ -1672,7 +1672,7 @@
   padding: 0.5rem 1rem;
   background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 140, 90, 0.05));
   border: 1px solid rgba(255, 107, 53, 0.2);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--neuro-reward);
@@ -1708,7 +1708,7 @@
     rgba(16, 185, 129, 0.1) 40%,
     transparent 70%
   );
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   opacity: 0;
   animation: successBurstAnim 0.8s ease-out;
   pointer-events: none;
@@ -1735,7 +1735,7 @@
   color: white;
   font-size: 0.8rem;
   font-weight: 600;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 4px 12px var(--neuro-success-glow);
   animation: rewardBadgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1762,7 +1762,7 @@
   transform: translateX(-50%) translateY(-20px);
   padding: 12px 24px;
   background: white;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.15),
     0 4px 12px rgba(0, 0, 0, 0.05);
@@ -1894,7 +1894,7 @@
   color: white;
   font-size: 0.8rem;
   font-weight: 500;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;

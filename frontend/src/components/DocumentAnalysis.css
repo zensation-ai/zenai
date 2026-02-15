@@ -41,7 +41,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   padding: 3px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--accent-bg, rgba(255, 140, 0, 0.12));
   color: var(--accent-color, #ff8c00);
   letter-spacing: 0.02em;
@@ -80,7 +80,7 @@
 
 .doc-upload-dropzone {
   border: 2px dashed var(--border-color, #d1d5db);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 48px 32px;
   text-align: center;
   cursor: pointer;
@@ -136,7 +136,7 @@
 .doc-upload-error {
   margin-top: 8px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   font-size: 0.85rem;
@@ -146,7 +146,7 @@
 
 .doc-upload-selected {
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px;
   background: var(--bg-secondary, #fff);
 }
@@ -160,7 +160,7 @@
 .doc-upload-file-icon {
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -219,7 +219,7 @@
   height: 32px;
   border: none;
   background: rgba(239, 68, 68, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -260,7 +260,7 @@
   gap: 6px;
   padding: 16px 12px;
   border: 2px solid var(--border-color, #e5e7eb);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary, #fff);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -317,7 +317,7 @@
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--border-color, #d1d5db);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
@@ -347,7 +347,7 @@
   width: 100%;
   padding: 14px 24px;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--accent-color, #ff8c00);
   color: #fff;
   font-size: 1rem;
@@ -375,7 +375,7 @@
   height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top: 2px solid #fff;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: doc-spin 0.8s linear infinite;
 }
 
@@ -436,7 +436,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary, #fff);
   border: 1px solid var(--border-color, #e5e7eb);
 }
@@ -459,7 +459,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: var(--accent-bg, rgba(255, 140, 0, 0.12));
   color: var(--accent-color, #ff8c00);
 }
@@ -490,7 +490,7 @@
 .doc-action-btn {
   padding: 8px 14px;
   border: 1px solid var(--border-color, #d1d5db);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-secondary, #fff);
   color: var(--text-primary, #374151);
   font-size: 0.82rem;
@@ -520,7 +520,7 @@
 
 .doc-analysis-key-findings {
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--accent-bg, rgba(255, 140, 0, 0.06));
   border: 1px solid rgba(255, 140, 0, 0.15);
 }
@@ -550,7 +550,7 @@
 
 .doc-analysis-main {
   padding: 24px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary, #fff);
   border: 1px solid var(--border-color, #e5e7eb);
 }
@@ -612,7 +612,7 @@
 .doc-analysis-markdown code.inline-code {
   font-size: 0.85em;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-primary, #f3f4f6);
   color: var(--accent-color, #ff8c00);
 }
@@ -665,7 +665,7 @@
 .doc-mode-btn {
   padding: 6px 14px;
   border: 1px solid var(--border-color, #d1d5db);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary, #6b7280);
   font-size: 0.82rem;
@@ -749,7 +749,7 @@
   gap: 12px;
   padding: 10px 14px;
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-secondary, #fff);
 }
 
@@ -773,7 +773,7 @@
   height: 28px;
   border: none;
   background: rgba(239, 68, 68, 0.1);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   color: #ef4444;
   font-size: 0.9rem;
@@ -821,7 +821,7 @@
   gap: 16px;
   padding: 16px;
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--bg-secondary, #fff);
   transition: border-color 0.15s ease;
 }
@@ -873,7 +873,7 @@
 
 .doc-followup-section {
   padding: 24px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary, #fff);
   border: 1px solid var(--border-color, #e5e7eb);
 }
@@ -902,7 +902,7 @@
 
 .doc-followup-msg {
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 .doc-followup-user {
@@ -952,7 +952,7 @@
   flex: 1;
   padding: 10px 14px;
   border: 1px solid var(--border-color, #d1d5db);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
@@ -975,7 +975,7 @@
 .doc-followup-submit {
   padding: 10px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--accent-color, #ff8c00);
   color: #fff;
   font-size: 0.9rem;
@@ -1093,7 +1093,7 @@
 .doc-template-editor {
   background: var(--bg-secondary, #f8f9fa);
   border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 20px;
   margin-bottom: 20px;
 }
@@ -1121,7 +1121,7 @@
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--border-color, #ddd);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.88rem;
   background: var(--bg-primary, #fff);
   color: var(--text-primary, #333);
@@ -1149,7 +1149,7 @@
   padding: 16px;
   background: var(--bg-secondary, #f8f9fa);
   border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 .doc-analysis-diagrams h3 {
@@ -1166,7 +1166,7 @@
 .doc-diagram-card {
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
   overflow: hidden;
 }
@@ -1188,7 +1188,7 @@
   color: var(--text-secondary, #666);
   background: var(--bg-secondary, #f0f0f0);
   padding: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
   max-height: 80px;
   white-space: pre-wrap;

@@ -118,15 +118,6 @@
   }
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .voice-input-btn {

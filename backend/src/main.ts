@@ -722,22 +722,19 @@ Phase 4 APIs:
       missing: extensionStatus.missing,
       operation: 'startup',
     });
-    console.log(`
-⚠️  Missing PostgreSQL Extensions: ${extensionStatus.missing.join(', ')}
-    Run the following SQL on your database:
-    CREATE EXTENSION IF NOT EXISTS vector;
-    CREATE EXTENSION IF NOT EXISTS pg_trgm;
-    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-`);
+    logger.warn(`Missing PostgreSQL Extensions: ${extensionStatus.missing.join(', ')}. Run: CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`, {
+      missing: extensionStatus.missing,
+      operation: 'startup',
+    });
   } else if (extensionStatus.optional.length > 0) {
     logger.warn('Optional PostgreSQL extensions missing', {
       optional: extensionStatus.optional,
       operation: 'startup',
     });
-    console.log(`
-ℹ️  Optional extensions not installed: ${extensionStatus.optional.join(', ')}
-    Some features (like fuzzy duplicate detection) may be limited.
-`);
+    logger.info(`Optional extensions not installed: ${extensionStatus.optional.join(', ')}. Some features (like fuzzy duplicate detection) may be limited.`, {
+      optional: extensionStatus.optional,
+      operation: 'startup',
+    });
   } else {
     logger.info('All PostgreSQL extensions validated', {
       installed: extensionStatus.installed,
@@ -799,6 +796,7 @@ Phase 4 APIs:
 // Start the server
 startServer().catch((error) => {
   logger.error('FATAL: Server startup failed', error instanceof Error ? error : undefined);
-  console.error('Server startup failed:', error);
+  // Fallback to console.error in case logger pipeline is broken
+  console.error('Server startup failed:', error); // eslint-disable-line no-console
   process.exit(1);
 });

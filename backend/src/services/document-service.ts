@@ -231,13 +231,35 @@ export class DocumentService {
       });
   }
 
+  // SECURITY & PERFORMANCE: Explicit column selection instead of SELECT *
+  // Excludes 'embedding' (768-dim vector, ~6KB per row) and 'chunk_count' which
+  // are not needed for display. Use searchDocuments() for embedding-based queries.
+  private static readonly DOCUMENT_COLUMNS = `
+    id, filename, original_filename, file_path, storage_provider, file_hash,
+    mime_type, file_size, page_count, title, summary, full_text, keywords,
+    language, context, primary_topic_id, folder_path, tags,
+    processing_status, processing_error, ocr_confidence,
+    linked_idea_id, source_url, view_count, last_viewed_at,
+    is_favorite, is_archived, created_at, updated_at, processed_at
+  `.trim();
+
+  // Lightweight columns for list views (excludes full_text for performance)
+  private static readonly DOCUMENT_LIST_COLUMNS = `
+    id, filename, original_filename, file_path, storage_provider, file_hash,
+    mime_type, file_size, page_count, title, summary, keywords,
+    language, context, primary_topic_id, folder_path, tags,
+    processing_status, processing_error, ocr_confidence,
+    linked_idea_id, source_url, view_count, last_viewed_at,
+    is_favorite, is_archived, created_at, updated_at, processed_at
+  `.trim();
+
   /**
    * Get a single document by ID
    */
   async getDocument(id: string, context: AIContext): Promise<Document | null> {
     const result = await queryContext(
       context,
-      `SELECT * FROM documents WHERE id = $1 AND context = $2`,
+      `SELECT ${DocumentService.DOCUMENT_COLUMNS} FROM documents WHERE id = $1 AND context = $2`,
       [id, context]
     );
 
@@ -341,7 +363,7 @@ export class DocumentService {
     // Get paginated results
     const result = await queryContext(
       context,
-      `SELECT * FROM documents ${whereClause} ${orderClause} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      `SELECT ${DocumentService.DOCUMENT_LIST_COLUMNS} FROM documents ${whereClause} ${orderClause} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     );
 
@@ -682,7 +704,7 @@ export class DocumentService {
   async getFolders(context: AIContext): Promise<FolderInfo[]> {
     const result = await queryContext(
       context,
-      `SELECT * FROM document_folders WHERE context = $1 ORDER BY path`,
+      `SELECT id, path, name, parent_path, color, icon, document_count FROM document_folders WHERE context = $1 ORDER BY path`,
       [context]
     );
 
@@ -768,7 +790,7 @@ export class DocumentService {
   private async findByHash(hash: string, context: AIContext): Promise<Document | null> {
     const result = await queryContext(
       context,
-      `SELECT * FROM documents WHERE file_hash = $1 AND context = $2`,
+      `SELECT ${DocumentService.DOCUMENT_COLUMNS} FROM documents WHERE file_hash = $1 AND context = $2`,
       [hash, context]
     );
 

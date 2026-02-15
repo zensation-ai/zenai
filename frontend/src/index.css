@@ -1035,15 +1035,6 @@ select:focus-visible {
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 /* Loading spinner utility class */
 .spinner {
   display: inline-block;

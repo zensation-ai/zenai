@@ -162,12 +162,6 @@
   transform-origin: center;
 }
 
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .progress-percent {
   position: absolute;
   top: 50%;
@@ -380,12 +374,3 @@
   }
 }
 
-/* Smoother shimmer animation */
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}

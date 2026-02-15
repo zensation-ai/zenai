@@ -22,11 +22,6 @@
   align-items: center;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 /* Panel */
 .artifact-panel {
   width: min(600px, 90vw);

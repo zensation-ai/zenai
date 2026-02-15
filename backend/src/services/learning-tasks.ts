@@ -443,8 +443,12 @@ export async function getStudySessions(
   const client = await pool.connect();
 
   try {
+    // PERFORMANCE: Explicit column selection instead of SELECT *
     const result = await client.query(
-      `SELECT * FROM learning_sessions
+      `SELECT id, task_id, user_id, session_type, duration_minutes, notes,
+              key_learnings, questions, ai_summary, ai_feedback,
+              understanding_level, created_at
+       FROM learning_sessions
        WHERE task_id = $1
        ORDER BY created_at DESC
        LIMIT $2`,

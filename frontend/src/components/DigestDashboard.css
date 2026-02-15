@@ -40,7 +40,7 @@
 
 .digest-header .context-indicator {
   padding: 0.375rem 0.75rem;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -63,7 +63,7 @@
 
 .generate-btn {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
@@ -97,7 +97,7 @@
   margin-bottom: 24px;
   padding: 4px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
 
@@ -106,7 +106,7 @@
   padding: 12px 16px;
   border: none;
   background: transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
@@ -131,7 +131,7 @@
 .tab-btn .badge {
   background: rgba(255, 255, 255, 0.2);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
 }
 
@@ -140,15 +140,10 @@
   animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 /* Digest Card */
 .digest-card {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   border: 1px solid var(--border);
 }
@@ -172,7 +167,7 @@
 
 .digest-type {
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -203,7 +198,7 @@
 .score-circle {
   width: 120px;
   height: 120px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 4px solid;
   display: flex;
   flex-direction: column;
@@ -226,7 +221,7 @@
 
 .mini-score {
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: white;
   font-size: 0.8rem;
   font-weight: 700;
@@ -237,7 +232,7 @@
   margin-bottom: 24px;
   padding: 16px 20px;
   background: var(--surface-light);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .digest-summary p {
@@ -272,7 +267,7 @@
   align-items: center;
   padding: 16px;
   background: var(--surface-light);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .digest-stat-icon {
@@ -347,14 +342,14 @@
   flex: 1;
   height: 20px;
   background: var(--surface-light);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .category-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   transition: width 0.5s ease;
 }
 
@@ -377,7 +372,7 @@
   padding: 12px 16px;
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   color: var(--text);
 }
@@ -392,7 +387,7 @@
 /* Goals Section */
 .goals-section {
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   border: 1px solid var(--border);
 }
@@ -411,7 +406,7 @@
 
 .edit-btn {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-light);
   cursor: pointer;
@@ -458,7 +453,7 @@
 
 .goal-input-group input {
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   color: var(--text);
@@ -491,7 +486,7 @@
 
 .category-toggle {
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   background: var(--surface-light);
   cursor: pointer;
@@ -516,7 +511,7 @@
 
 .save-btn {
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--primary);
   color: white;
@@ -554,7 +549,7 @@
   gap: 16px;
   padding: 20px;
   background: var(--surface-light);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .goal-icon {
@@ -585,7 +580,7 @@
 .focus-display {
   padding: 16px;
   background: var(--surface-light);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .focus-display h3 {
@@ -602,7 +597,7 @@
 .focus-tag {
   padding: 6px 14px;
   background: rgba(59, 130, 246, 0.15);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   font-size: 0.85rem;
   color: #60a5fa;
 }
@@ -614,7 +609,7 @@
   gap: 10px;
   padding: 12px 16px;
   background: rgba(249, 115, 22, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   color: var(--text);
 }
@@ -674,7 +669,7 @@
   padding: 12px 16px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--danger);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 20px;
   color: var(--danger);
 }
