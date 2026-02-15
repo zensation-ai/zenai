@@ -56,6 +56,14 @@ jest.mock('../../services/calendar', () => ({
 // Mock validation
 jest.mock('../../utils/validation', () => ({
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
+  validateContextParam: jest.fn((context: string) => {
+    const valid = ['personal', 'work', 'learning', 'creative'];
+    if (!valid.includes(context)) {
+      const { ValidationError } = jest.requireActual('../../middleware/errorHandler');
+      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    }
+    return context;
+  }),
 }));
 
 let app: Express;
