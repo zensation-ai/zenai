@@ -233,7 +233,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMe
     related_entity_id: id,
     actionType: 'chat_message_sent',
     actionData: { sessionId: id, messageLength: message.length },
-  }).catch(() => {});
+  }).catch((err) => logger.debug('Failed to record chat activity', { error: err instanceof Error ? err.message : String(err) }));
 
   // Build response data
   const responseData: Record<string, unknown> = {

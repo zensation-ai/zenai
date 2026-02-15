@@ -7,7 +7,7 @@
 .idea-batch-bar {
   position: sticky;
   bottom: 16px;
-  z-index: 20;
+  z-index: var(--z-batch-bar);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -109,7 +109,7 @@
     flex-direction: column;
     gap: 10px;
     padding: 10px 14px;
-    bottom: 70px; /* Above mobile bottom nav */
+    bottom: calc(var(--mobile-nav-height) + 10px); /* Above mobile bottom nav */
   }
 
   .idea-batch-info {

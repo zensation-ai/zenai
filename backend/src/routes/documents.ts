@@ -42,7 +42,7 @@ function validateDocumentId(id: string): void {
 const UPLOAD_DIR = path.join(__dirname, '../../uploads/documents');
 
 // Ensure upload directory exists
-fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(() => {});
+fs.mkdir(UPLOAD_DIR, { recursive: true }).catch((err) => logger.debug('Failed to create upload directory', { error: err instanceof Error ? err.message : String(err) }));
 
 const storage = multer.memoryStorage(); // Use memory storage for flexibility
 

@@ -8,7 +8,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 100;
+  z-index: var(--z-feature-hint);
   width: 340px;
   max-width: calc(100vw - 48px);
   padding: 20px;
@@ -155,7 +155,7 @@
 /* Mobile */
 @media (max-width: 768px) {
   .feature-hint-card {
-    bottom: 80px; /* Above mobile bottom nav */
+    bottom: calc(var(--mobile-nav-height) + 20px); /* Above mobile bottom nav */
     right: 12px;
     left: 12px;
     width: auto;

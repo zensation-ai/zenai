@@ -10,6 +10,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ErrorCodes, AIContext, IdeaType, IdeaCategory, Priority } from '../types';
+import { isValidContext } from './database-context';
+import { ValidationError as RouteValidationError } from '../middleware/errorHandler';
 
 // ===========================================
 // Validation Result Types
@@ -376,6 +378,22 @@ export function validateContext(
   fieldName: string = 'context'
 ): ValidationResult<AIContext> {
   return validateEnum(value, VALID_CONTEXTS, fieldName, { required: true }) as ValidationResult<AIContext>;
+}
+
+/**
+ * Validate context from route params (:context).
+ * Throws RouteValidationError if invalid — works with asyncHandler/errorHandler.
+ *
+ * Replaces the duplicated getContextFromParams() in tasks, projects, calendar, ideas routes.
+ */
+export function validateContextParam(context: string): AIContext {
+  if (!isValidContext(context)) {
+    throw new RouteValidationError(
+      'Invalid context. Use "personal", "work", "learning", or "creative".',
+      { context: 'must be "personal", "work", "learning", or "creative"' }
+    );
+  }
+  return context as AIContext;
 }
 
 // ===========================================

@@ -263,7 +263,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
       related_entity_id: ideaId,
       actionType: 'idea_created',
       actionData: { ideaId, type: structured.type, category: structured.category },
-    }).catch(() => {});
+    }).catch((err) => logger.debug('Failed to record voice memo activity', { error: err instanceof Error ? err.message : String(err) }));
 
     // Phase 24: Invalidate ideas cache so new idea appears immediately
     // This is critical - without this, GET /api/:context/ideas returns stale cached data

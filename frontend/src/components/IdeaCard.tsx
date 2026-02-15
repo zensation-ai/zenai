@@ -129,8 +129,9 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onTog
       aria-label={`${getTypeLabel(idea.type)}: ${idea.title}`}
     >
       {selectionMode && (
-        <label className="idea-select-checkbox" onClick={(e) => e.stopPropagation()}>
+        <label className="idea-select-checkbox" htmlFor={`select-idea-${idea.id}`} onClick={(e) => e.stopPropagation()}>
           <input
+            id={`select-idea-${idea.id}`}
             type="checkbox"
             checked={isSelected}
             onChange={(e) => onSelect?.(idea.id, e.target.checked)}

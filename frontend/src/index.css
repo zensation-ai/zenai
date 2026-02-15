@@ -181,13 +181,18 @@ textarea::placeholder {
   --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Z-Index Scale */
+  --z-batch-bar: 50;
   --z-dropdown: 100;
   --z-sticky: 200;
+  --z-feature-hint: 500;
   --z-overlay: 1000;
   --z-modal: 2000;
   --z-toast: 3000;
   --z-command-palette: 4000;
   --z-skip-link: 5000;
+
+  /* Layout Dimensions */
+  --mobile-nav-height: 60px;
 
   /* Animation */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);

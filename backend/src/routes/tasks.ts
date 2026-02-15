@@ -20,10 +20,10 @@ import {
   convertIdeaToTask,
   TaskStatus,
 } from '../services/tasks';
-import { AIContext, isValidContext, queryContext } from '../utils/database-context';
+import { AIContext, queryContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
-import { isValidUUID } from '../utils/validation';
+import { isValidUUID, validateContextParam } from '../utils/validation';
 import { validateBody } from '../utils/schemas';
 import { CreateTaskSchema, UpdateTaskSchema } from '../utils/schemas';
 
@@ -31,22 +31,12 @@ export const tasksRouter = Router();
 
 const VALID_STATUSES: TaskStatus[] = ['backlog', 'todo', 'in_progress', 'done', 'cancelled'];
 
-function getContextFromParams(context: string): AIContext {
-  if (!isValidContext(context)) {
-    throw new ValidationError(
-      'Invalid context. Use "personal", "work", "learning", or "creative".',
-      { context: 'must be "personal", "work", "learning", or "creative"' }
-    );
-  }
-  return context as AIContext;
-}
-
 // ============================================================
 // GET /api/:context/tasks/gantt  (before /:id to avoid conflict)
 // ============================================================
 
 tasksRouter.get('/:context/tasks/gantt', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const projectId = req.query.project_id as string | undefined;
 
   const tasks = await getTasksForGantt(context, projectId ? { project_id: projectId } : undefined);
@@ -63,7 +53,7 @@ tasksRouter.get('/:context/tasks/gantt', apiKeyAuth, asyncHandler(async (req, re
 // ============================================================
 
 tasksRouter.post('/:context/tasks/reorder', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { status, taskIds } = req.body;
 
   if (!status || !VALID_STATUSES.includes(status)) {
@@ -93,7 +83,7 @@ tasksRouter.post('/:context/tasks/reorder', apiKeyAuth, requireScope('write'), a
 // ============================================================
 
 tasksRouter.post('/:context/tasks/from-idea/:ideaId', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { ideaId } = req.params;
 
   if (!isValidUUID(ideaId)) {
@@ -114,7 +104,7 @@ tasksRouter.post('/:context/tasks/from-idea/:ideaId', apiKeyAuth, requireScope('
 // ============================================================
 
 tasksRouter.get('/:context/tasks', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
 
   const filters = {
     project_id: req.query.project_id as string | undefined,
@@ -140,7 +130,7 @@ tasksRouter.get('/:context/tasks', apiKeyAuth, asyncHandler(async (req, res) => 
 // ============================================================
 
 tasksRouter.get('/:context/tasks/:id', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -163,7 +153,7 @@ tasksRouter.get('/:context/tasks/:id', apiKeyAuth, asyncHandler(async (req, res)
 // ============================================================
 
 tasksRouter.post('/:context/tasks', apiKeyAuth, requireScope('write'), validateBody(CreateTaskSchema), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { title, description, status, priority, project_id, source_idea_id,
     calendar_event_id, due_date, start_date, assignee, estimated_hours,
     labels, metadata } = req.body;
@@ -185,7 +175,7 @@ tasksRouter.post('/:context/tasks', apiKeyAuth, requireScope('write'), validateB
 // ============================================================
 
 tasksRouter.put('/:context/tasks/:id', apiKeyAuth, requireScope('write'), validateBody(UpdateTaskSchema), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -208,7 +198,7 @@ tasksRouter.put('/:context/tasks/:id', apiKeyAuth, requireScope('write'), valida
 // ============================================================
 
 tasksRouter.delete('/:context/tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -231,7 +221,7 @@ tasksRouter.delete('/:context/tasks/:id', apiKeyAuth, requireScope('write'), asy
 // ============================================================
 
 tasksRouter.put('/:context/tasks/:id/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -260,7 +250,7 @@ tasksRouter.put('/:context/tasks/:id/favorite', apiKeyAuth, requireScope('write'
 // ============================================================
 
 tasksRouter.get('/:context/tasks/:id/dependencies', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -276,7 +266,7 @@ tasksRouter.get('/:context/tasks/:id/dependencies', apiKeyAuth, asyncHandler(asy
 }));
 
 tasksRouter.post('/:context/tasks/:id/dependencies', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
   const { depends_on_id, dependency_type } = req.body;
 
@@ -299,7 +289,7 @@ tasksRouter.post('/:context/tasks/:id/dependencies', apiKeyAuth, requireScope('w
 }));
 
 tasksRouter.delete('/:context/tasks/:id/dependencies/:depId', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { depId } = req.params;
 
   if (!isValidUUID(depId)) {

@@ -193,7 +193,8 @@
 
 .delete-button,
 .archive-button,
-.restore-button {
+.restore-button,
+.move-button {
   background: rgba(20, 50, 70, 0.06);
   border: none;
   border-radius: 50%;
@@ -216,7 +217,8 @@
 @media (pointer: coarse) {
   .delete-button,
   .archive-button,
-  .restore-button {
+  .restore-button,
+  .move-button {
     min-width: 44px;
     min-height: 44px;
     width: 44px;
@@ -227,7 +229,8 @@
 /* Disabled state for buttons */
 .delete-button:disabled,
 .archive-button:disabled,
-.restore-button:disabled {
+.restore-button:disabled,
+.move-button:disabled {
   opacity: 0.45; /* Erhöht für bessere Accessibility */
   cursor: not-allowed;
   pointer-events: none;

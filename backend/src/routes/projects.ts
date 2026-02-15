@@ -12,31 +12,21 @@ import {
   updateProject,
   deleteProject,
 } from '../services/projects';
-import { AIContext, isValidContext } from '../utils/database-context';
+import { AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
-import { isValidUUID } from '../utils/validation';
+import { isValidUUID, validateContextParam } from '../utils/validation';
 import { validateBody } from '../utils/schemas';
 import { CreateProjectSchema, UpdateProjectSchema } from '../utils/schemas';
 
 export const projectsRouter = Router();
-
-function getContextFromParams(context: string): AIContext {
-  if (!isValidContext(context)) {
-    throw new ValidationError(
-      'Invalid context. Use "personal", "work", "learning", or "creative".',
-      { context: 'must be "personal", "work", "learning", or "creative"' }
-    );
-  }
-  return context as AIContext;
-}
 
 // ============================================================
 // GET /api/:context/projects
 // ============================================================
 
 projectsRouter.get('/:context/projects', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
 
   const filters = {
     status: req.query.status as string | undefined,
@@ -58,7 +48,7 @@ projectsRouter.get('/:context/projects', apiKeyAuth, asyncHandler(async (req, re
 // ============================================================
 
 projectsRouter.get('/:context/projects/:id', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -81,7 +71,7 @@ projectsRouter.get('/:context/projects/:id', apiKeyAuth, asyncHandler(async (req
 // ============================================================
 
 projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), validateBody(CreateProjectSchema), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { name, description, color, icon, status, sort_order, metadata } = req.body;
 
   const project = await createProject(context, {
@@ -99,7 +89,7 @@ projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), val
 // ============================================================
 
 projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), validateBody(UpdateProjectSchema), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -122,7 +112,7 @@ projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), 
 // ============================================================
 
 projectsRouter.delete('/:context/projects/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {

@@ -18,28 +18,14 @@ import {
   getEventMeetingId,
 } from '../services/calendar';
 import { createMeeting, getMeeting, getMeetingNotes, processMeetingNotes } from '../services/meetings';
-import { AIContext, isValidContext } from '../utils/database-context';
+import { AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
-import { isValidUUID } from '../utils/validation';
+import { isValidUUID, validateContextParam } from '../utils/validation';
 import { logger } from '../utils/logger';
 import type { EventType, EventStatus } from '../services/calendar';
 
 export const calendarRouter = Router();
-
-// ============================================================
-// Helper: validate context from params
-// ============================================================
-
-function getContextFromParams(context: string): AIContext {
-  if (!isValidContext(context)) {
-    throw new ValidationError(
-      'Invalid context. Use "personal", "work", "learning", or "creative".',
-      { context: 'must be "personal", "work", "learning", or "creative"' }
-    );
-  }
-  return context as AIContext;
-}
 
 // ============================================================
 // POST /api/:context/calendar/events/search
@@ -47,7 +33,7 @@ function getContextFromParams(context: string): AIContext {
 // ============================================================
 
 calendarRouter.post('/:context/calendar/events/search', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { query, limit } = req.body;
 
   if (!query || typeof query !== 'string') {
@@ -69,7 +55,7 @@ calendarRouter.post('/:context/calendar/events/search', apiKeyAuth, asyncHandler
 // ============================================================
 
 calendarRouter.get('/:context/calendar/upcoming', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const hours = Math.min(parseInt(req.query.hours as string, 10) || 24, 168); // Max 7 days
 
   const events = await getUpcomingEvents(context, hours);
@@ -87,7 +73,7 @@ calendarRouter.get('/:context/calendar/upcoming', apiKeyAuth, asyncHandler(async
 // ============================================================
 
 calendarRouter.get('/:context/calendar/events', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
 
   const filters = {
     start: req.query.start as string | undefined,
@@ -121,7 +107,7 @@ calendarRouter.get('/:context/calendar/events', apiKeyAuth, asyncHandler(async (
 // ============================================================
 
 calendarRouter.get('/:context/calendar/events/:id', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -145,7 +131,7 @@ calendarRouter.get('/:context/calendar/events/:id', apiKeyAuth, asyncHandler(asy
 // ============================================================
 
 calendarRouter.post('/:context/calendar/events', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const {
     title, description, event_type, start_time, end_time,
     all_day, location, participants, rrule,
@@ -203,7 +189,7 @@ calendarRouter.post('/:context/calendar/events', apiKeyAuth, requireScope('write
 // ============================================================
 
 calendarRouter.put('/:context/calendar/events/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -227,7 +213,7 @@ calendarRouter.put('/:context/calendar/events/:id', apiKeyAuth, requireScope('wr
 // ============================================================
 
 calendarRouter.delete('/:context/calendar/events/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -254,7 +240,7 @@ calendarRouter.delete('/:context/calendar/events/:id', apiKeyAuth, requireScope(
  * Create a meeting from a calendar event and link them
  */
 calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -305,7 +291,7 @@ calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, r
  * Get meeting + notes for a calendar event
  */
 calendarRouter.get('/:context/calendar/events/:id/meeting', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -336,7 +322,7 @@ calendarRouter.get('/:context/calendar/events/:id/meeting', apiKeyAuth, asyncHan
  * Add transcript/notes to the meeting linked to a calendar event
  */
 calendarRouter.post('/:context/calendar/events/:id/meeting/notes', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const context = getContextFromParams(req.params.context);
+  const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {

@@ -184,7 +184,7 @@ personalizationChatRouter.post('/chat', apiKeyAuth, asyncHandler(async (req: Req
         impact_score: Math.min(0.3 + extractedFacts.length * 0.1, 0.8),
         metadata: { factsCount: extractedFacts.length, sessionId: currentSessionId },
       }
-    ).catch(() => {});
+    ).catch((err) => logger.debug('Failed to record personalization activity', { error: err instanceof Error ? err.message : String(err) }));
   }
 
   res.json({

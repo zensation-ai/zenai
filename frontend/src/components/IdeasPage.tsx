@@ -159,6 +159,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
 
   // Local favorite overrides for optimistic UI updates
   const [favoriteOverrides, setFavoriteOverrides] = useState<Map<string, boolean>>(new Map());
+  const [favoriteInFlight, setFavoriteInFlight] = useState<Set<string>>(new Set());
 
   // Reset overrides when ideas change (e.g., after refetch)
   useEffect(() => {
@@ -166,11 +167,16 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   }, [ideas]);
 
   const handleToggleFavorite = useCallback(async (id: string) => {
+    // Prevent concurrent requests for the same idea
+    if (favoriteInFlight.has(id)) return;
+
     // Find current state (check override first, then original)
     const idea = ideas.find(i => i.id === id);
     const currentFav = favoriteOverrides.has(id) ? favoriteOverrides.get(id) : idea?.is_favorite;
     const newFav = !currentFav;
 
+    // Mark as in-flight
+    setFavoriteInFlight(prev => new Set(prev).add(id));
     // Optimistic update
     setFavoriteOverrides(prev => new Map(prev).set(id, newFav));
 
@@ -185,12 +191,19 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
         return next;
       });
       showToast('Favorit konnte nicht geändert werden', 'error');
+    } finally {
+      setFavoriteInFlight(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
-  }, [context, ideas, favoriteOverrides]);
+  }, [context, ideas, favoriteOverrides, favoriteInFlight]);
 
   // Selection mode for bulk actions
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
   const confirm = useConfirm();
 
   const handleSelectIdea = useCallback((id: string, selected: boolean) => {
@@ -214,7 +227,8 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   }, []);
 
   const handleBatchArchive = useCallback(async () => {
-    if (selectedIds.size === 0) return;
+    if (selectedIds.size === 0 || batchLoading) return;
+    setBatchLoading(true);
     try {
       await axios.post(`/api/${context}/ideas/batch/archive`, { ids: Array.from(selectedIds) });
       showToast(`${selectedIds.size} Gedanken archiviert`, 'success');
@@ -223,11 +237,13 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
       setSelectionMode(false);
     } catch {
       showToast('Batch-Archivierung fehlgeschlagen', 'error');
+    } finally {
+      setBatchLoading(false);
     }
-  }, [context, selectedIds, onArchiveIdea]);
+  }, [context, selectedIds, onArchiveIdea, batchLoading]);
 
   const handleBatchDelete = useCallback(async () => {
-    if (selectedIds.size === 0) return;
+    if (selectedIds.size === 0 || batchLoading) return;
     const confirmed = await confirm({
       title: `${selectedIds.size} Gedanken löschen`,
       message: `Möchtest du wirklich ${selectedIds.size} Gedanken unwiderruflich löschen?`,
@@ -236,6 +252,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
       variant: 'danger',
     });
     if (!confirmed) return;
+    setBatchLoading(true);
     try {
       await axios.post(`/api/${context}/ideas/batch/delete`, { ids: Array.from(selectedIds) });
       showToast(`${selectedIds.size} Gedanken gelöscht`, 'success');
@@ -244,11 +261,14 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
       setSelectionMode(false);
     } catch {
       showToast('Batch-Löschung fehlgeschlagen', 'error');
+    } finally {
+      setBatchLoading(false);
     }
-  }, [context, selectedIds, confirm, onDeleteIdea]);
+  }, [context, selectedIds, confirm, onDeleteIdea, batchLoading]);
 
   const handleBatchFavorite = useCallback(async () => {
-    if (selectedIds.size === 0) return;
+    if (selectedIds.size === 0 || batchLoading) return;
+    setBatchLoading(true);
     try {
       await axios.post(`/api/${context}/ideas/batch/favorite`, { ids: Array.from(selectedIds), isFavorite: true });
       showToast(`${selectedIds.size} Gedanken als Favoriten markiert`, 'success');
@@ -261,8 +281,10 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
       setSelectionMode(false);
     } catch {
       showToast('Batch-Favoriten fehlgeschlagen', 'error');
+    } finally {
+      setBatchLoading(false);
     }
-  }, [context, selectedIds]);
+  }, [context, selectedIds, batchLoading]);
 
   const timeGreeting = useMemo(() => getTimeBasedGreeting(), []);
 
@@ -694,6 +716,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
                 onBatchArchive={handleBatchArchive}
                 onBatchDelete={handleBatchDelete}
                 onBatchFavorite={handleBatchFavorite}
+                disabled={batchLoading}
               />
             </>
           )}

@@ -13,6 +13,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toIntBounded, toFloatBounded } from '../utils/validation';
+import { logger } from '../utils/logger';
 import {
   proactiveSuggestionEngine,
   SuggestionType,
@@ -88,7 +89,7 @@ router.post('/suggestions/:id/accept', apiKeyAuth, requireScope('write'), asyncH
     description: 'Ein proaktiver Vorschlag wurde akzeptiert',
     impact_score: 0.5,
     metadata: { suggestionId: id },
-  }).catch(() => {});
+  }).catch((err) => logger.debug('Failed to record proactive activity', { error: err instanceof Error ? err.message : String(err) }));
 
   res.json({
     success: true,

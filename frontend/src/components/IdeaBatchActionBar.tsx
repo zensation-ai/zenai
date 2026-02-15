@@ -15,6 +15,7 @@ interface IdeaBatchActionBarProps {
   onBatchArchive: () => void;
   onBatchDelete: () => void;
   onBatchFavorite: () => void;
+  disabled?: boolean;
 }
 
 export function IdeaBatchActionBar({
@@ -25,6 +26,7 @@ export function IdeaBatchActionBar({
   onBatchArchive,
   onBatchDelete,
   onBatchFavorite,
+  disabled = false,
 }: IdeaBatchActionBarProps) {
   if (selectedCount === 0) return null;
 
@@ -46,6 +48,7 @@ export function IdeaBatchActionBar({
           type="button"
           className="idea-batch-action favorite"
           onClick={onBatchFavorite}
+          disabled={disabled}
           title="Ausgewählte als Favoriten markieren"
           aria-label="Ausgewählte als Favoriten markieren"
         >
@@ -55,6 +58,7 @@ export function IdeaBatchActionBar({
           type="button"
           className="idea-batch-action archive"
           onClick={onBatchArchive}
+          disabled={disabled}
           title="Ausgewählte archivieren"
           aria-label="Ausgewählte archivieren"
         >
@@ -64,6 +68,7 @@ export function IdeaBatchActionBar({
           type="button"
           className="idea-batch-action delete"
           onClick={onBatchDelete}
+          disabled={disabled}
           title="Ausgewählte löschen"
           aria-label="Ausgewählte löschen"
         >

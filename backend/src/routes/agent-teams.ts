@@ -102,7 +102,7 @@ agentTeamsRouter.post(
       impact_score: result.success ? 0.6 : 0.3,
       actionType: 'agent_execution',
       actionData: { teamId: result.teamId, strategy: result.strategy, success: result.success },
-    }).catch(() => {});
+    }).catch((err) => logger.debug('Failed to record agent team activity', { error: err instanceof Error ? err.message : String(err) }));
 
     res.json({
       success: result.success,

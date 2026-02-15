@@ -15,6 +15,7 @@ import {
   validatePriority,
   validateRequiredString,
   parseIntSafe,
+  validateContextParam,
 } from '../utils/validation';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
@@ -39,14 +40,6 @@ export const ideasContextRouter = Router();
  */
 function getContext(req: Request): AIContext {
   const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
-  return isValidContext(context) ? context : 'personal';
-}
-
-/**
- * Get context from URL parameter (for context-aware routes)
- */
-function getContextFromParams(req: Request): AIContext {
-  const context = req.params.context;
   return isValidContext(context) ? context : 'personal';
 }
 
@@ -725,7 +718,7 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
     related_entity_id: req.params.id,
     actionType: 'idea_updated',
     actionData: { ideaId: req.params.id, hasCorrection: hasTypeChange || hasCategoryChange || hasPriorityChange },
-  }).catch(() => {});
+  }).catch((err) => logger.debug('Failed to record idea update activity', { error: err instanceof Error ? err.message : String(err) }));
 
   res.json({ success: true, idea: parseIdeaRow(result.rows[0] as IdeaDatabaseRow) });
 }));
@@ -1051,7 +1044,7 @@ ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, 
  * Get statistics about ideas (excluding archived) - context-aware version
  */
 ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
 
   try {
     const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
@@ -1104,7 +1097,7 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
  * Archive an idea - context-aware version
  */
 ideasContextRouter.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -1141,7 +1134,7 @@ ideasContextRouter.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('
  * Restore an archived idea - context-aware version
  */
 ideasContextRouter.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -1180,7 +1173,7 @@ ideasContextRouter.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('
  * List all ideas with pagination - context-aware version
  */
 ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
 
   const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
   if (!paginationResult.success) {
@@ -1257,7 +1250,7 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
  * List archived ideas - context-aware version
  */
 ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
 
   const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
   if (!paginationResult.success) {
@@ -1298,7 +1291,7 @@ ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(asyn
  * Delete an idea - context-aware version
  */
 ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -1330,7 +1323,7 @@ ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write
  * Move an idea from one context to another
  */
 ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const sourceContext = getContextFromParams(req);
+  const sourceContext = validateContextParam(req.params.context);
   const { id } = req.params;
   const { targetContext } = req.body;
 
@@ -1414,7 +1407,7 @@ ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('wr
  * Toggle favorite status on an idea
  */
 ideasContextRouter.put('/:context/ideas/:id/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -1464,12 +1457,12 @@ function validateBatchIds(ids: unknown): string[] {
  * Archive multiple ideas at once
  */
 ideasContextRouter.post('/:context/ideas/batch/archive', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
   const ids = validateBatchIds(req.body.ids);
 
   const result = await queryContext(
     ctx,
-    `UPDATE ideas SET status = 'archived', updated_at = NOW() WHERE id = ANY($1::uuid[]) AND status != 'archived' RETURNING id`,
+    `UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = ANY($1::uuid[]) AND is_archived = false RETURNING id`,
     [ids]
   );
 
@@ -1484,7 +1477,7 @@ ideasContextRouter.post('/:context/ideas/batch/archive', apiKeyAuth, requireScop
  * Delete multiple ideas at once
  */
 ideasContextRouter.post('/:context/ideas/batch/delete', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
   const ids = validateBatchIds(req.body.ids);
 
   const result = await queryContext(
@@ -1504,7 +1497,7 @@ ideasContextRouter.post('/:context/ideas/batch/delete', apiKeyAuth, requireScope
  * Set or unset favorite for multiple ideas
  */
 ideasContextRouter.post('/:context/ideas/batch/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
-  const ctx = getContextFromParams(req);
+  const ctx = validateContextParam(req.params.context);
   const ids = validateBatchIds(req.body.ids);
   const isFavorite = req.body.isFavorite !== false; // default true
 
