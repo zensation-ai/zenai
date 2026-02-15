@@ -108,7 +108,7 @@ class DocumentAnalysisService {
 
     try {
       // Build the message content based on file type
-      const { content, sheetInfo } = buildMessageContent(
+      const { content, sheetInfo } = await buildMessageContent(
         buffer, filename, mimeType, template, customPrompt, context, language
       );
 
@@ -260,7 +260,7 @@ Erstelle nur Diagramme wenn die Daten sinnvolle Visualisierungen ermöglichen.`;
       });
 
       // Build the message content
-      const { content, sheetInfo } = buildMessageContent(
+      const { content, sheetInfo } = await buildMessageContent(
         buffer, filename, mimeType, template, customPrompt, context, language
       );
 
@@ -496,7 +496,7 @@ Erstelle nur Diagramme wenn die Daten sinnvolle Visualisierungen ermöglichen.`;
 
       for (let i = 0; i < documents.length; i++) {
         const doc = documents[i];
-        const { content, sheetInfo } = buildMessageContent(
+        const { content, sheetInfo } = await buildMessageContent(
           doc.buffer, doc.filename, doc.mimeType,
           'general', undefined, undefined, language
         );
@@ -719,7 +719,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
     return extractMermaidDiagrams(text);
   }
 
-  buildMessageContent(
+  async buildMessageContent(
     buffer: Buffer,
     filename: string,
     mimeType: DocumentMediaType,

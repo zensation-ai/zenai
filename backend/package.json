@@ -64,8 +64,8 @@
     "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.1",
     "ws": "^8.19.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz",
-    "zod": "^4.3.5"
+    "zod": "^4.3.5",
+    "exceljs": "^4.4.0"
   },
   "overrides": {
     "diff": "^8.0.3"

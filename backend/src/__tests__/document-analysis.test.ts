@@ -443,83 +443,78 @@ describe('Document Analysis - Routes', () => {
 });
 
 // ===========================================
-// Excel Parsing Tests (via xlsx)
+// Excel Parsing Tests (via exceljs)
 // ===========================================
 
 describe('Document Analysis - Excel Parsing', () => {
-  it('should have xlsx library available', () => {
-    const XLSX = require('xlsx');
-    expect(XLSX).toBeDefined();
-    expect(XLSX.read).toBeInstanceOf(Function);
-    expect(XLSX.utils).toBeDefined();
+  it('should have exceljs library available', () => {
+    const ExcelJS = require('exceljs');
+    expect(ExcelJS).toBeDefined();
+    expect(ExcelJS.Workbook).toBeInstanceOf(Function);
   });
 
-  it('should parse simple xlsx buffer', () => {
-    const XLSX = require('xlsx');
+  it('should parse simple xlsx buffer', async () => {
+    const ExcelJS = require('exceljs');
 
     // Create a simple workbook
-    const wb = XLSX.utils.book_new();
-    const wsData = [
-      ['Name', 'Alter', 'Stadt'],
-      ['Anna', 30, 'Berlin'],
-      ['Ben', 25, 'Hamburg'],
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, 'Personen');
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Personen');
+    ws.addRow(['Name', 'Alter', 'Stadt']);
+    ws.addRow(['Anna', 30, 'Berlin']);
+    ws.addRow(['Ben', 25, 'Hamburg']);
 
     // Write to buffer
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-    expect(Buffer.isBuffer(buffer)).toBe(true);
+    const buffer = await wb.xlsx.writeBuffer();
+    expect(Buffer.isBuffer(buffer) || buffer instanceof Uint8Array).toBe(true);
 
     // Parse back
-    const parsed = XLSX.read(buffer, { type: 'buffer' });
-    expect(parsed.SheetNames).toContain('Personen');
+    const parsed = new ExcelJS.Workbook();
+    await parsed.xlsx.load(buffer);
+    const sheetNames = parsed.worksheets.map((s: { name: string }) => s.name);
+    expect(sheetNames).toContain('Personen');
 
-    const sheet = parsed.Sheets['Personen'];
-    const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    expect(json).toHaveLength(3);
-    expect(json[0]).toEqual(['Name', 'Alter', 'Stadt']);
-    expect(json[1]).toEqual(['Anna', 30, 'Berlin']);
+    const sheet = parsed.getWorksheet('Personen');
+    expect(sheet.rowCount).toBe(3);
+    expect(sheet.getRow(1).getCell(1).value).toBe('Name');
+    expect(sheet.getRow(2).getCell(1).value).toBe('Anna');
   });
 
-  it('should handle multi-sheet workbooks', () => {
-    const XLSX = require('xlsx');
+  it('should handle multi-sheet workbooks', async () => {
+    const ExcelJS = require('exceljs');
 
-    const wb = XLSX.utils.book_new();
+    const wb = new ExcelJS.Workbook();
 
     // Sheet 1
-    const ws1 = XLSX.utils.aoa_to_sheet([
-      ['Produkt', 'Preis'],
-      ['Widget A', 9.99],
-    ]);
-    XLSX.utils.book_append_sheet(wb, ws1, 'Produkte');
+    const ws1 = wb.addWorksheet('Produkte');
+    ws1.addRow(['Produkt', 'Preis']);
+    ws1.addRow(['Widget A', 9.99]);
 
     // Sheet 2
-    const ws2 = XLSX.utils.aoa_to_sheet([
-      ['Region', 'Umsatz'],
-      ['Nord', 50000],
-      ['Süd', 75000],
-    ]);
-    XLSX.utils.book_append_sheet(wb, ws2, 'Umsatz');
+    const ws2 = wb.addWorksheet('Umsatz');
+    ws2.addRow(['Region', 'Umsatz']);
+    ws2.addRow(['Nord', 50000]);
+    ws2.addRow(['Süd', 75000]);
 
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-    const parsed = XLSX.read(buffer, { type: 'buffer' });
+    const buffer = await wb.xlsx.writeBuffer();
+    const parsed = new ExcelJS.Workbook();
+    await parsed.xlsx.load(buffer);
 
-    expect(parsed.SheetNames).toEqual(['Produkte', 'Umsatz']);
+    const sheetNames = parsed.worksheets.map((s: { name: string }) => s.name);
+    expect(sheetNames).toEqual(['Produkte', 'Umsatz']);
   });
 
-  it('should handle empty sheets', () => {
-    const XLSX = require('xlsx');
+  it('should handle empty sheets', async () => {
+    const ExcelJS = require('exceljs');
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([]);
-    XLSX.utils.book_append_sheet(wb, ws, 'Leer');
+    const wb = new ExcelJS.Workbook();
+    wb.addWorksheet('Leer');
 
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-    const parsed = XLSX.read(buffer, { type: 'buffer' });
+    const buffer = await wb.xlsx.writeBuffer();
+    const parsed = new ExcelJS.Workbook();
+    await parsed.xlsx.load(buffer);
 
-    const json = XLSX.utils.sheet_to_json(parsed.Sheets['Leer'], { header: 1 });
-    expect(json).toHaveLength(0);
+    const sheet = parsed.getWorksheet('Leer');
+    expect(sheet.rowCount).toBe(0);
   });
 });
 

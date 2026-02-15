@@ -6,7 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import type {
   DocumentMediaType,
   AnalysisTemplate,
@@ -22,7 +22,7 @@ import { ANALYSIS_TEMPLATES } from './templates';
 /**
  * Build message content based on file type
  */
-export function buildMessageContent(
+export async function buildMessageContent(
   buffer: Buffer,
   filename: string,
   mimeType: DocumentMediaType,
@@ -30,10 +30,10 @@ export function buildMessageContent(
   customPrompt?: string,
   context?: string,
   language?: string
-): {
+): Promise<{
   content: Anthropic.MessageCreateParams['messages'][0]['content'];
   sheetInfo?: DocumentAnalysisResult['metadata']['sheetInfo'];
-} {
+}> {
   const templateConfig = ANALYSIS_TEMPLATES[template];
   const instruction = customPrompt || templateConfig.instruction;
   const langNote = language === 'en' ? '\n\nRespond in English.' : '';
@@ -67,7 +67,7 @@ export function buildMessageContent(
     mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
     mimeType === 'application/vnd.ms-excel'
   ) {
-    const parsed = parseExcel(buffer);
+    const parsed = await parseExcel(buffer);
     documentText = parsed.text;
     sheetInfo = parsed.sheetInfo;
   } else {
@@ -98,50 +98,58 @@ export function buildMessageContent(
 /**
  * Parse Excel file to structured text
  */
-export function parseExcel(buffer: Buffer): {
+export async function parseExcel(buffer: Buffer): Promise<{
   text: string;
   sheetInfo: NonNullable<DocumentAnalysisResult['metadata']['sheetInfo']>;
-} {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
+}> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
   const sheetInfo: NonNullable<DocumentAnalysisResult['metadata']['sheetInfo']> = [];
   const parts: string[] = [];
 
-  for (const sheetName of workbook.SheetNames) {
-    const sheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown as unknown[][];
-    const rows = jsonData;
+  for (const worksheet of workbook.worksheets) {
+    const sheetName = worksheet.name;
+    const rowCount = worksheet.rowCount;
+    const colCount = worksheet.columnCount;
 
-    // Track sheet info
-    const colCount = rows.length > 0 ? Math.max(...rows.map((r) => (r as unknown[]).length)) : 0;
     sheetInfo.push({
       name: sheetName,
-      rows: rows.length,
+      rows: rowCount,
       columns: colCount,
     });
 
     parts.push(`## Sheet: ${sheetName}`);
-    parts.push(`(${rows.length} Zeilen, ${colCount} Spalten)\n`);
+    parts.push(`(${rowCount} Zeilen, ${colCount} Spalten)\n`);
 
-    if (rows.length === 0) {
+    if (rowCount === 0) {
       parts.push('(Leer)\n');
       continue;
     }
 
     // Convert to Markdown table for better Claude comprehension
-    const headers = (rows[0] as unknown[]).map((h) => String(h ?? ''));
+    const headerRow = worksheet.getRow(1);
+    const headers: string[] = [];
+    for (let col = 1; col <= colCount; col++) {
+      headers.push(String(headerRow.getCell(col).value ?? ''));
+    }
     parts.push('| ' + headers.join(' | ') + ' |');
     parts.push('| ' + headers.map(() => '---').join(' | ') + ' |');
 
     // Limit rows for very large sheets (first 500 rows)
     const maxRows = 500;
-    const dataRows = rows.slice(1, maxRows + 1);
-    for (const row of dataRows) {
-      const cells = (row as unknown[]).map((c) => String(c ?? ''));
+    const lastRow = Math.min(rowCount, maxRows + 1);
+    for (let row = 2; row <= lastRow; row++) {
+      const worksheetRow = worksheet.getRow(row);
+      const cells: string[] = [];
+      for (let col = 1; col <= colCount; col++) {
+        cells.push(String(worksheetRow.getCell(col).value ?? ''));
+      }
       parts.push('| ' + cells.join(' | ') + ' |');
     }
 
-    if (rows.length > maxRows + 1) {
-      parts.push(`\n... (${rows.length - maxRows - 1} weitere Zeilen nicht angezeigt)`);
+    if (rowCount > maxRows + 1) {
+      parts.push(`\n... (${rowCount - maxRows - 1} weitere Zeilen nicht angezeigt)`);
     }
 
     parts.push('');

@@ -297,7 +297,7 @@ export class DocumentProcessingService {
   }
 
   /**
-   * Extract text from Excel/CSV using xlsx
+   * Extract text from Excel/CSV using exceljs
    */
   private async extractXlsxText(filePath: string): Promise<ExtractedText> {
     try {
@@ -313,19 +313,27 @@ export class DocumentProcessingService {
         return { text };
       }
 
-      const XLSX = await import('xlsx');
-      const workbook = XLSX.readFile(filePath);
+      const ExcelJS = await import('exceljs');
+      const workbook = new ExcelJS.default.Workbook();
+      await workbook.xlsx.readFile(filePath);
       const texts: string[] = [];
+      const sheetNames: string[] = [];
 
-      for (const sheetName of workbook.SheetNames) {
-        const sheet = workbook.Sheets[sheetName];
-        const csv = XLSX.utils.sheet_to_csv(sheet);
-        texts.push(`--- ${sheetName} ---\n${csv}`);
+      for (const worksheet of workbook.worksheets) {
+        sheetNames.push(worksheet.name);
+        const rows: string[] = [];
+        worksheet.eachRow((row) => {
+          const cells = (row.values as (string | number | null | undefined)[])
+            .slice(1) // ExcelJS row.values is 1-indexed with empty [0]
+            .map(v => String(v ?? ''));
+          rows.push(cells.join(','));
+        });
+        texts.push(`--- ${worksheet.name} ---\n${rows.join('\n')}`);
       }
 
       return {
         text: texts.join('\n\n'),
-        metadata: { sheets: workbook.SheetNames },
+        metadata: { sheets: sheetNames },
       };
     } catch (_error) {
       logger.error('XLSX extraction failed', undefined, { filePath });
