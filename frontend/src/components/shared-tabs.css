@@ -149,13 +149,24 @@
 
 @media (max-width: 480px) {
   .hub-tabs {
-    gap: 0.25rem;
+    gap: 0.125rem;
+    padding: 0.4rem 0.5rem;
+    margin: 0;
     justify-content: space-around;
   }
 
   .hub-tab {
     flex: 1;
     justify-content: center;
-    padding: 0.75rem 0.5rem;
+    padding: 0.6rem 0.35rem;
+    gap: 0.25rem;
+  }
+
+  .hub-tab-icon {
+    font-size: 1.15rem;
+  }
+
+  .hub-tab-content {
+    padding: 0.75rem;
   }
 }

@@ -486,8 +486,9 @@
   }
 
   .afm-modal {
-    width: 100vw;
+    width: 100%;
     max-height: 92vh;
+    max-height: 92dvh;
     border-radius: 20px 20px 0 0;
   }
 

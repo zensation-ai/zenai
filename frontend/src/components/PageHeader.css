@@ -192,6 +192,37 @@
   }
 }
 
+@media (max-width: 480px) {
+  .page-header {
+    padding: 0.75rem 0.75rem;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  }
+
+  .page-header-content {
+    gap: 8px;
+  }
+
+  .page-header-left {
+    gap: 0.5rem;
+  }
+
+  .page-title {
+    font-size: 0.9rem;
+  }
+
+  .page-icon {
+    font-size: 1.2rem;
+  }
+
+  .page-back-button {
+    padding: 6px 8px;
+  }
+
+  .page-title-group {
+    gap: 0.5rem;
+  }
+}
+
 /* Light Mode - ensure dark header stays opaque for readable white text */
 :root.light-mode .page-header {
   background: rgba(20, 34, 48, 0.94);

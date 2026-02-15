@@ -265,8 +265,21 @@
 }
 
 @media (max-width: 480px) {
+  .topbar {
+    padding: 0 0.75rem;
+  }
+
+  .topbar-content {
+    gap: 10px;
+  }
+
+  .topbar-left {
+    gap: 8px;
+  }
+
   .topbar-title {
     font-size: 0.85rem;
+    max-width: 140px;
   }
 }
 

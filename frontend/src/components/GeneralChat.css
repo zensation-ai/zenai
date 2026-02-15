@@ -608,6 +608,37 @@
   }
 }
 
+@media (max-width: 480px) {
+  .chat-page-chat {
+    padding: 4px 4px 4px;
+  }
+
+  .chat-message-content {
+    max-width: 94%;
+  }
+
+  .chat-message-text {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.84rem;
+  }
+
+  .chat-input-area {
+    padding: 0.5rem 0.5rem 0.75rem;
+  }
+
+  .chat-input {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .chat-messages {
+    gap: 0.5rem;
+  }
+
+  .chat-empty {
+    padding: 1rem 0.75rem;
+  }
+}
+
 /* Dark mode support - Optimiert für bessere Lesbarkeit */
 /* Supports both system preference AND manual .dark-mode class */
 @media (prefers-color-scheme: dark) {

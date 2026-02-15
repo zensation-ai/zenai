@@ -437,13 +437,14 @@
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .artifact-panel {
-    width: 100vw;
+    width: 100%;
     border-left: none;
   }
 
   .artifact-panel.fullscreen {
-    width: 100vw;
+    width: 100%;
     max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
   }
 

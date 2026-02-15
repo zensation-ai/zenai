@@ -892,9 +892,40 @@
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 12px 12px 24px;
+    gap: 14px;
+  }
+
+  .dash-greeting {
+    font-size: 1.05rem;
+  }
+
+  .dash-quickstart-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dash-qs-card {
+    padding: 10px 12px;
+  }
+
+  .dash-qs-label {
+    font-size: 0.8rem;
+  }
+
   .dash-stats {
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .dash-stat-card {
+    padding: 12px;
+  }
+
+  .dash-stat-value {
+    font-size: 1.1rem;
   }
 }
 
