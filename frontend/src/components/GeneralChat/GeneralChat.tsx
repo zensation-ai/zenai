@@ -78,9 +78,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Listen for quick action input events from FloatingAssistant
+  // Listen for quick action input events from FloatingAssistant and ChatPage
   useEffect(() => {
-    if (!assistantMode) return;
     const handler = (e: Event) => {
       const prompt = (e as CustomEvent).detail?.prompt;
       if (prompt) {
@@ -88,9 +87,19 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         inputRef.current?.focus();
       }
     };
-    window.addEventListener('zenai-assistant-fill-input', handler);
-    return () => window.removeEventListener('zenai-assistant-fill-input', handler);
-  }, [assistantMode]);
+    // FloatingAssistant sends this event
+    if (assistantMode) {
+      window.addEventListener('zenai-assistant-fill-input', handler);
+    }
+    // ChatPage Quick Actions send this event
+    if (fullPage) {
+      window.addEventListener('zenai-chat-quick-action', handler);
+    }
+    return () => {
+      window.removeEventListener('zenai-assistant-fill-input', handler);
+      window.removeEventListener('zenai-chat-quick-action', handler);
+    };
+  }, [assistantMode, fullPage]);
 
   const loadLastSession = async (signal?: AbortSignal) => {
     try {

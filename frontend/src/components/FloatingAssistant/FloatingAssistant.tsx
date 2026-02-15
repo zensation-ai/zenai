@@ -13,23 +13,26 @@ import { createPortal } from 'react-dom';
 import type { Page } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { GeneralChat } from '../GeneralChat';
+import { ChatContextBar } from '../GeneralChat/ChatContextBar';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { safeLocalStorage } from '../../utils/storage';
 import { QuickActions } from './QuickActions';
 import { CloseIcon } from '../icons/CloseIcon';
+import '../GeneralChat/ChatContextBar.css';
 import './FloatingAssistant.css';
 
 interface FloatingAssistantProps {
   context: AIContext;
   currentPage: Page;
   onNavigate: (page: Page) => void;
+  onContextChange?: (context: AIContext) => void;
 }
 
 const ONBOARDING_KEY = 'zenai-assistant-seen';
 const ASSISTANT_INPUT_EVENT = 'zenai-assistant-fill-input';
 
-export function FloatingAssistant({ context, currentPage, onNavigate }: FloatingAssistantProps) {
+export function FloatingAssistant({ context, currentPage, onNavigate, onContextChange }: FloatingAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const bubbleRef = useRef<HTMLButtonElement>(null);
@@ -180,6 +183,15 @@ export function FloatingAssistant({ context, currentPage, onNavigate }: Floating
               </svg>
             </button>
           </div>
+
+          {/* Context Switcher (compact: icons only) */}
+          {onContextChange && (
+            <ChatContextBar
+              context={context}
+              onContextChange={onContextChange}
+              compact={true}
+            />
+          )}
 
           {/* Quick Actions */}
           <QuickActions currentPage={currentPage} onAction={handleQuickAction} />

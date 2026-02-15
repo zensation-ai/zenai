@@ -1,0 +1,213 @@
+/* ===========================================
+   ChatContextBar - Kontext-Kacheln
+   =========================================== */
+
+.chat-context-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--glass-border, rgba(20, 50, 70, 0.08));
+  background: var(--surface-subtle, rgba(255, 255, 255, 0.4));
+}
+
+/* Compact mode: icons only, smaller padding */
+.chat-context-bar--compact {
+  gap: 4px;
+  padding: 6px 10px;
+  justify-content: center;
+}
+
+/* ---- Tile ---- */
+
+.chat-context-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--border-light, rgba(20, 50, 70, 0.1));
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  white-space: nowrap;
+  flex: 1;
+  justify-content: center;
+  min-height: 38px;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+
+.chat-context-tile:hover:not(.chat-context-tile--active) {
+  border-color: var(--tile-color);
+  background: var(--tile-bg); /* fallback for older browsers */
+  background: color-mix(in srgb, var(--tile-color) 6%, transparent);
+}
+
+.chat-context-tile:active {
+  transform: scale(0.97);
+  transition-duration: 0.08s;
+}
+
+.chat-context-tile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--tile-color, var(--primary));
+}
+
+/* Active state */
+.chat-context-tile--active {
+  background: var(--tile-bg);
+  border-color: var(--tile-color);
+  color: var(--tile-color);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Icon */
+.chat-context-tile-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Label */
+.chat-context-tile-label {
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+/* Active indicator dot */
+.chat-context-tile-indicator {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--tile-color);
+  animation: tileIndicatorIn 0.2s ease;
+}
+
+@keyframes tileIndicatorIn {
+  from {
+    transform: translateX(-50%) scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* ---- Compact Mode Overrides ---- */
+
+.chat-context-bar--compact .chat-context-tile {
+  padding: 5px 8px;
+  min-height: 32px;
+  flex: 0;
+  border-radius: 8px;
+}
+
+.chat-context-bar--compact .chat-context-tile-icon {
+  font-size: 0.9rem;
+}
+
+.chat-context-bar--compact .chat-context-tile-indicator {
+  width: 10px;
+  height: 2px;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+  .chat-context-bar {
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  .chat-context-tile {
+    padding: 6px 10px;
+    min-height: 40px;
+    font-size: 0.78rem;
+  }
+
+  .chat-context-tile-icon {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-context-tile-label {
+    display: none;
+  }
+
+  .chat-context-tile {
+    flex: 0;
+    padding: 8px 12px;
+  }
+}
+
+/* ---- Dark Mode ---- */
+
+@media (prefers-color-scheme: dark) {
+  .chat-context-bar {
+    background: rgba(18, 38, 48, 0.5);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .chat-context-tile {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .chat-context-tile:hover:not(.chat-context-tile--active) {
+    background: var(--tile-bg);
+    background: color-mix(in srgb, var(--tile-color) 10%, transparent);
+  }
+
+  .chat-context-tile--active {
+    background: var(--tile-bg);
+    background: color-mix(in srgb, var(--tile-color) 15%, transparent);
+    border-color: var(--tile-color);
+    color: var(--tile-color);
+  }
+}
+
+:root.dark-mode .chat-context-bar,
+.dark-mode .chat-context-bar {
+  background: rgba(18, 38, 48, 0.5);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+:root.dark-mode .chat-context-tile,
+.dark-mode .chat-context-tile {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:root.dark-mode .chat-context-tile:hover:not(.chat-context-tile--active),
+.dark-mode .chat-context-tile:hover:not(.chat-context-tile--active) {
+  background: color-mix(in srgb, var(--tile-color) 10%, transparent);
+}
+
+:root.dark-mode .chat-context-tile--active,
+.dark-mode .chat-context-tile--active {
+  background: color-mix(in srgb, var(--tile-color) 15%, transparent);
+  border-color: var(--tile-color);
+  color: color-mix(in srgb, var(--tile-color) 80%, white);
+}
+
+/* ---- Reduced Motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-context-tile,
+  .chat-context-tile-indicator {
+    transition: none !important;
+    animation: none !important;
+  }
+}

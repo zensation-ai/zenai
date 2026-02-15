@@ -38,8 +38,17 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* Wrapper around GeneralChat inside ChatPage */
+.chat-page-chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 24px 24px 16px;
+  padding: 16px 24px 16px;
   overflow-y: auto;
 }
 
@@ -547,8 +556,8 @@
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .chat-page-main {
-    padding: 12px 8px 8px;
+  .chat-page-chat {
+    padding: 8px 8px 8px;
   }
 
   .general-chat.full-page {

@@ -90,12 +90,14 @@ export const TopBar = memo(function TopBar({
           <kbd className="topbar-search-shortcut">⌘K</kbd>
         </button>
 
-        {/* Right: Context, Theme, Status, Refresh */}
+        {/* Right: Context (hidden on chat page - context tiles are integrated there), Theme, Status, Refresh */}
         <div className="topbar-right">
-          <ContextSwitcher
-            context={context}
-            onContextChange={onContextChange}
-          />
+          {currentPage !== 'chat' && (
+            <ContextSwitcher
+              context={context}
+              onContextChange={onContextChange}
+            />
+          )}
           <ThemeToggle className="compact" />
           <div className="topbar-status" aria-label="Systemstatus">
             <span

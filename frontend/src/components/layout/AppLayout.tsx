@@ -221,6 +221,7 @@ export function AppLayout({
         context={context}
         currentPage={currentPage}
         onNavigate={handleMobileNavigate}
+        onContextChange={onContextChange}
       />
 
       {/* Mobile Chat Overlay */}

@@ -572,7 +572,7 @@ function App() {
       case 'chat':
         return (
           <Suspense fallback={<PageLoader />}>
-            <ChatPage context={context} />
+            <ChatPage context={context} onContextChange={setContext} />
           </Suspense>
         );
 
