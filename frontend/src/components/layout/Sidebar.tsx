@@ -14,6 +14,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { safeLocalStorage } from '../../utils/storage';
+import { useAuth } from '../../contexts/AuthContext';
 import { BrainLogo } from './BrainLogo';
 import './Sidebar.css';
 
@@ -56,6 +57,7 @@ export const Sidebar = memo(function Sidebar({
     }
   });
 
+  const { signOut } = useAuth();
   const sidebarRef = useRef<HTMLElement>(null);
 
   // Persist expanded sections
@@ -342,6 +344,16 @@ export const Sidebar = memo(function Sidebar({
               </button>
             );
           })}
+          <button
+            type="button"
+            className="sidebar-footer-item sidebar-logout-btn neuro-focus-ring"
+            onClick={() => signOut()}
+            title="Abmelden"
+            aria-label="Abmelden"
+          >
+            <span className="sidebar-footer-icon" aria-hidden="true">🚪</span>
+            {!collapsed && <span className="sidebar-footer-label">Abmelden</span>}
+          </button>
         </div>
       </div>
     </aside>

@@ -585,6 +585,16 @@
   padding: 8px;
 }
 
+.sidebar-logout-btn {
+  margin-top: 4px;
+  border-top: 1px solid var(--sidebar-section-border, rgba(255, 255, 255, 0.06));
+  padding-top: 8px;
+}
+
+.sidebar-logout-btn:hover {
+  color: #f87171;
+}
+
 /* ============================================
    Responsive
    ============================================ */

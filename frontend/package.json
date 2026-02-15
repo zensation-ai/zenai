@@ -30,6 +30,7 @@
     "@capacitor/keyboard": "^8.0.0",
     "@capacitor/splash-screen": "^8.0.0",
     "@capacitor/status-bar": "^8.0.0",
+    "@supabase/supabase-js": "^2.95.3",
     "@tanstack/react-virtual": "^3.13.18",
     "@types/react-syntax-highlighter": "^15.5.13",
     "axios": "^1.6.5",

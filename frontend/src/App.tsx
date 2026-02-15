@@ -20,6 +20,8 @@ import type { InputMode } from './components/CommandCenter';
 import type { AdvancedFilters } from './components/SearchFilterBar';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage } from './utils/errors';
+import { useAuth } from './contexts/AuthContext';
+import { LoginPage } from './components/LoginPage';
 import { safeParseResponse, IdeaCreationResponseSchema, SearchResponseSchema, ProgressiveSearchResponseSchema } from './utils/apiSchemas';
 import { GeneralChat } from './components/GeneralChat';
 import { ContextNudge } from './components/ContextNudge';
@@ -198,8 +200,23 @@ function useUrlNavigation() {
 }
 
 function App() {
+  const { session, loading: authLoading } = useAuth();
   const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
   const [context, setContext] = useContextState();
+
+  // Auth gate: show login if not authenticated
+  if (authLoading) {
+    return (
+      <div className="page-loader" role="status" aria-live="polite">
+        <SkeletonLoader type="card" count={1} />
+        <p className="loading-text">Wird geladen...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <LoginPage />;
+  }
   const [selectedPersona] = usePersonaState(context);
   const keyboardShortcuts = useKeyboardShortcutsModal();
 

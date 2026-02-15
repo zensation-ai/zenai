@@ -7,6 +7,7 @@ import './index.css';
 import { safeLocalStorage } from './utils/storage';
 import { ConfirmProvider } from './components/ConfirmDialog';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { initializeNative } from './utils/native';
 import { logError } from './utils/errors';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -123,11 +124,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
-        <ThemeProvider>
-          <ConfirmProvider>
-            <App />
-          </ConfirmProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <ConfirmProvider>
+              <App />
+            </ConfirmProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>

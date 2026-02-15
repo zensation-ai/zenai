@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { AI_PERSONALITY, AI_AVATAR, getTimeBasedGreeting } from '../utils/aiPersonality';
@@ -45,10 +45,12 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
   const [saving, setSaving] = useState(false);
   const [typingText, setTypingText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
-  const timeGreeting = getTimeBasedGreeting();
 
-  // Typing animation for AI introduction
-  const introText = `${timeGreeting.greeting} Ich bin ${AI_PERSONALITY.name}, dein persönlicher KI-Begleiter. Ich bin hier, um dir zu helfen, deine Gedanken zu ordnen und aus deinen Ideen zu lernen.`;
+  // Memoize greeting so Math.random() is only called once on mount
+  const introText = useMemo(() => {
+    const timeGreeting = getTimeBasedGreeting();
+    return `${timeGreeting.greeting} Ich bin ${AI_PERSONALITY.name}, dein persönlicher KI-Begleiter. Ich bin hier, um dir zu helfen, deine Gedanken zu ordnen und aus deinen Ideen zu lernen.`;
+  }, []);
 
   useEffect(() => {
     if (currentStep === 0 && isTyping) {
