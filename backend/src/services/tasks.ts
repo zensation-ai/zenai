@@ -295,7 +295,9 @@ export async function reorderTasks(
   status: TaskStatus,
   taskIds: string[]
 ): Promise<void> {
-  if (taskIds.length === 0) return;
+  if (taskIds.length === 0) {
+    return;
+  }
 
   // Batch update: single query using unnest instead of N individual updates
   await queryContext(context, `

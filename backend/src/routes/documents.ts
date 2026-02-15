@@ -311,7 +311,9 @@ router.post(
     let doc: Document | null = null;
     for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
       doc = await documentService.getDocument(id, ctx);
-      if (doc) break;
+      if (doc) {
+        break;
+      }
     }
 
     if (!doc) {
@@ -573,7 +575,9 @@ router.get(
     let doc: Document | null = null;
     for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
       doc = await documentService.getDocument(id, ctx);
-      if (doc) break;
+      if (doc) {
+        break;
+      }
     }
 
     if (!doc) {
@@ -615,7 +619,9 @@ router.get(
     let doc: Document | null = null;
     for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
       doc = await documentService.getDocument(id, ctx);
-      if (doc) break;
+      if (doc) {
+        break;
+      }
     }
 
     if (!doc) {
