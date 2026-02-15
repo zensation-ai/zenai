@@ -1040,6 +1040,175 @@ ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, 
 // ===========================================
 
 /**
+ * GET /api/:context/ideas/triage
+ * Get ideas for triage - context-aware version
+ */
+ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req, res) => {
+  const ctx = validateContextParam(req.params.context);
+
+  const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 20, min: 1, max: 50, fieldName: 'limit' });
+  if (!limitResult.success) {
+    throw new ValidationError('Invalid limit');
+  }
+  const limit = limitResult.data ?? 20;
+
+  const excludeIds = req.query.exclude ? (req.query.exclude as string).split(',').filter(id => isValidUUID(id)) : [];
+
+  let excludeClause = '';
+  const params: (string | number)[] = [ctx, limit];
+  if (excludeIds.length > 0) {
+    excludeClause = ` AND i.id NOT IN (${excludeIds.map((_, idx) => `$${idx + 3}`).join(',')})`;
+    params.push(...excludeIds);
+  }
+
+  const result = await queryContext(
+    ctx,
+    `SELECT i.id, i.title, i.type, i.category, i.priority, i.summary,
+            i.next_steps, i.context_needed, i.keywords, i.context,
+            i.created_at, i.updated_at, i.raw_transcript
+     FROM ideas i
+     LEFT JOIN triage_history th ON th.idea_id = i.id
+       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+     WHERE i.context = $1
+       AND i.is_archived = false
+       AND th.id IS NULL
+       ${excludeClause}
+     ORDER BY
+       CASE i.priority
+         WHEN 'high' THEN 1
+         WHEN 'medium' THEN 2
+         WHEN 'low' THEN 3
+         ELSE 4
+       END,
+       i.created_at DESC
+     LIMIT $2`,
+    params
+  );
+
+  const countResult = await queryContext(
+    ctx,
+    `SELECT COUNT(*) as total
+     FROM ideas i
+     LEFT JOIN triage_history th ON th.idea_id = i.id
+       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+     WHERE i.context = $1
+       AND i.is_archived = false
+       AND th.id IS NULL`,
+    [ctx]
+  );
+
+  res.json({
+    success: true,
+    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
+    total: parseInt(countResult.rows[0].total, 10),
+    hasMore: result.rows.length === limit,
+  });
+}));
+
+/**
+ * POST /api/:context/ideas/:id/triage
+ * Record a triage action for an idea - context-aware version
+ */
+ideasContextRouter.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const ctx = validateContextParam(req.params.context);
+  const ideaId = req.params.id;
+
+  if (!isValidUUID(ideaId)) {
+    throw new ValidationError('Invalid idea ID format');
+  }
+
+  const { action } = req.body;
+
+  const validActions = ['priority', 'keep', 'later', 'archive'];
+  if (!action || !validActions.includes(action)) {
+    throw new ValidationError(`Invalid triage action. Must be one of: ${validActions.join(', ')}`);
+  }
+
+  const ideaCheck = await queryContext(ctx, 'SELECT id, title, priority FROM ideas WHERE id = $1', [ideaId]);
+  if (ideaCheck.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
+  const oldPriority = ideaCheck.rows[0].priority;
+  const ideaTitle = ideaCheck.rows[0].title;
+
+  let updateData: { priority?: 'low' | 'medium' | 'high'; is_archived?: boolean } = {};
+  let actionDescription = '';
+
+  switch (action) {
+    case 'priority':
+      updateData = { priority: 'high' };
+      actionDescription = 'als Priorität markiert';
+      break;
+    case 'archive':
+      updateData = { is_archived: true };
+      actionDescription = 'archiviert';
+      break;
+    case 'later':
+      updateData = { priority: 'low' };
+      actionDescription = 'auf später verschoben';
+      break;
+    case 'keep':
+      actionDescription = 'beibehalten';
+      break;
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    const ALLOWED_TRIAGE_COLUMNS = new Set(['priority', 'is_archived']);
+    const safeKeys = Object.keys(updateData).filter(k => ALLOWED_TRIAGE_COLUMNS.has(k));
+
+    if (safeKeys.length !== Object.keys(updateData).length) {
+      throw new ValidationError('Invalid update fields detected');
+    }
+
+    await queryContext(
+      ctx,
+      `UPDATE ideas SET ${safeKeys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
+      [ideaId, ...safeKeys.map(k => updateData[k as keyof typeof updateData])]
+    );
+
+    if (updateData.priority && oldPriority !== updateData.priority) {
+      learnFromCorrection(ideaId, {
+        oldPriority,
+        newPriority: updateData.priority,
+      }).catch(err => logger.debug('Background triage correction learning skipped', { error: err.message }));
+    }
+  }
+
+  await queryContext(
+    ctx,
+    `INSERT INTO triage_history (idea_id, context, action) VALUES ($1, $2, $3)`,
+    [ideaId, ctx, action]
+  );
+
+  trackInteraction({
+    idea_id: ideaId,
+    interaction_type: action === 'priority' ? 'prioritize' : action === 'archive' ? 'archive' : 'view',
+    metadata: { action, source: 'triage', old_priority: oldPriority },
+  }).catch((err) => logger.debug('Background triage tracking skipped', { error: err.message }));
+
+  logAIActivity({
+    context: ctx,
+    type: 'idea_triaged',
+    message: `Gedanke "${ideaTitle.substring(0, 50)}..." ${actionDescription}`,
+    ideaId,
+    metadata: { action, oldPriority, newPriority: updateData.priority },
+  }).catch((err) => logger.debug('Background AI activity logging skipped', { error: err.message }));
+
+  if (action === 'archive') {
+    triggerWebhook('idea.archived', { id: ideaId })
+      .catch((err) => logger.debug('Background triage archive webhook skipped', { error: err.message }));
+  }
+
+  res.json({
+    success: true,
+    ideaId,
+    action,
+    message: `Idee ${actionDescription}`,
+  });
+}));
+
+/**
  * GET /api/:context/ideas/stats/summary
  * Get statistics about ideas (excluding archived) - context-aware version
  */

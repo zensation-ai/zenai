@@ -193,8 +193,12 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
           onComplete();
         }
       }
-    } catch {
-      showToast('Fehler beim Speichern der Aktion', 'error');
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error || err.response?.data?.message || 'Fehler beim Speichern der Aktion'
+        : 'Ein unerwarteter Fehler ist aufgetreten';
+      console.error('Triage action failed:', { action, ideaId: currentIdea.id, error: err });
+      showToast(message, 'error');
     } finally {
       setIsAnimating(false);
       setAnimationClass('');
