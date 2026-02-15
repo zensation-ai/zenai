@@ -63,9 +63,13 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
     loadLastSession(abortControllerRef.current.signal);
 
-    // Cleanup: abort on unmount or context change
+    // Cleanup: abort on unmount or context change + cancel pending RAF
     return () => {
       abortControllerRef.current?.abort();
+      if (streamingRafRef.current) {
+        cancelAnimationFrame(streamingRafRef.current);
+        streamingRafRef.current = null;
+      }
     };
   }, [context, initialSessionId]);
 

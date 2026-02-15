@@ -324,11 +324,17 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
       });
     }
 
-    // Update last_used_at
-    await pool.query(
+    // Update last_used_at (fire-and-forget — no need to block the request)
+    pool.query(
       'UPDATE api_keys SET last_used_at = NOW() WHERE id = $1',
       [keyData.id]
-    );
+    ).catch((err) => {
+      logger.warn('Failed to update last_used_at', {
+        operation: 'apiKeyAuth',
+        keyId: keyData.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
 
     // Phase Security Sprint 3: Check key expiry status and add warnings
     const expiryInfo = checkKeyExpiry(keyData.expires_at, keyData.created_at);
