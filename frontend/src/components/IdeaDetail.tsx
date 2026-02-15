@@ -157,11 +157,10 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('de-DE', {
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('de-DE', {
       weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
     });
-  };
 
   const performResearch = async (type: 'answer' | 'solve' | 'develop' | 'explore') => {
     setResearchLoading(true);

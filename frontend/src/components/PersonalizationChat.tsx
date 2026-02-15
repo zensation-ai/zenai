@@ -1,18 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
-import {
-  AI_PERSONALITY,
-  AI_AVATAR,
-  FEEDBACK_REACTIONS,
-} from '../utils/aiPersonality';
+import { AI_PERSONALITY, AI_AVATAR, FEEDBACK_REACTIONS } from '../utils/aiPersonality';
 import { getContextLabel } from './ContextSwitcher';
 import { PersonalizationMessages } from './PersonalizationMessages';
 import { PersonalizationFacts } from './PersonalizationFacts';
 import { PersonalizationSummary } from './PersonalizationSummary';
+import { logError } from '../utils/errors';
 import './PersonalizationChat.css';
 import '../neurodesign.css';
-import { logError } from '../utils/errors';
 
 interface ChatMessage {
   id: string;

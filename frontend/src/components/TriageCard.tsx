@@ -39,9 +39,8 @@ export function TriageCard({ idea, cardRef, isDragging, cardStyle, swipeClass }:
   const priorityInfo = PRIORITY_LABELS[idea.priority] || PRIORITY_LABELS.medium;
   const typeEmoji = TYPE_EMOJIS[idea.type] || '📝';
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   return (
     <div

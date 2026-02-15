@@ -1,10 +1,5 @@
 import { useRef, useEffect } from 'react';
-import {
-  AI_PERSONALITY,
-  AI_AVATAR,
-  EMPTY_STATE_MESSAGES,
-  getRandomMessage,
-} from '../utils/aiPersonality';
+import { AI_PERSONALITY, AI_AVATAR, EMPTY_STATE_MESSAGES, getRandomMessage } from '../utils/aiPersonality';
 
 interface ChatMessage {
   id: string;
@@ -26,9 +21,8 @@ export function PersonalizationMessages({ messages, sending, categoryLabels }: P
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, sending]);
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (dateStr: string) =>
+    new Date(dateStr).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
   if (messages.length === 0 && !sending) {
     return (

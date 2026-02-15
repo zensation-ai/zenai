@@ -1,10 +1,4 @@
-import {
-  DigestEntry,
-  categoryLabels,
-  formatDigestDate,
-  formatDateRange,
-  getProductivityColor,
-} from './DigestTypes';
+import { DigestEntry, categoryLabels, formatDigestDate, formatDateRange, getProductivityColor } from './DigestTypes';
 
 interface DigestCardProps {
   digest: DigestEntry;

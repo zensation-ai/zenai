@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
-import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
+import { AIContext } from './ContextSwitcher';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
-import {
-  AI_PERSONALITY,
-  getRandomReward,
-  FLOW_STATE_MESSAGES,
-  ANTICIPATORY_MESSAGES,
-} from '../utils/aiPersonality';
+import { AI_PERSONALITY, getRandomReward, FLOW_STATE_MESSAGES, ANTICIPATORY_MESSAGES } from '../utils/aiPersonality';
 import { useNeuroFeedback } from './NeuroFeedback';
 import type { IdeaPriority } from '../types/idea';
 import { TriageCard } from './TriageCard';

@@ -8,19 +8,14 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
-import {
-  getTimeBasedGreeting,
-  getRandomReward,
-  AI_PERSONALITY,
-  DOPAMINE_REWARDS,
-} from '../utils/aiPersonality';
+import { getTimeBasedGreeting, getRandomReward, AI_PERSONALITY, DOPAMINE_REWARDS } from '../utils/aiPersonality';
 import { IncubatorQuickInput } from './IncubatorQuickInput';
 import { IncubatorClusterCard } from './IncubatorClusterCard';
 import type { ThoughtCluster, IncubatorStats } from './IncubatorTypes';
 import { MILLER_CHUNK_SIZE } from './IncubatorTypes';
+import { logError } from '../utils/errors';
 import './IncubatorPage.css';
 import '../neurodesign.css';
-import { logError } from '../utils/errors';
 
 interface Props {
   onBack: () => void;

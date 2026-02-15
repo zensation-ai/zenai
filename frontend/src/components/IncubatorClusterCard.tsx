@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import type { ThoughtCluster } from './IncubatorTypes';
-import {
-  getClusterMood, getMoodClass, getStatusColor, getStatusLabel,
-  getTypeIcon, getDaysSinceUpdate, formatDate,
-} from './IncubatorTypes';
+import { getClusterMood, getMoodClass, getStatusColor, getStatusLabel, getTypeIcon, getDaysSinceUpdate, formatDate } from './IncubatorTypes';
 
 interface IncubatorClusterCardProps {
   cluster: ThoughtCluster;

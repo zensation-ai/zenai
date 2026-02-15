@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ProductivityGoals, categoryLabels } from './DigestTypes';
 
 interface DigestGoalsProps {
@@ -27,19 +27,19 @@ export function DigestGoals({ goals, savingGoals, onSaveGoals }: DigestGoalsProp
     reminder_time: goals?.reminder_time || '',
   });
 
-  const toggleFocusCategory = (category: string) => {
+  const toggleFocusCategory = useCallback((category: string) => {
     setForm(prev => ({
       ...prev,
       focus_categories: prev.focus_categories.includes(category)
         ? prev.focus_categories.filter(c => c !== category)
         : [...prev.focus_categories, category],
     }));
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     onSaveGoals(form);
     setEditing(false);
-  };
+  }, [form, onSaveGoals]);
 
   return (
     <div className="goals-section liquid-glass neuro-stagger-item">

@@ -1,8 +1,4 @@
-import {
-  AI_AVATAR,
-  AI_PERSONALITY,
-  EMPTY_STATE_MESSAGES,
-} from '../utils/aiPersonality';
+import { AI_AVATAR, AI_PERSONALITY, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 
 interface LearnedFact {
   id: string;
@@ -21,13 +17,13 @@ interface PersonalizationFactsProps {
   onSwitchToChat: () => void;
 }
 
-function getConfidenceColor(confidence: number) {
+function getConfidenceColor(confidence: number): string {
   if (confidence >= 0.8) return '#22c55e';
   if (confidence >= 0.6) return '#f59e0b';
   return '#9ca3af';
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
