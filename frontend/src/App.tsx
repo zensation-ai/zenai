@@ -201,10 +201,7 @@ function useUrlNavigation() {
 
 function App() {
   const { session, loading: authLoading } = useAuth();
-  const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
-  const [context, setContext] = useContextState();
 
-  // Auth gate: show login if not authenticated
   if (authLoading) {
     return (
       <div className="page-loader" role="status" aria-live="polite">
@@ -217,6 +214,13 @@ function App() {
   if (!session) {
     return <LoginPage />;
   }
+
+  return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
+  const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
+  const [context, setContext] = useContextState();
   const [selectedPersona] = usePersonaState(context);
   const keyboardShortcuts = useKeyboardShortcutsModal();
 
