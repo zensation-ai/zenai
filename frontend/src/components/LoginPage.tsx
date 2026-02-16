@@ -3,10 +3,22 @@ import { useAuth } from '../contexts/AuthContext';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import './LoginPage.css';
 
-type Mode = 'login' | 'register' | 'reset';
+type Mode = 'login' | 'reset';
+
+const ERROR_TRANSLATIONS: Record<string, string> = {
+  'Invalid login credentials': 'E-Mail oder Passwort ist falsch.',
+  'Email not confirmed': 'E-Mail-Adresse wurde noch nicht bestätigt.',
+  'User not found': 'Kein Konto mit dieser E-Mail gefunden.',
+  'Too many requests': 'Zu viele Versuche. Bitte warte kurz.',
+  'Network request failed': 'Verbindungsfehler. Prüfe deine Internetverbindung.',
+};
+
+function translateError(message: string): string {
+  return ERROR_TRANSLATIONS[message] ?? message;
+}
 
 export function LoginPage() {
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signIn, resetPassword } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,24 +34,11 @@ export function LoginPage() {
     try {
       if (mode === 'login') {
         const { error: err } = await signIn(email, password);
-        if (err) setError(err.message);
-      } else if (mode === 'register') {
-        if (password.length < 6) {
-          setError('Passwort muss mindestens 6 Zeichen haben.');
-          setLoading(false);
-          return;
-        }
-        const { error: err } = await signUp(email, password);
-        if (err) {
-          setError(err.message);
-        } else {
-          setError(null);
-          setMode('login');
-        }
-      } else if (mode === 'reset') {
+        if (err) setError(translateError(err.message));
+      } else {
         const { error: err } = await resetPassword(email);
         if (err) {
-          setError(err.message);
+          setError(translateError(err.message));
         } else {
           setResetSent(true);
         }
@@ -49,7 +48,7 @@ export function LoginPage() {
     } finally {
       setLoading(false);
     }
-  }, [mode, email, password, signIn, signUp, resetPassword]);
+  }, [mode, email, password, signIn, resetPassword]);
 
   const switchMode = useCallback((newMode: Mode) => {
     setMode(newMode);
@@ -66,7 +65,7 @@ export function LoginPage() {
             <div className="login-avatar-glow" />
           </div>
           <h1 className="login-title">
-            {mode === 'login' ? 'Willkommen bei' : mode === 'register' ? 'Registrieren bei' : 'Passwort zurücksetzen'}
+            {mode === 'login' ? 'Willkommen bei' : 'Passwort zurücksetzen'}
           </h1>
           <p className="login-subtitle">{AI_PERSONALITY.name}</p>
         </div>
@@ -98,7 +97,7 @@ export function LoginPage() {
             />
           </div>
 
-          {mode !== 'reset' && (
+          {mode === 'login' && (
             <div className="login-field">
               <label htmlFor="login-password">Passwort</label>
               <input
@@ -109,7 +108,7 @@ export function LoginPage() {
                 placeholder="Passwort"
                 required
                 minLength={6}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                autoComplete="current-password"
               />
             </div>
           )}
@@ -123,26 +122,14 @@ export function LoginPage() {
               ? 'Laden...'
               : mode === 'login'
                 ? 'Anmelden'
-                : mode === 'register'
-                  ? 'Registrieren'
-                  : 'Link senden'}
+                : 'Link senden'}
           </button>
         </form>
 
         <div className="login-links">
           {mode === 'login' && (
-            <>
-              <button type="button" className="login-link" onClick={() => switchMode('reset')}>
-                Passwort vergessen?
-              </button>
-              <button type="button" className="login-link" onClick={() => switchMode('register')}>
-                Noch kein Konto? Registrieren
-              </button>
-            </>
-          )}
-          {mode === 'register' && (
-            <button type="button" className="login-link" onClick={() => switchMode('login')}>
-              Schon ein Konto? Anmelden
+            <button type="button" className="login-link" onClick={() => switchMode('reset')}>
+              Passwort vergessen?
             </button>
           )}
           {mode === 'reset' && (
