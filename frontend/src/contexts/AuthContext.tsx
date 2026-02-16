@@ -8,7 +8,6 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
@@ -20,13 +19,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setLoading(false);
-    });
+    // Get initial session (with error handling to prevent infinite loading)
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        setSession(s);
+      })
+      .catch(() => {
+        // Supabase unreachable — show login instead of infinite spinner
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
-    // Listen for auth state changes
+    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, s) => {
         setSession(s);
@@ -38,11 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ? new Error(error.message) : null };
-  }, []);
-
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
     return { error: error ? new Error(error.message) : null };
   }, []);
 
@@ -62,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         loading,
         signIn,
-        signUp,
         signOut,
         resetPassword,
       }}
