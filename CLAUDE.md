@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 37
+## Current Phase: 38
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -137,6 +137,11 @@
 - Tasks Routes: `backend/src/routes/tasks.ts`
 - Projects Service: `backend/src/services/projects.ts`
 - Projects Routes: `backend/src/routes/projects.ts`
+- Resend Service: `backend/src/services/resend.ts`
+- Email CRUD Service: `backend/src/services/email.ts`
+- Email AI Service: `backend/src/services/email-ai.ts`
+- Email Routes: `backend/src/routes/email.ts`
+- Email Webhooks: `backend/src/routes/email-webhooks.ts`
 
 ### Frontend
 
@@ -200,6 +205,31 @@ DELETE /api/:context/projects/:id     - Archive project
 POST /api/:context/calendar/events/:id/start-meeting  - Create meeting + link to event
 GET  /api/:context/calendar/events/:id/meeting         - Get meeting + notes for event
 POST /api/:context/calendar/events/:id/meeting/notes   - Add audio/transcript → AI structures
+```
+
+### Email API (Phase 38)
+
+```
+GET    /api/:context/emails              - List emails (filter: status, direction, category, search)
+GET    /api/:context/emails/stats        - Unread count, category breakdown
+GET    /api/:context/emails/:id          - Single email (marks as read)
+GET    /api/:context/emails/:id/thread   - Thread view
+POST   /api/:context/emails              - Create draft
+PUT    /api/:context/emails/:id          - Update draft
+POST   /api/:context/emails/:id/send     - Send draft
+POST   /api/:context/emails/send         - Compose & send new email
+POST   /api/:context/emails/:id/reply    - Reply to email
+POST   /api/:context/emails/:id/forward  - Forward email
+PATCH  /api/:context/emails/:id/status   - Change status
+PATCH  /api/:context/emails/:id/star     - Toggle star
+POST   /api/:context/emails/batch        - Bulk actions
+DELETE /api/:context/emails/:id          - Move to trash
+GET    /api/:context/emails/accounts     - List accounts
+POST   /api/:context/emails/accounts     - Create account
+POST   /api/:context/emails/:id/ai/process           - Trigger AI processing
+GET    /api/:context/emails/:id/ai/reply-suggestions  - AI reply suggestions
+GET    /api/:context/emails/:id/thread/ai/summary     - Thread AI summary
+POST   /api/webhooks/resend              - Resend inbound webhook (Svix signature, no API key)
 ```
 
 ### Vision API
@@ -320,6 +350,11 @@ GOOGLE_CLIENT_ID=...apps.googleusercontent.com  # OAuth2 Client ID
 GOOGLE_CLIENT_SECRET=GOCSPX-...          # OAuth2 Client Secret
 GOOGLE_REDIRECT_URI=https://ki-ab-production.up.railway.app/api/business/connectors/google/callback
 GSC_SITE_URL=https://zensation.ai        # Verified GSC site
+
+# Optional - Resend Email Integration (Phase 38)
+RESEND_API_KEY=re_...                    # Resend API Key
+RESEND_WEBHOOK_SECRET=whsec_...          # Svix Webhook Signing Secret
+RESEND_DEFAULT_FROM=noreply@zensation.ai # Default sender address
 ```
 
 ## Railway Environment Variables (Production)
@@ -343,6 +378,9 @@ GSC_SITE_URL=https://zensation.ai        # Verified GSC site
 | `GOOGLE_CLIENT_SECRET` | Backend | Gesetzt | Google OAuth2 Client Secret |
 | `GOOGLE_REDIRECT_URI` | Backend | Gesetzt | Google OAuth2 Callback URL |
 | `GSC_SITE_URL` | Backend | Gesetzt | Google Search Console Site |
+| `RESEND_API_KEY` | Backend | Gesetzt | Resend Email API |
+| `RESEND_WEBHOOK_SECRET` | Backend | Gesetzt | Resend Svix Webhook Signing |
+| `RESEND_DEFAULT_FROM` | Backend | Gesetzt | Default Sender Address |
 
 **Health Check:** `GET /api/health/detailed` zeigt Status aller Services (4 DBs, Claude, Redis, Brave, Judge0).
 
@@ -503,6 +541,53 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-02-17: Phase 38 - Resend E-Mail Integration mit KI-Analyse
+
+**Vollstaendige E-Mail-Integration ueber Resend mit automatischer KI-Verarbeitung.**
+
+**Features:**
+
+| Feature | Details |
+|---------|---------|
+| **Inbound Webhook** | `POST /api/webhooks/resend` — Svix-Signaturverifizierung, kein API-Key |
+| **E-Mail Body** | Resend Receiving API (`emails.receiving.get()`) fuer Inbound-Body |
+| **KI-Analyse** | Auto-Verarbeitung bei Empfang: Zusammenfassung, Kategorie, Prioritaet, Sentiment, Action Items |
+| **Antwort-Vorschlaege** | 3 KI-generierte Antworten (formal, freundlich, kurz) |
+| **CRUD API** | Vollstaendiges E-Mail-Management (Entwuerfe, Senden, Antworten, Weiterleiten, Bulk) |
+| **Domain-Routing** | `zensation.ai` → work, `zensation.app` → personal, `joint-sales.com` → work |
+| **Threading** | Automatische Thread-Erkennung via message_id |
+
+**Neue Dateien (Backend):**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/sql/migrations/phase38_email.sql` | DB-Migration (email_accounts, emails, email_labels pro Schema + resend_webhook_log) |
+| `backend/src/services/resend.ts` | Resend SDK Wrapper (sendEmail, getInboundEmail, verifyWebhook) |
+| `backend/src/services/email.ts` | Email CRUD Service (context-aware mit queryContext) |
+| `backend/src/services/email-ai.ts` | KI-Verarbeitung (Claude API: Zusammenfassung, Kategorie, Prioritaet, Sentiment) |
+| `backend/src/routes/email-webhooks.ts` | Resend Webhook-Empfang + Inbound-Verarbeitung |
+| `backend/src/routes/email.ts` | Email REST API (20+ Endpoints) |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | Route-Registrierung (emailWebhooksRouter VOR webhooksRouter) |
+| `backend/src/utils/schemas.ts` | Zod Schemas fuer E-Mail-Validierung |
+
+**Deployment-Fixes (4 Iterationen):**
+
+| # | Problem | Fix |
+|---|---------|-----|
+| 1 | 401 Auth-Block auf `/api/webhooks/resend` | `emailWebhooksRouter` vor `webhooksRouter` registrieren |
+| 2 | Body NULL (Webhook-Payload ohne Body) | Body aus Webhook-Payload lesen als Erstversuch |
+| 3 | Body NULL (`emails.get()` → 404 fuer Inbound) | `emails.receiving.get()` (Resend Receiving API) |
+| 4 | Webhook Secret Mismatch | Neues Secret aus Resend Dashboard in .env + Railway |
+
+**Verifiziert:** E-Mail an `service@zensation.ai` → Body gespeichert + KI-Analyse in ~3s (Summary, Kategorie: business, Prioritaet: medium, Sentiment: positive)
+
+---
 
 ### 2026-02-13: Null-Safe Date Formatting & Code Polish
 
