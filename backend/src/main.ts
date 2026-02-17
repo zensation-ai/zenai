@@ -317,6 +317,10 @@ app.use('/api/meetings', meetingsRouter);
 app.use('/api/profile', userProfileRouter);
 app.use('/api', userProfileContextRouter);  // Context-aware profile routes: /api/:context/profile/*
 
+// Phase 38: Email Webhooks - MUST be before webhooksRouter to avoid /:id catch-all with apiKeyAuth
+import { emailWebhooksRouter } from './routes/email-webhooks';
+app.use('/api/webhooks', emailWebhooksRouter);  // /api/webhooks/resend (no auth, uses Svix signature)
+
 // Phase 4: Enterprise Integration Routes
 app.use('/api/keys', apiKeysRouter);
 app.use('/api/webhooks', webhooksRouter);
@@ -407,10 +411,8 @@ import { projectsRouter } from './routes/projects';
 app.use('/api', tasksRouter);      // /api/:context/tasks, /api/:context/tasks/gantt, /api/:context/tasks/reorder
 app.use('/api', projectsRouter);   // /api/:context/projects
 
-// Phase 38: Email Integration (Resend)
-import { emailWebhooksRouter } from './routes/email-webhooks';
+// Phase 38: Email Integration (Resend) - emailRouter for CRUD
 import { emailRouter } from './routes/email';
-app.use('/api/webhooks', emailWebhooksRouter);  // /api/webhooks/resend (no auth, uses Svix signature)
 app.use('/api', emailRouter);                    // /api/:context/emails/*
 
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
