@@ -76,6 +76,8 @@ import { businessRouter } from './routes/business';
 import { initializeBusinessConnectors } from './services/business';
 // Phase 35: AI Calendar System
 import { calendarRouter } from './routes/calendar';
+// Phase 37: Global Search
+import { globalSearchRouter } from './routes/global-search';
 // Phase 12: Developer Experience
 import { setupSwagger } from './utils/swagger';
 // Phase 9: Cache-Control & ETag Support
@@ -283,7 +285,6 @@ app.use(csrfProtection);
 setupSwagger(app);
 
 // Phase 37: Global Search - Must be before context-aware routes
-import { globalSearchRouter } from './routes/global-search';
 app.use('/api/search', globalSearchRouter);
 
 // Phase 31: Code Execution - Must be before context-aware routes

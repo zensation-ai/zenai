@@ -70,7 +70,7 @@ ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    total: parseInt(totalResult.rows[0].total, 10),
+    total: parseInt(totalResult.rows[0]?.total ?? '0', 10),
     byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count, 10) }), {} as Record<string, number>),
     byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count, 10) }), {} as Record<string, number>),
     byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count, 10) }), {} as Record<string, number>),

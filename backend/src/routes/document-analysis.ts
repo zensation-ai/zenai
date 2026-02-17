@@ -23,6 +23,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import {
   documentAnalysis,
@@ -433,7 +434,7 @@ documentAnalysisRouter.get(
   '/history',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const context = typeof req.query.context === 'string' ? req.query.context : 'work';
+    const context = (typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'work';
     const limit = Math.min(parseInt(String(req.query.limit || '20'), 10), 100);
     const offset = Math.max(parseInt(String(req.query.offset || '0'), 10), 0);
 
@@ -550,7 +551,7 @@ documentAnalysisRouter.get(
   '/templates/custom',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const context = typeof req.query.context === 'string' ? req.query.context : 'work';
+    const context = (typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'work';
     const templates = await documentAnalysis.getCustomTemplates(context);
 
     res.json({

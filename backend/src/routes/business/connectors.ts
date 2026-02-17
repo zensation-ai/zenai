@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../../middleware/errorHandler';
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import {
@@ -65,6 +66,7 @@ connectorsRouter.get('/', apiKeyAuth, asyncHandler(async (_req: Request, res: Re
     SELECT id, source_type, display_name, status, last_sync, last_error, created_at
     FROM business_data_sources
     ORDER BY created_at DESC
+    LIMIT 100
   `);
 
   const statuses = getConnectorStatuses();

@@ -8,6 +8,7 @@
 
 import { google, searchconsole_v1 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import type { BusinessConnector, SEOMetrics, SEOQuery, SEOPage } from '../../types/business';

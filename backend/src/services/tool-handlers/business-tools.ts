@@ -8,6 +8,7 @@
  */
 
 import { logger } from '../../utils/logger';
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import {
   stripeConnector,

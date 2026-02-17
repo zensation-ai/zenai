@@ -2,8 +2,7 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
-import { query } from '../utils/database';
-import { isValidUUID, isValidContext } from '../utils/database-context';
+import { queryContext, isValidUUID, isValidContext, AIContext } from '../utils/database-context';
 import { generateEmbedding } from '../utils/ollama';
 import crypto from 'crypto';
 import { analyzeImage, extractTextFromImage, analyzeDocument } from '../utils/image-analysis';
@@ -206,8 +205,9 @@ router.post('/:context/media', apiKeyAuth, requireScope('write'), upload.single(
     embedding = await generateEmbedding(caption);
   }
 
-  // Store media metadata in database
-  const result = await query(
+  // Store media metadata in database (schema-isolated via queryContext)
+  const result = await queryContext(
+    context as AIContext,
     `INSERT INTO media_items (
       media_type,
       filename,
@@ -256,6 +256,7 @@ router.post('/:context/media', apiKeyAuth, requireScope('write'), upload.single(
  */
 router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context, type, limit = '50' } = req.query;
+  const mediaContext: AIContext = (context && typeof context === 'string' && isValidContext(context)) ? context : 'personal';
 
   let queryStr = 'SELECT id, media_type, filename, caption, context, created_at FROM media_items WHERE 1=1';
   const params: (string | number | boolean | Date | null)[] = [];
@@ -276,7 +277,7 @@ router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Resp
   queryStr += ` ORDER BY created_at DESC LIMIT $${paramCount}`;
   params.push(parseLimit(limit as string | undefined));
 
-  const result = await query(queryStr, params);
+  const result = await queryContext(mediaContext, queryStr, params);
 
   res.json({
     success: true,
@@ -292,8 +293,10 @@ router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Resp
 router.get('/media-file/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
 
-  const result = await query(
+  const result = await queryContext(
+    mediaContext,
     'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
@@ -370,8 +373,9 @@ router.post('/:context/media/analyze', apiKeyAuth, requireScope('write'), upload
     embedding = await generateEmbedding(textForEmbedding);
   }
 
-  // Store analysis result in database
-  const result = await query(
+  // Store analysis result in database (schema-isolated via queryContext)
+  const result = await queryContext(
+    context as AIContext,
     `INSERT INTO media_items (
       media_type,
       filename,
@@ -456,8 +460,9 @@ router.post('/:context/media-with-voice', apiKeyAuth, requireScope('write'), mul
     embedding = await generateEmbedding(caption);
   }
 
-  // Store media metadata in database
-  const result = await query(
+  // Store media metadata in database (schema-isolated via queryContext)
+  const result = await queryContext(
+    context as AIContext,
     `INSERT INTO media_items (
       media_type,
       filename,
@@ -513,9 +518,11 @@ router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHand
   const { id } = req.params;
   validateMediaId(id);
   const { timestamp = '00:00:01' } = req.body;
+  const mediaContext: AIContext = (req.body.context && typeof req.body.context === 'string' && isValidContext(req.body.context)) ? req.body.context : 'personal';
 
   // Get media item
-  const result = await query(
+  const result = await queryContext(
+    mediaContext,
     'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
@@ -544,7 +551,8 @@ router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHand
   }
 
   // Update database with thumbnail path
-  await query(
+  await queryContext(
+    mediaContext,
     'UPDATE media_items SET thumbnail_path = $1, duration = $2, width = $3, height = $4 WHERE id = $5',
     [
       thumbnailResult.thumbnailPath,
@@ -576,8 +584,10 @@ router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHand
 router.get('/media/:id/thumbnail', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
 
-  const result = await query(
+  const result = await queryContext(
+    mediaContext,
     'SELECT thumbnail_path FROM media_items WHERE id = $1',
     [id]
   );
@@ -612,9 +622,11 @@ router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHa
   const { id } = req.params;
   validateMediaId(id);
   const { duration = 3 } = req.body;
+  const mediaContext: AIContext = (req.body.context && typeof req.body.context === 'string' && isValidContext(req.body.context)) ? req.body.context : 'personal';
 
   // Get media item
-  const result = await query(
+  const result = await queryContext(
+    mediaContext,
     'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
@@ -642,7 +654,8 @@ router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHa
   }
 
   // Update database
-  await query(
+  await queryContext(
+    mediaContext,
     'UPDATE media_items SET gif_preview_path = $1 WHERE id = $2',
     [gifResult.gifPath, id]
   );
@@ -661,8 +674,10 @@ router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHa
 router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
 
-  const result = await query(
+  const result = await queryContext(
+    mediaContext,
     'SELECT id, file_path, media_type, filename FROM media_items WHERE id = $1',
     [id]
   );
@@ -678,7 +693,8 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
     const videoInfo = await getVideoInfo(mediaItem.file_path);
 
     // Update database
-    await query(
+    await queryContext(
+      mediaContext,
       'UPDATE media_items SET duration = $1, width = $2, height = $3 WHERE id = $4',
       [videoInfo.duration, videoInfo.width, videoInfo.height, id]
     );
@@ -721,8 +737,10 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
 router.delete('/media/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
 
-  const result = await query(
+  const result = await queryContext(
+    mediaContext,
     'SELECT id, file_path, thumbnail_path, gif_preview_path FROM media_items WHERE id = $1',
     [id]
   );
@@ -749,7 +767,7 @@ router.delete('/media/:id', apiKeyAuth, requireScope('write'), asyncHandler(asyn
   }
 
   // Delete from database
-  await query('DELETE FROM media_items WHERE id = $1', [id]);
+  await queryContext(mediaContext, 'DELETE FROM media_items WHERE id = $1', [id]);
 
   logger.info('Media deleted', { mediaId: id });
 
@@ -772,8 +790,9 @@ router.post('/:context/media/analyze-existing', apiKeyAuth, requireScope('write'
     throw new ValidationError('Valid mediaId is required');
   }
 
-  // Fetch media item from database
-  const mediaResult = await query(
+  // Fetch media item from database (schema-isolated via queryContext)
+  const mediaResult = await queryContext(
+    context as AIContext,
     `SELECT * FROM media_items WHERE id = $1 AND context = $2`,
     [mediaId, context]
   );
@@ -817,8 +836,9 @@ router.post('/:context/media/analyze-existing', apiKeyAuth, requireScope('write'
     }
   }
 
-  // Update database with analysis results
-  await query(
+  // Update database with analysis results (schema-isolated via queryContext)
+  await queryContext(
+    context as AIContext,
     `UPDATE media_items SET
        caption = $1,
        ocr_text = $2,

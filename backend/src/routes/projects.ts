@@ -13,10 +13,12 @@ import {
   deleteProject,
 } from '../services/projects';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
-import { isValidUUID, validateContextParam } from '../utils/validation';
+import { asyncHandler, NotFoundError } from '../middleware/errorHandler';
+import { validateContextParam } from '../utils/validation';
 import { validateBody } from '../utils/schemas';
 import { CreateProjectSchema, UpdateProjectSchema } from '../utils/schemas';
+import { requireUUID } from '../middleware/validate-params';
+import { sendData, sendList, sendMessage, parsePagination } from '../utils/response';
 
 export const projectsRouter = Router();
 
@@ -26,43 +28,32 @@ export const projectsRouter = Router();
 
 projectsRouter.get('/:context/projects', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const { limit, offset } = parsePagination(req, { defaultLimit: 100, maxLimit: 500 });
 
   const filters = {
     status: req.query.status as string | undefined,
-    limit: Math.min(parseInt(req.query.limit as string, 10) || 100, 500),
-    offset: parseInt(req.query.offset as string, 10) || 0,
+    limit,
+    offset,
   };
 
   const projects = await getProjects(context, filters as Parameters<typeof getProjects>[1]);
 
-  res.json({
-    success: true,
-    data: projects,
-    count: projects.length,
-  });
+  sendList(res, projects);
 }));
 
 // ============================================================
 // GET /api/:context/projects/:id
 // ============================================================
 
-projectsRouter.get('/:context/projects/:id', apiKeyAuth, asyncHandler(async (req, res) => {
+projectsRouter.get('/:context/projects/:id', apiKeyAuth, requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid project ID', { id: 'must be a valid UUID' });
-  }
-
-  const project = await getProject(context, id);
+  const project = await getProject(context, req.params.id);
   if (!project) {
     throw new NotFoundError('Project not found');
   }
 
-  res.json({
-    success: true,
-    data: project,
-  });
+  sendData(res, project);
 }));
 
 // ============================================================
@@ -77,54 +68,35 @@ projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), val
     name, description, color, icon, status, sort_order, metadata,
   });
 
-  res.status(201).json({
-    success: true,
-    data: project,
-  });
+  sendData(res, project, 201);
 }));
 
 // ============================================================
 // PUT /api/:context/projects/:id
 // ============================================================
 
-projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), validateBody(UpdateProjectSchema), asyncHandler(async (req, res) => {
+projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), requireUUID('id'), validateBody(UpdateProjectSchema), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid project ID', { id: 'must be a valid UUID' });
-  }
-
-  const project = await updateProject(context, id, req.body);
+  const project = await updateProject(context, req.params.id, req.body);
   if (!project) {
     throw new NotFoundError('Project not found');
   }
 
-  res.json({
-    success: true,
-    data: project,
-  });
+  sendData(res, project);
 }));
 
 // ============================================================
 // DELETE /api/:context/projects/:id
 // ============================================================
 
-projectsRouter.delete('/:context/projects/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+projectsRouter.delete('/:context/projects/:id', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid project ID', { id: 'must be a valid UUID' });
-  }
-
-  const deleted = await deleteProject(context, id);
+  const deleted = await deleteProject(context, req.params.id);
   if (!deleted) {
     throw new NotFoundError('Project not found or already archived');
   }
 
-  res.json({
-    success: true,
-    message: 'Project archived',
-  });
+  sendMessage(res, 'Project archived');
 }));

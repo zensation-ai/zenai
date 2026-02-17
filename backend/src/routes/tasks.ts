@@ -26,6 +26,8 @@ import { asyncHandler, ValidationError, NotFoundError } from '../middleware/erro
 import { isValidUUID, validateContextParam } from '../utils/validation';
 import { validateBody } from '../utils/schemas';
 import { CreateTaskSchema, UpdateTaskSchema } from '../utils/schemas';
+import { requireUUID } from '../middleware/validate-params';
+import { sendData, sendList, sendMessage, parsePagination } from '../utils/response';
 
 export const tasksRouter = Router();
 
@@ -41,11 +43,7 @@ tasksRouter.get('/:context/tasks/gantt', apiKeyAuth, asyncHandler(async (req, re
 
   const tasks = await getTasksForGantt(context, projectId ? { project_id: projectId } : undefined);
 
-  res.json({
-    success: true,
-    data: tasks,
-    count: tasks.length,
-  });
+  sendList(res, tasks);
 }));
 
 // ============================================================
@@ -72,31 +70,21 @@ tasksRouter.post('/:context/tasks/reorder', apiKeyAuth, requireScope('write'), a
 
   await reorderTasks(context, status, taskIds);
 
-  res.json({
-    success: true,
-    message: `Reordered ${taskIds.length} tasks in column "${status}"`,
-  });
+  sendMessage(res, `Reordered ${taskIds.length} tasks in column "${status}"`);
 }));
 
 // ============================================================
 // POST /api/:context/tasks/from-idea/:ideaId
 // ============================================================
 
-tasksRouter.post('/:context/tasks/from-idea/:ideaId', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+tasksRouter.post('/:context/tasks/from-idea/:ideaId', apiKeyAuth, requireScope('write'), requireUUID('ideaId'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
   const { ideaId } = req.params;
-
-  if (!isValidUUID(ideaId)) {
-    throw new ValidationError('Invalid idea ID', { ideaId: 'must be a valid UUID' });
-  }
 
   const projectId = req.body.project_id as string | undefined;
   const task = await convertIdeaToTask(context, ideaId, projectId);
 
-  res.status(201).json({
-    success: true,
-    data: task,
-  });
+  sendData(res, task, 201);
 }));
 
 // ============================================================
@@ -105,6 +93,7 @@ tasksRouter.post('/:context/tasks/from-idea/:ideaId', apiKeyAuth, requireScope('
 
 tasksRouter.get('/:context/tasks', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const { limit, offset } = parsePagination(req, { defaultLimit: 200, maxLimit: 500 });
 
   const filters = {
     project_id: req.query.project_id as string | undefined,
@@ -112,40 +101,28 @@ tasksRouter.get('/:context/tasks', apiKeyAuth, asyncHandler(async (req, res) => 
     priority: req.query.priority as string | undefined,
     due_before: req.query.due_before as string | undefined,
     due_after: req.query.due_after as string | undefined,
-    limit: Math.min(parseInt(req.query.limit as string, 10) || 200, 500),
-    offset: parseInt(req.query.offset as string, 10) || 0,
+    limit,
+    offset,
   };
 
   const tasks = await getTasks(context, filters as Parameters<typeof getTasks>[1]);
 
-  res.json({
-    success: true,
-    data: tasks,
-    count: tasks.length,
-  });
+  sendList(res, tasks);
 }));
 
 // ============================================================
 // GET /api/:context/tasks/:id
 // ============================================================
 
-tasksRouter.get('/:context/tasks/:id', apiKeyAuth, asyncHandler(async (req, res) => {
+tasksRouter.get('/:context/tasks/:id', apiKeyAuth, requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid task ID', { id: 'must be a valid UUID' });
-  }
-
-  const task = await getTask(context, id);
+  const task = await getTask(context, req.params.id);
   if (!task) {
     throw new NotFoundError('Task not found');
   }
 
-  res.json({
-    success: true,
-    data: task,
-  });
+  sendData(res, task);
 }));
 
 // ============================================================
@@ -164,82 +141,57 @@ tasksRouter.post('/:context/tasks', apiKeyAuth, requireScope('write'), validateB
     labels, metadata,
   });
 
-  res.status(201).json({
-    success: true,
-    data: task,
-  });
+  sendData(res, task, 201);
 }));
 
 // ============================================================
 // PUT /api/:context/tasks/:id
 // ============================================================
 
-tasksRouter.put('/:context/tasks/:id', apiKeyAuth, requireScope('write'), validateBody(UpdateTaskSchema), asyncHandler(async (req, res) => {
+tasksRouter.put('/:context/tasks/:id', apiKeyAuth, requireScope('write'), requireUUID('id'), validateBody(UpdateTaskSchema), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid task ID', { id: 'must be a valid UUID' });
-  }
-
-  const task = await updateTask(context, id, req.body);
+  const task = await updateTask(context, req.params.id, req.body);
   if (!task) {
     throw new NotFoundError('Task not found');
   }
 
-  res.json({
-    success: true,
-    data: task,
-  });
+  sendData(res, task);
 }));
 
 // ============================================================
 // DELETE /api/:context/tasks/:id
 // ============================================================
 
-tasksRouter.delete('/:context/tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+tasksRouter.delete('/:context/tasks/:id', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid task ID', { id: 'must be a valid UUID' });
-  }
-
-  const deleted = await deleteTask(context, id);
+  const deleted = await deleteTask(context, req.params.id);
   if (!deleted) {
     throw new NotFoundError('Task not found or already cancelled');
   }
 
-  res.json({
-    success: true,
-    message: 'Task cancelled',
-  });
+  sendMessage(res, 'Task cancelled');
 }));
 
 // ============================================================
 // PUT /api/:context/tasks/:id/favorite
 // ============================================================
 
-tasksRouter.put('/:context/tasks/:id/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+tasksRouter.put('/:context/tasks/:id/favorite', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
-
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid task ID', { id: 'must be a valid UUID' });
-  }
 
   const result = await queryContext(
     context,
     'UPDATE tasks SET is_favorite = NOT COALESCE(is_favorite, false), updated_at = NOW() WHERE id = $1 AND status != $2 RETURNING id, is_favorite',
-    [id, 'cancelled']
+    [req.params.id, 'cancelled']
   );
 
   if (result.rows.length === 0) {
     throw new NotFoundError('Task not found');
   }
 
-  res.json({
-    success: true,
+  sendMessage(res, 'Favorite toggled', {
     id: result.rows[0].id,
     isFavorite: result.rows[0].is_favorite,
   });
@@ -249,30 +201,19 @@ tasksRouter.put('/:context/tasks/:id/favorite', apiKeyAuth, requireScope('write'
 // Dependencies
 // ============================================================
 
-tasksRouter.get('/:context/tasks/:id/dependencies', apiKeyAuth, asyncHandler(async (req, res) => {
+tasksRouter.get('/:context/tasks/:id/dependencies', apiKeyAuth, requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { id } = req.params;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid task ID', { id: 'must be a valid UUID' });
-  }
+  const deps = await getTaskDependencies(context, req.params.id);
 
-  const deps = await getTaskDependencies(context, id);
-
-  res.json({
-    success: true,
-    data: deps,
-  });
+  sendData(res, deps);
 }));
 
-tasksRouter.post('/:context/tasks/:id/dependencies', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+tasksRouter.post('/:context/tasks/:id/dependencies', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
   const { depends_on_id, dependency_type } = req.body;
 
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid task ID', { id: 'must be a valid UUID' });
-  }
   if (!depends_on_id || !isValidUUID(depends_on_id)) {
     throw new ValidationError('depends_on_id is required and must be a valid UUID');
   }
@@ -282,27 +223,16 @@ tasksRouter.post('/:context/tasks/:id/dependencies', apiKeyAuth, requireScope('w
 
   const dep = await addDependency(context, id, depends_on_id, dependency_type);
 
-  res.status(201).json({
-    success: true,
-    data: dep,
-  });
+  sendData(res, dep, 201);
 }));
 
-tasksRouter.delete('/:context/tasks/:id/dependencies/:depId', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+tasksRouter.delete('/:context/tasks/:id/dependencies/:depId', apiKeyAuth, requireScope('write'), requireUUID('id', 'depId'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const { depId } = req.params;
 
-  if (!isValidUUID(depId)) {
-    throw new ValidationError('Invalid dependency ID', { depId: 'must be a valid UUID' });
-  }
-
-  const deleted = await removeDependency(context, depId);
+  const deleted = await removeDependency(context, req.params.depId);
   if (!deleted) {
     throw new NotFoundError('Dependency not found');
   }
 
-  res.json({
-    success: true,
-    message: 'Dependency removed',
-  });
+  sendMessage(res, 'Dependency removed');
 }));

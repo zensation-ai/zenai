@@ -467,6 +467,7 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   // AI Chat endpoints - moderate limits to prevent abuse
   'POST:/api/chat/sessions': { limit: 10, windowMs: 60 * 1000 }, // 10/min - session creation
   'POST:/api/chat/quick': { limit: 20, windowMs: 60 * 1000 }, // 20/min - quick chat
+  'POST:/api/personalization/chat': { limit: 30, windowMs: 60 * 1000 }, // 30/min - personalization chat
 
   // ===========================================
   // Expensive AI endpoints - strict limits (cost protection)

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { query } from '../utils/database';
+import { queryContext, AIContext } from '../utils/database-context';
 import { structureWithOllama, generateEmbedding } from '../utils/ollama';
 import { formatForPgVector } from '../utils/embedding';
 import { logger } from '../utils/logger';
@@ -79,11 +79,13 @@ export async function createMeeting(data: {
   participants?: string[];
   location?: string;
   meeting_type?: Meeting['meeting_type'];
+  context?: AIContext;
 }): Promise<Meeting> {
   const id = uuidv4();
+  const ctx = data.context || 'work';
 
   // SECURITY: Explicit column selection instead of RETURNING *
-  const result = await query(
+  const result = await queryContext(ctx,
     `INSERT INTO meetings (id, company_id, title, date, duration_minutes, participants, location, meeting_type)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at`,
@@ -112,6 +114,7 @@ export async function getMeetings(filters?: {
   to_date?: string;
   limit?: number;
   offset?: number;
+  context?: AIContext;
 }): Promise<{ meetings: Meeting[]; total: number }> {
   let whereClause = 'WHERE 1=1';
   const params: (string | number)[] = [];
@@ -136,15 +139,16 @@ export async function getMeetings(filters?: {
 
   const limit = filters?.limit || 20;
   const offset = filters?.offset || 0;
+  const ctx = filters?.context || 'work';
 
   // SECURITY: Explicit column selection instead of SELECT *
   const [meetingsResult, countResult] = await Promise.all([
-    query(
+    queryContext(ctx,
       `SELECT id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at
        FROM meetings ${whereClause} ORDER BY date DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     ),
-    query(`SELECT COUNT(*) as total FROM meetings ${whereClause}`, params),
+    queryContext(ctx, `SELECT COUNT(*) as total FROM meetings ${whereClause}`, params),
   ]);
 
   return {
@@ -156,9 +160,9 @@ export async function getMeetings(filters?: {
 /**
  * Get a single meeting by ID
  */
-export async function getMeeting(id: string): Promise<Meeting | null> {
+export async function getMeeting(id: string, context: AIContext = 'work'): Promise<Meeting | null> {
   // SECURITY: Explicit column selection instead of SELECT *
-  const result = await query(
+  const result = await queryContext(context,
     `SELECT id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at
      FROM meetings WHERE id = $1`,
     [id]
@@ -169,9 +173,9 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
 /**
  * Update meeting status
  */
-export async function updateMeetingStatus(id: string, status: Meeting['status']): Promise<Meeting | null> {
+export async function updateMeetingStatus(id: string, status: Meeting['status'], context: AIContext = 'work'): Promise<Meeting | null> {
   // SECURITY: Explicit column selection instead of RETURNING *
-  const result = await query(
+  const result = await queryContext(context,
     `UPDATE meetings SET status = $2, updated_at = NOW() WHERE id = $1
      RETURNING id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at`,
     [id, status]
@@ -184,7 +188,8 @@ export async function updateMeetingStatus(id: string, status: Meeting['status'])
  */
 export async function processMeetingNotes(
   meetingId: string,
-  transcript: string
+  transcript: string,
+  context: AIContext = 'work'
 ): Promise<MeetingNotes> {
   const id = uuidv4();
 
@@ -222,8 +227,8 @@ STRUKTURIERTE NOTIZEN:`;
   // Generate embedding for semantic search
   const embedding = await generateEmbedding(transcript);
 
-  // Store in database
-  await query(
+  // Store in database (schema-isolated via queryContext)
+  await queryContext(context,
     `INSERT INTO meeting_notes (
       id, meeting_id, raw_transcript, structured_summary,
       key_decisions, action_items, topics_discussed, follow_ups,
@@ -244,7 +249,7 @@ STRUKTURIERTE NOTIZEN:`;
   );
 
   // Update meeting status to completed
-  await updateMeetingStatus(meetingId, 'completed');
+  await updateMeetingStatus(meetingId, 'completed', context);
 
   return {
     id,
@@ -268,9 +273,9 @@ STRUKTURIERTE NOTIZEN:`;
 /**
  * Get notes for a meeting
  */
-export async function getMeetingNotes(meetingId: string): Promise<MeetingNotes | null> {
+export async function getMeetingNotes(meetingId: string, context: AIContext = 'work'): Promise<MeetingNotes | null> {
   // SECURITY: Explicit column selection instead of SELECT * (excluding embedding for performance)
-  const result = await query(
+  const result = await queryContext(context,
     `SELECT id, meeting_id, raw_transcript, structured_summary, key_decisions, action_items,
             topics_discussed, follow_ups, sentiment, created_at
      FROM meeting_notes WHERE meeting_id = $1`,
@@ -299,7 +304,8 @@ export async function getMeetingNotes(meetingId: string): Promise<MeetingNotes |
  */
 export async function searchMeetings(
   searchQuery: string,
-  limit: number = 10
+  limit: number = 10,
+  context: AIContext = 'work'
 ): Promise<{ meeting: Meeting; notes: MeetingNotes; similarity: number }[]> {
   const embedding = await generateEmbedding(searchQuery);
 
@@ -308,7 +314,7 @@ export async function searchMeetings(
   }
 
   // SECURITY: Explicit column selection instead of SELECT *
-  const result = await query(
+  const result = await queryContext(context,
     `SELECT
       mn.id, mn.meeting_id, mn.raw_transcript, mn.structured_summary, mn.key_decisions,
       mn.action_items, mn.topics_discussed, mn.follow_ups, mn.sentiment, mn.created_at,
@@ -359,10 +365,12 @@ export async function searchMeetings(
 export async function getAllActionItems(filters?: {
   completed?: boolean;
   company_id?: string;
+  context?: AIContext;
 }): Promise<{ meeting: Meeting; action_item: ActionItem; notes_id: string }[]> {
   let whereClause = 'WHERE 1=1';
   const params: string[] = [];
   let paramIndex = 1;
+  const ctx = filters?.context || 'work';
 
   if (filters?.company_id) {
     whereClause += ` AND m.company_id = $${paramIndex++}`;
@@ -370,7 +378,7 @@ export async function getAllActionItems(filters?: {
   }
 
   // SECURITY: Explicit column selection instead of SELECT *
-  const result = await query(
+  const result = await queryContext(ctx,
     `SELECT mn.id as notes_id, mn.action_items,
             m.id, m.company_id, m.title, m.date, m.duration_minutes, m.participants,
             m.location, m.meeting_type, m.status, m.created_at, m.updated_at

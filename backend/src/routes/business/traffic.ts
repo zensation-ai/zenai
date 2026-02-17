@@ -8,6 +8,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler } from '../../middleware/errorHandler';
 import { ga4Connector } from '../../services/business';
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 
 export const trafficRouter = Router();

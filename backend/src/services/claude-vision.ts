@@ -92,82 +92,95 @@ export interface VisionOptions {
 }
 
 // ===========================================
-// Task-Specific Prompts
+// Task-Specific Prompts (Bilingual: DE/EN)
 // ===========================================
 
-const VISION_PROMPTS: Record<VisionTask, { system: string; instruction: string }> = {
+type PromptSet = { system: string; instruction: string };
+type BilingualPrompts = Record<'de' | 'en', PromptSet>;
+
+const VISION_PROMPTS_I18N: Record<VisionTask, BilingualPrompts> = {
   describe: {
-    system: `Du bist ein Experte für Bildbeschreibung. Beschreibe Bilder präzise, strukturiert und vollständig.`,
-    instruction: `Beschreibe dieses Bild detailliert:
-- Was ist zu sehen (Hauptelemente)?
-- Welche Details sind erkennbar?
-- Welcher Kontext/Zweck ist erkennbar?`,
+    de: {
+      system: `Du bist ein Experte für Bildbeschreibung. Beschreibe Bilder präzise, strukturiert und vollständig.`,
+      instruction: `Beschreibe dieses Bild detailliert:\n- Was ist zu sehen (Hauptelemente)?\n- Welche Details sind erkennbar?\n- Welcher Kontext/Zweck ist erkennbar?`,
+    },
+    en: {
+      system: `You are an expert in image description. Describe images precisely, structured, and completely.`,
+      instruction: `Describe this image in detail:\n- What is visible (main elements)?\n- What details are recognizable?\n- What context/purpose is apparent?`,
+    },
   },
 
   extract_text: {
-    system: `Du bist ein OCR-Experte. Extrahiere jeden sichtbaren Text aus Bildern präzise und strukturiert.`,
-    instruction: `Extrahiere ALLEN sichtbaren Text aus diesem Bild.
-
-Formatiere die Ausgabe als JSON:
-{
-  "extractedText": "Der vollständige extrahierte Text",
-  "textBlocks": [
-    {"position": "oben links", "text": "..."},
-    {"position": "mitte", "text": "..."}
-  ],
-  "confidence": 0.0-1.0
-}`,
+    de: {
+      system: `Du bist ein OCR-Experte. Extrahiere jeden sichtbaren Text aus Bildern präzise und strukturiert.`,
+      instruction: `Extrahiere ALLEN sichtbaren Text aus diesem Bild.\n\nFormatiere die Ausgabe als JSON:\n{\n  "extractedText": "Der vollständige extrahierte Text",\n  "textBlocks": [\n    {"position": "oben links", "text": "..."},\n    {"position": "mitte", "text": "..."}\n  ],\n  "confidence": 0.0-1.0\n}`,
+    },
+    en: {
+      system: `You are an OCR expert. Extract all visible text from images precisely and structured.`,
+      instruction: `Extract ALL visible text from this image.\n\nFormat the output as JSON:\n{\n  "extractedText": "The complete extracted text",\n  "textBlocks": [\n    {"position": "top left", "text": "..."},\n    {"position": "center", "text": "..."}\n  ],\n  "confidence": 0.0-1.0\n}`,
+    },
   },
 
   analyze: {
-    system: `Du bist ein Bildanalytiker. Analysiere Bilder tiefgehend und identifiziere wichtige Muster, Informationen und Bedeutungen.`,
-    instruction: `Analysiere dieses Bild gründlich:
-
-1. INHALT: Was zeigt das Bild?
-2. KONTEXT: In welchem Zusammenhang steht es?
-3. DETAILS: Welche wichtigen Details sind erkennbar?
-4. BEDEUTUNG: Welche Informationen/Erkenntnisse kann man ableiten?
-5. QUALITÄT: Wie ist die Bildqualität und was fehlt ggf.?`,
+    de: {
+      system: `Du bist ein Bildanalytiker. Analysiere Bilder tiefgehend und identifiziere wichtige Muster, Informationen und Bedeutungen.`,
+      instruction: `Analysiere dieses Bild gründlich:\n\n1. INHALT: Was zeigt das Bild?\n2. KONTEXT: In welchem Zusammenhang steht es?\n3. DETAILS: Welche wichtigen Details sind erkennbar?\n4. BEDEUTUNG: Welche Informationen/Erkenntnisse kann man ableiten?\n5. QUALITÄT: Wie ist die Bildqualität und was fehlt ggf.?`,
+    },
+    en: {
+      system: `You are an image analyst. Analyze images deeply and identify important patterns, information, and meanings.`,
+      instruction: `Analyze this image thoroughly:\n\n1. CONTENT: What does the image show?\n2. CONTEXT: What is its context?\n3. DETAILS: What important details are visible?\n4. SIGNIFICANCE: What insights can be derived?\n5. QUALITY: How is the image quality and what might be missing?`,
+    },
   },
 
   extract_ideas: {
-    system: `Du bist ein Ideen-Extraktor. Identifiziere actionable Ideen, Aufgaben und Erkenntnisse aus visuellen Inhalten.`,
-    instruction: `Extrahiere alle Ideen, Aufgaben und Erkenntnisse aus diesem Bild.
-
-Antworte als JSON:
-{
-  "ideas": [
-    {
-      "title": "Kurzer Titel",
-      "type": "idea|task|insight|problem|question",
-      "description": "Beschreibung",
-      "priority": "low|medium|high"
-    }
-  ],
-  "summary": "Zusammenfassung des visuellen Inhalts"
-}`,
+    de: {
+      system: `Du bist ein Ideen-Extraktor. Identifiziere actionable Ideen, Aufgaben und Erkenntnisse aus visuellen Inhalten.`,
+      instruction: `Extrahiere alle Ideen, Aufgaben und Erkenntnisse aus diesem Bild.\n\nAntworte als JSON:\n{\n  "ideas": [\n    {\n      "title": "Kurzer Titel",\n      "type": "idea|task|insight|problem|question",\n      "description": "Beschreibung",\n      "priority": "low|medium|high"\n    }\n  ],\n  "summary": "Zusammenfassung des visuellen Inhalts"\n}`,
+    },
+    en: {
+      system: `You are an idea extractor. Identify actionable ideas, tasks, and insights from visual content.`,
+      instruction: `Extract all ideas, tasks, and insights from this image.\n\nRespond as JSON:\n{\n  "ideas": [\n    {\n      "title": "Short title",\n      "type": "idea|task|insight|problem|question",\n      "description": "Description",\n      "priority": "low|medium|high"\n    }\n  ],\n  "summary": "Summary of the visual content"\n}`,
+    },
   },
 
   summarize: {
-    system: `Du bist ein Zusammenfasser. Fasse visuelle Inhalte prägnant und informativ zusammen.`,
-    instruction: `Fasse den Inhalt dieses Bildes in 2-3 Sätzen zusammen. Fokussiere auf die Kernaussage oder Hauptinformation.`,
+    de: {
+      system: `Du bist ein Zusammenfasser. Fasse visuelle Inhalte prägnant und informativ zusammen.`,
+      instruction: `Fasse den Inhalt dieses Bildes in 2-3 Sätzen zusammen. Fokussiere auf die Kernaussage oder Hauptinformation.`,
+    },
+    en: {
+      system: `You are a summarizer. Summarize visual content concisely and informatively.`,
+      instruction: `Summarize the content of this image in 2-3 sentences. Focus on the key message or main information.`,
+    },
   },
 
   compare: {
-    system: `Du bist ein Bild-Vergleicher. Vergleiche mehrere Bilder und identifiziere Gemeinsamkeiten und Unterschiede.`,
-    instruction: `Vergleiche diese Bilder:
-
-1. GEMEINSAMKEITEN: Was haben sie gemeinsam?
-2. UNTERSCHIEDE: Was ist unterschiedlich?
-3. ZUSAMMENHANG: Wie hängen sie zusammen?
-4. SCHLUSSFOLGERUNG: Was lässt sich daraus ableiten?`,
+    de: {
+      system: `Du bist ein Bild-Vergleicher. Vergleiche mehrere Bilder und identifiziere Gemeinsamkeiten und Unterschiede.`,
+      instruction: `Vergleiche diese Bilder:\n\n1. GEMEINSAMKEITEN: Was haben sie gemeinsam?\n2. UNTERSCHIEDE: Was ist unterschiedlich?\n3. ZUSAMMENHANG: Wie hängen sie zusammen?\n4. SCHLUSSFOLGERUNG: Was lässt sich daraus ableiten?`,
+    },
+    en: {
+      system: `You are an image comparator. Compare multiple images and identify similarities and differences.`,
+      instruction: `Compare these images:\n\n1. SIMILARITIES: What do they have in common?\n2. DIFFERENCES: What is different?\n3. RELATIONSHIP: How are they connected?\n4. CONCLUSION: What can be inferred?`,
+    },
   },
 
   qa: {
-    system: `Du bist ein visueller Assistent. Beantworte Fragen zu Bildern präzise und hilfreich.`,
-    instruction: `Beantworte die Frage basierend auf dem Bildinhalt.`,
+    de: {
+      system: `Du bist ein visueller Assistent. Beantworte Fragen zu Bildern präzise und hilfreich.`,
+      instruction: `Beantworte die Frage basierend auf dem Bildinhalt.`,
+    },
+    en: {
+      system: `You are a visual assistant. Answer questions about images precisely and helpfully.`,
+      instruction: `Answer the question based on the image content.`,
+    },
   },
 };
+
+/** Get prompts for a task in the specified language (defaults to 'de'). */
+function getVisionPrompt(task: VisionTask, language: 'de' | 'en' = 'de'): PromptSet {
+  return VISION_PROMPTS_I18N[task][language];
+}
 
 // ===========================================
 // Claude Vision Service Class
@@ -205,12 +218,8 @@ class ClaudeVisionService {
     });
 
     try {
-      const taskConfig = VISION_PROMPTS[task];
-      let systemPrompt = taskConfig.system;
-
-      if (language === 'en') {
-        systemPrompt += '\n\nRespond in English.';
-      }
+      const taskConfig = getVisionPrompt(task, language);
+      const systemPrompt = taskConfig.system;
 
       // Build content array with images
       const content: Anthropic.MessageCreateParams['messages'][0]['content'] = [];
@@ -227,9 +236,10 @@ class ClaudeVisionService {
       }
 
       // Add instruction
+      const contextLabel = language === 'en' ? 'CONTEXT' : 'KONTEXT';
       let instruction = taskConfig.instruction;
       if (context) {
-        instruction = `[KONTEXT]\n${context}\n\n${instruction}`;
+        instruction = `[${contextLabel}]\n${context}\n\n${instruction}`;
       }
       content.push({ type: 'text', text: instruction });
 
@@ -371,6 +381,7 @@ class ClaudeVisionService {
 
   /**
    * Process a document image (screenshot, scan, etc.)
+   * Uses Promise.allSettled to return partial results on individual failures.
    */
   async processDocument(
     image: VisionImage,
@@ -380,20 +391,41 @@ class ClaudeVisionService {
     summary: string;
     ideas: Array<{ title: string; type: string; description: string }>;
   }> {
-    // Run text extraction and idea extraction in parallel
-    const [textResult, ideaResult] = await Promise.all([
+    // Run all three analyses in parallel with partial failure handling
+    const [textSettled, ideaSettled, summarySettled] = await Promise.allSettled([
       this.analyze(image, 'extract_text', options),
       this.analyze(image, 'extract_ideas', options),
+      this.analyze(image, 'summarize', options),
     ]);
 
-    // Get summary
-    const summaryResult = await this.analyze(image, 'summarize', options);
+    // Extract results, falling back gracefully on individual failures
+    let text = '';
+    if (textSettled.status === 'fulfilled') {
+      text = textSettled.value.structured?.extractedText || textSettled.value.text;
+    } else {
+      logger.warn('Document text extraction failed', { error: textSettled.reason });
+    }
 
-    return {
-      text: textResult.structured?.extractedText || textResult.text,
-      summary: summaryResult.text,
-      ideas: ideaResult.structured?.ideas || [],
-    };
+    let ideas: Array<{ title: string; type: string; description: string }> = [];
+    if (ideaSettled.status === 'fulfilled') {
+      ideas = ideaSettled.value.structured?.ideas || [];
+    } else {
+      logger.warn('Document idea extraction failed', { error: ideaSettled.reason });
+    }
+
+    let summary = '';
+    if (summarySettled.status === 'fulfilled') {
+      summary = summarySettled.value.text;
+    } else {
+      logger.warn('Document summarization failed', { error: summarySettled.reason });
+    }
+
+    // If all three failed, throw to signal total failure
+    if (textSettled.status === 'rejected' && ideaSettled.status === 'rejected' && summarySettled.status === 'rejected') {
+      throw new Error('All document processing steps failed');
+    }
+
+    return { text, summary, ideas };
   }
 
   /**

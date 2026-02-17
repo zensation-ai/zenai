@@ -7,6 +7,7 @@
  */
 
 import axios from 'axios';
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import type { BusinessConnector, PerformanceMetrics } from '../../types/business';

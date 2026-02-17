@@ -22,6 +22,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateContextParam } from '../utils/validation';
 import { logger } from '../utils/logger';
+import { createTask } from '../services/tasks';
 import type { EventType, EventStatus } from '../services/calendar';
 
 export const calendarRouter = Router();
@@ -340,12 +341,42 @@ calendarRouter.post('/:context/calendar/events/:id/meeting/notes', apiKeyAuth, r
 
   const notes = await processMeetingNotes(meetingId, transcript.trim());
 
+  // Auto-create tasks from AI-extracted action items (non-blocking per item)
+  let tasksCreated = 0;
+  if (notes.action_items && notes.action_items.length > 0) {
+    for (const actionItem of notes.action_items) {
+      try {
+        await createTask(context, {
+          title: actionItem.task,
+          priority: actionItem.priority || 'medium',
+          assignee: actionItem.assignee,
+          status: 'todo',
+          calendar_event_id: id,
+          metadata: {
+            source: 'meeting',
+            source_meeting_id: meetingId,
+          },
+        });
+        tasksCreated++;
+      } catch (err) {
+        logger.warn('Failed to create task from meeting action item', {
+          meetingId, actionItem: actionItem.task,
+          error: err instanceof Error ? err.message : String(err),
+          operation: 'meetingActionItemToTask',
+        });
+      }
+    }
+  }
+
   logger.info('Meeting notes processed from calendar event', {
-    eventId: id, meetingId, context, operation: 'processMeetingNotesFromEvent'
+    eventId: id, meetingId, context, tasksCreated,
+    actionItemCount: notes.action_items?.length || 0,
+    operation: 'processMeetingNotesFromEvent',
   });
 
   res.status(201).json({
     success: true,
     data: notes,
+    tasksCreated,
   });
 }));

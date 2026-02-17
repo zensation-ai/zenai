@@ -92,6 +92,28 @@ export interface EnhancedRAGResult {
 // Configuration
 // ===========================================
 
+/**
+ * Default RAG configuration.
+ *
+ * Tuning rationale:
+ * - `enableHyDE: true` — HyDE improves recall for conceptual/vague queries by
+ *   generating a hypothetical answer first, then using its embedding for search.
+ *   Disable for latency-critical paths (adds ~1 extra LLM call).
+ * - `autoDetectHyDE: true` — Only triggers HyDE when the query looks conceptual
+ *   (questions, abstract terms). Factual/keyword queries skip it for speed.
+ * - `crossEncodeTop: 10` — Re-rank the top 10 candidates. Higher values improve
+ *   recall but increase latency linearly. 10 is a good balance for <500ms total.
+ * - `minRelevance: 0.3` — Permissive threshold: includes borderline results so the
+ *   LLM can decide relevance. Raise to 0.5+ if responses include too much noise.
+ * - `maxResults: 10` — Feed at most 10 context chunks to the LLM. Keeps prompt
+ *   size manageable (~4k tokens of context). Increase for long-form synthesis.
+ *
+ * Scoring weights (in mergeAllResults):
+ * - HYDE_WEIGHT = 0.4 — Conceptual/semantic similarity from hypothetical doc.
+ * - AGENTIC_WEIGHT = 0.6 — Direct keyword + vector search (more precise).
+ *   The 60/40 split favors precision over recall. Adjust toward 50/50 if users
+ *   report missing relevant results on conceptual queries.
+ */
 const DEFAULT_CONFIG: EnhancedRAGConfig = {
   enableHyDE: true,
   autoDetectHyDE: true,
@@ -157,6 +179,7 @@ class EnhancedRAGService {
           })
           .catch(error => {
             logger.warn('HyDE retrieval failed', { error });
+            hydeResults = [];
           })
       );
     }
@@ -172,6 +195,7 @@ class EnhancedRAGService {
         })
         .catch(error => {
           logger.warn('Agentic RAG retrieval failed', { error });
+          agenticResults = [];
         })
     );
 
@@ -369,9 +393,12 @@ class EnhancedRAGService {
     return original.map(result => {
       const rerankedResult = rerankedMap.get(result.id);
       if (rerankedResult) {
+        // Blend original retrieval score with cross-encoder score
+        // (30% original + 70% cross-encoder) to stabilize ranking
+        const blendedScore = result.score * 0.3 + rerankedResult.relevanceScore * 0.7;
         return {
           ...result,
-          score: rerankedResult.relevanceScore,
+          score: blendedScore,
           scores: {
             ...result.scores,
             crossEncoder: rerankedResult.relevanceScore,

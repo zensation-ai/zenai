@@ -7,6 +7,7 @@
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler, ValidationError } from '../../middleware/errorHandler';
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import { reportGenerator } from '../../services/business';
 

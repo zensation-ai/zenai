@@ -15,6 +15,7 @@ import { logger } from '../../utils/logger';
 import { generateClaudeResponse } from '../claude';
 import { generateEmbedding } from '../ai';
 import { cosineSimilarity } from '../../utils/semantic-cache';
+import { formatForPgVector } from '../../utils/embedding';
 
 // ===========================================
 // Types & Interfaces
@@ -387,7 +388,7 @@ Zusammenfassung:`;
            AND i.embedding IS NOT NULL
          ORDER BY i.embedding <=> $2
          LIMIT 15`,
-        [memory.context, `[${queryEmbedding.join(',')}]`]
+        [memory.context, formatForPgVector(queryEmbedding)]
       );
 
       // Calculate relevance scores and filter

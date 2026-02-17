@@ -213,24 +213,13 @@ router.post('/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (r
   const userId = (req.body.userId as string) || 'default';
   const context = getContextFromRequest(req);
 
-  try {
-    const result = await runBatchAnalysis(userId, context);
+  const result = await runBatchAnalysis(userId, context);
 
-    res.json({
-      success: true,
-      ...result,
-      context,
-    });
-  } catch (error) {
-    logger.error('Batch analysis failed', error instanceof Error ? error : undefined, { context });
-    res.status(500).json({
-      success: false,
-      error: process.env.NODE_ENV === 'production'
-        ? 'Batch analysis failed'
-        : (error instanceof Error ? error.message : 'Unknown error'),
-      code: 'INTERNAL_ERROR',
-    });
-  }
+  res.json({
+    success: true,
+    ...result,
+    context,
+  });
 }));
 
 /**

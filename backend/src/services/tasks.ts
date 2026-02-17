@@ -252,9 +252,9 @@ export async function updateTask(
     setClauses.push(`completed_at = NULL`);
   }
 
-  if (setClauses.length === 0) {return null;}
-
   setClauses.push('updated_at = NOW()');
+
+  if (setClauses.length <= 1) {return null;}
 
   const result = await queryContext(context, `
     UPDATE tasks
@@ -470,11 +470,16 @@ export async function convertIdeaToTask(
   }
 
   const idea = ideaResult.rows[0];
+  const title = idea.title as string | null;
+
+  if (!title) {
+    throw new Error('Idea has no title and cannot be converted to a task');
+  }
 
   return createTask(context, {
-    title: idea.title as string,
+    title,
     description: (idea.summary as string) || undefined,
-    priority: mapIdeaPriority(idea.priority as string),
+    priority: mapIdeaPriority(idea.priority as string | null),
     source_idea_id: ideaId,
     project_id: projectId,
   });

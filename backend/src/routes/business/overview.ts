@@ -8,6 +8,7 @@
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler } from '../../middleware/errorHandler';
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import { stripeConnector, ga4Connector, gscConnector, uptimeConnector, lighthouseConnector, getConnectorStatuses } from '../../services/business';
 import type { BusinessOverview } from '../../types/business';

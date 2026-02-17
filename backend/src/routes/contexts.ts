@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError, AppError } from '../middleware/errorHandler';
 import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';
 import { getRecentAIActivities, markActivitiesAsRead, getUnreadActivityCount } from '../services/ai-activity-logger';
 import { moveIdea } from '../services/idea-move';
@@ -278,20 +278,7 @@ router.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), async
       throw new NotFoundError('Idea');
     }
     if (error instanceof Error && error.message === 'SCHEMA_MISMATCH') {
-      const detail = (error as unknown as Record<string, unknown>).detail || 'Schema column mismatch between contexts';
-      logger.error('Idea move failed due to schema mismatch', error, {
-        operation: 'moveIdea',
-        sourceContext: context,
-        targetContext,
-        ideaId: id,
-        detail,
-      });
-      res.status(500).json({
-        success: false,
-        error: 'Verschieben fehlgeschlagen — bitte versuche es erneut.',
-        code: 'SCHEMA_MISMATCH',
-      });
-      return;
+      throw new AppError('Verschieben fehlgeschlagen — bitte versuche es erneut.', 500, 'SCHEMA_MISMATCH');
     }
     logger.error('Idea move failed', error instanceof Error ? error : undefined, {
       operation: 'moveIdea',

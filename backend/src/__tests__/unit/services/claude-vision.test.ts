@@ -426,7 +426,9 @@ describe('Claude Vision Service', () => {
       const mockClient = getClaudeClient() as jest.Mocked<any>;
       const systemPrompt = mockClient.messages.create.mock.calls[0][0].system;
 
-      expect(systemPrompt).toContain('Respond in English');
+      // With i18n prompts, English uses native English system prompt
+      expect(systemPrompt).toContain('image description');
+      expect(systemPrompt).not.toContain('Bildbeschreibung');
     });
   });
 

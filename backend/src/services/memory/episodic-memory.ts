@@ -458,28 +458,15 @@ export class EpisodicMemoryService {
     episodeIds: string[],
     context: AIContext
   ): Promise<void> {
-    try {
-      // Use the database function for atomic update
-      await queryContext(
-        context,
-        `SELECT update_episodic_retrieval_stats($1)`,
-        [episodeIds]
-      );
-    } catch (fnError) {
-      // Fallback to manual update if database function doesn't exist
-      logger.debug('update_episodic_retrieval_stats function not available, using fallback', {
-        error: fnError instanceof Error ? fnError.message : 'Unknown',
-      });
-      await queryContext(
-        context,
-        `UPDATE episodic_memories
-         SET retrieval_count = retrieval_count + 1,
-             retrieval_strength = LEAST(1.0, retrieval_strength + 0.05),
-             last_retrieved = NOW()
-         WHERE id = ANY($1)`,
-        [episodeIds]
-      );
-    }
+    await queryContext(
+      context,
+      `UPDATE episodic_memories
+       SET retrieval_count = retrieval_count + 1,
+           retrieval_strength = LEAST(1.0, retrieval_strength + 0.05),
+           last_retrieved = NOW()
+       WHERE id = ANY($1)`,
+      [episodeIds]
+    );
   }
 
   // ===========================================
@@ -972,10 +959,16 @@ export class EpisodicMemoryService {
    * Parse embedding from database format
    */
   private parseEmbedding(embedding: unknown): number[] {
-    if (Array.isArray(embedding)) {return embedding as number[];}
+    if (!embedding) {return [];}
+    if (Array.isArray(embedding)) {
+      return (embedding as number[]).every(n => typeof n === 'number' && !isNaN(n))
+        ? embedding as number[]
+        : [];
+    }
     if (typeof embedding === 'string') {
       const cleaned = embedding.replace(/[[\]]/g, '');
-      return cleaned.split(',').map(Number);
+      const parsed = cleaned.split(',').map(Number);
+      return parsed.length > 0 && parsed.every(n => !isNaN(n)) ? parsed : [];
     }
     return [];
   }

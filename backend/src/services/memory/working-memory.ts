@@ -13,7 +13,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { AIContext, queryContext } from '../../utils/database-context';
+import { AIContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
 import { cosineSimilarity } from '../../utils/embedding';
@@ -558,134 +558,6 @@ export class WorkingMemoryService {
     return [...state.slots].sort((a, b) =>
       (b.activation * b.priority) - (a.activation * a.priority)
     );
-  }
-
-  // ===========================================
-  // Persistence (Optional)
-  // ===========================================
-
-  /**
-   * Persist working memory to database
-   */
-  async persist(sessionId: string): Promise<void> {
-    const state = this.states.get(sessionId);
-    if (!state) {return;}
-
-    try {
-      await queryContext(
-        state.context,
-        `INSERT INTO working_memory_sessions
-         (session_id, context, current_goal, sub_goals, slots, capacity, last_activity)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (session_id) DO UPDATE SET
-           current_goal = $3,
-           sub_goals = $4,
-           slots = $5,
-           last_activity = $7`,
-        [
-          sessionId,
-          state.context,
-          state.currentGoal,
-          state.subGoals,
-          JSON.stringify(state.slots.map(s => ({
-            id: s.id,
-            type: s.type,
-            content: s.content,
-            priority: s.priority,
-            activation: s.activation,
-            addedAt: s.addedAt.toISOString(),
-            lastAccessed: s.lastAccessed.toISOString(),
-          }))),
-          state.capacity,
-          new Date(),
-        ]
-      );
-
-      logger.debug('Working memory persisted', { sessionId });
-    } catch (error) {
-      logger.debug('Failed to persist working memory', {
-        sessionId,
-        error: error instanceof Error ? error.message : 'Unknown',
-      });
-    }
-  }
-
-  /**
-   * Load working memory from database
-   */
-  async load(sessionId: string, context: AIContext): Promise<WorkingMemoryState | null> {
-    try {
-      const result = await queryContext(
-        context,
-        `SELECT * FROM working_memory_sessions
-         WHERE session_id = $1
-           AND last_activity > NOW() - INTERVAL '30 minutes'`,
-        [sessionId]
-      );
-
-      if (result.rows.length === 0) {return null;}
-
-      const row = result.rows[0] as Record<string, unknown>;
-
-      /** Serialized slot structure from database */
-      interface SerializedSlot {
-        id: string;
-        type: SlotType;
-        content: string;
-        priority: number;
-        activation: number;
-        addedAt: string;
-        lastAccessed: string;
-      }
-
-      let slots: SerializedSlot[] = [];
-      try {
-        const parsed = JSON.parse((row.slots as string) || '[]') as unknown;
-        if (!Array.isArray(parsed)) {
-          logger.warn('Working memory slots is not an array, resetting', { sessionId });
-          slots = [];
-        } else {
-          slots = parsed as SerializedSlot[];
-        }
-      } catch (parseError) {
-        logger.warn('Failed to parse working memory slots, resetting', {
-          sessionId,
-          error: parseError instanceof Error ? parseError.message : 'Unknown',
-        });
-        slots = [];
-      }
-
-      const state: WorkingMemoryState = {
-        sessionId: row.session_id as string,
-        context: row.context as AIContext,
-        currentGoal: row.current_goal as string,
-        subGoals: (row.sub_goals as string[]) || [],
-        capacity: (row.capacity as number) || CONFIG.DEFAULT_CAPACITY,
-        slots: slots.map((s: SerializedSlot) => ({
-          id: s.id,
-          type: s.type,
-          content: s.content,
-          priority: s.priority,
-          activation: s.activation,
-          addedAt: new Date(s.addedAt),
-          lastAccessed: new Date(s.lastAccessed),
-        })),
-        createdAt: new Date(row.created_at as string),
-        lastActivity: new Date(row.last_activity as string),
-      };
-
-      this.states.set(sessionId, state);
-
-      logger.debug('Working memory loaded from database', { sessionId });
-
-      return state;
-    } catch (error) {
-      logger.debug('Failed to load working memory', {
-        sessionId,
-        error: error instanceof Error ? error.message : 'Unknown',
-      });
-      return null;
-    }
   }
 
   // ===========================================

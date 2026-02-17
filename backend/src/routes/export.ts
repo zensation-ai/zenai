@@ -744,14 +744,14 @@ exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
       FROM ideas
       WHERE context = $1
       ORDER BY created_at DESC
-      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
+      LIMIT $2`, [ctx, MAX_BACKUP_ROWS]),
     queryContext(ctx, `
       SELECT id, company_id, title, date, duration_minutes, participants, location,
              meeting_type, status, context, created_at, updated_at
       FROM meetings
       WHERE context = $1
       ORDER BY date DESC
-      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
+      LIMIT $2`, [ctx, MAX_BACKUP_ROWS]),
     queryContext(ctx, `
       SELECT id, user_id, title, summary, suggested_type, suggested_category,
              thought_count, confidence_score, maturity_score, status,
@@ -759,14 +759,14 @@ exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
       FROM thought_clusters
       WHERE context = $1
       ORDER BY created_at DESC
-      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
+      LIMIT $2`, [ctx, MAX_BACKUP_ROWS]),
     queryContext(ctx, `
       SELECT id, user_id, raw_input, source, user_tags, cluster_id,
              similarity_to_cluster, is_processed, context, created_at, updated_at
       FROM loose_thoughts
       WHERE context = $1
       ORDER BY created_at DESC
-      LIMIT ${MAX_BACKUP_ROWS}`, [ctx]),
+      LIMIT $2`, [ctx, MAX_BACKUP_ROWS]),
   ]);
 
   const backup = {
@@ -954,11 +954,17 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
     res.setHeader('Content-Disposition', `attachment; filename="export-${timestamp}.md"`);
     res.send(markdown);
   } else if (format === 'pdf') {
-    // For PDF, redirect to the existing PDF endpoint (ideas only)
+    // Buffer PDF before sending to avoid partial responses on error
     const pdfDoc = new PDFDocument();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="export-${timestamp}.pdf"`);
-    pdfDoc.pipe(res);
+    const chunks: Buffer[] = [];
+
+    pdfDoc.on('data', (chunk) => chunks.push(chunk));
+    pdfDoc.on('end', () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="export-${timestamp}.pdf"`);
+      res.send(pdfBuffer);
+    });
 
     pdfDoc.fontSize(20).text('AI Brain Export', { align: 'center' });
     pdfDoc.fontSize(12).text(`Exported: ${timestamp} | Context: ${ctx}`, { align: 'center' });
@@ -973,7 +979,7 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
     }
 
     pdfDoc.end();
-    return; // Don't send res.json after piping PDF
+    return; // Don't send res.json after buffering PDF
   }
 }));
 

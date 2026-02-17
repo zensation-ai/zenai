@@ -14,6 +14,12 @@ jest.mock('../../utils/database', () => ({
   query: jest.fn(),
 }));
 
+jest.mock('../../utils/database-context', () => ({
+  queryContext: jest.fn(),
+  isValidUUID: (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+}));
+
 // Mock auth middleware to bypass authentication in tests
 jest.mock('../../middleware/auth', () => ({
   apiKeyAuth: jest.fn((req, res, next) => {
@@ -68,10 +74,12 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 import { query } from '../../utils/database';
+import { queryContext } from '../../utils/database-context';
 import { generateEmbedding } from '../../utils/ollama';
 import { errorHandler } from '../../middleware/errorHandler';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
 
 describe('Media API Integration Tests', () => {
@@ -86,7 +94,7 @@ describe('Media API Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 } as any);
+    mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
   });
 
   // ===========================================
@@ -95,7 +103,7 @@ describe('Media API Integration Tests', () => {
 
   describe('POST /api/:context/media', () => {
     it('should upload image successfully', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{
           id: 'test-id',
           media_type: 'photo',
@@ -136,7 +144,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should generate embedding for caption', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ id: 'id', media_type: 'photo', filename: 'test.jpg', caption: 'Test', context: 'personal' }],
         rowCount: 1,
       } as any);
@@ -151,7 +159,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should handle media without caption', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ id: 'id', media_type: 'photo', filename: 'test.jpg', caption: '', context: 'work' }],
         rowCount: 1,
       } as any);
@@ -167,7 +175,7 @@ describe('Media API Integration Tests', () => {
       const contexts = ['personal', 'work'];
 
       for (const context of contexts) {
-        mockQuery.mockResolvedValueOnce({
+        mockQueryContext.mockResolvedValueOnce({
           rows: [{ id: 'id', media_type: 'photo', filename: 'test.jpg', context }],
           rowCount: 1,
         } as any);
@@ -188,7 +196,7 @@ describe('Media API Integration Tests', () => {
 
   describe('GET /api/all-media', () => {
     it('should return list of media items', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [
           { id: '1', media_type: 'photo', filename: 'photo1.jpg', caption: 'Test 1', context: 'personal' },
           { id: '2', media_type: 'video', filename: 'video1.mp4', caption: 'Test 2', context: 'work' },
@@ -206,7 +214,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should filter by context', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ id: '1', media_type: 'photo', filename: 'photo1.jpg', context: 'personal' }],
         rowCount: 1,
       } as any);
@@ -215,33 +223,36 @@ describe('Media API Integration Tests', () => {
         .get('/api/all-media?context=personal')
         .expect(200);
 
-      expect(mockQuery).toHaveBeenCalledWith(
+      expect(mockQueryContext).toHaveBeenCalledWith(
+        'personal',
         expect.stringContaining('context = $'),
         expect.arrayContaining(['personal'])
       );
     });
 
     it('should filter by type', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       await request(app)
         .get('/api/all-media?type=video')
         .expect(200);
 
-      expect(mockQuery).toHaveBeenCalledWith(
+      expect(mockQueryContext).toHaveBeenCalledWith(
+        'personal',
         expect.stringContaining('media_type = $'),
         expect.arrayContaining(['video'])
       );
     });
 
     it('should respect limit parameter', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       await request(app)
         .get('/api/all-media?limit=10')
         .expect(200);
 
-      expect(mockQuery).toHaveBeenCalledWith(
+      expect(mockQueryContext).toHaveBeenCalledWith(
+        'personal',
         expect.any(String),
         expect.arrayContaining([10])
       );
@@ -254,7 +265,7 @@ describe('Media API Integration Tests', () => {
 
   describe('GET /api/media-file/:id', () => {
     it('should return 404 for non-existent media', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const response = await request(app)
         .get('/api/media-file/non-existent-id');
@@ -264,7 +275,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should detect path traversal attempts', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ file_path: '../../etc/passwd' }],
         rowCount: 1,
       } as any);
@@ -283,7 +294,7 @@ describe('Media API Integration Tests', () => {
 
   describe('POST /api/:context/media/analyze', () => {
     it('should analyze image and return results', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{
           id: 'analyzed-id',
           media_type: 'photo',
@@ -306,7 +317,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should handle document analysis type', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ id: 'doc-id', media_type: 'photo', filename: 'doc.jpg', context: 'work' }],
         rowCount: 1,
       } as any);
@@ -354,7 +365,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent media', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const response = await request(app)
         .post('/api/media/non-existent/thumbnail');
@@ -363,7 +374,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should return error for non-video media', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ id: 'photo-id', media_type: 'photo', filename: 'photo.jpg' }],
         rowCount: 1,
       } as any);
@@ -381,7 +392,7 @@ describe('Media API Integration Tests', () => {
 
   describe('GET /api/media/:id/thumbnail', () => {
     it('should return 404 if thumbnail not generated', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ thumbnail_path: null }],
         rowCount: 1,
       } as any);
@@ -394,7 +405,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should return 404 for non-existent media', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const response = await request(app)
         .get('/api/media/non-existent/thumbnail');
@@ -430,7 +441,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should return error for non-video media', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{ id: 'photo-id', media_type: 'photo' }],
         rowCount: 1,
       } as any);
@@ -449,7 +460,7 @@ describe('Media API Integration Tests', () => {
 
   describe('GET /api/media/:id/info', () => {
     it('should return media info', async () => {
-      mockQuery.mockResolvedValueOnce({
+      mockQueryContext.mockResolvedValueOnce({
         rows: [{
           id: 'media-id',
           media_type: 'video',
@@ -495,7 +506,7 @@ describe('Media API Integration Tests', () => {
     });
 
     it('should handle non-existent media on info', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const response = await request(app)
         .get('/api/media/non-existent/info');
@@ -511,7 +522,7 @@ describe('Media API Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      mockQuery.mockRejectedValueOnce(new Error('Database connection failed'));
+      mockQueryContext.mockRejectedValueOnce(new Error('Database connection failed'));
 
       const response = await request(app)
         .get('/api/all-media');

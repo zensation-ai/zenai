@@ -8,6 +8,8 @@
 import { getClaudeClient, executeWithProtection, CLAUDE_MODEL } from './claude/client';
 import { queryContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { episodicMemory } from './memory/episodic-memory';
+import { sendNotification } from './push-notifications';
 
 // ============================================================
 // Types
@@ -129,6 +131,38 @@ ${truncated}`,
       analysis.sentiment || null,
       JSON.stringify(analysis.action_items || []),
     ]);
+
+    // Store in episodic memory so chat can reference email context
+    try {
+      await episodicMemory.store(
+        `Email von ${email.from_name || email.from_address}: ${email.subject || '(Kein Betreff)'}`,
+        analysis.summary || '',
+        `email-${emailId}`,
+        context
+      );
+    } catch (memErr) {
+      logger.warn('Failed to store email in episodic memory', {
+        emailId, error: memErr instanceof Error ? memErr.message : String(memErr),
+        operation: 'processEmailWithAI',
+      });
+    }
+
+    // Notify on high/urgent priority emails
+    if (analysis.priority === 'high' || analysis.priority === 'urgent') {
+      try {
+        await sendNotification(context, {
+          type: 'custom',
+          title: `${analysis.priority === 'urgent' ? 'Dringend' : 'Wichtig'}: ${email.subject || 'Neue E-Mail'}`,
+          body: analysis.summary || `E-Mail von ${email.from_name || email.from_address}`,
+          data: { emailId, category: analysis.category, priority: analysis.priority },
+        });
+      } catch (notifErr) {
+        logger.warn('Failed to send email notification', {
+          emailId, error: notifErr instanceof Error ? notifErr.message : String(notifErr),
+          operation: 'processEmailWithAI',
+        });
+      }
+    }
 
     logger.info('Email AI analysis complete', {
       emailId,

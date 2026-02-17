@@ -7,9 +7,10 @@
  * - Pagination helpers
  */
 
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ErrorCode, ErrorCodes, PaginationInfo } from '../types';
 import { logger } from './logger';
+import { toIntBounded } from './validation';
 
 // ===========================================
 // Response Types
@@ -102,6 +103,29 @@ export function sendSuccess<T extends Record<string, unknown>>(
  */
 export function sendCreated<T extends Record<string, unknown>>(res: Response, fields: T, requestId?: string): void {
   sendSuccess(res, { fields, requestId }, 201);
+}
+
+/**
+ * Send a simple data response: `{ success: true, data }`.
+ * Replaces the common `res.json({ success: true, data })` one-liner.
+ */
+export function sendData(res: Response, data: unknown, statusCode: number = 200): void {
+  res.status(statusCode).json({ success: true, data });
+}
+
+/**
+ * Send a list response: `{ success: true, data, count }`.
+ * Replaces `res.json({ success: true, data: items, count: items.length })`.
+ */
+export function sendList(res: Response, data: unknown[], count?: number): void {
+  res.json({ success: true, data, count: count ?? data.length });
+}
+
+/**
+ * Send a message-only response: `{ success: true, message }`.
+ */
+export function sendMessage(res: Response, message: string, extra?: Record<string, unknown>): void {
+  res.json({ success: true, message, ...extra });
 }
 
 /**
@@ -252,6 +276,25 @@ export function sendPaginated<T>(
     pagination: createPaginationInfo(total, limit, offset),
     requestId,
   });
+}
+
+/**
+ * Parse pagination params from an Express request.
+ * Replaces the repeated `Math.min(parseInt(req.query.limit, 10) || X, Y)` pattern.
+ *
+ * @example
+ * const { limit, offset } = parsePagination(req); // defaults: limit=50, max=200
+ * const { limit, offset } = parsePagination(req, { defaultLimit: 100, maxLimit: 500 });
+ */
+export function parsePagination(
+  req: Request,
+  options: { defaultLimit?: number; maxLimit?: number } = {}
+): { limit: number; offset: number } {
+  const { defaultLimit = 50, maxLimit = 200 } = options;
+  return {
+    limit: toIntBounded(req.query.limit as string | undefined, defaultLimit, 1, maxLimit),
+    offset: toIntBounded(req.query.offset as string | undefined, 0, 0, Number.MAX_SAFE_INTEGER),
+  };
 }
 
 // ===========================================

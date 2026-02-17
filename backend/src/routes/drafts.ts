@@ -353,6 +353,9 @@ draftsRouter.post(
 
     // Validate quality aspects if provided
     if (qualityAspects) {
+      if (typeof qualityAspects !== 'object' || Array.isArray(qualityAspects) || qualityAspects === null) {
+        throw new ValidationError('qualityAspects must be an object with aspect keys and numeric values');
+      }
       const validAspects = ['accuracy', 'tone', 'completeness', 'relevance', 'structure'];
       for (const [key, value] of Object.entries(qualityAspects)) {
         if (!validAspects.includes(key)) {

@@ -7,6 +7,7 @@
  * @module services/business/report-generator
  */
 
+// pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import Anthropic from '@anthropic-ai/sdk';
