@@ -125,11 +125,12 @@ export interface InboundEmail {
 export async function getInboundEmail(emailId: string): Promise<InboundEmail> {
   const client = getClient();
 
-  // Resend's receiving API to get full email body
-  const { data, error } = await client.emails.get(emailId);
+  // Use the Receiving API — emails.get() only works for outbound emails
+  // See: https://resend.com/docs/dashboard/receiving/get-email-content
+  const { data, error } = await client.emails.receiving.get(emailId);
 
   if (error) {
-    logger.error('Resend get inbound email error', undefined, { emailId, errorMsg: error.message, operation: 'getInboundEmail' });
+    logger.error('Resend receiving.get error', undefined, { emailId, errorMsg: error.message, operation: 'getInboundEmail' });
     throw new Error(`Failed to get inbound email: ${error.message}`);
   }
 
