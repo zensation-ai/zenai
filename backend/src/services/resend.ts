@@ -168,6 +168,9 @@ export interface ResendWebhookEvent {
     bcc: string[];
     subject: string;
     message_id?: string;
+    // Inbound email body (available in email.received events)
+    html?: string;
+    text?: string;
     attachments?: Array<{
       id: string;
       filename: string;

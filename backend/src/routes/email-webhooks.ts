@@ -125,20 +125,22 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
 
   const { name: fromName, address: fromAddress } = extractNameAndAddress(data.from);
 
-  // Fetch full email body (not included in webhook payload)
-  let bodyHtml: string | null = null;
-  let bodyText: string | null = null;
+  // Get email body: prefer webhook payload fields, fallback to API
+  let bodyHtml: string | null = data.html || null;
+  let bodyText: string | null = data.text || null;
 
-  try {
-    const fullEmail = await getInboundEmail(data.email_id);
-    bodyHtml = fullEmail.html;
-    bodyText = fullEmail.text;
-  } catch (err) {
-    logger.warn('Failed to fetch full email body, storing without body', {
-      emailId: data.email_id,
-      error: (err as Error).message,
-      operation: 'processInboundEmail',
-    });
+  if (!bodyHtml && !bodyText) {
+    try {
+      const fullEmail = await getInboundEmail(data.email_id);
+      bodyHtml = fullEmail.html;
+      bodyText = fullEmail.text;
+    } catch (err) {
+      logger.warn('Failed to fetch full email body, storing without body', {
+        emailId: data.email_id,
+        error: (err as Error).message,
+        operation: 'processInboundEmail',
+      });
+    }
   }
 
   // Map recipient addresses to JSON
