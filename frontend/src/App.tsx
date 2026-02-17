@@ -52,6 +52,7 @@ const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').th
 const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
 const BusinessDashboard = lazy(() => import('./components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard })));
 const PlannerPage = lazy(() => import('./components/PlannerPage/PlannerPage').then(m => ({ default: m.PlannerPage })));
+const EmailPage = lazy(() => import('./components/EmailPage/EmailPage').then(m => ({ default: m.EmailPage })));
 const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
 const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
 const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
@@ -78,6 +79,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'insights': '/insights',
   'documents': '/documents',
   'calendar': '/calendar',
+  'email': '/email',
   'business': '/business',
   'learning': '/learning',
   'my-ai': '/my-ai',
@@ -121,6 +123,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/insights': 'insights',
   '/documents': 'documents',
   '/calendar': 'calendar',
+  '/email': 'email',
   '/business': 'business',
   '/learning': 'learning',
   '/my-ai': 'my-ai',
@@ -161,6 +164,7 @@ function useUrlNavigation() {
     if (fullPath.startsWith('/workshop/')) return 'workshop';
     if (fullPath.startsWith('/documents/')) return 'documents';
     if (fullPath.startsWith('/calendar/')) return 'calendar';
+    if (fullPath.startsWith('/email/')) return 'email';
     if (fullPath.startsWith('/business/')) return 'business';
     if (fullPath.startsWith('/ideas/')) return 'ideas';
     if (fullPath.startsWith('/my-ai/')) return 'my-ai';
@@ -183,7 +187,7 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar'];
+      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email'];
       if (tabPages.includes(page)) {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
@@ -669,6 +673,16 @@ function AuthenticatedApp() {
           </Suspense>
         );
       }
+
+      case 'email':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <EmailPage
+              context={context}
+              initialTab={(tabParam || 'inbox') as 'inbox' | 'sent' | 'drafts' | 'archived'}
+            />
+          </Suspense>
+        );
 
       case 'business':
         return (

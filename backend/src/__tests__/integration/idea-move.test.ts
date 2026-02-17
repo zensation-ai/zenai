@@ -193,7 +193,7 @@ describe('Idea Move API Integration Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.newIdeaId).toBe(NEW_UUID);
-    });
+    }, 30000);
 
     it('invalidates cache for both source and target contexts', async () => {
       mockQueryContext

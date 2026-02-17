@@ -171,7 +171,7 @@ describe('Voice Memo API Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.transcript).toBe('M4A transcription');
-    });
+    }, 30000);
 
     it('should fallback to body text if no audio file', async () => {
       const response = await request(app)

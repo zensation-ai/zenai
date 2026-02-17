@@ -83,6 +83,12 @@ export const NAV_SECTIONS: NavSection[] = [
         subPages: ['tasks', 'kanban', 'gantt', 'meetings'],
       },
       {
+        page: 'email',
+        icon: '✉️',
+        label: 'E-Mail',
+        description: 'E-Mails senden & empfangen',
+      },
+      {
         page: 'documents',
         icon: '📚',
         label: 'Wissensbasis',

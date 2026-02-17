@@ -407,6 +407,12 @@ import { projectsRouter } from './routes/projects';
 app.use('/api', tasksRouter);      // /api/:context/tasks, /api/:context/tasks/gantt, /api/:context/tasks/reorder
 app.use('/api', projectsRouter);   // /api/:context/projects
 
+// Phase 38: Email Integration (Resend)
+import { emailWebhooksRouter } from './routes/email-webhooks';
+import { emailRouter } from './routes/email';
+app.use('/api/webhooks', emailWebhooksRouter);  // /api/webhooks/resend (no auth, uses Svix signature)
+app.use('/api', emailRouter);                    // /api/:context/emails/*
+
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
 app.use('/api', documentsRouter);  // /api/:context/documents, /api/documents/file/:id, etc.
 

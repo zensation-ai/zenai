@@ -1,0 +1,115 @@
+/* EmailPage - Phase 38 */
+
+.email-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary, #0c1e28);
+  color: var(--text-primary, #e0e8ef);
+}
+
+.email-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.email-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.email-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.email-unread-badge {
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.email-compose-btn {
+  padding: 0.5rem 1.25rem;
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.email-compose-btn:hover {
+  background: var(--primary-hover, #e55d2a);
+}
+
+/* Tabs */
+.email-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  flex-shrink: 0;
+}
+
+.email-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.email-tab:hover {
+  color: var(--text-primary, #fff);
+}
+
+.email-tab--active {
+  color: var(--primary, #ff6b35);
+  border-bottom-color: var(--primary, #ff6b35);
+}
+
+.email-tab-icon { font-size: 1rem; }
+.email-tab-label { white-space: nowrap; }
+
+.email-tab-badge {
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* Light mode */
+:root.light-mode .email-page {
+  background: var(--bg-primary, #f5f7fa);
+  color: var(--text-primary, #1a1a2e);
+}
+
+@media (max-width: 768px) {
+  .email-header { padding: 0.75rem 1rem 0.25rem; }
+  .email-tabs { padding: 0 1rem; overflow-x: auto; }
+  .email-tab { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+}

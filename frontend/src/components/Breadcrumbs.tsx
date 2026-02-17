@@ -130,6 +130,9 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Verbindungen', page: 'knowledge-graph', icon: '🕸️' },
   ],
 
+  // Organisieren: E-Mail
+  'email': [ROOT, { label: 'E-Mail', page: 'email', icon: '✉️' }],
+
   // Organisieren: Wissensbasis
   'documents': [ROOT, { label: 'Wissensbasis', page: 'documents', icon: '📚' }],
   'canvas': [
