@@ -7,7 +7,7 @@
  * @module components/ArtifactPanel
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -38,6 +38,14 @@ export function ArtifactPanel({
 }: ArtifactPanelProps) {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup copy timer on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   // Focus trap for accessibility - keeps Tab navigation within the panel
   const panelRef = useFocusTrap<HTMLDivElement>({
@@ -72,7 +80,8 @@ export function ArtifactPanel({
       await navigator.clipboard.writeText(artifact.content);
       setCopied(true);
       showToast('In Zwischenablage kopiert', 'success');
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       showToast('Kopieren fehlgeschlagen', 'error');
     }

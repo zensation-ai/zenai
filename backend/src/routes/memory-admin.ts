@@ -73,7 +73,7 @@ router.get('/status', apiKeyAuth, asyncHandler(async (_req: Request, res: Respon
  *       200:
  *         description: Consolidation results
  */
-router.post('/consolidate', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/consolidate', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.body;
 
   // Validate context if provided
@@ -119,7 +119,7 @@ router.post('/consolidate', apiKeyAuth, asyncHandler(async (req: Request, res: R
  *       200:
  *         description: Decay results
  */
-router.post('/decay', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/decay', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.body;
 
   // Validate context if provided

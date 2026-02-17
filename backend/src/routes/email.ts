@@ -178,6 +178,9 @@ emailRouter.post('/:context/emails/batch', apiKeyAuth, requireScope('write'), as
   if (!Array.isArray(ids) || ids.length === 0) {
     throw new ValidationError('ids must be a non-empty array');
   }
+  if (ids.length > 100) {
+    throw new ValidationError('Batch operations are limited to 100 items at a time');
+  }
   if (!status || !VALID_STATUSES.includes(status)) {
     throw new ValidationError(`status must be one of: ${VALID_STATUSES.join(', ')}`);
   }

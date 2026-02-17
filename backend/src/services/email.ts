@@ -325,6 +325,7 @@ export async function getThread(context: AIContext, threadId: string): Promise<E
     LEFT JOIN email_accounts a ON e.account_id = a.id
     WHERE e.thread_id = $1
     ORDER BY e.received_at ASC
+    LIMIT 200
   `, [threadId]);
 
   return result.rows.map(mapRowToEmail);
@@ -454,14 +455,20 @@ export async function sendEmailById(context: AIContext, id: string): Promise<Ema
     throw new Error('Resend is not configured — cannot send emails');
   }
 
-  const email = await getEmail(context, id);
-  if (!email) return null;
-  if (email.status !== 'draft') {
-    throw new Error(`Cannot send email with status "${email.status}"`);
+  // Atomic status transition: draft → sending (prevents double-send race condition)
+  const lockResult = await queryContext(context, `
+    UPDATE emails SET status = 'sending', updated_at = NOW()
+    WHERE id = $1 AND status = 'draft'
+    RETURNING *
+  `, [id]);
+
+  if (lockResult.rows.length === 0) {
+    const existing = await getEmail(context, id);
+    if (!existing) return null;
+    throw new Error(`Cannot send email with status "${existing.status}"`);
   }
 
-  // Mark as sending
-  await queryContext(context, `UPDATE emails SET status = 'sending', updated_at = NOW() WHERE id = $1`, [id]);
+  const email = mapRowToEmail(lockResult.rows[0]);
 
   try {
     const result = await resendSendEmail({
@@ -667,7 +674,7 @@ export async function getEmailStats(context: AIContext): Promise<EmailStats> {
 // ============================================================
 
 export async function getAccounts(context: AIContext): Promise<EmailAccount[]> {
-  const result = await queryContext(context, `SELECT * FROM email_accounts ORDER BY is_default DESC, created_at ASC`, []);
+  const result = await queryContext(context, `SELECT * FROM email_accounts ORDER BY is_default DESC, created_at ASC LIMIT 100`, []);
   return result.rows as EmailAccount[];
 }
 
@@ -682,9 +689,9 @@ export async function createAccount(
 ): Promise<EmailAccount> {
   const id = uuidv4();
 
-  // If setting as default, unset others
+  // If setting as default, atomically unset others and insert new in one step
   if (input.is_default) {
-    await queryContext(context, `UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE`, []);
+    await queryContext(context, `UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE AND id != $1`, [id]);
   }
 
   const result = await queryContext(context, `
@@ -713,7 +720,7 @@ export async function updateAccount(
   }
   if (updates.is_default !== undefined) {
     if (updates.is_default) {
-      await queryContext(context, `UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE`, []);
+      await queryContext(context, `UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE AND id != $1`, [id]);
     }
     setClauses.push(`is_default = $${paramIdx}`);
     params.push(updates.is_default);
@@ -747,7 +754,7 @@ export async function deleteAccount(context: AIContext, id: string): Promise<voi
 // ============================================================
 
 export async function getLabels(context: AIContext): Promise<EmailLabel[]> {
-  const result = await queryContext(context, `SELECT * FROM email_labels ORDER BY sort_order ASC, name ASC`, []);
+  const result = await queryContext(context, `SELECT * FROM email_labels ORDER BY sort_order ASC, name ASC LIMIT 200`, []);
   return result.rows as EmailLabel[];
 }
 

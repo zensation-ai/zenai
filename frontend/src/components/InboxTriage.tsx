@@ -75,7 +75,17 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
 
   const cardRef = useRef<HTMLDivElement>(null);
   const swipeResetRef = useRef<() => void>(() => {});
+  const rewardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { triggerMilestone, triggerStreak } = useNeuroFeedback();
+
+  // Cleanup timers on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current);
+      if (undoHintTimerRef.current) clearTimeout(undoHintTimerRef.current);
+    };
+  }, []);
 
   const prefersReducedMotion = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -139,7 +149,8 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
     const actionFeedback = ACTION_FEEDBACK[action];
     setShowReward({ message: reward.message, emoji: actionFeedback.emoji });
     const timeout = prefersReducedMotion ? 1000 : 2000;
-    setTimeout(() => setShowReward(null), timeout);
+    if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current);
+    rewardTimerRef.current = setTimeout(() => setShowReward(null), timeout);
   }, [prefersReducedMotion]);
 
   const checkStreakReward = useCallback((newTotal: number) => {
@@ -176,7 +187,8 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
       setStats(prev => ({ ...prev, [action === 'priority' ? 'prioritized' : action]: prev[action === 'priority' ? 'prioritized' : (action as keyof typeof prev)] + 1 }));
       setLastAction({ id: currentIdea.id, action });
       setShowUndoHint(true);
-      setTimeout(() => setShowUndoHint(false), 3000);
+      if (undoHintTimerRef.current) clearTimeout(undoHintTimerRef.current);
+      undoHintTimerRef.current = setTimeout(() => setShowUndoHint(false), 3000);
       setProcessedIds(prev => [...prev, currentIdea.id]);
       const newTotal = totalProcessed + 1;
       checkStreakReward(newTotal);

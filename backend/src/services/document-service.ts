@@ -350,7 +350,7 @@ export class DocumentService {
     const sortOrder = requestedSortOrder && VALID_SORT_ORDERS.includes(requestedSortOrder as typeof VALID_SORT_ORDERS[number])
       ? requestedSortOrder
       : 'desc';
-    const orderClause = `ORDER BY ${sortBy} ${sortOrder}`;
+    const orderClause = `ORDER BY "${sortBy}" ${sortOrder}`;
 
     // Get total count
     const countResult = await queryContext(

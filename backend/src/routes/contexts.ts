@@ -484,7 +484,7 @@ router.get('/:context/ai-activity', apiKeyAuth, asyncHandler(async (req: Request
  * POST /api/:context/ai-activity/mark-read
  * Mark activities as read
  */
-router.post('/:context/ai-activity/mark-read', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/:context/ai-activity/mark-read', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { activityIds } = req.body;
 

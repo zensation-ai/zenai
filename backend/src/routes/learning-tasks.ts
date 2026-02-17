@@ -516,7 +516,7 @@ router.get('/:context/learning-tasks/:id/challenge', apiKeyAuth, asyncHandler(as
  * POST /api/:context/learning-tasks/:id/recall
  * Submit a recall attempt and get evaluation + next review schedule
  */
-router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
   const { user_recall } = req.body;
   validateTaskId(id);
