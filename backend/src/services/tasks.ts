@@ -145,6 +145,7 @@ export async function getTasks(
   }
 
   if (filters?.status) {
+    // Replace the default "!= cancelled" with the explicit status filter
     conditions[0] = `t.status = $${paramIdx}`;
     params.push(filters.status);
     paramIdx++;
@@ -327,6 +328,21 @@ export async function addDependency(
   dependsOnId: string,
   type: DependencyType = 'finish_to_start'
 ): Promise<TaskDependency> {
+  // Circular dependency detection via recursive CTE
+  const cycleCheck = await queryContext(context, `
+    WITH RECURSIVE dep_chain AS (
+      SELECT depends_on_id FROM task_dependencies WHERE task_id = $1
+      UNION
+      SELECT td.depends_on_id FROM task_dependencies td
+      JOIN dep_chain dc ON td.task_id = dc.depends_on_id
+    )
+    SELECT 1 FROM dep_chain WHERE depends_on_id = $2 LIMIT 1
+  `, [dependsOnId, taskId]);
+
+  if (cycleCheck.rows.length > 0) {
+    throw new Error('Circular dependency detected: adding this dependency would create a cycle');
+  }
+
   const id = uuidv4();
 
   const result = await queryContext(context, `

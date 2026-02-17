@@ -490,7 +490,7 @@ export async function sendEmailById(context: AIContext, id: string): Promise<Ema
   } catch (err) {
     // Mark as failed
     await queryContext(context, `
-      UPDATE emails SET status = 'failed', metadata = metadata || $2, updated_at = NOW()
+      UPDATE emails SET status = 'failed', metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb, updated_at = NOW()
       WHERE id = $1
     `, [id, JSON.stringify({ send_error: (err as Error).message })]);
 

@@ -79,10 +79,14 @@ emailWebhooksRouter.post('/resend', async (req: Request, res: Response) => {
         });
         return res.status(401).json({ error: 'Invalid signature' });
       }
+    } else if (process.env.NODE_ENV === 'production') {
+      // CRITICAL: Never skip signature verification in production
+      logger.error('RESEND_WEBHOOK_SECRET not configured in production — rejecting webhook', undefined, { operation: 'resendWebhook' });
+      return res.status(403).json({ error: 'Webhook verification not configured' });
     } else {
-      // In development, accept without verification
+      // In development only, accept without verification
       event = req.body as ResendWebhookEvent;
-      logger.warn('Processing unverified Resend webhook (RESEND_WEBHOOK_SECRET not set)', { operation: 'resendWebhook' });
+      logger.warn('Processing unverified Resend webhook (dev mode, RESEND_WEBHOOK_SECRET not set)', { operation: 'resendWebhook' });
     }
 
     // Log the webhook event

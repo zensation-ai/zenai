@@ -99,6 +99,14 @@ ${truncated}`,
       analysis = JSON.parse(jsonStr);
     } catch {
       logger.warn('Failed to parse AI email analysis', { emailId, text: textBlock.text.substring(0, 200), operation: 'processEmailWithAI' });
+      // Mark as processed with error to prevent infinite retries
+      await queryContext(context, `
+        UPDATE emails SET
+          ai_processed_at = NOW(),
+          metadata = COALESCE(metadata, '{}'::jsonb) || '{"ai_parse_error": true}'::jsonb,
+          updated_at = NOW()
+        WHERE id = $1
+      `, [emailId]);
       return;
     }
 

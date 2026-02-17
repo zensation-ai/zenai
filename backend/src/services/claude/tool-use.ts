@@ -1231,6 +1231,77 @@ export function extractText(content: Anthropic.ContentBlock[]): string {
 // ===========================================
 
 /**
+ * Safe math expression evaluator using recursive descent parsing.
+ * Supports: +, -, *, /, %, parentheses, and decimal numbers.
+ * No eval() or Function() — immune to code injection.
+ */
+function safeMathEval(expr: string): number {
+  let pos = 0;
+  const str = expr.replace(/\s/g, '');
+
+  function parseExpression(): number {
+    let left = parseTerm();
+    while (pos < str.length && (str[pos] === '+' || str[pos] === '-')) {
+      const op = str[pos++];
+      const right = parseTerm();
+      left = op === '+' ? left + right : left - right;
+    }
+    return left;
+  }
+
+  function parseTerm(): number {
+    let left = parseFactor();
+    while (pos < str.length && (str[pos] === '*' || str[pos] === '/' || str[pos] === '%')) {
+      const op = str[pos++];
+      const right = parseFactor();
+      if (op === '*') left *= right;
+      else if (op === '/') {
+        if (right === 0) throw new Error('Division by zero');
+        left /= right;
+      } else {
+        if (right === 0) throw new Error('Modulo by zero');
+        left %= right;
+      }
+    }
+    return left;
+  }
+
+  function parseFactor(): number {
+    // Unary minus
+    if (str[pos] === '-') {
+      pos++;
+      return -parseFactor();
+    }
+    // Unary plus
+    if (str[pos] === '+') {
+      pos++;
+      return parseFactor();
+    }
+    // Parenthesized expression
+    if (str[pos] === '(') {
+      pos++; // skip '('
+      const val = parseExpression();
+      if (str[pos] !== ')') throw new Error('Missing closing parenthesis');
+      pos++; // skip ')'
+      return val;
+    }
+    // Number (integer or decimal)
+    const start = pos;
+    while (pos < str.length && (str[pos] >= '0' && str[pos] <= '9' || str[pos] === '.')) {
+      pos++;
+    }
+    if (pos === start) throw new Error('Unexpected character');
+    const num = parseFloat(str.slice(start, pos));
+    if (isNaN(num)) throw new Error('Invalid number');
+    return num;
+  }
+
+  const result = parseExpression();
+  if (pos < str.length) throw new Error('Unexpected trailing characters');
+  return result;
+}
+
+/**
  * Register default tools with placeholder handlers
  * Real handlers should be registered by the application
  */
@@ -1265,8 +1336,8 @@ export function registerDefaultTools(): void {
         return 'Fehler: Unbalancierte Klammern';
       }
 
-      // Evaluate with strict mode
-      const result = Function(`"use strict"; return (${sanitized})`)();
+      // Safe math evaluation using recursive descent parser (no eval/Function)
+      const result = safeMathEval(sanitized);
 
       // Validate result is a finite number
       if (typeof result !== 'number' || !Number.isFinite(result)) {

@@ -6,9 +6,48 @@
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import axios from 'axios';
+import dns from 'dns/promises';
+import { URL } from 'url';
 // pool.query() is intentional here: webhooks/webhook_deliveries are global tables (not per-context)
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
+
+/**
+ * Validate a webhook URL is not targeting internal/private networks (SSRF protection)
+ */
+async function validateWebhookUrl(url: string): Promise<{ safe: boolean; reason?: string }> {
+  try {
+    const parsed = new URL(url);
+
+    // Must be HTTPS in production
+    if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+      return { safe: false, reason: 'Webhook URLs must use HTTPS in production' };
+    }
+
+    // Block localhost
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '0.0.0.0') {
+      return { safe: false, reason: 'Localhost URLs are not allowed' };
+    }
+
+    // Block internal metadata endpoints (AWS, GCP, Azure)
+    if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') {
+      return { safe: false, reason: 'Cloud metadata endpoints are not allowed' };
+    }
+
+    // DNS resolve and check for private IPs
+    const addresses = await dns.resolve4(hostname).catch(() => []);
+    for (const addr of addresses) {
+      if (addr.startsWith('10.') || addr.startsWith('172.') || addr.startsWith('192.168.') || addr.startsWith('127.') || addr === '0.0.0.0') {
+        return { safe: false, reason: 'Private IP addresses are not allowed' };
+      }
+    }
+
+    return { safe: true };
+  } catch {
+    return { safe: false, reason: 'Invalid URL' };
+  }
+}
 
 // Webhook event types
 export type WebhookEventType =
@@ -90,6 +129,18 @@ async function deliverWebhook(
   const payloadString = JSON.stringify(payload);
 
   try {
+    // SSRF protection: validate webhook URL before delivery
+    const ssrfCheck = await validateWebhookUrl(webhook.url);
+    if (!ssrfCheck.safe) {
+      logger.warn('Webhook delivery blocked by SSRF protection', {
+        webhookId: webhook.id,
+        url: webhook.url,
+        reason: ssrfCheck.reason,
+        operation: 'deliverWebhook',
+      });
+      return { success: false, error: `SSRF blocked: ${ssrfCheck.reason}` };
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Webhook-Id': webhook.id,

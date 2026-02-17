@@ -72,6 +72,12 @@ syncRouter.post('/:context/sync/swipe-actions', apiKeyAuth, requireScope('write'
     throw new ValidationError('Actions array is required');
   }
 
+  // Prevent DoS via unbounded batch size
+  const MAX_BATCH_SIZE = 500;
+  if (actions.length > MAX_BATCH_SIZE) {
+    throw new ValidationError(`Maximum ${MAX_BATCH_SIZE} actions per request, received ${actions.length}`);
+  }
+
   const results = await Promise.allSettled(
     actions.map((action, index) => processSwipeAction(context as AIContext, action, index))
   );
@@ -149,6 +155,13 @@ syncRouter.post('/:context/sync/batch', apiKeyAuth, requireScope('write'), async
     swipeActions = [],
     trainingFeedback = [],
   } = req.body as BatchSyncRequest;
+
+  // Prevent DoS via unbounded batch size
+  const MAX_BATCH_SIZE = 500;
+  const totalItems = voiceMemos.length + swipeActions.length + trainingFeedback.length;
+  if (totalItems > MAX_BATCH_SIZE) {
+    throw new ValidationError(`Maximum ${MAX_BATCH_SIZE} total items per batch request, received ${totalItems}`);
+  }
 
   const results: Record<string, SyncResult> = {};
 

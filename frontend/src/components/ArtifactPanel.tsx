@@ -196,7 +196,7 @@ export function ArtifactPanel({
               maxHeight: isFullscreen ? 'calc(100vh - 120px)' : '60vh',
             }}
           >
-            {JSON.stringify(JSON.parse(artifact.content), null, 2)}
+            {(() => { try { return JSON.stringify(JSON.parse(artifact.content), null, 2); } catch { return artifact.content; } })()}
           </SyntaxHighlighter>
         );
 
@@ -327,7 +327,8 @@ export function ArtifactPanel({
 
 // CSV Preview Component
 function CsvPreview({ content }: { content: string }) {
-  const rows = content.split('\n').filter(row => row.trim());
+  // Normalize line endings (Windows \r\n, old Mac \r, Unix \n)
+  const rows = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(row => row.trim());
   const headers = rows[0]?.split(',').map(h => h.trim()) || [];
   const data = rows.slice(1).map(row => row.split(',').map(cell => cell.trim()));
 

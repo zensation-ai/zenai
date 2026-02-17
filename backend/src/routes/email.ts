@@ -19,6 +19,7 @@ import {
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateContextParam } from '../utils/validation';
+import { logger } from '../utils/logger';
 
 export const emailRouter = Router();
 
@@ -418,7 +419,8 @@ emailRouter.post('/:context/emails/:id/ai/process', apiKeyAuth, requireScope('wr
     const updated = await getEmail(context, id);
     res.json({ success: true, data: updated });
   } catch (err) {
-    throw new ValidationError(`AI processing failed: ${(err as Error).message}`);
+    logger.error('AI processing failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'processEmailWithAI' });
+    throw new ValidationError('AI processing failed. Please try again later.');
   }
 }));
 
@@ -441,7 +443,8 @@ emailRouter.get('/:context/emails/:id/ai/reply-suggestions', apiKeyAuth, asyncHa
     const suggestions = await generateReplySuggestions(context, id);
     res.json({ success: true, data: suggestions });
   } catch (err) {
-    throw new ValidationError(`Reply suggestions failed: ${(err as Error).message}`);
+    logger.error('Reply suggestions failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'generateReplySuggestions' });
+    throw new ValidationError('Reply suggestions failed. Please try again later.');
   }
 }));
 
@@ -459,6 +462,7 @@ emailRouter.get('/:context/emails/:id/thread/ai/summary', apiKeyAuth, asyncHandl
     const summary = await summarizeThread(context, email.thread_id || id);
     res.json({ success: true, data: { summary } });
   } catch (err) {
-    throw new ValidationError(`Thread summary failed: ${(err as Error).message}`);
+    logger.error('Thread summary failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'summarizeThread' });
+    throw new ValidationError('Thread summary failed. Please try again later.');
   }
 }));

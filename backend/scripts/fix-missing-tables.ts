@@ -84,7 +84,7 @@ async function fixMissingTables() {
     console.log('\n📋 Verification:');
     const tables = ['cluster_analysis_log', 'interaction_history', 'pattern_predictions'];
     for (const t of tables) {
-      const r = await pool.query(`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '${t}')`);
+      const r = await pool.query(`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)`, [t]);
       console.log(`  ${t}: ${r.rows[0].exists ? '✅' : '❌'}`);
     }
 

@@ -101,8 +101,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     throw new Error(`Resend send failed: ${error.message}`);
   }
 
-  logger.info('Email sent via Resend', { id: data?.id, to: options.to, subject: options.subject, operation: 'sendEmail' });
-  return { id: data!.id };
+  if (!data?.id) {
+    throw new Error('Resend returned success but no email ID');
+  }
+
+  logger.info('Email sent via Resend', { id: data.id, to: options.to, subject: options.subject, operation: 'sendEmail' });
+  return { id: data.id };
 }
 
 // ============================================================

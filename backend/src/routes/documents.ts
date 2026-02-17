@@ -600,7 +600,9 @@ router.get(
     }
 
     res.setHeader('Content-Type', doc.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${doc.originalFilename}"`);
+    // Sanitize filename to prevent HTTP header injection (RFC 5987)
+    const sanitizedFilename = (doc.originalFilename || 'download').replace(/[^a-zA-Z0-9._-]/g, '_');
+    res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFilename}"`);
     res.sendFile(resolvedPath);
   })
 );

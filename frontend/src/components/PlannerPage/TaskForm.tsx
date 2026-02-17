@@ -72,8 +72,9 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
       status,
       priority,
       project_id: projectId || undefined,
-      due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
-      start_date: startDate ? new Date(startDate).toISOString() : undefined,
+      // Use noon UTC to prevent timezone-induced date shifts (e.g. 2026-02-17 in CET → 2026-02-16T23:00Z)
+      due_date: dueDate ? `${dueDate}T12:00:00Z` : undefined,
+      start_date: startDate ? `${startDate}T12:00:00Z` : undefined,
       assignee: assignee.trim() || undefined,
       estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
     };
