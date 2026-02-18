@@ -4,7 +4,7 @@
  * Tab container for email management: Inbox, Sent, Drafts, Archived.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useEmailData } from './useEmailData';
@@ -47,9 +47,16 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
     data.fetchAccounts();
   }, [activeTab, context]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    data.fetchEmails(activeTab, { search: query || undefined });
+
+    // Debounce API calls (300ms) to avoid firing on every keystroke
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      data.fetchEmails(activeTab, { search: query || undefined });
+    }, 300);
   }, [activeTab, data.fetchEmails]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectEmail = useCallback(async (email: Email) => {

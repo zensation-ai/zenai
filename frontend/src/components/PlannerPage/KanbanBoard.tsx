@@ -100,7 +100,12 @@ export function KanbanBoard({
 
   const isOverdue = useCallback((dueDate?: string) => {
     if (!dueDate) return false;
-    return new Date(dueDate) < new Date();
+    const due = new Date(dueDate);
+    const today = new Date();
+    // Compare dates only (ignore time) - "due today" is not overdue
+    return due.getFullYear() < today.getFullYear()
+      || (due.getFullYear() === today.getFullYear() && due.getMonth() < today.getMonth())
+      || (due.getFullYear() === today.getFullYear() && due.getMonth() === today.getMonth() && due.getDate() < today.getDate());
   }, []);
 
   if (loading) {

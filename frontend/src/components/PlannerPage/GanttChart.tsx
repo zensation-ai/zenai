@@ -77,7 +77,7 @@ export function GanttChart({
     // Pad by 7 days on each side
     const start = addDays(earliest, -7);
     const end = addDays(latest, 7);
-    return { rangeStart: start, rangeEnd: end, totalDays: daysBetween(start, end) };
+    return { rangeStart: start, totalDays: daysBetween(start, end) };
   }, [ganttTasks]);
 
   // Group tasks by project

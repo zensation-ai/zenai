@@ -101,18 +101,14 @@ export function useTasksData(
   }, [context]);
 
   const reorderTasks = useCallback(async (status: TaskStatus, taskIds: string[]): Promise<void> => {
-    // Optimistic update
-    setTasks(prev => {
-      const reordered = [...prev];
-      taskIds.forEach((id, index) => {
-        const task = reordered.find(t => t.id === id);
-        if (task) {
-          task.sort_order = index;
-          task.status = status;
-        }
-      });
-      return reordered;
-    });
+    // Optimistic update - immutable: create new objects instead of mutating
+    setTasks(prev => prev.map(task => {
+      const orderIndex = taskIds.indexOf(task.id);
+      if (orderIndex !== -1) {
+        return { ...task, sort_order: orderIndex, status };
+      }
+      return task;
+    }));
 
     try {
       await axios.post(`/api/${context}/tasks/reorder`, { status, taskIds });

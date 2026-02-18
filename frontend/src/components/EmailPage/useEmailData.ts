@@ -1,27 +1,14 @@
 /**
  * useEmailData - Data hook for email operations
+ *
+ * Uses the global axios instance (with baseURL and interceptors)
+ * consistent with the rest of the application.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
 import type { Email, EmailStats, EmailAccount, EmailTab, EmailFilters, ReplySuggestion } from './types';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
-
-function getHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'x-api-key': API_KEY,
-  };
-}
-
-function getErrorMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    return err.response?.data?.error || err.response?.data?.message || err.message || fallback;
-  }
-  return (err as Error).message || fallback;
-}
+import { getErrorMessage } from '../../utils/errors';
 
 export function useEmailData(context: string) {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -47,8 +34,7 @@ export function useEmailData(context: string) {
       if (filters?.category) params.category = filters.category;
       if (filters?.account_id) params.account_id = filters.account_id;
 
-      const res = await axios.get(`${API_URL}/api/${context}/emails`, {
-        headers: getHeaders(),
+      const res = await axios.get(`/api/${context}/emails`, {
         params,
         signal: controller.signal,
       });
@@ -65,7 +51,7 @@ export function useEmailData(context: string) {
 
   const fetchEmail = useCallback(async (id: string): Promise<Email | null> => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/emails/${id}`, { headers: getHeaders() });
+      const res = await axios.get(`/api/${context}/emails/${id}`);
       const email = res.data.data;
       setSelectedEmail(email);
       return email;
@@ -77,7 +63,7 @@ export function useEmailData(context: string) {
 
   const fetchThread = useCallback(async (id: string) => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/emails/${id}/thread`, { headers: getHeaders() });
+      const res = await axios.get(`/api/${context}/emails/${id}/thread`);
       setThread(res.data.data || []);
     } catch {
       setThread([]);
@@ -86,7 +72,7 @@ export function useEmailData(context: string) {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/emails/stats`, { headers: getHeaders() });
+      const res = await axios.get(`/api/${context}/emails/stats`);
       setStats(res.data.data);
     } catch {
       // Stats are non-critical
@@ -95,7 +81,7 @@ export function useEmailData(context: string) {
 
   const fetchAccounts = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/emails/accounts`, { headers: getHeaders() });
+      const res = await axios.get(`/api/${context}/emails/accounts`);
       setAccounts(res.data.data || []);
     } catch {
       // Accounts fetch failure is non-critical
@@ -111,7 +97,7 @@ export function useEmailData(context: string) {
     account_id?: string;
   }): Promise<Email | null> => {
     try {
-      const res = await axios.post(`${API_URL}/api/${context}/emails/send`, data, { headers: getHeaders() });
+      const res = await axios.post(`/api/${context}/emails/send`, data);
       return res.data.data;
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Senden'));
@@ -121,7 +107,7 @@ export function useEmailData(context: string) {
 
   const replyToEmail = useCallback(async (id: string, body: { body_html?: string; body_text?: string; account_id?: string }): Promise<Email | null> => {
     try {
-      const res = await axios.post(`${API_URL}/api/${context}/emails/${id}/reply`, body, { headers: getHeaders() });
+      const res = await axios.post(`/api/${context}/emails/${id}/reply`, body);
       return res.data.data;
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Antworten'));
@@ -131,7 +117,7 @@ export function useEmailData(context: string) {
 
   const forwardEmail = useCallback(async (id: string, to: Array<{ email: string; name?: string }>, body?: { body_html?: string; body_text?: string }): Promise<Email | null> => {
     try {
-      const res = await axios.post(`${API_URL}/api/${context}/emails/${id}/forward`, { to_addresses: to, ...body }, { headers: getHeaders() });
+      const res = await axios.post(`/api/${context}/emails/${id}/forward`, { to_addresses: to, ...body });
       return res.data.data;
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Weiterleiten'));
@@ -141,7 +127,7 @@ export function useEmailData(context: string) {
 
   const updateStatus = useCallback(async (id: string, status: string) => {
     try {
-      await axios.patch(`${API_URL}/api/${context}/emails/${id}/status`, { status }, { headers: getHeaders() });
+      await axios.patch(`/api/${context}/emails/${id}/status`, { status });
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Aktualisieren'));
     }
@@ -149,7 +135,7 @@ export function useEmailData(context: string) {
 
   const toggleStar = useCallback(async (id: string) => {
     try {
-      const res = await axios.patch(`${API_URL}/api/${context}/emails/${id}/star`, {}, { headers: getHeaders() });
+      const res = await axios.patch(`/api/${context}/emails/${id}/star`, {});
       // Update in list
       setEmails(prev => prev.map(e => e.id === id ? { ...e, is_starred: res.data.data.is_starred } : e));
       if (selectedEmail?.id === id) {
@@ -162,7 +148,7 @@ export function useEmailData(context: string) {
 
   const deleteEmail = useCallback(async (id: string) => {
     try {
-      await axios.delete(`${API_URL}/api/${context}/emails/${id}`, { headers: getHeaders() });
+      await axios.delete(`/api/${context}/emails/${id}`);
       setEmails(prev => prev.filter(e => e.id !== id));
       if (selectedEmail?.id === id) setSelectedEmail(null);
     } catch (err) {
@@ -172,7 +158,7 @@ export function useEmailData(context: string) {
 
   const batchUpdate = useCallback(async (ids: string[], status: string) => {
     try {
-      await axios.post(`${API_URL}/api/${context}/emails/batch`, { ids, status }, { headers: getHeaders() });
+      await axios.post(`/api/${context}/emails/batch`, { ids, status });
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler bei Massenoperation'));
     }
@@ -180,7 +166,7 @@ export function useEmailData(context: string) {
 
   const getReplySuggestions = useCallback(async (id: string): Promise<ReplySuggestion[]> => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/emails/${id}/ai/reply-suggestions`, { headers: getHeaders() });
+      const res = await axios.get(`/api/${context}/emails/${id}/ai/reply-suggestions`);
       return res.data.data || [];
     } catch {
       return [];
@@ -189,7 +175,7 @@ export function useEmailData(context: string) {
 
   const triggerAIProcess = useCallback(async (id: string): Promise<Email | null> => {
     try {
-      const res = await axios.post(`${API_URL}/api/${context}/emails/${id}/ai/process`, {}, { headers: getHeaders() });
+      const res = await axios.post(`/api/${context}/emails/${id}/ai/process`, {});
       return res.data.data;
     } catch {
       return null;

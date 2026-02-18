@@ -42,7 +42,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
     const fetchNotes = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`/api/meetings/${meetingId}/notes`);
+        const res = await axios.get(`/api/${context}/meetings/${meetingId}/notes`);
         if (res.data.success) {
           setNotes(Array.isArray(res.data.data) ? res.data.data : res.data.data ? [res.data.data] : []);
         }
@@ -53,7 +53,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
       }
     };
     fetchNotes();
-  }, [meetingId]);
+  }, [meetingId, context]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -115,7 +115,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
         });
       } else {
         // Process directly via meetings endpoint
-        res = await axios.post(`/api/meetings/${meetingId}/notes`, {
+        res = await axios.post(`/api/${context}/meetings/${meetingId}/notes`, {
           transcript: transcript.trim(),
         });
       }

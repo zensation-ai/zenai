@@ -50,7 +50,9 @@ export function EmailCompose({ accounts, replyTo, onSend, onCancel }: EmailCompo
         cc_addresses: ccAddresses,
         subject: subject || undefined,
         body_text: body,
-        body_html: body ? `<p>${body.replace(/\n/g, '</p><p>')}</p>` : undefined,
+        body_html: body ? body.split('\n').filter(Boolean).map(
+          line => `<p>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`
+        ).join('') : undefined,
         account_id: accountId || undefined,
       });
     } finally {

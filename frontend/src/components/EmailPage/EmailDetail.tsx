@@ -137,12 +137,15 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
         </button>
       )}
 
-      {/* Email Body */}
+      {/* Email Body - sandboxed iframe to prevent XSS from untrusted HTML */}
       <div className="email-detail-body">
         {email.body_html ? (
-          <div
-            className="email-detail-html"
-            dangerouslySetInnerHTML={{ __html: email.body_html }}
+          <iframe
+            className="email-detail-iframe"
+            sandbox="allow-same-origin"
+            title="E-Mail Inhalt"
+            srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.5;color:#333;margin:0;padding:12px;word-break:break-word;}a{color:#4A90D9;}img{max-width:100%;height:auto;}</style></head><body>${email.body_html}</body></html>`}
+            style={{ width: '100%', minHeight: '200px', border: 'none' }}
           />
         ) : (
           <pre className="email-detail-text">{email.body_text || '(Kein Inhalt)'}</pre>

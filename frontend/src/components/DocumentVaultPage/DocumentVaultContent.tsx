@@ -1,4 +1,3 @@
-import { logError } from '../../utils/errors';
 /**
  * Document Vault Content
  *
@@ -7,6 +6,7 @@ import { logError } from '../../utils/errors';
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logError } from '../../utils/errors';
 import { useNavigate } from 'react-router-dom';
 import { RisingBubbles } from '../RisingBubbles';
 import { DocumentUpload } from '../DocumentUpload';

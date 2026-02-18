@@ -5,7 +5,7 @@
  * Replaces the standalone CalendarPage.
  */
 
-import { useState, lazy, Suspense, useCallback } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
 import type { PlannerTab, Task } from './types';
 import { useTasksData } from './useTasksData';
 import { useProjectsData } from './useProjectsData';
@@ -48,6 +48,11 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
 
+  // Sync active tab when URL-driven initialTab changes
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   const {
     tasks, loading: tasksLoading,
     createTask, updateTask, reorderTasks,
@@ -57,6 +62,12 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
     projects, loading: projectsLoading,
     createProject,
   } = useProjectsData(context);
+
+  // Memoize open task count (avoid double-filtering in render)
+  const openTaskCount = useMemo(
+    () => tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').length,
+    [tasks]
+  );
 
   const handleCreateTask = useCallback(() => {
     setEditingTask(null);
@@ -97,9 +108,9 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
           >
             <span className="planner-tab__icon" aria-hidden="true">{tab.icon}</span>
             <span className="planner-tab__label">{tab.label}</span>
-            {tab.id === 'tasks' && tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').length > 0 && (
+            {tab.id === 'tasks' && openTaskCount > 0 && (
               <span className="planner-tab__badge">
-                {tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').length}
+                {openTaskCount}
               </span>
             )}
           </button>
