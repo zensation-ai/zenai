@@ -255,7 +255,8 @@
 }
 
 .msd-section-items.visible {
-  max-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
 }
 
 /* Item Wrapper (for favorite toggle) */

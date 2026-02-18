@@ -340,4 +340,32 @@
     flex-direction: column;
     align-items: stretch;
   }
+
+  .gantt-project-form input {
+    width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gantt-left {
+    width: 120px !important;
+  }
+
+  .gantt-project-form input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .gantt-project-form {
+    flex-wrap: wrap;
+  }
+
+  .gantt-toolbar {
+    gap: 8px;
+  }
+
+  .gantt-zoom__btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
 }

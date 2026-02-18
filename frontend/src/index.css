@@ -1013,6 +1013,49 @@ select:focus-visible {
   }
 }
 
+/* Mobile performance: reduce animated background elements */
+@media (max-width: 768px) {
+  /* Keep only 2 blobs, disable the rest */
+  .blob-3,
+  .blob-4,
+  .blob-5 {
+    display: none;
+  }
+
+  /* Reduce remaining blob sizes and complexity */
+  .blob-1 {
+    width: 50vw;
+    height: 50vw;
+    filter: blur(25px);
+    animation-duration: 35s;
+  }
+
+  .blob-2 {
+    width: 40vw;
+    height: 40vw;
+    filter: blur(30px);
+    animation-duration: 40s;
+  }
+
+  /* Hide most particles, keep only 3 */
+  .particle-4,
+  .particle-5,
+  .particle-6,
+  .particle-7,
+  .particle-8,
+  .particle-9,
+  .particle-10,
+  .particle-11,
+  .particle-12 {
+    display: none;
+  }
+
+  /* Disable cursor glow on touch devices */
+  .cursor-glow {
+    display: none;
+  }
+}
+
 /* ============================================
    GLOBAL LOADING & SPINNER STYLES
    Consistent loading states across the app

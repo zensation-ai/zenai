@@ -388,12 +388,12 @@
 @media (max-width: 640px) {
   .command-palette-overlay {
     padding: 8px;
-    padding-top: 10vh;
+    padding-top: 5vh;
     align-items: flex-start;
   }
 
   .command-palette {
-    max-height: 80vh;
+    max-height: 85vh;
     border-radius: 12px;
   }
 
@@ -427,6 +427,10 @@
 
   .command-palette-hint {
     font-size: 11px;
+  }
+
+  .command-palette-shortcut-hint {
+    display: none;
   }
 }
 

@@ -801,9 +801,19 @@
 }
 
 @media (max-width: 600px) {
+  .idea-detail-overlay {
+    padding: 8px;
+  }
+
   .idea-detail-modal {
-    padding: 20px;
+    padding: 16px;
+    padding-right: 12px;
     max-height: 95vh;
+    border-radius: var(--radius-lg, 16px);
+  }
+
+  .idea-detail-content {
+    padding-right: 8px;
   }
 
   .detail-title {
@@ -830,6 +840,29 @@
 
   .copy-button {
     justify-content: center;
+  }
+
+  .detail-summary {
+    font-size: 14px;
+  }
+
+  .research-section {
+    padding: 14px;
+  }
+
+  .draft-section {
+    padding: 14px;
+  }
+
+  .knowledge-section {
+    padding: 14px;
+  }
+
+  .close-button {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
   }
 }
 
