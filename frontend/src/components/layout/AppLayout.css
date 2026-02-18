@@ -7,6 +7,8 @@
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ============================================
@@ -18,6 +20,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
   margin-left: var(--sidebar-width, 260px);
   transition: margin-left var(--layout-transition);
 }
