@@ -101,16 +101,9 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
       setError(null);
     } catch (err: unknown) {
       if (signal?.aborted) return;
-      try {
-        const fallbackResponse = await axios.get('/api/ideas?limit=100', { signal });
-        const fallbackParsed = safeParseResponse(IdeasResponseSchema, fallbackResponse.data, 'loadIdeas:fallback');
-        setIdeas(fallbackParsed.ideas as unknown as StructuredIdea[]);
-        setError(null);
-      } catch (fallbackErr: unknown) {
-        if (signal?.aborted) return;
-        logError('loadIdeas', fallbackErr);
-        setError(getErrorMessage(fallbackErr, 'Failed to load ideas'));
-      }
+      logError('loadIdeas', err);
+      setError(getErrorMessage(err, 'Gedanken konnten nicht geladen werden'));
+      setIdeas([]);
     } finally {
       if (!signal?.aborted) {
         setLoading(false);

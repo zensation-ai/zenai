@@ -21,6 +21,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
 import { trackActivity } from '../services/activity-tracker';
+import { moveIdea } from '../services/idea-move';
 
 // ===========================================
 // Type-safe row interfaces for aggregate queries
@@ -1489,7 +1490,8 @@ ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write
 
 /**
  * POST /api/:context/ideas/:id/move
- * Move an idea from one context to another
+ * Move an idea from one context to another.
+ * Delegates to moveIdea() service which handles schema differences gracefully.
  */
 ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const sourceContext = validateContextParam(req.params.context);
@@ -1508,55 +1510,9 @@ ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('wr
     throw new ValidationError('Source and target context are the same.');
   }
 
-  // 1. Read the idea from source context
-  const sourceResult = await queryContext(
-    sourceContext,
-    `SELECT id, title, raw_text, type, category, priority, tags, source, mood,
-            energy_level, is_actionable, is_archived, ai_enhanced_title,
-            ai_summary, ai_category, ai_tags, ai_priority, ai_sentiment,
-            ai_confidence, keywords, embedding, related_ideas
-     FROM ideas WHERE id = $1`,
-    [id]
-  );
+  const result = await moveIdea(sourceContext, targetContext as AIContext, id);
 
-  if (sourceResult.rows.length === 0) {
-    throw new NotFoundError('Idea');
-  }
-
-  const idea = sourceResult.rows[0];
-
-  // 2. Insert into target context
-  await queryContext(
-    targetContext as AIContext,
-    `INSERT INTO ideas (id, title, raw_text, type, category, priority, tags, source, mood,
-                        energy_level, is_actionable, is_archived, ai_enhanced_title,
-                        ai_summary, ai_category, ai_tags, ai_priority, ai_sentiment,
-                        ai_confidence, keywords, embedding, related_ideas, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW())`,
-    [
-      idea.id, idea.title, idea.raw_text, idea.type, idea.category,
-      idea.priority, idea.tags, idea.source, idea.mood, idea.energy_level,
-      idea.is_actionable, idea.is_archived, idea.ai_enhanced_title,
-      idea.ai_summary, idea.ai_category, idea.ai_tags, idea.ai_priority,
-      idea.ai_sentiment, idea.ai_confidence, idea.keywords, idea.embedding,
-      idea.related_ideas,
-    ]
-  );
-
-  // 3. Delete from source context
-  await queryContext(
-    sourceContext,
-    'DELETE FROM ideas WHERE id = $1',
-    [id]
-  );
-
-  logger.info('Idea moved between contexts', {
-    ideaId: id,
-    from: sourceContext,
-    to: targetContext,
-  });
-
-  // Track interaction
+  // Track interaction (non-blocking)
   trackInteraction({
     idea_id: id,
     interaction_type: 'edit',
@@ -1565,9 +1521,10 @@ ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('wr
 
   res.json({
     success: true,
-    movedId: id,
-    from: sourceContext,
-    to: targetContext,
+    movedId: result.ideaId,
+    newIdeaId: result.newIdeaId,
+    from: result.sourceContext,
+    to: result.targetContext,
   });
 }));
 

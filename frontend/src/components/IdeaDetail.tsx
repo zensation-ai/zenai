@@ -196,7 +196,12 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
       onClose();
     } catch (err) {
       logError('IdeaDetail.handleMove', err);
-      showToast('Verschieben fehlgeschlagen', 'error');
+      const code = axios.isAxiosError(err) ? err.response?.data?.code : undefined;
+      if (code === 'SCHEMA_MISMATCH') {
+        showToast('Datenbankschema stimmt nicht überein — bitte Migration ausführen', 'error');
+      } else {
+        showToast('Verschieben fehlgeschlagen', 'error');
+      }
     } finally {
       setIsMoving(false);
     }
