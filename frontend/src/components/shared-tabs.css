@@ -122,6 +122,45 @@
   background: rgba(20, 30, 42, 0.92);
 }
 
+/* Show More Button - shared across hub sub-components */
+.show-more-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--dark-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.show-more-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.show-more-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--focus-ring-color, var(--primary));
+}
+
+:root.light-mode .show-more-btn {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.02);
+  color: var(--light-text-secondary, #555);
+}
+
+:root.light-mode .show-more-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.25);
+  color: var(--light-text-primary, #222);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .hub-tabs {

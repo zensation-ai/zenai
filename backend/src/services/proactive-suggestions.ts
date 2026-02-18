@@ -593,11 +593,17 @@ export class ProactiveSuggestionEngine {
       }
 
       const row = result.rows[0];
+      let enabledTypes = row.enabled_types;
+      if (typeof enabledTypes === 'string') {
+        try {
+          enabledTypes = JSON.parse(enabledTypes);
+        } catch {
+          enabledTypes = ['routine', 'connection', 'follow_up'];
+        }
+      }
       return {
         proactivityLevel: row.proactivity_level,
-        enabledTypes: typeof row.enabled_types === 'string'
-          ? JSON.parse(row.enabled_types)
-          : row.enabled_types,
+        enabledTypes,
         quietHoursStart: row.quiet_hours_start,
         quietHoursEnd: row.quiet_hours_end,
         maxSuggestionsPerDay: row.max_suggestions_per_day,

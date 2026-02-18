@@ -81,6 +81,8 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'accuracy' | 'milestones'>('overview');
+  const [showAllTimeline, setShowAllTimeline] = useState(false);
+  const [showAllMilestones, setShowAllMilestones] = useState(false);
 
   // AbortController ref to prevent memory leaks on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -88,16 +90,23 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
   const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const [dashboardRes, depthRes] = await Promise.all([
-        axios.get(`/api/${context}/evolution`, { signal }),
-        axios.get(`/api/${context}/evolution/context-depth`, { signal }),
-      ]);
 
+      // Load dashboard data (required) and context-depth (optional) separately
+      // so a context-depth failure doesn't break the whole dashboard
+      const dashboardRes = await axios.get(`/api/${context}/evolution`, { signal });
       setData(dashboardRes.data.dashboard);
-      setContextDepth(depthRes.data.context_depth.breakdown || []);
       setError(null);
+
+      // Context-depth is optional - don't fail if it errors
+      try {
+        const depthRes = await axios.get(`/api/${context}/evolution/context-depth`, { signal });
+        setContextDepth(depthRes.data.context_depth?.breakdown || []);
+      } catch (depthErr) {
+        if (!axios.isCancel(depthErr)) {
+          setContextDepth([]);
+        }
+      }
     } catch (err: unknown) {
-      // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
 
       const message = axios.isAxiosError(err)
@@ -130,16 +139,22 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
     loadData(abortControllerRef.current.signal);
   }, [loadData]);
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('de-DE', {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('de-DE', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
     });
   };
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('de-DE', {
+  const formatTime = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('de-DE', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -381,7 +396,7 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
               </div>
             ) : (
               <div className="timeline neuro-flow-list">
-                {data.learning_timeline.slice(0, 7).map((event, index) => (
+                {(showAllTimeline ? data.learning_timeline : data.learning_timeline.slice(0, 7)).map((event, index) => (
                   <div key={event.id} className={`timeline-item neuro-stagger-item ${event.color}`} style={{ animationDelay: `${index * 80}ms` }}>
                     <div className="timeline-marker">
                       <span className="event-icon">{event.icon}</span>
@@ -411,6 +426,17 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
                   </div>
                 ))}
               </div>
+            )}
+            {data.learning_timeline.length > 7 && (
+              <button
+                type="button"
+                className="show-more-btn neuro-hover-lift"
+                onClick={() => setShowAllTimeline(!showAllTimeline)}
+              >
+                {showAllTimeline
+                  ? 'Weniger anzeigen'
+                  : `Alle ${data.learning_timeline.length} Events anzeigen`}
+              </button>
             )}
           </div>
         )}
@@ -490,7 +516,7 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
               <div className="card achieved-card liquid-glass neuro-stagger-item">
                 <h3>Erreichte Meilensteine ({data.achieved_milestones.length})</h3>
                 <div className="milestones-grid neuro-flow-list">
-                  {data.achieved_milestones.slice(0, 7).map((milestone, index) => (
+                  {(showAllMilestones ? data.achieved_milestones : data.achieved_milestones.slice(0, 7)).map((milestone, index) => (
                     <div key={milestone.id} className="milestone-badge achieved neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
                       <span className="badge-icon">{milestone.icon}</span>
                       <span className="badge-title">{milestone.title}</span>
@@ -500,6 +526,17 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
                     </div>
                   ))}
                 </div>
+                {data.achieved_milestones.length > 7 && (
+                  <button
+                    type="button"
+                    className="show-more-btn neuro-hover-lift"
+                    onClick={() => setShowAllMilestones(!showAllMilestones)}
+                  >
+                    {showAllMilestones
+                      ? 'Weniger anzeigen'
+                      : `Alle ${data.achieved_milestones.length} Meilensteine anzeigen`}
+                  </button>
+                )}
               </div>
             )}
 

@@ -289,6 +289,11 @@ agentTeamsRouter.post(
       ]
     );
 
+    if (!ideaResult.rows[0]) {
+      res.status(500).json({ success: false, error: 'Gedanke konnte nicht erstellt werden' });
+      return;
+    }
+
     const ideaId = ideaResult.rows[0].id;
 
     // Link execution to idea

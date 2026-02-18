@@ -9,6 +9,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { AIContext } from './ContextSwitcher';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { logError } from '../utils/errors';
@@ -65,7 +66,7 @@ const ROLE_CONFIG: Record<string, { icon: string; label: string }> = {
 };
 
 interface AgentTeamsPageProps {
-  context: string;
+  context: AIContext;
   onBack?: () => void;
   embedded?: boolean;
 }
@@ -183,7 +184,18 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
     } catch (err) {
       if (axios.isCancel(err)) return;
       logError('AgentTeamsPage:execute', err);
-      setError('Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
+      if (axios.isAxiosError(err)) {
+        if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+          setError('Zeitüberschreitung - die Aufgabe war zu komplex. Versuche eine einfachere Beschreibung.');
+        } else if (!err.response) {
+          setError('Server nicht erreichbar. Bitte prüfe deine Verbindung.');
+        } else {
+          const apiError = (err.response.data as { error?: string })?.error;
+          setError(apiError || 'Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
+        }
+      } else {
+        setError('Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
+      }
     } finally {
       setLoading(false);
     }
