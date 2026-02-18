@@ -450,6 +450,8 @@
 
   .artifact-header {
     padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .artifact-title {
@@ -458,8 +460,54 @@
 
   .artifact-action-btn,
   .artifact-close-btn {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .artifact-nav-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .artifact-markdown {
+    padding: 1rem;
+  }
+
+  .artifact-csv td,
+  .artifact-csv th {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .artifact-header {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .artifact-language {
+    display: none;
+  }
+
+  .artifact-actions {
+    gap: 0.35rem;
+  }
+
+  .artifact-action-btn,
+  .artifact-close-btn {
+    width: 36px;
+    height: 36px;
     font-size: 0.875rem;
+  }
+
+  .artifact-nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .artifact-description {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 }

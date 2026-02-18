@@ -186,10 +186,38 @@
 
   .task-form {
     max-height: 85vh;
+    max-height: 85dvh;
     border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
   }
 
   .task-form__row {
     grid-template-columns: 1fr;
+  }
+
+  .task-form__field input,
+  .task-form__field textarea,
+  .task-form__field select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .task-form__close {
+    width: 40px;
+    height: 40px;
+  }
+
+  .task-form__cancel,
+  .task-form__submit {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-form__body {
+    padding: 1rem;
+  }
+
+  .task-form__header {
+    padding: 0.75rem 1rem;
   }
 }

@@ -293,11 +293,50 @@
   .business-connector-grid {
     grid-template-columns: 1fr;
   }
+
+  .business-section {
+    padding: 1rem;
+    overflow-x: auto;
+  }
+
+  .business-table {
+    min-width: 500px;
+  }
+
+  .business-chart-container {
+    height: 220px;
+  }
 }
 
 @media (max-width: 480px) {
+  .business-content {
+    padding: 0.75rem;
+  }
+
   .business-kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .business-kpi-card {
+    padding: 1rem;
+  }
+
+  .business-kpi-value {
+    font-size: 1.25rem;
+  }
+
+  .business-section {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .business-section-title {
+    font-size: 1rem;
+  }
+
+  .business-btn {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
   }
 }
 

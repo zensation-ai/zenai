@@ -237,7 +237,21 @@
 @media (max-width: 768px) {
   .email-compose-header { padding: 0.5rem 1rem; }
   .email-compose-field { padding: 0 1rem; }
+  .email-compose-field input,
+  .email-compose-field select { font-size: 16px; min-height: 44px; }
   .email-compose-body { padding: 0 1rem; }
+  .email-compose-body textarea { font-size: 16px; }
   .email-compose-reply-context { margin: 0 1rem; }
   .email-compose-actions { padding: 0.5rem 1rem; }
+  .email-compose-cancel,
+  .email-compose-send { min-height: 44px; }
+  .email-compose-close { width: 44px; height: 44px; font-size: 1.75rem; }
+}
+
+@media (max-width: 480px) {
+  .email-compose-header { padding: 0.4rem 0.75rem; }
+  .email-compose-field { padding: 0 0.75rem; }
+  .email-compose-body { padding: 0 0.75rem; }
+  .email-compose-reply-context { margin: 0 0.75rem; }
+  .email-compose-actions { padding: 0.5rem 0.75rem; }
 }

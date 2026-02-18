@@ -560,6 +560,11 @@
     padding: 8px 8px 8px;
   }
 
+  .general-chat {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+
   .general-chat.full-page {
     max-width: 100%;
     border-radius: var(--radius-md);

@@ -104,11 +104,17 @@
     padding: 0 var(--spacing-sm, 8px);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .planner-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .planner-tab {
     padding: 0.5rem 0.75rem;
     font-size: 0.813rem;
+    min-height: 44px;
   }
 
   .planner-tab__label {
@@ -121,5 +127,22 @@
 
   .planner-content {
     padding: var(--spacing-sm, 8px);
+  }
+}
+
+@media (max-width: 480px) {
+  .planner-tabs {
+    padding: 0 4px;
+    gap: 0;
+  }
+
+  .planner-tab {
+    padding: 0.5rem 0.5rem;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .planner-content {
+    padding: 4px;
   }
 }

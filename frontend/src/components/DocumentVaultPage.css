@@ -651,6 +651,8 @@
 
   .search-input {
     width: 100%;
+    font-size: 16px;
+    min-height: 44px;
   }
 
   .folder-sidebar {
@@ -661,13 +663,88 @@
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 
+  .document-area {
+    padding: 1rem;
+  }
+
   .stats-bar {
     flex-wrap: wrap;
     gap: 1rem;
+    padding: 0.75rem 1rem;
   }
 
   .stat {
     min-width: 80px;
+  }
+
+  .vault-doc-tabs {
+    padding: 0.5rem 1rem 0;
+  }
+
+  .vault-doc-tab {
+    min-height: 44px;
+  }
+
+  .upload-trigger,
+  .ask-knowledge-btn {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vault-header {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .vault-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .search-box {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .document-area {
+    padding: 0.75rem;
+  }
+
+  .stats-bar {
+    padding: 0.5rem 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .vault-doc-tabs {
+    padding: 0.4rem 0.75rem 0;
+    gap: 0.125rem;
+  }
+
+  .vault-doc-tab {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .view-toggle button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .empty-state {
+    height: auto;
+    padding: 2rem 1rem;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
   }
 }
 

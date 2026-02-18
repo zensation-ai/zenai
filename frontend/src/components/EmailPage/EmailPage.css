@@ -110,6 +110,18 @@
 
 @media (max-width: 768px) {
   .email-header { padding: 0.75rem 1rem 0.25rem; }
-  .email-tabs { padding: 0 1rem; overflow-x: auto; }
-  .email-tab { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+  .email-tabs { padding: 0 1rem; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .email-tabs::-webkit-scrollbar { display: none; }
+  .email-tab { padding: 0.5rem 0.75rem; font-size: 0.8rem; flex-shrink: 0; }
+  .email-title { font-size: 1.25rem; }
+  .email-compose-btn { padding: 0.5rem 1rem; font-size: 0.8rem; min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+  .email-header { padding: 0.5rem 0.75rem 0.25rem; }
+  .email-tabs { padding: 0 0.75rem; gap: 0.125rem; }
+  .email-tab { padding: 0.5rem 0.5rem; font-size: 0.75rem; }
+  .email-tab-label { display: none; }
+  .email-title { font-size: 1.1rem; }
+  .email-compose-btn { padding: 0.5rem 0.75rem; }
 }

@@ -895,6 +895,31 @@
   }
 }
 
+@media (max-width: 480px) {
+  .learning-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .tab-button {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.7rem;
+    min-height: 40px;
+  }
+
+  .profile-tab .profile-header {
+    gap: 0.75rem;
+  }
+}
+
 /* Profile Actions */
 .profile-actions {
   display: flex;

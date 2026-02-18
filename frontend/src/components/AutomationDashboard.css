@@ -626,6 +626,32 @@
   }
 }
 
+@media (max-width: 480px) {
+  .automation-dashboard {
+    padding: 6px;
+    padding-top: 32px;
+  }
+
+  .stat-item {
+    flex: 1 1 100%;
+  }
+
+  .tabs {
+    gap: 0;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.78rem;
+    min-height: 44px;
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .automation-dashboard .neuro-stagger-item,
