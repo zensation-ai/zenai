@@ -186,17 +186,24 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const hasFetched = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const greeting = useMemo(() => getTimeBasedGreeting(), []);
+  // Recalculate greeting when context changes (also covers time-of-day updates)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const greeting = useMemo(() => getTimeBasedGreeting(), [context]);
   const contextInfo = CONTEXT_LABELS[context];
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/${context}/analytics/dashboard-summary`).catch(e => {
+      const res = await axios.get(`/api/${context}/analytics/dashboard-summary`, { signal }).catch(e => {
+        if (axios.isCancel(e)) throw e;
         logError('Dashboard:summary', e);
         return { data: null };
       });
+
+      if (signal?.aborted) return;
 
       if (res.data) {
         const d = res.data;
@@ -210,34 +217,25 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         setTrend(d.trend || []);
         setRecentIdeas((d.recentIdeas || []).slice(0, 6));
         setActivity((d.activities || []).slice(0, 5));
+        setUnreadCount(d.unreadCount || 0);
       }
-
-      // Fetch AI activity with unread count
-      axios.get(`/api/${context}/ai-activity`, { params: { limit: 10 } })
-        .then(r => {
-          if (r.data?.success) {
-            setActivity((r.data.activities || []).slice(0, 5));
-            setUnreadCount(r.data.unreadCount || 0);
-          }
-        })
-        .catch(() => { /* Activity feed might not be available */ });
 
       // Fetch upcoming calendar events (next 48 hours)
-      axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 5 } })
-        .then(r => { if (r.data?.success) setUpcomingEvents(r.data.data || []); })
+      axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 5 }, signal })
+        .then(r => { if (!signal?.aborted && r.data?.success) setUpcomingEvents(r.data.data || []); })
         .catch(() => { /* Calendar might not be set up yet */ });
 
-      // If response came back null, retry once after a short delay
+      // If response came back null, retry once after a short delay (keep loading state)
       if (!res.data && !hasFetched.current) {
         hasFetched.current = true;
-        setTimeout(() => fetchData(), 1500);
-        return;
+        retryTimer.current = setTimeout(() => fetchData(signal), 1500);
+        return; // Don't set loading=false — retry will handle it
       }
     } catch (err) {
+      if (axios.isCancel(err)) return;
       logError('Dashboard:fetchData', err);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, [context]);
 
   const handleMarkAllRead = useCallback(async () => {
@@ -253,20 +251,34 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   // Wait for API to be ready before fetching dashboard data
   useEffect(() => {
     if (apiStatus) {
+      // Cancel previous requests on context change
+      abortRef.current?.abort();
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+      const controller = new AbortController();
+      abortRef.current = controller;
       hasFetched.current = false;
-      fetchData();
+      fetchData(controller.signal);
+
+      return () => {
+        controller.abort();
+        if (retryTimer.current) clearTimeout(retryTimer.current);
+      };
     }
   }, [apiStatus, fetchData]);
 
   const formatTime = (dateString: string) => {
-    const diff = Date.now() - new Date(dateString).getTime();
+    if (!dateString) return '';
+    const time = new Date(dateString).getTime();
+    if (isNaN(time)) return '';
+    const diff = Date.now() - time;
+    if (diff < 0) return 'gerade eben';
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'gerade eben';
     if (mins < 60) return `vor ${mins} Min.`;
     const hours = Math.floor(diff / 3600000);
     if (hours < 24) return `vor ${hours} Std.`;
     const days = Math.floor(diff / 86400000);
-    return `vor ${days} Tagen`;
+    return days === 1 ? 'vor 1 Tag' : `vor ${days} Tagen`;
   };
 
   const welcomeSubtext = useMemo(() => {

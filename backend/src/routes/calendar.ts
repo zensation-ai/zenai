@@ -57,8 +57,9 @@ calendarRouter.post('/:context/calendar/events/search', apiKeyAuth, asyncHandler
 calendarRouter.get('/:context/calendar/upcoming', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
   const hours = Math.min(parseInt(req.query.hours as string, 10) || 24, 168); // Max 7 days
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 50);
 
-  const events = await getUpcomingEvents(context, hours);
+  const events = await getUpcomingEvents(context, hours, limit);
 
   res.json({
     success: true,

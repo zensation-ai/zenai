@@ -25,6 +25,11 @@ jest.mock('../../middleware/auth', () => ({
   requireScope: jest.fn(() => (req: any, res: any, next: any) => next()),
 }));
 
+jest.mock('../../services/ai-activity-logger', () => ({
+  getRecentAIActivities: jest.fn().mockResolvedValue([]),
+  getUnreadActivityCount: jest.fn().mockResolvedValue(0),
+}));
+
 jest.mock('../../utils/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -317,6 +322,24 @@ describe('Analytics API Integration Tests', () => {
       expect(response.body.summary.total).toBe(0);
     });
 
+    it('should handle all four contexts', async () => {
+      for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+        mockQueryContext
+          .mockResolvedValueOnce({ rows: [{ total: '1', active: '1', archived: '0', last_week: '0', last_month: '0' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+          .mockResolvedValueOnce({ rows: [{ created: '0', updated: '0' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
+          .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
+          .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
+          .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] })
+          .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
+
+        const response = await request(app)
+          .get(`/api/${ctx}/analytics/overview`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+      }
+    });
+
     it('should handle work context the same as personal', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ total: '50', active: '45', archived: '5', last_week: '10', last_month: '25' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
@@ -332,6 +355,136 @@ describe('Analytics API Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.summary.total).toBe(50);
+    });
+  });
+
+  // ===========================================
+  // GET /api/:context/analytics/dashboard-summary
+  // ===========================================
+
+  describe('GET /api/:context/analytics/dashboard-summary', () => {
+    const { getRecentAIActivities, getUnreadActivityCount } = jest.requireMock('../../services/ai-activity-logger');
+
+    it('should return aggregated dashboard data', async () => {
+      mockQueryContext
+        // Stats
+        .mockResolvedValueOnce({
+          rows: [{ total: '42', this_week: '12', today: '3', high_priority: '7' }],
+          rowCount: 1, command: 'SELECT', oid: 0, fields: [],
+        })
+        // Streak
+        .mockResolvedValueOnce({
+          rows: [{ streak_days: '5' }],
+          rowCount: 1, command: 'SELECT', oid: 0, fields: [],
+        })
+        // Trend
+        .mockResolvedValueOnce({
+          rows: [
+            { date: '2026-02-17', count: '4' },
+            { date: '2026-02-18', count: '3' },
+          ],
+          rowCount: 2, command: 'SELECT', oid: 0, fields: [],
+        })
+        // Recent ideas
+        .mockResolvedValueOnce({
+          rows: [
+            { id: 'idea-1', title: 'Test Idea', type: 'idea', priority: 'high', created_at: '2026-02-18T10:00:00Z' },
+          ],
+          rowCount: 1, command: 'SELECT', oid: 0, fields: [],
+        });
+
+      (getRecentAIActivities as jest.Mock).mockResolvedValueOnce([
+        { id: 'act-1', activityType: 'idea_created', message: 'Test activity', ideaId: null, isRead: false, createdAt: '2026-02-18T10:00:00Z' },
+      ]);
+      (getUnreadActivityCount as jest.Mock).mockResolvedValueOnce(3);
+
+      const response = await request(app)
+        .get('/api/personal/analytics/dashboard-summary')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.stats).toEqual({
+        total: 42,
+        thisWeek: 12,
+        todayCount: 3,
+        highPriority: 7,
+      });
+      expect(response.body.streak).toBe(5);
+      expect(response.body.trend).toHaveLength(2);
+      expect(response.body.recentIdeas).toHaveLength(1);
+      expect(response.body.activities).toHaveLength(1);
+      expect(response.body.unreadCount).toBe(3);
+      expect(response.body.context).toBe('personal');
+    });
+
+    it('should return 400 for invalid context', async () => {
+      const response = await request(app)
+        .get('/api/invalid/analytics/dashboard-summary')
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should handle partial query failures gracefully', async () => {
+      // Stats succeeds
+      mockQueryContext
+        .mockResolvedValueOnce({
+          rows: [{ total: '10', this_week: '2', today: '1', high_priority: '0' }],
+          rowCount: 1, command: 'SELECT', oid: 0, fields: [],
+        })
+        // Streak fails
+        .mockRejectedValueOnce(new Error('Connection timeout'))
+        // Trend succeeds
+        .mockResolvedValueOnce({
+          rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [],
+        })
+        // Recent ideas succeeds
+        .mockResolvedValueOnce({
+          rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [],
+        });
+
+      (getRecentAIActivities as jest.Mock).mockResolvedValueOnce([]);
+      (getUnreadActivityCount as jest.Mock).mockResolvedValueOnce(0);
+
+      const response = await request(app)
+        .get('/api/personal/analytics/dashboard-summary')
+        .expect(200);
+
+      // Should still return 200 because safeQuery catches errors
+      expect(response.body.success).toBe(true);
+      expect(response.body.stats.total).toBe(10);
+      expect(response.body.streak).toBe(0); // Fallback from failed query
+    });
+
+    it('should handle empty database', async () => {
+      mockQueryContext
+        .mockResolvedValueOnce({
+          rows: [{ total: '0', this_week: '0', today: '0', high_priority: '0' }],
+          rowCount: 1, command: 'SELECT', oid: 0, fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [],
+        });
+
+      (getRecentAIActivities as jest.Mock).mockResolvedValueOnce([]);
+      (getUnreadActivityCount as jest.Mock).mockResolvedValueOnce(0);
+
+      const response = await request(app)
+        .get('/api/personal/analytics/dashboard-summary')
+        .expect(200);
+
+      expect(response.body.stats.total).toBe(0);
+      expect(response.body.streak).toBe(0);
+      expect(response.body.trend).toEqual([]);
+      expect(response.body.recentIdeas).toEqual([]);
+      expect(response.body.activities).toEqual([]);
+      expect(response.body.unreadCount).toBe(0);
     });
   });
 });

@@ -367,18 +367,20 @@ export async function deleteCalendarEvent(
  */
 export async function getUpcomingEvents(
   context: AIContext,
-  hours: number = 24
+  hours: number = 24,
+  limit: number = 10
 ): Promise<CalendarEvent[]> {
   const now = new Date().toISOString();
   const end = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+  const safeLimit = Math.min(Math.max(1, limit), 50);
 
   const result = await queryContext(context, `
     SELECT * FROM calendar_events
     WHERE start_time >= $1 AND start_time <= $2
       AND status != 'cancelled'
     ORDER BY start_time ASC
-    LIMIT 10
-  `, [now, end]);
+    LIMIT $3
+  `, [now, end, safeLimit]);
 
   return result.rows.map(mapRowToEvent);
 }

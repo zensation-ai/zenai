@@ -14,7 +14,7 @@ import { queryContext, AIContext, isValidContext } from '../utils/database-conte
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toInt } from '../utils/validation';
-import { getRecentAIActivities } from '../services/ai-activity-logger';
+import { getRecentAIActivities, getUnreadActivityCount } from '../services/ai-activity-logger';
 import { logger } from '../utils/logger';
 
 export const analyticsRouter = Router();
@@ -374,7 +374,7 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
 
   const emptyResult: QueryResult = { rows: [], command: '', rowCount: 0, oid: 0, fields: [] };
 
-  const [statsResult, streakResult, trendResult, recentIdeasResult, activities] = await Promise.all([
+  const [statsResult, streakResult, trendResult, recentIdeasResult, activities, unreadCount] = await Promise.all([
     // Stats: total, thisWeek, highPriority, todayCount
     safeQuery(queryContext(ctx, `
       SELECT
@@ -426,6 +426,9 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
 
     // Recent 5 AI activities
     getRecentAIActivities(ctx, 5),
+
+    // Unread activity count (avoids separate /ai-activity request from frontend)
+    getUnreadActivityCount(ctx),
   ]);
 
   const stats = statsResult.rows[0];
@@ -445,6 +448,7 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
     })),
     recentIdeas: recentIdeasResult.rows,
     activities,
+    unreadCount,
     context,
   });
 }));
