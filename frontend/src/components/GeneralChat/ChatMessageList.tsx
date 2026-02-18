@@ -33,8 +33,11 @@ export function ChatMessageList({
   renderContent,
   messagesEndRef,
 }: ChatMessageListProps) {
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('de-DE', {
+  const formatTime = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('de-DE', {
       hour: '2-digit',
       minute: '2-digit',
     });

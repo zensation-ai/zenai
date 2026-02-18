@@ -8,7 +8,7 @@
  * Phase 33 Sprint 4 - Feature 9
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export interface UseVADOptions {
   onSpeechStart: () => void;
@@ -175,6 +175,24 @@ export function useVAD(options: UseVADOptions): UseVADReturn {
     setIsListening(false);
     setIsSpeaking(false);
     setAudioLevel(0);
+  }, []);
+
+  // Ensure cleanup on unmount even if stop() isn't called explicitly
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (mediaRecorderRef.current?.state === 'recording') {
+        try { mediaRecorderRef.current.stop(); } catch { /* already stopped */ }
+      }
+      if (audioContextRef.current?.state !== 'closed') {
+        audioContextRef.current?.close().catch(() => { /* ignore */ });
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
   }, []);
 
   return { start, stop, isListening, isSpeaking, audioLevel };

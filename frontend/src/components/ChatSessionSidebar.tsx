@@ -86,8 +86,10 @@ function ChatSessionSidebarComponent({
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Unbekannt';
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Unbekannt';
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / 86400000);
@@ -244,6 +246,10 @@ function groupByDate(sessions: ChatSession[]) {
 
   for (const session of sessions) {
     const date = new Date(session.updatedAt);
+    if (isNaN(date.getTime())) {
+      groups[4].sessions.push(session); // Invalid dates go to "Älter"
+      continue;
+    }
     if (date >= today) groups[0].sessions.push(session);
     else if (date >= yesterday) groups[1].sessions.push(session);
     else if (date >= weekAgo) groups[2].sessions.push(session);

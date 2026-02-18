@@ -175,15 +175,15 @@ export async function generateEnhancedResponse(
         if (unifiedContext.profile?.industry) {
           contextParts.push(`Branche: ${unifiedContext.profile.industry}.`);
         }
-        if (unifiedContext.recentTopics.length > 0) {
+        if (unifiedContext.recentTopics?.length > 0) {
           contextParts.push(`Aktuelle Themen: ${unifiedContext.recentTopics.slice(0, 5).join(', ')}.`);
         }
         if (contextParts.length > 0) {
           systemPrompt += `\n\n[BENUTZER-KONTEXT]\n${contextParts.join('\n')}\nBerücksichtige diesen Kontext wenn relevant.`;
         }
       }
-    } catch {
-      // Continue without any context enhancement
+    } catch (fallbackErr) {
+      logger.debug('Context fallback also failed', { sessionId, error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr) });
     }
   }
 

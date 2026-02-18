@@ -326,8 +326,10 @@ export async function updateSessionTitle(sessionId: string, userMessage: string)
   }
 
   // Generate a short title from the first message (max 50 chars)
-  const title = userMessage.length > 50
-    ? userMessage.substring(0, 47) + '...'
+  // Use Array.from to correctly handle multi-byte/emoji characters
+  const chars = Array.from(userMessage);
+  const title = chars.length > 50
+    ? chars.slice(0, 47).join('') + '...'
     : userMessage;
 
   await query(`

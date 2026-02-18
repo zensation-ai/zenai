@@ -624,25 +624,23 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     });
   };
 
-  // Navigate between artifacts in the same message
+  // Navigate between artifacts in the same message (skip inline artifacts with index -1)
   const navigateArtifact = useCallback((direction: 'prev' | 'next') => {
-    if (!activeArtifact) return;
+    if (!activeArtifact || activeArtifact.index < 0) return;
 
     const messageArtifacts = artifacts.get(activeArtifact.messageId) || [];
     const currentIndex = activeArtifact.index;
 
     if (direction === 'prev' && currentIndex > 0) {
-      setActiveArtifact({
-        artifact: messageArtifacts[currentIndex - 1],
-        messageId: activeArtifact.messageId,
-        index: currentIndex - 1,
-      });
+      const target = messageArtifacts[currentIndex - 1];
+      if (target) {
+        setActiveArtifact({ artifact: target, messageId: activeArtifact.messageId, index: currentIndex - 1 });
+      }
     } else if (direction === 'next' && currentIndex < messageArtifacts.length - 1) {
-      setActiveArtifact({
-        artifact: messageArtifacts[currentIndex + 1],
-        messageId: activeArtifact.messageId,
-        index: currentIndex + 1,
-      });
+      const target = messageArtifacts[currentIndex + 1];
+      if (target) {
+        setActiveArtifact({ artifact: target, messageId: activeArtifact.messageId, index: currentIndex + 1 });
+      }
     }
   }, [activeArtifact, artifacts]);
 
