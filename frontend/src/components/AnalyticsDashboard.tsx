@@ -176,7 +176,8 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
     };
   })() : null;
 
-  if (errors.some(e => e !== null)) {
+  const hasErrors = errors.some(e => e !== null);
+  if (hasErrors) {
     logError('AnalyticsDashboard:loadAnalytics', new Error(`Failed to load some analytics: ${errors.filter(e => e !== null).length} errors`));
   }
 
@@ -230,6 +231,12 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
           <span className="context-badge">{CONTEXT_LABELS[context] || context}</span>
         </div>
       </header>
+
+      {hasErrors && (
+        <div className="error-banner" role="alert" style={{ margin: '1rem', padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: '#ef4444' }}>
+          Einige Analytics-Daten konnten nicht geladen werden.
+        </div>
+      )}
 
       <main className="dashboard-content">
         {/* Productivity Score */}

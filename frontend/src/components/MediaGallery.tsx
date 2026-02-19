@@ -117,9 +117,11 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
       const res = await axios.post(`/api/${context}/media/analyze-existing`, { mediaId });
       // Backend returns analysis as object { description, tags, ... } - extract description string
       const analysisResult = res.data.analysis;
-      const analysisText = typeof analysisResult === 'string'
-        ? analysisResult
-        : (analysisResult?.description || JSON.stringify(analysisResult));
+      const analysisText = !analysisResult
+        ? null
+        : typeof analysisResult === 'string'
+          ? analysisResult
+          : (analysisResult.description || JSON.stringify(analysisResult));
       const analysisTags = res.data.tags || analysisResult?.tags || [];
       setMedia(prev => prev.map(m =>
         m.id === mediaId ? { ...m, analysis: analysisText, tags: analysisTags || m.tags } : m

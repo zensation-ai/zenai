@@ -158,6 +158,23 @@
 }
 
 /* Focus Tab */
+.focus-stats-summary {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: var(--glass-bg, rgba(15, 31, 46, 0.5));
+  font-size: 0.85rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.focus-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .focus-actions {
   display: flex;
   gap: 1rem;

@@ -169,6 +169,7 @@ function useUrlNavigation() {
     if (fullPath.startsWith('/ideas/')) return 'ideas';
     if (fullPath.startsWith('/my-ai/')) return 'my-ai';
     if (fullPath.startsWith('/settings/')) return 'settings';
+    if (fullPath.startsWith('/learning/')) return 'learning';
     // Legacy: /ai-workshop/* → workshop
     if (fullPath.startsWith('/ai-workshop/')) return 'workshop';
 
@@ -187,7 +188,7 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email'];
+      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning'];
       if (tabPages.includes(page)) {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
@@ -636,6 +637,7 @@ function AuthenticatedApp() {
             <LearningDashboard
               context={context}
               onBack={() => navigateToPage('home')}
+              initialTab={(tabParam || 'overview') as 'overview' | 'focus' | 'suggestions' | 'research' | 'feedback' | 'profile'}
             />
           </Suspense>
         );

@@ -37,14 +37,14 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
 
   const loadExportHistory = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await axios.get('/api/export/history', { signal });
+      const res = await axios.get('/api/export/history', { params: { context }, signal });
       setExportHistory(res.data.exports || []);
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
       logError('ExportDashboard:loadHistory', err);
     }
-  }, []);
+  }, [context]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -116,6 +116,7 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
     setLoading(true);
     try {
       const response = await axios.get('/api/export/backup', {
+        params: { context },
         responseType: 'blob'
       });
 

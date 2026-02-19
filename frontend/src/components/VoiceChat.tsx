@@ -129,6 +129,7 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
       case 'listening': return 'Ich h\u00f6re zu...';
       case 'processing': return 'Denke nach...';
       case 'speaking': return 'Spricht...';
+      default: return 'Bereit';
     }
   };
 
@@ -139,6 +140,7 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
       case 'listening': return '\uD83D\uDD34';
       case 'processing': return '\uD83E\uDDE0';
       case 'speaking': return '\uD83D\uDD0A';
+      default: return '\uD83C\uDFA4';
     }
   };
 

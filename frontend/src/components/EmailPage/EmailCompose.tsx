@@ -22,7 +22,7 @@ interface EmailComposeProps {
   onCancel: () => void;
 }
 
-export function EmailCompose({ accounts, replyTo, onSend, onCancel }: EmailComposeProps) {
+export function EmailCompose({ context: _context, accounts, replyTo, onSend, onCancel }: EmailComposeProps) {
   const [to, setTo] = useState(replyTo ? replyTo.from_address : '');
   const [cc, setCc] = useState('');
   const [subject, setSubject] = useState(

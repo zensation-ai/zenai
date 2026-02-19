@@ -41,7 +41,7 @@ function startOfDay(d: Date): Date {
 }
 
 export function GanttChart({
-  tasks, projects, loading, onEditTask, onCreateProject,
+  tasks, projects, loading, context: _context, onEditTask, onCreateProject,
 }: GanttChartProps) {
   const [zoom, setZoom] = useState<ZoomLevel>('week');
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());

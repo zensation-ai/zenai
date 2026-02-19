@@ -77,11 +77,11 @@ const ProactiveDigestComponent: React.FC<ProactiveDigestProps> = ({
 
   const markViewed = useCallback(async (id: string) => {
     try {
-      await axios.post(`/api/proactive/digest/${id}/viewed`);
+      await axios.post(`/api/proactive/digest/${id}/viewed`, null, { params: { context } });
     } catch (err) {
       logError('ProactiveDigest:markViewed', err);
     }
-  }, []);
+  }, [context]);
 
   const handleExpand = useCallback(() => {
     setExpanded(true);

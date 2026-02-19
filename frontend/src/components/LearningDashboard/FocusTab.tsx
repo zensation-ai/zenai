@@ -16,6 +16,7 @@ interface FocusTabProps {
 
 export function FocusTab({
   activeAreas,
+  stats,
   showAddFocus,
   newFocus,
   onToggleFocus,
@@ -27,6 +28,12 @@ export function FocusTab({
 }: FocusTabProps) {
   return (
     <div className="focus-tab">
+      {/* Focus Stats Summary */}
+      <div className="focus-stats-summary">
+        <span className="focus-stat">{stats.active_focus_areas} / {stats.total_focus_areas} aktiv</span>
+        <span className="focus-stat">{stats.total_ideas_linked} verknuepfte Ideen</span>
+      </div>
+
       <div className="focus-actions">
         <button type="button" className="add-focus-button neuro-button" onClick={() => onSetShowAddFocus(true)} aria-label="Neues Fokus-Thema erstellen">
           + Neues Fokus-Thema

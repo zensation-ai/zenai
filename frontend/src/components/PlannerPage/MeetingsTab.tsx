@@ -37,7 +37,7 @@ export function MeetingsTab({ context }: MeetingsTabProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`/api/${context}/meetings`, { params: { limit: 50, status: 'all' } });
+      const res = await axios.get('/api/meetings', { params: { limit: 50, status: 'all', context } });
       if (res.data.success) {
         setMeetings(res.data.data || []);
       }

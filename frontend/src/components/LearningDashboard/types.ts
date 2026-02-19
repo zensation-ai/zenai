@@ -1,6 +1,9 @@
+export type LearningTab = 'overview' | 'focus' | 'feedback' | 'research' | 'suggestions' | 'profile';
+
 export interface LearningDashboardProps {
   context: string;
   onBack: () => void;
+  initialTab?: LearningTab;
 }
 
 export interface DomainFocus {

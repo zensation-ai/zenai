@@ -42,7 +42,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
     const fetchNotes = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`/api/${context}/meetings/${meetingId}/notes`);
+        const res = await axios.get(`/api/meetings/${meetingId}/notes`, { params: { context } });
         if (res.data.success) {
           setNotes(Array.isArray(res.data.data) ? res.data.data : res.data.data ? [res.data.data] : []);
         }
@@ -114,9 +114,10 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
           transcript: transcript.trim(),
         });
       } else {
-        // Process directly via meetings endpoint
-        res = await axios.post(`/api/${context}/meetings/${meetingId}/notes`, {
+        // Process directly via meetings endpoint (context as query param)
+        res = await axios.post(`/api/meetings/${meetingId}/notes`, {
           transcript: transcript.trim(),
+          context,
         });
       }
 

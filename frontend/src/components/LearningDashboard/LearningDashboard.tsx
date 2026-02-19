@@ -8,6 +8,8 @@ import '../LearningDashboard.css';
 import { logError } from '../../utils/errors';
 import { RisingBubbles } from '../RisingBubbles';
 import { LearningDashboardProps, DashboardData, ProfileData } from './types';
+import type { LearningTab } from './types';
+import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { OverviewTab } from './OverviewTab';
 import { FocusTab } from './FocusTab';
 import { SuggestionsTab } from './SuggestionsTab';
@@ -15,11 +17,19 @@ import { ResearchTab } from './ResearchTab';
 import { FeedbackTab } from './FeedbackTab';
 import { ProfileTab } from './ProfileTab';
 
-export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
+const VALID_TABS: readonly LearningTab[] = ['overview', 'focus', 'suggestions', 'research', 'feedback', 'profile'];
+
+export function LearningDashboard({ context, onBack, initialTab = 'overview' }: LearningDashboardProps) {
   const greeting = getTimeBasedGreeting();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'focus' | 'feedback' | 'research' | 'suggestions' | 'profile'>('overview');
+  const { activeTab, handleTabChange } = useTabNavigation<LearningTab>({
+    initialTab,
+    validTabs: VALID_TABS,
+    defaultTab: 'overview',
+    basePath: '/learning',
+    rootTab: 'overview',
+  });
   const [newFocus, setNewFocus] = useState({ name: '', description: '', keywords: '' });
   const [showAddFocus, setShowAddFocus] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -246,7 +256,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         <button
           type="button"
           className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
+          onClick={() => handleTabChange('overview')}
           aria-label="Ubersicht anzeigen"
           aria-current={activeTab === 'overview' ? 'page' : undefined}
         >
@@ -255,7 +265,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         <button
           type="button"
           className={`tab-button ${activeTab === 'focus' ? 'active' : ''}`}
-          onClick={() => setActiveTab('focus')}
+          onClick={() => handleTabChange('focus')}
           aria-label="Fokus-Themen anzeigen"
           aria-current={activeTab === 'focus' ? 'page' : undefined}
         >
@@ -264,7 +274,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         <button
           type="button"
           className={`tab-button ${activeTab === 'suggestions' ? 'active' : ''}`}
-          onClick={() => setActiveTab('suggestions')}
+          onClick={() => handleTabChange('suggestions')}
           aria-label="Vorschläge anzeigen"
           aria-current={activeTab === 'suggestions' ? 'page' : undefined}
         >
@@ -273,7 +283,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         <button
           type="button"
           className={`tab-button ${activeTab === 'research' ? 'active' : ''}`}
-          onClick={() => setActiveTab('research')}
+          onClick={() => handleTabChange('research')}
           aria-label="Recherchen anzeigen"
           aria-current={activeTab === 'research' ? 'page' : undefined}
         >
@@ -282,7 +292,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         <button
           type="button"
           className={`tab-button ${activeTab === 'feedback' ? 'active' : ''}`}
-          onClick={() => setActiveTab('feedback')}
+          onClick={() => handleTabChange('feedback')}
           aria-label="Feedback anzeigen"
           aria-current={activeTab === 'feedback' ? 'page' : undefined}
         >
@@ -291,7 +301,7 @@ export function LearningDashboard({ context, onBack }: LearningDashboardProps) {
         <button
           type="button"
           className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
+          onClick={() => handleTabChange('profile')}
           aria-label="Profil anzeigen"
           aria-current={activeTab === 'profile' ? 'page' : undefined}
         >

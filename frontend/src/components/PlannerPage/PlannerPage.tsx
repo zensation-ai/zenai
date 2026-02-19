@@ -5,10 +5,11 @@
  * Replaces the standalone CalendarPage.
  */
 
-import { useState, useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
+import { useState, useMemo, lazy, Suspense, useCallback } from 'react';
 import type { PlannerTab, Task } from './types';
 import { useTasksData } from './useTasksData';
 import { useProjectsData } from './useProjectsData';
+import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { SkeletonLoader } from '../SkeletonLoader';
 import './PlannerPage.css';
 
@@ -43,15 +44,16 @@ const TABS: { id: PlannerTab; label: string; icon: string }[] = [
 ];
 
 export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPageProps) {
-  const [activeTab, setActiveTab] = useState<PlannerTab>(initialTab);
+  const { activeTab, handleTabChange } = useTabNavigation<PlannerTab>({
+    initialTab,
+    validTabs: ['calendar', 'tasks', 'projects', 'meetings'],
+    defaultTab: 'calendar',
+    basePath: '/calendar',
+    rootTab: 'calendar',
+  });
   const [projectFilter, setProjectFilter] = useState<string | undefined>(undefined);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
-
-  // Sync active tab when URL-driven initialTab changes
-  useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
 
   const {
     tasks, loading: tasksLoading,
@@ -104,7 +106,7 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
             role="tab"
             aria-selected={activeTab === tab.id}
             className={`planner-tab ${activeTab === tab.id ? 'planner-tab--active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
           >
             <span className="planner-tab__icon" aria-hidden="true">{tab.icon}</span>
             <span className="planner-tab__label">{tab.label}</span>
