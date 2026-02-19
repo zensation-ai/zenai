@@ -128,7 +128,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = () => {
         <div className="business-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>⚡ Performance (Lighthouse)</span>
           <button type="button" className="business-btn" onClick={runAudit} disabled={auditing}>
-            {auditing ? 'Audit laeuft...' : '🔄 Neues Audit'}
+            {auditing ? 'Audit läuft...' : '🔄 Neues Audit'}
           </button>
         </div>
         {performance ? (

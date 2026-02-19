@@ -289,7 +289,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
           </div>
           <div className="stat-item liquid-glass neuro-hover-lift">
             <span className="stat-value">{stats.total_executions}</span>
-            <span className="stat-label">Ausfuhrungen</span>
+            <span className="stat-label">Ausführungen</span>
           </div>
           <div className="stat-item liquid-glass neuro-hover-lift">
             <span className="stat-value">{Math.round(stats.success_rate * 100)}%</span>
@@ -404,7 +404,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
                           type="button"
                           className="action-btn execute neuro-hover-lift"
                           onClick={(e) => { e.stopPropagation(); handleExecuteAutomation(automation.id); }}
-                          aria-label="Automation jetzt ausfuhren"
+                          aria-label="Automation jetzt ausführen"
                         >
                           ▶ Jetzt ausführen
                         </button>
@@ -423,7 +423,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
                             type="button"
                             className="action-btn delete neuro-hover-lift"
                             onClick={(e) => { e.stopPropagation(); handleDeleteAutomation(automation.id); }}
-                            aria-label="Automation loschen"
+                            aria-label="Automation löschen"
                           >
                             🗑 Löschen
                           </button>
@@ -527,7 +527,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
                     <span>{stats.active_automations}</span>
                   </div>
                   <div className="stat-row">
-                    <span>Gesamt Ausfuhrungen</span>
+                    <span>Gesamt Ausführungen</span>
                     <span>{stats.total_executions}</span>
                   </div>
                   <div className="stat-row">
@@ -564,7 +564,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
                       <div key={auto.id} className="top-item neuro-hover-lift neuro-stagger-item">
                         <span className="rank">#{i + 1}</span>
                         <span className="name">{auto.name}</span>
-                        <span className="runs">{auto.run_count} Ausfuhrungen</span>
+                        <span className="runs">{auto.run_count} Ausführungen</span>
                         <span className="rate">{Math.round(auto.success_rate * 100)}%</span>
                       </div>
                     ))}

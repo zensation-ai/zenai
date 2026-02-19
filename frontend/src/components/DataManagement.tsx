@@ -8,11 +8,13 @@
 import { Suspense, lazy } from 'react';
 import { SkeletonLoader } from './SkeletonLoader';
 
+import type { AIContext } from './ContextSwitcher';
+
 const ExportDashboard = lazy(() => import('./ExportDashboard').then(m => ({ default: m.ExportDashboard })));
 const SyncDashboard = lazy(() => import('./SyncDashboard').then(m => ({ default: m.SyncDashboard })));
 
 interface DataManagementProps {
-  context: string;
+  context: AIContext;
 }
 
 export function DataManagement({ context }: DataManagementProps) {

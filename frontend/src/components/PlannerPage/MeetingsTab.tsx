@@ -8,6 +8,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { MeetingProtocol } from './MeetingProtocol';
+import { logError } from '../../utils/errors';
+import type { AIContext } from '../ContextSwitcher';
 import './MeetingsTab.css';
 
 interface Meeting {
@@ -24,7 +26,7 @@ interface Meeting {
 }
 
 interface MeetingsTabProps {
-  context: string;
+  context: AIContext;
 }
 
 export function MeetingsTab({ context }: MeetingsTabProps) {
@@ -42,6 +44,7 @@ export function MeetingsTab({ context }: MeetingsTabProps) {
         setMeetings(res.data.data || []);
       }
     } catch (err) {
+      logError('MeetingsTab:fetchMeetings', err);
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Meetings');
     } finally {
       setLoading(false);

@@ -47,7 +47,7 @@ const defaultProps = {
   tasks: [] as Task[],
   projects: [sampleProject],
   loading: false,
-  context: 'work',
+  context: 'work' as const,
   onEditTask: vi.fn(),
   onCreateProject: vi.fn().mockResolvedValue(null),
   onUpdateProject: vi.fn().mockResolvedValue(null),

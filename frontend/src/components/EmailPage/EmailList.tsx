@@ -20,8 +20,10 @@ interface EmailListProps {
   onBatchAction: (ids: string[], status: string) => void;
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '–';
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '–';
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   const isThisYear = date.getFullYear() === now.getFullYear();
@@ -88,10 +90,10 @@ export function EmailList({ emails, loading, error, total, searchQuery, onSearch
       {/* Batch Actions */}
       {selected.size > 0 && (
         <div className="email-batch-bar">
-          <span>{selected.size} ausgewaehlt</span>
+          <span>{selected.size} ausgewählt</span>
           <button onClick={() => handleBatchAction('read')}>Als gelesen</button>
           <button onClick={() => handleBatchAction('archived')}>Archivieren</button>
-          <button onClick={() => handleBatchAction('trash')}>Loeschen</button>
+          <button onClick={() => handleBatchAction('trash')}>Löschen</button>
           <button onClick={() => setSelected(new Set())}>Abbrechen</button>
         </div>
       )}
@@ -100,7 +102,7 @@ export function EmailList({ emails, loading, error, total, searchQuery, onSearch
       {emails.length > 0 && selected.size === 0 && (
         <div className="email-list-header">
           <button className="email-select-all" onClick={selectAll}>
-            Alle auswaehlen
+            Alle auswählen
           </button>
           <span className="email-count">{total} E-Mail{total !== 1 ? 's' : ''}</span>
         </div>
@@ -125,7 +127,7 @@ export function EmailList({ emails, loading, error, total, searchQuery, onSearch
       {!loading && !error && emails.length === 0 && (
         <div className="email-empty">
           <span className="email-empty-icon">📭</span>
-          <p>Keine E-Mails{searchQuery ? ` fuer "${searchQuery}"` : ''}</p>
+          <p>Keine E-Mails{searchQuery ? ` für "${searchQuery}"` : ''}</p>
         </div>
       )}
 
@@ -205,7 +207,7 @@ export function EmailList({ emails, loading, error, total, searchQuery, onSearch
           <button
             className="email-row-delete"
             onClick={(e) => { e.stopPropagation(); onDelete(email.id); }}
-            aria-label="Loeschen"
+            aria-label="Löschen"
           >
             🗑
           </button>

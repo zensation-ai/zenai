@@ -19,9 +19,10 @@ interface EmailDetailProps {
   onAIProcess: () => Promise<Email | null>;
 }
 
-function formatDateTime(dateStr: string | null): string {
+function formatDateTime(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -57,8 +58,8 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
     <div className="email-detail">
       {/* Toolbar */}
       <div className="email-detail-toolbar">
-        <button className="email-detail-back" onClick={onBack} aria-label="Zurueck">
-          ← Zurueck
+        <button className="email-detail-back" onClick={onBack} aria-label="Zurück">
+          ← Zurück
         </button>
         <div className="email-detail-actions">
           <button onClick={onStar} title={email.is_starred ? 'Stern entfernen' : 'Stern setzen'}>
@@ -66,7 +67,7 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
           </button>
           <button onClick={() => onReply(email)} title="Antworten">↩ Antworten</button>
           <button onClick={onArchive} title="Archivieren">📦 Archivieren</button>
-          <button onClick={onDelete} title="Loeschen" className="email-detail-delete">🗑 Loeschen</button>
+          <button onClick={onDelete} title="Löschen" className="email-detail-delete">🗑 Löschen</button>
         </div>
       </div>
 
@@ -155,7 +156,7 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
       {/* Attachments */}
       {email.attachments.length > 0 && (
         <div className="email-detail-attachments">
-          <div className="email-detail-ai-label">📎 Anhaenge</div>
+          <div className="email-detail-ai-label">📎 Anhänge</div>
           {email.attachments.map((att, i) => (
             <div key={i} className="email-attachment">
               <span>{att.filename}</span>
@@ -192,13 +193,13 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
         <div className="email-detail-suggestions">
           {suggestions.length === 0 && !loadingSuggestions && (
             <button className="email-detail-ai-btn" onClick={handleGetSuggestions}>
-              💡 Antwort-Vorschlaege generieren
+              💡 Antwort-Vorschläge generieren
             </button>
           )}
-          {loadingSuggestions && <p className="email-loading-text">Generiere Vorschlaege...</p>}
+          {loadingSuggestions && <p className="email-loading-text">Generiere Vorschläge...</p>}
           {suggestions.length > 0 && (
             <div className="email-suggestions-grid">
-              <div className="email-detail-ai-label">💡 Antwort-Vorschlaege</div>
+              <div className="email-detail-ai-label">💡 Antwort-Vorschläge</div>
               {suggestions.map((s, i) => (
                 <button
                   key={i}

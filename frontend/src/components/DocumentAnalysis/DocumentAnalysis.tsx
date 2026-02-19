@@ -20,6 +20,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { showToast } from '../Toast';
 import { getErrorMessage } from '../../utils/errors';
+import { getApiFetchHeaders, getApiBaseUrl } from '../../utils/apiConfig';
 import { ArtifactPanel } from '../ArtifactPanel';
 import type { Artifact } from '../../types/artifacts';
 import '../DocumentAnalysis.css';
@@ -118,8 +119,9 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
         setStreamStage('Verbinde...');
         setStreamProgress(5);
 
-        const response = await fetch('/api/documents/analyze/stream', {
+        const response = await fetch(`${getApiBaseUrl()}/api/documents/analyze/stream`, {
           method: 'POST',
+          headers: getApiFetchHeaders(),
           body: formData,
         });
 

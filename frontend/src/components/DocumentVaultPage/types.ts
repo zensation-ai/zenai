@@ -2,13 +2,15 @@
  * Document Vault Page - Types, Interfaces & Constants
  */
 
+import type { AIContext } from '../ContextSwitcher';
+
 export type DocumentsTab = 'documents' | 'editor' | 'media';
 
 export type ViewMode = 'grid' | 'list';
 
 export interface DocumentVaultPageProps {
   onBack: () => void;
-  context: string;
+  context: AIContext;
   initialTab?: DocumentsTab;
 }
 

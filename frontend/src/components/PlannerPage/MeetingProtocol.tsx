@@ -7,6 +7,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { logError } from '../../utils/errors';
+import type { AIContext } from '../ContextSwitcher';
 import './MeetingProtocol.css';
 
 interface MeetingNote {
@@ -24,7 +26,7 @@ interface MeetingNote {
 interface MeetingProtocolProps {
   meetingId: string;
   meetingTitle: string;
-  context: string;
+  context: AIContext;
   eventId?: string; // If opened from calendar event
 }
 
@@ -82,6 +84,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
             setTranscript(prev => prev ? `${prev}\n\n${res.data.transcript}` : res.data.transcript);
           }
         } catch (err) {
+          logError('MeetingProtocol:transcribe', err);
           setError('Transkription fehlgeschlagen. Bitte manuell eingeben.');
         }
       };
@@ -90,6 +93,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
       setMediaRecorder(recorder);
       setIsRecording(true);
     } catch (err) {
+      logError('MeetingProtocol:startRecording', err);
       setError('Mikrofon-Zugriff fehlgeschlagen. Bitte Berechtigung erteilen.');
     }
   }, [context]);
@@ -126,6 +130,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
         setTranscript('');
       }
     } catch (err) {
+      logError('MeetingProtocol:processNotes', err);
       setError(err instanceof Error ? err.message : 'Verarbeitung fehlgeschlagen');
     } finally {
       setProcessing(false);
@@ -171,7 +176,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
 
         {isRecording && (
           <span className="meeting-protocol__recording-indicator">
-            Aufnahme laeuft...
+            Aufnahme läuft...
           </span>
         )}
       </div>

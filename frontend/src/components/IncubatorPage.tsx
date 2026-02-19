@@ -14,6 +14,7 @@ import { IncubatorClusterCard } from './IncubatorClusterCard';
 import type { ThoughtCluster, IncubatorStats } from './IncubatorTypes';
 import { MILLER_CHUNK_SIZE } from './IncubatorTypes';
 import { logError } from '../utils/errors';
+import { useContextState } from './ContextSwitcher';
 import './IncubatorPage.css';
 import '../neurodesign.css';
 
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
+  const [context] = useContextState();
   const [clusters, setClusters] = useState<ThoughtCluster[]>([]);
   const [stats, setStats] = useState<IncubatorStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,8 +56,8 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
     setLoading(true);
     try {
       const [clustersRes, statsRes] = await Promise.all([
-        axios.get('/api/incubator/clusters'),
-        axios.get('/api/incubator/stats'),
+        axios.get('/api/incubator/clusters', { params: { context } }),
+        axios.get('/api/incubator/stats', { params: { context } }),
       ]);
       if (isMountedRef.current) {
         setClusters(clustersRes.data.clusters);
@@ -67,7 +69,7 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
     } finally {
       if (isMountedRef.current) setLoading(false);
     }
-  }, []);
+  }, [context]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -95,7 +97,7 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
     if (!quickThought.trim()) return;
     setSubmitting(true);
     try {
-      await axios.post('/api/incubator/thought', { text: quickThought, source: 'quick_jot' });
+      await axios.post('/api/incubator/thought', { text: quickThought, source: 'quick_jot', context });
       if (isMountedRef.current) {
         setQuickThought('');
         const reward = getRandomReward('ideaCreated');
@@ -113,7 +115,7 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
   const generateSummary = async (clusterId: string) => {
     setSummarizing(clusterId);
     try {
-      const response = await axios.post(`/api/incubator/clusters/${clusterId}/summarize`);
+      const response = await axios.post(`/api/incubator/clusters/${clusterId}/summarize`, { context });
       if (isMountedRef.current) {
         setClusters(clusters.map(c =>
           c.id === clusterId
@@ -133,7 +135,7 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
   const consolidateCluster = async (clusterId: string) => {
     setConsolidating(clusterId);
     try {
-      const response = await axios.post(`/api/incubator/clusters/${clusterId}/consolidate`);
+      const response = await axios.post(`/api/incubator/clusters/${clusterId}/consolidate`, { context });
       if (isMountedRef.current) {
         const milestoneRewards = DOPAMINE_REWARDS.milestoneReached;
         const randomMilestone = milestoneRewards[Math.floor(Math.random() * milestoneRewards.length)];
@@ -151,7 +153,7 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
 
   const dismissCluster = async (clusterId: string) => {
     try {
-      await axios.post(`/api/incubator/clusters/${clusterId}/dismiss`);
+      await axios.post(`/api/incubator/clusters/${clusterId}/dismiss`, { context });
       if (isMountedRef.current) { showToast('Cluster verworfen', 'info'); loadData(); }
     } catch (error) {
       logError('IncubatorPage:dismissCluster', error);
@@ -227,7 +229,7 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
                 ))}
               </div>
               {hasMoreReadyClusters && (
-                <div className="more-clusters-hint neuro-inspirational"><span aria-hidden="true">↓</span> {readyClusters.length - MILLER_CHUNK_SIZE} weitere Cluster verfuegbar</div>
+                <div className="more-clusters-hint neuro-inspirational"><span aria-hidden="true">↓</span> {readyClusters.length - MILLER_CHUNK_SIZE} weitere Cluster verfügbar</div>
               )}
             </section>
           )}

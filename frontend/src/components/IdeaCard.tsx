@@ -53,7 +53,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onTog
   const { triggerSuccess } = useNeuroFeedback();
 
   // Prüfe ob Karte neu ist (weniger als 5 Minuten alt)
-  const isNew = new Date().getTime() - new Date(idea.created_at).getTime() < IS_NEW_THRESHOLD_MS;
+  const isNew = idea.created_at ? new Date().getTime() - new Date(idea.created_at).getTime() < IS_NEW_THRESHOLD_MS : false;
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();

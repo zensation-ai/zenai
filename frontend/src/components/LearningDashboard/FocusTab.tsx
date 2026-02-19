@@ -128,7 +128,7 @@ export function FocusTab({
                     type="button"
                     className="delete-btn neuro-hover-lift"
                     onClick={() => onDeleteFocus(focus.id, focus.name)}
-                    aria-label={`Fokus ${focus.name} loschen`}
+                    aria-label={`Fokus ${focus.name} löschen`}
                   >
                     Löschen
                   </button>

@@ -18,7 +18,7 @@ interface ExportHistory {
 
 interface ExportDashboardProps {
   onBack: () => void;
-  context: string;
+  context: AIContext;
   embedded?: boolean;
 }
 

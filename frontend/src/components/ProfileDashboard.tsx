@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
+import type { AIContext } from './ContextSwitcher';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './ProfileDashboard.css';
@@ -37,7 +38,7 @@ interface Recommendations {
 
 interface ProfileDashboardProps {
   onBack: () => void;
-  context: string;
+  context: AIContext;
   embedded?: boolean;
 }
 

@@ -9,8 +9,9 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
 import type { Email, EmailStats, EmailAccount, EmailTab, EmailFilters, ReplySuggestion } from './types';
 import { getErrorMessage } from '../../utils/errors';
+import type { AIContext } from '../ContextSwitcher';
 
-export function useEmailData(context: string) {
+export function useEmailData(context: AIContext) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [thread, setThread] = useState<Email[]>([]);
@@ -152,7 +153,7 @@ export function useEmailData(context: string) {
       setEmails(prev => prev.filter(e => e.id !== id));
       if (selectedEmail?.id === id) setSelectedEmail(null);
     } catch (err) {
-      setError(getErrorMessage(err, 'Fehler beim Loeschen'));
+      setError(getErrorMessage(err, 'Fehler beim Löschen'));
     }
   }, [context, selectedEmail?.id]);
 

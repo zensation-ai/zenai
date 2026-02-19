@@ -6,7 +6,7 @@
  */
 
 import { lazy, Suspense, useMemo, memo, useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTabNavigation } from '../hooks/useTabNavigation';
 import axios from 'axios';
 import type { StructuredIdea } from '../types';
 import type { AIContext } from './ContextSwitcher';
@@ -140,22 +140,14 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   onTriageComplete,
   initialTab = 'ideas',
 }) => {
-  const navigate = useNavigate();
-  const [activeIdeasTab, setActiveIdeasTab] = useState<IdeasTab>(initialTab || 'ideas');
-
-  useEffect(() => {
-    const VALID_TABS: IdeasTab[] = ['ideas', 'incubator', 'archive', 'triage'];
-    setActiveIdeasTab(VALID_TABS.includes(initialTab as IdeasTab) ? initialTab as IdeasTab : 'ideas');
-  }, [initialTab]);
-
-  const handleTabChange = useCallback((tab: IdeasTab) => {
-    setActiveIdeasTab(tab);
-    if (tab === 'ideas') {
-      navigate('/ideas', { replace: true });
-    } else {
-      navigate(`/ideas/${tab}`, { replace: true });
-    }
-  }, [navigate]);
+  const VALID_TABS = ['ideas', 'incubator', 'archive', 'triage'] as const;
+  const { activeTab: activeIdeasTab, handleTabChange } = useTabNavigation<IdeasTab>({
+    initialTab,
+    validTabs: VALID_TABS,
+    defaultTab: 'ideas',
+    basePath: '/ideas',
+    rootTab: 'ideas',
+  });
 
   // Local favorite overrides for optimistic UI updates
   const [favoriteOverrides, setFavoriteOverrides] = useState<Map<string, boolean>>(new Map());

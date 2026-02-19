@@ -51,7 +51,7 @@ export function DigestCard({ digest, variant, index = 0 }: DigestCardProps) {
           <span className="score-value" style={{ color: getProductivityColor(digest.stats.productivity_score) }}>
             {digest.stats.productivity_score}
           </span>
-          <span className="score-label">Produktivitat</span>
+          <span className="score-label">Produktivität</span>
         </div>
       </div>
 

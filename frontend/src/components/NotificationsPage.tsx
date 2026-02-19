@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getRandomReward } from '../utils/aiPersonality';
+import type { AIContext } from './ContextSwitcher';
 import { getContextLabel } from './ContextSwitcher';
 import './NotificationsPage.css';
 import '../neurodesign.css';
@@ -56,7 +57,7 @@ interface PushStatus {
 
 interface NotificationsPageProps {
   onBack: () => void;
-  context: string;
+  context: AIContext;
 }
 
 const notificationTypeLabels: Record<string, { label: string; icon: string; description: string }> = {

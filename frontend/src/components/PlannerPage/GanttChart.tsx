@@ -8,13 +8,14 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import type { Task, Project } from './types';
 import { PRIORITY_COLORS } from './types';
+import type { AIContext } from '../ContextSwitcher';
 import './GanttChart.css';
 
 interface GanttChartProps {
   tasks: Task[];
   projects: Project[];
   loading: boolean;
-  context: string;
+  context: AIContext;
   onEditTask: (task: Task) => void;
   onCreateProject: (input: Partial<Project>) => Promise<Project | null>;
 }

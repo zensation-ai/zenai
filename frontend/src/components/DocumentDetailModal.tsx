@@ -5,6 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import axios from 'axios';
 import {
   Document,
   formatFileSize,
@@ -12,12 +13,15 @@ import {
   PROCESSING_STATUS_LABELS,
   PROCESSING_STATUS_COLORS,
 } from '../types/document';
-import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
+import { getApiBaseUrl } from '../utils/apiConfig';
+import { logError } from '../utils/errors';
 import './DocumentDetailModal.css';
+
+import type { AIContext } from './ContextSwitcher';
 
 interface DocumentDetailModalProps {
   doc: Document;
-  context: string;
+  context: AIContext;
   onClose: () => void;
   onUpdate: (doc: Document) => void;
   onDelete: () => void;
@@ -54,94 +58,59 @@ export function DocumentDetailModal({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/${doc.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getApiFetchHeaders(),
-          },
-          body: JSON.stringify({
-            title: editTitle,
-            tags: editTags.split(',').map(t => t.trim()).filter(Boolean),
-          }),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
-        onUpdate(result.data);
+      const response = await axios.put(`/api/${context}/documents/${doc.id}`, {
+        title: editTitle,
+        tags: editTags.split(',').map(t => t.trim()).filter(Boolean),
+      });
+      if (response.data.success) {
+        onUpdate(response.data.data);
         setIsEditing(false);
       }
     } catch (error) {
-      console.error('Failed to save:', error);
+      logError('DocumentDetail.save', error);
     } finally {
       setIsSaving(false);
     }
-  }, [API_URL, context, doc.id, editTitle, editTags, onUpdate]);
+  }, [context, doc.id, editTitle, editTags, onUpdate]);
 
   // Toggle favorite
   const handleToggleFavorite = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/${doc.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getApiFetchHeaders(),
-          },
-          body: JSON.stringify({ isFavorite: !doc.isFavorite }),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
-        onUpdate(result.data);
+      const response = await axios.put(`/api/${context}/documents/${doc.id}`, { isFavorite: !doc.isFavorite });
+      if (response.data.success) {
+        onUpdate(response.data.data);
       }
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      logError('DocumentDetail.toggleFavorite', error);
     }
-  }, [API_URL, context, doc, onUpdate]);
+  }, [context, doc, onUpdate]);
 
-  // Download file — use fetch + blob to avoid leaking API key in URL
+  // Download file — axios blob to avoid leaking API key in URL
   const handleDownload = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/documents/file/${doc.id}`,
-        { headers: getApiFetchHeaders() }
-      );
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const response = await axios.get(`/api/documents/file/${doc.id}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(response.data);
       const a = document.createElement('a');
       a.href = url;
       a.download = doc.originalFilename;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download:', error);
+      logError('DocumentDetail.download', error);
     }
-  }, [API_URL, doc.id, doc.originalFilename]);
+  }, [doc.id, doc.originalFilename]);
 
   // Reprocess document (context-aware, no page reload)
   const handleReprocess = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/documents/${doc.id}/reprocess`,
-        {
-          method: 'POST',
-          headers: getApiFetchHeaders(),
-        }
-      );
-      const result = await response.json();
-      if (result.success && result.data) {
+      const response = await axios.post(`/api/documents/${doc.id}/reprocess`);
+      if (response.data.success && response.data.data) {
         onUpdate({ ...doc, processingStatus: 'processing' });
       }
     } catch (error) {
-      console.error('Failed to reprocess:', error);
+      logError('DocumentDetail.reprocess', error);
     }
-  }, [API_URL, doc, onUpdate]);
+  }, [doc, onUpdate]);
 
   // Delete document
   const handleDelete = useCallback(async () => {
@@ -151,33 +120,27 @@ export function DocumentDetailModal({
 
     setIsDeleting(true);
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/${doc.id}`,
-        {
-          method: 'DELETE',
-          headers: getApiFetchHeaders(),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
+      const response = await axios.delete(`/api/${context}/documents/${doc.id}`);
+      if (response.data.success) {
         onDelete();
         onClose();
       }
     } catch (error) {
-      console.error('Failed to delete:', error);
+      logError('DocumentDetail.delete', error);
     } finally {
       setIsDeleting(false);
     }
-  }, [API_URL, context, doc.id, onDelete, onClose]);
+  }, [context, doc.id, onDelete, onClose]);
 
-  const formattedDate = new Date(doc.createdAt).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const formattedDate = doc.createdAt
+    ? new Date(doc.createdAt).toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '–';
 
   const isImage = doc.mimeType.startsWith('image/');
   const isPdf = doc.mimeType === 'application/pdf';

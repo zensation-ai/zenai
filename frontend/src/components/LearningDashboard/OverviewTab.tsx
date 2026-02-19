@@ -29,7 +29,7 @@ export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearc
         </div>
         <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
           <div className="stat-icon">⭐</div>
-          <div className="stat-value">{data.feedback.stats.average_rating.toFixed(1)}</div>
+          <div className="stat-value">{(data.feedback.stats.average_rating ?? 0).toFixed(1)}</div>
           <div className="stat-label">Durchschnittliche Bewertung</div>
         </div>
       </div>
@@ -52,7 +52,7 @@ export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearc
                     <span className="bar-value">{log.ideas_analyzed}</span>
                   </div>
                   <span className="chart-label">
-                    {new Date(log.learning_date).toLocaleDateString('de-DE', { weekday: 'short' })}
+                    {log.learning_date ? new Date(log.learning_date).toLocaleDateString('de-DE', { weekday: 'short' }) : '–'}
                   </span>
                 </div>
               );

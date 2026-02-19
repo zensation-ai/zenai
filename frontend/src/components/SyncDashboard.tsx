@@ -5,6 +5,7 @@ import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import '../neurodesign.css';
 import './SyncDashboard.css';
 import { logError } from '../utils/errors';
+import type { AIContext } from './ContextSwitcher';
 
 interface Device {
   id: string;
@@ -31,7 +32,7 @@ interface PendingChange {
 
 interface SyncDashboardProps {
   onBack: () => void;
-  context: string;
+  context: AIContext;
   embedded?: boolean;
 }
 
@@ -189,7 +190,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
         <div className="loading-state neuro-loading-contextual">
           <div className="neuro-loading-spinner" />
           <p className="neuro-loading-message">Lade Sync-Status...</p>
-          <p className="neuro-loading-submessage">Verbindungen werden gepruft</p>
+          <p className="neuro-loading-submessage">Verbindungen werden geprüft</p>
         </div>
       </div>
     );
@@ -318,7 +319,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
                   <div className="device-info">
                     <span className="device-name">
                       {device.name}
-                      {device.is_current && <span className="current-badge">Dieses Gerat</span>}
+                      {device.is_current && <span className="current-badge">Dieses Gerät</span>}
                     </span>
                     <span className="device-last-seen">
                       Zuletzt aktiv: {formatDate(device.last_seen)}

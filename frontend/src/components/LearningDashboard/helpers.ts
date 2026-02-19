@@ -32,8 +32,10 @@ export function getActivityStatusLabel(status: string): string {
   return labels[status] || status;
 }
 
-export function formatDate(dateString: string): string {
+export function formatDate(dateString: string | null | undefined): string {
+  if (!dateString) return '–';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '–';
   return date.toLocaleDateString('de-DE', {
     day: '2-digit',
     month: '2-digit',

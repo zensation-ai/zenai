@@ -14,7 +14,7 @@ export function FeedbackTab({ stats, insights }: FeedbackTabProps) {
           <div className="stat-label">Gesamt-Feedback</div>
         </div>
         <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">
-          <div className="stat-value">{stats.average_rating.toFixed(1)}</div>
+          <div className="stat-value">{(stats.average_rating ?? 0).toFixed(1)}</div>
           <div className="stat-label">Durchschnitt</div>
         </div>
         <div className="stat-card liquid-glass neuro-hover-lift neuro-stagger-item">

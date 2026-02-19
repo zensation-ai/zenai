@@ -58,7 +58,7 @@ export function DigestGoals({ goals, savingGoals, onSaveGoals }: DigestGoalsProp
   return (
     <div className="goals-section liquid-glass neuro-stagger-item">
       <div className="section-header-row">
-        <h2>🎯 Produktivitatsziele</h2>
+        <h2>🎯 Produktivitätsziele</h2>
         <button
           type="button"
           className={`edit-btn neuro-hover-lift ${editing ? 'active' : ''}`}
@@ -99,7 +99,7 @@ export function DigestGoals({ goals, savingGoals, onSaveGoals }: DigestGoalsProp
                   key={key}
                   className={`category-toggle neuro-hover-lift ${form.focus_categories.includes(key) ? 'active' : ''}`}
                   onClick={() => toggleFocusCategory(key)}
-                  aria-label={`Kategorie ${label} ${form.focus_categories.includes(key) ? 'entfernen' : 'hinzufugen'}`}
+                  aria-label={`Kategorie ${label} ${form.focus_categories.includes(key) ? 'entfernen' : 'hinzufügen'}`}
                 >
                   {label}
                 </button>

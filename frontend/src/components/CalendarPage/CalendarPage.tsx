@@ -11,6 +11,7 @@ import { useCalendarData } from './useCalendarData';
 import { CalendarEventForm } from './CalendarEventForm';
 import { SkeletonLoader } from '../SkeletonLoader';
 import { RisingBubbles } from '../RisingBubbles';
+import type { AIContext } from '../ContextSwitcher';
 import './CalendarPage.css';
 
 const CalendarMonthView = lazy(() => import('./CalendarMonthView').then(m => ({ default: m.CalendarMonthView })));
@@ -18,7 +19,7 @@ const CalendarWeekView = lazy(() => import('./CalendarWeekView').then(m => ({ de
 const CalendarDayView = lazy(() => import('./CalendarDayView').then(m => ({ default: m.CalendarDayView })));
 
 interface CalendarPageProps {
-  context?: string;
+  context?: AIContext;
   embedded?: boolean;
 }
 

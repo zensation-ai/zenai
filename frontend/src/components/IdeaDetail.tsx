@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { AIContext, useContextState, getContextLabel } from './ContextSwitcher';
 import { ContextPickerDialog } from './ContextPickerDialog';
 import { logError } from '../utils/errors';
+import { formatDateLong } from '../utils/dateUtils';
 import { IdeaDetailActions } from './IdeaDetailActions';
 import { IdeaDetailDraft } from './IdeaDetailDraft';
 import { IdeaDetailRelations } from './IdeaDetailRelations';
@@ -63,7 +64,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
   const loadRelations = async (signal: AbortSignal) => {
     setLoadingRelations(true);
     try {
-      const response = await axios.get(`/api/knowledge-graph/relations/${idea.id}`, { signal });
+      const response = await axios.get(`/api/knowledge-graph/relations/${idea.id}`, { params: { context }, signal });
       if (!signal.aborted) setRelations(response.data.relationships || []);
     } catch (error) {
       if (!axios.isCancel(error)) logError('IdeaDetail:loadRelations', error);
@@ -74,7 +75,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
 
   const loadSuggestions = async (signal: AbortSignal) => {
     try {
-      const response = await axios.get(`/api/knowledge-graph/suggestions/${idea.id}`, { signal });
+      const response = await axios.get(`/api/knowledge-graph/suggestions/${idea.id}`, { params: { context }, signal });
       if (!signal.aborted) setSuggestions(response.data.suggestions || []);
     } catch (error) {
       if (!axios.isCancel(error)) logError('IdeaDetail:loadSuggestions', error);
@@ -142,7 +143,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     setAnalyzing(true);
     const signal = abortControllerRef.current?.signal;
     try {
-      await axios.post(`/api/knowledge-graph/analyze/${idea.id}`, {}, { signal });
+      await axios.post(`/api/knowledge-graph/analyze/${idea.id}`, { context }, { signal });
       if (signal && !signal.aborted) {
         await loadRelations(signal);
         showToast('Beziehungen wurden analysiert', 'success');
@@ -157,10 +158,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     }
   };
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('de-DE', {
-      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
+  // Use shared null-safe formatDateLong from dateUtils
 
   const performResearch = async (type: 'answer' | 'solve' | 'develop' | 'explore') => {
     setResearchLoading(true);
@@ -339,9 +337,9 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
           />
 
           <div className="detail-footer">
-            <span className="detail-date">Erstellt: {formatDate(idea.created_at)}</span>
+            <span className="detail-date">Erstellt: {formatDateLong(idea.created_at)}</span>
             {idea.updated_at && idea.updated_at !== idea.created_at && (
-              <span className="detail-date">Aktualisiert: {formatDate(idea.updated_at)}</span>
+              <span className="detail-date">Aktualisiert: {formatDateLong(idea.updated_at)}</span>
             )}
           </div>
         </div>

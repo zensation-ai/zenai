@@ -130,7 +130,7 @@ export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onC
                 checked={allDay}
                 onChange={(e) => setAllDay(e.target.checked)}
               />
-              Ganztaegig
+              Ganztägig
             </label>
           </div>
 
@@ -167,7 +167,7 @@ export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onC
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="z.B. Buero, Zoom, ..."
+              placeholder="z.B. Büro, Zoom, ..."
             />
           </div>
 

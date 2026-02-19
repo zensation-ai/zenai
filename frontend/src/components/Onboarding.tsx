@@ -5,9 +5,10 @@ import { AI_PERSONALITY, AI_AVATAR, getTimeBasedGreeting } from '../utils/aiPers
 import './Onboarding.css';
 import '../neurodesign.css';
 import { logError } from '../utils/errors';
+import type { AIContext } from './ContextSwitcher';
 
 interface OnboardingProps {
-  context: string;
+  context: AIContext;
   onComplete: () => void;
 }
 

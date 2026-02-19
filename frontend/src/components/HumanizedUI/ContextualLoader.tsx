@@ -47,7 +47,7 @@ export const ContextualLoader = ({
         )}
       </div>
 
-      {/* Progress-Bar wenn verfuegbar */}
+      {/* Progress-Bar wenn verfügbar */}
       {showProgress && context.progress !== undefined && (
         <div className="loader-progress">
           <div

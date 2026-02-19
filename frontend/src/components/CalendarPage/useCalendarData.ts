@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import type { CalendarEvent, CreateEventInput } from './types';
+import type { AIContext } from '../ContextSwitcher';
 
 interface UseCalendarDataReturn {
   events: CalendarEvent[];
@@ -19,7 +20,7 @@ interface UseCalendarDataReturn {
 }
 
 export function useCalendarData(
-  context: string,
+  context: AIContext,
   start: Date,
   end: Date
 ): UseCalendarDataReturn {

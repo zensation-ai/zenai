@@ -186,7 +186,7 @@ export function RecordButton({ onTranscript, onProcessed, onRecordingChange, dis
   };
 
   const buttonLabel = processing
-    ? 'Verarbeitung laeuft'
+    ? 'Verarbeitung läuft'
     : recording
     ? 'Aufnahme stoppen'
     : 'Sprachmemo aufnehmen';

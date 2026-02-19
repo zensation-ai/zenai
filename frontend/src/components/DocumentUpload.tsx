@@ -6,12 +6,12 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
+import axios from 'axios';
 import {
   DocumentUploadResult,
   formatFileSize,
   getFileTypeLabel,
 } from '../types/document';
-import { getApiFetchHeaders } from '../utils/apiConfig';
 import './DocumentUpload.css';
 
 interface DocumentUploadProps {
@@ -190,16 +190,8 @@ export function DocumentUpload({
     );
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/api/${context}/documents`,
-        {
-          method: 'POST',
-          headers: getApiFetchHeaders(),
-          body: formData,
-        }
-      );
-
-      const result = await response.json();
+      const response = await axios.post(`/api/${context}/documents`, formData);
+      const result = response.data;
 
       if (result.success) {
         // Mark files as success or error

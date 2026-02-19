@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { AI_PERSONALITY, AI_AVATAR, FEEDBACK_REACTIONS } from '../utils/aiPersonality';
+import type { AIContext } from './ContextSwitcher';
 import { getContextLabel } from './ContextSwitcher';
 import { PersonalizationMessages } from './PersonalizationMessages';
 import { PersonalizationFacts } from './PersonalizationFacts';
@@ -42,7 +43,7 @@ interface UserSummary {
 
 interface PersonalizationChatProps {
   onBack?: () => void;
-  context: string;
+  context: AIContext;
   embedded?: boolean;
 }
 
@@ -246,6 +247,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
         showToast(`${newFacts.length} neue(s) Fakt(en) gelernt! ${reaction}`, 'success');
       }
     } catch (err) {
+      logError('PersonalizationChat:sendMessage', err);
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Nachricht fehlgeschlagen'
         : 'Nachricht fehlgeschlagen';
@@ -262,7 +264,8 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
       await axios.delete(`/api/personalization/facts/${factId}`);
       setFacts(prev => prev.filter(f => f.id !== factId));
       showToast('Fakt gelöscht', 'success');
-    } catch {
+    } catch (err) {
+      logError('PersonalizationChat:deleteFact', err);
       showToast('Löschen fehlgeschlagen', 'error');
     } finally {
       setDeletingFact(null);

@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 import { logError } from '../../utils/errors';
 import { useNavigate } from 'react-router-dom';
 import { RisingBubbles } from '../RisingBubbles';
@@ -21,7 +22,6 @@ import {
 import { DocumentsTab, DocumentVaultPageProps, DOC_TABS } from './types';
 import { FolderSidebar } from './FolderSidebar';
 import { BatchActionBar } from './BatchActionBar';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import '../DocumentVaultPage.css';
 import type { Folder } from '../../types/document';
 import type { ViewMode } from './types';
@@ -67,32 +67,24 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
   // Debounce timer for search
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const API_URL = getApiBaseUrl();
-
   // Fetch documents (append=true for load-more pagination)
   const fetchDocuments = useCallback(async (currentFilters: DocumentFilters, append = false) => {
     setLoading(true);
     if (!append) setError(null);
 
     try {
-      const params = new URLSearchParams();
-      if (currentFilters.folderPath) { params.set('folderPath', currentFilters.folderPath); }
-      if (currentFilters.search) { params.set('search', currentFilters.search); }
-      if (currentFilters.limit) { params.set('limit', currentFilters.limit.toString()); }
-      if (currentFilters.offset) { params.set('offset', currentFilters.offset.toString()); }
-      if (currentFilters.sortBy) { params.set('sortBy', currentFilters.sortBy); }
-      if (currentFilters.sortOrder) { params.set('sortOrder', currentFilters.sortOrder); }
-      if (currentFilters.favorites) { params.set('favorites', 'true'); }
-      if (currentFilters.archived) { params.set('archived', 'true'); }
+      const params: Record<string, string> = {};
+      if (currentFilters.folderPath) { params.folderPath = currentFilters.folderPath; }
+      if (currentFilters.search) { params.search = currentFilters.search; }
+      if (currentFilters.limit) { params.limit = currentFilters.limit.toString(); }
+      if (currentFilters.offset) { params.offset = currentFilters.offset.toString(); }
+      if (currentFilters.sortBy) { params.sortBy = currentFilters.sortBy; }
+      if (currentFilters.sortOrder) { params.sortOrder = currentFilters.sortOrder; }
+      if (currentFilters.favorites) { params.favorites = 'true'; }
+      if (currentFilters.archived) { params.archived = 'true'; }
 
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents?${params.toString()}`,
-        {
-          headers: getApiFetchHeaders(),
-        }
-      );
-
-      const result = await response.json();
+      const response = await axios.get(`/api/${context}/documents`, { params });
+      const result = response.data;
 
       if (result.success) {
         setDocuments(prev => append ? [...prev, ...result.data] : result.data);
@@ -106,45 +98,31 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } finally {
       setLoading(false);
     }
-  }, [API_URL,context]);
+  }, [context]);
 
   // Fetch folders
   const fetchFolders = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/folders`,
-        {
-          headers: getApiFetchHeaders(),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
-        setFolders(result.data);
+      const response = await axios.get(`/api/${context}/documents/folders`);
+      if (response.data.success) {
+        setFolders(response.data.data);
       }
     } catch (err) {
       logError('DocumentVault.fetchFolders', err);
     }
-  }, [API_URL,context]);
+  }, [context]);
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/stats`,
-        {
-          headers: getApiFetchHeaders(),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
-        setStats(result.data);
+      const response = await axios.get(`/api/${context}/documents/stats`);
+      if (response.data.success) {
+        setStats(response.data.data);
       }
     } catch (err) {
       logError('DocumentVault.fetchStats', err);
     }
-  }, [API_URL,context]);
+  }, [context]);
 
   // Initial load + reload on folder/sort changes (but NOT offset changes from loadMore)
   const prevFolderRef = useRef(filters.folderPath);
@@ -187,22 +165,12 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     if (!newFolderName.trim()) { return; }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/folders`,
-        {
-          method: 'POST',
-          headers: {
-            ...getApiFetchHeaders('application/json'),
-          },
-          body: JSON.stringify({
-            name: newFolderName.trim(),
-            parentPath: selectedFolder === '/' ? '/' : selectedFolder,
-          }),
-        }
-      );
+      const response = await axios.post(`/api/${context}/documents/folders`, {
+        name: newFolderName.trim(),
+        parentPath: selectedFolder === '/' ? '/' : selectedFolder,
+      });
 
-      const result = await response.json();
-      if (result.success) {
+      if (response.data.success) {
         fetchFolders();
         setShowCreateFolder(false);
         setNewFolderName('');
@@ -210,7 +178,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       logError('DocumentVault.createFolder', err);
     }
-  }, [API_URL,context, newFolderName, selectedFolder, fetchFolders]);
+  }, [context, newFolderName, selectedFolder, fetchFolders]);
 
   // Handle document update from detail modal
   const handleDocumentUpdate = useCallback((updatedDoc: Document) => {
@@ -250,43 +218,37 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     }
 
     // Debounce the actual search
-    searchTimerRef.current = setTimeout(() => {
-      fetch(`${API_URL}/api/${context}/documents/search`, {
-        method: 'POST',
-        headers: {
-          ...getApiFetchHeaders('application/json'),
-        },
-        body: JSON.stringify({ query, limit: 50 }),
-      })
-        .then(res => res.json())
-        .then(result => {
-          if (result.success) {
-            // Convert search results to document format, preserving available data
-            setDocuments(result.data.map((r: Record<string, unknown>) => ({
-              id: r.id,
-              title: r.title || r.originalFilename || 'Untitled',
-              originalFilename: r.originalFilename || r.title || 'Untitled',
-              summary: r.summary || '',
-              mimeType: r.mimeType || 'application/octet-stream',
-              fileSize: r.fileSize || 0,
-              folderPath: r.folderPath || '/',
-              keywords: r.keywords || [],
-              tags: r.tags || [],
-              processingStatus: r.processingStatus || 'completed',
-              viewCount: r.viewCount || 0,
-              isFavorite: r.isFavorite || false,
-              isArchived: r.isArchived || false,
-              createdAt: r.createdAt || r.created_at || new Date().toISOString(),
-              updatedAt: r.updatedAt || r.updated_at || new Date().toISOString(),
-              similarity: r.similarity,
-            })));
-            setTotal(result.data.length);
-            setHasMore(false);
-          }
-        })
-        .catch((err) => logError('DocumentVault.search', err));
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const response = await axios.post(`/api/${context}/documents/search`, { query, limit: 50 });
+        const result = response.data;
+        if (result.success) {
+          setDocuments(result.data.map((r: Record<string, unknown>) => ({
+            id: r.id,
+            title: r.title || r.originalFilename || 'Untitled',
+            originalFilename: r.originalFilename || r.title || 'Untitled',
+            summary: r.summary || '',
+            mimeType: r.mimeType || 'application/octet-stream',
+            fileSize: r.fileSize || 0,
+            folderPath: r.folderPath || '/',
+            keywords: r.keywords || [],
+            tags: r.tags || [],
+            processingStatus: r.processingStatus || 'completed',
+            viewCount: r.viewCount || 0,
+            isFavorite: r.isFavorite || false,
+            isArchived: r.isArchived || false,
+            createdAt: r.createdAt || r.created_at || new Date().toISOString(),
+            updatedAt: r.updatedAt || r.updated_at || new Date().toISOString(),
+            similarity: r.similarity,
+          })));
+          setTotal(result.data.length);
+          setHasMore(false);
+        }
+      } catch (err) {
+        logError('DocumentVault.search', err);
+      }
     }, 300);
-  }, [API_URL, context, filters, fetchDocuments]);
+  }, [context, filters, fetchDocuments]);
 
   // Handle upload complete
   const handleUploadComplete = useCallback((_result: DocumentUploadResult) => {
@@ -300,16 +262,8 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     if (!confirm('Dokument wirklich l\u00f6schen?')) { return; }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/${id}`,
-        {
-          method: 'DELETE',
-          headers: getApiFetchHeaders(),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
+      const response = await axios.delete(`/api/${context}/documents/${id}`);
+      if (response.data.success) {
         setDocuments(prev => prev.filter(d => d.id !== id));
         setTotal(prev => prev - 1);
         fetchStats();
@@ -317,24 +271,13 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       logError('DocumentVault.delete', err);
     }
-  }, [API_URL,context, fetchStats]);
+  }, [context, fetchStats]);
 
   // Handle toggle favorite
   const handleToggleFavorite = useCallback(async (doc: Document) => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/${doc.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            ...getApiFetchHeaders('application/json'),
-          },
-          body: JSON.stringify({ isFavorite: !doc.isFavorite }),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
+      const response = await axios.put(`/api/${context}/documents/${doc.id}`, { isFavorite: !doc.isFavorite });
+      if (response.data.success) {
         setDocuments(prev =>
           prev.map(d => d.id === doc.id ? { ...d, isFavorite: !d.isFavorite } : d)
         );
@@ -342,7 +285,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       logError('DocumentVault.toggleFavorite', err);
     }
-  }, [API_URL,context]);
+  }, [context]);
 
   // Handle document selection
   const toggleSelection = useCallback((id: string, selected: boolean) => {
@@ -373,19 +316,8 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     if (!confirm(`${selectedDocuments.size} Dokument(e) wirklich l\u00f6schen?`)) { return; }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/batch`,
-        {
-          method: 'DELETE',
-          headers: {
-            ...getApiFetchHeaders('application/json'),
-          },
-          body: JSON.stringify({ ids: Array.from(selectedDocuments) }),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
+      const response = await axios.delete(`/api/${context}/documents/batch`, { data: { ids: Array.from(selectedDocuments) } });
+      if (response.data.success) {
         setDocuments(prev => prev.filter(d => !selectedDocuments.has(d.id)));
         setSelectedDocuments(new Set());
         fetchStats();
@@ -393,30 +325,18 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       logError('DocumentVault.batchDelete', err);
     }
-  }, [API_URL,context, selectedDocuments, fetchStats]);
+  }, [context, selectedDocuments, fetchStats]);
 
   // Batch move
   const handleBatchMove = useCallback(async (targetFolder: string) => {
     if (selectedDocuments.size === 0) { return; }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/${context}/documents/batch/move`,
-        {
-          method: 'POST',
-          headers: {
-            ...getApiFetchHeaders('application/json'),
-          },
-          body: JSON.stringify({
-            ids: Array.from(selectedDocuments),
-            folderPath: targetFolder,
-          }),
-        }
-      );
-
-      const result = await response.json();
-      if (result.success) {
-        // Refresh documents
+      const response = await axios.post(`/api/${context}/documents/batch/move`, {
+        ids: Array.from(selectedDocuments),
+        folderPath: targetFolder,
+      });
+      if (response.data.success) {
         fetchDocuments(filters);
         setSelectedDocuments(new Set());
         fetchFolders();
@@ -424,7 +344,7 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
     } catch (err) {
       logError('DocumentVault.batchMove', err);
     }
-  }, [API_URL,context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
+  }, [context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
 
   // Load more (append to existing documents)
   const loadMore = useCallback(() => {

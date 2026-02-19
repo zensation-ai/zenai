@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 import { getContextLabel } from './ContextSwitcher';
+import type { AIContext } from './ContextSwitcher';
 import { DigestCard } from './DigestCard';
 import { DigestGoals } from './DigestGoals';
 import type { GoalFormState } from './DigestGoals';
@@ -13,7 +14,7 @@ import './DigestDashboard.css';
 
 interface DigestDashboardProps {
   onBack: () => void;
-  context: string;
+  context: AIContext;
 }
 
 export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
@@ -100,7 +101,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
         <div className="loading-state neuro-loading-contextual">
           <div className="neuro-loading-spinner" />
           <p className="neuro-loading-message">Lade Zusammenfassungen...</p>
-          <p className="neuro-loading-submessage">Deine Produktivitat wird analysiert</p>
+          <p className="neuro-loading-submessage">Deine Produktivität wird analysiert</p>
         </div>
       </div>
     );
