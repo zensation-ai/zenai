@@ -320,12 +320,13 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
         )}
 
         {/* Activity Chart */}
-        {hourlyActivity.length > 0 && (
+        {hourlyActivity.length > 0 && (() => {
+          const maxCount = Math.max(...hourlyActivity.map((h) => h.count), 1);
+          return (
           <section className="activity-section liquid-glass neuro-stagger-item">
             <h3>Aktivität nach Uhrzeit</h3>
             <div className="activity-chart">
               {hourlyActivity.map((item, index) => {
-                const maxCount = Math.max(...hourlyActivity.map((h) => h.count), 1);
                 const height = (item.count / maxCount) * 100;
                 return (
                   <div key={item.hour} className="activity-bar-container neuro-stagger-item" style={{ animationDelay: `${index * 20}ms` }}>
@@ -342,7 +343,8 @@ export function AnalyticsDashboard({ context, onBack }: AnalyticsDashboardProps)
               })}
             </div>
           </section>
-        )}
+          );
+        })()}
 
         {/* Patterns & Insights */}
         {patterns && (patterns.peakTimes.hours.length > 0 || patterns.insights.length > 0) && (

@@ -71,8 +71,11 @@ export function adaptGoals(d: Record<string, unknown>): ProductivityGoals | null
   };
 }
 
-export function formatDigestDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('de-DE', {
+export function formatDigestDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('de-DE', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -80,9 +83,11 @@ export function formatDigestDate(dateStr: string): string {
   });
 }
 
-export function formatDateRange(start: string, end: string): string {
+export function formatDateRange(start: string | null | undefined, end: string | null | undefined): string {
+  if (!start || !end) return '';
   const startDate = new Date(start);
   const endDate = new Date(end);
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return `${start} - ${end}`;
   return `${startDate.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })} - ${endDate.toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 }
 

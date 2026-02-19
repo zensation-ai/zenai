@@ -63,7 +63,7 @@ interface GraphData {
 interface KnowledgeGraphPageProps {
   onBack: () => void;
   onSelectIdea?: (ideaId: string) => void;
-  context: string;
+  context: string; // validated as AIContext by parent (InsightsDashboard)
 }
 
 // Node colors based on idea type
@@ -250,7 +250,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
   return (
     <div className="knowledge-graph-page neuro-page-enter">
       <header className="graph-header">
-        <button className="back-button" onClick={onBack}>
+        <button type="button" className="back-button" onClick={onBack} aria-label="Zurück zu Insights">
           ← Zurück
         </button>
         <h1>Knowledge Graph</h1>
@@ -268,18 +268,22 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
             <h2>Themen</h2>
             <div className="sidebar-actions">
               <button
+                type="button"
                 className="action-button"
                 onClick={handleGenerateTopics}
                 disabled={generating}
                 title="Themen neu generieren"
+                aria-label="Themen neu generieren"
               >
                 {generating ? '...' : '🔄'}
               </button>
               <button
+                type="button"
                 className="action-button"
                 onClick={handleDiscoverRelationships}
                 disabled={discovering}
                 title="Beziehungen entdecken"
+                aria-label="Beziehungen entdecken"
               >
                 {discovering ? '...' : '🔍'}
               </button>
@@ -288,6 +292,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
 
           <div className="topic-list">
             <button
+              type="button"
               className={`topic-chip ${!selectedTopic ? 'active' : ''}`}
               onClick={() => setSelectedTopic(null)}
             >
@@ -296,6 +301,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
 
             {graphData?.topics.map((topic) => (
               <button
+                type="button"
                 key={topic.id}
                 className={`topic-chip ${selectedTopic === topic.id ? 'active' : ''}`}
                 onClick={() => setSelectedTopic(topic.id === selectedTopic ? null : topic.id)}
@@ -314,7 +320,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
                 <span className="neuro-empty-icon">🏷️</span>
                 <h3 className="neuro-empty-title">Keine Themen vorhanden</h3>
                 <p className="neuro-empty-description">Generiere Themen aus deinen Ideen.</p>
-                <button className="generate-button neuro-button" onClick={handleGenerateTopics} disabled={generating}>
+                <button type="button" className="generate-button neuro-button" onClick={handleGenerateTopics} disabled={generating}>
                   {generating ? 'Generiere...' : 'Themen generieren'}
                 </button>
               </div>
@@ -361,7 +367,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
             />
 
             <Panel position="top-right" className="graph-panel">
-              <button onClick={() => loadGraph()} title="Aktualisieren">
+              <button type="button" onClick={() => loadGraph()} title="Aktualisieren" aria-label="Graph aktualisieren">
                 🔄 Aktualisieren
               </button>
             </Panel>
@@ -373,7 +379,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
           <aside className="node-detail-panel">
             <div className="panel-header">
               <h3>{selectedNode.title}</h3>
-              <button className="close-button" onClick={() => setSelectedNode(null)}>
+              <button type="button" className="close-button" onClick={() => setSelectedNode(null)} aria-label="Panel schließen">
                 ×
               </button>
             </div>
@@ -406,6 +412,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
                 </div>
               )}
               <button
+                type="button"
                 className="view-idea-button"
                 onClick={() => onSelectIdea?.(selectedNode.id)}
               >

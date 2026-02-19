@@ -3,8 +3,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 
 interface BusinessInsightsTabProps {
   context: AIContext;
@@ -62,12 +62,9 @@ export const BusinessInsightsTab: React.FC<BusinessInsightsTabProps> = () => {
 
   const fetchInsights = useCallback(async () => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/insights`, {
-        headers: getApiFetchHeaders(),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setInsights(data.insights ?? []);
+      const res = await axios.get('/api/business/insights');
+      if (res.data.success) {
+        setInsights(res.data.insights ?? []);
       }
     } catch {
       // Keep defaults
@@ -81,13 +78,10 @@ export const BusinessInsightsTab: React.FC<BusinessInsightsTabProps> = () => {
   const generateInsights = async () => {
     setGenerating(true);
     try {
-      await fetch(`${getApiBaseUrl()}/api/business/insights/generate`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-      });
+      await axios.post('/api/business/insights/generate');
       await fetchInsights();
     } catch {
-      // Ignore
+      // Generation may fail if no connectors configured
     } finally {
       setGenerating(false);
     }
@@ -95,10 +89,7 @@ export const BusinessInsightsTab: React.FC<BusinessInsightsTabProps> = () => {
 
   const dismissInsight = async (id: string) => {
     try {
-      await fetch(`${getApiBaseUrl()}/api/business/insights/${id}/dismiss`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-      });
+      await axios.post(`/api/business/insights/${id}/dismiss`);
       setInsights(prev => prev.filter(i => i.id !== id));
     } catch {
       // Ignore
@@ -107,10 +98,7 @@ export const BusinessInsightsTab: React.FC<BusinessInsightsTabProps> = () => {
 
   const actOnInsight = async (id: string) => {
     try {
-      await fetch(`${getApiBaseUrl()}/api/business/insights/${id}/act`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-      });
+      await axios.post(`/api/business/insights/${id}/act`);
       setInsights(prev => prev.filter(i => i.id !== id));
     } catch {
       // Ignore

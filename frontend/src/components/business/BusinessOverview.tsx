@@ -2,9 +2,9 @@
  * BusinessOverview - KPI-Cards with quick metrics
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import type { BusinessTab, BusinessOverview as BusinessOverviewType } from '../../types/business';
 
 interface BusinessOverviewProps {
@@ -23,30 +23,35 @@ const DEFAULT_OVERVIEW: BusinessOverviewType = {
 export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTab }) => {
   const [data, setData] = useState<BusinessOverviewType>(DEFAULT_OVERVIEW);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
     const fetchOverview = async () => {
       try {
-        const res = await fetch(`${getApiBaseUrl()}/api/business/overview`, {
-          headers: getApiFetchHeaders(),
-        });
-        const json = await res.json();
-        if (json.success && json.overview) {
+        const res = await axios.get('/api/business/overview', { signal });
+        if (res.data.success && res.data.overview) {
           setData({
-            revenue: json.overview.revenue ?? DEFAULT_OVERVIEW.revenue,
-            traffic: json.overview.traffic ?? DEFAULT_OVERVIEW.traffic,
-            seo: json.overview.seo ?? DEFAULT_OVERVIEW.seo,
-            health: json.overview.health ?? DEFAULT_OVERVIEW.health,
-            performance: json.overview.performance ?? DEFAULT_OVERVIEW.performance,
+            revenue: res.data.overview.revenue ?? DEFAULT_OVERVIEW.revenue,
+            traffic: res.data.overview.traffic ?? DEFAULT_OVERVIEW.traffic,
+            seo: res.data.overview.seo ?? DEFAULT_OVERVIEW.seo,
+            health: res.data.overview.health ?? DEFAULT_OVERVIEW.health,
+            performance: res.data.overview.performance ?? DEFAULT_OVERVIEW.performance,
           });
         }
-      } catch {
-        // Keep defaults
+        setError(null);
+      } catch (err) {
+        if (!axios.isCancel(err)) setError('Übersicht konnte nicht geladen werden');
       } finally {
         setLoading(false);
       }
     };
     fetchOverview();
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   const formatCurrency = (cents: number) => `€${(cents / 100).toFixed(0)}`;
@@ -91,6 +96,7 @@ export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTa
 
   return (
     <div>
+      {error && <div className="business-empty-text" style={{ color: 'var(--danger, #f87171)', marginBottom: '1rem' }}>{error}</div>}
       <div className="business-kpi-grid">
         {kpis.map((kpi) => (
           <div key={kpi.label} className="business-kpi-card neuro-hover-lift" onClick={() => onNavigateTab(kpi.tab)}>

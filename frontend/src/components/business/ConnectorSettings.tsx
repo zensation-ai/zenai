@@ -3,18 +3,12 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import type { BusinessConnector, BusinessSourceType } from '../../types/business';
 
 interface ConnectorSettingsProps {
   context: AIContext;
-}
-
-interface ConnectorStatus {
-  type: string;
-  available: boolean;
-  label: string;
 }
 
 const CONNECTOR_INFO: Record<string, { icon: string; label: string; description: string }> = {
@@ -27,20 +21,15 @@ const CONNECTOR_INFO: Record<string, { icon: string; label: string; description:
 
 export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
   const [connectors, setConnectors] = useState<BusinessConnector[]>([]);
-  const [, setStatuses] = useState<ConnectorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ type: string; success: boolean; message: string } | null>(null);
 
   const fetchConnectors = useCallback(async () => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/connectors`, {
-        headers: getApiFetchHeaders(),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setConnectors(data.connectors ?? []);
-        setStatuses(data.available ?? []);
+      const res = await axios.get('/api/business/connectors');
+      if (res.data.success) {
+        setConnectors(res.data.connectors ?? []);
       }
     } catch {
       // Keep defaults
@@ -55,12 +44,8 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
     setTesting(type);
     setTestResult(null);
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/connectors/${type}/test`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-      });
-      const data = await res.json();
-      setTestResult({ type, success: data.test?.success ?? false, message: data.test?.message ?? 'Unknown' });
+      const res = await axios.post(`/api/business/connectors/${type}/test`);
+      setTestResult({ type, success: res.data.test?.success ?? false, message: res.data.test?.message ?? 'Unknown' });
     } catch (error) {
       setTestResult({ type, success: false, message: error instanceof Error ? error.message : 'Verbindungsfehler' });
     } finally {
@@ -71,16 +56,11 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
   const addConnector = async (sourceType: BusinessSourceType) => {
     const info = CONNECTOR_INFO[sourceType];
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/connectors`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-        body: JSON.stringify({
-          source_type: sourceType,
-          display_name: info?.label ?? sourceType,
-        }),
+      const res = await axios.post('/api/business/connectors', {
+        source_type: sourceType,
+        display_name: info?.label ?? sourceType,
       });
-      const data = await res.json();
-      if (data.success) {
+      if (res.data.success) {
         await fetchConnectors();
       }
     } catch {
@@ -90,12 +70,8 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
 
   const removeConnector = async (id: string) => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/connectors/${id}`, {
-        method: 'DELETE',
-        headers: getApiFetchHeaders(),
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await axios.delete(`/api/business/connectors/${id}`);
+      if (res.data.success) {
         setConnectors(prev => prev.filter(c => c.id !== id));
       }
     } catch {
@@ -105,10 +81,7 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
 
   const triggerCollection = async () => {
     try {
-      await fetch(`${getApiBaseUrl()}/api/business/connectors/collect`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-      });
+      await axios.post('/api/business/connectors/collect');
     } catch {
       // Ignore
     }
@@ -116,12 +89,9 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
 
   const authorizeGoogle = async () => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/connectors/google/authorize`, {
-        headers: getApiFetchHeaders(),
-      });
-      const data = await res.json();
-      if (data.success && data.authorizeUrl) {
-        window.open(data.authorizeUrl, '_blank');
+      const res = await axios.get('/api/business/connectors/google/authorize');
+      if (res.data.success && res.data.authorizeUrl) {
+        window.open(res.data.authorizeUrl, '_blank');
       }
     } catch {
       // Ignore
@@ -138,7 +108,7 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h3 style={{ color: 'rgba(255,255,255,0.9)', margin: 0 }}>Datenquellen</h3>
-        <button className="business-btn" onClick={triggerCollection}>🔄 Daten sammeln</button>
+        <button type="button" className="business-btn" onClick={triggerCollection}>🔄 Daten sammeln</button>
       </div>
 
       {/* Configured Connectors */}
@@ -165,13 +135,14 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
                   )}
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                     <button
+                      type="button"
                       className="business-btn"
                       onClick={() => testConnector(c.source_type)}
                       disabled={testing === c.source_type}
                     >
                       {testing === c.source_type ? '...' : '🔌 Testen'}
                     </button>
-                    <button className="business-btn" onClick={() => removeConnector(c.id)}>🗑️ Entfernen</button>
+                    <button type="button" className="business-btn" onClick={() => removeConnector(c.id)}>🗑️ Entfernen</button>
                   </div>
                   {testResult?.type === c.source_type && (
                     <div style={{
@@ -211,11 +182,11 @@ export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
                 <div className="business-connector-meta">{info.description}</div>
                 {!isConfigured && (
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                    <button className="business-btn primary" onClick={() => addConnector(type as BusinessSourceType)}>
+                    <button type="button" className="business-btn primary" onClick={() => addConnector(type as BusinessSourceType)}>
                       Hinzufuegen
                     </button>
                     {isGoogleType && (
-                      <button className="business-btn" onClick={authorizeGoogle}>
+                      <button type="button" className="business-btn" onClick={authorizeGoogle}>
                         🔑 Google Auth
                       </button>
                     )}

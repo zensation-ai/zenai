@@ -2,9 +2,9 @@
  * HealthDashboard - Uptime & Performance Monitoring
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import type { PerformanceMetrics } from '../../types/business';
 
 interface HealthDashboardProps {
@@ -23,42 +23,40 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = () => {
   const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [auditing, setAuditing] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
     const fetchData = async () => {
-      const headers = getApiFetchHeaders();
-      const base = getApiBaseUrl();
       try {
         const [uptimeRes, perfRes] = await Promise.all([
-          fetch(`${base}/api/business/health/uptime`, { headers }),
-          fetch(`${base}/api/business/health/performance`, { headers }),
+          axios.get('/api/business/health/uptime', { signal }),
+          axios.get('/api/business/health/performance', { signal }),
         ]);
-        const [uData, pData] = await Promise.all([uptimeRes.json(), perfRes.json()]);
-        if (uData.success) setUptime(uData.uptime);
-        if (pData.success) setPerformance(pData.performance);
-      } catch {
-        // Keep defaults
+        if (uptimeRes.data.success) setUptime(uptimeRes.data.uptime);
+        if (perfRes.data.success) setPerformance(perfRes.data.performance);
+      } catch (err) {
+        if (!axios.isCancel(err)) { /* connectors may not be configured */ }
       } finally {
         setLoading(false);
       }
     };
     fetchData();
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   const runAudit = async () => {
     setAuditing(true);
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/health/audit`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-        body: JSON.stringify({ url: 'https://zensation.ai' }),
-      });
-      const data = await res.json();
-      if (data.success && data.scores) {
-        setPerformance(data.scores);
+      const res = await axios.post('/api/business/health/audit', { url: 'https://zensation.ai' });
+      if (res.data.success && res.data.scores) {
+        setPerformance(res.data.scores);
       }
     } catch {
-      // Ignore
+      // Audit may fail if Lighthouse is not available
     } finally {
       setAuditing(false);
     }
@@ -129,7 +127,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = () => {
       <div className="business-section">
         <div className="business-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>⚡ Performance (Lighthouse)</span>
-          <button className="business-btn" onClick={runAudit} disabled={auditing}>
+          <button type="button" className="business-btn" onClick={runAudit} disabled={auditing}>
             {auditing ? 'Audit laeuft...' : '🔄 Neues Audit'}
           </button>
         </div>

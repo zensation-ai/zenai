@@ -3,8 +3,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 
 interface BusinessReportsProps {
   context: AIContext;
@@ -29,14 +29,11 @@ export const BusinessReports: React.FC<BusinessReportsProps> = () => {
 
   const fetchReports = useCallback(async () => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/business/reports`, {
-        headers: getApiFetchHeaders(),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setReports(data.reports ?? []);
-        if (data.reports?.length > 0) {
-          setSelectedReport(data.reports[0]);
+      const res = await axios.get('/api/business/reports');
+      if (res.data.success) {
+        setReports(res.data.reports ?? []);
+        if (res.data.reports?.length > 0) {
+          setSelectedReport(res.data.reports[0]);
         }
       }
     } catch {
@@ -51,14 +48,10 @@ export const BusinessReports: React.FC<BusinessReportsProps> = () => {
   const generateReport = async (type: string) => {
     setGenerating(true);
     try {
-      await fetch(`${getApiBaseUrl()}/api/business/reports/generate`, {
-        method: 'POST',
-        headers: getApiFetchHeaders('application/json'),
-        body: JSON.stringify({ type }),
-      });
+      await axios.post('/api/business/reports/generate', { type });
       await fetchReports();
     } catch {
-      // Ignore
+      // Generation may fail if no data available
     } finally {
       setGenerating(false);
     }
@@ -74,11 +67,11 @@ export const BusinessReports: React.FC<BusinessReportsProps> = () => {
         <div className="business-empty-icon">📋</div>
         <div className="business-empty-title">Noch keine Berichte</div>
         <div className="business-empty-text">
-          Berichte werden automatisch generiert, sobald genügend Daten gesammelt wurden.
+          Berichte werden automatisch generiert, sobald genuegend Daten gesammelt wurden.
           Stelle sicher, dass mindestens ein Connector konfiguriert ist.
         </div>
         <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-          <button className="business-btn primary" onClick={() => generateReport('weekly')} disabled={generating}>
+          <button type="button" className="business-btn primary" onClick={() => generateReport('weekly')} disabled={generating}>
             {generating ? 'Wird generiert...' : '📊 Wochenbericht generieren'}
           </button>
         </div>
@@ -99,7 +92,10 @@ export const BusinessReports: React.FC<BusinessReportsProps> = () => {
         {reports.map((report) => (
           <div
             key={report.id}
+            role="button"
+            tabIndex={0}
             onClick={() => setSelectedReport(report)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedReport(report); }}
             style={{
               padding: '0.75rem',
               marginBottom: '0.5rem',
@@ -149,7 +145,7 @@ export const BusinessReports: React.FC<BusinessReportsProps> = () => {
             )}
           </>
         ) : (
-          <div className="business-empty-text">Wähle einen Bericht aus.</div>
+          <div className="business-empty-text">Waehle einen Bericht aus.</div>
         )}
       </div>
     </div>

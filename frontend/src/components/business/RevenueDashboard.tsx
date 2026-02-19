@@ -2,9 +2,9 @@
  * RevenueDashboard - Stripe Revenue Metrics
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import type { RevenueMetrics, RevenueTimelinePoint, RevenueEvent } from '../../types/business';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -17,30 +17,33 @@ export const RevenueDashboard: React.FC<RevenueDashboardProps> = () => {
   const [timeline, setTimeline] = useState<RevenueTimelinePoint[]>([]);
   const [events, setEvents] = useState<RevenueEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
     const fetchData = async () => {
-      const headers = getApiFetchHeaders();
-      const base = getApiBaseUrl();
       try {
         const [metricsRes, timelineRes, eventsRes] = await Promise.all([
-          fetch(`${base}/api/business/revenue`, { headers }),
-          fetch(`${base}/api/business/revenue/timeline`, { headers }),
-          fetch(`${base}/api/business/revenue/events?limit=20`, { headers }),
+          axios.get('/api/business/revenue', { signal }),
+          axios.get('/api/business/revenue/timeline', { signal }),
+          axios.get('/api/business/revenue/events', { params: { limit: 20 }, signal }),
         ]);
-        const [mData, tData, eData] = await Promise.all([
-          metricsRes.json(), timelineRes.json(), eventsRes.json(),
-        ]);
-        if (mData.success) setMetrics(mData.revenue);
-        if (tData.success) setTimeline(tData.timeline ?? []);
-        if (eData.success) setEvents(eData.events ?? []);
-      } catch {
-        // Keep defaults
+        if (metricsRes.data.success) setMetrics(metricsRes.data.revenue);
+        if (timelineRes.data.success) setTimeline(timelineRes.data.timeline ?? []);
+        if (eventsRes.data.success) setEvents(eventsRes.data.events ?? []);
+        setError(null);
+      } catch (err) {
+        if (!axios.isCancel(err)) setError('Revenue-Daten konnten nicht geladen werden');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   if (loading) {
@@ -51,7 +54,7 @@ export const RevenueDashboard: React.FC<RevenueDashboardProps> = () => {
     return (
       <div className="business-empty">
         <div className="business-empty-icon">💰</div>
-        <div className="business-empty-title">Keine Revenue-Daten</div>
+        <div className="business-empty-title">{error || 'Keine Revenue-Daten'}</div>
         <div className="business-empty-text">Stripe ist nicht konfiguriert. Verbinde deinen Stripe-Account unter Connectors.</div>
       </div>
     );

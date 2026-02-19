@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ProductivityGoals, categoryLabels } from './DigestTypes';
 
 interface DigestGoalsProps {
@@ -26,6 +26,20 @@ export function DigestGoals({ goals, savingGoals, onSaveGoals }: DigestGoalsProp
     focus_categories: goals?.focus_categories || [],
     reminder_time: goals?.reminder_time || '',
   });
+
+  // Sync form state when goals prop changes (e.g. after initial load)
+  useEffect(() => {
+    if (goals && !editing) {
+      setForm({
+        daily_ideas_target: goals.daily_ideas_target || 3,
+        weekly_ideas_target: goals.weekly_ideas_target || 15,
+        daily_tasks_target: goals.daily_tasks_target || 5,
+        weekly_tasks_target: goals.weekly_tasks_target || 20,
+        focus_categories: goals.focus_categories || [],
+        reminder_time: goals.reminder_time || '',
+      });
+    }
+  }, [goals, editing]);
 
   const toggleFocusCategory = useCallback((category: string) => {
     setForm(prev => ({

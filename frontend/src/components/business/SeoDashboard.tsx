@@ -2,9 +2,9 @@
  * SeoDashboard - Google Search Console SEO Metrics
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface SeoDashboardProps {
@@ -40,30 +40,33 @@ export const SeoDashboard: React.FC<SeoDashboardProps> = () => {
   const [timeline, setTimeline] = useState<SeoTimelinePoint[]>([]);
   const [queries, setQueries] = useState<SeoQuery[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
     const fetchData = async () => {
-      const headers = getApiFetchHeaders();
-      const base = getApiBaseUrl();
       try {
         const [metricsRes, timelineRes, queriesRes] = await Promise.all([
-          fetch(`${base}/api/business/seo`, { headers }),
-          fetch(`${base}/api/business/seo/timeline`, { headers }),
-          fetch(`${base}/api/business/seo/queries`, { headers }),
+          axios.get('/api/business/seo', { signal }),
+          axios.get('/api/business/seo/timeline', { signal }),
+          axios.get('/api/business/seo/queries', { signal }),
         ]);
-        const [mData, tData, qData] = await Promise.all([
-          metricsRes.json(), timelineRes.json(), queriesRes.json(),
-        ]);
-        if (mData.success) setMetrics(mData.seo);
-        if (tData.success) setTimeline(tData.timeline ?? []);
-        if (qData.success) setQueries(qData.queries ?? []);
-      } catch {
-        // Keep defaults
+        if (metricsRes.data.success) setMetrics(metricsRes.data.seo);
+        if (timelineRes.data.success) setTimeline(timelineRes.data.timeline ?? []);
+        if (queriesRes.data.success) setQueries(queriesRes.data.queries ?? []);
+        setError(null);
+      } catch (err) {
+        if (!axios.isCancel(err)) setError('SEO-Daten konnten nicht geladen werden');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   if (loading) {
@@ -74,7 +77,7 @@ export const SeoDashboard: React.FC<SeoDashboardProps> = () => {
     return (
       <div className="business-empty">
         <div className="business-empty-icon">🔍</div>
-        <div className="business-empty-title">Keine SEO-Daten</div>
+        <div className="business-empty-title">{error || 'Keine SEO-Daten'}</div>
         <div className="business-empty-text">Google Search Console ist nicht verbunden. Autorisiere den Zugang unter Connectors.</div>
       </div>
     );

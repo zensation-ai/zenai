@@ -2,9 +2,9 @@
  * TrafficDashboard - GA4 Traffic Analytics
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { AIContext } from '../ContextSwitcher';
-import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
 import type { TrafficMetrics } from '../../types/business';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -16,26 +16,31 @@ export const TrafficDashboard: React.FC<TrafficDashboardProps> = () => {
   const [metrics, setMetrics] = useState<TrafficMetrics | null>(null);
   const [timeline, setTimeline] = useState<Array<{ date: string; users: number; sessions: number }>>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
     const fetchData = async () => {
-      const headers = getApiFetchHeaders();
-      const base = getApiBaseUrl();
       try {
         const [metricsRes, timelineRes] = await Promise.all([
-          fetch(`${base}/api/business/traffic`, { headers }),
-          fetch(`${base}/api/business/traffic/timeline`, { headers }),
+          axios.get('/api/business/traffic', { signal }),
+          axios.get('/api/business/traffic/timeline', { signal }),
         ]);
-        const [mData, tData] = await Promise.all([metricsRes.json(), timelineRes.json()]);
-        if (mData.success) setMetrics(mData.traffic);
-        if (tData.success) setTimeline(tData.timeline ?? []);
-      } catch {
-        // Keep defaults
+        if (metricsRes.data.success) setMetrics(metricsRes.data.traffic);
+        if (timelineRes.data.success) setTimeline(timelineRes.data.timeline ?? []);
+        setError(null);
+      } catch (err) {
+        if (!axios.isCancel(err)) setError('Traffic-Daten konnten nicht geladen werden');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   if (loading) {
@@ -46,7 +51,7 @@ export const TrafficDashboard: React.FC<TrafficDashboardProps> = () => {
     return (
       <div className="business-empty">
         <div className="business-empty-icon">🌐</div>
-        <div className="business-empty-title">Keine Traffic-Daten</div>
+        <div className="business-empty-title">{error || 'Keine Traffic-Daten'}</div>
         <div className="business-empty-text">Google Analytics 4 ist nicht konfiguriert. Verbinde deinen GA4-Account unter Connectors.</div>
       </div>
     );
