@@ -196,7 +196,11 @@ export async function moveIdea(
     }
   }
 
-  const newIdeaId = insertResult.rows[0].id;
+  const newIdeaRow = insertResult.rows[0];
+  if (!newIdeaRow) {
+    throw new Error(`Failed to move idea: INSERT into ${targetContext}.ideas returned no row`);
+  }
+  const newIdeaId = newIdeaRow.id;
 
   // 3. Delete from source schema (CASCADE handles relations, topic memberships)
   try {

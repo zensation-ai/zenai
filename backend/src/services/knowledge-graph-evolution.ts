@@ -504,7 +504,11 @@ export async function storePattern(pattern: Omit<DiscoveredPattern, 'id'>): Prom
     pattern.occurrenceCount,
   ]);
 
-  return result.rows[0].id;
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error('Failed to store pattern: no ID returned');
+  }
+  return row.id;
 }
 
 /**

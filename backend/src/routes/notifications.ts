@@ -102,7 +102,7 @@ notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(asy
   res.status(201).json({
     success: true,
     message: 'Token registered',
-    tokenId: result.rows[0].id,
+    tokenId: result.rows[0]?.id,
   });
 }));
 
