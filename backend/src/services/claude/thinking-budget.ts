@@ -445,7 +445,10 @@ export async function storeThinkingChain(
       ]
     );
 
-    const chainId = result.rows[0].id;
+    const chainId = result.rows[0]?.id;
+    if (!chainId) {
+      throw new Error('Failed to store thinking chain: no ID returned');
+    }
 
     logger.debug('Thinking chain stored', {
       chainId,
@@ -717,10 +720,11 @@ export async function getThinkingStats(context: AIContext): Promise<{
       };
     }
 
+    const statsRow = result.rows[0];
     return {
-      totalChains: parseInt(result.rows[0].total, 10) || 0,
-      avgQuality: parseFloat(result.rows[0].avg_quality) || 0,
-      avgTokensUsed: parseFloat(result.rows[0].avg_tokens) || 0,
+      totalChains: statsRow ? parseInt(statsRow.total, 10) || 0 : 0,
+      avgQuality: statsRow ? parseFloat(statsRow.avg_quality) || 0 : 0,
+      avgTokensUsed: statsRow ? parseFloat(statsRow.avg_tokens) || 0 : 0,
       byTaskType,
     };
   } catch (error) {

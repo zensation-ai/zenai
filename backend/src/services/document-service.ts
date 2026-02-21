@@ -738,13 +738,17 @@ export class DocumentService {
       [context, folderPath, name, parentPath, options?.color, options?.icon]
     );
 
+    const row = result.rows[0];
+    if (!row) {
+      throw new Error('Failed to create folder: no row returned');
+    }
     return {
-      id: result.rows[0].id,
-      path: result.rows[0].path,
-      name: result.rows[0].name,
-      parentPath: result.rows[0].parent_path,
-      color: result.rows[0].color,
-      icon: result.rows[0].icon,
+      id: row.id,
+      path: row.path,
+      name: row.name,
+      parentPath: row.parent_path,
+      color: row.color,
+      icon: row.icon,
       documentCount: 0,
     };
   }

@@ -174,7 +174,12 @@ export async function generateTopics(
         cluster.coherence,
       ]);
 
-      const topicId = topicResult.rows[0].id;
+      const topicRow = topicResult.rows[0];
+      if (!topicRow) {
+        logger.warn('Failed to create topic: no row returned', { topicName: topicInfo.name });
+        continue;
+      }
+      const topicId = topicRow.id;
       topicsCreated++;
 
       // PERFORMANCE FIX: Batch insert memberships instead of N individual inserts
@@ -634,7 +639,11 @@ export async function mergeTopics(
       RETURNING id
     `, [context, newName, TOPIC_COLORS[0], '🔗', centroidStr]);
 
-    const newTopicId = newTopicResult.rows[0].id;
+    const newTopicRow = newTopicResult.rows[0];
+    if (!newTopicRow) {
+      throw new Error('Failed to create merged topic: no row returned');
+    }
+    const newTopicId = newTopicRow.id;
 
     // Reassign all ideas
     for (const ideaId of ideaIds) {
