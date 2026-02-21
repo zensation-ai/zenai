@@ -4,11 +4,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
-
-interface BusinessInsightsTabProps {
-  context: AIContext;
-}
 
 interface ActionItem {
   title: string;
@@ -54,7 +49,7 @@ const SOURCE_LABELS: Record<string, string> = {
   ai: 'AI-Analyse',
 };
 
-export const BusinessInsightsTab: React.FC<BusinessInsightsTabProps> = () => {
+export const BusinessInsightsTab: React.FC = () => {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [filter, setFilter] = useState<InsightFilter>('all');
   const [loading, setLoading] = useState(true);

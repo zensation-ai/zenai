@@ -4,15 +4,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
 import type { TrafficMetrics } from '../../types/business';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-interface TrafficDashboardProps {
-  context: AIContext;
-}
-
-export const TrafficDashboard: React.FC<TrafficDashboardProps> = () => {
+export const TrafficDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<TrafficMetrics | null>(null);
   const [timeline, setTimeline] = useState<Array<{ date: string; users: number; sessions: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +66,7 @@ export const TrafficDashboard: React.FC<TrafficDashboardProps> = () => {
             <span className="business-kpi-icon">👥</span>
             {metrics.usersGrowth !== 0 && (
               <span className={`business-kpi-badge ${metrics.usersGrowth >= 0 ? 'positive' : 'negative'}`}>
-                {metrics.usersGrowth >= 0 ? '+' : ''}{(metrics.usersGrowth * 100).toFixed(1)}%
+                {metrics.usersGrowth >= 0 ? '+' : ''}{metrics.usersGrowth.toFixed(1)}%
               </span>
             )}
           </div>
@@ -90,7 +85,7 @@ export const TrafficDashboard: React.FC<TrafficDashboardProps> = () => {
         </div>
         <div className="business-kpi-card">
           <div className="business-kpi-header"><span className="business-kpi-icon">↩️</span></div>
-          <div className="business-kpi-value">{(metrics.bounceRate * 100).toFixed(1)}%</div>
+          <div className="business-kpi-value">{metrics.bounceRate.toFixed(1)}%</div>
           <div className="business-kpi-label">Bounce Rate</div>
         </div>
       </div>
@@ -126,7 +121,7 @@ export const TrafficDashboard: React.FC<TrafficDashboardProps> = () => {
                 <tr key={p.page}>
                   <td>{p.page}</td>
                   <td>{p.views}</td>
-                  <td>{(p.bounceRate * 100).toFixed(1)}%</td>
+                  <td>{p.bounceRate.toFixed(1)}%</td>
                 </tr>
               ))}
             </tbody>

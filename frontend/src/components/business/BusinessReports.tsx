@@ -4,11 +4,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
-
-interface BusinessReportsProps {
-  context: AIContext;
-}
 
 interface Report {
   id: string;
@@ -21,7 +16,7 @@ interface Report {
   generated_at: string;
 }
 
-export const BusinessReports: React.FC<BusinessReportsProps> = () => {
+export const BusinessReports: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);

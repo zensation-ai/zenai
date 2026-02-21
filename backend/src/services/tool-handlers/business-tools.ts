@@ -38,21 +38,21 @@ export async function handleGetRevenueMetrics(
     const metrics = await stripeConnector.getMetrics();
     const parts: string[] = [
       `📊 **Revenue-Übersicht**`,
-      `- MRR: €${(metrics.mrr / 100).toFixed(2)}`,
-      `- ARR: €${(metrics.arr / 100).toFixed(2)}`,
+      `- MRR: €${metrics.mrr.toFixed(2)}`,
+      `- ARR: €${metrics.arr.toFixed(2)}`,
       `- Aktive Subscriptions: ${metrics.activeSubscriptions}`,
-      `- Churn Rate: ${(metrics.churnRate * 100).toFixed(1)}%`,
+      `- Churn Rate: ${metrics.churnRate.toFixed(1)}%`,
     ];
 
     if (metrics.mrrGrowth !== undefined) {
       const direction = metrics.mrrGrowth >= 0 ? '📈' : '📉';
-      parts.push(`- MRR-Wachstum: ${direction} ${(metrics.mrrGrowth * 100).toFixed(1)}%`);
+      parts.push(`- MRR-Wachstum: ${direction} ${metrics.mrrGrowth.toFixed(1)}%`);
     }
 
     if (metrics.recentPayments && metrics.recentPayments.length > 0) {
       parts.push('', '**Letzte Zahlungen:**');
       for (const p of metrics.recentPayments.slice(0, 5)) {
-        parts.push(`- €${(p.amount / 100).toFixed(2)} (${p.status}) - ${new Date(p.occurred_at).toLocaleDateString('de-DE')}`);
+        parts.push(`- €${p.amount.toFixed(2)} (${p.status}) - ${new Date(p.occurred_at).toLocaleDateString('de-DE')}`);
       }
     }
 
@@ -85,12 +85,12 @@ export async function handleGetTrafficAnalytics(
       `- Besucher: ${metrics.users.toLocaleString('de-DE')}`,
       `- Sessions: ${metrics.sessions.toLocaleString('de-DE')}`,
       `- Seitenaufrufe: ${metrics.pageviews.toLocaleString('de-DE')}`,
-      `- Bounce Rate: ${(metrics.bounceRate * 100).toFixed(1)}%`,
+      `- Bounce Rate: ${metrics.bounceRate.toFixed(1)}%`,
     ];
 
     if (metrics.usersGrowth !== undefined) {
       const direction = metrics.usersGrowth >= 0 ? '📈' : '📉';
-      parts.push(`- Besucher-Wachstum: ${direction} ${(metrics.usersGrowth * 100).toFixed(1)}%`);
+      parts.push(`- Besucher-Wachstum: ${direction} ${metrics.usersGrowth.toFixed(1)}%`);
     }
 
     if (metrics.topPages && metrics.topPages.length > 0) {
@@ -137,13 +137,13 @@ export async function handleGetSeoPerformance(
       `🔍 **SEO-Performance** (${period})`,
       `- Impressionen: ${metrics.impressions.toLocaleString('de-DE')}`,
       `- Klicks: ${metrics.clicks.toLocaleString('de-DE')}`,
-      `- CTR: ${(metrics.ctr * 100).toFixed(2)}%`,
+      `- CTR: ${metrics.ctr.toFixed(2)}%`,
       `- Ø Position: ${metrics.avgPosition.toFixed(1)}`,
     ];
 
     if (metrics.impressionsGrowth !== undefined) {
       const direction = metrics.impressionsGrowth >= 0 ? '📈' : '📉';
-      parts.push(`- Impressionen-Wachstum: ${direction} ${(metrics.impressionsGrowth * 100).toFixed(1)}%`);
+      parts.push(`- Impressionen-Wachstum: ${direction} ${metrics.impressionsGrowth.toFixed(1)}%`);
     }
 
     if (metrics.topQueries && metrics.topQueries.length > 0) {
@@ -251,20 +251,25 @@ export async function handleGenerateBusinessReport(
         '',
       ];
 
-      if (report.executive_summary) {
-        parts.push('**Zusammenfassung:**', report.executive_summary, '');
+      if (report.summary) {
+        parts.push('**Zusammenfassung:**', report.summary, '');
       }
 
-      if (report.metrics_summary) {
-        const metrics = typeof report.metrics_summary === 'string'
-          ? JSON.parse(report.metrics_summary)
-          : report.metrics_summary;
+      if (report.metrics) {
+        const metrics = typeof report.metrics === 'string'
+          ? JSON.parse(report.metrics)
+          : report.metrics;
 
         parts.push('**Kennzahlen:**');
-        if (metrics.mrr !== undefined) { parts.push(`- MRR: €${(metrics.mrr / 100).toFixed(2)}`); }
-        if (metrics.users !== undefined) { parts.push(`- Besucher: ${metrics.users}`); }
-        if (metrics.impressions !== undefined) { parts.push(`- SEO Impressionen: ${metrics.impressions}`); }
-        if (metrics.uptime !== undefined) { parts.push(`- Uptime: ${metrics.uptime}%`); }
+        // Metrics are stored nested: { stripe: { mrr }, ga4: { users }, ... }
+        const mrr = metrics.stripe?.mrr ?? metrics.mrr;
+        const users = metrics.ga4?.users ?? metrics.users;
+        const impressions = metrics.gsc?.impressions ?? metrics.impressions;
+        const uptimeVal = metrics.uptime?.percentage ?? metrics.uptime;
+        if (mrr !== undefined) { parts.push(`- MRR: €${Number(mrr).toFixed(2)}`); }
+        if (users !== undefined) { parts.push(`- Besucher: ${users}`); }
+        if (impressions !== undefined) { parts.push(`- SEO Impressionen: ${impressions}`); }
+        if (uptimeVal !== undefined) { parts.push(`- Uptime: ${uptimeVal}%`); }
       }
 
       if (report.recommendations) {
@@ -302,7 +307,7 @@ export async function handleIdentifyAnomalies(
   try {
     const result = await pool.query(`
       SELECT * FROM business_insights
-      WHERE status = 'new'
+      WHERE status = 'active'
         AND severity IN ('critical', 'warning')
       ORDER BY created_at DESC
       LIMIT 10
@@ -377,22 +382,22 @@ export async function handleComparePeriods(
 
     if (metric === 'all' || metric === 'revenue') {
       parts.push('**Revenue:**');
-      compareValue('MRR', currentMetrics.mrr, previousMetrics.mrr, '€', 100);
-      compareValue('Subscriptions', currentMetrics.activeSubscriptions, previousMetrics.activeSubscriptions);
+      compareValue('MRR', currentMetrics.stripe?.mrr, previousMetrics.stripe?.mrr, '€');
+      compareValue('Subscriptions', currentMetrics.stripe?.activeSubscriptions, previousMetrics.stripe?.activeSubscriptions);
       parts.push('');
     }
 
     if (metric === 'all' || metric === 'traffic') {
       parts.push('**Traffic:**');
-      compareValue('Besucher', currentMetrics.users, previousMetrics.users);
-      compareValue('Sessions', currentMetrics.sessions, previousMetrics.sessions);
+      compareValue('Besucher', currentMetrics.ga4?.users, previousMetrics.ga4?.users);
+      compareValue('Sessions', currentMetrics.ga4?.sessions, previousMetrics.ga4?.sessions);
       parts.push('');
     }
 
     if (metric === 'all' || metric === 'seo') {
       parts.push('**SEO:**');
-      compareValue('Impressionen', currentMetrics.impressions, previousMetrics.impressions);
-      compareValue('Klicks', currentMetrics.clicks, previousMetrics.clicks);
+      compareValue('Impressionen', currentMetrics.gsc?.impressions, previousMetrics.gsc?.impressions);
+      compareValue('Klicks', currentMetrics.gsc?.clicks, previousMetrics.gsc?.clicks);
       parts.push('');
     }
 

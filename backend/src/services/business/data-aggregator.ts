@@ -30,6 +30,7 @@ const DAILY_SCHEDULE = process.env.BUSINESS_METRICS_DAILY_SCHEDULE ?? '0 4 * * *
 class DataAggregatorService {
   private hourlyTimer: ReturnType<typeof setInterval> | null = null;
   private dailyTimer: ReturnType<typeof setInterval> | null = null;
+  private dailyInitTimeout: ReturnType<typeof setTimeout> | null = null;
   private isRunning = false;
 
   async start(): Promise<void> {
@@ -56,8 +57,9 @@ class DataAggregatorService {
 
   stop(): void {
     this.isRunning = false;
-    if (this.hourlyTimer) { clearInterval(this.hourlyTimer); }
-    if (this.dailyTimer) { clearInterval(this.dailyTimer); }
+    if (this.hourlyTimer) { clearInterval(this.hourlyTimer); this.hourlyTimer = null; }
+    if (this.dailyInitTimeout) { clearTimeout(this.dailyInitTimeout); this.dailyInitTimeout = null; }
+    if (this.dailyTimer) { clearInterval(this.dailyTimer); this.dailyTimer = null; }
     logger.info('[DataAggregator] Business metrics collection stopped');
   }
 
@@ -70,7 +72,8 @@ class DataAggregatorService {
 
     const msUntilNext = next.getTime() - now.getTime();
 
-    setTimeout(() => {
+    this.dailyInitTimeout = setTimeout(() => {
+      this.dailyInitTimeout = null;
       void this.collectDailyMetrics();
       // Then repeat every 24 hours
       this.dailyTimer = setInterval(() => {
@@ -216,6 +219,9 @@ class DataAggregatorService {
     await pool.query(`
       INSERT INTO business_metrics_snapshots (snapshot_date, snapshot_type, metrics)
       VALUES (CURRENT_DATE, $1, $2)
+      ON CONFLICT (snapshot_date, snapshot_type) DO UPDATE SET
+        metrics = EXCLUDED.metrics,
+        created_at = NOW()
     `, [type, JSON.stringify(metrics)]);
   }
 

@@ -4,12 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-
-interface SeoDashboardProps {
-  context: AIContext;
-}
 
 interface SeoMetrics {
   impressions: number;
@@ -35,7 +30,7 @@ interface SeoQuery {
   position: number;
 }
 
-export const SeoDashboard: React.FC<SeoDashboardProps> = () => {
+export const SeoDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<SeoMetrics | null>(null);
   const [timeline, setTimeline] = useState<SeoTimelinePoint[]>([]);
   const [queries, setQueries] = useState<SeoQuery[]>([]);
@@ -97,7 +92,7 @@ export const SeoDashboard: React.FC<SeoDashboardProps> = () => {
             <span className="business-kpi-icon">👀</span>
             {metrics.impressionsGrowth !== undefined && metrics.impressionsGrowth !== 0 && (
               <span className={`business-kpi-badge ${metrics.impressionsGrowth >= 0 ? 'positive' : 'negative'}`}>
-                {metrics.impressionsGrowth >= 0 ? '+' : ''}{(metrics.impressionsGrowth * 100).toFixed(1)}%
+                {metrics.impressionsGrowth >= 0 ? '+' : ''}{metrics.impressionsGrowth.toFixed(1)}%
               </span>
             )}
           </div>
@@ -111,7 +106,7 @@ export const SeoDashboard: React.FC<SeoDashboardProps> = () => {
         </div>
         <div className="business-kpi-card">
           <div className="business-kpi-header"><span className="business-kpi-icon">📊</span></div>
-          <div className="business-kpi-value">{(metrics.ctr * 100).toFixed(2)}%</div>
+          <div className="business-kpi-value">{metrics.ctr.toFixed(2)}%</div>
           <div className="business-kpi-label">CTR</div>
         </div>
         <div className="business-kpi-card">
@@ -153,7 +148,7 @@ export const SeoDashboard: React.FC<SeoDashboardProps> = () => {
                   <td>{q.query}</td>
                   <td>{q.clicks}</td>
                   <td>{q.impressions}</td>
-                  <td>{(q.ctr * 100).toFixed(1)}%</td>
+                  <td>{q.ctr.toFixed(1)}%</td>
                   <td>{q.position.toFixed(1)}</td>
                 </tr>
               ))}
