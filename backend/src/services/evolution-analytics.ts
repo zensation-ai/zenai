@@ -176,7 +176,7 @@ export async function createDailySnapshot(context: AIContext): Promise<Evolution
              CASE WHEN role IS NOT NULL AND role != '' THEN 20 ELSE 0 END +
              CASE WHEN array_length(tech_stack, 1) > 0 THEN 20 ELSE 0 END +
              CASE WHEN array_length(goals, 1) > 0 THEN 20 ELSE 0 END), 0) as completeness
-        FROM business_profiles WHERE context = $1
+        FROM business_profile WHERE context = $1
       `, [context]),
 
       // Today's ideas

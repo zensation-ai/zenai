@@ -280,7 +280,7 @@ BEGIN
      CASE WHEN array_length(tech_stack, 1) > 0 THEN 5 ELSE 0 END +
      CASE WHEN array_length(goals, 1) > 0 THEN 5 ELSE 0 END), 0)
   INTO v_profile_score
-  FROM business_profiles
+  FROM business_profile
   WHERE context = p_context
   LIMIT 1;
 

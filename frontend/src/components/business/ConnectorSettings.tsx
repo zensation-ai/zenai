@@ -4,12 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
 import type { BusinessConnector, BusinessSourceType } from '../../types/business';
-
-interface ConnectorSettingsProps {
-  context: AIContext;
-}
 
 const CONNECTOR_INFO: Record<string, { icon: string; label: string; description: string }> = {
   stripe: { icon: '💳', label: 'Stripe', description: 'Revenue-Daten, Subscriptions, Payments' },
@@ -19,7 +14,7 @@ const CONNECTOR_INFO: Record<string, { icon: string; label: string; description:
   lighthouse: { icon: '⚡', label: 'Lighthouse', description: 'Performance-Scores, Web Vitals' },
 };
 
-export const ConnectorSettings: React.FC<ConnectorSettingsProps> = () => {
+export const ConnectorSettings: React.FC = () => {
   const [connectors, setConnectors] = useState<BusinessConnector[]>([]);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState<string | null>(null);

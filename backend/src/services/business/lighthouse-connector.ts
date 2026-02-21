@@ -95,6 +95,16 @@ class LighthouseConnector implements BusinessConnector {
           best_practices_score, seo_score, lcp, fid, cls, metrics
         )
         VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT (url, audit_date) DO UPDATE SET
+          performance_score = EXCLUDED.performance_score,
+          accessibility_score = EXCLUDED.accessibility_score,
+          best_practices_score = EXCLUDED.best_practices_score,
+          seo_score = EXCLUDED.seo_score,
+          lcp = EXCLUDED.lcp,
+          fid = EXCLUDED.fid,
+          cls = EXCLUDED.cls,
+          metrics = EXCLUDED.metrics,
+          created_at = NOW()
       `, [
         url,
         scores.score,

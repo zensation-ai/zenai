@@ -28,7 +28,7 @@ async function checkSchema() {
     const requiredTables = [
       'ideas', 'meetings', 'api_keys', 'companies', 'user_profiles',
       'thought_incubator', 'thought_clusters', 'stories', 'media',
-      'learning_tasks', 'business_profiles', 'notifications'
+      'learning_tasks', 'business_profile', 'notifications'
     ];
 
     console.log('Missing tables:');

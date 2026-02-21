@@ -65,8 +65,10 @@ class InsightGenerator {
   }
 
   private async checkMRRAnomaly(current: Record<string, unknown>, previous: Record<string, unknown>): Promise<void> {
-    const currMRR = (current.mrr as number) ?? 0;
-    const prevMRR = (previous.mrr as number) ?? 0;
+    const stripe = current.stripe as Record<string, unknown> | undefined;
+    const prevStripe = previous.stripe as Record<string, unknown> | undefined;
+    const currMRR = (stripe?.mrr as number) ?? 0;
+    const prevMRR = (prevStripe?.mrr as number) ?? 0;
 
     if (prevMRR === 0) { return; }
 
@@ -77,7 +79,7 @@ class InsightGenerator {
         type: 'anomaly',
         severity: 'critical',
         title: 'MRR-Einbruch erkannt',
-        description: `MRR ist um ${(Math.abs(change) * 100).toFixed(1)}% gesunken (von €${(prevMRR / 100).toFixed(2)} auf €${(currMRR / 100).toFixed(2)}).`,
+        description: `MRR ist um ${(Math.abs(change) * 100).toFixed(1)}% gesunken (von €${prevMRR.toFixed(2)} auf €${currMRR.toFixed(2)}).`,
         recommendation: 'Pruefe Kuendigungen und Zahlungsfehler in Stripe. Kontaktiere betroffene Kunden.',
         dataSource: 'stripe',
         metrics: { currMRR, prevMRR, change },
@@ -87,7 +89,7 @@ class InsightGenerator {
         type: 'milestone',
         severity: 'info',
         title: 'Starkes MRR-Wachstum',
-        description: `MRR ist um ${(change * 100).toFixed(1)}% gewachsen (von €${(prevMRR / 100).toFixed(2)} auf €${(currMRR / 100).toFixed(2)}).`,
+        description: `MRR ist um ${(change * 100).toFixed(1)}% gewachsen (von €${prevMRR.toFixed(2)} auf €${currMRR.toFixed(2)}).`,
         recommendation: 'Analysiere, welche Massnahmen zum Wachstum beigetragen haben.',
         dataSource: 'stripe',
         metrics: { currMRR, prevMRR, change },
@@ -96,8 +98,10 @@ class InsightGenerator {
   }
 
   private async checkTrafficAnomaly(current: Record<string, unknown>, previous: Record<string, unknown>): Promise<void> {
-    const currUsers = (current.users as number) ?? 0;
-    const prevUsers = (previous.users as number) ?? 0;
+    const ga4 = current.ga4 as Record<string, unknown> | undefined;
+    const prevGa4 = previous.ga4 as Record<string, unknown> | undefined;
+    const currUsers = (ga4?.users as number) ?? 0;
+    const prevUsers = (prevGa4?.users as number) ?? 0;
 
     if (prevUsers === 0) { return; }
 
@@ -117,7 +121,8 @@ class InsightGenerator {
   }
 
   private async checkUptimeAnomaly(current: Record<string, unknown>): Promise<void> {
-    const uptime = (current.uptime as number) ?? 100;
+    const uptimeData = current.uptime as Record<string, unknown> | undefined;
+    const uptime = (uptimeData?.percentage as number) ?? 100;
 
     if (uptime < 99.5) {
       await this.storeInsight({
@@ -133,7 +138,8 @@ class InsightGenerator {
   }
 
   private async checkPerformanceAnomaly(current: Record<string, unknown>): Promise<void> {
-    const score = (current.performanceScore as number) ?? 100;
+    const lighthouse = current.lighthouse as Record<string, unknown> | undefined;
+    const score = (lighthouse?.score as number) ?? 100;
 
     if (score < 50) {
       await this.storeInsight({

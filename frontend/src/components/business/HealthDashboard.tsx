@@ -4,12 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
 import type { PerformanceMetrics } from '../../types/business';
-
-interface HealthDashboardProps {
-  context: AIContext;
-}
 
 interface UptimeData {
   monitors: Array<{ id: string; name: string; status: string; uptime: number; responseTime: number }>;
@@ -18,7 +13,7 @@ interface UptimeData {
   avgResponseTime: number;
 }
 
-export const HealthDashboard: React.FC<HealthDashboardProps> = () => {
+export const HealthDashboard: React.FC = () => {
   const [uptime, setUptime] = useState<UptimeData | null>(null);
   const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
   const [loading, setLoading] = useState(true);

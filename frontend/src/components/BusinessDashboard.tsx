@@ -71,49 +71,49 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
       case 'overview':
         return (
           <Suspense fallback={<TabLoader />}>
-            <BusinessOverview context={context} onNavigateTab={handleTabChange} />
+            <BusinessOverview onNavigateTab={handleTabChange} />
           </Suspense>
         );
       case 'revenue':
         return (
           <Suspense fallback={<TabLoader />}>
-            <RevenueDashboard context={context} />
+            <RevenueDashboard />
           </Suspense>
         );
       case 'traffic':
         return (
           <Suspense fallback={<TabLoader />}>
-            <TrafficDashboard context={context} />
+            <TrafficDashboard />
           </Suspense>
         );
       case 'seo':
         return (
           <Suspense fallback={<TabLoader />}>
-            <SeoDashboard context={context} />
+            <SeoDashboard />
           </Suspense>
         );
       case 'health':
         return (
           <Suspense fallback={<TabLoader />}>
-            <HealthDashboard context={context} />
+            <HealthDashboard />
           </Suspense>
         );
       case 'insights':
         return (
           <Suspense fallback={<TabLoader />}>
-            <BusinessInsightsTab context={context} />
+            <BusinessInsightsTab />
           </Suspense>
         );
       case 'reports':
         return (
           <Suspense fallback={<TabLoader />}>
-            <BusinessReports context={context} />
+            <BusinessReports />
           </Suspense>
         );
       case 'connectors':
         return (
           <Suspense fallback={<TabLoader />}>
-            <ConnectorSettings context={context} />
+            <ConnectorSettings />
           </Suspense>
         );
       default:

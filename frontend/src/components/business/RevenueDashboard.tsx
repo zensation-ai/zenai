@@ -4,15 +4,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
 import type { RevenueMetrics, RevenueTimelinePoint, RevenueEvent } from '../../types/business';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-interface RevenueDashboardProps {
-  context: AIContext;
-}
-
-export const RevenueDashboard: React.FC<RevenueDashboardProps> = () => {
+export const RevenueDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<RevenueMetrics | null>(null);
   const [timeline, setTimeline] = useState<RevenueTimelinePoint[]>([]);
   const [events, setEvents] = useState<RevenueEvent[]>([]);
@@ -62,7 +57,7 @@ export const RevenueDashboard: React.FC<RevenueDashboardProps> = () => {
 
   const chartData = timeline.map(p => ({
     date: new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
-    mrr: p.mrr / 100,
+    mrr: p.mrr,
   }));
 
   return (
@@ -70,12 +65,12 @@ export const RevenueDashboard: React.FC<RevenueDashboardProps> = () => {
       <div className="business-kpi-grid">
         <div className="business-kpi-card">
           <div className="business-kpi-header"><span className="business-kpi-icon">💰</span></div>
-          <div className="business-kpi-value">€{(metrics.mrr / 100).toFixed(0)}</div>
+          <div className="business-kpi-value">€{metrics.mrr.toFixed(0)}</div>
           <div className="business-kpi-label">MRR</div>
         </div>
         <div className="business-kpi-card">
           <div className="business-kpi-header"><span className="business-kpi-icon">📈</span></div>
-          <div className="business-kpi-value">€{(metrics.arr / 100).toFixed(0)}</div>
+          <div className="business-kpi-value">€{metrics.arr.toFixed(0)}</div>
           <div className="business-kpi-label">ARR</div>
         </div>
         <div className="business-kpi-card">
@@ -85,7 +80,7 @@ export const RevenueDashboard: React.FC<RevenueDashboardProps> = () => {
         </div>
         <div className="business-kpi-card">
           <div className="business-kpi-header"><span className="business-kpi-icon">📉</span></div>
-          <div className="business-kpi-value">{(metrics.churnRate * 100).toFixed(1)}%</div>
+          <div className="business-kpi-value">{metrics.churnRate.toFixed(1)}%</div>
           <div className="business-kpi-label">Churn Rate</div>
         </div>
       </div>
@@ -120,7 +115,7 @@ export const RevenueDashboard: React.FC<RevenueDashboardProps> = () => {
               {events.map((e) => (
                 <tr key={e.id}>
                   <td>{e.event_type}</td>
-                  <td>{e.amount !== null ? `€${(e.amount / 100).toFixed(2)}` : '-'}</td>
+                  <td>{e.amount !== null ? `€${e.amount.toFixed(2)}` : '-'}</td>
                   <td>{new Date(e.occurred_at).toLocaleDateString('de-DE')}</td>
                 </tr>
               ))}

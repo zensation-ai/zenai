@@ -4,11 +4,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { AIContext } from '../ContextSwitcher';
 import type { BusinessTab, BusinessOverview as BusinessOverviewType } from '../../types/business';
 
 interface BusinessOverviewProps {
-  context: AIContext;
   onNavigateTab: (tab: BusinessTab) => void;
 }
 
@@ -54,10 +52,10 @@ export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTa
     return () => { abortRef.current?.abort(); };
   }, []);
 
-  const formatCurrency = (cents: number) => `€${(cents / 100).toFixed(0)}`;
-  const formatPercent = (val: number) => `${(val * 100).toFixed(1)}%`;
+  const formatCurrency = (value: number) => `€${value.toFixed(0)}`;
+  const formatPercent = (val: number) => `${val.toFixed(1)}%`;
   const formatGrowth = (val: number) => {
-    const pct = (val * 100).toFixed(1);
+    const pct = val.toFixed(1);
     return val >= 0 ? `+${pct}%` : `${pct}%`;
   };
 

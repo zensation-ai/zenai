@@ -62,8 +62,8 @@ revenueRouter.post('/webhook', asyncHandler(async (req: Request, res: Response) 
   // Use raw body for Stripe signature verification (express.json() preserves it via verify callback)
   const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
   if (!rawBody) {
-    logger.warn('[Webhook] rawBody not available - signature verification may fail', { operation: 'stripeWebhook' });
+    throw new ValidationError('Raw body not available for signature verification');
   }
-  await stripeConnector.handleWebhook(rawBody ?? JSON.stringify(req.body), signature);
+  await stripeConnector.handleWebhook(rawBody, signature);
   res.json({ success: true, received: true });
 }));

@@ -110,15 +110,15 @@ class ReportGenerator {
     const lastMetrics = typeof last.metrics === 'string' ? JSON.parse(last.metrics as string) : (last.metrics ?? {});
 
     return {
-      // Latest values
-      mrr: lastMetrics.mrr ?? 0,
-      users: lastMetrics.users ?? 0,
-      impressions: lastMetrics.impressions ?? 0,
-      uptime: lastMetrics.uptime ?? 0,
-      performanceScore: lastMetrics.performanceScore ?? 0,
+      // Latest values (metrics are nested: { stripe: { mrr }, ga4: { users }, ... })
+      mrr: lastMetrics.stripe?.mrr ?? 0,
+      users: lastMetrics.ga4?.users ?? 0,
+      impressions: lastMetrics.gsc?.impressions ?? 0,
+      uptime: lastMetrics.uptime?.percentage ?? 0,
+      performanceScore: lastMetrics.lighthouse?.score ?? 0,
       // Period changes
-      mrrChange: firstMetrics.mrr ? ((lastMetrics.mrr ?? 0) - firstMetrics.mrr) / firstMetrics.mrr : 0,
-      usersChange: firstMetrics.users ? ((lastMetrics.users ?? 0) - firstMetrics.users) / firstMetrics.users : 0,
+      mrrChange: firstMetrics.stripe?.mrr ? ((lastMetrics.stripe?.mrr ?? 0) - firstMetrics.stripe.mrr) / firstMetrics.stripe.mrr : 0,
+      usersChange: firstMetrics.ga4?.users ? ((lastMetrics.ga4?.users ?? 0) - firstMetrics.ga4.users) / firstMetrics.ga4.users : 0,
       // Counts
       snapshotCount: snapshots.length,
     };
