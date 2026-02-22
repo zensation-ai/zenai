@@ -55,11 +55,11 @@ describe('InsightGenerator', () => {
   // ========================================
   describe('generateDailyInsights', () => {
     const currentSnapshot = {
-      metrics: { mrr: 4000, users: 800, uptime: 99.9, performanceScore: 85 },
+      metrics: { stripe: { mrr: 4000 }, ga4: { users: 800 }, uptime: { percentage: 99.9 }, lighthouse: { score: 85 } },
       snapshot_date: '2026-02-10',
     };
     const previousSnapshot = {
-      metrics: { mrr: 5000, users: 1000, uptime: 99.95, performanceScore: 90 },
+      metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.95 }, lighthouse: { score: 90 } },
       snapshot_date: '2026-02-09',
     };
 
@@ -97,11 +97,11 @@ describe('InsightGenerator', () => {
 
     it('should detect MRR growth >20% and create milestone', async () => {
       const growthCurrent = {
-        metrics: { mrr: 7000, users: 1000, uptime: 99.9, performanceScore: 85 },
+        metrics: { stripe: { mrr: 7000 }, ga4: { users: 1000 }, uptime: { percentage: 99.9 }, lighthouse: { score: 85 } },
         snapshot_date: '2026-02-10',
       };
       const growthPrevious = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.95, performanceScore: 90 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.95 }, lighthouse: { score: 90 } },
         snapshot_date: '2026-02-09',
       };
 
@@ -127,11 +127,11 @@ describe('InsightGenerator', () => {
     it('should detect traffic drop >20% and create warning', async () => {
       // users dropped from 1000 to 700 = -30%
       const trafficDropCurrent = {
-        metrics: { mrr: 5000, users: 700, uptime: 99.9, performanceScore: 85 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 700 }, uptime: { percentage: 99.9 }, lighthouse: { score: 85 } },
         snapshot_date: '2026-02-10',
       };
       const trafficDropPrevious = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.95, performanceScore: 90 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.95 }, lighthouse: { score: 90 } },
         snapshot_date: '2026-02-09',
       };
 
@@ -156,7 +156,7 @@ describe('InsightGenerator', () => {
 
     it('should detect uptime <99.5% and create alert', async () => {
       const lowUptimeCurrent = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.2, performanceScore: 85 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.2 }, lighthouse: { score: 85 } },
         snapshot_date: '2026-02-10',
       };
 
@@ -179,7 +179,7 @@ describe('InsightGenerator', () => {
 
     it('should detect performance score <50 and create alert', async () => {
       const lowPerfCurrent = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.9, performanceScore: 35 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.9 }, lighthouse: { score: 35 } },
         snapshot_date: '2026-02-10',
       };
 
@@ -218,11 +218,11 @@ describe('InsightGenerator', () => {
   describe('storeInsight (deduplication)', () => {
     it('should not insert if same title exists in last 24 hours', async () => {
       const current = {
-        metrics: { mrr: 4000, users: 800, uptime: 99.9, performanceScore: 85 },
+        metrics: { stripe: { mrr: 4000 }, ga4: { users: 800 }, uptime: { percentage: 99.9 }, lighthouse: { score: 85 } },
         snapshot_date: '2026-02-10',
       };
       const previous = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.95, performanceScore: 90 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.95 }, lighthouse: { score: 90 } },
         snapshot_date: '2026-02-09',
       };
 
@@ -248,11 +248,11 @@ describe('InsightGenerator', () => {
 
     it('should insert with correct column names (action_items, not recommendation)', async () => {
       const current = {
-        metrics: { mrr: 4000, users: 800, uptime: 99.9, performanceScore: 85 },
+        metrics: { stripe: { mrr: 4000 }, ga4: { users: 800 }, uptime: { percentage: 99.9 }, lighthouse: { score: 85 } },
         snapshot_date: '2026-02-10',
       };
       const previous = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.95, performanceScore: 90 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.95 }, lighthouse: { score: 90 } },
         snapshot_date: '2026-02-09',
       };
 
@@ -287,11 +287,11 @@ describe('InsightGenerator', () => {
       });
 
       const current = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.9, performanceScore: 85 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.9 }, lighthouse: { score: 85 } },
         snapshot_date: '2026-02-10',
       };
       const previous = {
-        metrics: { mrr: 4800, users: 950, uptime: 99.95, performanceScore: 90 },
+        metrics: { stripe: { mrr: 4800 }, ga4: { users: 950 }, uptime: { percentage: 99.95 }, lighthouse: { score: 90 } },
         snapshot_date: '2026-02-09',
       };
 
@@ -331,11 +331,11 @@ describe('InsightGenerator', () => {
       (insightGenerator as any).anthropic = null; // Clear the cached client
 
       const current = {
-        metrics: { mrr: 5000, users: 1000, uptime: 99.9, performanceScore: 85 },
+        metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, uptime: { percentage: 99.9 }, lighthouse: { score: 85 } },
         snapshot_date: '2026-02-10',
       };
       const previous = {
-        metrics: { mrr: 4800, users: 950, uptime: 99.95, performanceScore: 90 },
+        metrics: { stripe: { mrr: 4800 }, ga4: { users: 950 }, uptime: { percentage: 99.95 }, lighthouse: { score: 90 } },
         snapshot_date: '2026-02-09',
       };
 

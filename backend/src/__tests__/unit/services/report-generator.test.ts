@@ -38,11 +38,11 @@ describe('ReportGenerator', () => {
     for (let i = 0; i < count; i++) {
       rows.push({
         metrics: {
-          mrr: 5000 + i * 100,
-          users: 1000 + i * 10,
-          impressions: 2000 + i * 50,
-          uptime: 99.9,
-          performanceScore: 85 + i,
+          stripe: { mrr: 5000 + i * 100 },
+          ga4: { users: 1000 + i * 10 },
+          gsc: { impressions: 2000 + i * 50 },
+          uptime: { percentage: 99.9 },
+          lighthouse: { score: 85 + i },
         },
         snapshot_date: new Date(Date.now() - (count - i) * 86400000).toISOString(),
       });
@@ -159,11 +159,11 @@ describe('ReportGenerator', () => {
     it('should aggregate metrics from snapshots correctly', async () => {
       const snapshots = [
         {
-          metrics: { mrr: 4000, users: 800, impressions: 1500, uptime: 99.8, performanceScore: 80 },
+          metrics: { stripe: { mrr: 4000 }, ga4: { users: 800 }, gsc: { impressions: 1500 }, uptime: { percentage: 99.8 }, lighthouse: { score: 80 } },
           snapshot_date: new Date(Date.now() - 7 * 86400000).toISOString(),
         },
         {
-          metrics: { mrr: 5000, users: 1000, impressions: 2000, uptime: 99.9, performanceScore: 90 },
+          metrics: { stripe: { mrr: 5000 }, ga4: { users: 1000 }, gsc: { impressions: 2000 }, uptime: { percentage: 99.9 }, lighthouse: { score: 90 } },
           snapshot_date: new Date().toISOString(),
         },
       ];
