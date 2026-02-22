@@ -44,7 +44,7 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
     setLoading(true);
     try {
       const response = await axios.get(`/api/${context}/learning/dashboard`, { signal });
-      setData(response.data.dashboard);
+      setData(response.data?.dashboard ?? null);
     } catch (error) {
       // Don't update state if request was aborted
       if (axios.isCancel(error)) return;
@@ -183,12 +183,12 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
       const response = await axios.get(`/api/${context}/profile`);
       const profile = response.data.profile;
       setProfileData({
-        company_name: profile?.company_name || '',
-        industry: profile?.industry || '',
-        role: profile?.role || '',
-        tech_stack: profile?.tech_stack || [],
-        pain_points: profile?.pain_points || [],
-        goals: profile?.goals || [],
+        company_name: profile?.company_name ?? '',
+        industry: profile?.industry ?? '',
+        role: profile?.role ?? '',
+        tech_stack: profile?.tech_stack ?? [],
+        pain_points: profile?.pain_points ?? [],
+        goals: profile?.goals ?? [],
       });
       setShowEditProfile(true);
     } catch (error) {

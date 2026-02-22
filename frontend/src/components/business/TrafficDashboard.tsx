@@ -46,16 +46,16 @@ export const TrafficDashboard: React.FC = () => {
     return (
       <div className="business-empty">
         <div className="business-empty-icon">🌐</div>
-        <div className="business-empty-title">{error || 'Keine Traffic-Daten'}</div>
+        <div className="business-empty-title">{error ?? 'Keine Traffic-Daten'}</div>
         <div className="business-empty-text">Google Analytics 4 ist nicht konfiguriert. Verbinde deinen GA4-Account unter Connectors.</div>
       </div>
     );
   }
 
   const chartData = timeline.map(p => ({
-    date: new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
-    users: p.users,
-    sessions: p.sessions,
+    date: p.date ? new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '–',
+    users: p.users ?? 0,
+    sessions: p.sessions ?? 0,
   }));
 
   return (

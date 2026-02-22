@@ -39,8 +39,8 @@ export function useEmailData(context: AIContext) {
         params,
         signal: controller.signal,
       });
-      setEmails(res.data.data || []);
-      setTotal(res.data.total || 0);
+      setEmails(res.data?.data ?? []);
+      setTotal(res.data?.total ?? 0);
     } catch (err) {
       if (!controller.signal.aborted) {
         setError(getErrorMessage(err, 'Fehler beim Laden der E-Mails'));
@@ -53,7 +53,7 @@ export function useEmailData(context: AIContext) {
   const fetchEmail = useCallback(async (id: string): Promise<Email | null> => {
     try {
       const res = await axios.get(`/api/${context}/emails/${id}`);
-      const email = res.data.data;
+      const email = res.data?.data ?? null;
       setSelectedEmail(email);
       return email;
     } catch (err) {
@@ -65,7 +65,7 @@ export function useEmailData(context: AIContext) {
   const fetchThread = useCallback(async (id: string) => {
     try {
       const res = await axios.get(`/api/${context}/emails/${id}/thread`);
-      setThread(res.data.data || []);
+      setThread(res.data?.data ?? []);
     } catch {
       setThread([]);
     }
@@ -74,7 +74,7 @@ export function useEmailData(context: AIContext) {
   const fetchStats = useCallback(async () => {
     try {
       const res = await axios.get(`/api/${context}/emails/stats`);
-      setStats(res.data.data);
+      setStats(res.data?.data ?? null);
     } catch {
       // Stats are non-critical
     }
@@ -83,7 +83,7 @@ export function useEmailData(context: AIContext) {
   const fetchAccounts = useCallback(async () => {
     try {
       const res = await axios.get(`/api/${context}/emails/accounts`);
-      setAccounts(res.data.data || []);
+      setAccounts(res.data?.data ?? []);
     } catch {
       // Accounts fetch failure is non-critical
     }
@@ -99,7 +99,7 @@ export function useEmailData(context: AIContext) {
   }): Promise<Email | null> => {
     try {
       const res = await axios.post(`/api/${context}/emails/send`, data);
-      return res.data.data;
+      return res.data?.data ?? null;
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Senden'));
       return null;
@@ -109,7 +109,7 @@ export function useEmailData(context: AIContext) {
   const replyToEmail = useCallback(async (id: string, body: { body_html?: string; body_text?: string; account_id?: string }): Promise<Email | null> => {
     try {
       const res = await axios.post(`/api/${context}/emails/${id}/reply`, body);
-      return res.data.data;
+      return res.data?.data ?? null;
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Antworten'));
       return null;
@@ -119,7 +119,7 @@ export function useEmailData(context: AIContext) {
   const forwardEmail = useCallback(async (id: string, to: Array<{ email: string; name?: string }>, body?: { body_html?: string; body_text?: string }): Promise<Email | null> => {
     try {
       const res = await axios.post(`/api/${context}/emails/${id}/forward`, { to_addresses: to, ...body });
-      return res.data.data;
+      return res.data?.data ?? null;
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Weiterleiten'));
       return null;
@@ -137,10 +137,10 @@ export function useEmailData(context: AIContext) {
   const toggleStar = useCallback(async (id: string) => {
     try {
       const res = await axios.patch(`/api/${context}/emails/${id}/star`, {});
-      // Update in list
-      setEmails(prev => prev.map(e => e.id === id ? { ...e, is_starred: res.data.data.is_starred } : e));
+      const starred = res.data?.data?.is_starred ?? false;
+      setEmails(prev => prev.map(e => e.id === id ? { ...e, is_starred: starred } : e));
       if (selectedEmail?.id === id) {
-        setSelectedEmail(prev => prev ? { ...prev, is_starred: res.data.data.is_starred } : null);
+        setSelectedEmail(prev => prev ? { ...prev, is_starred: starred } : null);
       }
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Markieren'));
@@ -168,7 +168,7 @@ export function useEmailData(context: AIContext) {
   const getReplySuggestions = useCallback(async (id: string): Promise<ReplySuggestion[]> => {
     try {
       const res = await axios.get(`/api/${context}/emails/${id}/ai/reply-suggestions`);
-      return res.data.data || [];
+      return res.data?.data ?? [];
     } catch {
       return [];
     }
@@ -177,13 +177,12 @@ export function useEmailData(context: AIContext) {
   const triggerAIProcess = useCallback(async (id: string): Promise<Email | null> => {
     try {
       const res = await axios.post(`/api/${context}/emails/${id}/ai/process`, {});
-      return res.data.data;
+      return res.data?.data ?? null;
     } catch {
       return null;
     }
   }, [context]);
 
-  // Cleanup
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);

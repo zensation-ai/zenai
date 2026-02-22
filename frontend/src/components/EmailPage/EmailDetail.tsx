@@ -47,7 +47,7 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
 
   // Load suggestions on mount if inbound
   useEffect(() => {
-    if (email.direction === 'inbound' && email.ai_reply_suggestions.length > 0) {
+    if (email.direction === 'inbound' && (email.ai_reply_suggestions?.length ?? 0) > 0) {
       setSuggestions(email.ai_reply_suggestions);
     }
   }, [email.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -73,20 +73,20 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
 
       {/* Subject & Meta */}
       <div className="email-detail-header">
-        <h2 className="email-detail-subject">{email.subject || '(Kein Betreff)'}</h2>
+        <h2 className="email-detail-subject">{email.subject ?? '(Kein Betreff)'}</h2>
         <div className="email-detail-meta">
           <div className="email-detail-from">
-            <strong>{email.from_name || email.from_address}</strong>
+            <strong>{email.from_name ?? email.from_address}</strong>
             {email.from_name && <span className="email-detail-addr">&lt;{email.from_address}&gt;</span>}
           </div>
           <div className="email-detail-to">
-            An: {email.to_addresses.map(a => a.name || a.email).join(', ')}
-            {email.cc_addresses.length > 0 && (
-              <> | CC: {email.cc_addresses.map(a => a.name || a.email).join(', ')}</>
+            An: {(email.to_addresses ?? []).map(a => a.name ?? a.email).join(', ')}
+            {(email.cc_addresses?.length ?? 0) > 0 && (
+              <> | CC: {(email.cc_addresses ?? []).map(a => a.name ?? a.email).join(', ')}</>
             )}
           </div>
           <div className="email-detail-date">
-            {formatDateTime(email.received_at || email.sent_at || email.created_at)}
+            {formatDateTime(email.received_at ?? email.sent_at ?? email.created_at)}
           </div>
         </div>
 
@@ -107,7 +107,7 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
               {email.ai_sentiment === 'positive' ? '😊' : email.ai_sentiment === 'negative' ? '😟' : '😐'} {email.ai_sentiment}
             </span>
           )}
-          {email.has_attachments && <span className="email-badge">📎 {email.attachments.length} Anhang</span>}
+          {email.has_attachments && <span className="email-badge">📎 {email.attachments?.length ?? 0} Anhang</span>}
         </div>
       </div>
 
@@ -120,11 +120,11 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
       )}
 
       {/* AI Action Items */}
-      {email.ai_action_items.length > 0 && (
+      {(email.ai_action_items?.length ?? 0) > 0 && (
         <div className="email-detail-ai-actions">
           <div className="email-detail-ai-label">📋 Erkannte Aufgaben</div>
           <ul>
-            {email.ai_action_items.map((item, i) => (
+            {(email.ai_action_items ?? []).map((item, i) => (
               <li key={i}>{item.text}</li>
             ))}
           </ul>
@@ -149,15 +149,15 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
             style={{ width: '100%', minHeight: '200px', border: 'none' }}
           />
         ) : (
-          <pre className="email-detail-text">{email.body_text || '(Kein Inhalt)'}</pre>
+          <pre className="email-detail-text">{email.body_text ?? '(Kein Inhalt)'}</pre>
         )}
       </div>
 
       {/* Attachments */}
-      {email.attachments.length > 0 && (
+      {(email.attachments?.length ?? 0) > 0 && (
         <div className="email-detail-attachments">
           <div className="email-detail-ai-label">📎 Anhänge</div>
-          {email.attachments.map((att, i) => (
+          {(email.attachments ?? []).map((att, i) => (
             <div key={i} className="email-attachment">
               <span>{att.filename}</span>
               <span className="email-attachment-type">{att.content_type}</span>
@@ -177,10 +177,10 @@ export function EmailDetail({ email, thread, onBack, onReply, onStar, onArchive,
               {thread.filter(t => t.id !== email.id).map(t => (
                 <div key={t.id} className={`email-thread-item ${t.direction === 'outbound' ? 'email-thread-item--sent' : ''}`}>
                   <div className="email-thread-item-header">
-                    <strong>{t.from_name || t.from_address}</strong>
-                    <span>{formatDateTime(t.received_at || t.sent_at)}</span>
+                    <strong>{t.from_name ?? t.from_address}</strong>
+                    <span>{formatDateTime(t.received_at ?? t.sent_at)}</span>
                   </div>
-                  <p>{t.ai_summary || (t.body_text ? t.body_text.substring(0, 200) + '...' : '(Kein Inhalt)')}</p>
+                  <p>{t.ai_summary ?? (t.body_text ? t.body_text.substring(0, 200) + '...' : '(Kein Inhalt)')}</p>
                 </div>
               ))}
             </div>

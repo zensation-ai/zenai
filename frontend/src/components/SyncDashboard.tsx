@@ -72,7 +72,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
   const loadPendingChanges = useCallback(async (signal?: AbortSignal) => {
     try {
       const res = await axios.get(`/api/${context}/sync/pending`, { signal });
-      setPendingChanges(res.data.data?.changes || []);
+      setPendingChanges(res.data.data?.changes ?? []);
     } catch (err) {
       // Don't update state if request was aborted
       if (axios.isCancel(err)) return;
@@ -208,7 +208,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
           <span className={`context-indicator ${context}`}>
-            {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] || context}
+            {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] ?? context}
           </span>
         </div>
       )}

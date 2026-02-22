@@ -93,7 +93,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
   const startNewConversation = useCallback(async (signal?: AbortSignal) => {
     try {
       const startRes = await axios.get('/api/personalization/start', { signal });
-      const data = startRes.data?.data || startRes.data;
+      const data = startRes.data?.data ?? startRes.data;
       if (data?.sessionId) {
         persistSessionId(data.sessionId);
       }
@@ -128,7 +128,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
             params: { session_id: storedSessionId },
             signal,
           });
-          const history = historyRes.data?.data?.messages || [];
+          const history = historyRes.data?.data?.messages ?? [];
           if (history.length > 0) {
             setMessages(history.map((m: { role: string; content: string; created_at: string }, i: number) => ({
               id: `hist-${i}`,
@@ -147,7 +147,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
         await startNewConversation(signal);
       }
 
-      const factsData = factsRes.data?.data || factsRes.data;
+      const factsData = factsRes.data?.data ?? factsRes.data;
       const allFacts: LearnedFact[] = [];
       if (factsData?.factsByCategory) {
         for (const [category, categoryFacts] of Object.entries(factsData.factsByCategory)) {
@@ -165,21 +165,21 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
       }
       setFacts(allFacts);
 
-      const progressData = progressRes.data?.data || progressRes.data;
-      const progressItems: LearningProgress[] = (progressData?.topics || []).map((t: { topic: string; factsLearned: number; completionLevel: number }) => ({
+      const progressData = progressRes.data?.data ?? progressRes.data;
+      const progressItems: LearningProgress[] = (progressData?.topics ?? []).map((t: { topic: string; factsLearned: number; completionLevel: number }) => ({
         category: t.topic,
         facts_count: t.factsLearned,
         completeness: t.completionLevel,
       }));
       setProgress(progressItems);
 
-      const summaryData = summaryRes.data?.data || summaryRes.data;
+      const summaryData = summaryRes.data?.data ?? summaryRes.data;
       setSummary(summaryData?.summary ? {
         summary: summaryData.summary,
-        key_traits: summaryData.key_traits || [],
-        interests: summaryData.interests || [],
-        communication_style: summaryData.communication_style || '',
-        generated_at: summaryData.generated_at || new Date().toISOString(),
+        key_traits: summaryData.key_traits ?? [],
+        interests: summaryData.interests ?? [],
+        communication_style: summaryData.communication_style ?? '',
+        generated_at: summaryData.generated_at ?? new Date().toISOString(),
       } : null);
     } catch (err) {
       if (axios.isCancel(err)) return;
@@ -217,7 +217,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
         context,
       });
 
-      const responseData = res.data?.data || res.data;
+      const responseData = res.data?.data ?? res.data;
 
       if (responseData?.sessionId && !sessionId) {
         persistSessionId(responseData.sessionId);
@@ -226,13 +226,13 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
       const aiMessage: ChatMessage = {
         id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: responseData?.response || res.data.response,
+        content: responseData?.response ?? res.data.response,
         timestamp: new Date().toISOString(),
       };
 
       setMessages(prev => [...prev, aiMessage]);
 
-      const newFacts = responseData?.newFacts || res.data.new_facts;
+      const newFacts = responseData?.newFacts ?? res.data.new_facts;
       if (newFacts && newFacts.length > 0) {
         const mappedFacts: LearnedFact[] = newFacts.map((f: { category: string; key: string; value: string }, i: number) => ({
           id: `new-${Date.now()}-${i}`,
@@ -249,7 +249,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
     } catch (err) {
       logError('PersonalizationChat:sendMessage', err);
       const message = axios.isAxiosError(err)
-        ? (err.response?.data as { error?: string })?.error || 'Nachricht fehlgeschlagen'
+        ? (err.response?.data as { error?: string })?.error ?? 'Nachricht fehlgeschlagen'
         : 'Nachricht fehlgeschlagen';
       showToast(message, 'error');
     } finally {
@@ -328,7 +328,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
             <div className="progress-overview">
               {progress.map(p => (
                 <div key={p.category} className="progress-item">
-                  <span className="progress-icon">{categoryLabels[p.category]?.icon || '📌'}</span>
+                  <span className="progress-icon">{categoryLabels[p.category]?.icon ?? '📌'}</span>
                   <div className="progress-bar-container">
                     <div className="progress-bar-fill" style={{ width: `${p.completeness * 100}%` }} />
                   </div>

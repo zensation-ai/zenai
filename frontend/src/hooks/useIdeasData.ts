@@ -45,10 +45,6 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
   const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
   const lastSubmitTimeRef = useRef(0);
 
-  // ============================================
-  // DATA LOADING FUNCTIONS
-  // ============================================
-
   const checkHealth = useCallback(async (signal?: AbortSignal) => {
     try {
       const response = await axios.get('/api/health', { signal });
@@ -63,7 +59,7 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
       const claudeAvailable = aiServices?.claude?.status === 'healthy' || aiServices?.claude?.available;
       const ollamaConnected = aiServices?.ollama?.status === 'connected';
       const openaiConfigured = aiServices?.openai?.status === 'configured';
-      const ollamaModels = aiServices?.ollama?.models || [];
+      const ollamaModels = aiServices?.ollama?.models ?? [];
 
       setApiStatus({
         database: !!dbConnected,
@@ -82,7 +78,7 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
     try {
       const response = await axios.get(`/api/${context}/ideas?limit=100`, { signal });
       const parsed = safeParseResponse(IdeasResponseSchema, response.data, 'loadIdeas');
-      const serverIdeas = (parsed.ideas || []) as unknown as StructuredIdea[];
+      const serverIdeas = (parsed.ideas ?? []) as unknown as StructuredIdea[];
 
       setIdeas(currentIdeas => {
         const serverIdeaIds = new Set(serverIdeas.map(i => i.id));
@@ -151,12 +147,7 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
     }
   }, [context]);
 
-  // ============================================
-  // INITIAL LOAD + CONTEXT SWITCH
-  // ============================================
-
   useEffect(() => {
-    // Clear stale state when switching context
     setError(null);
     setIdeas([]);
     setArchivedIdeas([]);
@@ -171,10 +162,6 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
     return () => { abortController.abort(); };
   }, [context, checkHealth, loadIdeas, loadArchivedCount, loadNotificationCount]);
 
-  // ============================================
-  // ARCHIVE LOADING ON PAGE SWITCH
-  // ============================================
-
   useEffect(() => {
     if (currentPage === 'archive') {
       const abortController = new AbortController();
@@ -182,10 +169,6 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
       return () => abortController.abort();
     }
   }, [currentPage, loadArchivedIdeas]);
-
-  // ============================================
-  // BACKGROUND SYNC (when on ideas page)
-  // ============================================
 
   useEffect(() => {
     if (currentPage !== 'ideas') return;
@@ -196,7 +179,7 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
 
       try {
         const res = await axios.get(`/api/${context}/ideas`, { signal: abortController.signal });
-        const serverIdeas: StructuredIdea[] = res.data.ideas || [];
+        const serverIdeas: StructuredIdea[] = res.data?.ideas ?? [];
         const serverIdeaIds = new Set(serverIdeas.map(i => i.id));
 
         setIdeas(currentIdeas => {

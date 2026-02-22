@@ -49,7 +49,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
           setNotes(Array.isArray(res.data.data) ? res.data.data : res.data.data ? [res.data.data] : []);
         }
       } catch {
-        // No notes yet - that's fine
+        // No notes yet
       } finally {
         setLoading(false);
       }
@@ -279,7 +279,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
               )}
 
               <span className="meeting-protocol__timestamp">
-                {new Date(note.created_at).toLocaleString('de-DE')}
+                {note.created_at ? new Date(note.created_at).toLocaleString('de-DE') : ''}
               </span>
             </div>
           ))}

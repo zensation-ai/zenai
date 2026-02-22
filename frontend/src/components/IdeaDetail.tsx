@@ -65,7 +65,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     setLoadingRelations(true);
     try {
       const response = await axios.get(`/api/knowledge-graph/relations/${idea.id}`, { params: { context }, signal });
-      if (!signal.aborted) setRelations(response.data.relationships || []);
+      if (!signal.aborted) setRelations(response.data?.relationships ?? []);
     } catch (error) {
       if (!axios.isCancel(error)) logError('IdeaDetail:loadRelations', error);
     } finally {
@@ -76,7 +76,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
   const loadSuggestions = async (signal: AbortSignal) => {
     try {
       const response = await axios.get(`/api/knowledge-graph/suggestions/${idea.id}`, { params: { context }, signal });
-      if (!signal.aborted) setSuggestions(response.data.suggestions || []);
+      if (!signal.aborted) setSuggestions(response.data?.suggestions ?? []);
     } catch (error) {
       if (!axios.isCancel(error)) logError('IdeaDetail:loadSuggestions', error);
     }
@@ -86,7 +86,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     setLoadingDraft(true);
     try {
       const response = await axios.get(`/api/${context}/ideas/${idea.id}/draft`, { signal });
-      if (!signal.aborted && response.data.draft) setDraft(response.data.draft);
+      if (!signal.aborted && response.data?.draft) setDraft(response.data.draft);
     } catch (error) {
       if (!axios.isCancel(error)) logError('IdeaDetail:loadDraft', error);
     } finally {
@@ -158,8 +158,6 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     }
   };
 
-  // Use shared null-safe formatDateLong from dateUtils
-
   const performResearch = async (type: 'answer' | 'solve' | 'develop' | 'explore') => {
     setResearchLoading(true);
     setResearchType(type);
@@ -205,7 +203,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
     }
   };
 
-  const typeInfo = typeLabels[idea.type] || { label: idea.type, icon: '📝' };
+  const typeInfo = typeLabels[idea.type] ?? { label: idea.type, icon: '📝' };
 
   return (
     <div className="idea-detail-overlay" onClick={onClose} role="presentation">

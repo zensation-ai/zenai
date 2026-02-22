@@ -52,9 +52,7 @@ export function GanttChart({
 
   const dayWidth = DAY_WIDTH_MAP[zoom];
 
-  // Fetch gantt data with dependencies
   const ganttTasks = useMemo(() => {
-    // Use tasks prop directly; dependencies are fetched separately if needed
     return tasks.filter(t => t.status !== 'cancelled');
   }, [tasks]);
 
@@ -75,7 +73,6 @@ export function GanttChart({
       }
     });
 
-    // Pad by 7 days on each side
     const start = addDays(earliest, -7);
     const end = addDays(latest, 7);
     return { rangeStart: start, totalDays: daysBetween(start, end) };
@@ -91,7 +88,7 @@ export function GanttChart({
 
     ganttTasks.forEach(t => {
       if (t.project_id) {
-        const existing = projectMap.get(t.project_id) || [];
+        const existing = projectMap.get(t.project_id) ?? [];
         existing.push(t);
         projectMap.set(t.project_id, existing);
       } else {
@@ -103,7 +100,7 @@ export function GanttChart({
       .filter(p => p.status !== 'archived')
       .sort((a, b) => a.sort_order - b.sort_order)
       .forEach(p => {
-        const projectTasks = projectMap.get(p.id) || [];
+        const projectTasks = projectMap.get(p.id) ?? [];
         if (projectTasks.length > 0 || !collapsedProjects.has(p.id)) {
           groups.push({ project: p, tasks: projectTasks });
         }
@@ -130,7 +127,7 @@ export function GanttChart({
       }
 
       group.tasks
-        .sort((a, b) => (a.start_date || a.created_at).localeCompare(b.start_date || b.created_at))
+        .sort((a, b) => ((a.start_date ?? a.created_at) ?? '').localeCompare((b.start_date ?? b.created_at) ?? ''))
         .forEach(task => {
           result.push({ type: 'task', task, project: group.project, y });
           y += ROW_HEIGHT;
@@ -166,7 +163,6 @@ export function GanttChart({
     return days * dayWidth;
   }, [dayWidth]);
 
-  // Today line position
   const todayX = daysBetween(rangeStart, startOfDay(new Date())) * dayWidth;
 
   const handleCreateProject = useCallback(async () => {
@@ -346,11 +342,11 @@ export function GanttChart({
             {rows.map((row, i) => {
               if (row.type !== 'task' || !row.task) return null;
               const task = row.task;
-              const barX = getBarX(task.start_date || task.created_at);
-              const barW = getBarWidth(task.start_date || task.created_at, task.due_date);
+              const barX = getBarX(task.start_date ?? task.created_at);
+              const barW = getBarWidth(task.start_date ?? task.created_at, task.due_date);
               const barY = HEADER_HEIGHT + i * ROW_HEIGHT + 6;
               const barH = ROW_HEIGHT - 12;
-              const color = row.project?.color || PRIORITY_COLORS[task.priority];
+              const color = row.project?.color ?? PRIORITY_COLORS[task.priority];
               const isDone = task.status === 'done';
 
               return (

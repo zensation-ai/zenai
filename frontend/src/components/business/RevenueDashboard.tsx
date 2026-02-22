@@ -49,15 +49,15 @@ export const RevenueDashboard: React.FC = () => {
     return (
       <div className="business-empty">
         <div className="business-empty-icon">💰</div>
-        <div className="business-empty-title">{error || 'Keine Revenue-Daten'}</div>
+        <div className="business-empty-title">{error ?? 'Keine Revenue-Daten'}</div>
         <div className="business-empty-text">Stripe ist nicht konfiguriert. Verbinde deinen Stripe-Account unter Connectors.</div>
       </div>
     );
   }
 
   const chartData = timeline.map(p => ({
-    date: new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
-    mrr: p.mrr,
+    date: p.date ? new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '–',
+    mrr: p.mrr ?? 0,
   }));
 
   return (
@@ -116,7 +116,7 @@ export const RevenueDashboard: React.FC = () => {
                 <tr key={e.id}>
                   <td>{e.event_type}</td>
                   <td>{e.amount !== null ? `€${e.amount.toFixed(2)}` : '-'}</td>
-                  <td>{new Date(e.occurred_at).toLocaleDateString('de-DE')}</td>
+                  <td>{e.occurred_at ? new Date(e.occurred_at).toLocaleDateString('de-DE') : '–'}</td>
                 </tr>
               ))}
             </tbody>

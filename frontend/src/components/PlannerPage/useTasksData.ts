@@ -43,8 +43,8 @@ export function useTasksData(
       if (filters?.priority) params.priority = filters.priority;
 
       const res = await axios.get(`/api/${context}/tasks`, { params });
-      if (res.data.success) {
-        setTasks(res.data.data || []);
+      if (res.data?.success) {
+        setTasks(res.data.data ?? []);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Aufgaben');
@@ -60,7 +60,7 @@ export function useTasksData(
   const createTask = useCallback(async (input: Partial<Task>): Promise<Task | null> => {
     try {
       const res = await axios.post(`/api/${context}/tasks`, input);
-      if (res.data.success) {
+      if (res.data?.success) {
         const newTask = res.data.data as Task;
         setTasks(prev => [...prev, newTask]);
         return newTask;
@@ -75,7 +75,7 @@ export function useTasksData(
   const updateTask = useCallback(async (id: string, updates: Partial<Task>): Promise<Task | null> => {
     try {
       const res = await axios.put(`/api/${context}/tasks/${id}`, updates);
-      if (res.data.success) {
+      if (res.data?.success) {
         const updated = res.data.data as Task;
         setTasks(prev => prev.map(t => t.id === id ? updated : t));
         return updated;
@@ -90,7 +90,7 @@ export function useTasksData(
   const deleteTask = useCallback(async (id: string): Promise<boolean> => {
     try {
       const res = await axios.delete(`/api/${context}/tasks/${id}`);
-      if (res.data.success) {
+      if (res.data?.success) {
         setTasks(prev => prev.filter(t => t.id !== id));
         return true;
       }
@@ -101,7 +101,6 @@ export function useTasksData(
   }, [context]);
 
   const reorderTasks = useCallback(async (status: TaskStatus, taskIds: string[]): Promise<void> => {
-    // Optimistic update - immutable: create new objects instead of mutating
     setTasks(prev => prev.map(task => {
       const orderIndex = taskIds.indexOf(task.id);
       if (orderIndex !== -1) {

@@ -38,11 +38,11 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
         axios.get(`/api/${context}/digest/goals`, { signal }).catch(() => ({ data: { data: null } })),
       ]);
 
-      setLatestDigest(adaptDigest(latestRes.data.data));
-      const historyItems = (historyRes.data.data || []) as Record<string, unknown>[];
+      setLatestDigest(adaptDigest(latestRes.data?.data));
+      const historyItems = (historyRes.data?.data ?? []) as Record<string, unknown>[];
       setDigestHistory(historyItems.map(adaptDigest).filter((d): d is DigestEntry => d !== null));
 
-      const goalsData = adaptGoals(goalsRes.data.data);
+      const goalsData = adaptGoals(goalsRes.data?.data);
       if (goalsData) setGoals(goalsData);
 
       setError(null);
@@ -65,7 +65,7 @@ export function DigestDashboard({ onBack, context }: DigestDashboardProps) {
     try {
       setGenerating(type);
       const res = await axios.post(`/api/${context}/digest/generate/${type}`);
-      const generated = adaptDigest(res.data.data);
+      const generated = adaptDigest(res.data?.data);
       if (generated) {
         setLatestDigest(generated);
         setDigestHistory(prev => [generated, ...prev]);

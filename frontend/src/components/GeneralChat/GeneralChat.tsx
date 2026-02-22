@@ -118,7 +118,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       // Get list of sessions for current context
       const typeFilter = assistantMode ? '&type=assistant' : '';
       const res = await axios.get(`/api/chat/sessions?context=${context}&limit=1${typeFilter}`, { signal });
-      const sessions = res.data.sessions || [];
+      const sessions = res.data?.sessions ?? [];
 
       if (sessions.length > 0) {
         // Load the most recent session
@@ -137,10 +137,10 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const loadSession = async (id: string, signal?: AbortSignal) => {
     try {
       const res = await axios.get(`/api/chat/sessions/${id}`, { signal });
-      const session = res.data.session;
+      const session = res.data?.session;
       if (session) {
         setSessionId(session.id);
-        setMessages(session.messages || []);
+        setMessages(session.messages ?? []);
         onSessionChange?.(session.id);
       }
     } catch (err) {
@@ -155,7 +155,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       const sessionPayload: Record<string, string> = { context };
       if (assistantMode) sessionPayload.type = 'assistant';
       const res = await axios.post('/api/chat/sessions', sessionPayload);
-      const session = res.data.session;
+      const session = res.data?.session;
       if (session) {
         setSessionId(session.id);
         setMessages([]);
@@ -261,8 +261,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
         try {
           // Build full URL: native fetch doesn't use axios baseURL
-          const baseUrl = import.meta.env.VITE_API_URL || '';
-          const apiKey = safeLocalStorage('get', 'apiKey') || import.meta.env.VITE_API_KEY;
+          const baseUrl = import.meta.env.VITE_API_URL ?? '';
+          const apiKey = safeLocalStorage('get', 'apiKey') ?? import.meta.env.VITE_API_KEY;
 
           const response = await fetch(`${baseUrl}/api/chat/sessions/${currentSessionId}/messages/stream`, {
             method: 'POST',
@@ -296,7 +296,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
               // Process complete SSE events from buffer
               const lines = buffer.split('\n');
-              buffer = lines.pop() || ''; // Keep incomplete line in buffer
+              buffer = lines.pop() ?? '';
 
               let currentEventType = '';
               for (const line of lines) {
@@ -335,11 +335,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                       // Accumulate thinking deltas (backend now streams chunks)
                       setThinkingContent(prev => prev + data.thinking);
                     }
-                  } catch (parseError) {
+                  } catch {
                     // Skip malformed JSON
-                    if (line.slice(6).trim() !== '') {
-                      // intentionally empty
-                    }
                   }
                   currentEventType = '';
                 }
@@ -628,7 +625,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const navigateArtifact = useCallback((direction: 'prev' | 'next') => {
     if (!activeArtifact || activeArtifact.index < 0) return;
 
-    const messageArtifacts = artifacts.get(activeArtifact.messageId) || [];
+    const messageArtifacts = artifacts.get(activeArtifact.messageId) ?? [];
     const currentIndex = activeArtifact.index;
 
     if (direction === 'prev' && currentIndex > 0) {
@@ -699,7 +696,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
               onPrevious={() => navigateArtifact('prev')}
               onNext={() => navigateArtifact('next')}
               hasPrevious={activeArtifact.index > 0}
-              hasNext={activeArtifact.index >= 0 && activeArtifact.index < (artifacts.get(activeArtifact.messageId)?.length || 0) - 1}
+              hasNext={activeArtifact.index >= 0 && activeArtifact.index < (artifacts.get(activeArtifact.messageId)?.length ?? 0) - 1}
             />
           </Suspense>
         </ErrorBoundary>
@@ -723,8 +720,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
             <Suspense fallback={<div className="voice-chat-loading">Lade Sprachkonversation...</div>}>
               <VoiceChatOverlay
                 context={context}
-                apiUrl={import.meta.env.VITE_API_URL || ''}
-                apiKey={import.meta.env.VITE_API_KEY || ''}
+                apiUrl={import.meta.env.VITE_API_URL ?? ''}
+                apiKey={import.meta.env.VITE_API_KEY ?? ''}
                 onClose={() => setVoiceChatOpen(false)}
               />
             </Suspense>

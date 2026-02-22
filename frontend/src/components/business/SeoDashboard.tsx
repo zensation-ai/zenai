@@ -72,14 +72,14 @@ export const SeoDashboard: React.FC = () => {
     return (
       <div className="business-empty">
         <div className="business-empty-icon">🔍</div>
-        <div className="business-empty-title">{error || 'Keine SEO-Daten'}</div>
+        <div className="business-empty-title">{error ?? 'Keine SEO-Daten'}</div>
         <div className="business-empty-text">Google Search Console ist nicht verbunden. Autorisiere den Zugang unter Connectors.</div>
       </div>
     );
   }
 
   const chartData = timeline.map(p => ({
-    date: new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+    date: p.date ? new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '–',
     impressions: p.impressions,
     clicks: p.clicks,
   }));
