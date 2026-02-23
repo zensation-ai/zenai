@@ -7,7 +7,7 @@
  * - Medien: Image/video gallery
  */
 
-import { lazy, Suspense, memo, useCallback } from 'react';
+import { lazy, Suspense, memo } from 'react';
 import { SkeletonLoader } from '../SkeletonLoader';
 import { RisingBubbles } from '../RisingBubbles';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
@@ -27,8 +27,7 @@ function DocumentVaultPageComponent({ onBack, context, initialTab = 'documents' 
     rootTab: 'documents',
   });
 
-  const noopNavigate = useCallback(() => {}, []);
-  const backToDocuments = useCallback(() => handleDocTabChange('documents'), [handleDocTabChange]);
+  const backToDocuments = () => handleDocTabChange('documents');
 
   const renderDocTabs = () => (
     <div className="vault-doc-tabs" role="tablist" aria-label="Wissensbasis Navigation">
@@ -54,7 +53,7 @@ function DocumentVaultPageComponent({ onBack, context, initialTab = 'documents' 
         <RisingBubbles variant="subtle" />
         {renderDocTabs()}
         <Suspense fallback={<SkeletonLoader type="card" count={2} />}>
-          <CanvasPage context={context} onNavigate={noopNavigate} />
+          <CanvasPage context={context} />
         </Suspense>
       </div>
     );

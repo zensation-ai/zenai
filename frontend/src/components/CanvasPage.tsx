@@ -30,7 +30,6 @@ interface CanvasDocument {
 
 interface CanvasPageProps {
   context: string;
-  onNavigate?: (page: string) => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || '';
