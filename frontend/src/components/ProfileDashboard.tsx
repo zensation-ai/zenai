@@ -86,7 +86,16 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
         axios.get(`/api/${context}/profile/recommendations`, { signal }),
         axios.get(`/api/${context}/profile`, { signal }).catch(() => ({ data: { profile: null } })),
       ]);
-      setProfile(statsRes.data);
+      const d = statsRes.data;
+      setProfile({
+        total_ideas: d.total_ideas ?? 0,
+        total_meetings: d.total_meetings ?? 0,
+        avg_ideas_per_day: Number(d.avg_ideas_per_day) || 0,
+        top_categories: d.top_categories ?? [],
+        top_types: d.top_types ?? [],
+        top_topics: d.top_topics ?? [],
+        auto_priority_enabled: d.auto_priority_enabled ?? false,
+      });
       setRecommendations(recsRes.data.recommendations);
 
       const bp = businessRes.data.profile;

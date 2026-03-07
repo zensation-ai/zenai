@@ -25,7 +25,21 @@ export const TrafficDashboard: React.FC = () => {
           axios.get('/api/business/traffic', { signal }),
           axios.get('/api/business/traffic/timeline', { signal }),
         ]);
-        if (metricsRes.data.success) setMetrics(metricsRes.data.traffic);
+        if (metricsRes.data.success && metricsRes.data.traffic) {
+          const t = metricsRes.data.traffic;
+          setMetrics({
+            users: t.users ?? 0,
+            newUsers: t.newUsers ?? 0,
+            sessions: t.sessions ?? 0,
+            pageviews: t.pageviews ?? 0,
+            bounceRate: t.bounceRate ?? 0,
+            avgSessionDuration: t.avgSessionDuration ?? 0,
+            conversions: t.conversions ?? 0,
+            usersGrowth: t.usersGrowth ?? 0,
+            topPages: t.topPages ?? [],
+            trafficSources: t.trafficSources ?? [],
+          });
+        }
         if (timelineRes.data.success) setTimeline(timelineRes.data.timeline ?? []);
         setError(null);
       } catch (err) {

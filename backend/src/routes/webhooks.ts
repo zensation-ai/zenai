@@ -136,17 +136,25 @@ webhooksRouter.post('/', apiKeyAuth, requireScope('admin'), asyncHandler(async (
  * List all webhooks
  */
 webhooksRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const result = await pool.query(
-    `SELECT id, name, url, events, is_active, retry_count,
-            last_triggered_at, failure_count, created_at, updated_at
-     FROM webhooks
-     ORDER BY created_at DESC`
-  );
+  let rows: Record<string, unknown>[] = [];
+  try {
+    const result = await pool.query(
+      `SELECT id, name, url, events, is_active, retry_count,
+              last_triggered_at, failure_count, created_at, updated_at
+       FROM webhooks
+       ORDER BY created_at DESC`
+    );
+    rows = result.rows;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : '';
+    if (!msg.includes('does not exist')) throw err;
+    // Table missing — return empty list gracefully
+  }
 
   res.json({
     success: true,
-    count: result.rows.length,
-    webhooks: result.rows.map(row => ({
+    count: rows.length,
+    webhooks: rows.map(row => ({
       id: row.id,
       name: row.name,
       url: row.url,

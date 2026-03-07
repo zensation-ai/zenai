@@ -63,7 +63,7 @@ export function BatchActionBar({
           className="batch-delete-btn"
           onClick={onBatchDelete}
         >
-          🗑️ L\u00f6schen
+          🗑️ Löschen
         </button>
       </div>
     </div>

@@ -149,8 +149,8 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
       <div className="voice-chat-header">
         <h3>Sprachkonversation</h3>
         {onClose && (
-          <button className="voice-chat-close" onClick={onClose} aria-label="Schlie\u00dfen">
-            \u2715
+          <button className="voice-chat-close" onClick={onClose} aria-label="Schließen">
+            {'\u2715'}
           </button>
         )}
       </div>
@@ -160,7 +160,7 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
         {conversation.length === 0 && voiceState === 'idle' && (
           <div className="voice-chat-empty">
             Starte eine Sprachkonversation mit ZenAI.
-            Dr\u00fccke den Mikrofon-Button um zu beginnen.
+            Drücke den Mikrofon-Button um zu beginnen.
           </div>
         )}
 

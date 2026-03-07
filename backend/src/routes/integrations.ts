@@ -154,12 +154,20 @@ function getRedirectUri(provider: 'microsoft' | 'slack'): string {
  * List all available integrations and their status
  */
 integrationsRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const result = await pool.query(
-    `SELECT id, provider, name, is_enabled, config, sync_settings,
-            last_sync_at, sync_status, error_message, created_at
-     FROM integrations
-     ORDER BY provider`
-  );
+  let dbRows: { provider: string; is_enabled: boolean; config: unknown; sync_settings: unknown; last_sync_at: string | null; sync_status: string; error_message: string | null }[] = [];
+  try {
+    const result = await pool.query(
+      `SELECT id, provider, name, is_enabled, config, sync_settings,
+              last_sync_at, sync_status, error_message, created_at
+       FROM integrations
+       ORDER BY provider`
+    );
+    dbRows = result.rows;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : '';
+    if (!msg.includes('does not exist')) throw err;
+    logger.warn('integrations table not found, returning defaults');
+  }
 
   // Check connection status for each provider
   const microsoftConnected = await microsoft.isMicrosoftConnected();
@@ -189,7 +197,7 @@ integrationsRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: R
 
   // Merge database results with defaults
   const integrations = defaultIntegrations.map(def => {
-    const dbRecord = result.rows.find(r => r.provider === def.provider);
+    const dbRecord = dbRows.find(r => r.provider === def.provider);
     return {
       ...def,
       isEnabled: dbRecord?.is_enabled || false,
@@ -214,13 +222,21 @@ integrationsRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: R
 integrationsRouter.get('/:provider', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { provider } = req.params;
 
-  const result = await pool.query(
-    `SELECT id, provider, name, is_enabled, config, sync_settings,
-            last_sync_at, sync_status, error_message, created_at
-     FROM integrations
-     WHERE provider = $1`,
-    [provider]
-  );
+  let row: Record<string, unknown> | undefined;
+  try {
+    const result = await pool.query(
+      `SELECT id, provider, name, is_enabled, config, sync_settings,
+              last_sync_at, sync_status, error_message, created_at
+       FROM integrations
+       WHERE provider = $1`,
+      [provider]
+    );
+    row = result.rows[0];
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : '';
+    if (!msg.includes('does not exist')) throw err;
+    logger.warn('integrations table not found');
+  }
 
   let isConnected = false;
   if (provider === 'microsoft') {
@@ -228,8 +244,6 @@ integrationsRouter.get('/:provider', apiKeyAuth, asyncHandler(async (req: Reques
   } else if (provider === 'slack') {
     isConnected = await slack.isSlackConnected();
   }
-
-  const row = result.rows[0];
 
   res.json({
     success: true,

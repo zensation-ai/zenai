@@ -109,16 +109,16 @@ export const KeyboardShortcutsModal = memo(function KeyboardShortcutsModal({
       >
         <header className="shortcuts-header">
           <h2 id="shortcuts-title" className="shortcuts-title">
-            <span className="shortcuts-icon" aria-hidden="true">\u2328\uFE0F</span>
+            <span className="shortcuts-icon" aria-hidden="true">{'\u2328\uFE0F'}</span>
             Tastenkombinationen
           </h2>
           <button
             type="button"
             className="shortcuts-close neuro-press-effect"
             onClick={onClose}
-            aria-label="Schlie\u00DFen"
+            aria-label="Schließen"
           >
-            \u00D7
+            {'\u00D7'}
           </button>
         </header>
 
@@ -148,7 +148,7 @@ export const KeyboardShortcutsModal = memo(function KeyboardShortcutsModal({
 
         <footer className="shortcuts-footer">
           <p className="shortcuts-hint">
-            Dr\u00FCcke <kbd>?</kbd> um diese Hilfe jederzeit anzuzeigen
+            Drücke <kbd>?</kbd> um diese Hilfe jederzeit anzuzeigen
           </p>
         </footer>
       </div>

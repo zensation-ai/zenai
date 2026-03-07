@@ -491,7 +491,7 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `analyse-${result.filename.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+      link.download = `analyse-${(result.filename || 'dokument').replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
