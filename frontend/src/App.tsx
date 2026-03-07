@@ -681,7 +681,7 @@ function AuthenticatedApp() {
           <Suspense fallback={<PageLoader />}>
             <EmailPage
               context={context}
-              initialTab={(tabParam || 'inbox') as 'inbox' | 'sent' | 'drafts' | 'archived'}
+              initialTab={(tabParam || 'inbox') as 'inbox' | 'sent' | 'drafts' | 'archived' | 'trash' | 'starred'}
             />
           </Suspense>
         );

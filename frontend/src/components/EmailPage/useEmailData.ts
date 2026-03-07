@@ -1,15 +1,17 @@
 /**
- * useEmailData - Data hook for email operations
+ * useEmailData - Premium email data hook
  *
- * Uses the global axios instance (with baseURL and interceptors)
- * consistent with the rest of the application.
+ * Features: auto-refresh, optimistic updates, undo support
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
-import type { Email, EmailStats, EmailAccount, EmailTab, EmailFilters, ReplySuggestion, ImapTestResult, ImapSyncResult } from './types';
+import type { Email, EmailStats, EmailAccount, EmailTab, EmailFilters, ReplySuggestion, ImapTestResult, ImapSyncResult, UndoAction } from './types';
 import { getErrorMessage } from '../../utils/errors';
 import type { AIContext } from '../ContextSwitcher';
+
+const AUTO_REFRESH_MS = 30_000;
+const UNDO_TIMEOUT_MS = 5_000;
 
 export function useEmailData(context: AIContext) {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -20,12 +22,20 @@ export function useEmailData(context: AIContext) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [undoAction, setUndoAction] = useState<UndoAction | null>(null);
+
   const abortRef = useRef<AbortController | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastFetchRef = useRef<{ folder: string; filters?: EmailFilters }>({ folder: 'inbox' });
+
+  // ── Core fetch ────────────────────────────────────────────
 
   const fetchEmails = useCallback(async (folder: EmailTab | string = 'inbox', filters?: EmailFilters) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    lastFetchRef.current = { folder, filters };
 
     setLoading(true);
     setError(null);
@@ -33,7 +43,9 @@ export function useEmailData(context: AIContext) {
       const params: Record<string, string> = { folder };
       if (filters?.search) params.search = filters.search;
       if (filters?.category) params.category = filters.category;
+      if (filters?.priority) params.priority = filters.priority;
       if (filters?.account_id) params.account_id = filters.account_id;
+      if (filters?.unread) params.status = 'received';
 
       const res = await axios.get(`/api/${context}/emails`, {
         params,
@@ -50,11 +62,20 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
+  const refetchCurrent = useCallback(() => {
+    const { folder, filters } = lastFetchRef.current;
+    fetchEmails(folder, filters);
+  }, [fetchEmails]);
+
   const fetchEmail = useCallback(async (id: string): Promise<Email | null> => {
     try {
       const res = await axios.get(`/api/${context}/emails/${id}`);
       const email = res.data?.data ?? null;
       setSelectedEmail(email);
+      // Optimistic: mark as read in list
+      if (email && email.status === 'received') {
+        setEmails(prev => prev.map(e => e.id === id ? { ...e, status: 'read' as const } : e));
+      }
       return email;
     } catch (err) {
       setError(getErrorMessage(err, 'Fehler beim Laden der E-Mail'));
@@ -76,7 +97,7 @@ export function useEmailData(context: AIContext) {
       const res = await axios.get(`/api/${context}/emails/stats`);
       setStats(res.data?.data ?? null);
     } catch {
-      // Stats are non-critical
+      // non-critical
     }
   }, [context]);
 
@@ -85,9 +106,11 @@ export function useEmailData(context: AIContext) {
       const res = await axios.get(`/api/${context}/emails/accounts`);
       setAccounts(res.data?.data ?? []);
     } catch {
-      // Accounts fetch failure is non-critical
+      // non-critical
     }
   }, [context]);
+
+  // ── Send operations ───────────────────────────────────────
 
   const sendEmail = useCallback(async (data: {
     to_addresses: Array<{ email: string; name?: string }>;
@@ -106,7 +129,9 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
-  const replyToEmail = useCallback(async (id: string, body: { body_html?: string; body_text?: string; account_id?: string }): Promise<Email | null> => {
+  const replyToEmail = useCallback(async (id: string, body: {
+    body_html?: string; body_text?: string; account_id?: string;
+  }): Promise<Email | null> => {
     try {
       const res = await axios.post(`/api/${context}/emails/${id}/reply`, body);
       return res.data?.data ?? null;
@@ -116,7 +141,9 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
-  const forwardEmail = useCallback(async (id: string, to: Array<{ email: string; name?: string }>, body?: { body_html?: string; body_text?: string }): Promise<Email | null> => {
+  const forwardEmail = useCallback(async (id: string, to: Array<{ email: string; name?: string }>, body?: {
+    body_html?: string; body_text?: string;
+  }): Promise<Email | null> => {
     try {
       const res = await axios.post(`/api/${context}/emails/${id}/forward`, { to_addresses: to, ...body });
       return res.data?.data ?? null;
@@ -126,6 +153,39 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
+  // ── Status operations with undo ───────────────────────────
+
+  const pushUndo = useCallback((action: Omit<UndoAction, 'id' | 'timestamp'>) => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const undo: UndoAction = {
+      ...action,
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+    };
+    setUndoAction(undo);
+    undoTimerRef.current = setTimeout(() => setUndoAction(null), UNDO_TIMEOUT_MS);
+  }, []);
+
+  const executeUndo = useCallback(async () => {
+    if (!undoAction) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    try {
+      await axios.patch(`/api/${context}/emails/${undoAction.emailId}/status`, {
+        status: undoAction.previousStatus,
+      });
+      refetchCurrent();
+      fetchStats();
+    } catch {
+      // silent fail
+    }
+    setUndoAction(null);
+  }, [undoAction, context, refetchCurrent, fetchStats]);
+
+  const dismissUndo = useCallback(() => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setUndoAction(null);
+  }, []);
+
   const updateStatus = useCallback(async (id: string, status: string) => {
     try {
       await axios.patch(`/api/${context}/emails/${id}/status`, { status });
@@ -134,36 +194,94 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
-  const toggleStar = useCallback(async (id: string) => {
+  const archiveEmail = useCallback(async (id: string) => {
+    const email = emails.find(e => e.id === id);
+    if (!email) return;
+
+    // Optimistic remove from list
+    setEmails(prev => prev.filter(e => e.id !== id));
+    if (selectedEmail?.id === id) setSelectedEmail(null);
+
+    pushUndo({
+      type: 'archive',
+      emailId: id,
+      previousStatus: email.status,
+      label: 'E-Mail archiviert',
+    });
+
     try {
-      const res = await axios.patch(`/api/${context}/emails/${id}/star`, {});
-      const starred = res.data?.data?.is_starred ?? false;
-      setEmails(prev => prev.map(e => e.id === id ? { ...e, is_starred: starred } : e));
-      if (selectedEmail?.id === id) {
-        setSelectedEmail(prev => prev ? { ...prev, is_starred: starred } : null);
-      }
+      await axios.patch(`/api/${context}/emails/${id}/status`, { status: 'archived' });
+      fetchStats();
     } catch (err) {
+      // Rollback
+      setEmails(prev => [...prev, email].sort((a, b) =>
+        new Date(b.received_at || b.created_at).getTime() - new Date(a.received_at || a.created_at).getTime()
+      ));
+      setError(getErrorMessage(err, 'Fehler beim Archivieren'));
+    }
+  }, [context, emails, selectedEmail, pushUndo, fetchStats]);
+
+  const deleteEmail = useCallback(async (id: string) => {
+    const email = emails.find(e => e.id === id);
+    if (!email) return;
+
+    // Optimistic remove
+    setEmails(prev => prev.filter(e => e.id !== id));
+    if (selectedEmail?.id === id) setSelectedEmail(null);
+
+    pushUndo({
+      type: 'delete',
+      emailId: id,
+      previousStatus: email.status,
+      label: 'E-Mail geloescht',
+    });
+
+    try {
+      await axios.delete(`/api/${context}/emails/${id}`);
+      fetchStats();
+    } catch (err) {
+      setEmails(prev => [...prev, email].sort((a, b) =>
+        new Date(b.received_at || b.created_at).getTime() - new Date(a.received_at || a.created_at).getTime()
+      ));
+      setError(getErrorMessage(err, 'Fehler beim Loeschen'));
+    }
+  }, [context, emails, selectedEmail, pushUndo, fetchStats]);
+
+  const toggleStar = useCallback(async (id: string) => {
+    // Optimistic update
+    setEmails(prev => prev.map(e => e.id === id ? { ...e, is_starred: !e.is_starred } : e));
+    if (selectedEmail?.id === id) {
+      setSelectedEmail(prev => prev ? { ...prev, is_starred: !prev.is_starred } : null);
+    }
+
+    try {
+      await axios.patch(`/api/${context}/emails/${id}/star`, {});
+    } catch (err) {
+      // Rollback
+      setEmails(prev => prev.map(e => e.id === id ? { ...e, is_starred: !e.is_starred } : e));
       setError(getErrorMessage(err, 'Fehler beim Markieren'));
     }
   }, [context, selectedEmail?.id]);
 
-  const deleteEmail = useCallback(async (id: string) => {
-    try {
-      await axios.delete(`/api/${context}/emails/${id}`);
-      setEmails(prev => prev.filter(e => e.id !== id));
-      if (selectedEmail?.id === id) setSelectedEmail(null);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Fehler beim Löschen'));
-    }
-  }, [context, selectedEmail?.id]);
-
   const batchUpdate = useCallback(async (ids: string[], status: string) => {
+    // Optimistic remove from list for archive/trash
+    if (status === 'archived' || status === 'trash') {
+      setEmails(prev => prev.filter(e => !ids.includes(e.id)));
+    }
+
     try {
       await axios.post(`/api/${context}/emails/batch`, { ids, status });
+      fetchStats();
+      if (status === 'read') {
+        setEmails(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: 'read' as const } : e));
+      }
     } catch (err) {
+      refetchCurrent();
       setError(getErrorMessage(err, 'Fehler bei Massenoperation'));
     }
-  }, [context]);
+  }, [context, fetchStats, refetchCurrent]);
+
+  // ── AI operations ─────────────────────────────────────────
 
   const getReplySuggestions = useCallback(async (id: string): Promise<ReplySuggestion[]> => {
     try {
@@ -177,13 +295,19 @@ export function useEmailData(context: AIContext) {
   const triggerAIProcess = useCallback(async (id: string): Promise<Email | null> => {
     try {
       const res = await axios.post(`/api/${context}/emails/${id}/ai/process`, {});
-      return res.data?.data ?? null;
+      const updated = res.data?.data ?? null;
+      if (updated) {
+        setSelectedEmail(updated);
+        setEmails(prev => prev.map(e => e.id === id ? { ...e, ...updated } : e));
+      }
+      return updated;
     } catch {
       return null;
     }
   }, [context]);
 
-  // IMAP functions (Phase 39)
+  // ── IMAP ──────────────────────────────────────────────────
+
   const testImapConnection = useCallback(async (data: {
     host: string; port: number; user: string; password: string; tls: boolean;
   }): Promise<ImapTestResult> => {
@@ -204,17 +328,62 @@ export function useEmailData(context: AIContext) {
     return res.data?.data;
   }, [context]);
 
+  // ── Auto-refresh ──────────────────────────────────────────
+
+  const startAutoRefresh = useCallback(() => {
+    if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    refreshTimerRef.current = setInterval(() => {
+      fetchStats();
+      // Silent refresh - don't show loading state
+      const { folder, filters } = lastFetchRef.current;
+      const controller = new AbortController();
+      axios.get(`/api/${context}/emails`, {
+        params: { folder, ...filters },
+        signal: controller.signal,
+      }).then(res => {
+        const newEmails = res.data?.data ?? [];
+        const newTotal = res.data?.total ?? 0;
+        setEmails(newEmails);
+        setTotal(newTotal);
+      }).catch(() => { /* silent */ });
+    }, AUTO_REFRESH_MS);
+  }, [context, fetchStats]);
+
+  const stopAutoRefresh = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearInterval(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
+  // ── Cleanup ───────────────────────────────────────────────
+
   useEffect(() => {
-    return () => { abortRef.current?.abort(); };
+    return () => {
+      abortRef.current?.abort();
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
   }, []);
 
   return {
-    emails, selectedEmail, thread, stats, accounts, loading, error, total,
-    setSelectedEmail,
-    fetchEmails, fetchEmail, fetchThread, fetchStats, fetchAccounts,
+    // State
+    emails, selectedEmail, thread, stats, accounts, loading, error, total, undoAction,
+    // Setters
+    setSelectedEmail, setError,
+    // Fetches
+    fetchEmails, fetchEmail, fetchThread, fetchStats, fetchAccounts, refetchCurrent,
+    // Send
     sendEmail, replyToEmail, forwardEmail,
-    updateStatus, toggleStar, deleteEmail, batchUpdate,
+    // Status (with undo)
+    updateStatus, archiveEmail, deleteEmail, toggleStar, batchUpdate,
+    // Undo
+    executeUndo, dismissUndo,
+    // AI
     getReplySuggestions, triggerAIProcess,
+    // IMAP
     testImapConnection, createImapAccount, triggerImapSync,
+    // Auto-refresh
+    startAutoRefresh, stopAutoRefresh,
   };
 }

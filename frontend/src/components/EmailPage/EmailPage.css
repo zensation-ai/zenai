@@ -1,4 +1,6 @@
-/* EmailPage - Phase 38 */
+/* ════════════════════════════════════════════════════════════════
+   EmailPage - Premium Split-Pane Email Client
+   ════════════════════════════════════════════════════════════════ */
 
 .email-page {
   display: flex;
@@ -6,144 +8,369 @@
   height: 100%;
   background: var(--bg-primary, #0c1e28);
   color: var(--text-primary, #e0e8ef);
+  overflow: hidden;
 }
 
-.email-header {
+/* ── Header ──────────────────────────────────────────────────── */
+
+.ep-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem 0.5rem;
+  padding: 12px 20px;
   flex-shrink: 0;
 }
 
-.email-header-left {
+.ep-header-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
-.email-title {
-  font-size: 1.5rem;
+.ep-title {
+  font-size: 1.35rem;
   font-weight: 700;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
-.email-unread-badge {
+.ep-unread-badge {
   background: var(--primary, #ff6b35);
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 0.15rem 0.5rem;
+  padding: 2px 7px;
   border-radius: 10px;
   min-width: 20px;
   text-align: center;
+  line-height: 1.4;
 }
 
-.email-header-actions {
+.ep-header-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 6px;
 }
 
-.email-imap-btn {
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-secondary, #8899aa);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+/* Buttons */
+.ep-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
   border-radius: 8px;
   font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  border: none;
 }
 
-.email-imap-btn:hover {
+.ep-btn--ghost {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary, #8899aa);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ep-btn--ghost:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary, #e0e8ef);
 }
 
-.email-compose-btn {
-  padding: 0.5rem 1.25rem;
+.ep-btn--primary {
   background: var(--primary, #ff6b35);
   color: #fff;
-  border: none;
-  border-radius: 8px;
   font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background 0.2s;
 }
-
-.email-compose-btn:hover {
+.ep-btn--primary:hover {
   background: var(--primary-hover, #e55d2a);
 }
 
-/* Tabs */
-.email-tabs {
-  display: flex;
-  gap: 0.25rem;
-  padding: 0 1.5rem;
-  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-  flex-shrink: 0;
-}
+.ep-btn-icon { font-size: 0.95rem; }
 
-.email-tab {
+/* ── Folder Tabs ─────────────────────────────────────────────── */
+
+.ep-folders {
+  display: flex;
+  gap: 2px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ep-folders::-webkit-scrollbar { display: none; }
+
+.ep-folder {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 1rem;
+  gap: 5px;
+  padding: 8px 12px;
   border: none;
   background: transparent;
-  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
-  font-size: 0.875rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
-
-.email-tab:hover {
+.ep-folder:hover {
   color: var(--text-primary, #fff);
 }
-
-.email-tab--active {
+.ep-folder--active {
   color: var(--primary, #ff6b35);
   border-bottom-color: var(--primary, #ff6b35);
 }
-
-.email-tab-icon { font-size: 1rem; }
-.email-tab-label { white-space: nowrap; }
-
-.email-tab-badge {
-  background: var(--primary, #ff6b35);
-  color: #fff;
+.ep-folder-icon { font-size: 0.9rem; }
+.ep-folder-count {
   font-size: 0.65rem;
   font-weight: 700;
-  padding: 0.1rem 0.35rem;
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  padding: 1px 5px;
   border-radius: 8px;
   min-width: 16px;
   text-align: center;
 }
 
-/* Light mode */
+/* ── Filter Chips ────────────────────────────────────────────── */
+
+.ep-filters {
+  display: flex;
+  gap: 6px;
+  padding: 8px 20px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ep-filters::-webkit-scrollbar { display: none; }
+
+.ep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text-secondary, #8899aa);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ep-chip:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary, #e0e8ef);
+}
+.ep-chip--active {
+  background: rgba(255, 107, 53, 0.12);
+  border-color: rgba(255, 107, 53, 0.3);
+  color: var(--primary, #ff6b35);
+}
+.ep-chip-icon { font-size: 0.8rem; }
+.ep-chip-count {
+  font-size: 0.6rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 4px;
+  border-radius: 6px;
+}
+
+/* ── Split Pane ──────────────────────────────────────────────── */
+
+.ep-split {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ep-split-list {
+  width: 380px;
+  min-width: 320px;
+  max-width: 480px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ep-split-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Empty detail state */
+.ep-empty-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0.4;
+}
+.ep-empty-detail-icon {
+  font-size: 3rem;
+  filter: grayscale(0.5);
+}
+.ep-empty-detail-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+}
+.ep-empty-detail-hint {
+  font-size: 0.75rem;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.3));
+  margin: 0;
+}
+.ep-empty-detail-hint kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 0 2px;
+}
+
+/* ── Undo Toast ──────────────────────────────────────────────── */
+
+.ep-undo-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #1a2a3a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  font-size: 0.85rem;
+  color: var(--text-primary, #e0e8ef);
+  z-index: 1000;
+  animation: ep-toast-in 0.3s ease-out;
+}
+
+@keyframes ep-toast-in {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.ep-undo-btn {
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ep-undo-btn:hover { background: var(--primary-hover, #e55d2a); }
+
+.ep-undo-close {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+/* ── Light Mode ──────────────────────────────────────────────── */
+
 :root.light-mode .email-page {
   background: var(--bg-primary, #f5f7fa);
   color: var(--text-primary, #1a1a2e);
 }
+:root.light-mode .ep-folders {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+:root.light-mode .ep-split-list {
+  border-right-color: rgba(0, 0, 0, 0.08);
+}
+:root.light-mode .ep-btn--ghost {
+  background: rgba(0, 0, 0, 0.04);
+  color: #666;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:root.light-mode .ep-btn--ghost:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #333;
+}
+:root.light-mode .ep-chip {
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #666;
+}
+:root.light-mode .ep-chip:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #333;
+}
+:root.light-mode .ep-undo-toast {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+:root.light-mode .ep-empty-detail-hint kbd {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .ep-split-list {
+    width: 100%;
+    max-width: none;
+    border-right: none;
+  }
+  .ep-split-detail {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-primary, #0c1e28);
+    z-index: 10;
+    display: none;
+  }
+  .ep-split--detail-active .ep-split-detail {
+    display: flex;
+  }
+  .ep-split--detail-active .ep-split-list {
+    display: none;
+  }
+  .ep-split {
+    position: relative;
+  }
+  :root.light-mode .ep-split-detail {
+    background: var(--bg-primary, #f5f7fa);
+  }
+}
 
 @media (max-width: 768px) {
-  .email-header { padding: 0.75rem 1rem 0.25rem; }
-  .email-tabs { padding: 0 1rem; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  .email-tabs::-webkit-scrollbar { display: none; }
-  .email-tab { padding: 0.5rem 0.75rem; font-size: 0.8rem; flex-shrink: 0; }
-  .email-title { font-size: 1.25rem; }
-  .email-compose-btn { padding: 0.5rem 1rem; font-size: 0.8rem; min-height: 44px; }
+  .ep-header { padding: 8px 12px; }
+  .ep-title { font-size: 1.15rem; }
+  .ep-folders { padding: 0 12px; }
+  .ep-folder { padding: 6px 8px; font-size: 0.75rem; }
+  .ep-folder-label { display: none; }
+  .ep-filters { padding: 6px 12px; }
+  .ep-btn-label { display: none; }
+  .ep-btn { padding: 7px 10px; }
 }
 
 @media (max-width: 480px) {
-  .email-header { padding: 0.5rem 0.75rem 0.25rem; }
-  .email-tabs { padding: 0 0.75rem; gap: 0.125rem; }
-  .email-tab { padding: 0.5rem 0.5rem; font-size: 0.75rem; }
-  .email-tab-label { display: none; }
-  .email-title { font-size: 1.1rem; }
-  .email-compose-btn { padding: 0.5rem 0.75rem; }
+  .ep-header { padding: 6px 8px; }
+  .ep-folders { padding: 0 8px; gap: 0; }
+  .ep-folder { padding: 6px 6px; }
+  .ep-filters { padding: 4px 8px; gap: 4px; }
+  .ep-chip { padding: 3px 7px; font-size: 0.68rem; }
 }
