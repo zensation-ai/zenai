@@ -257,8 +257,8 @@ describe('Calendar Service', () => {
         start_time: '2026-03-01T10:00:00Z',
       });
 
-      // Should have: UPDATE + DELETE reminders + INSERT reminder = 3 calls
-      expect(mockQueryContext).toHaveBeenCalledTimes(3);
+      // Should have: UPDATE + DELETE reminders = 2 calls (no INSERT because mock event has no reminder_minutes)
+      expect(mockQueryContext).toHaveBeenCalledTimes(2);
     });
   });
 

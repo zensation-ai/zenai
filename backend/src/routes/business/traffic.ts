@@ -25,8 +25,13 @@ trafficRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Respon
     return;
   }
 
-  const metrics = await ga4Connector.getTrafficMetrics(period);
-  res.json({ success: true, traffic: metrics });
+  try {
+    const metrics = await ga4Connector.getTrafficMetrics(period);
+    res.json({ success: true, traffic: metrics });
+  } catch (error) {
+    // GA4 API may fail due to permissions, quota, etc. - return gracefully
+    res.json({ success: true, traffic: null, message: 'Google Analytics data temporarily unavailable' });
+  }
 }));
 
 /**

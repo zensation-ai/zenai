@@ -113,7 +113,7 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
             i.created_at, i.updated_at, i.raw_transcript
      FROM ideas i
      LEFT JOIN triage_history th ON th.idea_id = i.id
-       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+       AND th.created_at > NOW() - INTERVAL '24 hours'
      WHERE i.context = $1
        AND i.is_archived = false
        AND th.id IS NULL
@@ -136,7 +136,7 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
     `SELECT COUNT(*) as total
      FROM ideas i
      LEFT JOIN triage_history th ON th.idea_id = i.id
-       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+       AND th.created_at > NOW() - INTERVAL '24 hours'
      WHERE i.context = $1
        AND i.is_archived = false
        AND th.id IS NULL`,
@@ -1069,7 +1069,7 @@ ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async 
             i.created_at, i.updated_at, i.raw_transcript
      FROM ideas i
      LEFT JOIN triage_history th ON th.idea_id = i.id
-       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+       AND th.created_at > NOW() - INTERVAL '24 hours'
      WHERE i.context = $1
        AND i.is_archived = false
        AND th.id IS NULL
@@ -1091,7 +1091,7 @@ ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async 
     `SELECT COUNT(*) as total
      FROM ideas i
      LEFT JOIN triage_history th ON th.idea_id = i.id
-       AND th.triaged_at > NOW() - INTERVAL '24 hours'
+       AND th.created_at > NOW() - INTERVAL '24 hours'
      WHERE i.context = $1
        AND i.is_archived = false
        AND th.id IS NULL`,

@@ -187,10 +187,13 @@ function getVisionPrompt(task: VisionTask, language: 'de' | 'en' = 'de'): Prompt
 // ===========================================
 
 class ClaudeVisionService {
-  private client: Anthropic;
+  private _client: Anthropic | null = null;
 
-  constructor() {
-    this.client = getClaudeClient();
+  private get client(): Anthropic {
+    if (!this._client) {
+      this._client = getClaudeClient();
+    }
+    return this._client;
   }
 
   /**
