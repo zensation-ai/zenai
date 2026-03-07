@@ -27,7 +27,18 @@ export const RevenueDashboard: React.FC = () => {
           axios.get('/api/business/revenue/timeline', { signal }),
           axios.get('/api/business/revenue/events', { params: { limit: 20 }, signal }),
         ]);
-        if (metricsRes.data.success) setMetrics(metricsRes.data.revenue);
+        if (metricsRes.data.success && metricsRes.data.revenue) {
+          const r = metricsRes.data.revenue;
+          setMetrics({
+            mrr: r.mrr ?? 0,
+            arr: r.arr ?? 0,
+            activeSubscriptions: r.activeSubscriptions ?? 0,
+            churnRate: r.churnRate ?? 0,
+            mrrGrowth: r.mrrGrowth ?? 0,
+            totalCustomers: r.totalCustomers ?? 0,
+            recentPayments: r.recentPayments ?? [],
+          });
+        }
         if (timelineRes.data.success) setTimeline(timelineRes.data.timeline ?? []);
         if (eventsRes.data.success) setEvents(eventsRes.data.events ?? []);
         setError(null);

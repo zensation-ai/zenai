@@ -50,7 +50,16 @@ export const SeoDashboard: React.FC = () => {
           axios.get('/api/business/seo/timeline', { signal }),
           axios.get('/api/business/seo/queries', { signal }),
         ]);
-        if (metricsRes.data.success) setMetrics(metricsRes.data.seo);
+        if (metricsRes.data.success && metricsRes.data.seo) {
+          const s = metricsRes.data.seo;
+          setMetrics({
+            impressions: s.impressions ?? 0,
+            clicks: s.clicks ?? 0,
+            ctr: s.ctr ?? 0,
+            avgPosition: s.avgPosition ?? 0,
+            impressionsGrowth: s.impressionsGrowth,
+          });
+        }
         if (timelineRes.data.success) setTimeline(timelineRes.data.timeline ?? []);
         if (queriesRes.data.success) setQueries(queriesRes.data.queries ?? []);
         setError(null);

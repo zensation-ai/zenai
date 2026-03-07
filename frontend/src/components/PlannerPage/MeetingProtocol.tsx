@@ -46,7 +46,8 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
       try {
         const res = await axios.get(`/api/meetings/${meetingId}/notes`, { params: { context } });
         if (res.data.success) {
-          setNotes(Array.isArray(res.data.data) ? res.data.data : res.data.data ? [res.data.data] : []);
+          const n = res.data.notes;
+          setNotes(Array.isArray(n) ? n : n ? [n] : []);
         }
       } catch {
         // No notes yet
@@ -125,8 +126,8 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
         });
       }
 
-      if (res.data.success && res.data.data) {
-        setNotes(prev => [...prev, res.data.data]);
+      if (res.data.success && res.data.notes) {
+        setNotes(prev => [...prev, res.data.notes]);
         setTranscript('');
       }
     } catch (err) {
