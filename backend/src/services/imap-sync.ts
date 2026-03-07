@@ -133,8 +133,24 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
   const result: SyncResult = { newEmails: 0, errors: 0, lastUid: lastSyncUid };
 
   try {
+    logger.info('IMAP sync starting', {
+      account: account.email_address,
+      lastSyncUid,
+      folder: account.sync_folder || 'INBOX',
+      operation: 'imapSync',
+    });
+
     await client.connect();
+    logger.info('IMAP connected', { account: account.email_address, operation: 'imapSync' });
+
     const mailbox = await client.mailboxOpen(account.sync_folder || 'INBOX');
+    logger.info('IMAP mailbox opened', {
+      account: account.email_address,
+      exists: mailbox.exists,
+      uidNext: String(mailbox.uidNext),
+      uidValidity: String(mailbox.uidValidity),
+      operation: 'imapSync',
+    });
 
     // Check UIDVALIDITY — if changed, mailbox was recreated, need full resync
     // Convert bigint to number for DB storage and comparison
@@ -159,9 +175,11 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
       const uidNext = Number(mailbox.uidNext) || 1;
       const startUid = Math.max(1, uidNext - MAX_INITIAL_FETCH);
       uidRange = `${startUid}:*`;
+      logger.info('IMAP initial fetch range', { uidRange, uidNext, startUid, operation: 'imapSync' });
     } else {
       // Incremental: fetch only new messages
       uidRange = `${lastSyncUid + 1}:*`;
+      logger.info('IMAP incremental fetch range', { uidRange, operation: 'imapSync' });
     }
 
     // Fetch messages
@@ -172,7 +190,6 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
       envelope: true,
       source: true,
       flags: true,
-      bodyStructure: true,
     })) {
       // Skip if UID is not actually newer (can happen with range queries)
       if (msg.uid <= lastSyncUid && !needsFullResync) continue;
@@ -231,17 +248,24 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
 
     return result;
   } catch (err) {
-    const error = (err as Error).message;
-    await updateSyncError(context, account.id, error);
+    // Capture detailed error info including ImapFlow responseText
+    const errObj = err as Record<string, unknown>;
+    const errorDetail = errObj.responseText || errObj.responseStatus || errObj.command || '';
+    const errorMsg = (err as Error).message || 'Unknown error';
+    const fullError = errorDetail ? `${errorMsg} (${errorDetail})` : errorMsg;
+
+    await updateSyncError(context, account.id, fullError);
 
     try { await client.logout(); } catch { /* ignore */ }
 
     logger.error('IMAP sync failed', err instanceof Error ? err : undefined, {
       account: account.email_address,
       context,
+      errorDetail: String(errorDetail),
+      errorStack: (err as Error).stack?.substring(0, 500),
       operation: 'imapSync',
     });
-    throw err;
+    throw new Error(fullError);
   }
 }
 
