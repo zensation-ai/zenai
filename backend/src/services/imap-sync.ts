@@ -125,7 +125,12 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
   }
 
   const client = createImapClient(account, password);
-  const result: SyncResult = { newEmails: 0, errors: 0, lastUid: account.last_sync_uid };
+
+  // PostgreSQL BIGINT returns as string — ensure numeric types
+  const lastSyncUid = Number(account.last_sync_uid) || 0;
+  const lastSyncUidValidity = account.last_sync_uidvalidity !== null ? Number(account.last_sync_uidvalidity) : null;
+
+  const result: SyncResult = { newEmails: 0, errors: 0, lastUid: lastSyncUid };
 
   try {
     await client.connect();
@@ -134,13 +139,13 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
     // Check UIDVALIDITY — if changed, mailbox was recreated, need full resync
     // Convert bigint to number for DB storage and comparison
     const uidValidity = Number(mailbox.uidValidity);
-    const needsFullResync = account.last_sync_uidvalidity !== null &&
-      uidValidity !== account.last_sync_uidvalidity;
+    const needsFullResync = lastSyncUidValidity !== null &&
+      uidValidity !== lastSyncUidValidity;
 
     if (needsFullResync) {
       logger.info('UIDVALIDITY changed, performing full resync', {
         account: account.email_address,
-        oldValidity: account.last_sync_uidvalidity,
+        oldValidity: lastSyncUidValidity,
         newValidity: uidValidity,
         operation: 'imapSync',
       });
@@ -148,19 +153,19 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
 
     // Determine UID range to fetch
     let uidRange: string;
-    if (needsFullResync || account.last_sync_uid === 0) {
+    if (needsFullResync || lastSyncUid === 0) {
       // First sync or full resync: fetch recent messages
       // Use UIDNEXT to calculate range for last N messages
-      const uidNext = mailbox.uidNext || 1;
+      const uidNext = Number(mailbox.uidNext) || 1;
       const startUid = Math.max(1, uidNext - MAX_INITIAL_FETCH);
       uidRange = `${startUid}:*`;
     } else {
       // Incremental: fetch only new messages
-      uidRange = `${account.last_sync_uid + 1}:*`;
+      uidRange = `${lastSyncUid + 1}:*`;
     }
 
     // Fetch messages
-    let maxUid = account.last_sync_uid;
+    let maxUid = lastSyncUid;
 
     for await (const msg of client.fetch(uidRange, {
       uid: true,
@@ -170,7 +175,7 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
       bodyStructure: true,
     })) {
       // Skip if UID is not actually newer (can happen with range queries)
-      if (msg.uid <= account.last_sync_uid && !needsFullResync) continue;
+      if (msg.uid <= lastSyncUid && !needsFullResync) continue;
 
       try {
         // Check if we already have this message (by message-id)
