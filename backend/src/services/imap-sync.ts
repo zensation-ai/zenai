@@ -232,11 +232,10 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
     const uidList = uidsToFetch.join(',');
 
     for await (const msg of client.fetch(uidList, {
-      uid: true,
       envelope: true,
       source: true,
       flags: true,
-    })) {
+    }, { uid: true })) {
       // Skip if UID is not actually newer
       if (msg.uid <= lastSyncUid && !needsFullResync) continue;
       if (!msg.uid) continue;
