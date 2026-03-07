@@ -9,6 +9,23 @@ import request from 'supertest';
 import { agentTeamsRouter } from '../../../routes/agent-teams';
 import { errorHandler } from '../../../middleware/errorHandler';
 
+// Mock auth middleware
+jest.mock('../../../middleware/auth', () => ({
+  apiKeyAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireScope: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
+// Mock database-context (for queryContext + isValidContext)
+jest.mock('../../../utils/database-context', () => ({
+  queryContext: jest.fn().mockResolvedValue({ rows: [] }),
+  isValidContext: jest.fn().mockReturnValue(true),
+}));
+
+// Mock activity-tracker
+jest.mock('../../../services/activity-tracker', () => ({
+  trackActivity: jest.fn().mockResolvedValue(undefined),
+}));
+
 // Mock the orchestrator
 jest.mock('../../../services/agent-orchestrator', () => ({
   executeTeamTask: jest.fn().mockResolvedValue({

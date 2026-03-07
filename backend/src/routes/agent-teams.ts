@@ -8,6 +8,7 @@
 
 import { Router, Request, Response } from 'express';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { AIContext, queryContext, isValidContext } from '../utils/database-context';
 import {
@@ -26,6 +27,8 @@ export const agentTeamsRouter = Router();
  */
 agentTeamsRouter.post(
   '/execute',
+  apiKeyAuth,
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const {
       task,
@@ -131,6 +134,8 @@ agentTeamsRouter.post(
  */
 agentTeamsRouter.post(
   '/classify',
+  apiKeyAuth,
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { task } = req.body as { task: string };
 
@@ -163,6 +168,8 @@ agentTeamsRouter.post(
  */
 agentTeamsRouter.get(
   '/history',
+  apiKeyAuth,
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
@@ -208,6 +215,8 @@ agentTeamsRouter.get(
  */
 agentTeamsRouter.get(
   '/history/:id',
+  apiKeyAuth,
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
@@ -255,6 +264,8 @@ agentTeamsRouter.get(
  */
 agentTeamsRouter.post(
   '/history/:id/save-as-idea',
+  apiKeyAuth,
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {

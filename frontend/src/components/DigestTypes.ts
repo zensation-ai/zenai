@@ -48,9 +48,9 @@ export function adaptDigest(d: Record<string, unknown>): DigestEntry | null {
     summary: (d.summary || '') as string,
     highlights: (d.highlights || []) as string[],
     stats: {
-      ideas_created: (d.ideasCount ?? (stats as Record<string, unknown>).totalIdeas ?? 0) as number,
-      tasks_completed: 0,
-      meetings_held: 0,
+      ideas_created: (d.ideasCount ?? stats.totalIdeas ?? 0) as number,
+      tasks_completed: (stats.tasksCompleted ?? d.tasksCompleted ?? 0) as number,
+      meetings_held: (stats.meetingsHeld ?? d.meetingsHeld ?? 0) as number,
       top_categories: topCats,
       productivity_score: (d.productivityScore ?? 0) as number,
     },

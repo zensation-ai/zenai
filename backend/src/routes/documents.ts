@@ -563,6 +563,7 @@ router.delete(
 
 /**
  * GET /documents/file/:id - Download original file
+ * Optional ?context= query param to scope search to a single schema
  */
 router.get(
   '/documents/file/:id',
@@ -571,9 +572,14 @@ router.get(
     const { id } = req.params;
     validateDocumentId(id);
 
-    // Search all contexts
+    // Use context query param to scope search, or fall back to all contexts
+    const contextParam = req.query.context as string | undefined;
+    const contexts: readonly AIContext[] = contextParam && isValidContext(contextParam)
+      ? [contextParam as AIContext]
+      : ['personal', 'work', 'learning', 'creative'];
+
     let doc: Document | null = null;
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of contexts) {
       doc = await documentService.getDocument(id, ctx);
       if (doc) {
         break;
@@ -609,6 +615,7 @@ router.get(
 
 /**
  * GET /documents/preview/:id - Get preview/thumbnail
+ * Optional ?context= query param to scope search to a single schema
  */
 router.get(
   '/documents/preview/:id',
@@ -617,9 +624,14 @@ router.get(
     const { id } = req.params;
     validateDocumentId(id);
 
-    // Search all contexts
+    // Use context query param to scope search, or fall back to all contexts
+    const contextParam = req.query.context as string | undefined;
+    const contexts: readonly AIContext[] = contextParam && isValidContext(contextParam)
+      ? [contextParam as AIContext]
+      : ['personal', 'work', 'learning', 'creative'];
+
     let doc: Document | null = null;
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of contexts) {
       doc = await documentService.getDocument(id, ctx);
       if (doc) {
         break;
