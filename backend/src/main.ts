@@ -87,6 +87,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { logger, requestLogger } from './utils/logger';
 // Phase 30: Memory Scheduler (HiMeS Consolidation & Decay)
 import { startMemoryScheduler, stopMemoryScheduler, workingMemory } from './services/memory';
+// Phase 39: IMAP Email Sync Scheduler
+import { startImapScheduler, stopImapScheduler } from './services/imap-sync';
 // Phase 31: AI Capabilities Enhancement
 import { registerAllToolHandlers } from './services/tool-handlers';
 
@@ -435,11 +437,13 @@ const rateLimitCleanupInterval = setInterval(() => {
 process.once('SIGTERM', () => {
   clearInterval(rateLimitCleanupInterval);
   stopMemoryScheduler();
+  stopImapScheduler();
   workingMemory.stopCleanupInterval();
 });
 process.once('SIGINT', () => {
   clearInterval(rateLimitCleanupInterval);
   stopMemoryScheduler();
+  stopImapScheduler();
   workingMemory.stopCleanupInterval();
 });
 
@@ -797,6 +801,13 @@ Phase 4 APIs:
       logger.info('Memory Scheduler started successfully (deferred)', { operation: 'startup' });
     } catch (error) {
       logger.error('Memory Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 39: Start IMAP Sync Scheduler
+    try {
+      startImapScheduler();
+    } catch (error) {
+      logger.error('IMAP Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
     }
   });
   });

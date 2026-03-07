@@ -12,10 +12,12 @@ import {
   sendEmailById, sendNewEmail, replyToEmail, forwardEmail,
   updateEmailStatus, markAsRead, toggleStar, batchUpdateStatus,
   moveToTrash, getEmailStats,
-  getAccounts, createAccount, updateAccount, deleteAccount,
+  getAccounts, getAccount, createAccount, createImapAccount, updateAccount, deleteAccount,
   getLabels, createLabel, updateLabel, deleteLabel,
   EmailStatus, EmailDirection,
 } from '../services/email';
+import { testImapConnection, syncAccount, ImapAccount } from '../services/imap-sync';
+import { encrypt } from '../utils/encryption';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateContextParam } from '../utils/validation';
@@ -468,4 +470,65 @@ emailRouter.get('/:context/emails/:id/thread/ai/summary', apiKeyAuth, asyncHandl
     logger.error('Thread summary failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'summarizeThread' });
     throw new ValidationError('Thread summary failed. Please try again later.');
   }
+}));
+
+// ============================================================
+// IMAP Sync Endpoints (Phase 39)
+// ============================================================
+
+emailRouter.post('/:context/emails/accounts/imap/test', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const { host, port, user, password, tls } = req.body;
+
+  if (!host || !user || !password) {
+    throw new ValidationError('host, user, and password are required');
+  }
+
+  const result = await testImapConnection(host, port || 993, user, password, tls !== false);
+  res.json({ success: true, data: result });
+}));
+
+emailRouter.post('/:context/emails/accounts/imap', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const context = validateContextParam(req.params.context);
+  const { email_address, display_name, imap_host, imap_port, imap_user, imap_password, imap_tls, sync_folder } = req.body;
+
+  if (!email_address || !imap_host || !imap_user || !imap_password) {
+    throw new ValidationError('email_address, imap_host, imap_user, and imap_password are required');
+  }
+
+  const domain = email_address.split('@')[1];
+  if (!domain) throw new ValidationError('Invalid email address');
+
+  // Encrypt the password before storing
+  const encryptedPassword = encrypt(imap_password);
+
+  const account = await createImapAccount(context, {
+    email_address,
+    display_name,
+    domain,
+    imap_host,
+    imap_port: imap_port || 993,
+    imap_user,
+    imap_password_encrypted: encryptedPassword,
+    imap_tls: imap_tls !== false,
+    sync_folder: sync_folder || 'INBOX',
+  });
+
+  res.status(201).json({ success: true, data: account });
+}));
+
+emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  const context = validateContextParam(req.params.context);
+  const { id } = req.params;
+
+  if (!isValidUUID(id)) throw new ValidationError('Invalid account ID');
+
+  const account = await getAccount(context, id);
+  if (!account) throw new NotFoundError('Account not found');
+
+  if (!account.imap_enabled || !account.imap_host) {
+    throw new ValidationError('Account is not IMAP-enabled');
+  }
+
+  const result = await syncAccount(context, account as unknown as ImapAccount);
+  res.json({ success: true, data: result });
 }));

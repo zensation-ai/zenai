@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
-import type { Email, EmailStats, EmailAccount, EmailTab, EmailFilters, ReplySuggestion } from './types';
+import type { Email, EmailStats, EmailAccount, EmailTab, EmailFilters, ReplySuggestion, ImapTestResult, ImapSyncResult } from './types';
 import { getErrorMessage } from '../../utils/errors';
 import type { AIContext } from '../ContextSwitcher';
 
@@ -183,6 +183,27 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
+  // IMAP functions (Phase 39)
+  const testImapConnection = useCallback(async (data: {
+    host: string; port: number; user: string; password: string; tls: boolean;
+  }): Promise<ImapTestResult> => {
+    const res = await axios.post(`/api/${context}/emails/accounts/imap/test`, data);
+    return res.data?.data;
+  }, [context]);
+
+  const createImapAccount = useCallback(async (data: {
+    email_address: string; display_name?: string;
+    imap_host: string; imap_port: number; imap_user: string; imap_password: string; imap_tls: boolean;
+  }): Promise<void> => {
+    await axios.post(`/api/${context}/emails/accounts/imap`, data);
+    await fetchAccounts();
+  }, [context, fetchAccounts]);
+
+  const triggerImapSync = useCallback(async (accountId: string): Promise<ImapSyncResult> => {
+    const res = await axios.post(`/api/${context}/emails/accounts/${accountId}/sync`, {});
+    return res.data?.data;
+  }, [context]);
+
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);
@@ -194,5 +215,6 @@ export function useEmailData(context: AIContext) {
     sendEmail, replyToEmail, forwardEmail,
     updateStatus, toggleStar, deleteEmail, batchUpdate,
     getReplySuggestions, triggerAIProcess,
+    testImapConnection, createImapAccount, triggerImapSync,
   };
 }

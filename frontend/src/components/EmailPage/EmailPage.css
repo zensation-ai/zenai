@@ -39,6 +39,28 @@
   text-align: center;
 }
 
+.email-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.email-imap-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary, #8899aa);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.email-imap-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #e0e8ef);
+}
+
 .email-compose-btn {
   padding: 0.5rem 1.25rem;
   background: var(--primary, #ff6b35);

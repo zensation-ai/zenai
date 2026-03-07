@@ -67,6 +67,26 @@ export interface EmailAccount {
   signature_text: string | null;
   context: string;
   created_at: string;
+  // IMAP fields (Phase 39)
+  imap_host: string | null;
+  imap_port: number | null;
+  imap_user: string | null;
+  imap_tls: boolean | null;
+  imap_enabled: boolean;
+  last_sync_at: string | null;
+  sync_error: string | null;
+  sync_folder: string | null;
+}
+
+export interface ImapTestResult {
+  success: boolean;
+  mailboxes: string[];
+}
+
+export interface ImapSyncResult {
+  newEmails: number;
+  errors: number;
+  lastUid: number;
 }
 
 export interface EmailStats {

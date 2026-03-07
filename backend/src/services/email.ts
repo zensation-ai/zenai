@@ -100,6 +100,17 @@ export interface EmailAccount {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  // IMAP fields (Phase 39)
+  imap_host: string | null;
+  imap_port: number | null;
+  imap_user: string | null;
+  imap_tls: boolean | null;
+  imap_enabled: boolean;
+  last_sync_uid: number | null;
+  last_sync_uidvalidity: number | null;
+  last_sync_at: string | null;
+  sync_error: string | null;
+  sync_folder: string | null;
 }
 
 export interface EmailLabel {
@@ -747,6 +758,47 @@ export async function updateAccount(
 export async function deleteAccount(context: AIContext, id: string): Promise<void> {
   await queryContext(context, `DELETE FROM email_accounts WHERE id = $1`, [id]);
   logger.info('Email account deleted', { id, context, operation: 'deleteAccount' });
+}
+
+/**
+ * Create an IMAP-enabled email account (Phase 39).
+ */
+export async function createImapAccount(
+  context: AIContext,
+  input: {
+    email_address: string;
+    display_name?: string;
+    domain: string;
+    imap_host: string;
+    imap_port?: number;
+    imap_user: string;
+    imap_password_encrypted: string;
+    imap_tls?: boolean;
+    sync_folder?: string;
+  }
+): Promise<EmailAccount> {
+  const id = uuidv4();
+
+  const result = await queryContext(context, `
+    INSERT INTO email_accounts (
+      id, email_address, display_name, domain, is_default,
+      context, imap_host, imap_port, imap_user, imap_password_encrypted,
+      imap_tls, imap_enabled, sync_folder
+    ) VALUES (
+      $1, $2, $3, $4, FALSE,
+      $5, $6, $7, $8, $9,
+      $10, TRUE, $11
+    )
+    RETURNING *
+  `, [
+    id, input.email_address, input.display_name || null, input.domain,
+    context, input.imap_host, input.imap_port || 993, input.imap_user,
+    input.imap_password_encrypted, input.imap_tls !== false,
+    input.sync_folder || 'INBOX',
+  ]);
+
+  logger.info('IMAP email account created', { id, email: input.email_address, host: input.imap_host, context, operation: 'createImapAccount' });
+  return result.rows[0] as EmailAccount;
 }
 
 // ============================================================

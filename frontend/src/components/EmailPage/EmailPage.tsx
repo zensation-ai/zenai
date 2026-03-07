@@ -11,6 +11,7 @@ import { useEmailData } from './useEmailData';
 import { EmailList } from './EmailList';
 import { EmailDetail } from './EmailDetail';
 import { EmailCompose } from './EmailCompose';
+import { ImapAccountSetup } from './ImapAccountSetup';
 import type { EmailTab, Email } from './types';
 import './EmailPage.css';
 
@@ -39,6 +40,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
   const [composing, setComposing] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Email | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showImapSetup, setShowImapSetup] = useState(false);
 
   // Load emails when tab or context changes
   useEffect(() => {
@@ -133,9 +135,14 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
             <span className="email-unread-badge">{data.stats.unread}</span>
           )}
         </div>
-        <button className="email-compose-btn" onClick={() => setComposing(true)}>
-          Verfassen
-        </button>
+        <div className="email-header-actions">
+          <button className="email-imap-btn" onClick={() => setShowImapSetup(true)}>
+            IMAP-Konto
+          </button>
+          <button className="email-compose-btn" onClick={() => setComposing(true)}>
+            Verfassen
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -170,6 +177,26 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
         onDelete={(id) => data.deleteEmail(id)}
         onBatchAction={data.batchUpdate}
       />
+
+      {/* IMAP Setup Modal */}
+      {showImapSetup && (
+        <ImapAccountSetup
+          context={context}
+          accounts={data.accounts}
+          onCreateAccount={async (accountData) => {
+            await data.createImapAccount(accountData);
+          }}
+          onTestConnection={data.testImapConnection}
+          onSync={async (accountId) => {
+            const result = await data.triggerImapSync(accountId);
+            // Refresh email list after sync
+            data.fetchEmails(activeTab, { search: searchQuery || undefined });
+            data.fetchStats();
+            return result;
+          }}
+          onClose={() => setShowImapSetup(false)}
+        />
+      )}
     </div>
   );
 }
