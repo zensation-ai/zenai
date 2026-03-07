@@ -167,32 +167,79 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
       });
     }
 
-    // Determine UID range to fetch
-    let uidRange: string;
-    if (needsFullResync || lastSyncUid === 0) {
-      // First sync or full resync: fetch recent messages
-      // Use UIDNEXT to calculate range for last N messages
-      const uidNext = Number(mailbox.uidNext) || 1;
-      const startUid = Math.max(1, uidNext - MAX_INITIAL_FETCH);
-      uidRange = `${startUid}:*`;
-      logger.info('IMAP initial fetch range', { uidRange, uidNext, startUid, operation: 'imapSync' });
-    } else {
-      // Incremental: fetch only new messages
-      uidRange = `${lastSyncUid + 1}:*`;
-      logger.info('IMAP incremental fetch range', { uidRange, operation: 'imapSync' });
+    // Skip fetch if mailbox is empty
+    if (!mailbox.exists || mailbox.exists === 0) {
+      logger.info('IMAP mailbox is empty, nothing to sync', {
+        account: account.email_address,
+        operation: 'imapSync',
+      });
+
+      await queryContext(context, `
+        UPDATE email_accounts SET
+          last_sync_uidvalidity = $1,
+          last_sync_at = NOW(),
+          sync_error = NULL
+        WHERE id = $2
+      `, [uidValidity, account.id]);
+
+      await client.logout();
+      return result;
     }
 
-    // Fetch messages
-    let maxUid = lastSyncUid;
+    // Use SEARCH to find UIDs instead of range-based FETCH (more reliable)
+    let uidsToFetch: number[];
 
-    for await (const msg of client.fetch(uidRange, {
+    if (needsFullResync || lastSyncUid === 0) {
+      // First sync: search for recent messages
+      // Fetch all UIDs and take the most recent MAX_INITIAL_FETCH
+      const searchResult = await client.search({ all: true }, { uid: true });
+      const allUids: number[] = Array.isArray(searchResult) ? searchResult : [];
+      uidsToFetch = allUids.slice(-MAX_INITIAL_FETCH);
+      logger.info('IMAP initial search', {
+        totalUids: allUids.length,
+        fetchingCount: uidsToFetch.length,
+        operation: 'imapSync',
+      });
+    } else {
+      // Incremental: search for UIDs greater than last synced
+      const searchResult = await client.search({ uid: `${lastSyncUid + 1}:*` }, { uid: true });
+      const newUids: number[] = Array.isArray(searchResult) ? searchResult : [];
+      // Filter out the lastSyncUid itself (IMAP search is inclusive)
+      uidsToFetch = newUids.filter((uid: number) => uid > lastSyncUid);
+      logger.info('IMAP incremental search', {
+        newUids: uidsToFetch.length,
+        operation: 'imapSync',
+      });
+    }
+
+    if (uidsToFetch.length === 0) {
+      logger.info('No new messages to sync', { account: account.email_address, operation: 'imapSync' });
+
+      await queryContext(context, `
+        UPDATE email_accounts SET
+          last_sync_uidvalidity = $1,
+          last_sync_at = NOW(),
+          sync_error = NULL
+        WHERE id = $2
+      `, [uidValidity, account.id]);
+
+      await client.logout();
+      return result;
+    }
+
+    // Fetch messages by specific UIDs (comma-separated)
+    let maxUid = lastSyncUid;
+    const uidList = uidsToFetch.join(',');
+
+    for await (const msg of client.fetch(uidList, {
       uid: true,
       envelope: true,
       source: true,
       flags: true,
     })) {
-      // Skip if UID is not actually newer (can happen with range queries)
+      // Skip if UID is not actually newer
       if (msg.uid <= lastSyncUid && !needsFullResync) continue;
+      if (!msg.uid) continue;
 
       try {
         // Check if we already have this message (by message-id)
