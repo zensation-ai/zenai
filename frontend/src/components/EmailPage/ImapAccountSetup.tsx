@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import type { EmailAccount } from './types';
+import { getErrorMessage } from '../../utils/errors';
 import './ImapAccountSetup.css';
 
 interface ImapAccountSetupProps {
@@ -86,7 +87,7 @@ export function ImapAccountSetup({
       });
       setTestResult(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verbindungstest fehlgeschlagen');
+      setError(getErrorMessage(err, 'Verbindungstest fehlgeschlagen'));
     } finally {
       setTesting(false);
     }
@@ -118,7 +119,7 @@ export function ImapAccountSetup({
       setDisplayName('');
       setTestResult(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Konto konnte nicht erstellt werden');
+      setError(getErrorMessage(err, 'Konto konnte nicht erstellt werden'));
     } finally {
       setCreating(false);
     }
@@ -133,7 +134,7 @@ export function ImapAccountSetup({
       const result = await onSync(accountId);
       setSyncResult({ accountId, newEmails: result.newEmails });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sync fehlgeschlagen');
+      setError(getErrorMessage(err, 'Sync fehlgeschlagen'));
     } finally {
       setSyncing(null);
     }

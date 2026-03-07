@@ -483,8 +483,13 @@ emailRouter.post('/:context/emails/accounts/imap/test', apiKeyAuth, requireScope
     throw new ValidationError('host, user, and password are required');
   }
 
-  const result = await testImapConnection(host, port || 993, user, password, tls !== false);
-  res.json({ success: true, data: result });
+  try {
+    const result = await testImapConnection(host, port || 993, user, password, tls !== false);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    const message = (err as Error).message || 'IMAP connection failed';
+    res.status(400).json({ success: false, error: message });
+  }
 }));
 
 emailRouter.post('/:context/emails/accounts/imap', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
@@ -529,6 +534,11 @@ emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope(
     throw new ValidationError('Account is not IMAP-enabled');
   }
 
-  const result = await syncAccount(context, account as unknown as ImapAccount);
-  res.json({ success: true, data: result });
+  try {
+    const result = await syncAccount(context, account as unknown as ImapAccount);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    const message = (err as Error).message || 'Sync failed';
+    res.status(400).json({ success: false, error: message });
+  }
 }));
