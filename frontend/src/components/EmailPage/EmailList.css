@@ -329,6 +329,25 @@
 }
 .el-badge--muted { background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); }
 
+.el-label-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  background: rgba(123, 104, 238, 0.15);
+  color: #9B8AFF;
+  white-space: nowrap;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:root.light-mode .el-label-chip {
+  background: rgba(123, 104, 238, 0.1);
+  color: #6B5CE7;
+}
+
 /* Quick actions - visible on hover */
 .el-quick-actions {
   display: flex;

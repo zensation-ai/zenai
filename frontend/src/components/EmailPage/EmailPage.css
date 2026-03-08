@@ -288,6 +288,27 @@
   padding: 0 2px;
 }
 
+/* ── Load More ───────────────────────────────────────────────── */
+
+.ep-load-more {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 8px 12px;
+  padding: 10px;
+  background: rgba(74, 144, 217, 0.06);
+  border: 1px dashed rgba(74, 144, 217, 0.2);
+  border-radius: 10px;
+  color: #4A90D9;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ep-load-more:hover {
+  background: rgba(74, 144, 217, 0.1);
+  border-color: rgba(74, 144, 217, 0.35);
+}
+
 /* ── Light Mode ──────────────────────────────────────────────── */
 
 :root.light-mode .email-page {

@@ -124,7 +124,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
     body_text?: string;
     account_id?: string;
   }) => {
-    if (compose?.mode === 'reply' && compose.replyTo) {
+    if ((compose?.mode === 'reply' || compose?.mode === 'reply-all') && compose.replyTo) {
       await data.replyToEmail(compose.replyTo.id, emailData);
     } else if (compose?.mode === 'forward' && compose.replyTo) {
       await data.forwardEmail(compose.replyTo.id, emailData.to_addresses, emailData);
@@ -135,6 +135,27 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
     data.refetchCurrent();
     data.fetchStats();
   }, [compose, data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Draft editing ─────────────────────────────────────────
+
+  const handleSelectEmailOrDraft = useCallback(async (email: Email) => {
+    // If in drafts folder, open draft in compose mode
+    if (activeFolder === 'drafts' && email.status === 'draft') {
+      setCompose({
+        mode: 'new',
+        replyTo: undefined,
+        prefillBody: email.body_text || '',
+        prefillSubject: email.subject || '',
+        // Store draft ID so we can update instead of creating new
+        draftId: email.id,
+        prefillTo: (email.to_addresses ?? []).map(a => a.email).join(', '),
+        prefillCc: (email.cc_addresses ?? []).map(a => a.email).join(', '),
+        prefillAccountId: email.account_id || undefined,
+      } as ComposeState & { draftId?: string; prefillTo?: string; prefillCc?: string; prefillAccountId?: string });
+      return;
+    }
+    handleSelectEmail(email);
+  }, [activeFolder, handleSelectEmail]);
 
   // ── Keyboard shortcuts ────────────────────────────────────
 
@@ -349,7 +370,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
             total={data.total}
             searchQuery={searchQuery}
             onSearch={handleSearch}
-            onSelect={handleSelectEmail}
+            onSelect={handleSelectEmailOrDraft}
             onStar={(id) => data.toggleStar(id)}
             onArchive={(id) => data.archiveEmail(id)}
             onDelete={(id) => data.deleteEmail(id)}
@@ -359,6 +380,19 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
             searchInputRef={searchInputRef}
             activeFolder={activeFolder}
           />
+          {/* Pagination: Load More */}
+          {data.emails.length < data.total && !data.loading && (
+            <button
+              className="ep-load-more"
+              onClick={() => data.loadMore(activeFolder, {
+                search: searchQuery || undefined,
+                category: activeCategory || undefined,
+                unread: showUnreadOnly || undefined,
+              })}
+            >
+              Weitere laden ({data.emails.length} von {data.total})
+            </button>
+          )}
         </div>
 
         {/* Right: Email Detail */}
@@ -376,6 +410,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
               onDelete={() => { data.deleteEmail(data.selectedEmail!.id); handleBack(); }}
               onGetReplySuggestions={() => data.getReplySuggestions(data.selectedEmail!.id)}
               onAIProcess={() => data.triggerAIProcess(data.selectedEmail!.id)}
+              onGetThreadSummary={() => data.getThreadSummary(data.selectedEmail!.id)}
               onInlineReply={async (body) => {
                 if (data.selectedEmail) {
                   const escaped = body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -414,8 +449,15 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
           mode={compose.mode}
           replyTo={compose.replyTo}
           prefillBody={compose.prefillBody}
+          prefillSubject={compose.prefillSubject}
+          prefillTo={compose.prefillTo}
+          prefillCc={compose.prefillCc}
+          prefillAccountId={compose.prefillAccountId}
+          draftId={compose.draftId}
           onSend={handleComposeSend}
           onCancel={() => setCompose(null)}
+          onAICompose={data.aiCompose}
+          onAIImprove={data.aiImprove}
         />
       )}
 

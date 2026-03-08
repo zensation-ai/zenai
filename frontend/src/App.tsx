@@ -274,6 +274,19 @@ function AuthenticatedApp() {
     confidence: number;
   } | null>(null);
 
+  // Email unread count for sidebar badge
+  const [emailUnreadCount, setEmailUnreadCount] = useState(0);
+  useEffect(() => {
+    const fetchUnread = () => {
+      axios.get(`/api/${context}/emails/stats`).then(res => {
+        setEmailUnreadCount(res.data?.data?.unread ?? 0);
+      }).catch(() => { /* silent */ });
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => clearInterval(interval);
+  }, [context]);
+
   const pageHistory = usePageHistory();
 
   // Global Search state
@@ -764,6 +777,7 @@ function AuthenticatedApp() {
         aiActivityMessage={aiActivityMessage}
         archivedCount={archivedCount}
         notificationCount={notificationCount}
+        emailUnreadCount={emailUnreadCount}
         onOpenSearch={openGlobalSearch}
         onRefresh={() => loadIdeas()}
         favoritePages={pageHistory.favoritePages}

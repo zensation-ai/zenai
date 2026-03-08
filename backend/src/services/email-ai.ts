@@ -291,6 +291,122 @@ export async function summarizeThread(context: AIContext, threadId: string): Pro
 }
 
 // ============================================================
+// AI Smart Compose
+// ============================================================
+
+export interface SmartComposeInput {
+  prompt: string;
+  tone?: 'formell' | 'freundlich' | 'kurz' | 'neutral';
+  replyTo?: {
+    from: string;
+    subject: string;
+    body: string;
+  };
+  context_info?: string;
+}
+
+export interface SmartComposeResult {
+  subject: string;
+  body_text: string;
+  body_html: string;
+}
+
+export async function smartCompose(input: SmartComposeInput): Promise<SmartComposeResult> {
+  const client = getClaudeClient();
+
+  const toneInstructions: Record<string, string> = {
+    formell: 'Schreibe geschaeftlich, hoeflich und professionell. Verwende "Sie".',
+    freundlich: 'Schreibe warmherzig, persoenlich und offen. Verwende "Du".',
+    kurz: 'Schreibe praegnant und auf den Punkt. Maximal 3-5 Saetze.',
+    neutral: 'Schreibe sachlich und klar.',
+  };
+
+  const tone = input.tone || 'neutral';
+  const replyContext = input.replyTo
+    ? `\n\nDies ist eine Antwort auf folgende E-Mail:\nVon: ${input.replyTo.from}\nBetreff: ${input.replyTo.subject}\nInhalt: ${input.replyTo.body.substring(0, 1500)}`
+    : '';
+
+  const response = await executeWithProtection(() =>
+    client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 2048,
+      system: `Du bist ein E-Mail-Schreib-Assistent. Erstelle eine E-Mail basierend auf den Anweisungen.
+${toneInstructions[tone]}
+
+Antworte NUR mit einem JSON-Objekt (kein Markdown):
+{
+  "subject": "Betreff der E-Mail",
+  "body": "Der vollstaendige E-Mail-Text"
+}
+
+Regeln:
+- Immer auf Deutsch schreiben
+- Passende Anrede und Grussformel verwenden
+- Subject nur wenn es eine neue E-Mail ist (nicht bei Antworten)
+- Bei Antworten: Subject weglassen oder mit "Re: " Prefix`,
+      messages: [{
+        role: 'user',
+        content: `${input.prompt}${replyContext}${input.context_info ? `\n\nZusaetzlicher Kontext: ${input.context_info}` : ''}`,
+      }],
+    })
+  );
+
+  const textBlock = response.content.find(b => b.type === 'text');
+  if (!textBlock || textBlock.type !== 'text') {
+    throw new Error('KI-Antwort konnte nicht verarbeitet werden');
+  }
+
+  const jsonStr = textBlock.text.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
+  const parsed = JSON.parse(jsonStr);
+
+  const bodyText = parsed.body || '';
+  const bodyHtml = bodyText
+    .split('\n')
+    .filter((line: string) => line.trim() !== '' || true)
+    .map((line: string) => {
+      if (line.trim() === '') return '<br>';
+      const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return `<p>${escaped}</p>`;
+    })
+    .join('');
+
+  return {
+    subject: parsed.subject || '',
+    body_text: bodyText,
+    body_html: bodyHtml,
+  };
+}
+
+// ============================================================
+// AI Improve/Rewrite Email
+// ============================================================
+
+export async function improveEmailText(text: string, instruction: string): Promise<string> {
+  const client = getClaudeClient();
+
+  const response = await executeWithProtection(() =>
+    client.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 2048,
+      system: `Du bist ein E-Mail-Editor. Verbessere den Text nach den Anweisungen des Nutzers.
+Antworte NUR mit dem verbesserten Text, keine Erklaerungen.
+Behalte die Sprache (Deutsch) bei und den allgemeinen Ton.`,
+      messages: [{
+        role: 'user',
+        content: `Anweisung: ${instruction}\n\nOriginal-Text:\n${text}`,
+      }],
+    })
+  );
+
+  const textBlock = response.content.find(b => b.type === 'text');
+  if (!textBlock || textBlock.type !== 'text') {
+    throw new Error('KI-Verbesserung fehlgeschlagen');
+  }
+
+  return textBlock.text.trim();
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 

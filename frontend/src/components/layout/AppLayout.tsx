@@ -31,6 +31,7 @@ interface AppLayoutProps {
   aiActivityMessage?: string;
   archivedCount: number;
   notificationCount: number;
+  emailUnreadCount?: number;
   onOpenSearch: () => void;
   onRefresh: () => void;
   favoritePages?: Page[];
@@ -51,6 +52,7 @@ export function AppLayout({
   aiActivityMessage,
   archivedCount,
   notificationCount,
+  emailUnreadCount,
   onOpenSearch,
   onRefresh,
   favoritePages,
@@ -163,6 +165,7 @@ export function AppLayout({
         aiActivityMessage={aiActivityMessage}
         archivedCount={archivedCount}
         notificationCount={notificationCount}
+        emailUnreadCount={emailUnreadCount}
         favoritePages={favoritePages}
         toggleFavorite={toggleFavorite}
         isFavorited={isFavorited}
@@ -211,6 +214,7 @@ export function AppLayout({
         onContextChange={onContextChange}
         archivedCount={archivedCount}
         notificationCount={notificationCount}
+        emailUnreadCount={emailUnreadCount}
         isAIActive={isAIActive}
         favoritePages={favoritePages}
         toggleFavorite={toggleFavorite}

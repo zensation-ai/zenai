@@ -26,6 +26,7 @@ interface MobileSidebarDrawerProps {
   onContextChange: (ctx: AIContext) => void;
   archivedCount: number;
   notificationCount: number;
+  emailUnreadCount?: number;
   isAIActive: boolean;
   favoritePages?: Page[];
   toggleFavorite?: (page: Page) => void;
@@ -43,6 +44,7 @@ export function MobileSidebarDrawer({
   onContextChange,
   archivedCount,
   notificationCount,
+  emailUnreadCount = 0,
   isAIActive,
   favoritePages,
   toggleFavorite,
@@ -119,6 +121,7 @@ export function MobileSidebarDrawer({
   const getBadgeValue = (item: NavItem): number | undefined => {
     if (item.badge === 'archived') return archivedCount > 0 ? archivedCount : undefined;
     if (item.badge === 'notifications') return notificationCount > 0 ? notificationCount : undefined;
+    if (item.badge === 'email_unread') return emailUnreadCount > 0 ? emailUnreadCount : undefined;
     return undefined;
   };
 

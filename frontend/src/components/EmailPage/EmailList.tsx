@@ -224,6 +224,9 @@ export function EmailList({
                     </span>
                   )}
                   {email.has_attachments && <span className="el-badge el-badge--muted">📎</span>}
+                  {email.labels?.length > 0 && email.labels.slice(0, 2).map(label => (
+                    <span key={label} className="el-label-chip">{label}</span>
+                  ))}
                 </div>
 
                 {/* Quick actions (visible on hover) */}

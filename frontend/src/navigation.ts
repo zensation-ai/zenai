@@ -17,7 +17,7 @@ export interface NavItem {
   label: string;
   description?: string;
   /** Badge type - resolved to actual count at render time */
-  badge?: 'archived' | 'notifications';
+  badge?: 'archived' | 'notifications' | 'email_unread';
   /** Sub-pages that should highlight this item */
   subPages?: Page[];
 }
@@ -87,6 +87,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: '✉️',
         label: 'E-Mail',
         description: 'E-Mails senden & empfangen',
+        badge: 'email_unread',
       },
       {
         page: 'documents',

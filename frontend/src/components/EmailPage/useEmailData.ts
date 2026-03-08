@@ -306,6 +306,58 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
+  // ── Load more (pagination) ─────────────────────────────────
+
+  const loadMore = useCallback(async (folder: EmailTab | string = 'inbox', filters?: EmailFilters) => {
+    try {
+      const params: Record<string, string | number> = { folder, offset: emails.length, limit: 50 };
+      if (filters?.search) params.search = filters.search;
+      if (filters?.category) params.category = filters.category;
+      if (filters?.unread) params.status = 'received';
+
+      const res = await axios.get(`/api/${context}/emails`, { params });
+      const moreEmails = res.data?.data ?? [];
+      setEmails(prev => [...prev, ...moreEmails]);
+      setTotal(res.data?.total ?? total);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Fehler beim Nachladen'));
+    }
+  }, [context, emails.length, total]);
+
+  // ── AI Compose & Improve ──────────────────────────────────
+
+  const aiCompose = useCallback(async (data: {
+    prompt: string;
+    tone?: 'formell' | 'freundlich' | 'kurz' | 'neutral';
+    reply_to?: { from: string; subject: string; body: string };
+  }): Promise<{ subject: string; body_text: string; body_html: string } | null> => {
+    try {
+      const res = await axios.post(`/api/${context}/emails/ai/compose`, data);
+      return res.data?.data ?? null;
+    } catch (err) {
+      setError(getErrorMessage(err, 'KI-Entwurf fehlgeschlagen'));
+      return null;
+    }
+  }, [context]);
+
+  const aiImprove = useCallback(async (text: string, instruction: string): Promise<string | null> => {
+    try {
+      const res = await axios.post(`/api/${context}/emails/ai/improve`, { text, instruction });
+      return res.data?.data?.text ?? null;
+    } catch {
+      return null;
+    }
+  }, [context]);
+
+  const getThreadSummary = useCallback(async (emailId: string): Promise<string | null> => {
+    try {
+      const res = await axios.get(`/api/${context}/emails/${emailId}/thread/ai/summary`);
+      return res.data?.data?.summary ?? null;
+    } catch {
+      return null;
+    }
+  }, [context]);
+
   // ── IMAP ──────────────────────────────────────────────────
 
   const testImapConnection = useCallback(async (data: {
@@ -380,7 +432,9 @@ export function useEmailData(context: AIContext) {
     // Undo
     executeUndo, dismissUndo,
     // AI
-    getReplySuggestions, triggerAIProcess,
+    getReplySuggestions, triggerAIProcess, aiCompose, aiImprove, getThreadSummary,
+    // Pagination
+    loadMore,
     // IMAP
     testImapConnection, createImapAccount, triggerImapSync,
     // Auto-refresh

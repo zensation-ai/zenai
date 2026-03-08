@@ -473,6 +473,43 @@ emailRouter.get('/:context/emails/:id/thread/ai/summary', apiKeyAuth, asyncHandl
 }));
 
 // ============================================================
+// AI Smart Compose (Phase 39.1)
+// ============================================================
+
+emailRouter.post('/:context/emails/ai/compose', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  validateContextParam(req.params.context);
+  const { prompt, tone, reply_to, context_info } = req.body;
+
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    throw new ValidationError('prompt is required');
+  }
+
+  const { smartCompose } = await import('../services/email-ai');
+  const result = await smartCompose({
+    prompt: prompt.trim(),
+    tone,
+    replyTo: reply_to,
+    context_info,
+  });
+
+  res.json({ success: true, data: result });
+}));
+
+emailRouter.post('/:context/emails/ai/improve', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  validateContextParam(req.params.context);
+  const { text, instruction } = req.body;
+
+  if (!text || !instruction) {
+    throw new ValidationError('text and instruction are required');
+  }
+
+  const { improveEmailText } = await import('../services/email-ai');
+  const improved = await improveEmailText(text, instruction);
+
+  res.json({ success: true, data: { text: improved } });
+}));
+
+// ============================================================
 // IMAP Sync Endpoints (Phase 39)
 // ============================================================
 

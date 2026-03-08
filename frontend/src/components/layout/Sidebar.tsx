@@ -28,6 +28,7 @@ interface SidebarProps {
   aiActivityMessage?: string;
   archivedCount: number;
   notificationCount: number;
+  emailUnreadCount?: number;
   favoritePages?: Page[];
   toggleFavorite?: (page: Page) => void;
   isFavorited?: (page: Page) => boolean;
@@ -43,6 +44,7 @@ export const Sidebar = memo(function Sidebar({
   aiActivityMessage,
   archivedCount,
   notificationCount,
+  emailUnreadCount = 0,
   favoritePages,
   toggleFavorite,
   isFavorited,
@@ -85,6 +87,7 @@ export const Sidebar = memo(function Sidebar({
   const getBadgeValue = (item: NavItem): number | undefined => {
     if (item.badge === 'archived') return archivedCount > 0 ? archivedCount : undefined;
     if (item.badge === 'notifications') return notificationCount > 0 ? notificationCount : undefined;
+    if (item.badge === 'email_unread') return emailUnreadCount > 0 ? emailUnreadCount : undefined;
     return undefined;
   };
 

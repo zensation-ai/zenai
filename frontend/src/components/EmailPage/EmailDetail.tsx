@@ -29,12 +29,13 @@ interface EmailDetailProps {
   onGetReplySuggestions: () => Promise<ReplySuggestion[]>;
   onAIProcess: () => Promise<Email | null>;
   onInlineReply: (body: string) => Promise<void>;
+  onGetThreadSummary?: () => Promise<string | null>;
 }
 
 export function EmailDetail({
   email, thread, onBack, onReply, onReplyAll, onForward,
   onStar, onArchive, onDelete,
-  onGetReplySuggestions, onAIProcess, onInlineReply,
+  onGetReplySuggestions, onAIProcess, onInlineReply, onGetThreadSummary,
 }: EmailDetailProps) {
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -43,10 +44,12 @@ export function EmailDetail({
   const [inlineReplyText, setInlineReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
   const [showInlineReply, setShowInlineReply] = useState(false);
+  const [threadSummary, setThreadSummary] = useState<string | null>(null);
+  const [loadingThreadSummary, setLoadingThreadSummary] = useState(false);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Load cached suggestions
+  // Load cached suggestions and reset state on email change
   useEffect(() => {
     if (email.direction === 'inbound' && (email.ai_reply_suggestions?.length ?? 0) > 0) {
       setSuggestions(email.ai_reply_suggestions);
@@ -55,6 +58,7 @@ export function EmailDetail({
     }
     setShowInlineReply(false);
     setInlineReplyText('');
+    setThreadSummary(null);
   }, [email.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-resize iframe
@@ -98,6 +102,14 @@ export function EmailDetail({
 
   const handleSuggestionClick = (suggestion: ReplySuggestion) => {
     onReply(email, suggestion.body);
+  };
+
+  const handleGetThreadSummary = async () => {
+    if (!onGetThreadSummary) return;
+    setLoadingThreadSummary(true);
+    const summary = await onGetThreadSummary();
+    setThreadSummary(summary);
+    setLoadingThreadSummary(false);
   };
 
   const openInlineReply = () => {
@@ -162,6 +174,9 @@ export function EmailDetail({
             {email.has_attachments && (
               <span className="ed-badge ed-badge--muted">📎 {email.attachments?.length ?? 0}</span>
             )}
+            {email.labels?.length > 0 && email.labels.map(label => (
+              <span key={label} className="ed-badge ed-badge--label">🏷 {label}</span>
+            ))}
           </div>
         </div>
 
@@ -272,10 +287,31 @@ export function EmailDetail({
         {/* Thread View */}
         {hasThread && (
           <div className="ed-thread">
-            <button className="ed-thread-toggle" onClick={() => setShowThread(!showThread)}>
-              <span className={`ed-thread-arrow ${showThread ? 'ed-thread-arrow--open' : ''}`}>▶</span>
-              Konversation ({thread.length} Nachrichten)
-            </button>
+            <div className="ed-thread-section-header">
+              <button className="ed-thread-toggle" onClick={() => setShowThread(!showThread)}>
+                <span className={`ed-thread-arrow ${showThread ? 'ed-thread-arrow--open' : ''}`}>▶</span>
+                Konversation ({thread.length} Nachrichten)
+              </button>
+              {onGetThreadSummary && (
+                <button
+                  className="ed-thread-summary-btn"
+                  onClick={handleGetThreadSummary}
+                  disabled={loadingThreadSummary}
+                  title="Thread zusammenfassen"
+                >
+                  {loadingThreadSummary ? '✦ ...' : '✦ Zusammenfassen'}
+                </button>
+              )}
+            </div>
+            {threadSummary && (
+              <div className="ed-ai-card ed-ai-card--thread">
+                <div className="ed-ai-card-header">
+                  <span className="ed-ai-icon">✦</span>
+                  <span className="ed-ai-label">Thread-Zusammenfassung</span>
+                </div>
+                <p className="ed-ai-text">{threadSummary}</p>
+              </div>
+            )}
             {showThread && (
               <div className="ed-thread-list">
                 {otherThreadEmails.map(t => {

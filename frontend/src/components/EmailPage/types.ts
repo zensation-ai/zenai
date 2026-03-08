@@ -129,6 +129,10 @@ export interface ComposeState {
   replyTo?: Email;
   prefillBody?: string;
   prefillSubject?: string;
+  draftId?: string;
+  prefillTo?: string;
+  prefillCc?: string;
+  prefillAccountId?: string;
 }
 
 export const CATEGORY_LABELS: Record<EmailCategory, { label: string; color: string; icon: string }> = {

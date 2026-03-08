@@ -8,6 +8,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { queryContext, AIContext } from '../utils/database-context';
 import { sendEmail as resendSendEmail, isResendConfigured } from './resend';
+import { NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 
 // ============================================================
@@ -533,7 +534,7 @@ export async function replyToEmail(
   options?: { cc?: Array<{ email: string; name?: string }>; account_id?: string }
 ): Promise<Email> {
   const original = await getEmail(context, originalId);
-  if (!original) throw new Error('Original email not found');
+  if (!original) throw new NotFoundError('Original email');
 
   const draft = await createDraft(context, {
     to_addresses: [{ email: original.from_address, name: original.from_name || undefined }],
@@ -562,7 +563,7 @@ export async function forwardEmail(
   options?: { account_id?: string }
 ): Promise<Email> {
   const original = await getEmail(context, originalId);
-  if (!original) throw new Error('Original email not found');
+  if (!original) throw new NotFoundError('Original email');
 
   // Build forwarded body
   const fwdPrefix = `\n\n---------- Weitergeleitete Nachricht ----------\nVon: ${original.from_name || original.from_address}\nDatum: ${original.received_at}\nBetreff: ${original.subject}\nAn: ${original.to_addresses.map(a => a.email).join(', ')}\n\n`;

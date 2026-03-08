@@ -4,6 +4,9 @@
  * Features:
  * - Floating window anchored bottom-right
  * - Smart reply/forward prefill
+ * - Draft editing support
+ * - KI Smart Compose (AI-generated drafts)
+ * - KI Text Improve
  * - Account selector
  * - CC/BCC toggle
  * - Ctrl+Enter to send
@@ -19,6 +22,11 @@ interface EmailComposeProps {
   mode: ComposeMode;
   replyTo?: Email;
   prefillBody?: string;
+  prefillSubject?: string;
+  prefillTo?: string;
+  prefillCc?: string;
+  prefillAccountId?: string;
+  draftId?: string;
   onSend: (data: {
     to_addresses: Array<{ email: string; name?: string }>;
     cc_addresses?: Array<{ email: string; name?: string }>;
@@ -28,9 +36,16 @@ interface EmailComposeProps {
     account_id?: string;
   }) => Promise<void>;
   onCancel: () => void;
+  onAICompose?: (data: {
+    prompt: string;
+    tone?: 'formell' | 'freundlich' | 'kurz' | 'neutral';
+    reply_to?: { from: string; subject: string; body: string };
+  }) => Promise<{ subject: string; body_text: string; body_html: string } | null>;
+  onAIImprove?: (text: string, instruction: string) => Promise<string | null>;
 }
 
-function buildSubject(mode: ComposeMode, original?: Email | null): string {
+function buildSubject(mode: ComposeMode, original?: Email | null, prefill?: string): string {
+  if (prefill) return prefill;
   if (!original?.subject) return '';
   const sub = original.subject;
   if (mode === 'reply' || mode === 'reply-all') {
@@ -42,34 +57,62 @@ function buildSubject(mode: ComposeMode, original?: Email | null): string {
   return '';
 }
 
-function buildTo(mode: ComposeMode, original?: Email | null): string {
+function buildTo(mode: ComposeMode, original?: Email | null, prefill?: string): string {
+  if (prefill) return prefill;
   if (!original) return '';
   if (mode === 'reply') return original.from_address;
   if (mode === 'reply-all') {
     const all = [original.from_address, ...(original.to_addresses ?? []).map(a => a.email)];
     return [...new Set(all)].join(', ');
   }
-  return ''; // forward: empty
+  return '';
 }
 
-function buildCc(mode: ComposeMode, original?: Email | null): string {
+function buildCc(mode: ComposeMode, original?: Email | null, prefill?: string): string {
+  if (prefill) return prefill;
   if (mode === 'reply-all' && original?.cc_addresses?.length) {
     return original.cc_addresses.map(a => a.email).join(', ');
   }
   return '';
 }
 
-export function EmailCompose({ accounts, mode, replyTo, prefillBody, onSend, onCancel }: EmailComposeProps) {
-  const [to, setTo] = useState(buildTo(mode, replyTo));
-  const [cc, setCc] = useState(buildCc(mode, replyTo));
+const AI_TONES = [
+  { value: 'formell', label: 'Formell', icon: '👔' },
+  { value: 'freundlich', label: 'Freundlich', icon: '😊' },
+  { value: 'kurz', label: 'Kurz & knapp', icon: '⚡' },
+  { value: 'neutral', label: 'Neutral', icon: '📝' },
+] as const;
+
+const AI_IMPROVE_OPTIONS = [
+  { label: 'Professioneller', instruction: 'Mache den Text professioneller und geschaeftlicher' },
+  { label: 'Freundlicher', instruction: 'Mache den Text freundlicher und waermer' },
+  { label: 'Kuerzer', instruction: 'Kuerze den Text auf das Wesentliche' },
+  { label: 'Fehler korrigieren', instruction: 'Korrigiere Grammatik- und Rechtschreibfehler' },
+];
+
+export function EmailCompose({
+  accounts, mode, replyTo, prefillBody, prefillSubject, prefillTo, prefillCc, prefillAccountId, draftId,
+  onSend, onCancel, onAICompose, onAIImprove,
+}: EmailComposeProps) {
+  const [to, setTo] = useState(buildTo(mode, replyTo, prefillTo));
+  const [cc, setCc] = useState(buildCc(mode, replyTo, prefillCc));
   const [bcc, setBcc] = useState('');
-  const [subject, setSubject] = useState(buildSubject(mode, replyTo));
+  const [subject, setSubject] = useState(buildSubject(mode, replyTo, prefillSubject));
   const [body, setBody] = useState(prefillBody || '');
-  const [accountId, setAccountId] = useState(accounts.find(a => a.is_default)?.id || accounts[0]?.id || '');
+  const [accountId, setAccountId] = useState(
+    prefillAccountId || accounts.find(a => a.is_default)?.id || accounts[0]?.id || ''
+  );
   const [sending, setSending] = useState(false);
-  const [showCc, setShowCc] = useState(!!buildCc(mode, replyTo));
+  const [showCc, setShowCc] = useState(!!buildCc(mode, replyTo, prefillCc));
   const [showBcc, setShowBcc] = useState(false);
   const [minimized, setMinimized] = useState(false);
+
+  // AI state
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [aiPrompt, setAIPrompt] = useState('');
+  const [aiTone, setAITone] = useState<'formell' | 'freundlich' | 'kurz' | 'neutral'>('neutral');
+  const [aiLoading, setAILoading] = useState(false);
+  const [showImproveMenu, setShowImproveMenu] = useState(false);
 
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const toRef = useRef<HTMLInputElement>(null);
@@ -77,11 +120,12 @@ export function EmailCompose({ accounts, mode, replyTo, prefillBody, onSend, onC
   // Focus management
   useEffect(() => {
     if (mode === 'new' || mode === 'forward') {
-      toRef.current?.focus();
+      if (!prefillTo) toRef.current?.focus();
+      else bodyRef.current?.focus();
     } else {
       bodyRef.current?.focus();
     }
-  }, [mode]);
+  }, [mode, prefillTo]);
 
   // Signature append
   useEffect(() => {
@@ -90,6 +134,14 @@ export function EmailCompose({ accounts, mode, replyTo, prefillBody, onSend, onC
       setBody('\n\n' + account.signature_text);
     }
   }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const textToHtml = useCallback((text: string): string => {
+    return text.split('\n').map(line => {
+      if (line.trim() === '') return '<br>';
+      const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return `<p>${escaped}</p>`;
+    }).join('');
+  }, []);
 
   const handleSend = useCallback(async () => {
     if (!to.trim()) return;
@@ -104,18 +156,57 @@ export function EmailCompose({ accounts, mode, replyTo, prefillBody, onSend, onC
         cc_addresses: ccAddresses?.length ? ccAddresses : undefined,
         subject: subject || undefined,
         body_text: body,
-        body_html: body ? body.split('\n').filter(Boolean).map(
-          line => `<p>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`
-        ).join('') : undefined,
+        body_html: body ? textToHtml(body) : undefined,
         account_id: accountId || undefined,
         ...(bccAddresses?.length ? { bcc_addresses: bccAddresses } : {}),
       });
     } finally {
       setSending(false);
     }
-  }, [to, cc, bcc, subject, body, accountId, onSend]);
+  }, [to, cc, bcc, subject, body, accountId, onSend, textToHtml]);
 
-  const modeLabel = mode === 'reply' ? 'Antwort' : mode === 'reply-all' ? 'Antwort an alle' : mode === 'forward' ? 'Weiterleiten' : 'Neue E-Mail';
+  // AI Smart Compose
+  const handleAICompose = useCallback(async () => {
+    if (!onAICompose || !aiPrompt.trim()) return;
+    setAILoading(true);
+    try {
+      const result = await onAICompose({
+        prompt: aiPrompt.trim(),
+        tone: aiTone,
+        reply_to: replyTo ? {
+          from: replyTo.from_name || replyTo.from_address,
+          subject: replyTo.subject || '',
+          body: replyTo.body_text || '',
+        } : undefined,
+      });
+      if (result) {
+        setBody(result.body_text);
+        if (result.subject && !subject) setSubject(result.subject);
+        setShowAIPanel(false);
+        setAIPrompt('');
+      }
+    } finally {
+      setAILoading(false);
+    }
+  }, [onAICompose, aiPrompt, aiTone, replyTo, subject]);
+
+  // AI Improve
+  const handleAIImprove = useCallback(async (instruction: string) => {
+    if (!onAIImprove || !body.trim()) return;
+    setAILoading(true);
+    setShowImproveMenu(false);
+    try {
+      const improved = await onAIImprove(body, instruction);
+      if (improved) setBody(improved);
+    } finally {
+      setAILoading(false);
+    }
+  }, [onAIImprove, body]);
+
+  const modeLabel = draftId ? 'Entwurf bearbeiten' :
+    mode === 'reply' ? 'Antwort' :
+    mode === 'reply-all' ? 'Antwort an alle' :
+    mode === 'forward' ? 'Weiterleiten' : 'Neue E-Mail';
 
   if (minimized) {
     return (
@@ -197,6 +288,45 @@ export function EmailCompose({ accounts, mode, replyTo, prefillBody, onSend, onC
           </div>
         </div>
 
+        {/* AI Compose Panel */}
+        {showAIPanel && onAICompose && (
+          <div className="ec-ai-panel">
+            <div className="ec-ai-header">
+              <span className="ec-ai-icon">✦</span>
+              <span>KI-Entwurf erstellen</span>
+              <button className="ec-ai-close" onClick={() => setShowAIPanel(false)}>&times;</button>
+            </div>
+            <textarea
+              className="ec-ai-prompt"
+              value={aiPrompt}
+              onChange={(e) => setAIPrompt(e.target.value)}
+              placeholder="Beschreibe was die E-Mail enthalten soll... z.B. 'Danke fuer das Angebot, bitte um Verlaengerung der Frist um 2 Wochen'"
+              rows={3}
+              onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleAICompose();
+              }}
+            />
+            <div className="ec-ai-tones">
+              {AI_TONES.map(t => (
+                <button
+                  key={t.value}
+                  className={`ec-ai-tone ${aiTone === t.value ? 'ec-ai-tone--active' : ''}`}
+                  onClick={() => setAITone(t.value)}
+                >
+                  {t.icon} {t.label}
+                </button>
+              ))}
+            </div>
+            <button
+              className="ec-ai-generate"
+              onClick={handleAICompose}
+              disabled={aiLoading || !aiPrompt.trim()}
+            >
+              {aiLoading ? '✦ Generiere...' : '✦ Text generieren'}
+            </button>
+          </div>
+        )}
+
         {/* Body */}
         <div className="ec-body">
           <textarea
@@ -211,6 +341,11 @@ export function EmailCompose({ accounts, mode, replyTo, prefillBody, onSend, onC
               }
             }}
           />
+          {aiLoading && !showAIPanel && (
+            <div className="ec-ai-loading-overlay">
+              <span className="ec-ai-spinner" /> KI arbeitet...
+            </div>
+          )}
         </div>
 
         {/* Reply context */}
@@ -233,8 +368,44 @@ export function EmailCompose({ accounts, mode, replyTo, prefillBody, onSend, onC
 
         {/* Footer */}
         <div className="ec-footer">
-          <div className="ec-footer-hint">
-            <kbd>Ctrl</kbd>+<kbd>Enter</kbd> senden &middot; <kbd>Esc</kbd> schliessen
+          <div className="ec-footer-left">
+            {/* AI buttons */}
+            {onAICompose && (
+              <button
+                className="ec-ai-btn"
+                onClick={() => setShowAIPanel(!showAIPanel)}
+                title="KI-Entwurf erstellen"
+              >
+                ✦ KI
+              </button>
+            )}
+            {onAIImprove && body.trim() && (
+              <div className="ec-improve-container">
+                <button
+                  className="ec-ai-btn"
+                  onClick={() => setShowImproveMenu(!showImproveMenu)}
+                  title="Text verbessern"
+                >
+                  ✏ Verbessern
+                </button>
+                {showImproveMenu && (
+                  <div className="ec-improve-menu">
+                    {AI_IMPROVE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.label}
+                        className="ec-improve-option"
+                        onClick={() => handleAIImprove(opt.instruction)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="ec-footer-hint">
+              <kbd>Ctrl</kbd>+<kbd>Enter</kbd> senden
+            </div>
           </div>
           <div className="ec-footer-actions">
             <button className="ec-cancel" onClick={onCancel}>Verwerfen</button>

@@ -118,6 +118,14 @@
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-secondary);
 }
+.ed-badge--label {
+  background: rgba(123, 104, 238, 0.12);
+  color: #9B8AFF;
+}
+:root.light-mode .ed-badge--label {
+  background: rgba(123, 104, 238, 0.08);
+  color: #6B5CE7;
+}
 
 /* ── Sender Bar ──────────────────────────────────────────────── */
 
@@ -377,6 +385,57 @@
 }
 .ed-thread-toggle:hover { color: var(--text-primary); }
 
+.ed-thread-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ed-thread-summary-btn {
+  background: none;
+  border: 1px solid rgba(74, 144, 217, 0.3);
+  color: var(--primary, #4A90D9);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.ed-thread-summary-btn:hover:not(:disabled) {
+  background: rgba(74, 144, 217, 0.1);
+  border-color: rgba(74, 144, 217, 0.5);
+}
+.ed-thread-summary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ed-ai-card--thread {
+  margin: 10px 0 6px;
+  background: rgba(74, 144, 217, 0.06);
+  border: 1px solid rgba(74, 144, 217, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.ed-ai-card--thread .ed-ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary, #4A90D9);
+}
+.ed-ai-card--thread .ed-ai-text {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
 .ed-thread-arrow {
   font-size: 0.6rem;
   transition: transform 0.2s;
@@ -603,6 +662,8 @@
 :root.light-mode .ed-reply-form { background: rgba(0, 0, 0, 0.02); border-color: rgba(0, 0, 0, 0.1); }
 :root.light-mode .ed-reply-textarea { color: #1a1a2e; }
 :root.light-mode .ed-attachment { background: rgba(0, 0, 0, 0.03); border-color: rgba(0, 0, 0, 0.06); }
+:root.light-mode .ed-thread-summary-btn { border-color: rgba(74, 144, 217, 0.25); }
+:root.light-mode .ed-ai-card--thread { background: rgba(74, 144, 217, 0.05); border-color: rgba(74, 144, 217, 0.15); }
 
 /* ── Responsive ──────────────────────────────────────────────── */
 
