@@ -14,6 +14,7 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev --filter=zenai-frontend --filter=zenai-backend",
+    "dev:desktop": "turbo run build --filter=@zenai/shared && turbo run dev --filter=zenai-frontend --filter=zenai-electron --parallel",
     "dev:electron": "turbo run dev --filter=zenai-electron",
     "build": "turbo run build",
     "build:web": "turbo run build --filter=zenai-frontend --filter=zenai-backend",

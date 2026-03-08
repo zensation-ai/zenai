@@ -14,6 +14,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
+
 import { safeLocalStorage } from '../../utils/storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { BrainLogo } from './BrainLogo';
