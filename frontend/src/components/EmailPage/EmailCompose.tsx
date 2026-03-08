@@ -17,6 +17,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Email, EmailAccount, ComposeMode } from './types';
 import './EmailCompose.css';
 
+const AUTO_SAVE_DELAY_MS = 3000;
+
 interface EmailComposeProps {
   accounts: EmailAccount[];
   mode: ComposeMode;
@@ -36,6 +38,18 @@ interface EmailComposeProps {
     account_id?: string;
   }) => Promise<void>;
   onCancel: () => void;
+  onSaveDraft?: (data: {
+    to_addresses: Array<{ email: string; name?: string }>;
+    subject?: string;
+    body_text?: string;
+    account_id?: string;
+  }) => Promise<{ id: string } | null>;
+  onUpdateDraft?: (id: string, data: {
+    to_addresses?: Array<{ email: string; name?: string }>;
+    subject?: string;
+    body_text?: string;
+    account_id?: string;
+  }) => Promise<unknown>;
   onAICompose?: (data: {
     prompt: string;
     tone?: 'formell' | 'freundlich' | 'kurz' | 'neutral';
@@ -92,7 +106,7 @@ const AI_IMPROVE_OPTIONS = [
 
 export function EmailCompose({
   accounts, mode, replyTo, prefillBody, prefillSubject, prefillTo, prefillCc, prefillAccountId, draftId,
-  onSend, onCancel, onAICompose, onAIImprove,
+  onSend, onCancel, onSaveDraft, onUpdateDraft, onAICompose, onAIImprove,
 }: EmailComposeProps) {
   const [to, setTo] = useState(buildTo(mode, replyTo, prefillTo));
   const [cc, setCc] = useState(buildCc(mode, replyTo, prefillCc));
@@ -114,8 +128,55 @@ export function EmailCompose({
   const [aiLoading, setAILoading] = useState(false);
   const [showImproveMenu, setShowImproveMenu] = useState(false);
 
+  const [currentDraftId, setCurrentDraftId] = useState<string | undefined>(draftId);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const toRef = useRef<HTMLInputElement>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-save draft with debounce
+  useEffect(() => {
+    // Only auto-save for new compositions or existing drafts
+    if (mode !== 'new' && !currentDraftId) return;
+    if (!body.trim() && !subject.trim() && !to.trim()) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      const toAddresses = to.split(',').map(e => e.trim()).filter(Boolean).map(email => ({ email }));
+      if (toAddresses.length === 0 && !body.trim() && !subject.trim()) return;
+
+      setAutoSaveStatus('saving');
+
+      if (currentDraftId && onUpdateDraft) {
+        await onUpdateDraft(currentDraftId, {
+          to_addresses: toAddresses.length > 0 ? toAddresses : undefined,
+          subject: subject || undefined,
+          body_text: body || undefined,
+          account_id: accountId || undefined,
+        });
+      } else if (onSaveDraft && toAddresses.length > 0) {
+        const result = await onSaveDraft({
+          to_addresses: toAddresses,
+          subject: subject || undefined,
+          body_text: body || undefined,
+          account_id: accountId || undefined,
+        });
+        if (result?.id) setCurrentDraftId(result.id);
+      }
+
+      setAutoSaveStatus('saved');
+      if (autoSaveIdleTimerRef.current) clearTimeout(autoSaveIdleTimerRef.current);
+      autoSaveIdleTimerRef.current = setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    }, AUTO_SAVE_DELAY_MS);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      if (autoSaveIdleTimerRef.current) clearTimeout(autoSaveIdleTimerRef.current);
+    };
+  }, [to, subject, body, accountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Focus management
   useEffect(() => {
@@ -404,7 +465,9 @@ export function EmailCompose({
               </div>
             )}
             <div className="ec-footer-hint">
-              <kbd>Ctrl</kbd>+<kbd>Enter</kbd> senden
+              {autoSaveStatus === 'saving' && <span className="ec-autosave">Speichert...</span>}
+              {autoSaveStatus === 'saved' && <span className="ec-autosave ec-autosave--saved">✓ Gespeichert</span>}
+              {autoSaveStatus === 'idle' && <><kbd>Ctrl</kbd>+<kbd>Enter</kbd> senden</>}
             </div>
           </div>
           <div className="ec-footer-actions">

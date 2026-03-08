@@ -541,6 +541,29 @@ export function validateUUID(
 }
 
 // ===========================================
+// Email Address Validation
+// ===========================================
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Validate email address format */
+export function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email) && email.length <= 254;
+}
+
+/** Validate an array of email address objects */
+export function validateEmailAddresses(
+  addresses: Array<{ email: string; name?: string }>,
+  fieldName: string = 'addresses'
+): void {
+  for (const addr of addresses) {
+    if (!addr.email || !isValidEmail(addr.email)) {
+      throw new Error(`Invalid email address in ${fieldName}: "${addr.email || '(empty)'}"`);
+    }
+  }
+}
+
+// ===========================================
 // Date Validation
 // ===========================================
 

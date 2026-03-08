@@ -8,7 +8,8 @@
  * - Keyboard shortcuts hint
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 import type { Email, ReplySuggestion } from './types';
 import {
   CATEGORY_LABELS, PRIORITY_LABELS,
@@ -47,7 +48,6 @@ export function EmailDetail({
   const [threadSummary, setThreadSummary] = useState<string | null>(null);
   const [loadingThreadSummary, setLoadingThreadSummary] = useState(false);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Load cached suggestions and reset state on email change
   useEffect(() => {
@@ -61,43 +61,41 @@ export function EmailDetail({
     setThreadSummary(null);
   }, [email.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-resize iframe
-  useEffect(() => {
-    if (iframeRef.current) {
-      const iframe = iframeRef.current;
-      const onLoad = () => {
-        try {
-          const body = iframe.contentDocument?.body;
-          if (body) {
-            iframe.style.height = Math.max(200, body.scrollHeight + 32) + 'px';
-          }
-        } catch { /* cross-origin, use default height */ }
-      };
-      iframe.addEventListener('load', onLoad);
-      return () => iframe.removeEventListener('load', onLoad);
-    }
-  }, [email.body_html]);
-
   const handleGetSuggestions = async () => {
     setLoadingSuggestions(true);
-    const result = await onGetReplySuggestions();
-    setSuggestions(result);
-    setLoadingSuggestions(false);
+    try {
+      const result = await onGetReplySuggestions();
+      setSuggestions(result);
+    } catch {
+      // AI service unavailable — fail silently
+    } finally {
+      setLoadingSuggestions(false);
+    }
   };
 
   const handleAIProcess = async () => {
     setAIProcessing(true);
-    await onAIProcess();
-    setAIProcessing(false);
+    try {
+      await onAIProcess();
+    } catch {
+      // AI service unavailable — fail silently
+    } finally {
+      setAIProcessing(false);
+    }
   };
 
   const handleInlineReply = async () => {
     if (!inlineReplyText.trim()) return;
     setSendingReply(true);
-    await onInlineReply(inlineReplyText);
-    setInlineReplyText('');
-    setShowInlineReply(false);
-    setSendingReply(false);
+    try {
+      await onInlineReply(inlineReplyText);
+      setInlineReplyText('');
+      setShowInlineReply(false);
+    } catch {
+      // Send error is shown via parent error state
+    } finally {
+      setSendingReply(false);
+    }
   };
 
   const handleSuggestionClick = (suggestion: ReplySuggestion) => {
@@ -107,9 +105,14 @@ export function EmailDetail({
   const handleGetThreadSummary = async () => {
     if (!onGetThreadSummary) return;
     setLoadingThreadSummary(true);
-    const summary = await onGetThreadSummary();
-    setThreadSummary(summary);
-    setLoadingThreadSummary(false);
+    try {
+      const summary = await onGetThreadSummary();
+      setThreadSummary(summary);
+    } catch {
+      // AI service unavailable
+    } finally {
+      setLoadingThreadSummary(false);
+    }
   };
 
   const openInlineReply = () => {
@@ -121,6 +124,26 @@ export function EmailDetail({
   const otherThreadEmails = thread.filter(t => t.id !== email.id);
   const avatarColor = stringToColor(email.from_address);
   const initials = getInitials(email.from_name, email.from_address);
+
+  // Sanitize HTML to prevent XSS from malicious email content
+  const sanitizedHtml = useMemo(() => {
+    if (!email.body_html) return null;
+    return DOMPurify.sanitize(email.body_html, {
+      ALLOWED_TAGS: [
+        'a', 'b', 'br', 'blockquote', 'code', 'div', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 'span', 'strong', 'table', 'tbody', 'td',
+        'th', 'thead', 'tr', 'u', 'ul', 'font', 'center', 'small', 'sub', 'sup',
+      ],
+      ALLOWED_ATTR: [
+        'href', 'src', 'alt', 'title', 'style', 'class', 'id', 'width', 'height',
+        'border', 'cellpadding', 'cellspacing', 'bgcolor', 'color', 'size', 'face',
+        'align', 'valign', 'colspan', 'rowspan', 'target',
+      ],
+      ALLOW_DATA_ATTR: false,
+      ADD_ATTR: ['target'],
+      FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'select', 'textarea'],
+    });
+  }, [email.body_html]);
 
   return (
     <div className="ed-container">
@@ -244,19 +267,10 @@ export function EmailDetail({
 
         {/* Email Body */}
         <div className="ed-body">
-          {email.body_html ? (
-            <iframe
-              ref={iframeRef}
-              className="ed-iframe"
-              sandbox="allow-same-origin"
-              title="E-Mail Inhalt"
-              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-                body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;font-size:14px;line-height:1.6;color:#333;margin:0;padding:16px;word-break:break-word;}
-                a{color:#4A90D9;}img{max-width:100%;height:auto;}
-                blockquote{margin:8px 0;padding:0 12px;border-left:3px solid #ddd;color:#666;}
-                pre{background:#f5f5f5;padding:12px;border-radius:6px;overflow-x:auto;font-size:13px;}
-                @media(prefers-color-scheme:dark){body{color:#e0e8ef;background:transparent;}blockquote{border-color:#444;color:#8899aa;}pre{background:#1a2a3a;}}
-              </style></head><body>${email.body_html}</body></html>`}
+          {sanitizedHtml ? (
+            <div
+              className="ed-html-body"
+              dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
             />
           ) : (
             <pre className="ed-text">{email.body_text ?? '(Kein Inhalt)'}</pre>
@@ -266,11 +280,11 @@ export function EmailDetail({
         {/* Attachments */}
         {(email.attachments?.length ?? 0) > 0 && (
           <div className="ed-attachments">
-            <div className="ed-section-label">📎 Anhaenge</div>
+            <div className="ed-section-label">📎 Anhaenge ({email.attachments?.length})</div>
             <div className="ed-attachment-grid">
               {(email.attachments ?? []).map((att, i) => (
-                <div key={i} className="ed-attachment">
-                  <span className="ed-attachment-icon">
+                <div key={i} className="ed-attachment" role="listitem">
+                  <span className="ed-attachment-icon" aria-hidden="true">
                     {att.content_type?.startsWith('image/') ? '🖼' :
                      att.content_type?.includes('pdf') ? '📄' : '📁'}
                   </span>
@@ -278,6 +292,18 @@ export function EmailDetail({
                     <span className="ed-attachment-name">{att.filename}</span>
                     <span className="ed-attachment-type">{att.content_type}</span>
                   </div>
+                  {att.download_url && (
+                    <a
+                      href={att.download_url}
+                      className="ed-attachment-download"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`${att.filename} herunterladen`}
+                      aria-label={`${att.filename} herunterladen`}
+                    >
+                      ⬇
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

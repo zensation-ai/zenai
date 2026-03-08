@@ -387,10 +387,10 @@ export function eventToICal(event: {
 
   if (event.all_day) {
     lines.push(`DTSTART;VALUE=DATE:${dtStart}`);
-    if (dtEnd) lines.push(`DTEND;VALUE=DATE:${dtEnd}`);
+    if (dtEnd) {lines.push(`DTEND;VALUE=DATE:${dtEnd}`);}
   } else {
     lines.push(`DTSTART:${dtStart}`);
-    if (dtEnd) lines.push(`DTEND:${dtEnd}`);
+    if (dtEnd) {lines.push(`DTEND:${dtEnd}`);}
   }
 
   lines.push(`SUMMARY:${escapeICal(event.title)}`);
@@ -434,7 +434,7 @@ export function parseICal(icalData: string): {
   try {
     const uid = extractField(icalData, 'UID');
     const summary = extractField(icalData, 'SUMMARY');
-    if (!uid || !summary) return null;
+    if (!uid || !summary) {return null;}
 
     const dtStartRaw = extractField(icalData, 'DTSTART');
     const dtEndRaw = extractField(icalData, 'DTEND');
@@ -449,7 +449,7 @@ export function parseICal(icalData: string): {
     const startTime = dtStartRaw ? parseICalDate(dtStartRaw, allDay) : null;
     const endTime = dtEndRaw ? parseICalDate(dtEndRaw, allDay) : null;
 
-    if (!startTime) return null;
+    if (!startTime) {return null;}
 
     const statusMap: Record<string, string> = {
       CONFIRMED: 'confirmed',
@@ -481,16 +481,16 @@ function extractField(ical: string, field: string): string | null {
   // Match the field line including any continuation lines (folded lines start with space/tab)
   const foldRegex = new RegExp(`^${field}[;:][^\\r\\n]*(?:\\r?\\n[ \\t][^\\r\\n]*)*`, 'm');
   const foldMatch = ical.match(foldRegex);
-  if (!foldMatch) return null;
+  if (!foldMatch) {return null;}
 
   // Unfold continuation lines
-  let line = foldMatch[0].replace(/\r?\n[ \t]/g, '');
+  const line = foldMatch[0].replace(/\r?\n[ \t]/g, '');
 
   // Strip the field name and get everything after the first colon
   // e.g. "DTSTART;VALUE=DATE:20260308" -> "VALUE=DATE:20260308"
   // e.g. "UID:some-uid" -> "some-uid"
   const firstColon = line.indexOf(':');
-  if (firstColon === -1) return null;
+  if (firstColon === -1) {return null;}
 
   let value: string;
   // Check if there are parameters (semicolon before the first colon)
@@ -508,7 +508,7 @@ function extractField(ical: string, field: string): string | null {
 }
 
 function parseICalDate(raw: string, allDay: boolean): string | null {
-  if (!raw) return null;
+  if (!raw) {return null;}
 
   if (allDay && raw.length === 8) {
     // YYYYMMDD

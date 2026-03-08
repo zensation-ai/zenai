@@ -39,7 +39,7 @@ export interface Email {
   message_id: string | null;
   in_reply_to: string | null;
   has_attachments: boolean;
-  attachments: Array<{ id?: string; filename: string; content_type: string; size?: number }>;
+  attachments: Array<{ id?: string; filename: string; content_type: string; content_disposition?: string; content_id?: string | null; size?: number; download_url?: string }>;
   ai_summary: string | null;
   ai_category: EmailCategory | null;
   ai_priority: EmailPriority | null;
@@ -179,7 +179,7 @@ function mapRowToEmail(row: Record<string, unknown>): Email {
 }
 
 function parseJson<T>(value: unknown, fallback: T): T {
-  if (value === null || value === undefined) return fallback;
+  if (value === null || value === undefined) {return fallback;}
   if (typeof value === 'string') {
     try { return JSON.parse(value); } catch { return fallback; }
   }
@@ -286,14 +286,17 @@ export async function getEmails(
   `, params);
   const total = parseInt(countResult.rows[0]?.total, 10) || 0;
 
-  // Main query with account join
+  // Main query with account join + thread_count via window function (avoids N+1)
   const result = await queryContext(context, `
     SELECT e.*,
       a.email_address as account_email,
       a.display_name as account_display_name,
-      (SELECT COUNT(*) FROM emails t WHERE t.thread_id = e.thread_id) as thread_count
+      tc.thread_count
     FROM emails e
     LEFT JOIN email_accounts a ON e.account_id = a.id
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*) as thread_count FROM emails t WHERE t.thread_id = e.thread_id
+    ) tc ON TRUE
     ${whereClause}
     ORDER BY e.received_at DESC
     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
@@ -320,7 +323,7 @@ export async function getEmail(context: AIContext, id: string): Promise<Email | 
     WHERE e.id = $1
   `, [id]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
 }
 
@@ -454,7 +457,7 @@ export async function updateDraft(
     RETURNING *
   `, params);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
 }
 
@@ -476,7 +479,7 @@ export async function sendEmailById(context: AIContext, id: string): Promise<Ema
 
   if (lockResult.rows.length === 0) {
     const existing = await getEmail(context, id);
-    if (!existing) return null;
+    if (!existing) {return null;}
     throw new Error(`Cannot send email with status "${existing.status}"`);
   }
 
@@ -493,25 +496,46 @@ export async function sendEmailById(context: AIContext, id: string): Promise<Ema
       text: email.body_text || undefined,
     });
 
-    // Mark as sent
-    const updated = await queryContext(context, `
-      UPDATE emails SET
-        status = 'sent',
-        resend_email_id = $2,
-        sent_at = NOW(),
-        updated_at = NOW()
-      WHERE id = $1
-      RETURNING *
-    `, [id, result.id]);
+    // Mark as sent - if DB update fails, email was already sent via Resend
+    // so we mark it with the Resend ID and log the discrepancy
+    try {
+      const updated = await queryContext(context, `
+        UPDATE emails SET
+          status = 'sent',
+          resend_email_id = $2,
+          sent_at = NOW(),
+          updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `, [id, result.id]);
 
-    logger.info('Email sent', { id, resendId: result.id, context, operation: 'sendEmail' });
-    return mapRowToEmail(updated.rows[0]);
+      logger.info('Email sent', { id, resendId: result.id, context, operation: 'sendEmail' });
+      return mapRowToEmail(updated.rows[0]);
+    } catch (dbErr) {
+      // Resend succeeded but DB update failed - log critical discrepancy
+      // DO NOT throw: email was actually sent. Attempt to save the Resend ID at minimum.
+      logger.error('Email sent via Resend but DB update failed', dbErr instanceof Error ? dbErr : undefined, {
+        id, resendId: result.id, context, operation: 'sendEmail',
+      });
+      // Attempt minimal status update
+      try {
+        await queryContext(context, `
+          UPDATE emails SET status = 'sent', resend_email_id = $2, updated_at = NOW() WHERE id = $1
+        `, [id, result.id]);
+      } catch { /* last resort failed, logged above */ }
+      // Return the email as-is with sent status
+      return { ...email, status: 'sent' as const, resend_email_id: result.id };
+    }
   } catch (err) {
-    // Mark as failed
-    await queryContext(context, `
-      UPDATE emails SET status = 'failed', metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb, updated_at = NOW()
-      WHERE id = $1
-    `, [id, JSON.stringify({ send_error: (err as Error).message })]);
+    // Resend API failed — mark as failed so user can retry
+    try {
+      await queryContext(context, `
+        UPDATE emails SET status = 'failed', metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb, updated_at = NOW()
+        WHERE id = $1
+      `, [id, JSON.stringify({ send_error: (err as Error).message })]);
+    } catch (dbErr) {
+      logger.error('Failed to update email status to failed', dbErr instanceof Error ? dbErr : undefined, { id, operation: 'sendEmail' });
+    }
 
     throw err;
   }
@@ -520,7 +544,8 @@ export async function sendEmailById(context: AIContext, id: string): Promise<Ema
 export async function sendNewEmail(context: AIContext, input: CreateEmailInput): Promise<Email> {
   const draft = await createDraft(context, input);
   const sent = await sendEmailById(context, draft.id);
-  return sent!;
+  if (!sent) {throw new Error('Failed to send email — draft was created but send returned null');}
+  return sent;
 }
 
 // ============================================================
@@ -534,7 +559,7 @@ export async function replyToEmail(
   options?: { cc?: Array<{ email: string; name?: string }>; account_id?: string }
 ): Promise<Email> {
   const original = await getEmail(context, originalId);
-  if (!original) throw new NotFoundError('Original email');
+  if (!original) {throw new NotFoundError('Original email');}
 
   const draft = await createDraft(context, {
     to_addresses: [{ email: original.from_address, name: original.from_name || undefined }],
@@ -563,7 +588,7 @@ export async function forwardEmail(
   options?: { account_id?: string }
 ): Promise<Email> {
   const original = await getEmail(context, originalId);
-  if (!original) throw new NotFoundError('Original email');
+  if (!original) {throw new NotFoundError('Original email');}
 
   // Build forwarded body
   const fwdPrefix = `\n\n---------- Weitergeleitete Nachricht ----------\nVon: ${original.from_name || original.from_address}\nDatum: ${original.received_at}\nBetreff: ${original.subject}\nAn: ${original.to_addresses.map(a => a.email).join(', ')}\n\n`;
@@ -590,7 +615,7 @@ export async function updateEmailStatus(context: AIContext, id: string, status: 
     RETURNING *
   `, [id, status]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
 }
 
@@ -601,7 +626,7 @@ export async function markAsRead(context: AIContext, id: string): Promise<Email 
     RETURNING *
   `, [id]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
 }
 
@@ -612,7 +637,7 @@ export async function toggleStar(context: AIContext, id: string): Promise<Email 
     RETURNING *
   `, [id]);
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
 }
 
@@ -638,46 +663,30 @@ export async function moveToTrash(context: AIContext, id: string): Promise<Email
 // ============================================================
 
 export async function getEmailStats(context: AIContext): Promise<EmailStats> {
+  // Single query with sub-selects to avoid 3 round-trips
   const result = await queryContext(context, `
     SELECT
-      COUNT(*) as total,
-      COUNT(*) FILTER (WHERE status = 'received') as unread,
-      COUNT(*) FILTER (WHERE is_starred = TRUE AND status != 'trash') as starred
-    FROM emails
-    WHERE status != 'trash'
-  `, []);
-
-  const catResult = await queryContext(context, `
-    SELECT ai_category, COUNT(*) as count
-    FROM emails
-    WHERE ai_category IS NOT NULL AND status NOT IN ('trash', 'draft')
-    GROUP BY ai_category
-  `, []);
-
-  const acctResult = await queryContext(context, `
-    SELECT e.account_id, a.email_address as email, COUNT(*) as count
-    FROM emails e
-    LEFT JOIN email_accounts a ON e.account_id = a.id
-    WHERE e.account_id IS NOT NULL AND e.status NOT IN ('trash', 'draft')
-    GROUP BY e.account_id, a.email_address
+      (SELECT COUNT(*) FROM emails WHERE status != 'trash') as total,
+      (SELECT COUNT(*) FROM emails WHERE status = 'received') as unread,
+      (SELECT COUNT(*) FROM emails WHERE is_starred = TRUE AND status != 'trash') as starred,
+      COALESCE((
+        SELECT jsonb_object_agg(ai_category, cnt)
+        FROM (SELECT ai_category, COUNT(*)::int as cnt FROM emails WHERE ai_category IS NOT NULL AND status NOT IN ('trash', 'draft') GROUP BY ai_category) sub
+      ), '{}'::jsonb) as by_category,
+      COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('account_id', sub.account_id, 'email', COALESCE(sub.email, 'unknown'), 'count', sub.cnt))
+        FROM (SELECT e.account_id, a.email_address as email, COUNT(*)::int as cnt FROM emails e LEFT JOIN email_accounts a ON e.account_id = a.id WHERE e.account_id IS NOT NULL AND e.status NOT IN ('trash', 'draft') GROUP BY e.account_id, a.email_address) sub
+      ), '[]'::jsonb) as by_account
   `, []);
 
   const row = result.rows[0] || {};
-  const byCategory: Record<string, number> = {};
-  for (const r of catResult.rows) {
-    byCategory[r.ai_category] = parseInt(r.count, 10);
-  }
 
   return {
     total: parseInt(row.total, 10) || 0,
     unread: parseInt(row.unread, 10) || 0,
     starred: parseInt(row.starred, 10) || 0,
-    by_category: byCategory,
-    by_account: acctResult.rows.map(r => ({
-      account_id: r.account_id,
-      email: r.email || 'unknown',
-      count: parseInt(r.count, 10),
-    })),
+    by_category: typeof row.by_category === 'string' ? JSON.parse(row.by_category) : (row.by_category || {}),
+    by_account: typeof row.by_account === 'string' ? JSON.parse(row.by_account) : (row.by_account || []),
   };
 }
 
@@ -700,17 +709,24 @@ export async function createAccount(
   input: { email_address: string; display_name?: string; domain: string; is_default?: boolean; signature_html?: string; signature_text?: string }
 ): Promise<EmailAccount> {
   const id = uuidv4();
+  const isDefault = !!input.is_default;
 
-  // If setting as default, atomically unset others and insert new in one step
-  if (input.is_default) {
-    await queryContext(context, `UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE AND id != $1`, [id]);
-  }
+  // CTE atomically unsets other defaults when setting this as default
+  const sql = isDefault
+    ? `WITH unset_defaults AS (
+        UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE
+      )
+      INSERT INTO email_accounts (id, email_address, display_name, domain, is_default, signature_html, signature_text, context)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`
+    : `INSERT INTO email_accounts (id, email_address, display_name, domain, is_default, signature_html, signature_text, context)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`;
 
-  const result = await queryContext(context, `
-    INSERT INTO email_accounts (id, email_address, display_name, domain, is_default, signature_html, signature_text, context)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING *
-  `, [id, input.email_address, input.display_name || null, input.domain, input.is_default || false, input.signature_html || null, input.signature_text || null, context]);
+  const result = await queryContext(context, sql, [
+    id, input.email_address, input.display_name || null, input.domain,
+    isDefault, input.signature_html || null, input.signature_text || null, context,
+  ]);
 
   logger.info('Email account created', { id, email: input.email_address, context, operation: 'createAccount' });
   return result.rows[0] as EmailAccount;
@@ -731,9 +747,6 @@ export async function updateAccount(
     paramIdx++;
   }
   if (updates.is_default !== undefined) {
-    if (updates.is_default) {
-      await queryContext(context, `UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE AND id != $1`, [id]);
-    }
     setClauses.push(`is_default = $${paramIdx}`);
     params.push(updates.is_default);
     paramIdx++;
@@ -749,9 +762,15 @@ export async function updateAccount(
     paramIdx++;
   }
 
-  const result = await queryContext(context, `
-    UPDATE email_accounts SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *
-  `, params);
+  // Use CTE to atomically unset other defaults when setting this as default
+  const sql = updates.is_default
+    ? `WITH unset_defaults AS (
+        UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE AND id != $1
+      )
+      UPDATE email_accounts SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *`
+    : `UPDATE email_accounts SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *`;
+
+  const result = await queryContext(context, sql, params);
 
   return result.rows[0] as EmailAccount | null;
 }
@@ -839,7 +858,7 @@ export async function updateLabel(
   if (updates.icon !== undefined) { setClauses.push(`icon = $${paramIdx}`); params.push(updates.icon); paramIdx++; }
   if (updates.sort_order !== undefined) { setClauses.push(`sort_order = $${paramIdx}`); params.push(updates.sort_order); paramIdx++; }
 
-  if (setClauses.length === 0) return null;
+  if (setClauses.length === 0) {return null;}
 
   const result = await queryContext(context, `
     UPDATE email_labels SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *

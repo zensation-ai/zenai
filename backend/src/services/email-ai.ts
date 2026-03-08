@@ -79,10 +79,7 @@ Regeln:
 - action_items: Nur wenn konkrete Aufgaben erkennbar sind, sonst leeres Array`,
         messages: [{
           role: 'user',
-          content: `Von: ${email.from_name || email.from_address}
-Betreff: ${email.subject || '(Kein Betreff)'}
-
-${truncated}`,
+          content: `<email>\nVon: ${sanitizeForAI(email.from_name || email.from_address)}\nBetreff: ${sanitizeForAI(email.subject || '(Kein Betreff)')}\n\n${sanitizeForAI(truncated)}\n</email>`,
         }],
       })
     );
@@ -112,6 +109,15 @@ ${truncated}`,
       return;
     }
 
+    // Validate AI analysis fields against allowed values
+    const VALID_CATEGORIES = ['business', 'personal', 'newsletter', 'notification', 'spam'];
+    const VALID_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
+    const VALID_SENTIMENTS = ['positive', 'neutral', 'negative'];
+
+    const safeCategory = VALID_CATEGORIES.includes(analysis.category) ? analysis.category : null;
+    const safePriority = VALID_PRIORITIES.includes(analysis.priority) ? analysis.priority : null;
+    const safeSentiment = VALID_SENTIMENTS.includes(analysis.sentiment) ? analysis.sentiment : null;
+
     // Update email with AI analysis
     await queryContext(context, `
       UPDATE emails SET
@@ -125,11 +131,11 @@ ${truncated}`,
       WHERE id = $1
     `, [
       emailId,
-      analysis.summary || null,
-      analysis.category || null,
-      analysis.priority || null,
-      analysis.sentiment || null,
-      JSON.stringify(analysis.action_items || []),
+      analysis.summary ? analysis.summary.substring(0, 500) : null,
+      safeCategory,
+      safePriority,
+      safeSentiment,
+      JSON.stringify((analysis.action_items || []).slice(0, 10)),
     ]);
 
     // Store in episodic memory so chat can reference email context
@@ -189,7 +195,7 @@ export async function generateReplySuggestions(context: AIContext, emailId: stri
     FROM emails WHERE id = $1
   `, [emailId]);
 
-  if (result.rows.length === 0) return [];
+  if (result.rows.length === 0) {return [];}
 
   const email = result.rows[0];
   const content = email.body_text || stripHtml(email.body_html || '') || '';
@@ -218,16 +224,13 @@ Regeln:
 - Subject immer mit "Re: " Prefix des Originals`,
       messages: [{
         role: 'user',
-        content: `Von: ${email.from_name || email.from_address}
-Betreff: ${email.subject || '(Kein Betreff)'}
-
-${truncated}`,
+        content: `<email>\nVon: ${sanitizeForAI(email.from_name || email.from_address)}\nBetreff: ${sanitizeForAI(email.subject || '(Kein Betreff)')}\n\n${sanitizeForAI(truncated)}\n</email>`,
       }],
     })
   );
 
   const textBlock = response.content.find(b => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') return [];
+  if (!textBlock || textBlock.type !== 'text') {return [];}
 
   try {
     const jsonStr = textBlock.text.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
@@ -258,7 +261,7 @@ export async function summarizeThread(context: AIContext, threadId: string): Pro
     ORDER BY received_at ASC
   `, [threadId]);
 
-  if (result.rows.length === 0) return 'Kein Thread gefunden.';
+  if (result.rows.length === 0) {return 'Kein Thread gefunden.';}
 
   // Build conversation text
   const conversation = result.rows.map(row => {
@@ -285,7 +288,7 @@ export async function summarizeThread(context: AIContext, threadId: string): Pro
   );
 
   const textBlock = response.content.find(b => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') return 'Zusammenfassung nicht verfuegbar.';
+  if (!textBlock || textBlock.type !== 'text') {return 'Zusammenfassung nicht verfuegbar.';}
 
   return textBlock.text;
 }
@@ -362,9 +365,8 @@ Regeln:
   const bodyText = parsed.body || '';
   const bodyHtml = bodyText
     .split('\n')
-    .filter((line: string) => line.trim() !== '' || true)
     .map((line: string) => {
-      if (line.trim() === '') return '<br>';
+      if (line.trim() === '') {return '<br>';}
       const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       return `<p>${escaped}</p>`;
     })
@@ -421,4 +423,18 @@ function stripHtml(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Sanitize user-provided content before passing to AI prompts.
+ * Prevents prompt injection by neutralizing control-like patterns.
+ */
+function sanitizeForAI(text: string): string {
+  return text
+    .replace(/```/g, "'''")
+    // Neutralize XML/HTML tag injection that could break prompt boundaries
+    .replace(/<\/?(?:email|system|user|assistant|instruction|tool)[^>]*>/gi, '')
+    // Remove zero-width characters that could hide injected instructions
+    .replace(/[\u200B-\u200F\u2028-\u202F\uFEFF]/g, '')
+    .substring(0, 5000);
 }

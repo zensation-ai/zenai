@@ -456,6 +456,8 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
           draftId={compose.draftId}
           onSend={handleComposeSend}
           onCancel={() => setCompose(null)}
+          onSaveDraft={data.saveDraft}
+          onUpdateDraft={data.updateDraft}
           onAICompose={data.aiCompose}
           onAIImprove={data.aiImprove}
         />

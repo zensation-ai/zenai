@@ -33,7 +33,7 @@ function getContextForRecipient(toAddresses: string[]): AIContext {
     const domain = addr.split('@')[1]?.toLowerCase();
     if (domain) {
       const mapping = DOMAIN_MAPPINGS.find(m => m.domain === domain);
-      if (mapping) return mapping.defaultContext;
+      if (mapping) {return mapping.defaultContext;}
     }
   }
   return 'work'; // default fallback
@@ -179,20 +179,37 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
 
   const accountId = accountResult.rows[0]?.id || null;
 
-  // Thread detection: look for existing thread by message_id / in_reply_to
+  // Thread detection: look for existing thread by in_reply_to or message_id references
   let threadId: string | null = null;
-  if (data.message_id) {
+
+  // 1) Check if we have an In-Reply-To header (most reliable for threading)
+  const inReplyTo = (data as Record<string, unknown>).in_reply_to as string | undefined;
+  if (inReplyTo) {
     const threadResult = await queryContext(context, `
       SELECT thread_id FROM emails
-      WHERE message_id = $1 OR resend_email_id = $1
+      WHERE message_id = $1
       LIMIT 1
-    `, [data.message_id]);
+    `, [inReplyTo]);
     threadId = threadResult.rows[0]?.thread_id || null;
   }
 
-  // If no existing thread, start a new one
+  // 2) Check by subject line threading (Re: / Fwd:)
+  if (!threadId && data.subject) {
+    const baseSubject = data.subject.replace(/^(Re|Fwd|AW|WG):\s*/gi, '').trim();
+    if (baseSubject && baseSubject !== data.subject) {
+      const threadResult = await queryContext(context, `
+        SELECT thread_id FROM emails
+        WHERE subject = $1 OR subject = $2
+        ORDER BY received_at DESC
+        LIMIT 1
+      `, [baseSubject, data.subject]);
+      threadId = threadResult.rows[0]?.thread_id || null;
+    }
+  }
+
+  // 3) If no existing thread found, start a new one
   if (!threadId) {
-    threadId = id; // Use the email's own ID as thread root
+    threadId = id;
   }
 
   // Insert the email
@@ -201,21 +218,21 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
       id, resend_email_id, account_id, direction, status,
       from_address, from_name, to_addresses, cc_addresses, bcc_addresses,
       subject, body_html, body_text,
-      thread_id, message_id, has_attachments, attachments,
+      thread_id, message_id, in_reply_to, has_attachments, attachments,
       context, received_at, created_at, updated_at
     ) VALUES (
       $1, $2, $3, 'inbound', 'received',
       $4, $5, $6, $7, '[]'::jsonb,
       $8, $9, $10,
-      $11, $12, $13, $14,
-      $15, $16, NOW(), NOW()
+      $11, $12, $13, $14, $15,
+      $16, $17, NOW(), NOW()
     )
   `, [
     id, data.email_id, accountId,
     fromAddress, fromName, JSON.stringify(toAddresses), JSON.stringify(ccAddresses),
     data.subject || '(Kein Betreff)',
     bodyHtml, bodyText,
-    threadId, data.message_id || null,
+    threadId, data.message_id || null, inReplyTo || null,
     hasAttachments, JSON.stringify(attachments),
     context, data.created_at || new Date().toISOString(),
   ]);

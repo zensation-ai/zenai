@@ -17,7 +17,10 @@ export interface EmailAttachment {
   id?: string;
   filename: string;
   content_type: string;
+  content_disposition?: string;
+  content_id?: string | null;
   size?: number;
+  download_url?: string;
 }
 
 export interface Email {

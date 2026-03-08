@@ -153,6 +153,42 @@ export function useEmailData(context: AIContext) {
     }
   }, [context]);
 
+  // ── Draft operations ─────────────────────────────────────
+
+  const saveDraft = useCallback(async (data: {
+    to_addresses: Array<{ email: string; name?: string }>;
+    cc_addresses?: Array<{ email: string; name?: string }>;
+    subject?: string;
+    body_html?: string;
+    body_text?: string;
+    account_id?: string;
+  }): Promise<Email | null> => {
+    try {
+      const res = await axios.post(`/api/${context}/emails`, data);
+      return res.data?.data ?? null;
+    } catch (err) {
+      setError(getErrorMessage(err, 'Fehler beim Speichern des Entwurfs'));
+      return null;
+    }
+  }, [context]);
+
+  const updateDraft = useCallback(async (id: string, data: {
+    to_addresses?: Array<{ email: string; name?: string }>;
+    cc_addresses?: Array<{ email: string; name?: string }>;
+    subject?: string;
+    body_html?: string;
+    body_text?: string;
+    account_id?: string;
+  }): Promise<Email | null> => {
+    try {
+      const res = await axios.put(`/api/${context}/emails/${id}`, data);
+      return res.data?.data ?? null;
+    } catch {
+      // Silent failure for auto-save - don't set error state
+      return null;
+    }
+  }, [context]);
+
   // ── Status operations with undo ───────────────────────────
 
   const pushUndo = useCallback((action: Omit<UndoAction, 'id' | 'timestamp'>) => {
@@ -427,6 +463,8 @@ export function useEmailData(context: AIContext) {
     fetchEmails, fetchEmail, fetchThread, fetchStats, fetchAccounts, refetchCurrent,
     // Send
     sendEmail, replyToEmail, forwardEmail,
+    // Drafts
+    saveDraft, updateDraft,
     // Status (with undo)
     updateStatus, archiveEmail, deleteEmail, toggleStar, batchUpdate,
     // Undo

@@ -300,13 +300,20 @@
   min-height: 200px;
 }
 
-.ed-iframe {
-  width: 100%;
-  min-height: 200px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
+.ed-html-body {
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
+.ed-html-body a { color: #4A90D9; }
+.ed-html-body img { max-width: 100%; height: auto; }
+.ed-html-body blockquote { margin: 8px 0; padding: 0 12px; border-left: 3px solid rgba(255,255,255,0.15); color: var(--text-secondary); }
+.ed-html-body pre { background: rgba(255,255,255,0.04); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px; }
+.ed-html-body table { border-collapse: collapse; max-width: 100%; }
+.ed-html-body td, .ed-html-body th { padding: 4px 8px; }
 
 .ed-text {
   font-family: inherit;
@@ -362,6 +369,30 @@
 .ed-attachment-type {
   font-size: 0.65rem;
   color: var(--text-tertiary);
+}
+.ed-attachment-download {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(74, 144, 217, 0.1);
+  color: #4A90D9;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.12s;
+}
+.ed-attachment-download:hover {
+  background: rgba(74, 144, 217, 0.2);
+}
+:root.light-mode .ed-attachment-download {
+  background: rgba(74, 144, 217, 0.08);
+}
+:root.light-mode .ed-attachment-download:hover {
+  background: rgba(74, 144, 217, 0.15);
 }
 
 /* ── Thread ──────────────────────────────────────────────────── */

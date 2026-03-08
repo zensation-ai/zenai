@@ -435,13 +435,34 @@
   background: rgba(0, 0, 0, 0.08);
 }
 
+/* ── Swipe actions (mobile) ──────────────────────────────────── */
+
+.el-row--swipe-right {
+  background: rgba(76, 175, 80, 0.15) !important;
+}
+.el-row--swipe-left {
+  background: rgba(244, 67, 54, 0.15) !important;
+}
+
+/* Touch-friendly quick actions - always visible on touch devices */
+.el-quick-actions--touch {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  position: static;
+}
+.el-quick-actions--touch .el-qa-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 0.85rem;
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
   .el-row { padding: 12px; }
   .el-row-check { width: 0; }
   .el-row:hover .el-row-check { width: 0; }
-  .el-quick-actions { display: none; }
+  .el-quick-actions:not(.el-quick-actions--touch) { display: none; }
   .el-row:hover .el-badges { opacity: 1; pointer-events: auto; }
   .el-star-indicator { display: block; }
   .el-row:hover .el-star-indicator { display: block; }
@@ -454,6 +475,10 @@
   .el-avatar { width: 32px; height: 32px; font-size: 0.7rem; border-radius: 8px; }
   .el-sender { max-width: 140px; }
   .el-badges { display: none; }
+  /* Touch devices: show only star button inline, hide archive/delete (use swipe) */
+  .el-quick-actions--touch .el-qa-btn:not(.el-qa-btn--starred):not(:first-child) {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {

@@ -2,10 +2,13 @@
  * EmailList - Premium email list with avatars, hover actions, batch operations
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { Email, EmailTab } from './types';
 import { CATEGORY_LABELS, PRIORITY_LABELS, stringToColor, getInitials, formatEmailDate, truncateText } from './types';
 import './EmailList.css';
+
+// Touch swipe threshold in pixels
+const SWIPE_THRESHOLD = 80;
 
 interface EmailListProps {
   emails: Email[];
@@ -32,6 +35,16 @@ export function EmailList({
 }: EmailListProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const listRef = useRef<HTMLDivElement>(null);
+  const [swipeId, setSwipeId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwiping = useRef(false);
+
+  // Detect touch device
+  const isTouchDevice = useMemo(() =>
+    typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0),
+  []);
 
   // Auto-scroll focused item into view
   useEffect(() => {
@@ -43,6 +56,43 @@ export function EmailList({
       }
     }
   }, [focusedIndex]);
+
+  // Touch handlers for swipe-to-action on mobile
+  const handleTouchStart = useCallback((id: string, e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+    setSwipeId(id);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!swipeId) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    // Only register horizontal swipes (not vertical scrolling)
+    if (!isSwiping.current && Math.abs(dy) > Math.abs(dx)) {
+      setSwipeId(null);
+      return;
+    }
+    isSwiping.current = true;
+    // Clamp swipe offset between -150 and 150
+    setSwipeOffset(Math.max(-150, Math.min(150, dx)));
+  }, [swipeId]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!swipeId) return;
+    if (swipeOffset > SWIPE_THRESHOLD) {
+      // Swipe right → archive
+      onArchive(swipeId);
+    } else if (swipeOffset < -SWIPE_THRESHOLD) {
+      // Swipe left → delete
+      onDelete(swipeId);
+    }
+    setSwipeId(null);
+    setSwipeOffset(0);
+    isSwiping.current = false;
+  }, [swipeId, swipeOffset, onArchive, onDelete]);
 
   const toggleSelect = useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -76,15 +126,16 @@ export function EmailList({
   return (
     <div className="el-container">
       {/* Search */}
-      <div className="el-search">
-        <span className="el-search-icon">⌕</span>
+      <div className="el-search" role="search">
+        <span className="el-search-icon" aria-hidden="true">⌕</span>
         <input
           ref={searchInputRef}
-          type="text"
+          type="search"
           className="el-search-input"
           placeholder="Suchen... (/ druecken)"
           value={searchQuery}
           onChange={(e) => onSearch(e.target.value)}
+          aria-label="E-Mails durchsuchen"
         />
         {searchQuery && (
           <button className="el-search-clear" onClick={() => onSearch('')}>
@@ -120,26 +171,26 @@ export function EmailList({
       )}
 
       {/* Scrollable list */}
-      <div className="el-scroll" ref={listRef}>
+      <div className="el-scroll" ref={listRef} role="list" aria-label="E-Mail-Liste">
         {/* Loading */}
         {loading && emails.length === 0 && (
-          <div className="el-state">
-            <div className="el-spinner" />
+          <div className="el-state" role="status" aria-live="polite">
+            <div className="el-spinner" aria-hidden="true" />
             <p>Lade E-Mails...</p>
           </div>
         )}
 
         {/* Error */}
         {error && (
-          <div className="el-state el-state--error">
+          <div className="el-state el-state--error" role="alert">
             <p>{error}</p>
           </div>
         )}
 
         {/* Empty */}
         {!loading && !error && emails.length === 0 && (
-          <div className="el-state el-state--empty">
-            <span className="el-empty-icon">
+          <div className="el-state el-state--empty" role="status">
+            <span className="el-empty-icon" aria-hidden="true">
               {activeFolder === 'inbox' ? '📭' : activeFolder === 'sent' ? '📤' : activeFolder === 'drafts' ? '📝' : '📦'}
             </span>
             <p>{searchQuery ? `Keine Ergebnisse fuer "${searchQuery}"` : 'Keine E-Mails'}</p>
@@ -155,6 +206,7 @@ export function EmailList({
           const isSelected = selectedId === email.id;
           const isFocused = focusedIndex === idx && !selectedId;
           const isChecked = selected.has(email.id);
+          const isSwipingThis = swipeId === email.id && Math.abs(swipeOffset) > 10;
 
           return (
             <div
@@ -165,15 +217,29 @@ export function EmailList({
                 isSelected && 'el-row--selected',
                 isFocused && 'el-row--focused',
                 isChecked && 'el-row--checked',
+                isSwipingThis && swipeOffset > 0 && 'el-row--swipe-right',
+                isSwipingThis && swipeOffset < 0 && 'el-row--swipe-left',
               ].filter(Boolean).join(' ')}
-              onClick={() => onSelect(email)}
-              role="button"
+              style={isSwipingThis ? { transform: `translateX(${swipeOffset}px)`, transition: 'none' } : undefined}
+              onClick={() => { if (!isSwiping.current) onSelect(email); }}
+              role="listitem"
               tabIndex={0}
+              aria-label={`${unread ? 'Ungelesen: ' : ''}${sender} - ${email.subject || '(Kein Betreff)'}`}
+              aria-selected={isSelected}
               onKeyDown={(e) => { if (e.key === 'Enter') onSelect(email); }}
+              onTouchStart={isTouchDevice ? (e) => handleTouchStart(email.id, e) : undefined}
+              onTouchMove={isTouchDevice ? handleTouchMove : undefined}
+              onTouchEnd={isTouchDevice ? handleTouchEnd : undefined}
             >
               {/* Checkbox (visible on hover or when batch mode) */}
               <div className="el-row-check" onClick={(e) => toggleSelect(email.id, e)}>
-                <input type="checkbox" checked={isChecked} onChange={() => {}} tabIndex={-1} />
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => {}}
+                  tabIndex={-1}
+                  aria-label={`${sender} auswaehlen`}
+                />
               </div>
 
               {/* Avatar */}
@@ -229,12 +295,13 @@ export function EmailList({
                   ))}
                 </div>
 
-                {/* Quick actions (visible on hover) */}
-                <div className="el-quick-actions">
+                {/* Quick actions (visible on hover / always on touch) */}
+                <div className={`el-quick-actions ${isTouchDevice ? 'el-quick-actions--touch' : ''}`}>
                   <button
                     className={`el-qa-btn ${email.is_starred ? 'el-qa-btn--starred' : ''}`}
                     onClick={(e) => { e.stopPropagation(); onStar(email.id); }}
                     title={email.is_starred ? 'Stern entfernen' : 'Stern setzen'}
+                    aria-label={email.is_starred ? 'Stern entfernen' : 'Stern setzen'}
                   >
                     {email.is_starred ? '★' : '☆'}
                   </button>
@@ -242,6 +309,7 @@ export function EmailList({
                     className="el-qa-btn"
                     onClick={(e) => { e.stopPropagation(); onArchive(email.id); }}
                     title="Archivieren (e)"
+                    aria-label="Archivieren"
                   >
                     📦
                   </button>
@@ -249,6 +317,7 @@ export function EmailList({
                     className="el-qa-btn el-qa-btn--danger"
                     onClick={(e) => { e.stopPropagation(); onDelete(email.id); }}
                     title="Loeschen (#)"
+                    aria-label="Loeschen"
                   >
                     🗑
                   </button>

@@ -20,7 +20,7 @@ import { testImapConnection, syncAccount, ImapAccount } from '../services/imap-s
 import { encrypt } from '../utils/encryption';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
-import { isValidUUID, validateContextParam } from '../utils/validation';
+import { isValidUUID, validateEmailAddresses, validateContextParam } from '../utils/validation';
 import { logger } from '../utils/logger';
 
 export const emailRouter = Router();
@@ -75,10 +75,10 @@ emailRouter.put('/:context/emails/accounts/:id', apiKeyAuth, requireScope('write
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid account ID');}
 
   const updated = await updateAccount(context, id, req.body);
-  if (!updated) throw new NotFoundError('Email account');
+  if (!updated) {throw new NotFoundError('Email account');}
 
   res.json({ success: true, data: updated });
 }));
@@ -91,7 +91,7 @@ emailRouter.delete('/:context/emails/accounts/:id', apiKeyAuth, requireScope('wr
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid account ID');}
 
   await deleteAccount(context, id);
   res.json({ success: true, message: 'Account deleted' });
@@ -116,7 +116,7 @@ emailRouter.post('/:context/emails/labels', apiKeyAuth, requireScope('write'), a
   const context = validateContextParam(req.params.context);
   const { name, color, icon } = req.body;
 
-  if (!name) throw new ValidationError('Label name is required');
+  if (!name) {throw new ValidationError('Label name is required');}
 
   const label = await createLabel(context, { name, color, icon });
   res.status(201).json({ success: true, data: label });
@@ -130,10 +130,10 @@ emailRouter.put('/:context/emails/labels/:id', apiKeyAuth, requireScope('write')
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid label ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid label ID');}
 
   const updated = await updateLabel(context, id, req.body);
-  if (!updated) throw new NotFoundError('Label');
+  if (!updated) {throw new NotFoundError('Label');}
 
   res.json({ success: true, data: updated });
 }));
@@ -146,7 +146,7 @@ emailRouter.delete('/:context/emails/labels/:id', apiKeyAuth, requireScope('writ
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid label ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid label ID');}
 
   await deleteLabel(context, id);
   res.json({ success: true, message: 'Label deleted' });
@@ -162,6 +162,15 @@ emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), asy
 
   if (!to_addresses || !Array.isArray(to_addresses) || to_addresses.length === 0) {
     throw new ValidationError('At least one recipient is required');
+  }
+
+  // Validate email address formats
+  try {
+    validateEmailAddresses(to_addresses, 'to_addresses');
+    if (cc_addresses?.length) {validateEmailAddresses(cc_addresses, 'cc_addresses');}
+    if (bcc_addresses?.length) {validateEmailAddresses(bcc_addresses, 'bcc_addresses');}
+  } catch (err) {
+    throw new ValidationError((err as Error).message);
   }
 
   const email = await sendNewEmail(context, { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id });
@@ -188,7 +197,7 @@ emailRouter.post('/:context/emails/batch', apiKeyAuth, requireScope('write'), as
   }
 
   for (const id of ids) {
-    if (!isValidUUID(id)) throw new ValidationError('All ids must be valid UUIDs');
+    if (!isValidUUID(id)) {throw new ValidationError('All ids must be valid UUIDs');}
   }
 
   const count = await batchUpdateStatus(context, ids, status);
@@ -234,15 +243,15 @@ emailRouter.get('/:context/emails/:id', apiKeyAuth, asyncHandler(async (req, res
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   let email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email');
+  if (!email) {throw new NotFoundError('Email');}
 
   // Auto-mark as read
   if (email.status === 'received') {
     const updated = await markAsRead(context, id);
-    if (updated) email = updated;
+    if (updated) {email = updated;}
   }
 
   res.json({ success: true, data: email });
@@ -256,14 +265,70 @@ emailRouter.get('/:context/emails/:id/thread', apiKeyAuth, asyncHandler(async (r
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email');
+  if (!email) {throw new NotFoundError('Email');}
 
   const thread = await getThread(context, email.thread_id || id);
 
   res.json({ success: true, data: thread, count: thread.length });
+}));
+
+// ============================================================
+// GET /api/:context/emails/:id/attachments/:attachmentId
+// Proxy attachment download from Resend
+// ============================================================
+
+emailRouter.get('/:context/emails/:id/attachments/:attachmentId', apiKeyAuth, asyncHandler(async (req, res) => {
+  const context = validateContextParam(req.params.context);
+  const { id, attachmentId } = req.params;
+
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
+
+  const email = await getEmail(context, id);
+  if (!email) {throw new NotFoundError('Email');}
+
+  // Find attachment in email metadata
+  const attachment = (email.attachments || []).find(
+    (a: { id?: string; filename?: string }) => a.id === attachmentId || a.filename === attachmentId
+  );
+  if (!attachment) {throw new NotFoundError('Attachment');}
+
+  // For inbound emails, fetch attachment content from Resend API
+  if (email.resend_email_id && email.direction === 'inbound') {
+    try {
+      const { getInboundEmail } = await import('../services/resend');
+      const inboundEmail = await getInboundEmail(email.resend_email_id);
+
+      // Resend returns attachments as part of the email body in some cases
+      // If direct download URL is available, redirect to it
+      if (attachment.download_url) {
+        return res.redirect(attachment.download_url);
+      }
+
+      // Otherwise return metadata for client-side handling
+      return res.json({
+        success: true,
+        data: {
+          filename: attachment.filename,
+          content_type: attachment.content_type,
+          message: 'Attachment download requires Resend Pro plan for direct content access',
+          email_id: inboundEmail.id,
+        },
+      });
+    } catch (err) {
+      logger.warn('Failed to fetch attachment from Resend', {
+        emailId: id,
+        attachmentId,
+        error: (err as Error).message,
+        operation: 'getAttachment',
+      });
+      throw new NotFoundError('Attachment content not available');
+    }
+  }
+
+  throw new ValidationError('Attachment download is only available for inbound emails');
 }));
 
 // ============================================================
@@ -274,11 +339,10 @@ emailRouter.post('/:context/emails', apiKeyAuth, requireScope('write'), asyncHan
   const context = validateContextParam(req.params.context);
   const { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id, reply_to_id, labels } = req.body;
 
-  if (!to_addresses || !Array.isArray(to_addresses) || to_addresses.length === 0) {
-    throw new ValidationError('At least one recipient is required');
-  }
+  // Drafts can be saved without recipients (auto-save), but validate format if provided
+  const recipients = Array.isArray(to_addresses) ? to_addresses : [];
 
-  const draft = await createDraft(context, { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id, reply_to_id, labels });
+  const draft = await createDraft(context, { to_addresses: recipients, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id, reply_to_id, labels });
 
   res.status(201).json({ success: true, data: draft });
 }));
@@ -291,10 +355,10 @@ emailRouter.put('/:context/emails/:id', apiKeyAuth, requireScope('write'), async
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const updated = await updateDraft(context, id, req.body);
-  if (!updated) throw new NotFoundError('Draft');
+  if (!updated) {throw new NotFoundError('Draft');}
 
   res.json({ success: true, data: updated });
 }));
@@ -307,10 +371,10 @@ emailRouter.post('/:context/emails/:id/send', apiKeyAuth, requireScope('write'),
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const sent = await sendEmailById(context, id);
-  if (!sent) throw new NotFoundError('Email');
+  if (!sent) {throw new NotFoundError('Email');}
 
   res.json({ success: true, data: sent });
 }));
@@ -323,7 +387,7 @@ emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write')
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const { body_html, body_text, cc, account_id } = req.body;
 
@@ -340,7 +404,7 @@ emailRouter.post('/:context/emails/:id/forward', apiKeyAuth, requireScope('write
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const { to_addresses, body_html, body_text, account_id } = req.body;
 
@@ -362,13 +426,13 @@ emailRouter.patch('/:context/emails/:id/status', apiKeyAuth, requireScope('write
   const { id } = req.params;
   const { status } = req.body;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
   if (!status || !VALID_STATUSES.includes(status)) {
     throw new ValidationError(`status must be one of: ${VALID_STATUSES.join(', ')}`);
   }
 
   const updated = await updateEmailStatus(context, id, status);
-  if (!updated) throw new NotFoundError('Email');
+  if (!updated) {throw new NotFoundError('Email');}
 
   res.json({ success: true, data: updated });
 }));
@@ -381,10 +445,10 @@ emailRouter.patch('/:context/emails/:id/star', apiKeyAuth, requireScope('write')
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const updated = await toggleStar(context, id);
-  if (!updated) throw new NotFoundError('Email');
+  if (!updated) {throw new NotFoundError('Email');}
 
   res.json({ success: true, data: updated });
 }));
@@ -397,10 +461,10 @@ emailRouter.delete('/:context/emails/:id', apiKeyAuth, requireScope('write'), as
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const trashed = await moveToTrash(context, id);
-  if (!trashed) throw new NotFoundError('Email');
+  if (!trashed) {throw new NotFoundError('Email');}
 
   res.json({ success: true, data: trashed, message: 'Email moved to trash' });
 }));
@@ -413,10 +477,10 @@ emailRouter.post('/:context/emails/:id/ai/process', apiKeyAuth, requireScope('wr
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email');
+  if (!email) {throw new NotFoundError('Email');}
 
   try {
     const { processEmailWithAI } = await import('../services/email-ai');
@@ -425,7 +489,7 @@ emailRouter.post('/:context/emails/:id/ai/process', apiKeyAuth, requireScope('wr
     res.json({ success: true, data: updated });
   } catch (err) {
     logger.error('AI processing failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'processEmailWithAI' });
-    throw new ValidationError('AI processing failed. Please try again later.');
+    res.status(503).json({ success: false, error: 'AI processing failed. Please try again later.' });
   }
 }));
 
@@ -433,10 +497,10 @@ emailRouter.get('/:context/emails/:id/ai/reply-suggestions', apiKeyAuth, asyncHa
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email');
+  if (!email) {throw new NotFoundError('Email');}
 
   // Return cached suggestions if available
   if (email.ai_reply_suggestions && email.ai_reply_suggestions.length > 0) {
@@ -449,7 +513,7 @@ emailRouter.get('/:context/emails/:id/ai/reply-suggestions', apiKeyAuth, asyncHa
     res.json({ success: true, data: suggestions });
   } catch (err) {
     logger.error('Reply suggestions failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'generateReplySuggestions' });
-    throw new ValidationError('Reply suggestions failed. Please try again later.');
+    res.status(503).json({ success: false, error: 'Reply suggestions failed. Please try again later.' });
   }
 }));
 
@@ -457,10 +521,10 @@ emailRouter.get('/:context/emails/:id/thread/ai/summary', apiKeyAuth, asyncHandl
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email');
+  if (!email) {throw new NotFoundError('Email');}
 
   try {
     const { summarizeThread } = await import('../services/email-ai');
@@ -468,7 +532,7 @@ emailRouter.get('/:context/emails/:id/thread/ai/summary', apiKeyAuth, asyncHandl
     res.json({ success: true, data: { summary } });
   } catch (err) {
     logger.error('Thread summary failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'summarizeThread' });
-    throw new ValidationError('Thread summary failed. Please try again later.');
+    res.status(503).json({ success: false, error: 'Thread summary failed. Please try again later.' });
   }
 }));
 
@@ -538,7 +602,7 @@ emailRouter.post('/:context/emails/accounts/imap', apiKeyAuth, requireScope('wri
   }
 
   const domain = email_address.split('@')[1];
-  if (!domain) throw new ValidationError('Invalid email address');
+  if (!domain) {throw new ValidationError('Invalid email address');}
 
   // Encrypt the password before storing
   const encryptedPassword = encrypt(imap_password);
@@ -562,10 +626,10 @@ emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope(
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(id)) {throw new ValidationError('Invalid account ID');}
 
   const account = await getAccount(context, id);
-  if (!account) throw new NotFoundError('Account');
+  if (!account) {throw new NotFoundError('Account');}
 
   if (!account.imap_enabled || !account.imap_host) {
     throw new ValidationError('Account is not IMAP-enabled');
