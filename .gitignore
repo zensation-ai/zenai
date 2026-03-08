@@ -49,3 +49,5 @@ stats.html
 # Misc
 *.bak
 .vercel-token
+.vercel/
+.claude/
