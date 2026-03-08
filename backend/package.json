@@ -35,6 +35,7 @@
   "author": "Alexander Bering <alex@zensation.ai> (https://zensation.ai)",
   "license": "MIT",
   "dependencies": {
+    "@zenai/shared": "workspace:*",
     "@anthropic-ai/sdk": "^0.71.2",
     "@google-analytics/data": "^5.2.1",
     "@supabase/supabase-js": "^2.90.1",

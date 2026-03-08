@@ -23,6 +23,7 @@
     "test:e2e:chromium": "playwright test --project=chromium"
   },
   "dependencies": {
+    "@zenai/shared": "workspace:*",
     "@capacitor/cli": "^8.0.2",
     "@capacitor/core": "^8.0.0",
     "@capacitor/haptics": "^8.0.0",
