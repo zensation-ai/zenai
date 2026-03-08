@@ -52,6 +52,10 @@ import {
   TOOL_LIST_CALENDAR_EVENTS,
   TOOL_DRAFT_EMAIL,
   TOOL_ESTIMATE_TRAVEL,
+  TOOL_GET_DIRECTIONS,
+  TOOL_GET_OPENING_HOURS,
+  TOOL_FIND_NEARBY,
+  TOOL_OPTIMIZE_ROUTE,
   ToolExecutionContext,
 } from '../claude/tool-use';
 import { createMeeting } from '../meetings';
@@ -79,6 +83,12 @@ import {
   handleIdentifyAnomalies,
   handleComparePeriods,
 } from './business-tools';
+import {
+  handleGetDirections,
+  handleGetOpeningHours,
+  handleFindNearbyPlaces,
+  handleOptimizeDayRoute,
+} from './maps-tools';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -947,6 +957,12 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_DRAFT_EMAIL, handleDraftEmail);
   toolRegistry.register(TOOL_ESTIMATE_TRAVEL, handleEstimateTravel);
 
+  // Phase 41: Google Maps tools
+  toolRegistry.register(TOOL_GET_DIRECTIONS, handleGetDirections);
+  toolRegistry.register(TOOL_GET_OPENING_HOURS, handleGetOpeningHours);
+  toolRegistry.register(TOOL_FIND_NEARBY, handleFindNearbyPlaces);
+  toolRegistry.register(TOOL_OPTIMIZE_ROUTE, handleOptimizeDayRoute);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -984,6 +1000,10 @@ export function registerAllToolHandlers(): void {
       'list_calendar_events',
       'draft_email',
       'estimate_travel',
+      'get_directions',
+      'get_opening_hours',
+      'find_nearby_places',
+      'optimize_day_route',
     ],
   });
 }

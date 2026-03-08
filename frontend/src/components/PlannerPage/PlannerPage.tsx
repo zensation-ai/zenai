@@ -25,6 +25,9 @@ const GanttChart = lazy(() =>
 const MeetingsTab = lazy(() =>
   import('./MeetingsTab').then(m => ({ default: m.MeetingsTab }))
 );
+const MapView = lazy(() =>
+  import('./MapView').then(m => ({ default: m.MapView }))
+);
 
 // Lazy-loaded modal
 const TaskForm = lazy(() =>
@@ -41,12 +44,13 @@ const TABS: { id: PlannerTab; label: string; icon: string }[] = [
   { id: 'tasks', label: 'Aufgaben', icon: '\u2705' },
   { id: 'projects', label: 'Projekte', icon: '\uD83D\uDCCA' },
   { id: 'meetings', label: 'Meetings', icon: '\uD83C\uDF99\uFE0F' },
+  { id: 'map', label: 'Karte', icon: '\uD83D\uDDFA\uFE0F' },
 ];
 
 export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPageProps) {
   const { activeTab, handleTabChange } = useTabNavigation<PlannerTab>({
     initialTab,
-    validTabs: ['calendar', 'tasks', 'projects', 'meetings'],
+    validTabs: ['calendar', 'tasks', 'projects', 'meetings', 'map'],
     defaultTab: 'calendar',
     basePath: '/calendar',
     rootTab: 'calendar',
@@ -152,6 +156,10 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
 
           {activeTab === 'meetings' && (
             <MeetingsTab context={context} />
+          )}
+
+          {activeTab === 'map' && (
+            <MapView context={context} />
           )}
         </Suspense>
       </div>

@@ -7,6 +7,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { CalendarEvent, CreateEventInput, EventType } from './types';
 import { EVENT_TYPE_LABELS } from './types';
+import { LocationAutocomplete } from './LocationAutocomplete';
 
 interface CalendarEventFormProps {
   event: CalendarEvent | null;
@@ -14,6 +15,7 @@ interface CalendarEventFormProps {
   onSave: (input: CreateEventInput) => Promise<CalendarEvent | null>;
   onDelete?: () => Promise<boolean>;
   onClose: () => void;
+  context?: string;
 }
 
 function toLocalDatetimeString(date: Date): string {
@@ -21,7 +23,7 @@ function toLocalDatetimeString(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onClose }: CalendarEventFormProps) {
+export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onClose, context = 'personal' }: CalendarEventFormProps) {
   const isEditing = Boolean(event);
 
   const defaultStart = prefilledStart || new Date();
@@ -162,12 +164,12 @@ export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onC
           {/* Location */}
           <div className="calendar-form__field">
             <label htmlFor="event-location">Ort</label>
-            <input
+            <LocationAutocomplete
               id="event-location"
-              type="text"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="z.B. Büro, Zoom, ..."
+              onChange={setLocation}
+              context={context}
+              placeholder="z.B. Buero, Zoom, Adresse..."
             />
           </div>
 

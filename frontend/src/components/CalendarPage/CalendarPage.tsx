@@ -340,6 +340,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
           onSave={handleSaveEvent}
           onDelete={selectedEvent ? () => handleDeleteEvent(selectedEvent.id) : undefined}
           onClose={handleCloseForm}
+          context={context}
         />
       )}
 

@@ -76,6 +76,8 @@ import { businessRouter } from './routes/business';
 import { initializeBusinessConnectors } from './services/business';
 // Phase 35: AI Calendar System
 import { calendarRouter } from './routes/calendar';
+// Phase 41: Google Maps Integration
+import { mapsRouter } from './routes/maps';
 // Phase 40: Calendar Accounts & AI (iCloud Sync, Smart Scheduling, Briefings)
 import { calendarAccountsRouter } from './routes/calendar-accounts';
 import { startCalDAVScheduler, stopCalDAVScheduler } from './services/caldav-sync';
@@ -315,6 +317,9 @@ app.use('/api', calendarRouter);
 
 // Phase 40: Calendar Accounts & AI - /api/:context/calendar/accounts/*, /api/:context/calendar/ai/*
 app.use('/api', calendarAccountsRouter);
+
+// Phase 41: Google Maps - /api/:context/maps/*
+app.use('/api', mapsRouter);
 
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);

@@ -6,7 +6,7 @@ export type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'done' | 'cancelle
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type DependencyType = 'finish_to_start' | 'start_to_start' | 'finish_to_finish';
 export type ProjectStatus = 'active' | 'on_hold' | 'completed' | 'archived';
-export type PlannerTab = 'calendar' | 'tasks' | 'projects' | 'meetings';
+export type PlannerTab = 'calendar' | 'tasks' | 'projects' | 'meetings' | 'map';
 
 export interface Task {
   id: string;

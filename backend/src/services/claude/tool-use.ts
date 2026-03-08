@@ -931,6 +931,78 @@ export const TOOL_ESTIMATE_TRAVEL: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 41: Google Maps Tools
+// ===========================================
+
+/**
+ * Get directions with real-time traffic
+ */
+export const TOOL_GET_DIRECTIONS: ToolDefinition = {
+  name: 'get_directions',
+  description: 'Berechnet die Route und Reisezeit zwischen zwei Orten mit Echtzeit-Verkehrsdaten. Nutze dies wenn der Nutzer nach Fahrzeiten, Entfernungen, Routen oder Anreise fragt. Ersetzt estimate_travel mit genaueren Google Maps Daten.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      origin: { type: 'string', description: 'Startort (Adresse, Ortsname oder Koordinaten)' },
+      destination: { type: 'string', description: 'Zielort (Adresse, Ortsname oder Koordinaten)' },
+      mode: { type: 'string', enum: ['driving', 'transit', 'walking', 'bicycling'], description: 'Transportmittel (Standard: driving)' },
+      departure_time: { type: 'string', description: 'Abfahrtszeit im ISO 8601 Format fuer Verkehrsprognose (optional, Standard: jetzt)' },
+    },
+    required: ['origin', 'destination'],
+  },
+};
+
+/**
+ * Get opening hours of a place
+ */
+export const TOOL_GET_OPENING_HOURS: ToolDefinition = {
+  name: 'get_opening_hours',
+  description: 'Ruft die Oeffnungszeiten, Adresse, Telefonnummer und Bewertung eines Geschaefts oder Ortes ab. Nutze dies wenn der Nutzer fragt ob ein Laden geoeffnet hat oder wann er aufmacht.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      place: { type: 'string', description: 'Name des Geschaefts oder Ortes (z.B. "Bauhaus Muenchen", "Cafe Leopold")' },
+    },
+    required: ['place'],
+  },
+};
+
+/**
+ * Find nearby places
+ */
+export const TOOL_FIND_NEARBY: ToolDefinition = {
+  name: 'find_nearby_places',
+  description: 'Sucht nach Geschaeften, Restaurants oder anderen Orten in der Naehe eines Standorts. Nutze dies wenn der Nutzer nach "in der Naehe", "nah bei" oder "um ... herum" fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      location: { type: 'string', description: 'Standort fuer die Suche (Adresse oder Ortsname)' },
+      keyword: { type: 'string', description: 'Suchbegriff (z.B. "Cafe", "Supermarkt", "Tankstelle")' },
+      type: { type: 'string', description: 'Google Places Typ (z.B. "restaurant", "cafe", "gas_station", "pharmacy")' },
+      radius: { type: 'number', description: 'Suchradius in Metern (Standard: 2000, Max: 50000)' },
+    },
+    required: ['location'],
+  },
+};
+
+/**
+ * Optimize route for multiple stops
+ */
+export const TOOL_OPTIMIZE_ROUTE: ToolDefinition = {
+  name: 'optimize_day_route',
+  description: 'Optimiert die Reihenfolge mehrerer Orte fuer den kuerzesten Gesamtweg. Nutze dies wenn der Nutzer mehrere Termine an einem Tag hat und die beste Route wissen will.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      locations: { type: 'array', items: { type: 'string' }, description: 'Liste der Orte/Adressen die besucht werden sollen' },
+      start_location: { type: 'string', description: 'Startpunkt (optional, z.B. "Zuhause" oder Bueroadresse)' },
+      mode: { type: 'string', enum: ['driving', 'transit', 'walking', 'bicycling'], description: 'Transportmittel (Standard: driving)' },
+    },
+    required: ['locations'],
+  },
+};
+
+// ===========================================
 // Tool Registry
 // ===========================================
 

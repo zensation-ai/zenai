@@ -80,12 +80,13 @@ describe('PlannerPage Component', () => {
     expect(screen.getByText('Aufgaben')).toBeInTheDocument();
     expect(screen.getByText('Projekte')).toBeInTheDocument();
     expect(screen.getByText('Meetings')).toBeInTheDocument();
+    expect(screen.getByText('Karte')).toBeInTheDocument();
   });
 
-  it('should show 4 tab buttons', () => {
+  it('should show 5 tab buttons', () => {
     render(<PlannerPage context="work" />);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs.length).toBe(4);
+    expect(tabs.length).toBe(5);
   });
 
   it('should mark the active tab as selected', () => {

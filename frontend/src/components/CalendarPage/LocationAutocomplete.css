@@ -1,0 +1,110 @@
+/* LocationAutocomplete - Phase 41 */
+
+.location-autocomplete {
+  position: relative;
+}
+
+.location-autocomplete__input-wrapper {
+  position: relative;
+}
+
+.location-autocomplete__input-wrapper input {
+  width: 100%;
+  padding-right: 2rem;
+}
+
+.location-autocomplete__spinner {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-color, #e0e0e0);
+  border-top-color: var(--accent-color, #4A90D9);
+  border-radius: 50%;
+  animation: loc-spin 0.6s linear infinite;
+}
+
+@keyframes loc-spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.location-autocomplete__list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.location-autocomplete__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.location-autocomplete__item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.location-autocomplete__item:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.location-autocomplete__item:hover,
+.location-autocomplete__item--selected {
+  background: var(--bg-hover, #f0f4ff);
+}
+
+.location-autocomplete__item-icon {
+  font-size: 0.9rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.location-autocomplete__item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.location-autocomplete__item-main {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-autocomplete__item-secondary {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #888);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dark mode */
+:root[data-theme="dark"] .location-autocomplete__list {
+  background: var(--bg-primary, #1e1e1e);
+  border-color: var(--border-color, #333);
+}
+
+:root[data-theme="dark"] .location-autocomplete__item:hover,
+:root[data-theme="dark"] .location-autocomplete__item--selected {
+  background: var(--bg-hover, #2a2a3e);
+}
