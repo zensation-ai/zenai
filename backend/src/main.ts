@@ -76,6 +76,9 @@ import { businessRouter } from './routes/business';
 import { initializeBusinessConnectors } from './services/business';
 // Phase 35: AI Calendar System
 import { calendarRouter } from './routes/calendar';
+// Phase 40: Calendar Accounts & AI (iCloud Sync, Smart Scheduling, Briefings)
+import { calendarAccountsRouter } from './routes/calendar-accounts';
+import { startCalDAVScheduler, stopCalDAVScheduler } from './services/caldav-sync';
 // Phase 37: Global Search
 import { globalSearchRouter } from './routes/global-search';
 // Phase 12: Developer Experience
@@ -310,6 +313,9 @@ app.use('/api/chat', generalChatRouter);  // /api/chat/sessions, /api/chat/sessi
 // Phase 35: AI Calendar - Context-aware: /api/:context/calendar/*
 app.use('/api', calendarRouter);
 
+// Phase 40: Calendar Accounts & AI - /api/:context/calendar/accounts/*, /api/:context/calendar/ai/*
+app.use('/api', calendarAccountsRouter);
+
 // Phase 1-3 Routes
 app.use('/api/health', healthRouter);
 app.use('/api/voice-memo', voiceMemoRouter);
@@ -438,12 +444,14 @@ process.once('SIGTERM', () => {
   clearInterval(rateLimitCleanupInterval);
   stopMemoryScheduler();
   stopImapScheduler();
+  stopCalDAVScheduler();
   workingMemory.stopCleanupInterval();
 });
 process.once('SIGINT', () => {
   clearInterval(rateLimitCleanupInterval);
   stopMemoryScheduler();
   stopImapScheduler();
+  stopCalDAVScheduler();
   workingMemory.stopCleanupInterval();
 });
 
@@ -808,6 +816,14 @@ Phase 4 APIs:
       startImapScheduler();
     } catch (error) {
       logger.error('IMAP Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 40: Start CalDAV Sync Scheduler (iCloud, etc.)
+    try {
+      startCalDAVScheduler();
+      logger.info('CalDAV sync scheduler started (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('CalDAV Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
     }
   });
   });

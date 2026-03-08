@@ -1,0 +1,200 @@
+/* CalendarBriefing - Phase 40 */
+
+.cal-briefing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Conflicts */
+.cal-briefing__conflicts {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.cal-briefing__conflicts--error {
+  background: rgba(217, 74, 74, 0.08);
+  border: 1px solid rgba(217, 74, 74, 0.25);
+  color: var(--text-primary);
+}
+
+.cal-briefing__conflicts--warning {
+  background: rgba(232, 168, 56, 0.08);
+  border: 1px solid rgba(232, 168, 56, 0.25);
+  color: var(--text-primary);
+}
+
+.cal-briefing__conflicts-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  margin-top: 1px;
+}
+
+.cal-briefing__conflicts--error .cal-briefing__conflicts-icon {
+  background: #D94A4A;
+  color: white;
+}
+
+.cal-briefing__conflicts--warning .cal-briefing__conflicts-icon {
+  background: #E8A838;
+  color: white;
+}
+
+.cal-briefing__conflict-item {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.cal-briefing__suggestion {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.cal-briefing__conflict-more {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* Briefing Content */
+.cal-briefing__content {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(155, 107, 217, 0.04), rgba(74, 144, 217, 0.04));
+}
+
+.cal-briefing__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.cal-briefing__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(155, 107, 217, 0.15);
+  color: #9B6BD9;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cal-briefing__stats {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.cal-briefing__summary {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+/* Free Slots */
+.cal-briefing__slots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.cal-briefing__slots-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.cal-briefing__slot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(74, 144, 217, 0.1);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.cal-briefing__slot-duration {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* Tips */
+.cal-briefing__tips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cal-briefing__tip {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding-left: 1rem;
+  position: relative;
+}
+
+.cal-briefing__tip::before {
+  content: '\2022';
+  position: absolute;
+  left: 0.25rem;
+  color: var(--accent);
+}
+
+/* Focus Recommendation */
+.cal-briefing__focus {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(107, 142, 123, 0.1);
+  color: #6B8E7B;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Loading */
+.cal-briefing__loading {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cal-briefing__slots {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

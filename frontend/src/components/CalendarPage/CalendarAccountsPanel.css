@@ -1,0 +1,263 @@
+/* CalendarAccountsPanel - Phase 40 */
+
+.cal-accounts-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.cal-accounts {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.cal-accounts__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cal-accounts__header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.cal-accounts__close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0;
+  line-height: 1;
+}
+
+.cal-accounts__body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Account Card */
+.cal-accounts__card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  align-items: flex-start;
+}
+
+.cal-accounts__card-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.cal-accounts__card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-accounts__card-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.cal-accounts__card-provider {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.1rem;
+}
+
+.cal-accounts__card-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.cal-accounts__error {
+  color: #D94A4A;
+}
+
+.cal-accounts__calendars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.cal-accounts__calendar-chip {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  border-left: 3px solid;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.cal-accounts__card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.cal-btn--sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.cal-btn--sm:hover {
+  background: var(--bg-secondary);
+}
+
+.cal-btn--danger-sm {
+  border-color: rgba(217, 74, 74, 0.3);
+  color: #D94A4A;
+}
+
+.cal-btn--danger-sm:hover {
+  background: rgba(217, 74, 74, 0.1);
+}
+
+/* Form */
+.cal-accounts__form {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.cal-accounts__form h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.cal-accounts__provider-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.cal-accounts__provider-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.cal-accounts__provider-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.cal-accounts__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.65rem;
+}
+
+.cal-accounts__field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cal-accounts__help-link {
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.cal-accounts__help-link:hover {
+  text-decoration: underline;
+}
+
+.cal-accounts__field input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.cal-accounts__form-error {
+  padding: 0.5rem 0.75rem;
+  background: rgba(217, 74, 74, 0.1);
+  border: 1px solid rgba(217, 74, 74, 0.3);
+  border-radius: 6px;
+  color: #D94A4A;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.cal-accounts__form-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+/* Add Button */
+.cal-accounts__add-btn {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.cal-accounts__add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(74, 144, 217, 0.05);
+}
+
+.cal-accounts__loading {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+}

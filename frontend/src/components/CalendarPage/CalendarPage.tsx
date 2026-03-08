@@ -1,14 +1,18 @@
 /**
- * CalendarPage - Phase 35
+ * CalendarPage - Phase 40
  *
  * AI-powered calendar with month/week/day views.
- * Integrates with voice memo intent detection for auto-created events.
+ * Features: iCloud sync, KI-Briefing, Smart Scheduling, Conflict Detection.
  */
 
 import { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import type { CalendarView, CalendarEvent, CreateEventInput } from './types';
 import { useCalendarData } from './useCalendarData';
+import { useCalendarAI } from './useCalendarAI';
+import { useCalendarAccounts } from './useCalendarAccounts';
 import { CalendarEventForm } from './CalendarEventForm';
+import { CalendarBriefing } from './CalendarBriefing';
+import { CalendarAccountsPanel } from './CalendarAccountsPanel';
 import { SkeletonLoader } from '../SkeletonLoader';
 import { RisingBubbles } from '../RisingBubbles';
 import type { AIContext } from '../ContextSwitcher';
@@ -29,6 +33,8 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [prefilledStart, setPrefilledStart] = useState<Date | null>(null);
+  const [showAccountsPanel, setShowAccountsPanel] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(true);
 
   // Calculate date range for data fetching
   const { rangeStart, rangeEnd } = useMemo(() => {
@@ -40,14 +46,14 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
     switch (view) {
       case 'month': {
         const start = new Date(year, month, 1);
-        start.setDate(start.getDate() - start.getDay()); // Start from Sunday/Monday
+        start.setDate(start.getDate() - start.getDay());
         const end = new Date(year, month + 1, 0);
-        end.setDate(end.getDate() + (6 - end.getDay())); // End at Saturday/Sunday
+        end.setDate(end.getDate() + (6 - end.getDay()));
         end.setHours(23, 59, 59, 999);
         return { rangeStart: start, rangeEnd: end };
       }
       case 'week': {
-        const start = new Date(year, month, day - ((dow + 6) % 7)); // Monday
+        const start = new Date(year, month, day - ((dow + 6) % 7));
         const end = new Date(start);
         end.setDate(end.getDate() + 6);
         end.setHours(23, 59, 59, 999);
@@ -62,10 +68,20 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
   }, [view, currentDate]);
 
   const { events, loading, error, refetch, createEvent, updateEvent, deleteEvent } = useCalendarData(
-    context,
-    rangeStart,
-    rangeEnd
+    context, rangeStart, rangeEnd
   );
+
+  // AI features
+  const {
+    briefing, briefingLoading, fetchBriefing,
+    conflicts, conflictsLoading, fetchConflicts,
+  } = useCalendarAI(context);
+
+  // Calendar accounts (iCloud sync)
+  const {
+    accounts, loading: accountsLoading, error: accountsError,
+    createAccount, deleteAccount, syncAccount,
+  } = useCalendarAccounts(context);
 
   // Navigation
   const goToday = useCallback(() => setCurrentDate(new Date()), []);
@@ -114,7 +130,6 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
 
   const handleSaveEvent = useCallback(async (input: CreateEventInput) => {
     if (selectedEvent) {
-      // Edit mode: update existing event
       const result = await updateEvent(selectedEvent.id, input);
       if (result) {
         setShowEventForm(false);
@@ -123,7 +138,6 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
       }
       return result;
     }
-    // Create mode
     return handleCreateEvent(input);
   }, [selectedEvent, updateEvent, handleCreateEvent]);
 
@@ -163,14 +177,56 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
     return currentDate.toLocaleDateString('de-DE', opts);
   }, [view, currentDate, rangeStart, rangeEnd]);
 
+  const hasConnectedAccounts = accounts.length > 0;
+
   return (
     <div className={`calendar-page ${embedded ? 'calendar-page--embedded' : ''}`}>
       <RisingBubbles variant="subtle" />
       {!embedded && (
         <div className="calendar-page__header">
-          <h1>Kalender</h1>
-          <p className="calendar-page__subtitle">Termine, Deadlines & Erinnerungen</p>
+          <div className="calendar-page__header-row">
+            <div>
+              <h1>Kalender</h1>
+              <p className="calendar-page__subtitle">
+                Termine, Deadlines & Erinnerungen
+                {hasConnectedAccounts && (
+                  <span className="calendar-page__sync-badge">
+                    iCloud verbunden
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="calendar-page__header-actions">
+              <button
+                className={`calendar-btn calendar-btn--sm ${showBriefing ? 'calendar-btn--active' : ''}`}
+                onClick={() => setShowBriefing(prev => !prev)}
+                title="KI-Briefing"
+              >
+                KI
+              </button>
+              <button
+                className="calendar-btn calendar-btn--sm"
+                onClick={() => setShowAccountsPanel(true)}
+                title="Kalender verbinden"
+              >
+                {hasConnectedAccounts ? 'Sync' : 'Verbinden'}
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* AI Briefing Panel */}
+      {showBriefing && (
+        <CalendarBriefing
+          briefing={briefing}
+          briefingLoading={briefingLoading}
+          conflicts={conflicts}
+          conflictsLoading={conflictsLoading}
+          onFetchBriefing={fetchBriefing}
+          onFetchConflicts={fetchConflicts}
+          currentDate={currentDate}
+        />
       )}
 
       {/* Toolbar */}
@@ -259,6 +315,19 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
           onSave={handleSaveEvent}
           onDelete={selectedEvent ? () => handleDeleteEvent(selectedEvent.id) : undefined}
           onClose={handleCloseForm}
+        />
+      )}
+
+      {/* Calendar Accounts Panel (iCloud connection) */}
+      {showAccountsPanel && (
+        <CalendarAccountsPanel
+          accounts={accounts}
+          loading={accountsLoading}
+          error={accountsError}
+          onCreateAccount={createAccount}
+          onDeleteAccount={deleteAccount}
+          onSyncAccount={syncAccount}
+          onClose={() => { setShowAccountsPanel(false); refetch(); }}
         />
       )}
     </div>

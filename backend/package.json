@@ -51,6 +51,7 @@
     "google-auth-library": "^10.5.0",
     "googleapis": "^171.4.0",
     "helmet": "^8.1.0",
+    "ical.js": "^2.2.1",
     "imapflow": "^1.2.12",
     "ioredis": "^5.9.0",
     "jsonwebtoken": "^9.0.3",
@@ -68,6 +69,7 @@
     "svix": "^1.85.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "tsdav": "^2.1.8",
     "uuid": "^9.0.1",
     "ws": "^8.19.0",
     "zod": "^4.3.5"
