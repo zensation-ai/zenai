@@ -67,12 +67,13 @@ const categoryLabels: Record<string, { label: string; icon: string }> = {
   communication: { label: 'Kommunikation', icon: '💬' },
 };
 
-const SESSION_STORAGE_KEY = 'zenai_personalization_session';
+const SESSION_KEY_PREFIX = 'zenai_personalization_session_';
 
 export function PersonalizationChat({ onBack, context, embedded }: PersonalizationChatProps) {
+  const sessionKey = `${SESSION_KEY_PREFIX}${context}`;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(
-    () => localStorage.getItem(SESSION_STORAGE_KEY)
+    () => localStorage.getItem(sessionKey)
   );
   const [facts, setFacts] = useState<LearnedFact[]>([]);
   const [progress, setProgress] = useState<LearningProgress[]>([]);
@@ -87,8 +88,8 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
 
   const persistSessionId = useCallback((id: string) => {
     setSessionId(id);
-    localStorage.setItem(SESSION_STORAGE_KEY, id);
-  }, []);
+    localStorage.setItem(sessionKey, id);
+  }, [sessionKey]);
 
   const startNewConversation = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -121,7 +122,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
         axios.get('/api/personalization/summary', { signal }).catch(() => ({ data: { data: { summary: null } } })),
       ]);
 
-      const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+      const storedSessionId = localStorage.getItem(sessionKey);
       if (storedSessionId) {
         try {
           const historyRes = await axios.get('/api/personalization/history', {
@@ -187,7 +188,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
     } finally {
       setLoading(false);
     }
-  }, [startNewConversation]);
+  }, [startNewConversation, sessionKey]);
 
   useEffect(() => {
     abortControllerRef.current?.abort();
@@ -361,7 +362,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
                 type="button"
                 className="new-conversation-btn"
                 onClick={async () => {
-                  localStorage.removeItem(SESSION_STORAGE_KEY);
+                  localStorage.removeItem(sessionKey);
                   setMessages([]);
                   setSessionId(null);
                   await startNewConversation();

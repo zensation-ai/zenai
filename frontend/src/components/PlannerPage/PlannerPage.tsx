@@ -2,7 +2,7 @@
  * PlannerPage - Phase 37
  *
  * Central planning hub with tabs: Kalender, Aufgaben (Kanban), Projekte (Gantt), Meetings.
- * Replaces the standalone CalendarPage.
+ * Uses shared HubPage layout for consistent UI.
  */
 
 import { useState, useMemo, lazy, Suspense, useCallback } from 'react';
@@ -10,8 +10,8 @@ import type { PlannerTab, Task } from './types';
 import { useTasksData } from './useTasksData';
 import { useProjectsData } from './useProjectsData';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
+import { HubPage, type TabDef } from '../HubPage';
 import { SkeletonLoader } from '../SkeletonLoader';
-import './PlannerPage.css';
 
 const CalendarPage = lazy(() =>
   import('../CalendarPage/CalendarPage').then(m => ({ default: m.CalendarPage }))
@@ -28,8 +28,6 @@ const MeetingsTab = lazy(() =>
 const MapView = lazy(() =>
   import('./MapView').then(m => ({ default: m.MapView }))
 );
-
-// Lazy-loaded modal
 const TaskForm = lazy(() =>
   import('./TaskForm').then(m => ({ default: m.TaskForm }))
 );
@@ -37,9 +35,10 @@ const TaskForm = lazy(() =>
 interface PlannerPageProps {
   context: 'personal' | 'work' | 'learning' | 'creative';
   initialTab?: PlannerTab;
+  onBack: () => void;
 }
 
-const TABS: { id: PlannerTab; label: string; icon: string }[] = [
+const TABS: TabDef<PlannerTab>[] = [
   { id: 'calendar', label: 'Kalender', icon: '\uD83D\uDCC5' },
   { id: 'tasks', label: 'Aufgaben', icon: '\u2705' },
   { id: 'projects', label: 'Projekte', icon: '\uD83D\uDCCA' },
@@ -47,7 +46,7 @@ const TABS: { id: PlannerTab; label: string; icon: string }[] = [
   { id: 'map', label: 'Karte', icon: '\uD83D\uDDFA\uFE0F' },
 ];
 
-export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPageProps) {
+export function PlannerPage({ context, initialTab = 'calendar', onBack }: PlannerPageProps) {
   const { activeTab, handleTabChange } = useTabNavigation<PlannerTab>({
     initialTab,
     validTabs: ['calendar', 'tasks', 'projects', 'meetings', 'map'],
@@ -69,10 +68,17 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
     createProject,
   } = useProjectsData(context);
 
-  // Memoize open task count (avoid double-filtering in render)
   const openTaskCount = useMemo(
     () => tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').length,
     [tasks]
+  );
+
+  // Build tabs with dynamic badge
+  const tabsWithBadge = useMemo(() =>
+    TABS.map(tab => tab.id === 'tasks' && openTaskCount > 0
+      ? { ...tab, badge: openTaskCount }
+      : tab
+    ), [openTaskCount]
   );
 
   const handleCreateTask = useCallback(() => {
@@ -101,35 +107,21 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
   }, []);
 
   return (
-    <div className="planner-page">
-      {/* Tab Navigation */}
-      <div className="planner-tabs" role="tablist">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`planner-tab ${activeTab === tab.id ? 'planner-tab--active' : ''}`}
-            onClick={() => handleTabChange(tab.id)}
-          >
-            <span className="planner-tab__icon" aria-hidden="true">{tab.icon}</span>
-            <span className="planner-tab__label">{tab.label}</span>
-            {tab.id === 'tasks' && openTaskCount > 0 && (
-              <span className="planner-tab__badge">
-                {openTaskCount}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      <div className="planner-content" role="tabpanel">
+    <>
+      <HubPage
+        title="Planer"
+        icon="\uD83D\uDCC5"
+        subtitle="Kalender, Aufgaben, Projekte & Meetings"
+        tabs={tabsWithBadge}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onBack={onBack}
+        context={context}
+      >
         <Suspense fallback={<SkeletonLoader type="card" count={1} />}>
           {activeTab === 'calendar' && (
             <CalendarPage context={context} embedded={true} />
           )}
-
           {activeTab === 'tasks' && (
             <KanbanBoard
               tasks={tasks}
@@ -142,7 +134,6 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
               onReorder={reorderTasks}
             />
           )}
-
           {activeTab === 'projects' && (
             <GanttChart
               tasks={tasks}
@@ -153,7 +144,6 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
               onCreateProject={createProject}
             />
           )}
-
           {activeTab === 'meetings' && (
             <MeetingsTab context={context} />
           )}
@@ -162,9 +152,8 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
             <MapView context={context} />
           )}
         </Suspense>
-      </div>
+      </HubPage>
 
-      {/* Task Form Modal */}
       {showTaskForm && (
         <Suspense fallback={null}>
           <TaskForm
@@ -175,6 +164,6 @@ export function PlannerPage({ context, initialTab = 'calendar' }: PlannerPagePro
           />
         </Suspense>
       )}
-    </div>
+    </>
   );
 }

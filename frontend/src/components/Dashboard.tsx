@@ -1,12 +1,8 @@
 /**
- * Dashboard - Zentrale Startseite
+ * Dashboard - Bento Grid Desktop
  *
- * Zeigt Übersicht:
- * - Welcome Banner mit AI-Greeting + Kontext-Badge
- * - Quick Stats (5 Metriken inkl. Streak)
- * - 7-Tage Sparkline Trend
- * - Letzte Gedanken + KI-Aktivität
- * - Quick Start Grid
+ * Personal AI OS landing page with widget-style bento layout.
+ * Sections span different grid areas for a modern "desktop" feel.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
@@ -19,7 +15,7 @@ import { SkeletonLoader } from './SkeletonLoader';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { logError } from '../utils/errors';
 import { ProactiveDigest } from './ProactiveDigest';
-import '../neurodesign.css';
+import { ProactiveBriefingWidget } from './ProactiveBriefing/ProactiveBriefingWidget';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -77,21 +73,22 @@ const ACTIVITY_ICONS: Record<string, string> = {
   idea_evolved: '🌱', routine_detected: '🔄', context_switch: '🔀',
 };
 
-interface QuickStartItem {
+interface QuickNavItem {
   icon: string;
   label: string;
-  description: string;
   page: Page;
-  colorClass: string;
+  accent: string;
 }
 
-const QUICK_START_ITEMS: QuickStartItem[] = [
-  { icon: '💡', label: 'Neuer Gedanke', description: 'Idee erfassen', page: 'ideas', colorClass: 'qs-ideas' },
-  { icon: '💬', label: 'Chat starten', description: 'KI-Konversation', page: 'chat', colorClass: 'qs-chat' },
-  { icon: '\uD83D\uDCC5', label: 'Kalender', description: 'Termine verwalten', page: 'calendar', colorClass: 'qs-calendar' },
-  { icon: '📚', label: 'Wissensbasis', description: 'Dokumente durchsuchen', page: 'documents', colorClass: 'qs-documents' },
-  { icon: '📊', label: 'Insights', description: 'Trends entdecken', page: 'insights', colorClass: 'qs-insights' },
-  { icon: '🧪', label: 'Werkstatt', description: 'KI-Vorschläge', page: 'workshop', colorClass: 'qs-workshop' },
+const QUICK_NAV: QuickNavItem[] = [
+  { icon: '💡', label: 'Gedanken', page: 'ideas', accent: 'var(--accent-ideas, #f59e0b)' },
+  { icon: '💬', label: 'Chat', page: 'chat', accent: 'var(--accent-chat, #f97316)' },
+  { icon: '📅', label: 'Planer', page: 'calendar', accent: 'var(--accent-calendar, #3b82f6)' },
+  { icon: '📚', label: 'Wissen', page: 'documents', accent: 'var(--accent-docs, #6366f1)' },
+  { icon: '📊', label: 'Insights', page: 'insights', accent: 'var(--accent-insights, #10b981)' },
+  { icon: '🧪', label: 'Werkstatt', page: 'workshop', accent: 'var(--accent-workshop, #8b5cf6)' },
+  { icon: '✉️', label: 'Email', page: 'email', accent: 'var(--accent-email, #ec4899)' },
+  { icon: '🧠', label: 'Meine KI', page: 'my-ai', accent: 'var(--accent-ai, #a855f7)' },
 ];
 
 interface UpcomingEvent {
@@ -104,18 +101,14 @@ interface UpcomingEvent {
 }
 
 const EVENT_ICONS: Record<string, string> = {
-  appointment: '\uD83D\uDCC5',
-  reminder: '\u23F0',
-  deadline: '\u26A0\uFE0F',
-  travel_block: '\uD83D\uDE97',
-  focus_time: '\uD83C\uDFAF',
+  appointment: '📅', reminder: '⏰', deadline: '⚠️',
+  travel_block: '🚗', focus_time: '🎯',
 };
 
 /** SVG Sparkline for 7-day trend */
-const Sparkline: React.FC<{ data: TrendPoint[] }> = memo(({ data }) => {
+const Sparkline = memo<{ data: TrendPoint[] }>(({ data }) => {
   if (data.length === 0) return null;
 
-  // Fill missing days in last 7 days
   const now = new Date();
   const days: number[] = [];
   for (let i = 6; i >= 0; i--) {
@@ -128,8 +121,8 @@ const Sparkline: React.FC<{ data: TrendPoint[] }> = memo(({ data }) => {
 
   const max = Math.max(...days, 1);
   const width = 200;
-  const height = 32;
-  const padding = 2;
+  const height = 40;
+  const padding = 4;
 
   const points = days.map((val, i) => {
     const x = padding + (i / 6) * (width - padding * 2);
@@ -137,34 +130,45 @@ const Sparkline: React.FC<{ data: TrendPoint[] }> = memo(({ data }) => {
     return `${x},${y}`;
   });
 
-  const total = days.reduce((s, v) => s + v, 0);
+  // Area fill path
+  const areaPath = [
+    `M ${padding},${height - padding}`,
+    ...days.map((val, i) => {
+      const x = padding + (i / 6) * (width - padding * 2);
+      const y = height - padding - (val / max) * (height - padding * 2);
+      return `L ${x},${y}`;
+    }),
+    `L ${width - padding},${height - padding} Z`,
+  ].join(' ');
 
   return (
-    <div className="dash-sparkline" aria-label={`${total} Gedanken in den letzten 7 Tagen`}>
-      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="dash-sparkline-svg">
+    <div className="bento-sparkline" aria-label={`${days.reduce((s, v) => s + v, 0)} Gedanken in den letzten 7 Tagen`}>
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--primary, #ff6b35)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--primary, #ff6b35)" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#sparkFill)" />
         <polyline
           points={points.join(' ')}
           fill="none"
           stroke="var(--primary, #ff6b35)"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {days.map((val, i) => {
-          const x = padding + (i / 6) * (width - padding * 2);
-          const y = height - padding - (val / max) * (height - padding * 2);
-          return (
-            <circle
-              key={i}
-              cx={x}
-              cy={y}
-              r={val > 0 ? 2.5 : 0}
-              fill="var(--primary, #ff6b35)"
-            />
-          );
-        })}
+        {days.map((val, i) => (
+          <circle
+            key={i}
+            cx={padding + (i / 6) * (width - padding * 2)}
+            cy={height - padding - (val / max) * (height - padding * 2)}
+            r={val > 0 ? 3 : 0}
+            fill="var(--primary, #ff6b35)"
+          />
+        ))}
       </svg>
-      <span className="dash-sparkline-label">7-Tage-Trend</span>
     </div>
   );
 });
@@ -189,7 +193,6 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const abortRef = useRef<AbortController | null>(null);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Recalculate greeting when context changes (also covers time-of-day updates)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const greeting = useMemo(() => getTimeBasedGreeting(), [context]);
   const contextInfo = CONTEXT_LABELS[context];
@@ -215,21 +218,19 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         });
         setStreak(d.streak || 0);
         setTrend(d.trend || []);
-        setRecentIdeas((d.recentIdeas || []).slice(0, 6));
+        setRecentIdeas((d.recentIdeas || []).slice(0, 5));
         setActivity((d.activities || []).slice(0, 5));
         setUnreadCount(d.unreadCount || 0);
       }
 
-      // Fetch upcoming calendar events (next 48 hours)
-      axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 5 }, signal })
+      axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 4 }, signal })
         .then(r => { if (!signal?.aborted && r.data?.success) setUpcomingEvents(r.data.data || []); })
-        .catch(() => { /* Calendar might not be set up yet */ });
+        .catch(() => {});
 
-      // If response came back null, retry once after a short delay (keep loading state)
       if (!res.data && !hasFetched.current) {
         hasFetched.current = true;
         retryTimer.current = setTimeout(() => fetchData(signal), 1500);
-        return; // Don't set loading=false — retry will handle it
+        return;
       }
     } catch (err) {
       if (axios.isCancel(err)) return;
@@ -248,17 +249,14 @@ const DashboardComponent: React.FC<DashboardProps> = ({
     }
   }, [context]);
 
-  // Wait for API to be ready before fetching dashboard data
   useEffect(() => {
     if (apiStatus) {
-      // Cancel previous requests on context change
       abortRef.current?.abort();
       if (retryTimer.current) clearTimeout(retryTimer.current);
       const controller = new AbortController();
       abortRef.current = controller;
       hasFetched.current = false;
       fetchData(controller.signal);
-
       return () => {
         controller.abort();
         if (retryTimer.current) clearTimeout(retryTimer.current);
@@ -282,261 +280,250 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   };
 
   const welcomeSubtext = useMemo(() => {
-    if (ideasCount === 0) return 'Bereit für deinen ersten Gedanken?';
-    if (streak > 3) return `${streak} Tage in Folge aktiv — weiter so!`;
+    if (ideasCount === 0) return 'Bereit fuer deinen ersten Gedanken?';
+    if (streak > 3) return `${streak} Tage in Folge aktiv`;
     if (stats.todayCount > 0) return `Heute schon ${stats.todayCount} neue Gedanken`;
     return `${ideasCount} Gedanken in deinem digitalen Gehirn`;
   }, [ideasCount, streak, stats.todayCount]);
 
   return (
-    <div className={`dashboard${isAIActive ? ' ai-active' : ''}`} data-context={context}>
-      <RisingBubbles variant="full" />
+    <div className={`bento-dashboard${isAIActive ? ' ai-active' : ''}`} data-context={context}>
+      <RisingBubbles variant="subtle" />
 
-      {/* Welcome Banner */}
-      <section className="dash-welcome">
-        <div className="dash-welcome-brain">
-          <AIBrain isActive={isAIActive} activityType="thinking" ideasCount={ideasCount} size="small" />
-        </div>
-        <div className="dash-welcome-text">
-          <h2 className="dash-greeting">{greeting.emoji} {greeting.greeting}</h2>
-          <p className="dash-subtext">{welcomeSubtext}</p>
-        </div>
-        <span className="dash-context-badge" aria-label={`Kontext: ${contextInfo.label}`}>
-          <span aria-hidden="true">{contextInfo.icon}</span>
-          {contextInfo.label}
-        </span>
-        <button
-          type="button"
-          className="dash-welcome-action neuro-focus-ring"
-          onClick={() => onNavigate('ideas')}
-        >
-          <span aria-hidden="true">💡</span>
-          Neuer Gedanke
-        </button>
-      </section>
+      {/* ===== BENTO GRID ===== */}
+      <div className="bento-grid">
 
-      {/* Quick Start Grid */}
-      <section className="dash-quickstart" aria-label="Schnellstart">
-        <h3 className="dash-quickstart-title">Schnellstart</h3>
-        <div className="dash-quickstart-grid">
-          {QUICK_START_ITEMS.map((item) => (
-            <button
-              key={item.page}
-              type="button"
-              className={`dash-qs-card ${item.colorClass} neuro-focus-ring`}
-              onClick={() => onNavigate(item.page)}
-            >
-              <span className="dash-qs-icon" aria-hidden="true">{item.icon}</span>
-              <div className="dash-qs-text">
-                <span className="dash-qs-label">{item.label}</span>
-                <span className="dash-qs-desc">{item.description}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
+        {/* Hero: Welcome */}
+        <section className="bento-card bento-hero">
+          <div className="bento-hero-content">
+            <div className="bento-hero-brain">
+              <AIBrain isActive={isAIActive} activityType="thinking" ideasCount={ideasCount} size="small" />
+            </div>
+            <div className="bento-hero-text">
+              <h2 className="bento-greeting">{greeting.emoji} {greeting.greeting}</h2>
+              <p className="bento-subtext">{welcomeSubtext}</p>
+            </div>
+            <span className="bento-context-badge">
+              <span aria-hidden="true">{contextInfo.icon}</span>
+              {contextInfo.label}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="bento-cta"
+            onClick={() => onNavigate('ideas')}
+          >
+            <span aria-hidden="true">💡</span>
+            Neuer Gedanke
+          </button>
+        </section>
 
-      {/* AI Digest */}
-      <ProactiveDigest context={context} onNavigate={onNavigate} />
-
-      {/* Quick Stats */}
-      <section className="dash-stats" aria-label="Statistiken">
+        {/* Stat tiles */}
         {loading ? (
-          <SkeletonLoader type="card" count={5} />
+          <>
+            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
+            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
+            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
+            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
+          </>
         ) : (
           <>
-            <button type="button" className="dash-stat-card" title="Alle Gedanken anzeigen" onClick={() => onNavigate('ideas')}>
-              <span className="dash-stat-icon" aria-hidden="true">💡</span>
-              <div className="dash-stat-data">
-                <span className="dash-stat-value">{stats.total}</span>
-                <span className="dash-stat-label">Gesamt</span>
-              </div>
+            <button type="button" className="bento-card bento-stat" onClick={() => onNavigate('ideas')}>
+              <span className="bento-stat-icon">💡</span>
+              <span className="bento-stat-value">{stats.total}</span>
+              <span className="bento-stat-label">Gesamt</span>
             </button>
-            <button type="button" className="dash-stat-card" title="Gedanken diese Woche" onClick={() => onNavigate('ideas')}>
-              <span className="dash-stat-icon" aria-hidden="true">📅</span>
-              <div className="dash-stat-data">
-                <span className="dash-stat-value">{stats.thisWeek}</span>
-                <span className="dash-stat-label">Diese Woche</span>
-              </div>
+            <button type="button" className="bento-card bento-stat" onClick={() => onNavigate('ideas')}>
+              <span className="bento-stat-icon">📅</span>
+              <span className="bento-stat-value">{stats.thisWeek}</span>
+              <span className="bento-stat-label">Diese Woche</span>
             </button>
-            <button type="button" className="dash-stat-card priority" title="Wichtige Gedanken anzeigen" onClick={() => onNavigate('ideas')}>
-              <span className="dash-stat-icon" aria-hidden="true">🔥</span>
-              <div className="dash-stat-data">
-                <span className="dash-stat-value">{stats.highPriority}</span>
-                <span className="dash-stat-label">Hohe Priorität</span>
-              </div>
+            <button type="button" className="bento-card bento-stat bento-stat--hot" onClick={() => onNavigate('ideas')}>
+              <span className="bento-stat-icon">🔥</span>
+              <span className="bento-stat-value">{stats.highPriority}</span>
+              <span className="bento-stat-label">Wichtig</span>
             </button>
-            <button type="button" className="dash-stat-card streak" title="Deine aktuelle Streak" onClick={() => onNavigate('insights')}>
-              <span className="dash-stat-icon" aria-hidden="true">{streak > 0 ? '🔥' : '💤'}</span>
-              <div className="dash-stat-data">
-                <span className="dash-stat-value">{streak} {streak === 1 ? 'Tag' : 'Tage'}</span>
-                <span className="dash-stat-label">Streak</span>
-              </div>
-            </button>
-            <button type="button" className="dash-stat-card ai" title="Chat mit ZenAI" onClick={() => onNavigate('chat')}>
-              <span className="dash-stat-icon" aria-hidden="true">🧠</span>
-              <div className="dash-stat-data">
-                <span className={`dash-stat-value ${isAIActive ? 'active' : ''}`}>
-                  {isAIActive ? 'Aktiv' : 'Bereit'}
-                </span>
-                <span className="dash-stat-label">KI-Status</span>
-              </div>
+            <button type="button" className="bento-card bento-stat bento-stat--streak" onClick={() => onNavigate('insights')}>
+              <span className="bento-stat-icon">{streak > 0 ? '🔥' : '💤'}</span>
+              <span className="bento-stat-value">{streak}d</span>
+              <span className="bento-stat-label">Streak</span>
             </button>
           </>
         )}
-      </section>
 
-      {/* Sparkline Trend */}
-      {!loading && <Sparkline data={trend} />}
+        {/* Trend sparkline (spans 2 cols) */}
+        {!loading && (
+          <div className="bento-card bento-trend">
+            <div className="bento-trend-header">
+              <span className="bento-trend-title">7-Tage-Trend</span>
+              <span className="bento-trend-total">{trend.reduce((s, p) => s + p.count, 0)} Gedanken</span>
+            </div>
+            <Sparkline data={trend} />
+          </div>
+        )}
 
-      {/* Upcoming Events */}
-      {!loading && upcomingEvents.length > 0 && (
-        <section className="dash-upcoming" aria-label="Nächste Termine">
-          <div className="dash-column-header">
-            <h3>{'\uD83D\uDCC5'} Nächste Termine</h3>
-            <button type="button" className="dash-see-all neuro-focus-ring" onClick={() => onNavigate('calendar')}>
-              Kalender {'\u2192'}
-            </button>
+        {/* AI Status (spans 2 cols) */}
+        <button type="button" className="bento-card bento-ai-status" onClick={() => onNavigate('chat')}>
+          <div className="bento-ai-indicator">
+            <span className={`bento-ai-dot ${isAIActive ? 'active' : ''}`} />
+            <span className="bento-ai-label">{isAIActive ? 'KI arbeitet...' : 'KI bereit'}</span>
           </div>
-          <div className="dash-upcoming-list">
-            {upcomingEvents.map((evt) => {
-              const startDate = new Date(evt.start_time);
-              const timeStr = startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-              const dayStr = startDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
-              return (
-                <button
-                  key={evt.id}
-                  type="button"
-                  className="dash-upcoming-item neuro-focus-ring"
-                  onClick={() => onNavigate('calendar')}
-                >
-                  <span className="dash-upcoming-icon" aria-hidden="true">
-                    {EVENT_ICONS[evt.event_type] || '\uD83D\uDCC5'}
-                  </span>
-                  <div className="dash-upcoming-content">
-                    <span className="dash-upcoming-title">{evt.title}</span>
-                    <span className="dash-upcoming-time">{dayStr}, {timeStr}{evt.location ? ` \u2022 ${evt.location}` : ''}</span>
-                  </div>
-                  {evt.ai_generated && <span className="dash-upcoming-ai" title="KI-generiert">KI</span>}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
+          <span className="bento-ai-action">Chat starten →</span>
+        </button>
 
-      {/* Two Column: Recent Ideas + Activity */}
-      <section className="dash-columns">
-        {/* Recent Ideas */}
-        <div className="dash-column">
-          <div className="dash-column-header">
-            <h3>Letzte Gedanken</h3>
-            <button type="button" className="dash-see-all neuro-focus-ring" onClick={() => onNavigate('ideas')}>
-              Alle anzeigen →
-            </button>
-          </div>
-          <div className="dash-ideas-list">
-            {loading ? (
-              <SkeletonLoader type="card" count={4} />
-            ) : recentIdeas.length === 0 ? (
-              <div className="dash-empty">
-                <span aria-hidden="true">💡</span>
-                <p>Noch keine Gedanken im Bereich <strong>{contextInfo.label}</strong>.</p>
-                <button
-                  type="button"
-                  className="dash-empty-cta neuro-focus-ring"
-                  onClick={() => onNavigate('ideas')}
-                >
-                  Ersten Gedanken erfassen
-                </button>
-              </div>
-            ) : (
-              recentIdeas.map((idea) => (
-                <button
-                  key={idea.id}
-                  type="button"
-                  className="dash-idea-card neuro-focus-ring"
-                  onClick={() => onNavigate('ideas')}
-                >
-                  <span className="dash-idea-type" aria-hidden="true">
-                    {TYPE_EMOJIS[idea.type] || '📝'}
-                  </span>
-                  <div className="dash-idea-content">
-                    <span className="dash-idea-title">{idea.title}</span>
-                    <span className="dash-idea-time">{formatTime(idea.created_at)}</span>
-                  </div>
-                  {idea.priority === 'high' && (
-                    <span className="dash-idea-priority" aria-label="Hohe Priorität">🔥</span>
-                  )}
-                </button>
-              ))
-            )}
+        {/* Quick Nav */}
+        <div className="bento-card bento-quicknav">
+          <h3 className="bento-section-title">Schnellzugriff</h3>
+          <div className="bento-nav-grid">
+            {QUICK_NAV.map((item) => (
+              <button
+                key={item.page}
+                type="button"
+                className="bento-nav-item"
+                onClick={() => onNavigate(item.page)}
+                style={{ '--nav-accent': item.accent } as React.CSSProperties}
+              >
+                <span className="bento-nav-icon">{item.icon}</span>
+                <span className="bento-nav-label">{item.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* AI Activity */}
-        <div className="dash-column">
-          <div className="dash-column-header">
-            <h3>
-              KI-Aktivität
-              {unreadCount > 0 && (
-                <span className="dash-unread-badge" aria-label={`${unreadCount} ungelesen`}>
-                  {unreadCount}
-                </span>
-              )}
-            </h3>
-            <div className="dash-column-actions">
-              {unreadCount > 0 && (
+        {/* Proactive Digest */}
+        <div className="bento-card bento-digest">
+          <ProactiveDigest context={context} onNavigate={onNavigate} />
+        </div>
+
+        {/* Proactive Briefing */}
+        <div className="bento-card bento-briefing">
+          <ProactiveBriefingWidget context={context} onNavigate={onNavigate} />
+        </div>
+
+        {/* Upcoming Events */}
+        {!loading && upcomingEvents.length > 0 && (
+          <section className="bento-card bento-events">
+            <div className="bento-card-header">
+              <h3>📅 Termine</h3>
+              <button type="button" className="bento-link" onClick={() => onNavigate('calendar')}>
+                Alle →
+              </button>
+            </div>
+            <div className="bento-events-list">
+              {upcomingEvents.map((evt) => {
+                const startDate = new Date(evt.start_time);
+                const timeStr = startDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                const dayStr = startDate.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+                return (
+                  <button
+                    key={evt.id}
+                    type="button"
+                    className="bento-event-row"
+                    onClick={() => onNavigate('calendar')}
+                  >
+                    <span className="bento-event-icon">{EVENT_ICONS[evt.event_type] || '📅'}</span>
+                    <div className="bento-event-info">
+                      <span className="bento-event-title">{evt.title}</span>
+                      <span className="bento-event-time">{dayStr}, {timeStr}</span>
+                    </div>
+                    {evt.ai_generated && <span className="bento-ai-tag">KI</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Recent Ideas */}
+        <section className="bento-card bento-recent">
+          <div className="bento-card-header">
+            <h3>Letzte Gedanken</h3>
+            <button type="button" className="bento-link" onClick={() => onNavigate('ideas')}>
+              Alle →
+            </button>
+          </div>
+          {loading ? (
+            <SkeletonLoader type="card" count={3} />
+          ) : recentIdeas.length === 0 ? (
+            <div className="bento-empty">
+              <span>💡</span>
+              <p>Noch keine Gedanken in <strong>{contextInfo.label}</strong>.</p>
+              <button type="button" className="bento-empty-cta" onClick={() => onNavigate('ideas')}>
+                Ersten Gedanken erfassen
+              </button>
+            </div>
+          ) : (
+            <div className="bento-ideas-list">
+              {recentIdeas.map((idea) => (
                 <button
+                  key={idea.id}
                   type="button"
-                  className="dash-mark-read-btn neuro-focus-ring"
-                  onClick={handleMarkAllRead}
-                  aria-label="Alle als gelesen markieren"
+                  className="bento-idea-row"
+                  onClick={() => onNavigate('ideas')}
                 >
-                  Alle gelesen
+                  <span className="bento-idea-type">{TYPE_EMOJIS[idea.type] || '📝'}</span>
+                  <div className="bento-idea-info">
+                    <span className="bento-idea-title">{idea.title}</span>
+                    <span className="bento-idea-time">{formatTime(idea.created_at)}</span>
+                  </div>
+                  {idea.priority === 'high' && <span className="bento-idea-hot">🔥</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* AI Activity */}
+        <section className="bento-card bento-activity">
+          <div className="bento-card-header">
+            <h3>
+              KI-Aktivitaet
+              {unreadCount > 0 && <span className="bento-badge">{unreadCount}</span>}
+            </h3>
+            <div className="bento-card-actions">
+              {unreadCount > 0 && (
+                <button type="button" className="bento-link-muted" onClick={handleMarkAllRead}>
+                  Gelesen
                 </button>
               )}
-              <button type="button" className="dash-see-all neuro-focus-ring" onClick={() => onNavigate('insights')}>
+              <button type="button" className="bento-link" onClick={() => onNavigate('insights')}>
                 Insights →
               </button>
             </div>
           </div>
-          <div className="dash-activity-list">
-            {loading ? (
-              <SkeletonLoader type="card" count={4} />
-            ) : activity.length === 0 ? (
-              <div className="dash-empty">
-                <span aria-hidden="true">🧠</span>
-                <p>Noch keine KI-Aktivität. Starte einen Chat oder erfasse Gedanken, damit die KI für dich arbeiten kann.</p>
-              </div>
-            ) : (
-              activity.map((item) => {
-                const isClickable = !!item.ideaId;
-                const Wrapper = isClickable ? 'button' : 'div';
-                return (
-                  <Wrapper
-                    key={item.id}
-                    className={`dash-activity-item ${!item.isRead ? 'unread' : ''} ${isClickable ? 'clickable' : ''}`}
-                    {...(isClickable && {
-                      type: 'button' as const,
-                      onClick: () => onNavigate('ideas'),
-                    })}
-                  >
-                    <span className="dash-activity-icon" aria-hidden="true">
-                      {ACTIVITY_ICONS[item.activityType] || '🔹'}
-                    </span>
-                    <div className="dash-activity-content">
-                      <span className="dash-activity-message">{item.message}</span>
-                      <span className="dash-activity-time">{formatTime(item.createdAt)}</span>
-                    </div>
-                    {!item.isRead && <span className="dash-activity-dot" aria-hidden="true" />}
-                  </Wrapper>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </section>
+          {loading ? (
+            <SkeletonLoader type="card" count={3} />
+          ) : activity.length === 0 ? (
+            <div className="bento-empty">
+              <span>🧠</span>
+              <p>Starte einen Chat oder erfasse Gedanken.</p>
+            </div>
+          ) : (
+            <div className="bento-activity-list">
+              {activity.map((item) => (
+                <div
+                  key={item.id}
+                  className={`bento-activity-row ${!item.isRead ? 'unread' : ''}`}
+                  {...(item.ideaId ? {
+                    role: 'button',
+                    tabIndex: 0,
+                    onClick: () => onNavigate('ideas'),
+                    onKeyDown: (e: React.KeyboardEvent) => e.key === 'Enter' && onNavigate('ideas'),
+                  } : {})}
+                >
+                  <span className="bento-activity-icon">{ACTIVITY_ICONS[item.activityType] || '🔹'}</span>
+                  <div className="bento-activity-info">
+                    <span className="bento-activity-msg">{item.message}</span>
+                    <span className="bento-activity-time">{formatTime(item.createdAt)}</span>
+                  </div>
+                  {!item.isRead && <span className="bento-unread-dot" />}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+      </div>
     </div>
   );
 };

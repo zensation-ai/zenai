@@ -444,7 +444,7 @@ export function useEmailData(context: AIContext) {
     }
   }, []);
 
-  // ── Cleanup ───────────────────────────────────────────────
+  // ── Cleanup: abort pending requests on unmount AND context change ──
 
   useEffect(() => {
     return () => {
@@ -452,7 +452,7 @@ export function useEmailData(context: AIContext) {
       if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     };
-  }, []);
+  }, [context]);
 
   return {
     // State

@@ -174,6 +174,8 @@ export async function streamToSSE(
     messageCount: messages.length,
   });
 
+  let streamTimeout: ReturnType<typeof setTimeout> | undefined;
+
   try {
     // Build request parameters
     const params: Record<string, unknown> = {
@@ -228,6 +230,18 @@ export async function streamToSSE(
     let responseContent = '';
     let compactionDetected = false;
 
+    // Safety timeout: abort stream if Claude API hangs (90 seconds)
+    streamTimeout = setTimeout(() => {
+      logger.warn('Stream timeout reached (90s), aborting');
+      stream.abort();
+    }, 90000);
+
+    // Handle stream-level errors (connection lost, API errors)
+    stream.on('error', (err: Error) => {
+      logger.error('Stream error event', err);
+      clearTimeout(streamTimeout);
+    });
+
     // Handle text content deltas
     stream.on('text', (text: string) => {
       if (!isInContent) {
@@ -264,6 +278,7 @@ export async function streamToSSE(
 
     // Wait for stream completion
     const finalMessage = await stream.finalMessage();
+    clearTimeout(streamTimeout);
 
     // Check if compaction occurred in the response
     if (hasCompactionBlock(finalMessage.content)) {
@@ -310,6 +325,7 @@ export async function streamToSSE(
       compactionOccurred: compactionDetected,
     });
   } catch (error) {
+    clearTimeout(streamTimeout);
     const errorMessage = error instanceof Error ? error.message : 'Unknown streaming error';
     logger.error('SSE stream failed', error instanceof Error ? error : undefined);
 

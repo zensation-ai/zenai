@@ -1,25 +1,16 @@
 /**
  * BusinessDashboard - AI Business Manager
  *
- * Tab-basiertes Dashboard für Business Intelligence:
- * - Overview: KPI-Cards mit Sparklines
- * - Revenue: Stripe MRR, Subscriptions, Payments
- * - Traffic: GA4 Users, Sessions, Sources
- * - SEO: GSC Impressions, Clicks, Rankings
- * - Health: Uptime, Performance, Web Vitals
- * - Reports: AI-generierte Berichte
- * - Connectors: Datenquellen verwalten
+ * Tab-basiertes Dashboard für Business Intelligence.
+ * Uses HubPage for unified layout.
  */
 
 import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
-import { PageHeader } from './PageHeader';
-import { RisingBubbles } from './RisingBubbles';
+import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import type { BusinessTab } from '../types/business';
-import '../neurodesign.css';
-import './shared-tabs.css';
 import './BusinessDashboard.css';
 
 const BusinessOverview = lazy(() => import('./business/BusinessOverview').then(m => ({ default: m.BusinessOverview })));
@@ -37,7 +28,7 @@ interface BusinessDashboardProps {
   initialTab?: BusinessTab;
 }
 
-const TABS: { id: BusinessTab; label: string; icon: string; description: string }[] = [
+const TABS: readonly TabDef<BusinessTab>[] = [
   { id: 'overview', label: 'Übersicht', icon: '📊', description: 'KPI-Dashboard' },
   { id: 'revenue', label: 'Revenue', icon: '💰', description: 'Umsatz und Subscriptions' },
   { id: 'traffic', label: 'Traffic', icon: '🌐', description: 'Besucher und Analytics' },
@@ -122,44 +113,19 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
   };
 
   return (
-    <div className="hub-page" data-context={context}>
-      <RisingBubbles variant="subtle" />
-      <PageHeader
-        title="Business Manager"
-        icon="💼"
-        subtitle="AI-gesteuerte Geschäftsanalysen"
-        onBack={onBack}
-        backLabel="Zurück"
-      />
-
-      <nav className="hub-tabs" role="tablist" aria-label="Business Navigation">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            id={`biz-tab-${tab.id}`}
-            type="button"
-            role="tab"
-            className={`hub-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => handleTabChange(tab.id)}
-            aria-selected={activeTab === tab.id}
-            aria-controls={`biz-tabpanel-${tab.id}`}
-            aria-label={`${tab.label}: ${tab.description}`}
-          >
-            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="hub-tab-label">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      <main
-        id={`biz-tabpanel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`biz-tab-${activeTab}`}
-        className="business-content"
-      >
-        {renderTabContent()}
-      </main>
-    </div>
+    <HubPage
+      title="Business Manager"
+      icon="💼"
+      subtitle="AI-gesteuerte Geschäftsanalysen"
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      onBack={onBack}
+      context={context}
+      ariaLabel="Business Navigation"
+    >
+      {renderTabContent()}
+    </HubPage>
   );
 };
 

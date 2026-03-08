@@ -2,7 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 
+// Use relative paths when building for Electron (file:// protocol)
+const isElectronBuild = process.env.ELECTRON_BUILD === 'true';
+
 export default defineConfig({
+  base: isElectronBuild ? './' : '/',
   plugins: [
     react(),
     // Bundle analyzer: generates stats.html after build

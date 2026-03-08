@@ -13,11 +13,12 @@
 
 import { memo, Suspense, lazy, useCallback } from 'react';
 import { AIContext } from './ContextSwitcher';
-import { PageHeader } from './PageHeader';
+import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useSettings } from '../hooks/useSettings';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import { FEATURE_HINTS, STORAGE_KEY_PREFIX } from '../constants/featureHints';
+import type { Page } from '../types';
 import '../neurodesign.css';
 import './SettingsDashboard.css';
 
@@ -32,11 +33,11 @@ type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'i
 interface SettingsDashboardProps {
   context: AIContext;
   onBack: () => void;
-  onNavigate: (page: string) => void;
+  onNavigate: (page: Page) => void;
   initialTab?: SettingsTab;
 }
 
-const TABS: { id: SettingsTab; label: string; icon: string; description: string }[] = [
+const TABS: readonly TabDef<SettingsTab>[] = [
   { id: 'profile', label: 'Profil', icon: '👤', description: 'Benutzerprofil und Business-Daten' },
   { id: 'general', label: 'Allgemein', icon: '⚙️', description: 'Erscheinungsbild und Verhalten' },
   { id: 'ai', label: 'KI', icon: '🧠', description: 'KI-Modell und Antwort-Stil' },
@@ -299,38 +300,20 @@ export const SettingsDashboard = memo(({
   };
 
   return (
-    <div className="settings-dashboard" data-context={context}>
-      <PageHeader
-        title="Einstellungen"
-        icon="⚙️"
-        subtitle="App-Konfiguration und Datenschutz"
-        onBack={onBack}
-        backLabel="Zurück"
-        onNavigate={(page) => onNavigate(page)}
-      />
-
-      <nav className="settings-tabs" role="tablist" aria-label="Einstellungs-Kategorien">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            className={`settings-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => handleTabChange(tab.id)}
-            aria-selected={activeTab === tab.id}
-            aria-controls={`tabpanel-${tab.id}`}
-            title={tab.description}
-          >
-            <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="tab-label">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      <main className="settings-content" id={`tabpanel-${activeTab}`} role="tabpanel">
-        {renderTabContent()}
-      </main>
-    </div>
+    <HubPage
+      title="Einstellungen"
+      icon="⚙️"
+      subtitle="App-Konfiguration und Datenschutz"
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      onBack={onBack}
+      context={context}
+      onNavigate={onNavigate}
+      ariaLabel="Einstellungs-Kategorien"
+    >
+      {renderTabContent()}
+    </HubPage>
   );
 });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { showToast } from '../Toast';
 import { useConfirm } from '../ConfirmDialog';
@@ -6,7 +6,8 @@ import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../../utils/aiPerson
 import '../../neurodesign.css';
 import '../LearningDashboard.css';
 import { logError } from '../../utils/errors';
-import { RisingBubbles } from '../RisingBubbles';
+import { HubPage, type TabDef } from '../HubPage';
+import { SkeletonLoader } from '../SkeletonLoader';
 import { LearningDashboardProps, DashboardData, ProfileData } from './types';
 import type { LearningTab } from './types';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
@@ -18,6 +19,15 @@ import { FeedbackTab } from './FeedbackTab';
 import { ProfileTab } from './ProfileTab';
 
 const VALID_TABS: readonly LearningTab[] = ['overview', 'focus', 'suggestions', 'research', 'feedback', 'profile'];
+
+const BASE_TABS: readonly TabDef<LearningTab>[] = [
+  { id: 'overview', label: 'Übersicht', icon: '📊' },
+  { id: 'focus', label: 'Fokus-Themen', icon: '🎯' },
+  { id: 'suggestions', label: 'Vorschläge', icon: '💡' },
+  { id: 'research', label: 'Recherchen', icon: '🔬' },
+  { id: 'feedback', label: 'Feedback', icon: '💬' },
+  { id: 'profile', label: 'Profil', icon: '👤' },
+];
 
 export function LearningDashboard({ context, onBack, initialTab = 'overview' }: LearningDashboardProps) {
   const greeting = getTimeBasedGreeting();
@@ -210,106 +220,48 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
     }
   };
 
-  if (loading) {
-    return (
-      <div className="learning-dashboard neuro-page-enter">
-        <div className="learning-header liquid-glass-nav">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
-          <h1>KI-Lernzentrum</h1>
-        </div>
+  // Tabs with dynamic badges from data
+  const tabs = useMemo((): readonly TabDef<LearningTab>[] => {
+    if (!data) return BASE_TABS;
+    return BASE_TABS.map(tab => {
+      switch (tab.id) {
+        case 'focus': return { ...tab, badge: data.focus.stats.active_focus_areas || undefined };
+        case 'suggestions': return { ...tab, badge: data.suggestions.active.length || undefined };
+        case 'research': return { ...tab, badge: data.research.pending.length || undefined };
+        default: return tab;
+      }
+    });
+  }, [data]);
+
+  const headerActions = (
+    <button
+      type="button"
+      className="trigger-learning-button neuro-button"
+      onClick={handleTriggerLearning}
+      aria-label="KI-Lernprozess starten"
+    >
+      Lernen starten
+    </button>
+  );
+
+  const renderContent = () => {
+    if (loading) {
+      return (
         <div className="loading-state neuro-loading-contextual">
-          <div className="neuro-loading-spinner" />
-          <p className="neuro-loading-message">Lade Dashboard...</p>
+          <SkeletonLoader type="card" count={3} />
           <p className="neuro-loading-submessage">{EMPTY_STATE_MESSAGES.learning.description}</p>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (!data) {
-    return (
-      <div className="learning-dashboard">
-        <div className="learning-header">
-          <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
-          <h1>KI-Lernzentrum</h1>
-        </div>
+    if (!data) {
+      return (
         <div className="error-state neuro-error-friendly">Dashboard konnte nicht geladen werden</div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return (
-    <div className="learning-dashboard neuro-page-enter">
-      <RisingBubbles variant="subtle" />
-      <div className="learning-header liquid-glass-nav">
-        <button type="button" className="back-button neuro-hover-lift" onClick={onBack} aria-label="Zurück zur vorherigen Seite">← Zurück</button>
-        <div className="header-greeting">
-          <h1>{greeting.emoji} KI-Lernzentrum</h1>
-          <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
-        </div>
-        <button type="button" className="trigger-learning-button neuro-button" onClick={handleTriggerLearning} aria-label="KI-Lernprozess starten">
-          Lernen starten
-        </button>
-      </div>
-
-      <div className="tab-navigation">
-        <button
-          type="button"
-          className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => handleTabChange('overview')}
-          aria-label="Ubersicht anzeigen"
-          aria-current={activeTab === 'overview' ? 'page' : undefined}
-        >
-          Übersicht
-        </button>
-        <button
-          type="button"
-          className={`tab-button ${activeTab === 'focus' ? 'active' : ''}`}
-          onClick={() => handleTabChange('focus')}
-          aria-label="Fokus-Themen anzeigen"
-          aria-current={activeTab === 'focus' ? 'page' : undefined}
-        >
-          Fokus-Themen ({data.focus.stats.active_focus_areas})
-        </button>
-        <button
-          type="button"
-          className={`tab-button ${activeTab === 'suggestions' ? 'active' : ''}`}
-          onClick={() => handleTabChange('suggestions')}
-          aria-label="Vorschläge anzeigen"
-          aria-current={activeTab === 'suggestions' ? 'page' : undefined}
-        >
-          Vorschläge ({data.suggestions.active.length})
-        </button>
-        <button
-          type="button"
-          className={`tab-button ${activeTab === 'research' ? 'active' : ''}`}
-          onClick={() => handleTabChange('research')}
-          aria-label="Recherchen anzeigen"
-          aria-current={activeTab === 'research' ? 'page' : undefined}
-        >
-          Recherchen ({data.research.pending.length})
-        </button>
-        <button
-          type="button"
-          className={`tab-button ${activeTab === 'feedback' ? 'active' : ''}`}
-          onClick={() => handleTabChange('feedback')}
-          aria-label="Feedback anzeigen"
-          aria-current={activeTab === 'feedback' ? 'page' : undefined}
-        >
-          Feedback
-        </button>
-        <button
-          type="button"
-          className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => handleTabChange('profile')}
-          aria-label="Profil anzeigen"
-          aria-current={activeTab === 'profile' ? 'page' : undefined}
-        >
-          Profil
-        </button>
-      </div>
-
-      <div className="tab-content">
+    return (
+      <>
         {activeTab === 'overview' && (
           <OverviewTab
             data={data}
@@ -367,8 +319,24 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
             onSetProfileData={setProfileData}
           />
         )}
-      </div>
-    </div>
+      </>
+    );
+  };
+
+  return (
+    <HubPage
+      title={`${greeting.emoji} KI-Lernzentrum`}
+      icon="📚"
+      subtitle={greeting.subtext}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      onBack={onBack}
+      headerActions={headerActions}
+      ariaLabel="KI-Lernzentrum Navigation"
+    >
+      {renderContent()}
+    </HubPage>
   );
 }
 

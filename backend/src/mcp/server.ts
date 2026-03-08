@@ -39,6 +39,32 @@ import { getProductivityDashboard } from '../services/productivity-analytics';
 import { getDecisionLogs, generateComplianceReport } from '../services/compliance-logger';
 import { findDuplicates } from '../services/duplicate-detection';
 
+// Phase 7: New domain services
+import {
+  getContacts,
+  getContact,
+  getFollowUpSuggestions as getContactFollowUps,
+  getContactStats,
+  getInteractions as getContactInteractions,
+} from '../services/contacts';
+import {
+  getTransactions,
+  getBudgets,
+  getOverview as getFinanceOverview,
+  getCategoryBreakdown,
+} from '../services/finance';
+import {
+  getCaptures as getScreenCaptures,
+  getStats as getScreenMemoryStats,
+} from '../services/screen-memory';
+import {
+  generateMorningBriefing,
+  getFollowUpSuggestions as getProactiveFollowUps,
+  getSmartSchedule,
+  getWorkflowPatterns,
+  getBriefings,
+} from '../services/proactive/proactive-engine';
+
 // ===========================================
 // Types
 // ===========================================
@@ -484,6 +510,190 @@ const TOOLS: MCPTool[] = [
       },
     },
   },
+
+  // === Phase 7: Domain Tools ===
+
+  // --- Contacts ---
+  {
+    name: 'search_contacts',
+    description: 'Durchsucht Kontakte nach Name, E-Mail, Organisation oder Tags. Findet Personen im CRM.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Suchbegriff (Name, Email, Organisation)' },
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        relationship_type: { type: 'string', description: 'Filter: colleague, friend, family, client, vendor' },
+        limit: { type: 'number', description: 'Max Ergebnisse (default: 20)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'get_contact_timeline',
+    description: 'Zeigt die Interaktions-Timeline eines Kontakts: E-Mails, Meetings, Aufgaben, Anrufe.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        contact_id: { type: 'string', description: 'UUID des Kontakts' },
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        limit: { type: 'number', description: 'Max Interaktionen (default: 20)' },
+      },
+      required: ['contact_id'],
+    },
+  },
+  {
+    name: 'contact_follow_ups',
+    description: 'Zeigt Kontakte an, mit denen seit längerem keine Interaktion stattfand. Empfiehlt Follow-ups.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        days_threshold: { type: 'number', description: 'Tage ohne Kontakt (default: 30)' },
+        limit: { type: 'number', description: 'Max Ergebnisse (default: 10)' },
+      },
+    },
+  },
+  {
+    name: 'contact_stats',
+    description: 'Übersicht über Kontakte: Gesamtzahl, Organisationen, Beziehungstypen, Favoriten.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+      },
+    },
+  },
+
+  // --- Finance ---
+  {
+    name: 'financial_overview',
+    description: 'Finanz-Übersicht: Einnahmen, Ausgaben, Kontostand, Trends über die letzten Monate.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        months: { type: 'number', description: 'Zeitraum in Monaten (default: 6)' },
+      },
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        overview: { type: 'object', description: 'Finanz-Übersicht mit Einnahmen/Ausgaben/Trends' },
+        context: { type: 'string' },
+      },
+      required: ['overview'],
+    },
+  },
+  {
+    name: 'get_transactions',
+    description: 'Listet Finanztransaktionen mit Filtern nach Kategorie, Typ, Zeitraum und Betrag.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        category: { type: 'string', description: 'Kategorie-Filter (z.B. Lebensmittel, Transport)' },
+        transaction_type: { type: 'string', enum: ['income', 'expense', 'transfer'], description: 'Typ-Filter' },
+        date_from: { type: 'string', description: 'Startdatum (YYYY-MM-DD)' },
+        date_to: { type: 'string', description: 'Enddatum (YYYY-MM-DD)' },
+        limit: { type: 'number', description: 'Max Ergebnisse (default: 50)' },
+      },
+    },
+  },
+  {
+    name: 'budget_status',
+    description: 'Zeigt den aktuellen Status aller Budgets: Limit, verbraucht, verbleibend, Prozent.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        active_only: { type: 'boolean', description: 'Nur aktive Budgets (default: true)' },
+      },
+    },
+  },
+  {
+    name: 'expense_categories',
+    description: 'Aufschlüsselung der Ausgaben nach Kategorien mit Summen und Prozentanteilen.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        date_from: { type: 'string', description: 'Startdatum (YYYY-MM-DD)' },
+        date_to: { type: 'string', description: 'Enddatum (YYYY-MM-DD)' },
+      },
+    },
+  },
+
+  // --- Screen Memory ---
+  {
+    name: 'search_screen_memory',
+    description: 'Durchsucht die Screen-Memory-Aufzeichnungen nach OCR-Text, App-Name oder Fenstertitel.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Suchbegriff (im OCR-Text, Titel, App)' },
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        app_name: { type: 'string', description: 'Filter nach App-Name' },
+        date_from: { type: 'string', description: 'Startdatum (YYYY-MM-DD)' },
+        date_to: { type: 'string', description: 'Enddatum (YYYY-MM-DD)' },
+        limit: { type: 'number', description: 'Max Ergebnisse (default: 20)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'screen_memory_stats',
+    description: 'Statistiken zur Bildschirmaufzeichnung: Gesamtaufnahmen, Apps, Nutzungsdauer.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+      },
+    },
+  },
+
+  // --- Proactive Intelligence ---
+  {
+    name: 'morning_briefing',
+    description: 'Erstellt ein KI-generiertes Morgen-Briefing: Meetings, Aufgaben, E-Mails, Follow-ups, Tagesplanung.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+      },
+    },
+  },
+  {
+    name: 'smart_schedule',
+    description: 'KI-optimierter Tagesplan: Analysiert Meetings, Aufgaben und schlägt eine optimale Reihenfolge vor.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+      },
+    },
+  },
+  {
+    name: 'proactive_follow_ups',
+    description: 'Zeigt proaktive Follow-up-Vorschläge: Kontakte die Aufmerksamkeit brauchen, basierend auf Interaktionsmuster.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        days: { type: 'number', description: 'Zeitfenster in Tagen (default: 14)' },
+      },
+    },
+  },
+  {
+    name: 'workflow_patterns',
+    description: 'Zeigt erkannte Arbeitsablauf-Muster und Automatisierungsvorschläge.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        confirmed_only: { type: 'boolean', description: 'Nur bestätigte Patterns (default: false)' },
+      },
+    },
+  },
 ];
 
 // ===========================================
@@ -631,6 +841,50 @@ export class KIABMCPServer {
 
       case 'compliance_check':
         result = await this.handleComplianceCheck(args);
+        break;
+
+      // Phase 7: Domain Tools
+      case 'search_contacts':
+        result = await this.handleSearchContacts(args);
+        break;
+      case 'get_contact_timeline':
+        result = await this.handleGetContactTimeline(args);
+        break;
+      case 'contact_follow_ups':
+        result = await this.handleContactFollowUps(args);
+        break;
+      case 'contact_stats':
+        result = await this.handleContactStats(args);
+        break;
+      case 'financial_overview':
+        result = await this.handleFinancialOverview(args);
+        break;
+      case 'get_transactions':
+        result = await this.handleGetTransactions(args);
+        break;
+      case 'budget_status':
+        result = await this.handleBudgetStatus(args);
+        break;
+      case 'expense_categories':
+        result = await this.handleExpenseCategories(args);
+        break;
+      case 'search_screen_memory':
+        result = await this.handleSearchScreenMemory(args);
+        break;
+      case 'screen_memory_stats':
+        result = await this.handleScreenMemoryStats(args);
+        break;
+      case 'morning_briefing':
+        result = await this.handleMorningBriefing(args);
+        break;
+      case 'smart_schedule':
+        result = await this.handleSmartSchedule(args);
+        break;
+      case 'proactive_follow_ups':
+        result = await this.handleProactiveFollowUps(args);
+        break;
+      case 'workflow_patterns':
+        result = await this.handleWorkflowPatterns(args);
         break;
 
       default:
@@ -1110,6 +1364,219 @@ Regeln:
   }
 
   // ===========================================
+  // Phase 7: Domain Tool Handlers
+  // ===========================================
+
+  private async handleSearchContacts(args: Record<string, unknown>): Promise<unknown> {
+    const query = args.query as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const relationship_type = args.relationship_type as string | undefined;
+    const limit = (args.limit as number | undefined) ?? 20;
+
+    if (!query) throw new Error('Suchbegriff ist erforderlich');
+
+    const result = await getContacts(context, {
+      search: query,
+      relationship_type,
+      limit,
+    });
+
+    return {
+      contacts: result.contacts.map(c => ({
+        id: c.id,
+        display_name: c.display_name,
+        email: c.email,
+        organization_id: c.organization_id,
+        role: c.role,
+        relationship_type: c.relationship_type,
+        last_interaction_at: c.last_interaction_at,
+        interaction_count: c.interaction_count,
+      })),
+      total: result.total,
+      query,
+    };
+  }
+
+  private async handleGetContactTimeline(args: Record<string, unknown>): Promise<unknown> {
+    const contactId = args.contact_id as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const limit = (args.limit as number | undefined) ?? 20;
+
+    if (!contactId) throw new Error('contact_id ist erforderlich');
+
+    const contact = await getContact(context, contactId);
+    if (!contact) throw new Error('Kontakt nicht gefunden');
+
+    const interactions = await getContactInteractions(context, contactId, limit);
+
+    return {
+      contact: {
+        id: contact.id,
+        display_name: contact.display_name,
+        email: contact.email,
+        role: contact.role,
+        ai_summary: contact.ai_summary,
+      },
+      interactions: interactions.interactions,
+      total: interactions.total,
+    };
+  }
+
+  private async handleContactFollowUps(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const daysThreshold = (args.days_threshold as number | undefined) ?? 30;
+    const limit = (args.limit as number | undefined) ?? 10;
+
+    const contacts = await getContactFollowUps(context, daysThreshold, limit);
+
+    return {
+      follow_ups: contacts,
+      days_threshold: daysThreshold,
+      count: contacts.length,
+    };
+  }
+
+  private async handleContactStats(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    return await getContactStats(context);
+  }
+
+  private async handleFinancialOverview(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const months = (args.months as number | undefined) ?? 6;
+
+    const overview = await getFinanceOverview(context, months);
+    return { overview, context };
+  }
+
+  private async handleGetTransactions(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+
+    const result = await getTransactions(context, {
+      category: args.category as string | undefined,
+      transaction_type: args.transaction_type as 'income' | 'expense' | 'transfer' | undefined,
+      date_from: args.date_from as string | undefined,
+      date_to: args.date_to as string | undefined,
+      limit: (args.limit as number | undefined) ?? 50,
+    });
+
+    return {
+      transactions: result.transactions.map(t => ({
+        id: t.id,
+        amount: t.amount,
+        currency: t.currency,
+        transaction_type: t.transaction_type,
+        category: t.category,
+        payee: t.payee,
+        description: t.description,
+        transaction_date: t.transaction_date,
+        is_recurring: t.is_recurring,
+      })),
+      total: result.total,
+    };
+  }
+
+  private async handleBudgetStatus(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const activeOnly = (args.active_only as boolean | undefined) ?? true;
+
+    const budgets = await getBudgets(context, activeOnly);
+
+    return {
+      budgets: budgets.map(b => ({
+        id: b.id,
+        name: b.name,
+        category: b.category,
+        amount_limit: b.amount_limit,
+        current_spent: b.current_spent,
+        remaining: Number(b.amount_limit) - Number(b.current_spent),
+        percentage: Number(b.amount_limit) > 0
+          ? Math.round((Number(b.current_spent) / Number(b.amount_limit)) * 100)
+          : 0,
+        period: b.period,
+        is_active: b.is_active,
+      })),
+      count: budgets.length,
+    };
+  }
+
+  private async handleExpenseCategories(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const dateFrom = args.date_from as string | undefined;
+    const dateTo = args.date_to as string | undefined;
+
+    const categories = await getCategoryBreakdown(context, dateFrom, dateTo);
+    return { categories, context };
+  }
+
+  private async handleSearchScreenMemory(args: Record<string, unknown>): Promise<unknown> {
+    const query = args.query as string | undefined;
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+
+    if (!query) throw new Error('Suchbegriff ist erforderlich');
+
+    const result = await getScreenCaptures(context, {
+      search: query,
+      app_name: args.app_name as string | undefined,
+      date_from: args.date_from as string | undefined,
+      date_to: args.date_to as string | undefined,
+      limit: (args.limit as number | undefined) ?? 20,
+    });
+
+    return {
+      captures: result.captures.map(c => ({
+        id: c.id,
+        timestamp: c.timestamp,
+        app_name: c.app_name,
+        window_title: c.window_title,
+        url: c.url,
+        ocr_text: c.ocr_text?.substring(0, 200),
+        duration_seconds: c.duration_seconds,
+      })),
+      total: result.total,
+      query,
+    };
+  }
+
+  private async handleScreenMemoryStats(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    return await getScreenMemoryStats(context);
+  }
+
+  private async handleMorningBriefing(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+
+    const briefing = await generateMorningBriefing(context);
+    return {
+      briefing_id: briefing.id,
+      type: briefing.briefing_type,
+      content: briefing.content,
+      generated_at: briefing.generated_at,
+    };
+  }
+
+  private async handleSmartSchedule(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    return await getSmartSchedule(context);
+  }
+
+  private async handleProactiveFollowUps(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const days = (args.days as number | undefined) ?? 14;
+
+    const followUps = await getProactiveFollowUps(context, days);
+    return { follow_ups: followUps, days, count: followUps.length };
+  }
+
+  private async handleWorkflowPatterns(args: Record<string, unknown>): Promise<unknown> {
+    const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
+    const confirmedOnly = (args.confirmed_only as boolean | undefined) ?? false;
+
+    const patterns = await getWorkflowPatterns(context, confirmedOnly);
+    return { patterns, count: patterns.length };
+  }
+
+  // ===========================================
   // Original Tool Handlers (continued)
   // ===========================================
 
@@ -1181,6 +1648,25 @@ Regeln:
         description: 'Übersicht und Statistiken',
         mimeType: 'application/json',
       },
+      // Phase 7: New domain resources
+      {
+        uri: 'zenai://contacts',
+        name: 'Kontakte',
+        description: 'Liste aller Kontakte im CRM',
+        mimeType: 'application/json',
+      },
+      {
+        uri: 'zenai://finance',
+        name: 'Finanzen',
+        description: 'Finanz-Übersicht mit Einnahmen und Ausgaben',
+        mimeType: 'application/json',
+      },
+      {
+        uri: 'zenai://briefings',
+        name: 'Proaktive Briefings',
+        description: 'Aktuelle KI-Briefings und Vorschläge',
+        mimeType: 'application/json',
+      },
     ];
 
     // Add individual ideas as resources
@@ -1216,6 +1702,14 @@ Regeln:
       content = { ideas: result.rows };
     } else if (uri === 'zenai://stats') {
       content = await this.handleGetStats({});
+    } else if (uri === 'zenai://contacts') {
+      const result = await getContacts(this.config.defaultContext, { limit: 50 });
+      content = { contacts: result.contacts, total: result.total };
+    } else if (uri === 'zenai://finance') {
+      content = await getFinanceOverview(this.config.defaultContext);
+    } else if (uri === 'zenai://briefings') {
+      const briefingList = await getBriefings(this.config.defaultContext, { limit: 10 });
+      content = { briefings: briefingList };
     } else {
       // Individual idea
       const ideaMatch = uri.match(/zenai:\/\/ideas\/([a-f0-9-]+)/);

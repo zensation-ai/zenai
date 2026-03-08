@@ -1,28 +1,16 @@
 /**
  * InsightsDashboard - Konsolidierte Insights-Ansicht
  *
- * Kombiniert die ehemaligen separaten Seiten:
- * - Dashboard (Übersicht)
- * - Analytics (Statistiken)
- * - Digest (Zusammenfassungen)
- * - Knowledge Graph (Verbindungen)
- *
- * Neurowissenschaftliche Optimierungen:
- * - Tab-basierte Navigation für kognitive Entlastung
- * - Progressive Disclosure der Komplexität
- * - Einheitliches Design für bessere Orientierung
+ * Tabs: Statistiken, Zusammenfassung, Verbindungen
  */
 
 import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
-import { PageHeader } from './PageHeader';
-import { RisingBubbles } from './RisingBubbles';
+import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
-import '../neurodesign.css';
 import './InsightsDashboard.css';
 
-// Lazy-load die Sub-Komponenten für bessere Performance
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
@@ -36,7 +24,7 @@ interface InsightsDashboardProps {
   initialTab?: InsightsTab;
 }
 
-const TABS: { id: InsightsTab; label: string; icon: string; description: string }[] = [
+const TABS: TabDef<InsightsTab>[] = [
   { id: 'analytics', label: 'Statistiken', icon: '📈', description: 'Analysen, Trends und Produktivität' },
   { id: 'digest', label: 'Zusammenfassung', icon: '📊', description: 'Tägliche und wöchentliche Digests' },
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
@@ -61,38 +49,24 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
     basePath: '/insights',
   });
 
-  const handleSelectIdea = (ideaId: string) => {
-    if (onSelectIdea) {
-      onSelectIdea(ideaId);
-    }
-  };
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'analytics':
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content hub-tab-fullwidth">
-              <AnalyticsDashboard
-                context={context}
-                onBack={() => handleTabChange('analytics')}
-              />
+              <AnalyticsDashboard context={context} onBack={() => handleTabChange('analytics')} />
             </div>
           </Suspense>
         );
-
       case 'digest':
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content hub-tab-fullwidth">
-              <DigestDashboard
-                context={context}
-                onBack={() => handleTabChange('analytics')}
-              />
+              <DigestDashboard context={context} onBack={() => handleTabChange('analytics')} />
             </div>
           </Suspense>
         );
-
       case 'connections':
         return (
           <Suspense fallback={<TabLoader />}>
@@ -100,58 +74,29 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
               <KnowledgeGraphPage
                 context={context}
                 onBack={() => handleTabChange('analytics')}
-                onSelectIdea={handleSelectIdea}
+                onSelectIdea={onSelectIdea ? (id: string) => onSelectIdea(id) : undefined}
               />
             </div>
           </Suspense>
         );
-
       default:
         return null;
     }
   };
 
   return (
-    <div className="hub-page" data-context={context}>
-      <RisingBubbles variant="subtle" />
-      <PageHeader
-        title="Insights"
-        icon="📊"
-        subtitle="Deine Gedanken im Überblick"
-        onBack={onBack}
-        backLabel="Zurück"
-      />
-
-      {/* Tab Navigation */}
-      <nav className="hub-tabs" role="tablist" aria-label="Insights Navigation">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            id={`tab-${tab.id}`}
-            type="button"
-            role="tab"
-            className={`hub-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => handleTabChange(tab.id)}
-            aria-selected={activeTab === tab.id}
-            aria-controls={`tabpanel-${tab.id}`}
-            aria-label={`${tab.label}: ${tab.description}`}
-          >
-            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="hub-tab-label">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* Tab Content */}
-      <main
-        id={`tabpanel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-        className="hub-content"
-      >
-        {renderTabContent()}
-      </main>
-    </div>
+    <HubPage
+      title="Insights"
+      icon="📊"
+      subtitle="Deine Gedanken im Überblick"
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      onBack={onBack}
+      context={context}
+    >
+      {renderTabContent()}
+    </HubPage>
   );
 };
 

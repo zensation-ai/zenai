@@ -1,18 +1,14 @@
 /**
- * MyAIPage - Meine KI (Personalisierung + Memory + Sprach-Chat)
+ * MyAIPage - Meine KI
  *
- * Kombiniert PersonalizationChat, MemoryTransparency und VoiceChat
- * in einer Seite mit Tab-Navigation.
+ * Tabs: KI anpassen, KI-Wissen, Sprach-Chat
  */
 
 import React, { Suspense, lazy, memo } from 'react';
 import type { AIContext } from './ContextSwitcher';
-import { PageHeader } from './PageHeader';
-import { RisingBubbles } from './RisingBubbles';
+import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
-import '../neurodesign.css';
-import './shared-tabs.css';
 
 const PersonalizationChat = lazy(() => import('./PersonalizationChat').then(m => ({ default: m.PersonalizationChat })));
 const MemoryTransparency = lazy(() => import('./MemoryTransparency').then(m => ({ default: m.MemoryTransparency })));
@@ -26,7 +22,7 @@ interface MyAIPageProps {
   initialTab?: MyAITab;
 }
 
-const TABS: { id: MyAITab; label: string; icon: string; description: string }[] = [
+const TABS: TabDef<MyAITab>[] = [
   { id: 'personalize', label: 'KI anpassen', icon: '🎨', description: 'Deine KI kennenlernen und trainieren' },
   { id: 'memory', label: 'KI-Wissen', icon: '🧠', description: 'Was deine KI über dich gelernt hat' },
   { id: 'voice-chat', label: 'Sprach-Chat', icon: '🎙️', description: 'Echtzeit-Sprachgespraech mit KI' },
@@ -57,14 +53,10 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content">
-              <PersonalizationChat
-                context={context}
-                embedded
-              />
+              <PersonalizationChat context={context} embedded />
             </div>
           </Suspense>
         );
-
       case 'memory':
         return (
           <Suspense fallback={<TabLoader />}>
@@ -73,7 +65,6 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
             </div>
           </Suspense>
         );
-
       case 'voice-chat':
         return (
           <Suspense fallback={<TabLoader />}>
@@ -87,51 +78,24 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
             </div>
           </Suspense>
         );
-
       default:
         return null;
     }
   };
 
   return (
-    <div className="hub-page" data-context={context}>
-      <RisingBubbles variant="subtle" />
-      <PageHeader
-        title="Meine KI"
-        icon="🤖"
-        subtitle="Personalisierung, KI-Wissen und Sprach-Chat"
-        onBack={onBack}
-        backLabel="Zurück"
-      />
-
-      <nav className="hub-tabs" role="tablist" aria-label="Meine KI Navigation">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            id={`tab-${tab.id}`}
-            type="button"
-            role="tab"
-            className={`hub-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => handleTabChange(tab.id)}
-            aria-selected={activeTab === tab.id}
-            aria-controls={`tabpanel-${tab.id}`}
-            aria-label={`${tab.label}: ${tab.description}`}
-          >
-            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="hub-tab-label">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      <main
-        id={`tabpanel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-        className="hub-content"
-      >
-        {renderTabContent()}
-      </main>
-    </div>
+    <HubPage
+      title="Meine KI"
+      icon="🤖"
+      subtitle="Personalisierung, KI-Wissen und Sprach-Chat"
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      onBack={onBack}
+      context={context}
+    >
+      {renderTabContent()}
+    </HubPage>
   );
 };
 

@@ -1,6 +1,6 @@
 /**
  * Native Platform Utilities
- * Provides access to native device features via Capacitor
+ * Provides access to native device features via Capacitor and Electron
  */
 
 import { Capacitor } from '@capacitor/core';
@@ -9,6 +9,11 @@ import { Keyboard } from '@capacitor/keyboard';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { logError } from './errors';
+
+/**
+ * Check if running inside Electron desktop app
+ */
+export const isElectron = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
 
 /**
  * Check if running on native platform (iOS/Android)
@@ -20,7 +25,8 @@ export const isNative = Capacitor.isNativePlatform();
  */
 export const isIOS = Capacitor.getPlatform() === 'ios';
 export const isAndroid = Capacitor.getPlatform() === 'android';
-export const isWeb = Capacitor.getPlatform() === 'web';
+export const isWeb = !isElectron && Capacitor.getPlatform() === 'web';
+export const isDesktop = isElectron;
 
 /**
  * Haptic Feedback

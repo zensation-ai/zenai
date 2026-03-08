@@ -814,6 +814,18 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
 
+    // Save partial assistant response if we collected any content before failure
+    if (fullResponse.length > 0) {
+      try {
+        await addMessage(id, 'assistant', fullResponse + '\n\n[Antwort unvollstaendig - Verbindung unterbrochen]');
+        logger.info('Saved partial assistant response after stream failure', {
+          sessionId: id, partialLength: fullResponse.length,
+        });
+      } catch (saveErr) {
+        logger.warn('Failed to save partial response', { sessionId: id, error: saveErr });
+      }
+    }
+
     // If headers already sent (SSE started), send error via SSE
     if (res.headersSent) {
       try {

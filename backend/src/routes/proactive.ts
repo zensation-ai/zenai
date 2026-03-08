@@ -28,6 +28,22 @@ import {
 } from '../services/workflow-boundary-detector';
 import { proactiveDigest } from '../services/proactive-digest';
 import { recordLearningEvent } from '../services/evolution-analytics';
+// Phase 6: Proactive Intelligence Engine
+import {
+  generateMorningBriefing,
+  generateMeetingPrep,
+  getBriefings,
+  getBriefing,
+  markBriefingRead,
+  dismissBriefing as dismissBriefingService,
+  getWorkflowPatterns,
+  createWorkflowPattern,
+  confirmWorkflowPattern,
+  dismissWorkflowPattern,
+  getFollowUpSuggestions,
+  getSmartSchedule,
+} from '../services/proactive/proactive-engine';
+import type { BriefingType } from '../services/proactive/proactive-engine';
 
 const router = Router();
 
@@ -464,6 +480,212 @@ router.post('/digest/:id/viewed', apiKeyAuth, requireScope('write'), asyncHandle
     success: true,
     message: 'Digest marked as viewed',
   });
+}));
+
+// ===========================================
+// Phase 6: Proactive Intelligence Engine
+// ===========================================
+
+// --- Briefings ---
+
+/**
+ * POST /api/proactive/briefing/morning
+ * Generate a morning briefing for the given context
+ */
+router.post('/briefing/morning', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.body.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const briefing = await generateMorningBriefing(context);
+  res.json({ success: true, data: briefing });
+}));
+
+/**
+ * POST /api/proactive/briefing/meeting-prep
+ * Generate meeting preparation for a specific event
+ */
+router.post('/briefing/meeting-prep', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.body.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const { event_id } = req.body;
+  if (!event_id) {
+    throw new ValidationError('event_id is required');
+  }
+
+  const prep = await generateMeetingPrep(context, event_id);
+  if (!prep) {
+    res.status(404).json({ success: false, error: 'Event not found' });
+    return;
+  }
+
+  res.json({ success: true, data: prep });
+}));
+
+/**
+ * GET /api/proactive/briefings
+ * List briefings (filter by type, unread_only)
+ */
+router.get('/briefings', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const type = req.query.type as BriefingType | undefined;
+  const unread_only = req.query.unread_only === 'true';
+  const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
+
+  const briefings = await getBriefings(context, { type, unread_only, limit });
+  res.json({ success: true, data: briefings, count: briefings.length });
+}));
+
+/**
+ * GET /api/proactive/briefings/:id
+ * Get a single briefing by ID
+ */
+router.get('/briefings/:id', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const briefing = await getBriefing(context, req.params.id);
+  if (!briefing) {
+    res.status(404).json({ success: false, error: 'Briefing not found' });
+    return;
+  }
+
+  // Auto-mark as read
+  if (!briefing.read_at) {
+    await markBriefingRead(context, req.params.id);
+    briefing.read_at = new Date().toISOString();
+  }
+
+  res.json({ success: true, data: briefing });
+}));
+
+/**
+ * POST /api/proactive/briefings/:id/dismiss
+ * Dismiss a briefing
+ */
+router.post('/briefings/:id/dismiss', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.body.context as string) || (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  await dismissBriefingService(context, req.params.id);
+  res.json({ success: true, message: 'Briefing dismissed' });
+}));
+
+// --- Workflow Patterns ---
+
+/**
+ * GET /api/proactive/patterns
+ * List detected workflow patterns
+ */
+router.get('/patterns', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const confirmedOnly = req.query.confirmed_only === 'true';
+  const patterns = await getWorkflowPatterns(context, confirmedOnly);
+  res.json({ success: true, data: patterns, count: patterns.length });
+}));
+
+/**
+ * POST /api/proactive/patterns
+ * Create a new workflow pattern
+ */
+router.post('/patterns', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.body.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const { pattern_name, trigger_type, trigger_conditions, suggested_actions, confidence } = req.body;
+  if (!pattern_name) {
+    throw new ValidationError('pattern_name is required');
+  }
+
+  const pattern = await createWorkflowPattern(context, {
+    pattern_name,
+    trigger_type,
+    trigger_conditions,
+    suggested_actions,
+    confidence,
+  });
+
+  res.status(201).json({ success: true, data: pattern });
+}));
+
+/**
+ * POST /api/proactive/patterns/:id/confirm
+ * Confirm a workflow pattern (optionally automate)
+ */
+router.post('/patterns/:id/confirm', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.body.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const automate = req.body.automate === true;
+  await confirmWorkflowPattern(context, req.params.id, automate);
+  res.json({ success: true, message: 'Pattern confirmed' });
+}));
+
+/**
+ * DELETE /api/proactive/patterns/:id
+ * Dismiss/delete a workflow pattern
+ */
+router.delete('/patterns/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  await dismissWorkflowPattern(context, req.params.id);
+  res.json({ success: true, message: 'Pattern dismissed' });
+}));
+
+// --- Follow-ups ---
+
+/**
+ * GET /api/proactive/follow-ups
+ * Get follow-up suggestions for contacts not contacted recently
+ */
+router.get('/follow-ups', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const days = toIntBounded(req.query.days as string, 14, 1, 365);
+  const suggestions = await getFollowUpSuggestions(context, days);
+  res.json({ success: true, data: suggestions, count: suggestions.length });
+}));
+
+// --- Smart Schedule ---
+
+/**
+ * GET /api/proactive/schedule
+ * Get smart schedule for today (meetings, tasks, suggestions)
+ */
+router.get('/schedule', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const context = (req.query.context as string) || 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+  }
+
+  const schedule = await getSmartSchedule(context);
+  res.json({ success: true, data: schedule });
 }));
 
 export default router;

@@ -1,0 +1,234 @@
+/* ================================================
+   ProactiveBriefingWidget - Phase 6
+   ================================================ */
+
+.proactive-briefing-widget {
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.proactive-briefing-empty {
+  opacity: 0.8;
+}
+
+.proactive-briefing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.proactive-briefing-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.proactive-briefing-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.proactive-briefing-toggle h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.proactive-briefing-toggle-icon {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #8b949e);
+}
+
+.proactive-briefing-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proactive-generate-btn {
+  background: var(--accent-color, #7c3aed);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.proactive-generate-btn:hover {
+  opacity: 0.9;
+}
+
+.proactive-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.proactive-dismiss-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #8b949e);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.proactive-dismiss-btn:hover {
+  color: var(--text-primary, #e6edf3);
+}
+
+.proactive-briefing-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #8b949e);
+  margin: 0;
+}
+
+/* Sections */
+.proactive-section {
+  margin-bottom: 12px;
+}
+
+.proactive-section:last-child {
+  margin-bottom: 0;
+}
+
+.proactive-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary, #8b949e);
+  margin: 0 0 8px;
+}
+
+.proactive-section-count {
+  background: rgba(139, 148, 158, 0.15);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.proactive-section-high .proactive-section-title {
+  color: var(--danger, #f85149);
+}
+
+/* Items */
+.proactive-section-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.proactive-section-item {
+  margin: 0;
+}
+
+.proactive-item-btn {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary, #e6edf3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.proactive-item-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-color, #30363d);
+}
+
+.proactive-item-btn:disabled {
+  cursor: default;
+}
+
+.proactive-item-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.proactive-item-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.proactive-item-detail {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #8b949e);
+  margin-top: 2px;
+}
+
+/* Suggestions */
+.proactive-suggestion-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.proactive-suggestion {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #8b949e);
+  padding: 6px 10px;
+  background: rgba(124, 58, 237, 0.06);
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+/* Summary */
+.proactive-briefing-summary {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #8b949e);
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #21262d);
+}
+
+/* Light Mode */
+[data-theme="light"] .proactive-briefing-widget {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+[data-theme="light"] .proactive-item-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: #d1d5db;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .proactive-briefing-widget {
+    padding: 12px 16px;
+  }
+}

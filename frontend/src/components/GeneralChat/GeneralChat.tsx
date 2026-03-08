@@ -259,6 +259,11 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         // Store reference for cleanup on unmount
         abortControllerRef.current = streamAbortController;
 
+        // Timeout: abort if no response starts within 30 seconds
+        const streamTimeout = setTimeout(() => {
+          streamAbortController.abort();
+        }, 30000);
+
         try {
           // Build full URL: native fetch doesn't use axios baseURL
           const baseUrl = import.meta.env.VITE_API_URL ?? '';
@@ -279,8 +284,19 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           });
 
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const statusMessages: Record<number, string> = {
+              401: 'Authentifizierung fehlgeschlagen. Bitte Seite neu laden.',
+              403: 'Zugriff verweigert.',
+              429: 'Zu viele Anfragen. Bitte kurz warten.',
+              500: 'Serverfehler. Bitte erneut versuchen.',
+              502: 'Server nicht erreichbar. Bitte spaeter versuchen.',
+              503: 'Server ueberlastet. Bitte spaeter versuchen.',
+            };
+            throw new Error(statusMessages[response.status] || `Serverfehler (${response.status})`);
           }
+
+          // Response received - clear initial timeout
+          clearTimeout(streamTimeout);
 
           const reader = response.body?.getReader();
           const decoder = new TextDecoder();
@@ -288,61 +304,70 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           let buffer = '';
 
           if (reader) {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-              buffer += decoder.decode(value, { stream: true });
+                buffer += decoder.decode(value, { stream: true });
 
-              // Process complete SSE events from buffer
-              const lines = buffer.split('\n');
-              buffer = lines.pop() ?? '';
+                // Process complete SSE events from buffer
+                const lines = buffer.split('\n');
+                buffer = lines.pop() ?? '';
 
-              let currentEventType = '';
-              for (const line of lines) {
-                if (line.startsWith('event: ')) {
-                  // Track event type for the next data line
-                  currentEventType = line.slice(7).trim();
-                  continue;
-                }
-                if (line.startsWith('data: ')) {
-                  try {
-                    const data = JSON.parse(line.slice(6));
-
-                    // Skip non-delta events that contain full content (would duplicate)
-                    if (currentEventType === 'done' || currentEventType === 'compaction_info' || currentEventType === 'thinking_end') {
-                      currentEventType = '';
-                      continue;
-                    }
-
-                    if (data.error) {
-                      throw new Error(data.error);
-                    }
-
-                    // Handle delta events
-                    if (data.content !== undefined) {
-                      accumulatedContent += data.content;
-                      // Throttle DOM updates to animation frame rate (~60fps)
-                      pendingStreamContentRef.current = accumulatedContent;
-                      if (!streamingRafRef.current) {
-                        streamingRafRef.current = requestAnimationFrame(() => {
-                          setStreamingContent(pendingStreamContentRef.current);
-                          streamingRafRef.current = null;
-                        });
-                      }
-                    }
-                    if (data.thinking !== undefined) {
-                      // Accumulate thinking deltas (backend now streams chunks)
-                      setThinkingContent(prev => prev + data.thinking);
-                    }
-                  } catch {
-                    // Skip malformed JSON
+                let currentEventType = '';
+                for (const line of lines) {
+                  if (line.startsWith('event: ')) {
+                    // Track event type for the next data line
+                    currentEventType = line.slice(7).trim();
+                    continue;
                   }
+                  if (line.startsWith('data: ')) {
+                    try {
+                      const data = JSON.parse(line.slice(6));
+
+                      // Skip non-delta events that contain full content (would duplicate)
+                      if (currentEventType === 'done' || currentEventType === 'compaction_info' || currentEventType === 'thinking_end') {
+                        currentEventType = '';
+                        continue;
+                      }
+
+                      if (data.error) {
+                        throw new Error(data.error);
+                      }
+
+                      // Handle delta events
+                      if (data.content !== undefined) {
+                        accumulatedContent += data.content;
+                        // Throttle DOM updates to animation frame rate (~60fps)
+                        pendingStreamContentRef.current = accumulatedContent;
+                        if (!streamingRafRef.current) {
+                          streamingRafRef.current = requestAnimationFrame(() => {
+                            setStreamingContent(pendingStreamContentRef.current);
+                            streamingRafRef.current = null;
+                          });
+                        }
+                      }
+                      if (data.thinking !== undefined) {
+                        // Accumulate thinking deltas (backend now streams chunks)
+                        setThinkingContent(prev => prev + data.thinking);
+                      }
+                    } catch {
+                      // Skip malformed JSON
+                    }
+                    currentEventType = '';
+                  }
+                  // Reset event type after processing data line
                   currentEventType = '';
                 }
-                // Reset event type after processing data line
-                currentEventType = '';
               }
+            } catch (readerErr) {
+              // Reader errors (connection lost, stream broken) - use partial content if available
+              if (readerErr instanceof Error && readerErr.name === 'AbortError') throw readerErr;
+              console.warn('Stream reader error, using partial content:', readerErr);
+            } finally {
+              // Always release the reader lock to prevent resource leaks
+              try { reader.releaseLock(); } catch { /* already released */ }
             }
           }
 

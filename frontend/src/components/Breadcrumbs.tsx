@@ -74,6 +74,15 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
   // Chat
   'chat': [ROOT, { label: 'Chat', page: 'chat', icon: '💬' }],
 
+  // Browser
+  'browser': [ROOT, { label: 'Browser', page: 'browser', icon: '🌐' }],
+
+  // Kontakte
+  'contacts': [ROOT, { label: 'Kontakte', page: 'contacts', icon: '👥' }],
+
+  // Finanzen
+  'finance': [ROOT, { label: 'Finanzen', page: 'finance', icon: '💰' }],
+
   // Ideen: Gedanken
   'ideas': [ROOT, { label: 'Gedanken', page: 'ideas', icon: '💭' }],
   'incubator': [
@@ -182,6 +191,9 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
 
   // KI & Lernen: Meine KI
   'my-ai': [ROOT, { label: 'Meine KI', page: 'my-ai', icon: '🤖' }],
+
+  // KI & Lernen: Screen Memory
+  'screen-memory': [ROOT, { label: 'Screen Memory', page: 'screen-memory', icon: '🧠' }],
   'personalization': [
     ROOT,
     { label: 'Meine KI', page: 'my-ai', icon: '🤖' },

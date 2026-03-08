@@ -43,6 +43,7 @@ export interface ApiStatus {
  * - KI & Lernen: my-ai (Personalisierung + KI-Wissen + Sprach-Chat), learning
  *
  * Chat: chat (eigene Seite + Floating-Bubble)
+ * Browser: browser (eingebetteter Browser mit Tabs)
  * Footer: settings (Profil + Allgemein + KI + Datenschutz + Automationen + Integrationen + Daten), notifications
  * Dashboard: home (Startseite)
  */
@@ -51,22 +52,29 @@ export type Page =
   | 'home'
   // Chat (eigene Seite)
   | 'chat'
+  // Browser (eingebetteter Browser)
+  | 'browser'
   // Ideen
   | 'ideas'
   | 'workshop'
   // Organisieren
+  | 'contacts'
   | 'calendar'
   | 'tasks'
   | 'kanban'
   | 'gantt'
   | 'email'
   | 'documents'
+  // Finanzen
+  | 'finance'
   // Auswerten
   | 'insights'
   | 'business'
   // KI & Lernen
   | 'my-ai'
   | 'learning'
+  // Screen Memory
+  | 'screen-memory'
   // Footer
   | 'notifications'
   | 'settings'

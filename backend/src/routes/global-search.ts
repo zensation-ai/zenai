@@ -13,7 +13,10 @@ import { globalSearch, SearchResultType } from '../services/global-search';
 
 const router = Router();
 
-const VALID_TYPES: SearchResultType[] = ['idea', 'document', 'voice_memo', 'meeting', 'fact', 'chat'];
+const VALID_TYPES: SearchResultType[] = [
+  'idea', 'document', 'voice_memo', 'meeting', 'fact', 'chat',
+  'contact', 'email', 'calendar_event', 'transaction', 'screen_capture',
+];
 
 /**
  * POST /api/search/global

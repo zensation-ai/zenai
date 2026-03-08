@@ -11,7 +11,7 @@ import type { Page } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { ContextSwitcher } from '../ContextSwitcher';
 import { ThemeToggle } from '../ThemeToggle';
-import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, isNavItemActive, getNavItemByPage, type NavItem } from '../../navigation';
+import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
 import { safeLocalStorage } from '../../utils/storage';
 import { BrainLogo } from './BrainLogo';
@@ -197,6 +197,17 @@ export function MobileSidebarDrawer({
             <span className="msd-item-icon">{NAV_CHAT_ITEM.icon}</span>
             <span className="msd-item-label">{NAV_CHAT_ITEM.label}</span>
             {currentPage === 'chat' && <span className="msd-item-check" aria-hidden="true">✓</span>}
+          </button>
+          <button
+            type="button"
+            className={`msd-item msd-browser-item neuro-focus-ring ${currentPage === 'browser' ? 'active' : ''}`}
+            onClick={() => handleNavigate('browser')}
+            aria-current={currentPage === 'browser' ? 'page' : undefined}
+            style={{ '--stagger-delay': `${globalIndex++ * STAGGER_DELAY}ms` } as CSSProperties}
+          >
+            <span className="msd-item-icon">{NAV_BROWSER_ITEM.icon}</span>
+            <span className="msd-item-label">{NAV_BROWSER_ITEM.label}</span>
+            {currentPage === 'browser' && <span className="msd-item-check" aria-hidden="true">✓</span>}
           </button>
         </div>
 

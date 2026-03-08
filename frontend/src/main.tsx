@@ -18,8 +18,13 @@ import { initWebVitals } from './utils/webVitals';
 const ENV_API_KEY = import.meta.env.VITE_API_KEY;
 const ENV_API_URL = import.meta.env.VITE_API_URL;
 
-// Set base URL for production (Railway backend)
-if (ENV_API_URL) {
+// Electron detection (inline check to avoid import order issues)
+const isElectronApp = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
+
+// Set base URL: Electron connects to localhost, web uses Railway backend
+if (isElectronApp) {
+  axios.defaults.baseURL = `http://localhost:${import.meta.env.VITE_BACKEND_PORT || '3000'}`;
+} else if (ENV_API_URL) {
   axios.defaults.baseURL = ENV_API_URL;
 }
 

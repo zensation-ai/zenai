@@ -46,6 +46,10 @@ import './App.css';
 // Lazy-loaded page components
 const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
 const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
+const BrowserPage = lazy(() => import('./components/BrowserPage/BrowserPage').then(m => ({ default: m.BrowserPage })));
+const ContactsPage = lazy(() => import('./components/ContactsPage/ContactsPage').then(m => ({ default: m.ContactsPage })));
+const FinancePage = lazy(() => import('./components/FinancePage/FinancePage').then(m => ({ default: m.FinancePage })));
+const ScreenMemoryPage = lazy(() => import('./components/ScreenMemoryPage/ScreenMemoryPage').then(m => ({ default: m.ScreenMemoryPage })));
 const IdeasPage = lazy(() => import('./components/IdeasPage').then(m => ({ default: m.IdeasPage })));
 const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ default: m.AIWorkshop })));
 const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
@@ -74,6 +78,9 @@ const PAGE_PATHS: Record<Page, string> = {
   // Primary pages (active routes)
   'home': '/',
   'chat': '/chat',
+  'browser': '/browser',
+  'contacts': '/contacts',
+  'finance': '/finance',
   'ideas': '/ideas',
   'workshop': '/workshop',
   'insights': '/insights',
@@ -83,6 +90,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'business': '/business',
   'learning': '/learning',
   'my-ai': '/my-ai',
+  'screen-memory': '/screen-memory',
   'settings': '/settings',
   'notifications': '/notifications',
   // Legacy pages (redirect to new locations)
@@ -118,6 +126,9 @@ const PATH_PAGES: Record<string, Page> = {
   // Primary routes
   '/': 'home',
   '/chat': 'chat',
+  '/browser': 'browser',
+  '/contacts': 'contacts',
+  '/finance': 'finance',
   '/ideas': 'ideas',
   '/workshop': 'workshop',
   '/insights': 'insights',
@@ -127,6 +138,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/business': 'business',
   '/learning': 'learning',
   '/my-ai': 'my-ai',
+  '/screen-memory': 'screen-memory',
   '/settings': 'settings',
   '/notifications': 'notifications',
   // Legacy paths -> redirect to primary pages
@@ -164,12 +176,16 @@ function useUrlNavigation() {
     if (fullPath.startsWith('/workshop/')) return 'workshop';
     if (fullPath.startsWith('/documents/')) return 'documents';
     if (fullPath.startsWith('/calendar/')) return 'calendar';
+    if (fullPath.startsWith('/browser/')) return 'browser';
+    if (fullPath.startsWith('/contacts/')) return 'contacts';
+    if (fullPath.startsWith('/finance/')) return 'finance';
     if (fullPath.startsWith('/email/')) return 'email';
     if (fullPath.startsWith('/business/')) return 'business';
     if (fullPath.startsWith('/ideas/')) return 'ideas';
     if (fullPath.startsWith('/my-ai/')) return 'my-ai';
     if (fullPath.startsWith('/settings/')) return 'settings';
     if (fullPath.startsWith('/learning/')) return 'learning';
+    if (fullPath.startsWith('/screen-memory/')) return 'screen-memory';
     // Legacy: /ai-workshop/* → workshop
     if (fullPath.startsWith('/ai-workshop/')) return 'workshop';
 
@@ -188,7 +204,7 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning'];
+      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning', 'contacts', 'finance', 'screen-memory'];
       if (tabPages.includes(page)) {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
@@ -254,6 +270,7 @@ function AuthenticatedApp() {
   const [selectedIdea, setSelectedIdea] = useState<StructuredIdea | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isSearching, setIsSearching] = useState(false);
+  const searchAbortRef = useRef<AbortController | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return safeLocalStorage('get', 'onboardingComplete') !== 'true';
@@ -333,10 +350,13 @@ function AuthenticatedApp() {
     onNavigate: navigateToPage,
   });
 
-  // Clear search/selection when context changes (data reset handled by useIdeasData)
+  // Clear search/selection and abort pending requests when context changes
   useEffect(() => {
+    searchAbortRef.current?.abort();
+    searchAbortRef.current = null;
     setSearchResults(null);
     setSelectedIdea(null);
+    setIsSearching(false);
   }, [context]);
 
   // ============================================
@@ -439,10 +459,15 @@ function AuthenticatedApp() {
       return;
     }
 
+    // Abort any pending search request
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+
     setIsSearching(true);
     try {
       // Phase 32B: Progressive search - keyword-first, then semantic
-      const response = await axios.post(`/api/${context}/ideas/search/progressive`, { query, limit: 15 });
+      const response = await axios.post(`/api/${context}/ideas/search/progressive`, { query, limit: 15 }, { signal: controller.signal });
       const parsed = safeParseResponse(ProgressiveSearchResponseSchema, response.data, 'progressiveSearch');
 
       // Merge keyword results (fast) + semantic results (deep), keyword first
@@ -451,13 +476,15 @@ function AuthenticatedApp() {
       const merged = [...keywordIdeas, ...semanticIdeas] as unknown as StructuredIdea[];
 
       setSearchResults(merged);
-    } catch {
+    } catch (progressiveErr) {
+      if (axios.isCancel(progressiveErr)) return;
       // Fallback to classic search if progressive endpoint not available
       try {
-        const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 });
+        const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 }, { signal: controller.signal });
         const parsed = safeParseResponse(SearchResponseSchema, response.data, 'handleSearch');
         setSearchResults(parsed.ideas as unknown as StructuredIdea[]);
       } catch (err: unknown) {
+        if (axios.isCancel(err)) return;
         const errorMessage = getErrorMessage(err, 'Suche fehlgeschlagen');
         setError(errorMessage);
         showToast(errorMessage, 'error');
@@ -615,6 +642,50 @@ function AuthenticatedApp() {
           </Suspense>
         );
 
+      case 'browser':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <BrowserPage
+              context={context}
+              initialTab={(tabParam || 'browse') as 'browse' | 'history' | 'bookmarks'}
+              onBack={() => navigateToPage('home')}
+            />
+          </Suspense>
+        );
+
+      case 'contacts':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <ContactsPage
+              context={context}
+              initialTab={(tabParam || 'all') as 'all' | 'favorites' | 'organizations'}
+              onBack={() => navigateToPage('home')}
+            />
+          </Suspense>
+        );
+
+      case 'finance':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <FinancePage
+              context={context}
+              initialTab={(tabParam || 'overview') as 'overview' | 'transactions' | 'budgets' | 'goals'}
+              onBack={() => navigateToPage('home')}
+            />
+          </Suspense>
+        );
+
+      case 'screen-memory':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <ScreenMemoryPage
+              context={context}
+              initialTab={(tabParam || 'timeline') as 'timeline' | 'search' | 'settings'}
+              onBack={() => navigateToPage('home')}
+            />
+          </Suspense>
+        );
+
       case 'insights':
         return (
           <Suspense fallback={<PageLoader />}>
@@ -672,6 +743,7 @@ function AuthenticatedApp() {
             <NotificationsPage
               context={context}
               onBack={() => navigateToPage('home')}
+              onNavigate={(page) => navigateToPage(page as Page)}
             />
           </Suspense>
         );
@@ -684,7 +756,7 @@ function AuthenticatedApp() {
         const plannerTab = tabParam ? calendarTabMap[tabParam] || 'calendar' : 'calendar';
         return (
           <Suspense fallback={<PageLoader />}>
-            <PlannerPage context={context} initialTab={plannerTab} />
+            <PlannerPage context={context} initialTab={plannerTab} onBack={() => navigateToPage('home')} />
           </Suspense>
         );
       }

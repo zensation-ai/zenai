@@ -1,11 +1,21 @@
 import { safeLocalStorage } from './storage';
 
 /**
- * Returns the API base URL from environment variables.
+ * Check if running inside Electron (without importing from electron.ts to avoid circular deps)
+ */
+const isElectronEnv = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
+
+/**
+ * Returns the API base URL.
+ * - In Electron: always connects to localhost backend
+ * - In web: uses VITE_API_URL environment variable
  * Use this for fetch() calls and <img src> URLs that can't go through axios.
  * Axios calls don't need this - they use axios.defaults.baseURL set in main.tsx.
  */
 export function getApiBaseUrl(): string {
+  if (isElectronEnv) {
+    return `http://localhost:${import.meta.env.VITE_BACKEND_PORT || '3000'}`;
+  }
   return import.meta.env.VITE_API_URL || '';
 }
 

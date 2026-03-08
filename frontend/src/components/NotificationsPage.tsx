@@ -4,6 +4,7 @@ import { showToast } from './Toast';
 import { getRandomReward } from '../utils/aiPersonality';
 import type { AIContext } from './ContextSwitcher';
 import { getContextLabel } from './ContextSwitcher';
+import { UnifiedInbox } from './UnifiedInbox/UnifiedInbox';
 import './NotificationsPage.css';
 import '../neurodesign.css';
 
@@ -58,6 +59,7 @@ interface PushStatus {
 interface NotificationsPageProps {
   onBack: () => void;
   context: AIContext;
+  onNavigate?: (page: string) => void;
 }
 
 const notificationTypeLabels: Record<string, { label: string; icon: string; description: string }> = {
@@ -76,7 +78,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   opened: { label: 'Geöffnet', color: '#8b5cf6' },
 };
 
-export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
+export function NotificationsPage({ onBack, context, onNavigate }: NotificationsPageProps) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [history, setHistory] = useState<NotificationHistory[]>([]);
@@ -84,7 +86,7 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
   const [pushStatus, setPushStatus] = useState<PushStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'preferences' | 'devices' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'inbox' | 'overview' | 'preferences' | 'devices' | 'history'>('inbox');
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
 
@@ -273,6 +275,14 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
       <div className="notifications-tabs" role="group" aria-label="Benachrichtigungs-Tabs">
         <button
           type="button"
+          className={`tab-btn neuro-press-effect ${activeTab === 'inbox' ? 'active' : ''}`}
+          onClick={() => setActiveTab('inbox')}
+          aria-current={activeTab === 'inbox' ? 'true' : undefined}
+        >
+          📥 Inbox
+        </button>
+        <button
+          type="button"
           className={`tab-btn neuro-press-effect ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
           aria-current={activeTab === 'overview' ? 'true' : undefined}
@@ -305,6 +315,13 @@ export function NotificationsPage({ onBack, context }: NotificationsPageProps) {
           📜 Verlauf
         </button>
       </div>
+
+      {/* Inbox Tab */}
+      {activeTab === 'inbox' && (
+        <div className="tab-content">
+          <UnifiedInbox context={context} onNavigate={onNavigate} />
+        </div>
+      )}
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (

@@ -12,7 +12,7 @@
 
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
-import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
+import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { safeLocalStorage } from '../../utils/storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { BrainLogo } from './BrainLogo';
@@ -167,6 +167,16 @@ export const Sidebar = memo(function Sidebar({
         >
           <span className="sidebar-item-icon" aria-hidden="true">{NAV_CHAT_ITEM.icon}</span>
           {!collapsed && <span className="sidebar-item-label">{NAV_CHAT_ITEM.label}</span>}
+        </button>
+        <button
+          type="button"
+          className={`sidebar-item sidebar-browser-item neuro-focus-ring ${currentPage === 'browser' ? 'active' : ''}`}
+          onClick={() => handleNavigate('browser')}
+          title={NAV_BROWSER_ITEM.description}
+          aria-current={currentPage === 'browser' ? 'page' : undefined}
+        >
+          <span className="sidebar-item-icon" aria-hidden="true">{NAV_BROWSER_ITEM.icon}</span>
+          {!collapsed && <span className="sidebar-item-label">{NAV_BROWSER_ITEM.label}</span>}
         </button>
       </div>
 
@@ -330,7 +340,7 @@ export const Sidebar = memo(function Sidebar({
         {/* Footer Nav Items */}
         <div className="sidebar-footer-items">
           {NAV_FOOTER_ITEMS.map((item) => {
-            const isActive = currentPage === item.page;
+            const isActive = isNavItemActive(item, currentPage);
 
             return (
               <button

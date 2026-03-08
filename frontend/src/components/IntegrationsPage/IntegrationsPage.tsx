@@ -17,9 +17,10 @@ import { getErrorMessage } from './types';
 import { IntegrationsTab } from './IntegrationsTab';
 import { ApiKeysTab } from './ApiKeysTab';
 import { WebhooksTab } from './WebhooksTab';
+import { MCPHubTab } from './MCPHubTab';
 
 export function IntegrationsPage({ onBack, embedded }: IntegrationsPageProps) {
-  const [activeTab, setActiveTab] = useState<'integrations' | 'apikeys' | 'webhooks'>('integrations');
+  const [activeTab, setActiveTab] = useState<'integrations' | 'apikeys' | 'webhooks' | 'mcp'>('integrations');
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
@@ -315,6 +316,14 @@ export function IntegrationsPage({ onBack, embedded }: IntegrationsPageProps) {
         >
           🪝 Webhooks
         </button>
+        <button
+          type="button"
+          className={`neuro-press-effect ${activeTab === 'mcp' ? 'active' : ''}`}
+          onClick={() => setActiveTab('mcp')}
+          aria-current={activeTab === 'mcp' ? 'true' : undefined}
+        >
+          🔧 MCP Hub
+        </button>
       </div>
 
       <main className="integrations-content">
@@ -354,6 +363,8 @@ export function IntegrationsPage({ onBack, embedded }: IntegrationsPageProps) {
             testWebhook={testWebhook}
           />
         )}
+
+        {activeTab === 'mcp' && <MCPHubTab />}
       </main>
     </div>
   );

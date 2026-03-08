@@ -40,6 +40,16 @@ export const NAV_CHAT_ITEM: NavItem = {
 };
 
 /**
+ * Browser item - displayed after chat, before sections
+ */
+export const NAV_BROWSER_ITEM: NavItem = {
+  page: 'browser',
+  icon: '🌐',
+  label: 'Browser',
+  description: 'Webseiten durchsuchen & speichern',
+};
+
+/**
  * Main navigation sections displayed in sidebar
  *
  * 4 funktionale Sektionen:
@@ -83,6 +93,12 @@ export const NAV_SECTIONS: NavSection[] = [
         subPages: ['tasks', 'kanban', 'gantt', 'meetings'],
       },
       {
+        page: 'contacts',
+        icon: '👥',
+        label: 'Kontakte',
+        description: 'Kontakte & Organisationen verwalten',
+      },
+      {
         page: 'email',
         icon: '✉️',
         label: 'E-Mail',
@@ -111,6 +127,12 @@ export const NAV_SECTIONS: NavSection[] = [
         subPages: ['analytics', 'digest', 'knowledge-graph'],
       },
       {
+        page: 'finance',
+        icon: '💰',
+        label: 'Finanzen',
+        description: 'Ausgaben, Budgets & Sparziele',
+      },
+      {
         page: 'business',
         icon: '💼',
         label: 'Business',
@@ -136,6 +158,12 @@ export const NAV_SECTIONS: NavSection[] = [
         label: 'Lernen',
         description: 'Lernziele setzen & verfolgen',
         subPages: ['learning-tasks'],
+      },
+      {
+        page: 'screen-memory',
+        icon: '🧠',
+        label: 'Screen Memory',
+        description: 'Bildschirmaktivitaet durchsuchen',
       },
     ],
   },
@@ -184,6 +212,7 @@ export function findSectionForPage(page: Page): NavSection | undefined {
 export function getPageLabel(page: Page): string {
   if (page === 'home') return 'Dashboard';
   if (page === 'chat') return NAV_CHAT_ITEM.label;
+  if (page === 'browser') return NAV_BROWSER_ITEM.label;
 
   for (const section of NAV_SECTIONS) {
     const item = section.items.find(i => i.page === page || i.subPages?.includes(page));
@@ -193,7 +222,7 @@ export function getPageLabel(page: Page): string {
   const footerItem = NAV_FOOTER_ITEMS.find(i => i.page === page || i.subPages?.includes(page));
   if (footerItem) return footerItem.label;
 
-  return 'ZenAI';
+  return 'My Brain';
 }
 
 /**
@@ -202,6 +231,7 @@ export function getPageLabel(page: Page): string {
 export function getNavItemByPage(page: Page): NavItem | undefined {
   if (page === 'home') return { page: 'home', icon: '🏠', label: 'Dashboard' };
   if (page === 'chat') return NAV_CHAT_ITEM;
+  if (page === 'browser') return NAV_BROWSER_ITEM;
 
   for (const section of NAV_SECTIONS) {
     const item = section.items.find(i => i.page === page || i.subPages?.includes(page));

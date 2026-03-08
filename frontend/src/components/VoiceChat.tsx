@@ -11,6 +11,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useVAD } from '../hooks/useVAD';
 import { useVoicePipeline } from '../hooks/useVoicePipeline';
 import { StreamingAudioPlayer } from '../utils/audioPlayer';
+import { AI_PERSONALITY } from '../utils/aiPersonality';
 import './VoiceChat.css';
 
 type VoiceState = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
@@ -159,7 +160,7 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
       <div className="voice-chat-conversation">
         {conversation.length === 0 && voiceState === 'idle' && (
           <div className="voice-chat-empty">
-            Starte eine Sprachkonversation mit ZenAI.
+            Starte eine Sprachkonversation mit {AI_PERSONALITY.name}.
             Drücke den Mikrofon-Button um zu beginnen.
           </div>
         )}
@@ -167,7 +168,7 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
         {conversation.map((entry, index) => (
           <div key={index} className={`voice-chat-message voice-chat-message-${entry.role}`}>
             <span className="voice-chat-message-role">
-              {entry.role === 'user' ? 'Du' : 'ZenAI'}
+              {entry.role === 'user' ? 'Du' : AI_PERSONALITY.name}
             </span>
             <p className="voice-chat-message-text">{entry.text}</p>
           </div>
@@ -183,7 +184,7 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
 
         {currentResponse && voiceState === 'speaking' && (
           <div className="voice-chat-message voice-chat-message-assistant voice-chat-message-current">
-            <span className="voice-chat-message-role">ZenAI</span>
+            <span className="voice-chat-message-role">{AI_PERSONALITY.name}</span>
             <p className="voice-chat-message-text">{currentResponse}</p>
           </div>
         )}

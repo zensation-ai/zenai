@@ -17,6 +17,7 @@ import { ChatContextBar } from '../GeneralChat/ChatContextBar';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { safeLocalStorage } from '../../utils/storage';
+import { AI_PERSONALITY } from '../../utils/aiPersonality';
 import { QuickActions } from './QuickActions';
 import { CloseIcon } from '../icons/CloseIcon';
 import '../GeneralChat/ChatContextBar.css';
@@ -147,7 +148,7 @@ export function FloatingAssistant({ context, currentPage, onNavigate, onContextC
             <CloseIcon size={12} />
           </button>
           <p className="assistant-tooltip-text">
-            Ich bin Zen, dein KI-Assistent. Frag mich alles zur App!
+            Ich bin {AI_PERSONALITY.name}, dein KI-Assistent. Frag mich alles zur App!
             <kbd className="assistant-tooltip-kbd">{shortcutLabel}</kbd>
           </p>
           <div className="assistant-tooltip-arrow" aria-hidden="true" />
@@ -161,14 +162,14 @@ export function FloatingAssistant({ context, currentPage, onNavigate, onContextC
           className="assistant-panel"
           role="dialog"
           aria-modal={window.innerWidth < 768}
-          aria-label="ZenAI Assistent"
+          aria-label={`${AI_PERSONALITY.name} Assistent`}
         >
           {/* Header */}
           <div className="assistant-header">
             <div className="assistant-header-left">
               <span className="assistant-header-avatar" aria-hidden="true">{'\u{1F9E0}'}</span>
               <div className="assistant-header-info">
-                <span className="assistant-header-name">Zen</span>
+                <span className="assistant-header-name">{AI_PERSONALITY.name}</span>
                 <span className="assistant-header-status">Dein KI-Assistent</span>
               </div>
             </div>

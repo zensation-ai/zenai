@@ -18,6 +18,7 @@ import { ChatContextBar } from './GeneralChat/ChatContextBar';
 import { ChatQuickActions } from './GeneralChat/ChatQuickActions';
 import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
+import { ErrorBoundary } from './ErrorBoundary';
 import { safeLocalStorage } from '../utils/storage';
 import './GeneralChat/ChatContextBar.css';
 import './GeneralChat/ChatQuickActions.css';
@@ -104,15 +105,17 @@ const ChatPageComponent: React.FC<ChatPageProps> = ({ context, onContextChange }
 
         {/* Chat-Bereich */}
         <div className="chat-page-chat">
-          <Suspense fallback={<SkeletonLoader type="card" count={3} />}>
-            <GeneralChat
-              context={context}
-              isCompact={false}
-              fullPage={true}
-              initialSessionId={activeSessionId}
-              onSessionChange={handleSessionChange}
-            />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<SkeletonLoader type="card" count={3} />}>
+              <GeneralChat
+                context={context}
+                isCompact={false}
+                fullPage={true}
+                initialSessionId={activeSessionId}
+                onSessionChange={handleSessionChange}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
     </div>

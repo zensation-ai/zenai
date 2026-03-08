@@ -20,7 +20,7 @@ import { logger } from '../utils/logger';
 // Types & Interfaces
 // ===========================================
 
-export type SearchResultType = 'idea' | 'document' | 'voice_memo' | 'meeting' | 'fact' | 'chat';
+export type SearchResultType = 'idea' | 'document' | 'voice_memo' | 'meeting' | 'fact' | 'chat' | 'contact' | 'email' | 'calendar_event' | 'transaction' | 'screen_capture';
 
 export interface SearchResult {
   id: string;
@@ -66,7 +66,7 @@ const CONFIG = {
   /** All searchable contexts */
   ALL_CONTEXTS: ['personal', 'work', 'learning', 'creative'] as AIContext[],
   /** All searchable types */
-  ALL_TYPES: ['idea', 'document', 'voice_memo', 'meeting', 'fact', 'chat'] as SearchResultType[],
+  ALL_TYPES: ['idea', 'document', 'voice_memo', 'meeting', 'fact', 'chat', 'contact', 'email', 'calendar_event', 'transaction', 'screen_capture'] as SearchResultType[],
 };
 
 // ===========================================
@@ -152,6 +152,47 @@ class GlobalSearchService {
           this.searchChatHistory(context, searchPattern, perTypeLimit)
             .then(results => { allResults.push(...results); })
             .catch(err => logger.debug('Chat search failed', { context, error: err }))
+        );
+      }
+
+      // Phase 8: New domain searches
+      if (types.includes('contact')) {
+        searchPromises.push(
+          this.searchContacts(context, searchPattern, perTypeLimit)
+            .then(results => { allResults.push(...results); })
+            .catch(err => logger.debug('Contact search failed', { context, error: err }))
+        );
+      }
+
+      if (types.includes('email')) {
+        searchPromises.push(
+          this.searchEmails(context, searchPattern, perTypeLimit)
+            .then(results => { allResults.push(...results); })
+            .catch(err => logger.debug('Email search failed', { context, error: err }))
+        );
+      }
+
+      if (types.includes('calendar_event')) {
+        searchPromises.push(
+          this.searchCalendarEvents(context, searchPattern, perTypeLimit)
+            .then(results => { allResults.push(...results); })
+            .catch(err => logger.debug('Calendar search failed', { context, error: err }))
+        );
+      }
+
+      if (types.includes('transaction')) {
+        searchPromises.push(
+          this.searchTransactions(context, searchPattern, perTypeLimit)
+            .then(results => { allResults.push(...results); })
+            .catch(err => logger.debug('Transaction search failed', { context, error: err }))
+        );
+      }
+
+      if (types.includes('screen_capture')) {
+        searchPromises.push(
+          this.searchScreenCaptures(context, searchPattern, perTypeLimit)
+            .then(results => { allResults.push(...results); })
+            .catch(err => logger.debug('Screen capture search failed', { context, error: err }))
         );
       }
     }
@@ -411,6 +452,194 @@ class GlobalSearchService {
         context,
         createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { messageId: row.id, role: row.role },
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // ===========================================
+  // Phase 8: New Domain Search Methods
+  // ===========================================
+
+  private async searchContacts(
+    context: AIContext, pattern: string, limit: number
+  ): Promise<SearchResult[]> {
+    try {
+      const result = await queryContext(
+        context,
+        `SELECT id, display_name, email, role, organization_id, relationship_type, ai_summary, created_at,
+                CASE
+                  WHEN display_name ILIKE $1 THEN 0.9
+                  WHEN email::text ILIKE $1 THEN 0.8
+                  WHEN role ILIKE $1 THEN 0.6
+                  ELSE 0.4
+                END as score
+         FROM contacts
+         WHERE display_name ILIKE $1 OR email::text ILIKE $1 OR role ILIKE $1 OR notes ILIKE $1
+         ORDER BY score DESC, updated_at DESC
+         LIMIT $2`,
+        [pattern, limit]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id as string,
+        type: 'contact' as SearchResultType,
+        title: row.display_name as string,
+        snippet: this.truncate(
+          [row.role, row.ai_summary].filter(Boolean).join(' - ') || (row.email as string[])?.join(', ') || '',
+          150
+        ),
+        score: Number(row.score),
+        context,
+        createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
+        metadata: { relationship_type: row.relationship_type, email: row.email },
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  private async searchEmails(
+    context: AIContext, pattern: string, limit: number
+  ): Promise<SearchResult[]> {
+    try {
+      const result = await queryContext(
+        context,
+        `SELECT id, subject, from_address, to_addresses, ai_summary, direction, status, created_at,
+                CASE
+                  WHEN subject ILIKE $1 THEN 0.85
+                  WHEN from_address ILIKE $1 THEN 0.7
+                  WHEN ai_summary ILIKE $1 THEN 0.6
+                  ELSE 0.4
+                END as score
+         FROM emails
+         WHERE (subject ILIKE $1 OR from_address ILIKE $1 OR to_addresses::text ILIKE $1 OR ai_summary ILIKE $1)
+           AND status != 'trash'
+         ORDER BY score DESC, created_at DESC
+         LIMIT $2`,
+        [pattern, limit]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id as string,
+        type: 'email' as SearchResultType,
+        title: row.subject as string || 'Kein Betreff',
+        snippet: this.truncate(row.ai_summary as string || `Von: ${row.from_address}`, 150),
+        score: Number(row.score),
+        context,
+        createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
+        metadata: { from: row.from_address, direction: row.direction, status: row.status },
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  private async searchCalendarEvents(
+    context: AIContext, pattern: string, limit: number
+  ): Promise<SearchResult[]> {
+    try {
+      const result = await queryContext(
+        context,
+        `SELECT id, title, description, location, start_time, end_time, created_at,
+                CASE
+                  WHEN title ILIKE $1 THEN 0.85
+                  WHEN description ILIKE $1 THEN 0.65
+                  WHEN location ILIKE $1 THEN 0.5
+                  ELSE 0.3
+                END as score
+         FROM calendar_events
+         WHERE (title ILIKE $1 OR description ILIKE $1 OR location ILIKE $1)
+         ORDER BY score DESC, start_time DESC
+         LIMIT $2`,
+        [pattern, limit]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id as string,
+        type: 'calendar_event' as SearchResultType,
+        title: row.title as string || 'Termin',
+        snippet: this.truncate(
+          [row.description, row.location ? `Ort: ${row.location}` : ''].filter(Boolean).join(' | ') || '',
+          150
+        ),
+        score: Number(row.score),
+        context,
+        createdAt: (row.start_time as Date)?.toISOString() || (row.created_at as Date)?.toISOString() || new Date().toISOString(),
+        metadata: { start_time: row.start_time, end_time: row.end_time, location: row.location },
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  private async searchTransactions(
+    context: AIContext, pattern: string, limit: number
+  ): Promise<SearchResult[]> {
+    try {
+      const result = await queryContext(
+        context,
+        `SELECT id, amount, currency, transaction_type, category, payee, description, transaction_date, created_at,
+                CASE
+                  WHEN payee ILIKE $1 THEN 0.8
+                  WHEN description ILIKE $1 THEN 0.65
+                  WHEN category ILIKE $1 THEN 0.5
+                  ELSE 0.3
+                END as score
+         FROM transactions
+         WHERE (payee ILIKE $1 OR description ILIKE $1 OR category ILIKE $1)
+         ORDER BY score DESC, transaction_date DESC
+         LIMIT $2`,
+        [pattern, limit]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id as string,
+        type: 'transaction' as SearchResultType,
+        title: `${row.payee || row.category || 'Transaktion'}: ${row.amount} ${row.currency || 'EUR'}`,
+        snippet: this.truncate(row.description as string || `${row.transaction_type} - ${row.category}`, 150),
+        score: Number(row.score),
+        context,
+        createdAt: (row.transaction_date as Date)?.toISOString() || (row.created_at as Date)?.toISOString() || new Date().toISOString(),
+        metadata: { amount: row.amount, currency: row.currency, category: row.category, transaction_type: row.transaction_type },
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  private async searchScreenCaptures(
+    context: AIContext, pattern: string, limit: number
+  ): Promise<SearchResult[]> {
+    try {
+      const result = await queryContext(
+        context,
+        `SELECT id, timestamp, app_name, window_title, url, ocr_text, duration_seconds, created_at,
+                CASE
+                  WHEN window_title ILIKE $1 THEN 0.8
+                  WHEN app_name ILIKE $1 THEN 0.7
+                  WHEN url ILIKE $1 THEN 0.6
+                  WHEN ocr_text ILIKE $1 THEN 0.5
+                  ELSE 0.3
+                END as score
+         FROM screen_captures
+         WHERE (window_title ILIKE $1 OR app_name ILIKE $1 OR url ILIKE $1 OR ocr_text ILIKE $1)
+           AND is_sensitive = false
+         ORDER BY score DESC, timestamp DESC
+         LIMIT $2`,
+        [pattern, limit]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id as string,
+        type: 'screen_capture' as SearchResultType,
+        title: row.window_title as string || row.app_name as string || 'Screen Capture',
+        snippet: this.truncate(row.ocr_text as string || row.url as string || '', 150),
+        score: Number(row.score),
+        context,
+        createdAt: (row.timestamp as Date)?.toISOString() || (row.created_at as Date)?.toISOString() || new Date().toISOString(),
+        metadata: { app_name: row.app_name, url: row.url, duration: row.duration_seconds },
       }));
     } catch {
       return [];

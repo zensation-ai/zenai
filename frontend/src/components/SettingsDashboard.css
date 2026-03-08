@@ -11,60 +11,6 @@
 }
 
 /* ============================================
-   Tab Navigation
-   ============================================ */
-
-.settings-tabs {
-  display: flex;
-  gap: 0.75rem;
-  margin: 2rem auto;
-  max-width: 1200px;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-}
-
-.settings-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  background: transparent;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.settings-tab:hover {
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--text);
-}
-
-.settings-tab.active {
-  background: var(--gradient-primary);
-  color: white;
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
-}
-
-[data-context="work"] .settings-tab.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.tab-icon {
-  font-size: 1.25rem;
-}
-
-/* ============================================
    Card Grid - Responsive 3->2->1 Columns
    ============================================ */
 
@@ -418,11 +364,6 @@
     background: linear-gradient(135deg, #1a3440 0%, #0c1e28 100%);
   }
 
-  .settings-tabs {
-    background: rgba(26, 48, 58, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
   .settings-card {
     background: linear-gradient(165deg,
       rgba(26, 48, 58, 0.95) 0%,
@@ -446,7 +387,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .settings-card,
-  .settings-tab,
   .card-arrow,
   .card-glow {
     transition: none !important;
@@ -505,24 +445,6 @@
    ============================================ */
 
 @media (max-width: 640px) {
-  .settings-dashboard {
-    padding: 1rem;
-  }
-
-  .settings-tabs {
-    gap: 0.5rem;
-    padding: 0.375rem;
-  }
-
-  .settings-tab {
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
-  }
-
-  .tab-icon {
-    font-size: 1.125rem;
-  }
-
   .settings-content {
     padding: 1rem 0;
   }
@@ -546,29 +468,6 @@
 }
 
 @media (max-width: 480px) {
-  .settings-dashboard {
-    padding: 0.75rem;
-  }
-
-  .settings-tabs {
-    gap: 0.25rem;
-    padding: 0.25rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    flex-wrap: nowrap;
-  }
-
-  .settings-tab {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .tab-label {
-    display: none;
-  }
-
   .settings-card {
     min-height: 140px;
     padding: 1rem;

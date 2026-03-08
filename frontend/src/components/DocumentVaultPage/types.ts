@@ -28,8 +28,3 @@ export function getFolderIcon(icon?: string): string {
   return icon ? (FOLDER_ICONS[icon] || '📁') : '📁';
 }
 
-export const DOC_TABS: { id: DocumentsTab; label: string; icon: string }[] = [
-  { id: 'documents', label: 'Dokumente', icon: '📄' },
-  { id: 'editor', label: 'Editor', icon: '✏️' },
-  { id: 'media', label: 'Medien', icon: '🖼️' },
-];

@@ -220,11 +220,27 @@ describe('MCP Server', () => {
       expect(toolNames).toContain('active_recall_quiz');
       expect(toolNames).toContain('synthesize_knowledge');
       expect(toolNames).toContain('compliance_check');
+
+      // Phase 7: Domain tools
+      expect(toolNames).toContain('search_contacts');
+      expect(toolNames).toContain('get_contact_timeline');
+      expect(toolNames).toContain('contact_follow_ups');
+      expect(toolNames).toContain('contact_stats');
+      expect(toolNames).toContain('financial_overview');
+      expect(toolNames).toContain('get_transactions');
+      expect(toolNames).toContain('budget_status');
+      expect(toolNames).toContain('expense_categories');
+      expect(toolNames).toContain('search_screen_memory');
+      expect(toolNames).toContain('screen_memory_stats');
+      expect(toolNames).toContain('morning_briefing');
+      expect(toolNames).toContain('smart_schedule');
+      expect(toolNames).toContain('proactive_follow_ups');
+      expect(toolNames).toContain('workflow_patterns');
     });
 
-    it('should have exactly 16 tools', async () => {
+    it('should have exactly 30 tools', async () => {
       const response = await server.handleRequest({ method: 'tools/list' });
-      expect(response.tools!.length).toBe(16);
+      expect(response.tools!.length).toBe(30);
     });
 
     it('should include output schemas on key tools (MCP 2026 spec)', async () => {

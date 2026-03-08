@@ -1,0 +1,30 @@
+{
+  "name": "zenai",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ZenAI - Personal AI Operating System by ZenSation Enterprise Solutions",
+  "author": "Alexander Bering <alex@zensation.ai> (https://zensation.ai)",
+  "homepage": "https://zensation.ai",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "turbo run dev --filter=zenai-frontend --filter=zenai-backend",
+    "dev:electron": "turbo run dev --filter=zenai-electron",
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=zenai-frontend --filter=zenai-backend",
+    "build:electron": "turbo run build --filter=zenai-electron",
+    "test": "turbo run test",
+    "test:backend": "turbo run test --filter=zenai-backend",
+    "test:frontend": "turbo run test --filter=zenai-frontend",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  }
+}

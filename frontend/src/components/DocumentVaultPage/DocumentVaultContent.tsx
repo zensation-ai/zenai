@@ -9,7 +9,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { logError } from '../../utils/errors';
 import { useNavigate } from 'react-router-dom';
-import { RisingBubbles } from '../RisingBubbles';
 import { DocumentUpload } from '../DocumentUpload';
 import { DocumentCard } from '../DocumentCard';
 import { DocumentDetailModal } from '../DocumentDetailModal';
@@ -19,19 +18,18 @@ import {
   DocumentStats,
   DocumentUploadResult,
 } from '../../types/document';
-import { DocumentsTab, DocumentVaultPageProps, DOC_TABS } from './types';
 import { FolderSidebar } from './FolderSidebar';
 import { BatchActionBar } from './BatchActionBar';
 import '../DocumentVaultPage.css';
 import type { Folder } from '../../types/document';
 import type { ViewMode } from './types';
+import type { AIContext } from '../ContextSwitcher';
 
-interface DocumentVaultContentProps extends DocumentVaultPageProps {
-  activeDocTab: DocumentsTab;
-  onDocTabChange: (tab: DocumentsTab) => void;
+interface DocumentVaultContentProps {
+  context: AIContext;
 }
 
-export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabChange }: DocumentVaultContentProps) {
+export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
   const contentNavigate = useNavigate();
   // State
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -356,33 +354,10 @@ export function DocumentVaultContent({ onBack, context, activeDocTab, onDocTabCh
   }, [hasMore, loading, filters, fetchDocuments]);
 
   return (
-    <div className="document-vault-page">
-      <RisingBubbles variant="subtle" />
-      {/* Document Tabs */}
-      <div className="vault-doc-tabs" role="tablist">
-        {DOC_TABS.map((tab) => (
-          <button
-            type="button"
-            key={tab.id}
-            role="tab"
-            aria-selected={activeDocTab === tab.id}
-            className={`vault-doc-tab ${activeDocTab === tab.id ? 'active' : ''}`}
-            onClick={() => onDocTabChange(tab.id)}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Header */}
-      <header className="vault-header">
+    <div className="document-vault-content">
+      {/* Toolbar */}
+      <header className="vault-toolbar">
         <div className="header-left">
-          <button type="button" className="back-button" onClick={onBack} aria-label="Zur\u00fcck">
-            ←
-          </button>
-          <h1>Wissensbasis</h1>
-          <span className="context-badge">{context}</span>
           <button
             type="button"
             className="mobile-folder-toggle"

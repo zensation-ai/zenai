@@ -1,28 +1,16 @@
 /**
- * AIWorkshop - KI-Werkstatt (Konsolidierte KI-Features)
+ * AIWorkshop - KI-Werkstatt
  *
- * Kombiniert die ehemaligen separaten Seiten:
- * - Inkubator (Gedanken-Cluster und Konsolidierung)
- * - Proaktiv (KI-Vorschläge und Routinen)
- * - Evolution (Gedanken-Entwicklung über Zeit)
- *
- * Neurowissenschaftliche Optimierungen:
- * - Tab-basierte Navigation für klare Struktur
- * - Progressive Disclosure der KI-Funktionen
- * - Einheitliches Interface für alle KI-Features
+ * Tabs: Vorschlaege, Entwicklung, Agenten
  */
 
 import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
-import { PageHeader } from './PageHeader';
-import { RisingBubbles } from './RisingBubbles';
+import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
-import '../neurodesign.css';
-import './shared-tabs.css';
 import './AIWorkshop.css';
 
-// Lazy-load die Sub-Komponenten
 const ProactiveDashboard = lazy(() => import('./ProactiveDashboard').then(m => ({ default: m.ProactiveDashboard })));
 const EvolutionDashboard = lazy(() => import('./EvolutionDashboard').then(m => ({ default: m.EvolutionDashboard })));
 const AgentTeamsPage = lazy(() => import('./AgentTeamsPage').then(m => ({ default: m.AgentTeamsPage })));
@@ -35,7 +23,7 @@ interface AIWorkshopProps {
   initialTab?: WorkshopTab;
 }
 
-const TABS: { id: WorkshopTab; label: string; icon: string; description: string }[] = [
+const TABS: TabDef<WorkshopTab>[] = [
   { id: 'proactive', label: 'Vorschläge', icon: '✨', description: 'KI-generierte Ideen und Routinen' },
   { id: 'evolution', label: 'Entwicklung', icon: '🌱', description: 'Wie deine Gedanken sich entwickeln' },
   { id: 'agent-teams', label: 'Agenten', icon: '👥', description: 'Multi-Agenten für komplexe Aufgaben' },
@@ -65,84 +53,44 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content hub-tab-fullwidth">
-              <ProactiveDashboard
-                context={context}
-                embedded
-              />
+              <ProactiveDashboard context={context} embedded />
             </div>
           </Suspense>
         );
-
       case 'evolution':
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content hub-tab-fullwidth">
-              <EvolutionDashboard
-                context={context}
-                embedded
-              />
+              <EvolutionDashboard context={context} embedded />
             </div>
           </Suspense>
         );
-
       case 'agent-teams':
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content hub-tab-fullwidth">
-              <AgentTeamsPage
-                context={context}
-                embedded
-              />
+              <AgentTeamsPage context={context} embedded />
             </div>
           </Suspense>
         );
-
       default:
         return null;
     }
   };
 
   return (
-    <div className="hub-page" data-context={context}>
-      <RisingBubbles variant="subtle" />
-      <PageHeader
-        title="Werkstatt"
-        icon="🧪"
-        subtitle="KI-Tools die für dich arbeiten"
-        onBack={onBack}
-        backLabel="Zurück"
-      />
-
-      {/* Tab Navigation */}
-      <nav className="hub-tabs" role="tablist" aria-label="KI-Werkstatt Navigation">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            id={`tab-${tab.id}`}
-            type="button"
-            role="tab"
-            className={`hub-tab neuro-hover-lift neuro-focus-ring ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => handleTabChange(tab.id)}
-            aria-selected={activeTab === tab.id}
-            aria-controls={`tabpanel-${tab.id}`}
-            aria-label={`${tab.label}: ${tab.description}`}
-          >
-            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="hub-tab-label">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* Tab Content */}
-      <main
-        id={`tabpanel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-        className="hub-content"
-      >
-        {renderTabContent()}
-      </main>
-    </div>
+    <HubPage
+      title="Werkstatt"
+      icon="🧪"
+      subtitle="KI-Tools die für dich arbeiten"
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      onBack={onBack}
+      context={context}
+    >
+      {renderTabContent()}
+    </HubPage>
   );
 };
 

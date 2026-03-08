@@ -99,6 +99,18 @@ import { registerAllToolHandlers } from './services/tool-handlers';
 
 dotenv.config();
 
+// ===========================================
+// Server Configuration Interface
+// ===========================================
+
+export interface ServerConfig {
+  port?: number;
+  /** When true, server is running inside Electron */
+  electronMode?: boolean;
+  /** Custom allowed CORS origins */
+  allowedOrigins?: string[];
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -428,6 +440,26 @@ app.use('/api', projectsRouter);   // /api/:context/projects
 // Phase 38: Email Integration (Resend) - emailRouter for CRUD
 import { emailRouter } from './routes/email';
 app.use('/api', emailRouter);                    // /api/:context/emails/*
+
+// Phase 2: Eingebetteter Browser - Browsing History + Bookmarks
+import { browserRouter } from './routes/browser';
+app.use('/api', browserRouter);    // /api/:context/browser/history, /api/:context/browser/bookmarks
+
+// Phase 3: Kontakte & CRM
+import { contactsRouter } from './routes/contacts';
+app.use('/api', contactsRouter);   // /api/:context/contacts, /api/:context/organizations
+
+// Phase 4: Finanzen & Ausgaben
+import { financeRouter } from './routes/finance';
+app.use('/api', financeRouter);    // /api/:context/finance/*
+
+// Phase 5: Screen Memory
+import { screenMemoryRouter } from './routes/screen-memory';
+app.use('/api', screenMemoryRouter); // /api/:context/screen-memory
+
+// Phase 8: Unified Inbox
+import { unifiedInboxRouter } from './routes/unified-inbox';
+app.use('/api', unifiedInboxRouter); // /api/:context/inbox, /api/:context/inbox/counts
 
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
 app.use('/api', documentsRouter);  // /api/:context/documents, /api/documents/file/:id, etc.
@@ -834,10 +866,42 @@ Phase 4 APIs:
   });
 }
 
-// Start the server
-startServer().catch((error) => {
-  logger.error('FATAL: Server startup failed', error instanceof Error ? error : undefined);
-  // Fallback to console.error in case logger pipeline is broken
-  console.error('Server startup failed:', error); // eslint-disable-line no-console
-  process.exit(1);
-});
+// ===========================================
+// Exported API for Electron Integration
+// ===========================================
+
+/**
+ * Create and start the Express server programmatically.
+ * Used by Electron to embed the backend as a child process.
+ *
+ * @param config - Optional server configuration
+ * @returns The Express app instance
+ */
+export async function createServer(config?: ServerConfig): Promise<typeof app> {
+  if (config?.port) {
+    process.env.PORT = String(config.port);
+  }
+  if (config?.electronMode) {
+    process.env.ELECTRON_MODE = 'true';
+  }
+  await startServer();
+  return app;
+}
+
+/** Export the Express app for testing */
+export { app };
+
+// ===========================================
+// Standalone Startup (when run directly)
+// ===========================================
+
+// Only auto-start when run directly (not imported by Electron or tests)
+const isMainModule = require.main === module;
+if (isMainModule) {
+  startServer().catch((error) => {
+    logger.error('FATAL: Server startup failed', error instanceof Error ? error : undefined);
+    // Fallback to console.error in case logger pipeline is broken
+    console.error('Server startup failed:', error); // eslint-disable-line no-console
+    process.exit(1);
+  });
+}
