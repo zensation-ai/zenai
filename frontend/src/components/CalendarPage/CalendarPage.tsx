@@ -34,7 +34,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [prefilledStart, setPrefilledStart] = useState<Date | null>(null);
   const [showAccountsPanel, setShowAccountsPanel] = useState(false);
-  const [showBriefing, setShowBriefing] = useState(true);
+  const [showBriefing, setShowBriefing] = useState(false);
 
   // Calculate date range for data fetching
   const { rangeStart, rangeEnd } = useMemo(() => {
@@ -80,7 +80,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
   // Calendar accounts (iCloud sync)
   const {
     accounts, loading: accountsLoading, error: accountsError,
-    createAccount, deleteAccount, syncAccount,
+    createAccount, deleteAccount, syncAccount, updateAccount,
   } = useCalendarAccounts(context);
 
   // Navigation
@@ -178,6 +178,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
   }, [view, currentDate, rangeStart, rangeEnd]);
 
   const hasConnectedAccounts = accounts.length > 0;
+  const isToday = currentDate.toDateString() === new Date().toDateString();
 
   return (
     <div className={`calendar-page ${embedded ? 'calendar-page--embedded' : ''}`}>
@@ -191,6 +192,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
                 Termine, Deadlines & Erinnerungen
                 {hasConnectedAccounts && (
                   <span className="calendar-page__sync-badge">
+                    <span className="calendar-page__sync-dot" />
                     iCloud verbunden
                   </span>
                 )}
@@ -200,29 +202,16 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
         </div>
       )}
 
-      {/* AI Briefing Panel */}
-      {showBriefing && (
-        <CalendarBriefing
-          briefing={briefing}
-          briefingLoading={briefingLoading}
-          conflicts={conflicts}
-          conflictsLoading={conflictsLoading}
-          onFetchBriefing={fetchBriefing}
-          onFetchConflicts={fetchConflicts}
-          currentDate={currentDate}
-        />
-      )}
-
       {/* Toolbar */}
       <div className="calendar-toolbar">
         <div className="calendar-toolbar__nav">
-          <button className="calendar-btn calendar-btn--icon" onClick={goPrev} title="Zurück">
+          <button className="calendar-btn calendar-btn--icon" onClick={goPrev} title="Zurück" aria-label="Zurück">
             &#8249;
           </button>
-          <button className="calendar-btn calendar-btn--today" onClick={goToday}>
+          <button className={`calendar-btn calendar-btn--today ${isToday ? 'calendar-btn--today-active' : ''}`} onClick={goToday}>
             Heute
           </button>
-          <button className="calendar-btn calendar-btn--icon" onClick={goNext} title="Vor">
+          <button className="calendar-btn calendar-btn--icon" onClick={goNext} title="Vor" aria-label="Vor">
             &#8250;
           </button>
           <h2 className="calendar-toolbar__title">{title}</h2>
@@ -240,28 +229,66 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
               </button>
             ))}
           </div>
+
+          <div className="calendar-toolbar__separator" />
+
           <button
-            className={`calendar-btn calendar-btn--sm ${showBriefing ? 'calendar-btn--active' : ''}`}
+            className={`calendar-toolbar-btn ${showBriefing ? 'calendar-toolbar-btn--active' : ''}`}
             onClick={() => setShowBriefing(prev => !prev)}
-            title="KI-Briefing"
+            title="KI-Briefing anzeigen/verstecken"
           >
-            ✨ KI
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1.5l1.5 3 3.5.5-2.5 2.5.5 3.5L7 9.5l-3 1.5.5-3.5L2 5l3.5-.5L7 1.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
+            </svg>
+            <span>KI</span>
           </button>
+
           <button
-            className="calendar-btn calendar-btn--sm"
+            className={`calendar-toolbar-btn ${hasConnectedAccounts ? 'calendar-toolbar-btn--connected' : ''}`}
             onClick={() => setShowAccountsPanel(true)}
-            title="Kalender verbinden"
+            title={hasConnectedAccounts ? 'Kalender-Verbindungen verwalten' : 'Kalender verbinden'}
           >
-            {hasConnectedAccounts ? '🔄 Sync' : '☁️ Verbinden'}
+            {hasConnectedAccounts ? (
+              <>
+                <span className="calendar-toolbar-btn__dot" />
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M1.75 7C1.75 4.1 4.1 1.75 7 1.75c1.7 0 3.2.82 4.15 2.08M12.25 7c0 2.9-2.35 5.25-5.25 5.25-1.7 0-3.2-.82-4.15-2.08" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+                  <path d="M10.5 1.75v2.33h-2.33M3.5 12.25V9.92h2.33" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Sync</span>
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1.75v10.5M1.75 7h10.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                </svg>
+                <span>Verbinden</span>
+              </>
+            )}
           </button>
+
           <button
             className="calendar-btn calendar-btn--primary"
             onClick={() => { setSelectedEvent(null); setPrefilledStart(null); setShowEventForm(true); }}
           >
-            + Neuer Termin
+            + Termin
           </button>
         </div>
       </div>
+
+      {/* AI Briefing Panel */}
+      {showBriefing && (
+        <CalendarBriefing
+          briefing={briefing}
+          briefingLoading={briefingLoading}
+          conflicts={conflicts}
+          conflictsLoading={conflictsLoading}
+          onFetchBriefing={fetchBriefing}
+          onFetchConflicts={fetchConflicts}
+          onClose={() => setShowBriefing(false)}
+          currentDate={currentDate}
+        />
+      )}
 
       {/* Error */}
       {error && (
@@ -325,6 +352,7 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
           onCreateAccount={createAccount}
           onDeleteAccount={deleteAccount}
           onSyncAccount={syncAccount}
+          onUpdateAccount={updateAccount}
           onClose={() => { setShowAccountsPanel(false); refetch(); }}
         />
       )}

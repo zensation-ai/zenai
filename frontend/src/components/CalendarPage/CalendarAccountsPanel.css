@@ -1,54 +1,97 @@
-/* CalendarAccountsPanel - Phase 40 */
+/* CalendarAccountsPanel - Phase 40 UX Redesign */
 
+/* Overlay */
 .cal-accounts-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  animation: cal-accounts-fadeIn 0.2s ease;
 }
 
+@keyframes cal-accounts-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cal-accounts-slideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Panel */
 .cal-accounts {
   background: var(--bg-primary);
-  border-radius: 12px;
+  border-radius: 16px;
   width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
+  max-width: 480px;
+  max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: cal-accounts-slideUp 0.25s ease;
 }
 
+/* Header */
 .cal-accounts__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.25rem 1rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+.cal-accounts__header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .cal-accounts__header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cal-accounts__count {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
 }
 
 .cal-accounts__close {
   background: none;
   border: none;
-  font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-secondary);
-  padding: 0;
-  line-height: 1;
+  padding: 0.35rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
 }
 
+.cal-accounts__close:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Body */
 .cal-accounts__body {
-  padding: 1.25rem;
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -58,206 +101,511 @@
 .cal-accounts__card {
   display: flex;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.875rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  align-items: flex-start;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.cal-accounts__card-icon {
-  font-size: 1.5rem;
+.cal-accounts__card--syncing {
+  border-color: rgba(52, 120, 246, 0.3);
+}
+
+.cal-accounts__card--syncing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3478F6, transparent);
+  animation: cal-sync-bar 1.5s ease-in-out infinite;
+}
+
+@keyframes cal-sync-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Provider Badge */
+.cal-accounts__card-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  margin-top: 0.1rem;
+  font-size: 1.1rem;
 }
 
 .cal-accounts__card-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cal-accounts__card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .cal-accounts__card-name {
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--text-primary);
+  line-height: 1.2;
 }
 
-.cal-accounts__card-provider {
-  font-size: 0.75rem;
+.cal-accounts__card-meta {
+  font-size: 0.72rem;
   color: var(--text-secondary);
   margin-top: 0.1rem;
 }
 
-.cal-accounts__card-status {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin-top: 0.25rem;
+.cal-accounts__card-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.3rem;
 }
 
-.cal-accounts__error {
+/* Sync Status */
+.cal-accounts__card-sync {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.cal-accounts__sync-time {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.cal-accounts__sync-time--pending {
+  color: #8E8E93;
+  font-style: italic;
+}
+
+.cal-accounts__sync-error {
+  font-size: 0.72rem;
   color: #D94A4A;
 }
 
+/* Sync Result Toast */
+.cal-accounts__sync-result {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(52, 199, 89, 0.08);
+  border: 1px solid rgba(52, 199, 89, 0.2);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #34C759;
+  animation: cal-accounts-fadeIn 0.3s ease;
+}
+
+.cal-accounts__sync-result-icon {
+  font-weight: 700;
+}
+
+.cal-accounts__sync-result-errors {
+  color: #D94A4A;
+}
+
+/* Calendar List */
 .cal-accounts__calendars {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
+  gap: 0.3rem;
+  align-items: center;
 }
 
 .cal-accounts__calendar-chip {
-  display: inline-block;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  border-left: 3px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
   background: var(--bg-secondary);
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
 }
 
+.cal-accounts__calendar-chip:hover {
+  border-color: var(--border-color);
+  background: var(--bg-primary);
+}
+
+.cal-accounts__calendar-chip--disabled {
+  opacity: 0.45;
+}
+
+.cal-accounts__calendar-chip--disabled:hover {
+  opacity: 0.65;
+}
+
+.cal-accounts__calendar-chip--reminders {
+  opacity: 0.5;
+  cursor: help;
+}
+
+.cal-accounts__calendar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.cal-accounts__calendar-name {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-accounts__calendar-warn {
+  font-size: 0.65rem;
+}
+
+.cal-accounts__calendar-toggle {
+  font-size: 0.65rem;
+  opacity: 0.5;
+}
+
+.cal-accounts__calendar-chip:hover .cal-accounts__calendar-toggle {
+  opacity: 1;
+}
+
+.cal-accounts__calendar-hint {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* Action Buttons */
 .cal-accounts__card-actions {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex-shrink: 0;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
 }
 
-/* Buttons */
-.cal-btn--sm {
-  padding: 0.25rem 0.5rem;
+.cal-accounts__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
   font-size: 0.75rem;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
   background: var(--bg-elevated);
   color: var(--text-primary);
   cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
 
-.cal-btn--sm:hover {
+.cal-accounts__action-btn:hover:not(:disabled) {
   background: var(--bg-secondary);
 }
 
-.cal-btn--danger-sm {
-  border-color: rgba(217, 74, 74, 0.3);
+.cal-accounts__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cal-accounts__action-btn--sync {
+  color: #3478F6;
+  border-color: rgba(52, 120, 246, 0.2);
+}
+
+.cal-accounts__action-btn--sync:hover:not(:disabled) {
+  background: rgba(52, 120, 246, 0.06);
+}
+
+.cal-accounts__action-btn--danger {
+  color: var(--text-secondary);
+  border-color: transparent;
+  background: none;
+}
+
+.cal-accounts__action-btn--danger:hover:not(:disabled) {
   color: #D94A4A;
+  background: rgba(217, 74, 74, 0.06);
 }
 
-.cal-btn--danger-sm:hover {
-  background: rgba(217, 74, 74, 0.1);
+.cal-accounts__action-btn--primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  font-weight: 600;
 }
 
-/* Form */
+.cal-accounts__action-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  background: var(--accent);
+}
+
+.cal-accounts__action-btn--primary:disabled {
+  opacity: 0.6;
+}
+
+/* Spinner */
+.cal-accounts__spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(52, 120, 246, 0.2);
+  border-top-color: #3478F6;
+  border-radius: 50%;
+  animation: cal-spin 0.6s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.cal-accounts__action-btn--primary .cal-accounts__spinner {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+}
+
+@keyframes cal-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Loading */
+.cal-accounts__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Connection Form */
 .cal-accounts__form {
   padding: 1rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .cal-accounts__form h4 {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
+/* Provider Selector */
 .cal-accounts__provider-selector {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 0.4rem;
 }
 
 .cal-accounts__provider-btn {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.5rem 0.25rem;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-elevated);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 500;
+  font-family: inherit;
   transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.cal-accounts__provider-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 .cal-accounts__provider-btn.active {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
+  background: rgba(52, 120, 246, 0.08);
+  color: #3478F6;
+  border-color: rgba(52, 120, 246, 0.3);
+  font-weight: 600;
 }
 
+.cal-accounts__provider-icon {
+  font-size: 1.2rem;
+}
+
+/* Help Banner */
+.cal-accounts__help-banner {
+  padding: 0.5rem 0.65rem;
+  background: rgba(52, 120, 246, 0.05);
+  border: 1px solid rgba(52, 120, 246, 0.1);
+  border-radius: 8px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.cal-accounts__help-banner strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.cal-accounts__help-banner a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cal-accounts__help-banner a:hover {
+  text-decoration: underline;
+}
+
+/* Form Fields */
 .cal-accounts__field {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  margin-bottom: 0.65rem;
 }
 
 .cal-accounts__field label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
-.cal-accounts__help-link {
-  font-size: 0.7rem;
-  color: var(--accent);
-  text-decoration: none;
+.cal-accounts__optional {
   font-weight: 400;
-}
-
-.cal-accounts__help-link:hover {
-  text-decoration: underline;
+  opacity: 0.6;
 }
 
 .cal-accounts__field input {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg-elevated);
   color: var(--text-primary);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-family: inherit;
+  transition: border-color 0.15s;
 }
 
+.cal-accounts__field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(52, 120, 246, 0.1);
+}
+
+.cal-accounts__field input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+/* Form Error */
 .cal-accounts__form-error {
-  padding: 0.5rem 0.75rem;
-  background: rgba(217, 74, 74, 0.1);
-  border: 1px solid rgba(217, 74, 74, 0.3);
-  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(217, 74, 74, 0.06);
+  border: 1px solid rgba(217, 74, 74, 0.2);
+  border-radius: 8px;
   color: #D94A4A;
-  font-size: 0.8rem;
-  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
+.cal-accounts__form-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Form Actions */
 .cal-accounts__form-actions {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
-  margin-top: 0.75rem;
+  margin-top: 0.35rem;
 }
 
 /* Add Button */
 .cal-accounts__add-btn {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.65rem;
   border: 2px dashed var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   background: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
 }
 
 .cal-accounts__add-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(74, 144, 217, 0.05);
+  background: rgba(52, 120, 246, 0.03);
 }
 
-.cal-accounts__loading {
-  text-align: center;
-  padding: 1rem;
+/* Footer */
+.cal-accounts__footer {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1.25rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.65rem;
   color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .cal-accounts {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+    margin-top: auto;
+  }
+
+  .cal-accounts-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .cal-accounts__provider-selector {
+    gap: 0.3rem;
+  }
+
+  .cal-accounts__provider-btn {
+    font-size: 0.72rem;
+    padding: 0.4rem 0.2rem;
+  }
 }

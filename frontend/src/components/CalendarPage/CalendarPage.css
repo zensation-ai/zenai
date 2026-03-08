@@ -47,18 +47,94 @@
 .calendar-page__sync-badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.3rem;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 600;
-  background: rgba(107, 142, 123, 0.15);
-  color: #6B8E7B;
+  background: rgba(52, 199, 89, 0.12);
+  color: #34C759;
+}
+
+.calendar-page__sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34C759;
+  animation: calendar-sync-pulse 2s ease-in-out infinite;
+}
+
+@keyframes calendar-sync-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .calendar-page__header-actions {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+}
+
+/* Toolbar Buttons (KI, Sync, Verbinden) */
+.calendar-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.calendar-toolbar-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.calendar-toolbar-btn--active {
+  background: rgba(155, 107, 217, 0.1);
+  border-color: rgba(155, 107, 217, 0.25);
+  color: #9B6BD9;
+}
+
+.calendar-toolbar-btn--active:hover {
+  background: rgba(155, 107, 217, 0.15);
+}
+
+.calendar-toolbar-btn--connected {
+  border-color: rgba(52, 199, 89, 0.2);
+  color: #34C759;
+}
+
+.calendar-toolbar-btn--connected:hover {
+  background: rgba(52, 199, 89, 0.06);
+}
+
+.calendar-toolbar-btn__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34C759;
+}
+
+.calendar-toolbar__separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 0.15rem;
+}
+
+.calendar-btn--today-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .calendar-btn--sm {
