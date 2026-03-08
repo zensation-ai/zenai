@@ -196,22 +196,6 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
                 )}
               </p>
             </div>
-            <div className="calendar-page__header-actions">
-              <button
-                className={`calendar-btn calendar-btn--sm ${showBriefing ? 'calendar-btn--active' : ''}`}
-                onClick={() => setShowBriefing(prev => !prev)}
-                title="KI-Briefing"
-              >
-                KI
-              </button>
-              <button
-                className="calendar-btn calendar-btn--sm"
-                onClick={() => setShowAccountsPanel(true)}
-                title="Kalender verbinden"
-              >
-                {hasConnectedAccounts ? 'Sync' : 'Verbinden'}
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -256,6 +240,20 @@ export function CalendarPage({ context = 'personal', embedded = false }: Calenda
               </button>
             ))}
           </div>
+          <button
+            className={`calendar-btn calendar-btn--sm ${showBriefing ? 'calendar-btn--active' : ''}`}
+            onClick={() => setShowBriefing(prev => !prev)}
+            title="KI-Briefing"
+          >
+            ✨ KI
+          </button>
+          <button
+            className="calendar-btn calendar-btn--sm"
+            onClick={() => setShowAccountsPanel(true)}
+            title="Kalender verbinden"
+          >
+            {hasConnectedAccounts ? '🔄 Sync' : '☁️ Verbinden'}
+          </button>
           <button
             className="calendar-btn calendar-btn--primary"
             onClick={() => { setSelectedEvent(null); setPrefilledStart(null); setShowEventForm(true); }}
