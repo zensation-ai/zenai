@@ -24,7 +24,7 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Load personas when context changes
+  // Load personas when context changes (NOT when selectedPersona changes - avoids loop)
   useEffect(() => {
     let isMounted = true;
     const abortController = new AbortController();
@@ -36,25 +36,20 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
           signal: abortController.signal
         });
 
-        // Prevent state updates if component unmounted
         if (!isMounted) return;
 
         const loadedPersonas = response.data.personas as Persona[];
         setPersonas(loadedPersonas);
 
-        // Check if current persona is valid for the new context
-        const currentPersonaValid = loadedPersonas.some((p: Persona) => p.id === selectedPersona);
-
-        // If no persona selected OR current persona is invalid for this context, use default
-        // This handles context switches (e.g., "companion" is not valid for "work")
-        if (!selectedPersona || !currentPersonaValid) {
+        // Auto-select default if current persona is invalid for this context
+        const currentPersonaValid = selectedPersona && loadedPersonas.some((p: Persona) => p.id === selectedPersona);
+        if (!currentPersonaValid) {
           const defaultPersona = loadedPersonas.find((p: Persona) => p.isDefault);
           if (defaultPersona) {
             onPersonaChange(defaultPersona.id);
           }
         }
       } catch (error) {
-        // Ignore abort errors
         if (axios.isCancel(error)) return;
         if (!isMounted) return;
 
@@ -74,7 +69,8 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
       isMounted = false;
       abortController.abort();
     };
-  }, [context, selectedPersona, onPersonaChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only reload on context change, not on persona/callback changes
+  }, [context]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -139,12 +135,13 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
   );
 }
 
-// Valid personas per context - must match backend config
+// Valid personas per context - must match backend config/personas.ts CONTEXT_PERSONAS
+// learning and creative contexts reuse PERSONAL_PERSONAS on the backend
 const VALID_PERSONAS: Record<AIContext, string[]> = {
   personal: ['companion', 'coach', 'creative'],
   work: ['coordinator', 'analyst', 'strategist'],
-  learning: ['tutor', 'mentor', 'researcher'],
-  creative: ['muse', 'critic', 'collaborator'],
+  learning: ['companion', 'coach', 'creative'],
+  creative: ['companion', 'coach', 'creative'],
 };
 
 // Hook for managing persona state per context
