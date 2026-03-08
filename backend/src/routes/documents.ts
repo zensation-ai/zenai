@@ -317,7 +317,7 @@ router.post(
     }
 
     if (!doc) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     const result = await documentProcessingService.processDocument(
@@ -353,7 +353,7 @@ router.post(
     }
 
     if (!doc) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     const result = await documentService.reprocessDocument(id, context);
@@ -388,7 +388,7 @@ router.post(
 
     const success = await documentService.moveToFolder(id, folderPath, context);
     if (!success) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     res.json({
@@ -417,7 +417,7 @@ router.post(
 
     const success = await documentService.addTags(id, tags, context);
     if (!success) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     res.json({
@@ -446,7 +446,7 @@ router.post(
 
     const success = await documentService.linkToIdea(id, ideaId, context);
     if (!success) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     res.json({
@@ -547,7 +547,7 @@ router.delete(
 
     const deleted = await documentService.deleteFolder(folderPath, context);
     if (!deleted) {
-      throw new NotFoundError('Folder not found');
+      throw new NotFoundError('Folder');
     }
 
     res.json({
@@ -587,7 +587,7 @@ router.get(
     }
 
     if (!doc) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     // Security: Validate file path to prevent path traversal attacks
@@ -602,7 +602,7 @@ router.get(
     try {
       await fs.access(resolvedPath);
     } catch {
-      throw new NotFoundError('File not found on disk');
+      throw new NotFoundError('File on disk');
     }
 
     res.setHeader('Content-Type', doc.mimeType);
@@ -639,7 +639,7 @@ router.get(
     }
 
     if (!doc) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     // For images, return the image itself
@@ -832,7 +832,7 @@ router.get(
 
     const document = await documentService.getDocument(id, context);
     if (!document) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     res.json({
@@ -864,7 +864,7 @@ router.put(
     });
 
     if (!document) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     res.json({
@@ -887,7 +887,7 @@ router.delete(
 
     const deleted = await documentService.deleteDocument(id, context);
     if (!deleted) {
-      throw new NotFoundError('Document not found');
+      throw new NotFoundError('Document');
     }
 
     res.json({

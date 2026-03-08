@@ -506,7 +506,7 @@ router.get('/:context/learning-tasks/:id/challenge', apiKeyAuth, asyncHandler(as
 
   const challenge = await generateChallenge(id, context as AIContext);
   if (!challenge) {
-    throw new NotFoundError('Task not found');
+    throw new NotFoundError('Task');
   }
 
   res.json({ success: true, challenge });
@@ -529,7 +529,7 @@ router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, requireScope('wri
 
   const result = await evaluateRecall(id, context as AIContext, sanitizedRecall);
   if (!result) {
-    throw new NotFoundError('Task not found');
+    throw new NotFoundError('Task');
   }
 
   res.json({ success: true, ...result });

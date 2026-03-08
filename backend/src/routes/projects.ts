@@ -50,7 +50,7 @@ projectsRouter.get('/:context/projects/:id', apiKeyAuth, requireUUID('id'), asyn
 
   const project = await getProject(context, req.params.id);
   if (!project) {
-    throw new NotFoundError('Project not found');
+    throw new NotFoundError('Project');
   }
 
   sendData(res, project);
@@ -80,7 +80,7 @@ projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), 
 
   const project = await updateProject(context, req.params.id, req.body);
   if (!project) {
-    throw new NotFoundError('Project not found');
+    throw new NotFoundError('Project');
   }
 
   sendData(res, project);
@@ -95,7 +95,7 @@ projectsRouter.delete('/:context/projects/:id', apiKeyAuth, requireScope('write'
 
   const deleted = await deleteProject(context, req.params.id);
   if (!deleted) {
-    throw new NotFoundError('Project not found or already archived');
+    throw new NotFoundError('Project (already archived?)');
   }
 
   sendMessage(res, 'Project archived');

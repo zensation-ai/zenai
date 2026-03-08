@@ -264,7 +264,7 @@ meetingsRouter.get('/:id/notes', apiKeyAuth, deprecationNotice, asyncHandler(asy
   const notes = await getMeetingNotes(req.params.id, ctx);
 
   if (!notes) {
-    throw new NotFoundError('Notes not found for this meeting');
+    throw new NotFoundError('Meeting notes');
   }
 
   res.json({ success: true, notes });

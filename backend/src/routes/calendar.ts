@@ -117,7 +117,7 @@ calendarRouter.get('/:context/calendar/events/:id', apiKeyAuth, asyncHandler(asy
 
   const event = await getCalendarEvent(context, id);
   if (!event) {
-    throw new NotFoundError('Calendar event not found');
+    throw new NotFoundError('Calendar event');
   }
 
   res.json({
@@ -199,7 +199,7 @@ calendarRouter.put('/:context/calendar/events/:id', apiKeyAuth, requireScope('wr
 
   const event = await updateCalendarEvent(context, id, req.body);
   if (!event) {
-    throw new NotFoundError('Calendar event not found');
+    throw new NotFoundError('Calendar event');
   }
 
   res.json({
@@ -223,7 +223,7 @@ calendarRouter.delete('/:context/calendar/events/:id', apiKeyAuth, requireScope(
 
   const deleted = await deleteCalendarEvent(context, id);
   if (!deleted) {
-    throw new NotFoundError('Calendar event not found or already cancelled');
+    throw new NotFoundError('Calendar event (already cancelled?)');
   }
 
   res.json({
@@ -251,7 +251,7 @@ calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, r
   // Get the calendar event
   const event = await getCalendarEvent(context, id);
   if (!event) {
-    throw new NotFoundError('Calendar event not found');
+    throw new NotFoundError('Calendar event');
   }
 
   // Check if already linked

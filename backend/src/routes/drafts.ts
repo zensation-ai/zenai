@@ -650,7 +650,7 @@ draftsRouter.put(
     );
 
     if (!success) {
-      throw new NotFoundError('Suggestion not found or could not be updated');
+      throw new NotFoundError('Suggestion');
     }
 
     logger.info('Learning suggestion updated', { suggestionId, action });

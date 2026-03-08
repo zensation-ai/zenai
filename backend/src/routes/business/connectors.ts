@@ -114,7 +114,7 @@ connectorsRouter.delete('/:id', apiKeyAuth, asyncHandler(async (req: Request, re
   `, [id]);
 
   if (result.rows.length === 0) {
-    throw new NotFoundError('Connector not found');
+    throw new NotFoundError('Connector');
   }
 
   res.json({ success: true, message: 'Connector removed' });

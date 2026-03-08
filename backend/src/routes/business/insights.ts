@@ -71,7 +71,7 @@ insightsRouter.post('/:id/dismiss', apiKeyAuth, asyncHandler(async (req: Request
   `, [id]);
 
   if (result.rows.length === 0) {
-    throw new NotFoundError('Insight not found');
+    throw new NotFoundError('Insight');
   }
 
   res.json({ success: true, message: 'Insight dismissed' });
@@ -92,7 +92,7 @@ insightsRouter.post('/:id/act', apiKeyAuth, asyncHandler(async (req: Request, re
   `, [id]);
 
   if (result.rows.length === 0) {
-    throw new NotFoundError('Insight not found');
+    throw new NotFoundError('Insight');
   }
 
   res.json({ success: true, message: 'Insight marked as acted on' });

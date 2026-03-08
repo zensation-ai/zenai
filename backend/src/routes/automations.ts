@@ -136,7 +136,7 @@ automationsRouter.post(
     const automation = await acceptSuggestion(context as AIContext, id);
 
     if (!automation) {
-      throw new NotFoundError('Suggestion not found or already processed');
+      throw new NotFoundError('Suggestion (already processed?)');
     }
 
     res.json({
@@ -220,7 +220,7 @@ automationsRouter.get(
     const automation = await getAutomation(context as AIContext, id);
 
     if (!automation) {
-      throw new NotFoundError('Automation not found');
+      throw new NotFoundError('Automation');
     }
 
     res.json({
@@ -322,7 +322,7 @@ automationsRouter.put(
     // Check if exists
     const existing = await getAutomation(context as AIContext, id);
     if (!existing) {
-      throw new NotFoundError('Automation not found');
+      throw new NotFoundError('Automation');
     }
 
     if (existing.is_system) {
@@ -379,7 +379,7 @@ automationsRouter.delete(
     const deleted = await deleteAutomation(context as AIContext, id);
 
     if (!deleted) {
-      throw new NotFoundError('Automation not found or is a system automation');
+      throw new NotFoundError('Automation (or system automation)');
     }
 
     res.json({
@@ -473,7 +473,7 @@ automationsRouter.post(
 
     const automation = await getAutomation(context as AIContext, id);
     if (!automation) {
-      throw new NotFoundError('Automation not found');
+      throw new NotFoundError('Automation');
     }
 
     await updateAutomation(context as AIContext, id, {

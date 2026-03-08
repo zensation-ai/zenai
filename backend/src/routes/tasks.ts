@@ -119,7 +119,7 @@ tasksRouter.get('/:context/tasks/:id', apiKeyAuth, requireUUID('id'), asyncHandl
 
   const task = await getTask(context, req.params.id);
   if (!task) {
-    throw new NotFoundError('Task not found');
+    throw new NotFoundError('Task');
   }
 
   sendData(res, task);
@@ -153,7 +153,7 @@ tasksRouter.put('/:context/tasks/:id', apiKeyAuth, requireScope('write'), requir
 
   const task = await updateTask(context, req.params.id, req.body);
   if (!task) {
-    throw new NotFoundError('Task not found');
+    throw new NotFoundError('Task');
   }
 
   sendData(res, task);
@@ -168,7 +168,7 @@ tasksRouter.delete('/:context/tasks/:id', apiKeyAuth, requireScope('write'), req
 
   const deleted = await deleteTask(context, req.params.id);
   if (!deleted) {
-    throw new NotFoundError('Task not found or already cancelled');
+    throw new NotFoundError('Task (already cancelled?)');
   }
 
   sendMessage(res, 'Task cancelled');
@@ -188,7 +188,7 @@ tasksRouter.put('/:context/tasks/:id/favorite', apiKeyAuth, requireScope('write'
   );
 
   if (result.rows.length === 0) {
-    throw new NotFoundError('Task not found');
+    throw new NotFoundError('Task');
   }
 
   sendMessage(res, 'Favorite toggled', {
@@ -231,7 +231,7 @@ tasksRouter.delete('/:context/tasks/:id/dependencies/:depId', apiKeyAuth, requir
 
   const deleted = await removeDependency(context, req.params.depId);
   if (!deleted) {
-    throw new NotFoundError('Dependency not found');
+    throw new NotFoundError('Dependency');
   }
 
   sendMessage(res, 'Dependency removed');
