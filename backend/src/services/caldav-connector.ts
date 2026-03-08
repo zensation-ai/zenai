@@ -5,7 +5,7 @@
  * Supports calendar discovery, event fetch, create, update, delete.
  */
 
-import { DAVClient, type DAVCalendar, type DAVObject } from 'tsdav';
+import { DAVClient, getBasicAuthHeaders, type DAVCalendar, type DAVObject } from 'tsdav';
 import { logger } from '../utils/logger';
 
 export interface CalDAVCredentials {
@@ -34,13 +34,20 @@ export interface CalDAVEventData {
  * Create a CalDAV client for iCloud or other CalDAV servers
  */
 export async function createCalDAVClient(credentials: CalDAVCredentials): Promise<DAVClient> {
+  // Use Custom auth to set explicit Accept-Language header.
+  // Apple iCloud servers reject the default "Accept-Language: *" that tsdav sends,
+  // returning 500 instead of PROPFIND response → "cannot find homeUrl" error.
   const client = new DAVClient({
     serverUrl: credentials.serverUrl,
     credentials: {
       username: credentials.username,
       password: credentials.password,
     },
-    authMethod: 'Basic',
+    authMethod: 'Custom',
+    authFunction: async (creds) => ({
+      ...getBasicAuthHeaders(creds),
+      'accept-language': 'en-US,en;q=0.9',
+    }),
     defaultAccountType: 'caldav',
   });
 
