@@ -452,7 +452,7 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
     {
       id: 'chat',
       label: 'Chat',
-      description: 'Vollbild-Chat mit My Brain',
+      description: 'Vollbild-Chat mit der KI',
       icon: '💬',
       category: 'navigation',
       keywords: ['chat', 'gespräch', 'fragen', 'konversation', 'zen'],
@@ -639,7 +639,7 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
     {
       id: 'voice-chat',
       label: 'Sprach-Chat',
-      description: 'Echtzeit-Sprachkonversation mit My Brain',
+      description: 'Echtzeit-Sprachkonversation mit der KI',
       icon: '🎙️',
       category: 'ai-features',
       keywords: ['voice', 'sprache', 'mikrofon', 'sprechen', 'reden', 'stimme'],

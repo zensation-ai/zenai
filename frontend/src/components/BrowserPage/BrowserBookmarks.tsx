@@ -70,13 +70,18 @@ export function BrowserBookmarks({
       {/* Toolbar */}
       <div className="browser-bookmarks-toolbar">
         <form className="browser-bookmarks-search" onSubmit={handleSearch}>
-          <input
-            type="text"
-            placeholder="Lesezeichen durchsuchen..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="browser-bookmarks-search-input"
-          />
+          <div className="browser-search-wrapper">
+            <span className="browser-search-icon">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </span>
+            <input
+              type="text"
+              placeholder="Lesezeichen durchsuchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="browser-bookmarks-search-input"
+            />
+          </div>
           <button type="submit" className="browser-bookmarks-search-btn">Suchen</button>
         </form>
         <button
@@ -206,7 +211,7 @@ export function BrowserBookmarks({
                 aria-label="Lesezeichen loeschen"
                 title="Loeschen"
               >
-                x
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
               </button>
             </div>
           ))}

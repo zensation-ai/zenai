@@ -222,7 +222,7 @@ export function getPageLabel(page: Page): string {
   const footerItem = NAV_FOOTER_ITEMS.find(i => i.page === page || i.subPages?.includes(page));
   if (footerItem) return footerItem.label;
 
-  return 'My Brain';
+  return 'ZenAI';
 }
 
 /**

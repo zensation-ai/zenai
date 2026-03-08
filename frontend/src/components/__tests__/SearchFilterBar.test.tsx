@@ -11,8 +11,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { SearchFilterBar, type AdvancedFilters } from '../SearchFilterBar';
 
 describe('SearchFilterBar Component', () => {
@@ -94,14 +93,12 @@ describe('SearchFilterBar Component', () => {
       expect(filterToggle).toBeInTheDocument();
     });
 
-    it('shows filter options when panel is expanded', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
+    it('shows filter options when panel is expanded', () => {
       render(<SearchFilterBar {...defaultProps} />);
 
       // Click filter toggle to expand panel
       const filterToggle = screen.getByRole('button', { name: /filter/i });
-      await user.click(filterToggle);
+      act(() => { fireEvent.click(filterToggle); });
 
       // Now filter labels should be visible
       expect(screen.getByText(/typ/i)).toBeInTheDocument();
@@ -109,14 +106,12 @@ describe('SearchFilterBar Component', () => {
       expect(screen.getByText(/kategorie/i)).toBeInTheDocument();
     });
 
-    it('shows filter pill buttons when panel is expanded', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
+    it('shows filter pill buttons when panel is expanded', () => {
       render(<SearchFilterBar {...defaultProps} />);
 
       // Click filter toggle
       const filterToggle = screen.getByRole('button', { name: /filter/i });
-      await user.click(filterToggle);
+      act(() => { fireEvent.click(filterToggle); });
 
       // Find filter pill buttons
       const pillButtons = screen.getAllByRole('button').filter(btn =>
@@ -126,18 +121,16 @@ describe('SearchFilterBar Component', () => {
       expect(pillButtons.length).toBeGreaterThan(0);
     });
 
-    it('calls onFilterChange when filter pill clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-
+    it('calls onFilterChange when filter pill clicked', () => {
       render(<SearchFilterBar {...defaultProps} />);
 
       // Open filter panel
       const filterToggle = screen.getByRole('button', { name: /filter/i });
-      await user.click(filterToggle);
+      act(() => { fireEvent.click(filterToggle); });
 
       // Click a filter pill (e.g., Ideen)
       const ideaPill = screen.getByRole('button', { name: /ideen/i });
-      await user.click(ideaPill);
+      act(() => { fireEvent.click(ideaPill); });
 
       expect(mockOnFilterChange).toHaveBeenCalled();
     });

@@ -194,8 +194,15 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
                 className={`browser-tab ${tab.id === activeTabId ? 'active' : ''}`}
                 onClick={() => switchBrowserTab(tab.id)}
               >
+                <span className="browser-tab-favicon">
+                  {tab.loading ? (
+                    <span className="browser-tab-spinner" />
+                  ) : (
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><ellipse cx="8" cy="8" rx="6.5" ry="3" stroke="currentColor" strokeWidth="1"/><line x1="8" y1="1.5" x2="8" y2="14.5" stroke="currentColor" strokeWidth="1"/></svg>
+                  )}
+                </span>
                 <span className="browser-tab-title">
-                  {tab.loading ? '...' : (tab.title || 'Neuer Tab')}
+                  {tab.title || 'Neuer Tab'}
                 </span>
                 {browserTabs.length > 1 && (
                   <button
@@ -204,7 +211,7 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
                     onClick={(e) => { e.stopPropagation(); closeBrowserTab(tab.id); }}
                     aria-label="Tab schliessen"
                   >
-                    x
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                   </button>
                 )}
               </div>
@@ -214,50 +221,62 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
               className="browser-tab-add"
               onClick={addBrowserTab}
               aria-label="Neuer Tab"
+              title="Neuer Tab"
             >
-              +
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </button>
           </div>
 
           {/* Navigation Bar */}
           <div className="browser-nav-bar">
-            <button
-              type="button"
-              className="browser-nav-btn"
-              onClick={() => { /* In Electron: webview.goBack() */ }}
-              title="Zurueck"
-              disabled
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              className="browser-nav-btn"
-              onClick={() => { /* In Electron: webview.goForward() */ }}
-              title="Vorwaerts"
-              disabled
-            >
-              →
-            </button>
-            <button
-              type="button"
-              className="browser-nav-btn"
-              onClick={() => iframeRef.current?.contentWindow?.location.reload()}
-              title="Neu laden"
-            >
-              {isLoading ? '◻' : '↻'}
-            </button>
+            <div className="browser-nav-controls">
+              <button
+                type="button"
+                className="browser-nav-btn"
+                onClick={() => { /* In Electron: webview.goBack() */ }}
+                title="Zurueck"
+                aria-label="Zurueck"
+                disabled
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button
+                type="button"
+                className="browser-nav-btn"
+                onClick={() => { /* In Electron: webview.goForward() */ }}
+                title="Vorwaerts"
+                aria-label="Vorwaerts"
+                disabled
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button
+                type="button"
+                className={`browser-nav-btn ${isLoading ? 'loading' : ''}`}
+                onClick={() => iframeRef.current?.contentWindow?.location.reload()}
+                title="Neu laden"
+                aria-label="Neu laden"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 8a5.5 5.5 0 1 1-1.1-3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M13.5 3v2h-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </div>
 
             <form className="browser-url-form" onSubmit={handleUrlSubmit}>
-              <input
-                ref={urlInputRef}
-                type="text"
-                className="browser-url-input"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="URL eingeben oder suchen..."
-                aria-label="URL-Eingabe"
-              />
+              <div className="browser-url-wrapper">
+                <span className="browser-url-icon">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </span>
+                <input
+                  ref={urlInputRef}
+                  type="text"
+                  className="browser-url-input"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="URL oder Suchbegriff eingeben..."
+                  aria-label="URL-Eingabe"
+                />
+              </div>
+              {isLoading && <div className="browser-loading-bar" />}
             </form>
 
             <button
@@ -265,9 +284,10 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
               className="browser-nav-btn browser-bookmark-btn"
               onClick={bookmarkCurrentPage}
               title="Lesezeichen hinzufuegen"
+              aria-label="Lesezeichen hinzufuegen"
               disabled={!currentUrl}
             >
-              ⭐
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2h8a1 1 0 0 1 1 1v11.5l-5-3-5 3V3a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
             </button>
           </div>
 
@@ -284,14 +304,48 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
               />
             ) : (
               <div className="browser-empty-state">
-                <div className="browser-empty-icon">🌐</div>
-                <h2>Willkommen im My Brain Browser</h2>
-                <p>Gib eine URL ein oder suche im Web</p>
-                <div className="browser-quick-links">
-                  <button type="button" onClick={() => navigateToUrl('https://duckduckgo.com')}>DuckDuckGo</button>
-                  <button type="button" onClick={() => navigateToUrl('https://wikipedia.org')}>Wikipedia</button>
-                  <button type="button" onClick={() => navigateToUrl('https://news.ycombinator.com')}>Hacker News</button>
+                <div className="browser-empty-hero">
+                  <div className="browser-empty-globe">
+                    <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                      <circle cx="28" cy="28" r="22" stroke="url(#globe-gradient)" strokeWidth="2"/>
+                      <ellipse cx="28" cy="28" rx="22" ry="9" stroke="url(#globe-gradient)" strokeWidth="1.5"/>
+                      <ellipse cx="28" cy="28" rx="9" ry="22" stroke="url(#globe-gradient)" strokeWidth="1.5"/>
+                      <line x1="6" y1="28" x2="50" y2="28" stroke="url(#globe-gradient)" strokeWidth="1"/>
+                      <defs>
+                        <linearGradient id="globe-gradient" x1="0" y1="0" x2="56" y2="56">
+                          <stop stopColor="var(--accent-color, #ff6b2b)"/>
+                          <stop offset="1" stopColor="#ff9a5c"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                  <h2>Wohin soll es gehen?</h2>
+                  <p>URL eingeben oder im Web suchen</p>
                 </div>
+                <div className="browser-quick-section">
+                  <span className="browser-quick-label">Schnellzugriff</span>
+                  <div className="browser-quick-links">
+                    <button type="button" className="browser-quick-link" onClick={() => navigateToUrl('https://duckduckgo.com')}>
+                      <span className="browser-quick-link-icon">🔍</span>
+                      <span className="browser-quick-link-text">Websuche</span>
+                    </button>
+                    <button type="button" className="browser-quick-link" onClick={() => navigateToUrl('https://wikipedia.org')}>
+                      <span className="browser-quick-link-icon">📖</span>
+                      <span className="browser-quick-link-text">Wikipedia</span>
+                    </button>
+                    <button type="button" className="browser-quick-link" onClick={() => navigateToUrl('https://translate.google.com')}>
+                      <span className="browser-quick-link-icon">🌍</span>
+                      <span className="browser-quick-link-text">Uebersetzer</span>
+                    </button>
+                    <button type="button" className="browser-quick-link" onClick={() => navigateToUrl('https://news.ycombinator.com')}>
+                      <span className="browser-quick-link-icon">📰</span>
+                      <span className="browser-quick-link-text">Tech News</span>
+                    </button>
+                  </div>
+                </div>
+                <p className="browser-empty-hint">
+                  Tipp: Einfach Text eingeben fuer eine Websuche, oder eine Domain wie example.com
+                </p>
               </div>
             )}
           </div>

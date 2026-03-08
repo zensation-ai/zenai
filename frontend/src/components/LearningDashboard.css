@@ -851,11 +851,6 @@
     gap: 0.25rem;
   }
 
-  .tab-button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-  }
-
   .learning-log {
     flex-wrap: wrap;
   }
@@ -894,12 +889,6 @@
 
   .feedback-stats {
     grid-template-columns: 1fr;
-  }
-
-  .tab-button {
-    padding: 0.5rem 0.5rem;
-    font-size: 0.7rem;
-    min-height: 40px;
   }
 
   .profile-tab .profile-header {

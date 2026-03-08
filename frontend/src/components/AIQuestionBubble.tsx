@@ -6,6 +6,7 @@
  */
 
 import { memo, useEffect, useRef, useState } from 'react';
+import { AI_PERSONALITY } from '../utils/aiPersonality';
 import './AIQuestionBubble.css';
 
 export type QuestionCategory = 'insight' | 'suggestion' | 'question' | 'celebration';
@@ -79,7 +80,7 @@ const AIQuestionBubbleComponent: React.FC<AIQuestionBubbleProps> = ({
       <div className="ai-question-content">
         <div className="ai-question-header">
           <span className="ai-question-emoji" aria-hidden="true">{displayEmoji}</span>
-          <span className="ai-question-label">My Brain</span>
+          <span className="ai-question-label">{AI_PERSONALITY.name}</span>
         </div>
 
         <p className="ai-question-text">{question}</p>
