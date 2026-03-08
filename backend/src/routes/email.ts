@@ -78,7 +78,7 @@ emailRouter.put('/:context/emails/accounts/:id', apiKeyAuth, requireScope('write
   if (!isValidUUID(id)) throw new ValidationError('Invalid account ID');
 
   const updated = await updateAccount(context, id, req.body);
-  if (!updated) throw new NotFoundError('Email account not found');
+  if (!updated) throw new NotFoundError('Email account');
 
   res.json({ success: true, data: updated });
 }));
@@ -133,7 +133,7 @@ emailRouter.put('/:context/emails/labels/:id', apiKeyAuth, requireScope('write')
   if (!isValidUUID(id)) throw new ValidationError('Invalid label ID');
 
   const updated = await updateLabel(context, id, req.body);
-  if (!updated) throw new NotFoundError('Label not found');
+  if (!updated) throw new NotFoundError('Label');
 
   res.json({ success: true, data: updated });
 }));
@@ -237,7 +237,7 @@ emailRouter.get('/:context/emails/:id', apiKeyAuth, asyncHandler(async (req, res
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   let email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email not found');
+  if (!email) throw new NotFoundError('Email');
 
   // Auto-mark as read
   if (email.status === 'received') {
@@ -259,7 +259,7 @@ emailRouter.get('/:context/emails/:id/thread', apiKeyAuth, asyncHandler(async (r
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email not found');
+  if (!email) throw new NotFoundError('Email');
 
   const thread = await getThread(context, email.thread_id || id);
 
@@ -294,7 +294,7 @@ emailRouter.put('/:context/emails/:id', apiKeyAuth, requireScope('write'), async
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const updated = await updateDraft(context, id, req.body);
-  if (!updated) throw new NotFoundError('Draft not found or email is not a draft');
+  if (!updated) throw new NotFoundError('Draft');
 
   res.json({ success: true, data: updated });
 }));
@@ -310,7 +310,7 @@ emailRouter.post('/:context/emails/:id/send', apiKeyAuth, requireScope('write'),
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const sent = await sendEmailById(context, id);
-  if (!sent) throw new NotFoundError('Email not found');
+  if (!sent) throw new NotFoundError('Email');
 
   res.json({ success: true, data: sent });
 }));
@@ -368,7 +368,7 @@ emailRouter.patch('/:context/emails/:id/status', apiKeyAuth, requireScope('write
   }
 
   const updated = await updateEmailStatus(context, id, status);
-  if (!updated) throw new NotFoundError('Email not found');
+  if (!updated) throw new NotFoundError('Email');
 
   res.json({ success: true, data: updated });
 }));
@@ -384,7 +384,7 @@ emailRouter.patch('/:context/emails/:id/star', apiKeyAuth, requireScope('write')
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const updated = await toggleStar(context, id);
-  if (!updated) throw new NotFoundError('Email not found');
+  if (!updated) throw new NotFoundError('Email');
 
   res.json({ success: true, data: updated });
 }));
@@ -400,7 +400,7 @@ emailRouter.delete('/:context/emails/:id', apiKeyAuth, requireScope('write'), as
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const trashed = await moveToTrash(context, id);
-  if (!trashed) throw new NotFoundError('Email not found');
+  if (!trashed) throw new NotFoundError('Email');
 
   res.json({ success: true, data: trashed, message: 'Email moved to trash' });
 }));
@@ -416,7 +416,7 @@ emailRouter.post('/:context/emails/:id/ai/process', apiKeyAuth, requireScope('wr
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email not found');
+  if (!email) throw new NotFoundError('Email');
 
   try {
     const { processEmailWithAI } = await import('../services/email-ai');
@@ -436,7 +436,7 @@ emailRouter.get('/:context/emails/:id/ai/reply-suggestions', apiKeyAuth, asyncHa
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email not found');
+  if (!email) throw new NotFoundError('Email');
 
   // Return cached suggestions if available
   if (email.ai_reply_suggestions && email.ai_reply_suggestions.length > 0) {
@@ -460,7 +460,7 @@ emailRouter.get('/:context/emails/:id/thread/ai/summary', apiKeyAuth, asyncHandl
   if (!isValidUUID(id)) throw new ValidationError('Invalid email ID');
 
   const email = await getEmail(context, id);
-  if (!email) throw new NotFoundError('Email not found');
+  if (!email) throw new NotFoundError('Email');
 
   try {
     const { summarizeThread } = await import('../services/email-ai');
@@ -528,7 +528,7 @@ emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope(
   if (!isValidUUID(id)) throw new ValidationError('Invalid account ID');
 
   const account = await getAccount(context, id);
-  if (!account) throw new NotFoundError('Account not found');
+  if (!account) throw new NotFoundError('Account');
 
   if (!account.imap_enabled || !account.imap_host) {
     throw new ValidationError('Account is not IMAP-enabled');

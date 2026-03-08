@@ -85,6 +85,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectEmail = useCallback(async (email: Email) => {
+    data.setError(null);
     await data.fetchEmail(email.id);
     await data.fetchThread(email.id);
     setFocusedIndex(data.emails.findIndex(e => e.id === email.id));
@@ -93,6 +94,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
 
   const handleBack = useCallback(() => {
     data.setSelectedEmail(null);
+    data.setError(null);
     setMobileShowDetail(false);
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -169,12 +169,13 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
 
   const hasAttachments = attachments.length > 0;
 
-  // Find matching account for context routing
+  // Find matching account by recipient domain (not sender domain)
+  const recipientDomains = toAddresses.map(a => a.email.split('@')[1]).filter(Boolean);
   const accountResult = await queryContext(context, `
     SELECT id FROM email_accounts
-    WHERE domain = $1
+    WHERE domain = ANY($1::text[])
     LIMIT 1
-  `, [fromAddress.split('@')[1] || '']);
+  `, [recipientDomains]);
 
   const accountId = accountResult.rows[0]?.id || null;
 
