@@ -34,21 +34,24 @@ import {
   deleteSavedLocation,
 } from '../services/location-cache';
 import { isValidContext } from '../utils/database-context';
+import { apiKeyAuth } from '../middleware/auth';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 
 const router = Router();
 
 // ============================================================
-// Middleware: Validate context
+// Helpers
 // ============================================================
 
-function validateContext(req: Request, res: Response): string | null {
+type ValidContext = 'personal' | 'work' | 'learning' | 'creative';
+
+function extractContext(req: Request): ValidContext {
   const context = req.params.context;
   if (!isValidContext(context)) {
-    res.status(400).json({ success: false, error: `Invalid context: ${context}` });
-    return null;
+    throw new ValidationError(`Invalid context: ${context}`);
   }
-  return context as string;
+  return context as ValidContext;
 }
 
 // ============================================================
@@ -59,7 +62,7 @@ function validateContext(req: Request, res: Response): string | null {
  * GET /api/:context/maps/status
  * Check if Google Maps is configured and available
  */
-router.get('/:context/maps/status', (_req: Request, res: Response) => {
+router.get('/:context/maps/status', apiKeyAuth, (_req: Request, res: Response) => {
   res.json({
     success: true,
     available: isGoogleMapsAvailable(),
@@ -82,62 +85,51 @@ router.get('/:context/maps/status', (_req: Request, res: Response) => {
  * POST /api/:context/maps/geocode
  * Convert address to coordinates (with cache)
  */
-router.post('/:context/maps/geocode', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
+router.post('/:context/maps/geocode', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const context = extractContext(req);
 
   const { address } = req.body;
   if (!address || typeof address !== 'string') {
-    return res.status(400).json({ success: false, error: 'address is required' });
+    throw new ValidationError('address is required');
   }
 
-  try {
-    // Check cache first
-    const cached = await getCachedGeocode(context as 'personal' | 'work' | 'learning' | 'creative', address);
-    if (cached) {
-      return res.json({ success: true, data: cached, source: 'cache' });
-    }
-
-    // Call Google Maps
-    const result = await geocode(address);
-    if (!result) {
-      return res.status(404).json({ success: false, error: 'Address not found' });
-    }
-
-    // Cache the result
-    await setCachedGeocode(context as 'personal' | 'work' | 'learning' | 'creative', address, result);
-
-    res.json({ success: true, data: result, source: 'google' });
-  } catch (error) {
-    logger.error('Geocode endpoint failed', error as Error);
-    res.status(500).json({ success: false, error: 'Geocoding failed' });
+  // Check cache first
+  const cached = await getCachedGeocode(context, address);
+  if (cached) {
+    return res.json({ success: true, data: cached, source: 'cache' });
   }
-});
+
+  // Call Google Maps
+  const result = await geocode(address);
+  if (!result) {
+    return res.status(404).json({ success: false, error: 'Address not found' });
+  }
+
+  // Cache the result
+  await setCachedGeocode(context, address, result);
+
+  res.json({ success: true, data: result, source: 'google' });
+}));
 
 /**
  * POST /api/:context/maps/reverse-geocode
  * Convert coordinates to address
  */
-router.post('/:context/maps/reverse-geocode', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
+router.post('/:context/maps/reverse-geocode', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const context = extractContext(req);
+  void context; // validated but not needed for this call
 
   const { lat, lng } = req.body;
   if (typeof lat !== 'number' || typeof lng !== 'number') {
-    return res.status(400).json({ success: false, error: 'lat and lng are required numbers' });
+    throw new ValidationError('lat and lng are required numbers');
   }
 
-  try {
-    const result = await reverseGeocode(lat, lng);
-    if (!result) {
-      return res.status(404).json({ success: false, error: 'Location not found' });
-    }
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Reverse geocode failed', error as Error);
-    res.status(500).json({ success: false, error: 'Reverse geocoding failed' });
+  const result = await reverseGeocode(lat, lng);
+  if (!result) {
+    return res.status(404).json({ success: false, error: 'Location not found' });
   }
-});
+  res.json({ success: true, data: result });
+}));
 
 // ============================================================
 // Autocomplete
@@ -147,27 +139,21 @@ router.post('/:context/maps/reverse-geocode', async (req: Request, res: Response
  * GET /api/:context/maps/autocomplete?input=...&lat=...&lng=...
  * Get place suggestions for text input
  */
-router.get('/:context/maps/autocomplete', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
+router.get('/:context/maps/autocomplete', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  extractContext(req);
 
   const input = req.query.input as string;
   if (!input || input.length < 2) {
     return res.json({ success: true, data: [] });
   }
 
-  try {
-    const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
-    const lng = req.query.lng ? parseFloat(req.query.lng as string) : undefined;
-    const location = lat && lng ? { lat, lng } : undefined;
+  const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
+  const lng = req.query.lng ? parseFloat(req.query.lng as string) : undefined;
+  const location = lat && lng ? { lat, lng } : undefined;
 
-    const results = await autocomplete(input, { location });
-    res.json({ success: true, data: results });
-  } catch (error) {
-    logger.error('Autocomplete endpoint failed', error as Error);
-    res.status(500).json({ success: false, error: 'Autocomplete failed' });
-  }
-});
+  const results = await autocomplete(input, { location });
+  res.json({ success: true, data: results });
+}));
 
 // ============================================================
 // Place Details
@@ -177,34 +163,27 @@ router.get('/:context/maps/autocomplete', async (req: Request, res: Response) =>
  * GET /api/:context/maps/places/:placeId
  * Get place details with opening hours (cached)
  */
-router.get('/:context/maps/places/:placeId', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
-
+router.get('/:context/maps/places/:placeId', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const context = extractContext(req);
   const { placeId } = req.params;
 
-  try {
-    // Check cache first
-    const cached = await getCachedPlaceDetails(context as 'personal' | 'work' | 'learning' | 'creative', placeId);
-    if (cached) {
-      return res.json({ success: true, data: cached, source: 'cache' });
-    }
-
-    // Call Google Maps
-    const details = await getPlaceDetails(placeId);
-    if (!details) {
-      return res.status(404).json({ success: false, error: 'Place not found' });
-    }
-
-    // Cache the result
-    await setCachedPlaceDetails(context as 'personal' | 'work' | 'learning' | 'creative', details);
-
-    res.json({ success: true, data: details, source: 'google' });
-  } catch (error) {
-    logger.error('Place details endpoint failed', error as Error);
-    res.status(500).json({ success: false, error: 'Place details failed' });
+  // Check cache first
+  const cached = await getCachedPlaceDetails(context, placeId);
+  if (cached) {
+    return res.json({ success: true, data: cached, source: 'cache' });
   }
-});
+
+  // Call Google Maps
+  const details = await getPlaceDetails(placeId);
+  if (!details) {
+    return res.status(404).json({ success: false, error: 'Place not found' });
+  }
+
+  // Cache the result
+  await setCachedPlaceDetails(context, details);
+
+  res.json({ success: true, data: details, source: 'google' });
+}));
 
 // ============================================================
 // Directions
@@ -214,34 +193,28 @@ router.get('/:context/maps/places/:placeId', async (req: Request, res: Response)
  * POST /api/:context/maps/directions
  * Get directions between two places (with traffic)
  */
-router.post('/:context/maps/directions', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
+router.post('/:context/maps/directions', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  extractContext(req);
 
   const { origin, destination, mode, departure_time } = req.body;
   if (!origin || !destination) {
-    return res.status(400).json({ success: false, error: 'origin and destination are required' });
+    throw new ValidationError('origin and destination are required');
   }
 
-  try {
-    const departureTime = departure_time ? new Date(departure_time) : undefined;
-    const result = await getDirections(
-      origin,
-      destination,
-      (mode as TravelMode) || 'driving',
-      departureTime
-    );
+  const departureTime = departure_time ? new Date(departure_time) : undefined;
+  const result = await getDirections(
+    origin,
+    destination,
+    (mode as TravelMode) || 'driving',
+    departureTime
+  );
 
-    if (!result) {
-      return res.status(404).json({ success: false, error: 'No route found' });
-    }
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Directions endpoint failed', error as Error);
-    res.status(500).json({ success: false, error: 'Directions failed' });
+  if (!result) {
+    return res.status(404).json({ success: false, error: 'No route found' });
   }
-});
+
+  res.json({ success: true, data: result });
+}));
 
 // ============================================================
 // Distance Matrix
@@ -251,34 +224,28 @@ router.post('/:context/maps/directions', async (req: Request, res: Response) => 
  * POST /api/:context/maps/distance-matrix
  * Calculate travel times between multiple points
  */
-router.post('/:context/maps/distance-matrix', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
+router.post('/:context/maps/distance-matrix', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  extractContext(req);
 
   const { origins, destinations, mode } = req.body;
   if (!Array.isArray(origins) || !Array.isArray(destinations)) {
-    return res.status(400).json({ success: false, error: 'origins and destinations must be arrays' });
+    throw new ValidationError('origins and destinations must be arrays');
   }
   if (origins.length === 0 || destinations.length === 0) {
-    return res.status(400).json({ success: false, error: 'origins and destinations must not be empty' });
+    throw new ValidationError('origins and destinations must not be empty');
   }
   if (origins.length * destinations.length > 25) {
-    return res.status(400).json({ success: false, error: 'Maximum 25 origin-destination pairs allowed' });
+    throw new ValidationError('Maximum 25 origin-destination pairs allowed');
   }
 
-  try {
-    const results = await getDistanceMatrix(
-      origins,
-      destinations,
-      (mode as TravelMode) || 'driving'
-    );
+  const results = await getDistanceMatrix(
+    origins,
+    destinations,
+    (mode as TravelMode) || 'driving'
+  );
 
-    res.json({ success: true, data: results });
-  } catch (error) {
-    logger.error('Distance matrix endpoint failed', error as Error);
-    res.status(500).json({ success: false, error: 'Distance matrix failed' });
-  }
-});
+  res.json({ success: true, data: results });
+}));
 
 // ============================================================
 // Nearby Search
@@ -288,23 +255,17 @@ router.post('/:context/maps/distance-matrix', async (req: Request, res: Response
  * POST /api/:context/maps/nearby
  * Find places near a location
  */
-router.post('/:context/maps/nearby', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
+router.post('/:context/maps/nearby', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  extractContext(req);
 
   const { lat, lng, radius, type, keyword } = req.body;
   if (typeof lat !== 'number' || typeof lng !== 'number') {
-    return res.status(400).json({ success: false, error: 'lat and lng are required numbers' });
+    throw new ValidationError('lat and lng are required numbers');
   }
 
-  try {
-    const results = await searchNearby(lat, lng, { radius, type, keyword });
-    res.json({ success: true, data: results });
-  } catch (error) {
-    logger.error('Nearby search endpoint failed', error as Error);
-    res.status(500).json({ success: false, error: 'Nearby search failed' });
-  }
-});
+  const results = await searchNearby(lat, lng, { radius, type, keyword });
+  res.json({ success: true, data: results });
+}));
 
 // ============================================================
 // Saved Locations
@@ -314,69 +275,51 @@ router.post('/:context/maps/nearby', async (req: Request, res: Response) => {
  * GET /api/:context/maps/saved-locations
  * List user's saved locations
  */
-router.get('/:context/maps/saved-locations', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
-
-  try {
-    const locations = await getSavedLocations(context as 'personal' | 'work' | 'learning' | 'creative');
-    res.json({ success: true, data: locations });
-  } catch (error) {
-    logger.error('Get saved locations failed', error as Error);
-    res.status(500).json({ success: false, error: 'Failed to get saved locations' });
-  }
-});
+router.get('/:context/maps/saved-locations', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const context = extractContext(req);
+  const locations = await getSavedLocations(context);
+  res.json({ success: true, data: locations });
+}));
 
 /**
  * POST /api/:context/maps/saved-locations
  * Save a new location
  */
-router.post('/:context/maps/saved-locations', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
+router.post('/:context/maps/saved-locations', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const context = extractContext(req);
 
   const { label, address, lat, lng, googlePlaceId, icon, isDefault } = req.body;
   if (!label || !address || typeof lat !== 'number' || typeof lng !== 'number') {
-    return res.status(400).json({ success: false, error: 'label, address, lat, and lng are required' });
+    throw new ValidationError('label, address, lat, and lng are required');
   }
 
-  try {
-    const location = await saveSavedLocation(
-      context as 'personal' | 'work' | 'learning' | 'creative',
-      { label, address, lat, lng, googlePlaceId: googlePlaceId || null, icon: icon || 'pin', isDefault: isDefault || false }
-    );
+  const location = await saveSavedLocation(context, {
+    label, address, lat, lng,
+    googlePlaceId: googlePlaceId || null,
+    icon: icon || 'pin',
+    isDefault: isDefault || false,
+  });
 
-    if (!location) {
-      return res.status(500).json({ success: false, error: 'Failed to save location' });
-    }
-
-    res.status(201).json({ success: true, data: location });
-  } catch (error) {
-    logger.error('Save location failed', error as Error);
-    res.status(500).json({ success: false, error: 'Failed to save location' });
+  if (!location) {
+    return res.status(500).json({ success: false, error: 'Failed to save location' });
   }
-});
+
+  res.status(201).json({ success: true, data: location });
+}));
 
 /**
  * DELETE /api/:context/maps/saved-locations/:id
  * Delete a saved location
  */
-router.delete('/:context/maps/saved-locations/:id', async (req: Request, res: Response) => {
-  const context = validateContext(req, res);
-  if (!context) return;
-
+router.delete('/:context/maps/saved-locations/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const context = extractContext(req);
   const { id } = req.params;
 
-  try {
-    const deleted = await deleteSavedLocation(context as 'personal' | 'work' | 'learning' | 'creative', id);
-    if (!deleted) {
-      return res.status(404).json({ success: false, error: 'Location not found' });
-    }
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Delete location failed', error as Error);
-    res.status(500).json({ success: false, error: 'Failed to delete location' });
+  const deleted = await deleteSavedLocation(context, id);
+  if (!deleted) {
+    return res.status(404).json({ success: false, error: 'Location not found' });
   }
-});
+  res.json({ success: true });
+}));
 
 export { router as mapsRouter };
