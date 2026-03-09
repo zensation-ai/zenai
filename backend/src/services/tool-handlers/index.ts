@@ -59,6 +59,10 @@ import {
   TOOL_MEMORY_UPDATE,
   TOOL_MEMORY_DELETE,
   TOOL_MEMORY_UPDATE_PROFILE,
+  TOOL_ASK_INBOX,
+  TOOL_INBOX_SUMMARY,
+  TOOL_MCP_CALL_TOOL,
+  TOOL_MCP_LIST_TOOLS,
   ToolExecutionContext,
 } from '../claude/tool-use';
 import { createMeeting } from '../meetings';
@@ -97,6 +101,14 @@ import {
   handleMemoryDelete,
   handleMemoryUpdateProfile,
 } from './memory-tools';
+import {
+  handleAskInbox,
+  handleInboxSummary,
+} from './email-tools';
+import {
+  handleMCPCallTool,
+  handleMCPListTools,
+} from './mcp-tools';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -976,6 +988,14 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_MEMORY_DELETE, handleMemoryDelete);
   toolRegistry.register(TOOL_MEMORY_UPDATE_PROFILE, handleMemoryUpdateProfile);
 
+  // Phase 43: Email Intelligence tools
+  toolRegistry.register(TOOL_ASK_INBOX, handleAskInbox);
+  toolRegistry.register(TOOL_INBOX_SUMMARY, handleInboxSummary);
+
+  // Phase 44: MCP Ecosystem tools
+  toolRegistry.register(TOOL_MCP_CALL_TOOL, handleMCPCallTool);
+  toolRegistry.register(TOOL_MCP_LIST_TOOLS, handleMCPListTools);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1020,6 +1040,10 @@ export function registerAllToolHandlers(): void {
       'memory_update',
       'memory_delete',
       'memory_update_profile',
+      'ask_inbox',
+      'inbox_summary',
+      'mcp_call_tool',
+      'mcp_list_tools',
     ],
   });
 }

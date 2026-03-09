@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 41
+## Current Phase: 44
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -140,6 +140,14 @@
 - Resend Service: `backend/src/services/resend.ts`
 - Email CRUD Service: `backend/src/services/email.ts`
 - Email AI Service: `backend/src/services/email-ai.ts`
+- Email Search: `backend/src/services/email-search.ts`
+- Email Digest: `backend/src/services/email-digest.ts`
+- Email Tool Handlers: `backend/src/services/tool-handlers/email-tools.ts`
+- MCP Server (stdio): `backend/src/mcp/server.ts`
+- MCP HTTP Gateway: `backend/src/routes/mcp.ts`
+- MCP Client SDK: `backend/src/services/mcp-client.ts`
+- MCP Connection Manager: `backend/src/services/mcp-connections.ts`
+- MCP Tool Handlers: `backend/src/services/tool-handlers/mcp-tools.ts`
 - Email Routes: `backend/src/routes/email.ts`
 - Email Webhooks: `backend/src/routes/email-webhooks.ts`
 - Browser Routes: `backend/src/routes/browser.ts`
@@ -153,6 +161,10 @@
 - Location Cache: `backend/src/services/location-cache.ts`
 - Canvas Routes: `backend/src/routes/canvas.ts`
 - Canvas Service: `backend/src/services/canvas.ts`
+- GraphRAG Service: `backend/src/services/graph-rag.ts`
+- Agent Runtime: `backend/src/services/agents/agent-runtime.ts`
+- Agent Templates: `backend/src/services/agents/agent-templates.ts`
+- Autonomous Agent Routes: `backend/src/routes/autonomous-agents.ts`
 
 ### Frontend
 
@@ -247,7 +259,32 @@ POST   /api/:context/emails/accounts     - Create account
 POST   /api/:context/emails/:id/ai/process           - Trigger AI processing
 GET    /api/:context/emails/:id/ai/reply-suggestions  - AI reply suggestions
 GET    /api/:context/emails/:id/thread/ai/summary     - Thread AI summary
+POST   /api/:context/emails/search                    - Natural language email search (Phase 43)
+GET    /api/:context/emails/inbox-summary              - Inbox statistics overview (Phase 43)
+POST   /api/:context/emails/digest                     - Generate email digest (Phase 43)
 POST   /api/webhooks/resend              - Resend inbound webhook (Svix signature, no API key)
+```
+
+### MCP HTTP Gateway API (Phase 44)
+
+```
+GET    /api/mcp/status                                  - MCP server status
+GET    /api/mcp/tools                                   - List all internal MCP tools (30)
+POST   /api/mcp/tools/call                              - Call an internal MCP tool
+GET    /api/mcp/resources                               - List internal MCP resources
+POST   /api/mcp/resources/read                          - Read an internal MCP resource
+GET    /api/:context/mcp/connections                     - List external MCP server connections
+GET    /api/:context/mcp/connections/:id                 - Get single connection
+POST   /api/:context/mcp/connections                     - Create MCP server connection
+PUT    /api/:context/mcp/connections/:id                 - Update connection
+DELETE /api/:context/mcp/connections/:id                 - Delete connection
+POST   /api/:context/mcp/connections/:id/check           - Health check connection
+GET    /api/:context/mcp/connections/:id/tools            - List tools from specific connection
+POST   /api/:context/mcp/connections/:id/tools/call       - Call tool on specific connection
+GET    /api/:context/mcp/connections/:id/resources         - List resources from specific connection
+POST   /api/:context/mcp/connections/:id/resources/read    - Read resource from specific connection
+GET    /api/:context/mcp/tools                            - Unified tool list (all connections)
+GET    /api/:context/mcp/resources                        - Unified resource list (all connections)
 ```
 
 ### Vision API
@@ -423,6 +460,25 @@ DELETE /api/canvas/:id                                - Delete canvas document
 POST   /api/canvas/:id/link-chat                      - Link chat session to document
 GET    /api/canvas/:id/versions                       - Get document version history
 POST   /api/canvas/:id/restore/:versionId             - Restore document version
+```
+
+### Autonomous Agents API (Phase 42)
+
+```
+GET    /api/:context/agents                             - List agents
+GET    /api/:context/agents/running                     - List all running agents
+GET    /api/:context/agents/templates                   - Available agent templates
+POST   /api/:context/agents/from-template               - Create agent from template
+GET    /api/:context/agents/:id                         - Agent details
+POST   /api/:context/agents                             - Create agent
+PUT    /api/:context/agents/:id                         - Update agent
+DELETE /api/:context/agents/:id                         - Delete agent
+POST   /api/:context/agents/:id/start                   - Start agent
+POST   /api/:context/agents/:id/stop                    - Stop agent
+GET    /api/:context/agents/:id/logs                    - Execution logs
+GET    /api/:context/agents/:id/stats                   - Agent statistics
+POST   /api/:context/agents/:id/approve/:execId         - Approve pending execution
+POST   /api/:context/agents/:id/reject/:execId          - Reject pending execution
 ```
 
 ## Environment Variables (Backend)
@@ -670,6 +726,85 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-09: Phase 44 — MCP Ecosystem (HTTP Gateway, External Connections, Client SDK)
+
+**MCP-Server ueber HTTP zugaenglich gemacht + externe MCP-Server-Verbindungen + Chat-Tool-Integration.**
+
+**Features:**
+
+| Feature | Details |
+|---------|---------|
+| **MCP HTTP Gateway** | REST API fuer interne MCP-Tools: `/api/mcp/tools`, `/api/mcp/tools/call`, `/api/mcp/resources`, `/api/mcp/status` |
+| **External MCP Connections** | CRUD fuer externe MCP-Server-Verbindungen mit Health-Check, Tool-Discovery, context-aware |
+| **MCP Client SDK** | TypeScript-Client mit JSON-RPC 2.0, Caching, Auth, Timeout-Handling |
+| **Chat Tool Integration** | `mcp_call_tool` und `mcp_list_tools` als Claude-Tools im Chat verfuegbar |
+| **Unified Tool Discovery** | Alle Tools aller verbundenen Server aggregiert unter `/api/:context/mcp/tools` |
+| **Frontend MCP Hub** | Enhanced MCPHubTab: Interne Tools + Externe Server-Verwaltung (hinzufuegen, testen, deaktivieren) |
+| **DB Migration** | `mcp_connections` + `mcp_tool_call_log` Tabellen in allen 4 Schemas |
+
+**Neue Dateien (Backend):**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/routes/mcp.ts` | MCP HTTP Gateway (mcpRouter + mcpConnectionsRouter), 17 Endpoints |
+| `backend/src/services/mcp-client.ts` | MCP Client SDK (HTTP JSON-RPC Transport, Caching, Health Check) |
+| `backend/src/services/mcp-connections.ts` | Connection Manager (CRUD, Health Monitoring, Unified Discovery) |
+| `backend/src/services/tool-handlers/mcp-tools.ts` | Chat-Tool-Handler (mcp_call_tool, mcp_list_tools) |
+| `backend/sql/migrations/phase44_mcp_ecosystem.sql` | DB-Migration (2 Tabellen pro Schema) |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | Route-Registrierung (mcpRouter, mcpConnectionsRouter), MCP Connection Manager Init |
+| `backend/src/services/claude/tool-use.ts` | TOOL_MCP_CALL_TOOL + TOOL_MCP_LIST_TOOLS Definitionen |
+| `backend/src/services/tool-handlers/index.ts` | MCP-Tool-Handler registriert |
+| `backend/src/services/chat-modes.ts` | 4 neue MCP-Patterns, Keywords, Default-Tool-Listen erweitert |
+| `frontend/src/components/IntegrationsPage/MCPHubTab.tsx` | Enhanced: Interne Tools + Externe Server-Verwaltung |
+
+**Tests:** 4 neue Testdateien (mcp-client: 17, mcp-tools: 5, mcp-connections: 6, mcp-gateway: 18 = 46 neue Tests)
+
+---
+
+### 2026-03-09: Phase 43 — Email Intelligence (Ask My Inbox, Digest, Auto Re-Summarization)
+
+**Intelligente E-Mail-Funktionen: Natuerliche Sprache fuer Inbox-Suche, automatische Digests und Thread-Re-Summarization.**
+
+**Neue Features:**
+
+| Feature | Details |
+|---------|---------|
+| **Ask My Inbox** | `ask_inbox` Chat-Tool: Natuerlichsprachliche E-Mail-Suche ueber den Chat |
+| **Inbox Summary** | `inbox_summary` Chat-Tool: Schneller Inbox-Ueberblick auf Anfrage |
+| **Email Search Service** | NL-Query-Parser → SQL-Filter (Absender, Datum, Kategorie, Prioritaet, Freitext) |
+| **Email Digest** | Tages-/Wochen-Digests mit KI-Narrativ, Highlights und Action Items |
+| **Auto Thread Re-Summarization** | Automatische Thread-Zusammenfassung bei neuen Inbound-Mails |
+| **3 neue API-Endpoints** | `POST /search`, `GET /inbox-summary`, `POST /digest` |
+| **9 neue Chat-Patterns** | Erkennung von Inbox-bezogenen Fragen in Chat-Modes |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/email-search.ts` | NL-Query-Parser + SQL-Suche + Formatierung |
+| `backend/src/services/email-digest.ts` | Digest-Generierung mit Claude-Narrativ |
+| `backend/src/services/tool-handlers/email-tools.ts` | Tool-Handler fuer ask_inbox + inbox_summary |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/services/claude/tool-use.ts` | 2 neue Tool-Definitionen (TOOL_ASK_INBOX, TOOL_INBOX_SUMMARY) |
+| `backend/src/services/tool-handlers/index.ts` | Tool-Registrierung fuer Email-Intelligence |
+| `backend/src/services/chat-modes.ts` | 9 neue Patterns fuer Inbox-Erkennung, Tools in Mode-Defaults |
+| `backend/src/routes/email.ts` | 3 neue Endpoints (search, inbox-summary, digest) |
+| `backend/src/routes/email-webhooks.ts` | Auto Thread Re-Summarization bei neuen Inbound-Mails |
+| `CLAUDE.md` | Phase auf 43 aktualisiert, API-Docs + Key Files ergaenzt |
+
+**Tests:** 35 neue Tests (26 email-search + 5 email-tools + 4 email-digest)
+
+---
 
 ### 2026-03-09: Comprehensive Function Audit & Fixes
 

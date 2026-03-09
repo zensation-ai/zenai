@@ -1106,6 +1106,88 @@ export const TOOL_OPTIMIZE_ROUTE: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 43: Email Intelligence Tools
+// ===========================================
+
+/**
+ * Ask My Inbox tool - natural language email search
+ */
+export const TOOL_ASK_INBOX: ToolDefinition = {
+  name: 'ask_inbox',
+  description: 'Durchsucht die E-Mails des Nutzers mit natuerlicher Sprache. Nutze dies wenn der Nutzer Fragen zu seinen E-Mails stellt, z.B. "Was hat mir X geschrieben?", "Gibt es dringende E-Mails?", "Zeig mir E-Mails von letzter Woche". Kann nach Absender, Datum, Kategorie, Prioritaet und Freitext filtern.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      question: {
+        type: 'string',
+        description: 'Die Frage oder Suchanfrage zu E-Mails in natuerlicher Sprache',
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximale Anzahl Ergebnisse (Standard: 10)',
+      },
+    },
+    required: ['question'],
+  },
+};
+
+/**
+ * Inbox Summary tool - quick inbox overview
+ */
+export const TOOL_INBOX_SUMMARY: ToolDefinition = {
+  name: 'inbox_summary',
+  description: 'Gibt einen Ueberblick ueber den aktuellen Inbox-Status: Anzahl E-Mails, ungelesen, Kategorien, Prioritaeten, haeufigste Absender, offene Aufgaben. Nutze dies wenn der Nutzer nach einem Inbox-Ueberblick oder E-Mail-Status fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {},
+    required: [],
+  },
+};
+
+// ===========================================
+// Phase 44: MCP Ecosystem Tools
+// ===========================================
+
+/**
+ * MCP Call Tool - call a tool on a connected external MCP server
+ */
+export const TOOL_MCP_CALL_TOOL: ToolDefinition = {
+  name: 'mcp_call_tool',
+  description: 'Ruft ein Tool auf einem verbundenen externen MCP-Server auf. Nutze zuerst mcp_list_tools um verfuegbare Tools zu sehen, dann rufe das gewuenschte Tool mit connection_id und tool_name auf.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      connection_id: {
+        type: 'string',
+        description: 'Die UUID der MCP-Server-Verbindung',
+      },
+      tool_name: {
+        type: 'string',
+        description: 'Der Name des Tools auf dem externen Server',
+      },
+      arguments: {
+        type: 'object',
+        description: 'Die Argumente fuer das Tool (als JSON-Objekt)',
+      },
+    },
+    required: ['connection_id', 'tool_name'],
+  },
+};
+
+/**
+ * MCP List Tools - list all available tools from connected MCP servers
+ */
+export const TOOL_MCP_LIST_TOOLS: ToolDefinition = {
+  name: 'mcp_list_tools',
+  description: 'Listet alle verfuegbaren Tools von verbundenen externen MCP-Servern auf. Zeigt Tool-Namen, Beschreibungen und den zugehoerigen Server.',
+  input_schema: {
+    type: 'object',
+    properties: {},
+    required: [],
+  },
+};
+
+// ===========================================
 // Tool Registry
 // ===========================================
 

@@ -22,6 +22,8 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateEmailAddresses, validateContextParam } from '../utils/validation';
 import { logger } from '../utils/logger';
+import { parseNaturalLanguageQuery, searchEmails, getInboxSummary, EmailSearchQuery } from '../services/email-search';
+import { generateEmailDigest, formatDigestForChat } from '../services/email-digest';
 
 export const emailRouter = Router();
 
@@ -648,4 +650,58 @@ emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope(
     const message = (err as Error).message || 'Sync failed';
     res.status(400).json({ success: false, error: message });
   }
+}));
+
+// ============================================================
+// Phase 43: Email Intelligence Routes
+// ============================================================
+
+/**
+ * POST /api/:context/emails/search
+ * Natural language email search
+ */
+emailRouter.post('/search', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
+  const context = validateContextParam(req.params.context);
+
+  const { query, text, from, to, after, before, category, priority, status, direction, starred, limit } = req.body;
+
+  let searchQuery: EmailSearchQuery;
+
+  if (query && typeof query === 'string') {
+    // Natural language mode
+    searchQuery = parseNaturalLanguageQuery(query);
+  } else {
+    // Structured filter mode
+    searchQuery = { text, from, to, after, before, category, priority, status, direction, starred };
+  }
+
+  if (limit) searchQuery.limit = Math.min(Number(limit), 50);
+
+  const results = await searchEmails(context, searchQuery);
+  res.json({ success: true, data: results });
+}));
+
+/**
+ * GET /api/:context/emails/inbox-summary
+ * Inbox overview statistics
+ */
+emailRouter.get('/inbox-summary', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
+  const context = validateContextParam(req.params.context);
+  const summary = await getInboxSummary(context);
+  res.json({ success: true, data: summary });
+}));
+
+/**
+ * POST /api/:context/emails/digest
+ * Generate email digest
+ */
+emailRouter.post('/digest', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
+  const context = validateContextParam(req.params.context);
+  const period = req.body.period === 'weekly' ? 'weekly' as const : 'daily' as const;
+  const lookbackHours = req.body.lookback_hours ? Number(req.body.lookback_hours) : undefined;
+
+  const digest = await generateEmailDigest({ context, period, lookbackHours });
+  const formatted = formatDigestForChat(digest);
+
+  res.json({ success: true, data: { digest, formatted } });
 }));

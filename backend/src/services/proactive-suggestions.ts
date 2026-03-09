@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { queryContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { routineDetectionService, UserAction } from './routine-detection';
+import { notifyProactiveSuggestion } from './push-notifications';
 
 // ===========================================
 // Types & Interfaces
@@ -172,10 +173,23 @@ export class ProactiveSuggestionEngine {
         return gettingStarted.slice(0, limit);
       }
 
+      // Push high-priority suggestions as notifications (fire-and-forget)
+      const highPriority = limitedSuggestions.filter(s => s.priority === 'high');
+      if (highPriority.length > 0) {
+        for (const suggestion of highPriority.slice(0, 2)) {
+          notifyProactiveSuggestion(context, suggestion).catch(err => {
+            logger.debug('Proactive push notification failed (non-critical)', {
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+        }
+      }
+
       logger.info('Proactive suggestions generated', {
         context,
         total: suggestions.length,
         returned: limitedSuggestions.length,
+        pushNotified: highPriority.length,
         dailyCount: dailySuggestionCount,
       });
 

@@ -10,6 +10,7 @@ import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { sendData, sendSuccess } from '../utils/response';
 import { getUnifiedInbox, InboxItemType } from '../services/unified-inbox';
 
 export const unifiedInboxRouter = Router();
@@ -55,10 +56,7 @@ unifiedInboxRouter.get(
 
     const result = await getUnifiedInbox(context as AIContext, { types, limit });
 
-    res.json({
-      success: true,
-      data: result,
-    });
+    sendData(res, result);
   })
 );
 
@@ -79,10 +77,6 @@ unifiedInboxRouter.get(
 
     const result = await getUnifiedInbox(context as AIContext, { limit: 100 });
 
-    res.json({
-      success: true,
-      counts: result.counts,
-      total: result.total,
-    });
+    sendSuccess(res, { fields: { counts: result.counts, total: result.total } });
   })
 );
