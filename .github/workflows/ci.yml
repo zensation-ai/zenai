@@ -8,9 +8,9 @@ on:
 
 jobs:
   # ============================================
-  # Backend: Lint + TypeScript Check
+  # Install dependencies (shared across jobs)
   # ============================================
-  lint-backend:
+  install:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +21,43 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache node_modules
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+            packages/*/node_modules
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+  # ============================================
+  # Backend: Lint + TypeScript Check
+  # ============================================
+  lint-backend:
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+            packages/*/node_modules
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (fallback)
         run: pnpm install --frozen-lockfile
 
       - name: TypeScript type check
@@ -47,12 +84,22 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+            packages/*/node_modules
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (fallback)
         run: pnpm install --frozen-lockfile
 
       - name: Run all tests
         working-directory: backend
-        run: pnpm exec jest --forceExit --detectOpenHandles --maxWorkers=2
+        run: pnpm test -- --forceExit --detectOpenHandles --maxWorkers=2
         timeout-minutes: 20
         env:
           NODE_ENV: test
@@ -65,6 +112,7 @@ jobs:
   # ============================================
   build-frontend:
     runs-on: ubuntu-latest
+    needs: install
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -73,7 +121,17 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+            packages/*/node_modules
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (fallback)
         run: pnpm install --frozen-lockfile
 
       - name: TypeScript type check
@@ -98,7 +156,17 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+            packages/*/node_modules
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (fallback)
         run: pnpm install --frozen-lockfile
 
       - name: Run Vitest unit tests

@@ -1,5 +1,5 @@
 {
-  "installCommand": "cd .. && corepack enable && pnpm install --frozen-lockfile",
+  "installCommand": "cd .. && corepack enable && corepack prepare pnpm@9.15.0 --activate && pnpm install --frozen-lockfile",
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "framework": "vite",

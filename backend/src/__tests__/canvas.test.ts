@@ -91,10 +91,10 @@ describe('Canvas API Tests', () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('title', 'Test Document');
-      expect(response.body).toHaveProperty('type', 'markdown');
-      expect(response.body).toHaveProperty('context', 'personal');
+      expect(response.body.data).toHaveProperty('id');
+      expect(response.body.data).toHaveProperty('title', 'Test Document');
+      expect(response.body.data).toHaveProperty('type', 'markdown');
+      expect(response.body.data).toHaveProperty('context', 'personal');
     });
 
     it('should create a code document with language', async () => {
@@ -113,8 +113,8 @@ describe('Canvas API Tests', () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.type).toBe('code');
-      expect(response.body.language).toBe('typescript');
+      expect(response.body.data.type).toBe('code');
+      expect(response.body.data.language).toBe('typescript');
     });
 
     it('should reject missing title', async () => {
@@ -178,9 +178,9 @@ describe('Canvas API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body).toHaveProperty('documents');
-      expect(response.body).toHaveProperty('total', 1);
-      expect(response.body.documents).toHaveLength(1);
+      expect(response.body.data).toHaveProperty('documents');
+      expect(response.body.data).toHaveProperty('total', 1);
+      expect(response.body.data.documents).toHaveLength(1);
     });
 
     it('should list documents for work context', async () => {
@@ -193,8 +193,8 @@ describe('Canvas API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.documents).toHaveLength(0);
-      expect(response.body.total).toBe(0);
+      expect(response.body.data.documents).toHaveLength(0);
+      expect(response.body.data.total).toBe(0);
     });
 
     it('should reject invalid context', async () => {
@@ -234,9 +234,9 @@ describe('Canvas API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body).toHaveProperty('id', VALID_UUID);
-      expect(response.body).toHaveProperty('title', 'Test Document');
-      expect(response.body).toHaveProperty('content', '# Hello World');
+      expect(response.body.data).toHaveProperty('id', VALID_UUID);
+      expect(response.body.data).toHaveProperty('title', 'Test Document');
+      expect(response.body.data).toHaveProperty('content', '# Hello World');
     });
 
     it('should return 404 for non-existent document', async () => {
@@ -273,7 +273,7 @@ describe('Canvas API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.title).toBe('Updated Title');
+      expect(response.body.data.title).toBe('Updated Title');
     });
 
     it('should update document content and trigger version save', async () => {
@@ -290,7 +290,7 @@ describe('Canvas API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.content).toBe('# Updated Content');
+      expect(response.body.data.content).toBe('# Updated Content');
     });
 
     it('should update document type', async () => {
@@ -303,7 +303,7 @@ describe('Canvas API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.type).toBe('code');
+      expect(response.body.data.type).toBe('code');
     });
 
     it('should return 404 for non-existent document', async () => {
@@ -510,7 +510,7 @@ describe('Canvas API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.content).toBe('# Restored Content');
+      expect(response.body.data.content).toBe('# Restored Content');
     });
 
     it('should return 404 for non-existent version', async () => {
