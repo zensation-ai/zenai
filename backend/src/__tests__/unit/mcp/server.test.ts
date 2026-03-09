@@ -114,12 +114,12 @@ import { structureWithClaudePersonalized, generateClaudeResponse } from '../../.
 import { proactiveSuggestionEngine } from '../../../services/proactive-suggestions';
 import { getSuggestedConnections, multiHopSearch } from '../../../services/knowledge-graph';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockStructureWithClaude = structureWithClaudePersonalized as jest.MockedFunction<typeof structureWithClaudePersonalized>;
-const mockGenerateClaudeResponse = generateClaudeResponse as jest.MockedFunction<typeof generateClaudeResponse>;
-const mockGetSuggestions = proactiveSuggestionEngine.getSuggestions as jest.MockedFunction<typeof proactiveSuggestionEngine.getSuggestions>;
-const mockGetSuggestedConnections = getSuggestedConnections as jest.MockedFunction<typeof getSuggestedConnections>;
-const mockMultiHopSearch = multiHopSearch as jest.MockedFunction<typeof multiHopSearch>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockStructureWithClaude = structureWithClaudePersonalized as jest.MockedFunction<typeof structureWithClaudePersonalized>;
+var mockGenerateClaudeResponse = generateClaudeResponse as jest.MockedFunction<typeof generateClaudeResponse>;
+var mockGetSuggestions = proactiveSuggestionEngine.getSuggestions as jest.MockedFunction<typeof proactiveSuggestionEngine.getSuggestions>;
+var mockGetSuggestedConnections = getSuggestedConnections as jest.MockedFunction<typeof getSuggestedConnections>;
+var mockMultiHopSearch = multiHopSearch as jest.MockedFunction<typeof multiHopSearch>;
 
 describe('MCP Server', () => {
   let server: KIABMCPServer;

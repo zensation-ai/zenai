@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 44
+## Current Phase: 48
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -133,6 +133,11 @@
 - Enhanced RAG: `backend/src/services/enhanced-rag.ts`
 - Topic Enhancement: `backend/src/services/topic-enhancement.ts`
 - Streaming: `backend/src/services/claude/streaming.ts`
+- Thinking Budget: `backend/src/services/claude/thinking-budget.ts`
+- Thinking Management: `backend/src/services/thinking-management.ts`
+- RAG Feedback: `backend/src/services/rag-feedback.ts`
+- RAG Query Decomposition: `backend/src/services/rag-query-decomposition.ts`
+- Graph Reasoning: `backend/src/services/knowledge-graph/graph-reasoning.ts`
 - Tasks Service: `backend/src/services/tasks.ts`
 - Tasks Routes: `backend/src/routes/tasks.ts`
 - Projects Service: `backend/src/services/projects.ts`
@@ -140,14 +145,6 @@
 - Resend Service: `backend/src/services/resend.ts`
 - Email CRUD Service: `backend/src/services/email.ts`
 - Email AI Service: `backend/src/services/email-ai.ts`
-- Email Search: `backend/src/services/email-search.ts`
-- Email Digest: `backend/src/services/email-digest.ts`
-- Email Tool Handlers: `backend/src/services/tool-handlers/email-tools.ts`
-- MCP Server (stdio): `backend/src/mcp/server.ts`
-- MCP HTTP Gateway: `backend/src/routes/mcp.ts`
-- MCP Client SDK: `backend/src/services/mcp-client.ts`
-- MCP Connection Manager: `backend/src/services/mcp-connections.ts`
-- MCP Tool Handlers: `backend/src/services/tool-handlers/mcp-tools.ts`
 - Email Routes: `backend/src/routes/email.ts`
 - Email Webhooks: `backend/src/routes/email-webhooks.ts`
 - Browser Routes: `backend/src/routes/browser.ts`
@@ -161,10 +158,14 @@
 - Location Cache: `backend/src/services/location-cache.ts`
 - Canvas Routes: `backend/src/routes/canvas.ts`
 - Canvas Service: `backend/src/services/canvas.ts`
-- GraphRAG Service: `backend/src/services/graph-rag.ts`
-- Agent Runtime: `backend/src/services/agents/agent-runtime.ts`
-- Agent Templates: `backend/src/services/agents/agent-templates.ts`
-- Autonomous Agent Routes: `backend/src/routes/autonomous-agents.ts`
+- Agent Orchestrator: `backend/src/services/agent-orchestrator.ts`
+- Agent Base Class: `backend/src/services/agents/base-agent.ts`
+- Researcher Agent: `backend/src/services/agents/researcher.ts`
+- Writer Agent: `backend/src/services/agents/writer.ts`
+- Reviewer Agent: `backend/src/services/agents/reviewer.ts`
+- Coder Agent: `backend/src/services/agents/coder.ts`
+- Agent Teams Routes: `backend/src/routes/agent-teams.ts`
+- Shared Memory: `backend/src/services/memory/shared-memory.ts`
 
 ### Frontend
 
@@ -195,6 +196,7 @@
 - Screen Memory: `frontend/src/components/ScreenMemoryPage/ScreenMemoryPage.tsx`
 - Canvas Page: `frontend/src/components/CanvasPage.tsx`
 - Hub Page: `frontend/src/components/HubPage.tsx`
+- Agent Teams Page: `frontend/src/components/AgentTeamsPage.tsx`
 
 ### Tests
 
@@ -259,32 +261,7 @@ POST   /api/:context/emails/accounts     - Create account
 POST   /api/:context/emails/:id/ai/process           - Trigger AI processing
 GET    /api/:context/emails/:id/ai/reply-suggestions  - AI reply suggestions
 GET    /api/:context/emails/:id/thread/ai/summary     - Thread AI summary
-POST   /api/:context/emails/search                    - Natural language email search (Phase 43)
-GET    /api/:context/emails/inbox-summary              - Inbox statistics overview (Phase 43)
-POST   /api/:context/emails/digest                     - Generate email digest (Phase 43)
 POST   /api/webhooks/resend              - Resend inbound webhook (Svix signature, no API key)
-```
-
-### MCP HTTP Gateway API (Phase 44)
-
-```
-GET    /api/mcp/status                                  - MCP server status
-GET    /api/mcp/tools                                   - List all internal MCP tools (30)
-POST   /api/mcp/tools/call                              - Call an internal MCP tool
-GET    /api/mcp/resources                               - List internal MCP resources
-POST   /api/mcp/resources/read                          - Read an internal MCP resource
-GET    /api/:context/mcp/connections                     - List external MCP server connections
-GET    /api/:context/mcp/connections/:id                 - Get single connection
-POST   /api/:context/mcp/connections                     - Create MCP server connection
-PUT    /api/:context/mcp/connections/:id                 - Update connection
-DELETE /api/:context/mcp/connections/:id                 - Delete connection
-POST   /api/:context/mcp/connections/:id/check           - Health check connection
-GET    /api/:context/mcp/connections/:id/tools            - List tools from specific connection
-POST   /api/:context/mcp/connections/:id/tools/call       - Call tool on specific connection
-GET    /api/:context/mcp/connections/:id/resources         - List resources from specific connection
-POST   /api/:context/mcp/connections/:id/resources/read    - Read resource from specific connection
-GET    /api/:context/mcp/tools                            - Unified tool list (all connections)
-GET    /api/:context/mcp/resources                        - Unified resource list (all connections)
 ```
 
 ### Vision API
@@ -462,23 +439,51 @@ GET    /api/canvas/:id/versions                       - Get document version his
 POST   /api/canvas/:id/restore/:versionId             - Restore document version
 ```
 
-### Autonomous Agents API (Phase 42)
+### Extended Thinking API (Phase 46)
 
 ```
-GET    /api/:context/agents                             - List agents
-GET    /api/:context/agents/running                     - List all running agents
-GET    /api/:context/agents/templates                   - Available agent templates
-POST   /api/:context/agents/from-template               - Create agent from template
-GET    /api/:context/agents/:id                         - Agent details
-POST   /api/:context/agents                             - Create agent
-PUT    /api/:context/agents/:id                         - Update agent
-DELETE /api/:context/agents/:id                         - Delete agent
-POST   /api/:context/agents/:id/start                   - Start agent
-POST   /api/:context/agents/:id/stop                    - Stop agent
-GET    /api/:context/agents/:id/logs                    - Execution logs
-GET    /api/:context/agents/:id/stats                   - Agent statistics
-POST   /api/:context/agents/:id/approve/:execId         - Approve pending execution
-POST   /api/:context/agents/:id/reject/:execId          - Reject pending execution
+POST   /api/:context/thinking/feedback                 - Record thinking quality feedback
+GET    /api/:context/thinking/stats                    - Get thinking chain statistics
+GET    /api/:context/thinking/strategies               - Get budget strategy performance
+POST   /api/:context/thinking/strategies/persist       - Persist strategies to database
+GET    /api/:context/thinking/chains/:id               - Get specific thinking chain
+DELETE /api/:context/thinking/chains/:id               - Delete thinking chain
+```
+
+### RAG Analytics API (Phase 47)
+
+```
+POST   /api/:context/rag/feedback                      - Record RAG retrieval feedback
+GET    /api/:context/rag/analytics                     - Get RAG performance analytics
+GET    /api/:context/rag/strategies                    - Get strategy performance breakdown
+GET    /api/:context/rag/history                       - Get recent RAG query history
+```
+
+### Knowledge Graph Reasoning API (Phase 48)
+
+```
+POST   /api/:context/knowledge-graph/infer             - Run transitive inference
+GET    /api/:context/knowledge-graph/contradictions    - Detect contradiction chains
+POST   /api/:context/knowledge-graph/communities       - Detect graph communities
+GET    /api/:context/knowledge-graph/communities       - Get cached communities
+GET    /api/:context/knowledge-graph/centrality        - Get centrality metrics
+GET    /api/:context/knowledge-graph/learning-path/:id - Generate learning path
+POST   /api/:context/knowledge-graph/relations         - Create manual relation
+PUT    /api/:context/knowledge-graph/relations         - Update relation strength
+DELETE /api/:context/knowledge-graph/relations         - Delete relation
+```
+
+### Agent Teams API (Phase 45)
+
+```
+POST   /api/agents/execute                              - Execute task with agent team
+POST   /api/agents/execute/stream                       - Execute with SSE streaming progress
+POST   /api/agents/classify                             - Preview strategy classification
+GET    /api/agents/templates                            - List agent templates
+GET    /api/agents/analytics                            - Agent execution analytics
+GET    /api/agents/history                              - List past executions
+GET    /api/agents/history/:id                          - Get single execution
+POST   /api/agents/history/:id/save-as-idea             - Persist result as idea
 ```
 
 ## Environment Variables (Backend)
@@ -727,82 +732,104 @@ mockQueryContext
 
 ## Changelog
 
-### 2026-03-09: Phase 44 — MCP Ecosystem (HTTP Gateway, External Connections, Client SDK)
+### 2026-03-09: Phase 46-48 - Extended Thinking, RAG Analytics & Knowledge Graph Reasoning
 
-**MCP-Server ueber HTTP zugaenglich gemacht + externe MCP-Server-Verbindungen + Chat-Tool-Integration.**
+**Drei strategische Phasen zur Verbesserung der KI-Kernbereiche.**
 
-**Features:**
-
-| Feature | Details |
-|---------|---------|
-| **MCP HTTP Gateway** | REST API fuer interne MCP-Tools: `/api/mcp/tools`, `/api/mcp/tools/call`, `/api/mcp/resources`, `/api/mcp/status` |
-| **External MCP Connections** | CRUD fuer externe MCP-Server-Verbindungen mit Health-Check, Tool-Discovery, context-aware |
-| **MCP Client SDK** | TypeScript-Client mit JSON-RPC 2.0, Caching, Auth, Timeout-Handling |
-| **Chat Tool Integration** | `mcp_call_tool` und `mcp_list_tools` als Claude-Tools im Chat verfuegbar |
-| **Unified Tool Discovery** | Alle Tools aller verbundenen Server aggregiert unter `/api/:context/mcp/tools` |
-| **Frontend MCP Hub** | Enhanced MCPHubTab: Interne Tools + Externe Server-Verwaltung (hinzufuegen, testen, deaktivieren) |
-| **DB Migration** | `mcp_connections` + `mcp_tool_call_log` Tabellen in allen 4 Schemas |
-
-**Neue Dateien (Backend):**
-
-| Datei | Zweck |
-|-------|-------|
-| `backend/src/routes/mcp.ts` | MCP HTTP Gateway (mcpRouter + mcpConnectionsRouter), 17 Endpoints |
-| `backend/src/services/mcp-client.ts` | MCP Client SDK (HTTP JSON-RPC Transport, Caching, Health Check) |
-| `backend/src/services/mcp-connections.ts` | Connection Manager (CRUD, Health Monitoring, Unified Discovery) |
-| `backend/src/services/tool-handlers/mcp-tools.ts` | Chat-Tool-Handler (mcp_call_tool, mcp_list_tools) |
-| `backend/sql/migrations/phase44_mcp_ecosystem.sql` | DB-Migration (2 Tabellen pro Schema) |
-
-**Geaenderte Dateien:**
-
-| Datei | Aenderung |
-|-------|-----------|
-| `backend/src/main.ts` | Route-Registrierung (mcpRouter, mcpConnectionsRouter), MCP Connection Manager Init |
-| `backend/src/services/claude/tool-use.ts` | TOOL_MCP_CALL_TOOL + TOOL_MCP_LIST_TOOLS Definitionen |
-| `backend/src/services/tool-handlers/index.ts` | MCP-Tool-Handler registriert |
-| `backend/src/services/chat-modes.ts` | 4 neue MCP-Patterns, Keywords, Default-Tool-Listen erweitert |
-| `frontend/src/components/IntegrationsPage/MCPHubTab.tsx` | Enhanced: Interne Tools + Externe Server-Verwaltung |
-
-**Tests:** 4 neue Testdateien (mcp-client: 17, mcp-tools: 5, mcp-connections: 6, mcp-gateway: 18 = 46 neue Tests)
-
----
-
-### 2026-03-09: Phase 43 — Email Intelligence (Ask My Inbox, Digest, Auto Re-Summarization)
-
-**Intelligente E-Mail-Funktionen: Natuerliche Sprache fuer Inbox-Suche, automatische Digests und Thread-Re-Summarization.**
-
-**Neue Features:**
+**Phase 46: Extended Thinking Excellence**
 
 | Feature | Details |
 |---------|---------|
-| **Ask My Inbox** | `ask_inbox` Chat-Tool: Natuerlichsprachliche E-Mail-Suche ueber den Chat |
-| **Inbox Summary** | `inbox_summary` Chat-Tool: Schneller Inbox-Ueberblick auf Anfrage |
-| **Email Search Service** | NL-Query-Parser → SQL-Filter (Absender, Datum, Kategorie, Prioritaet, Freitext) |
-| **Email Digest** | Tages-/Wochen-Digests mit KI-Narrativ, Highlights und Action Items |
-| **Auto Thread Re-Summarization** | Automatische Thread-Zusammenfassung bei neuen Inbound-Mails |
-| **3 neue API-Endpoints** | `POST /search`, `GET /inbox-summary`, `POST /digest` |
-| **9 neue Chat-Patterns** | Erkennung von Inbox-bezogenen Fragen in Chat-Modes |
+| **DB Migration** | `thinking_chains` + `thinking_budget_strategies` Tabellen in 4 Schemas |
+| **Thinking Chain Persistence** | Speichert Denkprozesse mit Embeddings fuer Similarity Search |
+| **Strategy Persistence** | Budget-Strategien werden in DB persistiert (ueberlebt Neustart) |
+| **Feedback API** | Quality Ratings (1-5) fuer Thinking Chains |
+| **Statistics API** | Aggregierte Metriken pro Task-Typ |
+| **Strategy Learning** | Automatische Optimierung basierend auf Token-Quality-Korrelation |
+
+**Phase 47: Agentic RAG Enhancement**
+
+| Feature | Details |
+|---------|---------|
+| **RAG Feedback** | Thumbs up/down + Relevance Ratings fuer Retrieval-Ergebnisse |
+| **Query Analytics** | Automatische Erfassung: Strategy, Confidence, Response-Time, Result-Count |
+| **Query Decomposition** | Komplexe Queries in Sub-Queries zerlegen (Vergleich, Kausal, Temporal, Multi-Part) |
+| **Strategy Performance** | Per-Strategy Metriken (Confidence, Speed, HyDE-Rate, Cross-Encoder-Rate) |
+| **Daily Trends** | Zeitverlauf der RAG-Performance |
+| **Enhanced RAG Integration** | Automatische Analytics-Erfassung bei jedem Retrieval |
+
+**Phase 48: Knowledge Graph Expansion**
+
+| Feature | Details |
+|---------|---------|
+| **Transitive Inference** | Findet versteckte A→C Verbindungen ueber 2-Hop-Pfade |
+| **Contradiction Detection** | Erkennt logische Konflikte (A supports B, B contradicts C) |
+| **Community Detection** | Label Propagation fuer Cluster-Erkennung (Connected Components) |
+| **Centrality Analysis** | Degree + Betweenness Centrality, Hub/Bridge Identifikation |
+| **Learning Paths** | Generiert Lernpfade durch den Knowledge Graph |
+| **Manual Relation CRUD** | Erstellen, Aktualisieren, Loeschen von Beziehungen |
+| **Reasoning Cache** | 7-Tage-Cache fuer Inference-Ergebnisse |
 
 **Neue Dateien:**
 
 | Datei | Zweck |
 |-------|-------|
-| `backend/src/services/email-search.ts` | NL-Query-Parser + SQL-Suche + Formatierung |
-| `backend/src/services/email-digest.ts` | Digest-Generierung mit Claude-Narrativ |
-| `backend/src/services/tool-handlers/email-tools.ts` | Tool-Handler fuer ask_inbox + inbox_summary |
+| `backend/sql/migrations/phase46_thinking_chains.sql` | DB-Migration (7 neue Tabellen in 4 Schemas) |
+| `backend/src/routes/thinking.ts` | Extended Thinking API (6 Endpoints) |
+| `backend/src/services/thinking-management.ts` | Strategy Persistence & Chain Management |
+| `backend/src/routes/rag-analytics.ts` | RAG Analytics API (4 Endpoints) |
+| `backend/src/services/rag-feedback.ts` | RAG Feedback & Analytics Service |
+| `backend/src/services/rag-query-decomposition.ts` | Query Decomposition (5 Typen) |
+| `backend/src/routes/graph-reasoning.ts` | Graph Reasoning API (9 Endpoints) |
+| `backend/src/services/knowledge-graph/graph-reasoning.ts` | Inference, Communities, Centrality, Learning Paths |
 
 **Geaenderte Dateien:**
 
 | Datei | Aenderung |
 |-------|-----------|
-| `backend/src/services/claude/tool-use.ts` | 2 neue Tool-Definitionen (TOOL_ASK_INBOX, TOOL_INBOX_SUMMARY) |
-| `backend/src/services/tool-handlers/index.ts` | Tool-Registrierung fuer Email-Intelligence |
-| `backend/src/services/chat-modes.ts` | 9 neue Patterns fuer Inbox-Erkennung, Tools in Mode-Defaults |
-| `backend/src/routes/email.ts` | 3 neue Endpoints (search, inbox-summary, digest) |
-| `backend/src/routes/email-webhooks.ts` | Auto Thread Re-Summarization bei neuen Inbound-Mails |
-| `CLAUDE.md` | Phase auf 43 aktualisiert, API-Docs + Key Files ergaenzt |
+| `backend/src/main.ts` | 3 neue Router registriert (thinking, rag-analytics, graph-reasoning) |
+| `backend/src/services/enhanced-rag.ts` | Query Decomposition + Analytics Tracking integriert |
+| `CLAUDE.md` | Phase auf 48 aktualisiert, 3 neue API-Sektionen, Changelog |
 
-**Tests:** 35 neue Tests (26 email-search + 5 email-tools + 4 email-digest)
+**Tests:** 39 neue Tests (4 Test Suites), TypeScript: 0 Fehler
+
+---
+
+### 2026-03-09: Phase 45 - Enhanced Multi-Agent Intelligence
+
+**Multi-Agent System erweitert mit Coder Agent, SSE Streaming, Templates, Analytics und Error Recovery.**
+
+**Neue Features:**
+
+| Feature | Details |
+|---------|---------|
+| **Coder Agent** | Neuer spezialisierter Agent fuer Code-Generierung, Testing und Debugging (Sonnet Model) |
+| **SSE Streaming** | `POST /api/agents/execute/stream` - Echtzeit-Fortschrittsanzeige per Server-Sent Events |
+| **Agent Templates** | 8 vordefinierte Templates (Tiefenrecherche, Blog-Artikel, Code-Loesung, Wettbewerbsanalyse, etc.) |
+| **Agent Analytics** | `GET /api/agents/analytics` - Erfolgsraten, Token-Kosten, Strategie-Breakdown, Daily Trends |
+| **Error Recovery** | Automatischer Retry bei Agent-Fehlern (1 Retry pro Agent) mit Shared Memory Logging |
+| **Code Strategies** | 2 neue Strategien: `code_solve` (Coder + Reviewer) und `research_code_review` (Researcher + Coder + Reviewer) |
+| **Progress Callbacks** | `AgentProgressCallback` fuer team_start, agent_start, agent_complete, agent_error, team_complete Events |
+| **Frontend Streaming UI** | Echtzeit-Fortschrittsbalken, Agent-Status-Updates, Streaming Fallback zu Regular Execution |
+| **Frontend Templates** | Template-Auswahl im UI, Template-Badge, Apply/Clear Funktionalitaet |
+| **Frontend Analytics** | Analytics-Panel mit Erfolgsrate, Token-Verbrauch und Strategie-Statistiken |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/agents/coder.ts` | Coder Agent (execute_code, web_search, search_ideas, fetch_url Tools) |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/services/agent-orchestrator.ts` | +Coder Factory, +SSE Streaming, +Error Recovery, +Templates, +Progress Callbacks, +Code Strategies |
+| `backend/src/routes/agent-teams.ts` | +Streaming Endpoint, +Templates Endpoint, +Analytics Endpoint, Code Strategy Descriptions |
+| `frontend/src/components/AgentTeamsPage.tsx` | +Streaming UI, +Templates Grid, +Analytics Panel, +Coder Role Config, +Strategy Fallback |
+| `frontend/src/components/AgentTeamsPage.css` | +Streaming Progress, +Templates Styles, +Analytics Styles, +Template Badge |
+
+**Tests:** 56 Agent-Tests bestanden (41 Orchestrator + 15 Route), 0 fehlgeschlagen
 
 ---
 

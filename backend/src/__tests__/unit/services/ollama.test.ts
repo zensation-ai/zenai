@@ -17,7 +17,7 @@ import {
 
 // Mock axios
 jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+var mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('Ollama Utilities', () => {
   beforeEach(() => {

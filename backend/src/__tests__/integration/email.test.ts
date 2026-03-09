@@ -10,7 +10,7 @@ import { emailRouter } from '../../routes/email';
 
 // ── Mocks ────────────────────────────────────────────────────────
 
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),

@@ -12,7 +12,7 @@ import {
 } from '../../../services/productivity-analytics';
 
 // Mock database-context
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
 }));

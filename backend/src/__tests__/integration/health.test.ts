@@ -71,8 +71,8 @@ jest.mock('../../utils/logger', () => ({
 import { testConnections } from '../../utils/database-context';
 import { checkOllamaHealth } from '../../utils/ollama';
 
-const mockTestConnections = testConnections as jest.MockedFunction<typeof testConnections>;
-const mockCheckOllamaHealth = checkOllamaHealth as jest.MockedFunction<typeof checkOllamaHealth>;
+var mockTestConnections = testConnections as jest.MockedFunction<typeof testConnections>;
+var mockCheckOllamaHealth = checkOllamaHealth as jest.MockedFunction<typeof checkOllamaHealth>;
 
 describe('Health API Integration Tests', () => {
   let app: Express;

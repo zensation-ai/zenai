@@ -138,7 +138,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
       const res = await axios.get(`/api/${context}/mcp/connections`);
       setConnections(res.data.data || []);
     } catch (err) {
-      logError(err, 'MCPHubTab.loadConnections');
+      logError('MCPHubTab.loadConnections', err);
     } finally {
       setLoadingConnections(false);
     }
@@ -165,7 +165,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
       setShowAddForm(false);
       loadConnections();
     } catch (err) {
-      logError(err, 'MCPHubTab.addConnection');
+      logError('MCPHubTab.addConnection', err);
       showToast('Fehler beim Hinzufuegen', 'error');
     }
   };
@@ -176,7 +176,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
       showToast('Verbindung entfernt', 'success');
       loadConnections();
     } catch (err) {
-      logError(err, 'MCPHubTab.deleteConnection');
+      logError('MCPHubTab.deleteConnection', err);
       showToast('Fehler beim Entfernen', 'error');
     }
   };
@@ -187,7 +187,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
       showToast('Verbindungstest durchgefuehrt', 'success');
       loadConnections();
     } catch (err) {
-      logError(err, 'MCPHubTab.checkConnection');
+      logError('MCPHubTab.checkConnection', err);
       showToast('Verbindungstest fehlgeschlagen', 'error');
     }
   };
@@ -197,7 +197,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
       await axios.put(`/api/${context}/mcp/connections/${id}`, { enabled: !enabled });
       loadConnections();
     } catch (err) {
-      logError(err, 'MCPHubTab.toggleConnection');
+      logError('MCPHubTab.toggleConnection', err);
     }
   };
 

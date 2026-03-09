@@ -3,15 +3,20 @@
  *
  * Tests the multi-agent system including:
  * - Task decomposition
- * - Strategy classification
+ * - Strategy classification (incl. code patterns)
  * - Agent pipeline execution
  * - Result aggregation
+ * - Error recovery & retry
+ * - Agent templates
+ * - Progress callbacks
  */
 
 import {
   classifyTeamStrategy,
   getAgentPipeline,
   executeTeamTask,
+  AGENT_TEMPLATES,
+  AgentProgressEvent,
 } from '../../../services/agent-orchestrator';
 import { sharedMemory } from '../../../services/memory/shared-memory';
 
@@ -110,6 +115,42 @@ describe('Agent Orchestrator', () => {
         'bisher gesammelt habe zum Thema künstliche Intelligenz im Gesundheitswesen';
       expect(classifyTeamStrategy(longTask)).toBe('research_write_review');
     });
+
+    // Phase 45: Code-related patterns
+    it('should classify code generation as code_solve', () => {
+      expect(classifyTeamStrategy('Schreibe mir Code für einen REST API Client'))
+        .toBe('code_solve');
+    });
+
+    it('should classify "implementiere" as code_solve', () => {
+      expect(classifyTeamStrategy('Implementiere einen Bubble Sort Algorithmus'))
+        .toBe('code_solve');
+    });
+
+    it('should classify "programmiere" as code_solve', () => {
+      expect(classifyTeamStrategy('Programmiere eine Funktion zum Validieren von E-Mails'))
+        .toBe('code_solve');
+    });
+
+    it('should classify debug tasks as code_solve', () => {
+      expect(classifyTeamStrategy('Debugge den Fehler in der Login-Funktion'))
+        .toBe('code_solve');
+    });
+
+    it('should classify code review as research_code_review', () => {
+      expect(classifyTeamStrategy('Analysiere den Code und finde Fehler'))
+        .toBe('research_code_review');
+    });
+
+    it('should classify code optimization as research_code_review', () => {
+      expect(classifyTeamStrategy('Optimiere den Code für bessere Performance'))
+        .toBe('research_code_review');
+    });
+
+    it('should classify "code review" as research_code_review', () => {
+      expect(classifyTeamStrategy('Mache ein Code Review für die neue API'))
+        .toBe('research_code_review');
+    });
   });
 
   describe('getAgentPipeline', () => {
@@ -139,6 +180,53 @@ describe('Agent Orchestrator', () => {
 
     it('should return empty for custom strategy', () => {
       expect(getAgentPipeline('custom')).toEqual([]);
+    });
+
+    // Phase 45: Code pipelines
+    it('should return coder + reviewer for code_solve', () => {
+      expect(getAgentPipeline('code_solve')).toEqual(['coder', 'reviewer']);
+    });
+
+    it('should return coder only for code_solve with skipReview', () => {
+      expect(getAgentPipeline('code_solve', true)).toEqual(['coder']);
+    });
+
+    it('should return researcher + coder + reviewer for research_code_review', () => {
+      expect(getAgentPipeline('research_code_review')).toEqual([
+        'researcher', 'coder', 'reviewer',
+      ]);
+    });
+  });
+
+  describe('AGENT_TEMPLATES', () => {
+    it('should have at least 5 templates', () => {
+      expect(AGENT_TEMPLATES.length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('should have unique IDs', () => {
+      const ids = AGENT_TEMPLATES.map(t => t.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('should have required fields for each template', () => {
+      for (const template of AGENT_TEMPLATES) {
+        expect(template.id).toBeTruthy();
+        expect(template.name).toBeTruthy();
+        expect(template.description).toBeTruthy();
+        expect(template.icon).toBeTruthy();
+        expect(template.strategy).toBeTruthy();
+      }
+    });
+
+    it('should include a code template', () => {
+      const codeTemplate = AGENT_TEMPLATES.find(t => t.strategy === 'code_solve');
+      expect(codeTemplate).toBeDefined();
+      expect(codeTemplate?.id).toBe('code_solution');
+    });
+
+    it('should include a research template', () => {
+      const researchTemplate = AGENT_TEMPLATES.find(t => t.strategy === 'research_only');
+      expect(researchTemplate).toBeDefined();
     });
   });
 
@@ -220,7 +308,7 @@ describe('Agent Orchestrator', () => {
       expect(result.strategy).toBe('research_only');
     });
 
-    it('should handle agent failures gracefully', async () => {
+    it('should handle agent failures gracefully with retry', async () => {
       let callCount = 0;
       getClaudeClient().messages.create.mockImplementation(() => {
         callCount++;
@@ -233,29 +321,28 @@ describe('Agent Orchestrator', () => {
           });
         }
         if (callCount === 2) {
-          // Agent execution fails
+          // First execution fails
           return Promise.reject(new Error('API Error'));
         }
-        // Fallback for any additional calls
+        // Retry succeeds
         return Promise.resolve({
-          content: [{ type: 'text', text: 'Fallback' }],
+          content: [{ type: 'text', text: 'Retry succeeded' }],
           usage: { input_tokens: 50, output_tokens: 25 },
           stop_reason: 'end_turn',
         });
       });
 
-      // Should not throw
       const result = await executeTeamTask({
         description: 'Test task',
         aiContext: 'personal',
         strategy: 'research_only',
       });
 
-      // Agent fails but result is still returned
       expect(result).toBeDefined();
       expect(result.agentResults).toHaveLength(1);
-      expect(result.agentResults[0].success).toBe(false);
-      expect(result.agentResults[0].error).toContain('API Error');
+      // Should succeed after retry
+      expect(result.agentResults[0].success).toBe(true);
+      expect(result.agentResults[0].content).toBe('Retry succeeded');
     });
 
     it('should respect skipReview option', async () => {
@@ -280,6 +367,78 @@ describe('Agent Orchestrator', () => {
       });
 
       expect(result.success).toBe(true);
+    });
+
+    // Phase 45: Progress callback tests
+    it('should emit progress events during execution', async () => {
+      const events: AgentProgressEvent[] = [];
+
+      await executeTeamTask(
+        {
+          description: 'Test with progress',
+          aiContext: 'personal',
+          strategy: 'research_only',
+        },
+        (event) => events.push(event)
+      );
+
+      // Should have team_start, agent_start, agent_complete, team_complete
+      expect(events.some(e => e.type === 'team_start')).toBe(true);
+      expect(events.some(e => e.type === 'agent_start')).toBe(true);
+      expect(events.some(e => e.type === 'team_complete')).toBe(true);
+    });
+
+    it('should include pipeline info in team_start event', async () => {
+      const events: AgentProgressEvent[] = [];
+
+      await executeTeamTask(
+        {
+          description: 'Test pipeline info',
+          aiContext: 'personal',
+          strategy: 'research_write_review',
+        },
+        (event) => events.push(event)
+      );
+
+      const teamStart = events.find(e => e.type === 'team_start');
+      expect(teamStart?.strategy).toBe('research_write_review');
+      expect(teamStart?.pipeline).toEqual(['researcher', 'writer', 'reviewer']);
+    });
+
+    // Phase 45: Code pipeline test
+    it('should execute code_solve strategy with coder agent', async () => {
+      let callCount = 0;
+      getClaudeClient().messages.create.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            content: [{
+              type: 'text',
+              text: JSON.stringify([
+                { agent: 'coder', task: 'Implementiere die Lösung' },
+                { agent: 'reviewer', task: 'Überprüfe den Code' },
+              ]),
+            }],
+            usage: { input_tokens: 200, output_tokens: 100 },
+            stop_reason: 'end_turn',
+          });
+        }
+        return Promise.resolve({
+          content: [{ type: 'text', text: `Code response ${callCount}` }],
+          usage: { input_tokens: 150, output_tokens: 80 },
+          stop_reason: 'end_turn',
+        });
+      });
+
+      const result = await executeTeamTask({
+        description: 'Implementiere einen Sortieralgorithmus',
+        aiContext: 'personal',
+        strategy: 'code_solve',
+      });
+
+      expect(result.strategy).toBe('code_solve');
+      expect(result.success).toBe(true);
+      expect(result.agentResults.some(r => r.role === 'coder')).toBe(true);
     });
   });
 });

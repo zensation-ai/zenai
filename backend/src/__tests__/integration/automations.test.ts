@@ -63,14 +63,14 @@ import {
 } from '../../services/automation-registry';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockRegisterAutomation = registerAutomation as jest.MockedFunction<typeof registerAutomation>;
-const mockGetAutomation = getAutomation as jest.MockedFunction<typeof getAutomation>;
-const mockListAutomations = listAutomations as jest.MockedFunction<typeof listAutomations>;
-const mockExecuteAutomation = executeAutomation as jest.MockedFunction<typeof executeAutomation>;
-const mockGetPendingSuggestions = getPendingSuggestions as jest.MockedFunction<typeof getPendingSuggestions>;
-const mockGetAutomationStats = getAutomationStats as jest.MockedFunction<typeof getAutomationStats>;
-const mockGetExecutionHistory = getExecutionHistory as jest.MockedFunction<typeof getExecutionHistory>;
-const mockDeleteAutomation = deleteAutomation as jest.MockedFunction<typeof deleteAutomation>;
+var mockRegisterAutomation = registerAutomation as jest.MockedFunction<typeof registerAutomation>;
+var mockGetAutomation = getAutomation as jest.MockedFunction<typeof getAutomation>;
+var mockListAutomations = listAutomations as jest.MockedFunction<typeof listAutomations>;
+var mockExecuteAutomation = executeAutomation as jest.MockedFunction<typeof executeAutomation>;
+var mockGetPendingSuggestions = getPendingSuggestions as jest.MockedFunction<typeof getPendingSuggestions>;
+var mockGetAutomationStats = getAutomationStats as jest.MockedFunction<typeof getAutomationStats>;
+var mockGetExecutionHistory = getExecutionHistory as jest.MockedFunction<typeof getExecutionHistory>;
+var mockDeleteAutomation = deleteAutomation as jest.MockedFunction<typeof deleteAutomation>;
 
 describe('Automations API Integration Tests', () => {
   let app: Express;

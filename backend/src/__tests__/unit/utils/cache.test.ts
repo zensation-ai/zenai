@@ -42,7 +42,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 // Get mock instance
-const mockRedis = new Redis() as jest.Mocked<Redis>;
+var mockRedis = new Redis() as jest.Mocked<Redis>;
 
 describe('Cache Service', () => {
   beforeEach(() => {

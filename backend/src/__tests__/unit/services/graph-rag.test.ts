@@ -55,11 +55,11 @@ jest.mock('../../../services/knowledge-graph', () => ({
   ]),
 }));
 
-const mockQueryContext = jest.requireMock('../../../utils/database-context').queryContext;
-const mockGetRelationships = jest.requireMock('../../../services/knowledge-graph/graph-core').getRelationships;
-const mockGetSuggestedConnections = jest.requireMock('../../../services/knowledge-graph/graph-core').getSuggestedConnections;
-const mockMultiHopSearch = jest.requireMock('../../../services/knowledge-graph').multiHopSearch;
-const mockEnhancedRAG = jest.requireMock('../../../services/enhanced-rag').enhancedRAG;
+var mockQueryContext = jest.requireMock('../../../utils/database-context').queryContext;
+var mockGetRelationships = jest.requireMock('../../../services/knowledge-graph/graph-core').getRelationships;
+var mockGetSuggestedConnections = jest.requireMock('../../../services/knowledge-graph/graph-core').getSuggestedConnections;
+var mockMultiHopSearch = jest.requireMock('../../../services/knowledge-graph').multiHopSearch;
+var mockEnhancedRAG = jest.requireMock('../../../services/enhanced-rag').enhancedRAG;
 
 describe('GraphRAG Service', () => {
   beforeEach(() => {

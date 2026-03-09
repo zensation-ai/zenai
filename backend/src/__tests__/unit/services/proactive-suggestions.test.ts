@@ -31,8 +31,8 @@ jest.mock('../../../utils/logger', () => ({
 import { queryContext } from '../../../utils/database-context';
 import { routineDetectionService } from '../../../services/routine-detection';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockCheckActiveRoutines = routineDetectionService.checkActiveRoutines as jest.MockedFunction<typeof routineDetectionService.checkActiveRoutines>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockCheckActiveRoutines = routineDetectionService.checkActiveRoutines as jest.MockedFunction<typeof routineDetectionService.checkActiveRoutines>;
 
 // Helper to create valid DetectedRoutine objects
 function createMockDetectedRoutine(overrides: Partial<{

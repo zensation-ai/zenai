@@ -50,8 +50,8 @@ import { voiceRouter } from '../routes/voice';
 import { errorHandler } from '../middleware/errorHandler';
 import { isTTSAvailable, streamSpeech } from '../services/tts';
 
-const mockIsTTSAvailable = isTTSAvailable as jest.MockedFunction<typeof isTTSAvailable>;
-const mockStreamSpeech = streamSpeech as jest.MockedFunction<typeof streamSpeech>;
+var mockIsTTSAvailable = isTTSAvailable as jest.MockedFunction<typeof isTTSAvailable>;
+var mockStreamSpeech = streamSpeech as jest.MockedFunction<typeof streamSpeech>;
 
 describe('Voice/TTS API Tests', () => {
   let app: Express;

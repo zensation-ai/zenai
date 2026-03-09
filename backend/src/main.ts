@@ -473,6 +473,38 @@ app.use('/api', unifiedInboxRouter); // /api/:context/inbox, /api/:context/inbox
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
 app.use('/api', documentsRouter);  // /api/:context/documents, /api/documents/file/:id, etc.
 
+// Phase 46: Extended Thinking Excellence
+import { thinkingRouter } from './routes/thinking';
+app.use('/api', thinkingRouter);  // /api/:context/thinking/feedback, /api/:context/thinking/stats, etc.
+
+// Phase 47: RAG Analytics & Feedback
+import { ragAnalyticsRouter } from './routes/rag-analytics';
+app.use('/api', ragAnalyticsRouter);  // /api/:context/rag/feedback, /api/:context/rag/analytics, etc.
+
+// Phase 48: Knowledge Graph Reasoning
+import { graphReasoningRouter } from './routes/graph-reasoning';
+app.use('/api', graphReasoningRouter);  // /api/:context/knowledge-graph/infer, /api/:context/knowledge-graph/communities, etc.
+
+// Phase 49: Advanced RAG v2
+import { ragV2Router } from './routes/rag-v2';
+app.use('/api', ragV2Router);  // /api/:context/rag/v2/retrieve, /api/:context/rag/v2/citations, etc.
+
+// Phase 50: Analytics V2 - Interactive Visualizations & Custom Date Ranges
+import { analyticsV2Router } from './routes/analytics-v2';
+app.use('/api', analyticsV2Router);  // /api/:context/analytics/v2/overview, /api/:context/analytics/v2/trends, etc.
+
+// Phase 51: Plugin System
+import { pluginsRouter } from './routes/plugins';
+app.use('/api', pluginsRouter);
+
+// Phase 52: i18n
+import { i18nRouter } from './routes/i18n';
+app.use('/api', i18nRouter);
+
+// Phase 53: Memory Insights - HiMeS Memory Analysis & Visualization
+import { memoryInsightsRouter } from './routes/memory-insights';
+app.use('/api', memoryInsightsRouter);  // /api/:context/memory/insights/timeline, /api/:context/memory/insights/conflicts, etc.
+
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"

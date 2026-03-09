@@ -23,7 +23,7 @@ jest.mock('../middleware/auth', () => ({
   requireScope: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
-const mockQuery = jest.fn();
+var mockQuery = jest.fn();
 jest.mock('../utils/database', () => ({
   query: (...args: unknown[]) => mockQuery(...args),
 }));
@@ -48,7 +48,7 @@ import { errorHandler } from '../middleware/errorHandler';
 const VALID_UUID = '11111111-1111-1111-1111-111111111111';
 const VALID_UUID_2 = '22222222-2222-2222-2222-222222222222';
 
-const mockDocument = {
+var mockDocument = {
   id: VALID_UUID,
   context: 'personal',
   title: 'Test Document',

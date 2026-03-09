@@ -131,35 +131,35 @@ import {
 import { errorHandler } from '../../middleware/errorHandler';
 
 // Cast mocks
-const mockCreateDomainFocus = createDomainFocus as jest.MockedFunction<typeof createDomainFocus>;
-const mockGetAllDomainFocus = getAllDomainFocus as jest.MockedFunction<typeof getAllDomainFocus>;
-const mockGetDomainFocus = getDomainFocus as jest.MockedFunction<typeof getDomainFocus>;
-const mockUpdateDomainFocus = updateDomainFocus as jest.MockedFunction<typeof updateDomainFocus>;
-const mockToggleDomainFocus = toggleDomainFocus as jest.MockedFunction<typeof toggleDomainFocus>;
-const mockDeleteDomainFocus = deleteDomainFocus as jest.MockedFunction<typeof deleteDomainFocus>;
-const mockGetDomainFocusStats = getDomainFocusStats as jest.MockedFunction<typeof getDomainFocusStats>;
+var mockCreateDomainFocus = createDomainFocus as jest.MockedFunction<typeof createDomainFocus>;
+var mockGetAllDomainFocus = getAllDomainFocus as jest.MockedFunction<typeof getAllDomainFocus>;
+var mockGetDomainFocus = getDomainFocus as jest.MockedFunction<typeof getDomainFocus>;
+var mockUpdateDomainFocus = updateDomainFocus as jest.MockedFunction<typeof updateDomainFocus>;
+var mockToggleDomainFocus = toggleDomainFocus as jest.MockedFunction<typeof toggleDomainFocus>;
+var mockDeleteDomainFocus = deleteDomainFocus as jest.MockedFunction<typeof deleteDomainFocus>;
+var mockGetDomainFocusStats = getDomainFocusStats as jest.MockedFunction<typeof getDomainFocusStats>;
 
-const mockSubmitFeedback = submitFeedback as jest.MockedFunction<typeof submitFeedback>;
-const mockGetFeedback = getFeedback as jest.MockedFunction<typeof getFeedback>;
-const mockGetFeedbackStats = getFeedbackStats as jest.MockedFunction<typeof getFeedbackStats>;
-const mockQuickThumbsUp = quickThumbsUp as jest.MockedFunction<typeof quickThumbsUp>;
-const mockQuickThumbsDown = quickThumbsDown as jest.MockedFunction<typeof quickThumbsDown>;
-const mockSubmitCorrection = submitCorrection as jest.MockedFunction<typeof submitCorrection>;
+var mockSubmitFeedback = submitFeedback as jest.MockedFunction<typeof submitFeedback>;
+var mockGetFeedback = getFeedback as jest.MockedFunction<typeof getFeedback>;
+var mockGetFeedbackStats = getFeedbackStats as jest.MockedFunction<typeof getFeedbackStats>;
+var mockQuickThumbsUp = quickThumbsUp as jest.MockedFunction<typeof quickThumbsUp>;
+var mockQuickThumbsDown = quickThumbsDown as jest.MockedFunction<typeof quickThumbsDown>;
+var mockSubmitCorrection = submitCorrection as jest.MockedFunction<typeof submitCorrection>;
 
-const mockGetPendingResearch = getPendingResearch as jest.MockedFunction<typeof getPendingResearch>;
-const mockGetResearchById = getResearchById as jest.MockedFunction<typeof getResearchById>;
-const mockDismissResearch = dismissResearch as jest.MockedFunction<typeof dismissResearch>;
-const mockTriggerManualResearch = triggerManualResearch as jest.MockedFunction<typeof triggerManualResearch>;
+var mockGetPendingResearch = getPendingResearch as jest.MockedFunction<typeof getPendingResearch>;
+var mockGetResearchById = getResearchById as jest.MockedFunction<typeof getResearchById>;
+var mockDismissResearch = dismissResearch as jest.MockedFunction<typeof dismissResearch>;
+var mockTriggerManualResearch = triggerManualResearch as jest.MockedFunction<typeof triggerManualResearch>;
 
-const mockGetActiveSuggestions = getActiveSuggestions as jest.MockedFunction<typeof getActiveSuggestions>;
-const mockRespondToSuggestion = respondToSuggestion as jest.MockedFunction<typeof respondToSuggestion>;
-const mockGetSuggestionStats = getSuggestionStats as jest.MockedFunction<typeof getSuggestionStats>;
-const mockRunDailyLearning = runDailyLearning as jest.MockedFunction<typeof runDailyLearning>;
+var mockGetActiveSuggestions = getActiveSuggestions as jest.MockedFunction<typeof getActiveSuggestions>;
+var mockRespondToSuggestion = respondToSuggestion as jest.MockedFunction<typeof respondToSuggestion>;
+var mockGetSuggestionStats = getSuggestionStats as jest.MockedFunction<typeof getSuggestionStats>;
+var mockRunDailyLearning = runDailyLearning as jest.MockedFunction<typeof runDailyLearning>;
 
-const mockGetOrCreateProfile = getOrCreateProfile as jest.MockedFunction<typeof getOrCreateProfile>;
-const mockUpdateProfile = updateProfile as jest.MockedFunction<typeof updateProfile>;
-const mockGetProfileStats = getProfileStats as jest.MockedFunction<typeof getProfileStats>;
-const mockGetPersonalizedContext = getPersonalizedContext as jest.MockedFunction<typeof getPersonalizedContext>;
+var mockGetOrCreateProfile = getOrCreateProfile as jest.MockedFunction<typeof getOrCreateProfile>;
+var mockUpdateProfile = updateProfile as jest.MockedFunction<typeof updateProfile>;
+var mockGetProfileStats = getProfileStats as jest.MockedFunction<typeof getProfileStats>;
+var mockGetPersonalizedContext = getPersonalizedContext as jest.MockedFunction<typeof getPersonalizedContext>;
 
 // Sample data
 const sampleFocus = {

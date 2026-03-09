@@ -78,9 +78,9 @@ import { queryContext } from '../../utils/database-context';
 import { generateEmbedding } from '../../utils/ollama';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
+var mockQuery = query as jest.MockedFunction<typeof query>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
 
 describe('Media API Integration Tests', () => {
   let app: Express;

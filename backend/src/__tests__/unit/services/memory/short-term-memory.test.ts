@@ -36,9 +36,9 @@ import { queryContext } from '../../../../utils/database-context';
 import { generateClaudeResponse } from '../../../../services/claude';
 import { generateEmbedding } from '../../../../services/ai';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockGenerateClaudeResponse = generateClaudeResponse as jest.MockedFunction<typeof generateClaudeResponse>;
-const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockGenerateClaudeResponse = generateClaudeResponse as jest.MockedFunction<typeof generateClaudeResponse>;
+var mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
 
 describe('Short-Term Memory Service', () => {
   let memory: ShortTermMemoryService;

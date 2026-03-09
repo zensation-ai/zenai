@@ -159,7 +159,7 @@ import {
   dataAggregator,
 } from '../../services/business';
 
-const mockPoolQuery = pool.query as jest.Mock;
+var mockPoolQuery = pool.query as jest.Mock;
 
 describe('Business Manager API Integration Tests', () => {
   let app: Express;

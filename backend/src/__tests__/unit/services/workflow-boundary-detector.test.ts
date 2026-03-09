@@ -8,7 +8,7 @@ import {
   getFrequencyState,
 } from '../../../services/workflow-boundary-detector';
 
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
 }));

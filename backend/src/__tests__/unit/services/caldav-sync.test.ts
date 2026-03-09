@@ -5,9 +5,9 @@
  */
 
 // Mock database context
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
-  queryContext: mockQueryContext,
+  queryContext: (...args: any[]) => mockQueryContext(...args),
   isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
   AIContext: {},
 }));
@@ -34,13 +34,13 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock CalDAV connector
-const mockFetchCalendarEvents = jest.fn().mockResolvedValue([]);
-const mockFetchChangedEvents = jest.fn().mockResolvedValue({ events: [], newSyncToken: undefined });
-const mockCreateRemoteEvent = jest.fn().mockResolvedValue({ url: '/event.ics', etag: '"new-etag"' });
-const mockUpdateRemoteEvent = jest.fn().mockResolvedValue({ etag: '"updated-etag"' });
-const mockDeleteRemoteEvent = jest.fn().mockResolvedValue(true);
-const mockEventToICal = jest.fn().mockReturnValue('BEGIN:VCALENDAR\r\nEND:VCALENDAR');
-const mockParseICal = jest.fn().mockReturnValue(null);
+var mockFetchCalendarEvents = jest.fn().mockResolvedValue([]);
+var mockFetchChangedEvents = jest.fn().mockResolvedValue({ events: [], newSyncToken: undefined });
+var mockCreateRemoteEvent = jest.fn().mockResolvedValue({ url: '/event.ics', etag: '"new-etag"' });
+var mockUpdateRemoteEvent = jest.fn().mockResolvedValue({ etag: '"updated-etag"' });
+var mockDeleteRemoteEvent = jest.fn().mockResolvedValue(true);
+var mockEventToICal = jest.fn().mockReturnValue('BEGIN:VCALENDAR\r\nEND:VCALENDAR');
+var mockParseICal = jest.fn().mockReturnValue(null);
 
 jest.mock('../../../services/caldav-connector', () => ({
   fetchCalendarEvents: (...args: any[]) => mockFetchCalendarEvents(...args),

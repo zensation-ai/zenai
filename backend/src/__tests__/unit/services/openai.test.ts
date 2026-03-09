@@ -5,8 +5,6 @@
  * Uses mocking to avoid actual API calls.
  */
 
-import { jest } from '@jest/globals';
-
 // Mock OpenAI before importing the module
 jest.mock('openai', () => {
   return {

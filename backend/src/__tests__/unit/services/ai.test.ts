@@ -5,8 +5,6 @@
  * Claude, Ollama, and basic fallback modes.
  */
 
-import { jest } from '@jest/globals';
-
 // Mock dependencies before importing the module
 jest.mock('../../../services/claude', () => ({
   isClaudeAvailable: jest.fn(),
@@ -26,8 +24,8 @@ import * as claude from '../../../services/claude';
 import * as ollama from '../../../utils/ollama';
 
 // Re-import after mocks to get mocked versions
-const mockedClaude = claude as jest.Mocked<typeof claude>;
-const mockedOllama = ollama as jest.Mocked<typeof ollama>;
+var mockedClaude = claude as jest.Mocked<typeof claude>;
+var mockedOllama = ollama as jest.Mocked<typeof ollama>;
 
 // Import the module under test - need to do this dynamically
 let aiModule: typeof import('../../../services/ai');

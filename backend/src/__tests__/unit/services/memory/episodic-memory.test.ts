@@ -35,8 +35,8 @@ jest.mock('../../../../utils/logger', () => ({
   },
 }));
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
 
 describe('Episodic Memory Service', () => {
   let service: EpisodicMemoryService;

@@ -345,15 +345,15 @@ describe('Working Memory Service', () => {
   // ===========================================
 
   describe('getOrInitialize', () => {
-    it('should return existing session', () => {
+    it('should return existing session', async () => {
       const state1 = memory.initialize('session-1', 'Goal 1', 'work');
-      const state2 = memory.getOrInitialize('session-1', 'Goal 2', 'work');
+      const state2 = await memory.getOrInitialize('session-1', 'Goal 2', 'work');
 
       expect(state1).toBe(state2);
     });
 
-    it('should create new session if not exists', () => {
-      const state = memory.getOrInitialize('new-session', 'New goal', 'personal');
+    it('should create new session if not exists', async () => {
+      const state = await memory.getOrInitialize('new-session', 'New goal', 'personal');
 
       expect(state.sessionId).toBe('new-session');
       expect(state.currentGoal).toBe('New goal');

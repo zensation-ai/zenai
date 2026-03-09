@@ -93,12 +93,12 @@ import { queryContext } from '../../utils/database-context';
 import { suggestFromLearning } from '../../services/learning-engine';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockTranscribeAudio = transcribeAudio as jest.MockedFunction<typeof transcribeAudio>;
-const mockCheckWhisperAvailable = checkWhisperAvailable as jest.MockedFunction<typeof checkWhisperAvailable>;
-const mockStructureWithOllama = structureWithOllama as jest.MockedFunction<typeof structureWithOllama>;
-const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockSuggestFromLearning = suggestFromLearning as jest.MockedFunction<typeof suggestFromLearning>;
+var mockTranscribeAudio = transcribeAudio as jest.MockedFunction<typeof transcribeAudio>;
+var mockCheckWhisperAvailable = checkWhisperAvailable as jest.MockedFunction<typeof checkWhisperAvailable>;
+var mockStructureWithOllama = structureWithOllama as jest.MockedFunction<typeof structureWithOllama>;
+var mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockSuggestFromLearning = suggestFromLearning as jest.MockedFunction<typeof suggestFromLearning>;
 
 describe('Voice Memo API Integration Tests', () => {
   let app: Express;

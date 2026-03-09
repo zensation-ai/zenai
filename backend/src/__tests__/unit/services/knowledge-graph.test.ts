@@ -39,9 +39,9 @@ import { query } from '../../../utils/database';
 import { queryContext } from '../../../utils/database-context';
 import { queryOllamaJSON } from '../../../utils/ollama';
 
-const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockQueryOllamaJSON = queryOllamaJSON as jest.MockedFunction<typeof queryOllamaJSON>;
+var mockQuery = query as jest.MockedFunction<typeof query>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockQueryOllamaJSON = queryOllamaJSON as jest.MockedFunction<typeof queryOllamaJSON>;
 
 describe('Knowledge Graph Service', () => {
   beforeEach(() => {

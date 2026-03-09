@@ -22,7 +22,7 @@ jest.mock('../../../utils/database', () => ({
 
 import { pool } from '../../../utils/database';
 
-const mockPool = pool as jest.Mocked<typeof pool>;
+var mockPool = pool as jest.Mocked<typeof pool>;
 
 describe('Authentication Middleware', () => {
   // ===========================================

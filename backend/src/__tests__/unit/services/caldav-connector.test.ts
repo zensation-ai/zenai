@@ -4,24 +4,24 @@
  * Tests iCal parsing, generation, and CalDAV operations.
  */
 
-// Mock tsdav
-const mockLogin = jest.fn().mockResolvedValue(undefined);
-const mockFetchCalendars = jest.fn().mockResolvedValue([]);
-const mockFetchCalendarObjects = jest.fn().mockResolvedValue([]);
-const mockCreateCalendarObject = jest.fn().mockResolvedValue({ url: '/cal/event.ics', etag: '"etag-1"' });
-const mockUpdateCalendarObject = jest.fn().mockResolvedValue({ etag: '"etag-2"' });
-const mockDeleteCalendarObject = jest.fn().mockResolvedValue(undefined);
-const mockSyncCalendars = jest.fn().mockResolvedValue([]);
+// Use var to avoid TDZ — @swc/jest hoists jest.mock() above const declarations
+var mockLogin = jest.fn().mockResolvedValue(undefined);
+var mockFetchCalendars = jest.fn().mockResolvedValue([]);
+var mockFetchCalendarObjects = jest.fn().mockResolvedValue([]);
+var mockCreateCalendarObject = jest.fn().mockResolvedValue({ url: '/cal/event.ics', etag: '"etag-1"' });
+var mockUpdateCalendarObject = jest.fn().mockResolvedValue({ etag: '"etag-2"' });
+var mockDeleteCalendarObject = jest.fn().mockResolvedValue(undefined);
+var mockSyncCalendars = jest.fn().mockResolvedValue([]);
 
 jest.mock('tsdav', () => ({
   DAVClient: jest.fn().mockImplementation(() => ({
-    login: mockLogin,
-    fetchCalendars: mockFetchCalendars,
-    fetchCalendarObjects: mockFetchCalendarObjects,
-    createCalendarObject: mockCreateCalendarObject,
-    updateCalendarObject: mockUpdateCalendarObject,
-    deleteCalendarObject: mockDeleteCalendarObject,
-    syncCalendars: mockSyncCalendars,
+    login: (...args: any[]) => mockLogin(...args),
+    fetchCalendars: (...args: any[]) => mockFetchCalendars(...args),
+    fetchCalendarObjects: (...args: any[]) => mockFetchCalendarObjects(...args),
+    createCalendarObject: (...args: any[]) => mockCreateCalendarObject(...args),
+    updateCalendarObject: (...args: any[]) => mockUpdateCalendarObject(...args),
+    deleteCalendarObject: (...args: any[]) => mockDeleteCalendarObject(...args),
+    syncCalendars: (...args: any[]) => mockSyncCalendars(...args),
   })),
 }));
 

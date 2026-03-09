@@ -2,12 +2,11 @@
  * Google Maps Service Tests - Phase 41
  */
 
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-
 // Mock axios
 jest.mock('axios');
 import axios from 'axios';
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+var mockedAxios = jest.mocked(axios);
 
 // Mock logger
 jest.mock('../../../utils/logger', () => ({

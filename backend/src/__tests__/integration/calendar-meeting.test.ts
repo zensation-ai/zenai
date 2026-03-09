@@ -58,13 +58,13 @@ import {
 import { createMeeting, getMeeting, getMeetingNotes, processMeetingNotes } from '../../services/meetings';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockGetCalendarEvent = getCalendarEvent as jest.MockedFunction<typeof getCalendarEvent>;
-const mockLinkMeetingToEvent = linkMeetingToEvent as jest.MockedFunction<typeof linkMeetingToEvent>;
-const mockGetEventMeetingId = getEventMeetingId as jest.MockedFunction<typeof getEventMeetingId>;
-const mockCreateMeeting = createMeeting as jest.MockedFunction<typeof createMeeting>;
-const mockGetMeeting = getMeeting as jest.MockedFunction<typeof getMeeting>;
-const mockGetMeetingNotes = getMeetingNotes as jest.MockedFunction<typeof getMeetingNotes>;
-const mockProcessMeetingNotes = processMeetingNotes as jest.MockedFunction<typeof processMeetingNotes>;
+var mockGetCalendarEvent = getCalendarEvent as jest.MockedFunction<typeof getCalendarEvent>;
+var mockLinkMeetingToEvent = linkMeetingToEvent as jest.MockedFunction<typeof linkMeetingToEvent>;
+var mockGetEventMeetingId = getEventMeetingId as jest.MockedFunction<typeof getEventMeetingId>;
+var mockCreateMeeting = createMeeting as jest.MockedFunction<typeof createMeeting>;
+var mockGetMeeting = getMeeting as jest.MockedFunction<typeof getMeeting>;
+var mockGetMeetingNotes = getMeetingNotes as jest.MockedFunction<typeof getMeetingNotes>;
+var mockProcessMeetingNotes = processMeetingNotes as jest.MockedFunction<typeof processMeetingNotes>;
 
 const UUID_EVENT = '550e8400-e29b-41d4-a716-446655440001';
 const UUID_MEETING = '550e8400-e29b-41d4-a716-446655440002';

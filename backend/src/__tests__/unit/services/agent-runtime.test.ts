@@ -37,7 +37,7 @@ jest.mock('../../../services/push-notifications', () => ({
   sendNotification: jest.fn().mockResolvedValue({ success: true, sent: 0, failed: 0, results: [] }),
 }));
 
-const mockQueryContext = jest.requireMock('../../../utils/database-context').queryContext;
+var mockQueryContext = jest.requireMock('../../../utils/database-context').queryContext;
 
 describe('Agent Runtime', () => {
   beforeEach(() => {

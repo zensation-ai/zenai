@@ -53,13 +53,13 @@ import { queryContext } from '../../utils/database-context';
 import { errorHandler } from '../../middleware/errorHandler';
 import { invalidateCacheForContext } from '../../middleware/response-cache';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockInvalidateCache = invalidateCacheForContext as jest.MockedFunction<typeof invalidateCacheForContext>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockInvalidateCache = invalidateCacheForContext as jest.MockedFunction<typeof invalidateCacheForContext>;
 
 const VALID_UUID = '11111111-1111-4111-a111-111111111111';
 const NEW_UUID = '22222222-2222-4222-a222-222222222222';
 
-const mockIdeaExtended = {
+var mockIdeaExtended = {
   title: 'Test Idea',
   type: 'idea',
   category: 'general',
@@ -76,7 +76,7 @@ const mockIdeaExtended = {
   created_at: '2026-01-01T00:00:00Z',
 };
 
-const mockIdeaBasic = {
+var mockIdeaBasic = {
   title: 'Test Idea',
   type: 'idea',
   category: 'general',

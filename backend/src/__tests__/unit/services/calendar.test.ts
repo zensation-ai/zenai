@@ -5,9 +5,9 @@
  */
 
 // Mock database context
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
-  queryContext: mockQueryContext,
+  queryContext: (...args: any[]) => mockQueryContext(...args),
   isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
   AIContext: {},
 }));

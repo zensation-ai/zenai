@@ -5,7 +5,7 @@
 import { MCPClient, createMCPClient } from '../../../services/mcp-client';
 
 // Mock fetch globally
-const mockFetch = jest.fn();
+var mockFetch = jest.fn();
 global.fetch = mockFetch;
 
 describe('MCP Client SDK', () => {
