@@ -1,16 +1,17 @@
 /**
  * Finance Data Hook - Phase 4
+ *
+ * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import type {
   FinancialAccount, Transaction, Budget, FinancialGoal,
   FinancialOverview, TransactionType,
 } from './types';
 
-const API = import.meta.env.VITE_API_URL || '';
-const headers = { 'x-api-key': import.meta.env.VITE_API_KEY || '' };
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 interface TransactionFilters {
   account_id?: string;
@@ -29,10 +30,11 @@ export function useFinanceData(context: string) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
   const [loading, setLoading] = useState(true);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchOverview = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/api/${context}/finance/overview`, { headers });
+      const res = await axios.get(`${API_URL}/api/${context}/finance/overview`);
       setOverview(res.data.data);
     } catch (err) {
       console.error('Failed to fetch overview', err);
@@ -50,7 +52,7 @@ export function useFinanceData(context: string) {
       if (filters.date_to) params.set('date_to', filters.date_to);
       params.set('limit', '50');
 
-      const res = await axios.get(`${API}/api/${context}/finance/transactions?${params}`, { headers });
+      const res = await axios.get(`${API_URL}/api/${context}/finance/transactions?${params}`);
       setTransactions(res.data.data);
       setTransactionsTotal(res.data.total || 0);
     } catch (err) {
@@ -60,7 +62,7 @@ export function useFinanceData(context: string) {
 
   const fetchAccounts = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/api/${context}/finance/accounts`, { headers });
+      const res = await axios.get(`${API_URL}/api/${context}/finance/accounts`);
       setAccounts(res.data.data);
     } catch (err) {
       console.error('Failed to fetch accounts', err);
@@ -69,7 +71,7 @@ export function useFinanceData(context: string) {
 
   const fetchBudgets = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/api/${context}/finance/budgets`, { headers });
+      const res = await axios.get(`${API_URL}/api/${context}/finance/budgets`);
       setBudgets(res.data.data);
     } catch (err) {
       console.error('Failed to fetch budgets', err);
@@ -78,7 +80,7 @@ export function useFinanceData(context: string) {
 
   const fetchGoals = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/api/${context}/finance/goals?active=false`, { headers });
+      const res = await axios.get(`${API_URL}/api/${context}/finance/goals?active=false`);
       setGoals(res.data.data);
     } catch (err) {
       console.error('Failed to fetch goals', err);
@@ -87,60 +89,68 @@ export function useFinanceData(context: string) {
 
   // CRUD Operations
   const createTransaction = useCallback(async (data: Partial<Transaction>) => {
-    await axios.post(`${API}/api/${context}/finance/transactions`, data, { headers });
+    await axios.post(`${API_URL}/api/${context}/finance/transactions`, data);
     await Promise.all([fetchTransactions(), fetchOverview(), fetchAccounts()]);
   }, [context, fetchTransactions, fetchOverview, fetchAccounts]);
 
   const deleteTransaction = useCallback(async (id: string) => {
-    await axios.delete(`${API}/api/${context}/finance/transactions/${id}`, { headers });
+    await axios.delete(`${API_URL}/api/${context}/finance/transactions/${id}`);
     await Promise.all([fetchTransactions(), fetchOverview(), fetchAccounts()]);
   }, [context, fetchTransactions, fetchOverview, fetchAccounts]);
 
   const createAccount = useCallback(async (data: Partial<FinancialAccount>) => {
-    await axios.post(`${API}/api/${context}/finance/accounts`, data, { headers });
+    await axios.post(`${API_URL}/api/${context}/finance/accounts`, data);
     await fetchAccounts();
   }, [context, fetchAccounts]);
 
   const deleteAccount = useCallback(async (id: string) => {
-    await axios.delete(`${API}/api/${context}/finance/accounts/${id}`, { headers });
+    await axios.delete(`${API_URL}/api/${context}/finance/accounts/${id}`);
     await fetchAccounts();
   }, [context, fetchAccounts]);
 
   const createBudget = useCallback(async (data: Partial<Budget>) => {
-    await axios.post(`${API}/api/${context}/finance/budgets`, data, { headers });
+    await axios.post(`${API_URL}/api/${context}/finance/budgets`, data);
     await fetchBudgets();
   }, [context, fetchBudgets]);
 
   const updateBudget = useCallback(async (id: string, data: Partial<Budget>) => {
-    await axios.put(`${API}/api/${context}/finance/budgets/${id}`, data, { headers });
+    await axios.put(`${API_URL}/api/${context}/finance/budgets/${id}`, data);
     await fetchBudgets();
   }, [context, fetchBudgets]);
 
   const deleteBudget = useCallback(async (id: string) => {
-    await axios.delete(`${API}/api/${context}/finance/budgets/${id}`, { headers });
+    await axios.delete(`${API_URL}/api/${context}/finance/budgets/${id}`);
     await fetchBudgets();
   }, [context, fetchBudgets]);
 
   const createGoal = useCallback(async (data: Partial<FinancialGoal>) => {
-    await axios.post(`${API}/api/${context}/finance/goals`, data, { headers });
+    await axios.post(`${API_URL}/api/${context}/finance/goals`, data);
     await fetchGoals();
   }, [context, fetchGoals]);
 
   const updateGoal = useCallback(async (id: string, data: Partial<FinancialGoal>) => {
-    await axios.put(`${API}/api/${context}/finance/goals/${id}`, data, { headers });
+    await axios.put(`${API_URL}/api/${context}/finance/goals/${id}`, data);
     await fetchGoals();
   }, [context, fetchGoals]);
 
   const deleteGoal = useCallback(async (id: string) => {
-    await axios.delete(`${API}/api/${context}/finance/goals/${id}`, { headers });
+    await axios.delete(`${API_URL}/api/${context}/finance/goals/${id}`);
     await fetchGoals();
   }, [context, fetchGoals]);
 
-  // Initial load
+  // Initial load with cleanup
   useEffect(() => {
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
     setLoading(true);
     Promise.all([fetchOverview(), fetchTransactions(), fetchAccounts(), fetchBudgets(), fetchGoals()])
       .finally(() => setLoading(false));
+
+    return () => {
+      ctrl.abort();
+      abortRef.current = null;
+    };
   }, [fetchOverview, fetchTransactions, fetchAccounts, fetchBudgets, fetchGoals]);
 
   return {

@@ -636,7 +636,7 @@ async function startServer(): Promise<void> {
 ║   zensation.ai  |  zensation.app  |  zensation.sh            ║
 ╚═══════════════════════════════════════════════════════════════╝
 
-ZenAI Backend - Phase 31
+ZenAI Backend - Phase 38
 ========================================================
 Server:      http://localhost:${PORT}
 API Docs:    http://localhost:${PORT}/api-docs

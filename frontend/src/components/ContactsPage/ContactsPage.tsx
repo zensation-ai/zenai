@@ -38,6 +38,9 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
   });
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [showOrgForm, setShowOrgForm] = useState(false);
+  const [orgName, setOrgName] = useState('');
+  const [orgIndustry, setOrgIndustry] = useState('');
   const {
     contacts, organizations, stats, followUps,
     totalContacts, totalOrganizations, loading,
@@ -89,19 +92,20 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
   }, [editingContact, updateContact, createContact]);
 
   const handleSubmitOrg = useCallback(async () => {
-    const name = prompt('Name der Organisation:');
-    if (!name?.trim()) return;
-    const industry = prompt('Branche (optional):');
+    if (!orgName.trim()) return;
     await createOrganization({
-      name: name.trim(),
-      industry: industry?.trim() || undefined,
+      name: orgName.trim(),
+      industry: orgIndustry.trim() || undefined,
     } as Partial<Organization>);
-  }, [createOrganization]);
+    setShowOrgForm(false);
+    setOrgName('');
+    setOrgIndustry('');
+  }, [orgName, orgIndustry, createOrganization]);
 
   const headerActions = (
     <>
       {activeTab === 'organizations' ? (
-        <button type="button" className="btn-primary" onClick={handleSubmitOrg}>
+        <button type="button" className="btn-primary" onClick={() => setShowOrgForm(true)}>
           + Organisation
         </button>
       ) : (
@@ -185,6 +189,41 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
           onSubmit={handleSubmitContact}
           onCancel={() => { setShowForm(false); setEditingContact(null); }}
         />
+      )}
+
+      {showOrgForm && (
+        <div className="modal-overlay" onClick={() => setShowOrgForm(false)}>
+          <div className="modal-content org-form-modal" onClick={e => e.stopPropagation()}>
+            <h3>Neue Organisation</h3>
+            <label>
+              Name *
+              <input
+                type="text"
+                value={orgName}
+                onChange={e => setOrgName(e.target.value)}
+                placeholder="Name der Organisation"
+                autoFocus
+              />
+            </label>
+            <label>
+              Branche (optional)
+              <input
+                type="text"
+                value={orgIndustry}
+                onChange={e => setOrgIndustry(e.target.value)}
+                placeholder="z.B. IT, Beratung, Handel"
+              />
+            </label>
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => { setShowOrgForm(false); setOrgName(''); setOrgIndustry(''); }}>
+                Abbrechen
+              </button>
+              <button type="button" className="btn-primary" onClick={handleSubmitOrg} disabled={!orgName.trim()}>
+                Erstellen
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -126,21 +126,24 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
 
   const closeBrowserTab = useCallback((tabId: string) => {
     setBrowserTabs(prev => {
-      const idx = prev.findIndex(t => t.id === tabId);
-      const updated = prev.filter(t => t.id !== tabId);
-      if (updated.length === 0) {
-        const newTab = { id: String(Date.now()), url: '', title: 'Neuer Tab', loading: false };
-        setActiveTabId(newTab.id);
+      if (prev.length <= 1) {
+        const newId = String(Date.now());
+        setActiveTabId(newId);
         setCurrentUrl('');
         setUrlInput('');
-        return [newTab];
+        return [{ id: newId, url: '', title: 'Neuer Tab', loading: false }];
       }
+
+      const idx = prev.findIndex(t => t.id === tabId);
+      const updated = prev.filter(t => t.id !== tabId);
+
       if (activeTabId === tabId) {
         const newActive = updated[Math.min(idx, updated.length - 1)] || updated[0];
         setActiveTabId(newActive.id);
         setCurrentUrl(newActive.url);
         setUrlInput(newActive.url);
       }
+
       return updated;
     });
   }, [activeTabId]);
@@ -298,7 +301,7 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
                 className="browser-iframe"
                 title="Browser"
                 onLoad={handleIframeLoad}
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                sandbox="allow-scripts allow-forms allow-popups"
               />
             ) : (
               <div className="browser-empty-state">

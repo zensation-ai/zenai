@@ -1,5 +1,7 @@
 /**
  * Contacts Data Hook - Phase 3
+ *
+ * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -7,12 +9,6 @@ import axios from 'axios';
 import type { Contact, Organization, ContactInteraction, ContactStats } from './types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
-
-const api = axios.create({
-  baseURL: API_URL,
-  headers: { 'x-api-key': API_KEY },
-});
 
 interface UseContactsDataProps {
   context: string;
@@ -47,7 +43,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
       if (filters?.is_favorite) params.set('is_favorite', 'true');
       if (filters?.organization_id) params.set('organization_id', filters.organization_id);
 
-      const { data } = await api.get(`/api/${context}/contacts?${params}`, { signal: ctrl.signal });
+      const { data } = await axios.get(`${API_URL}/api/${context}/contacts?${params}`, { signal: ctrl.signal });
       if (data.success) {
         setContacts(data.data);
         setTotalContacts(data.total);
@@ -62,7 +58,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
   const fetchOrganizations = useCallback(async (search?: string) => {
     try {
       const params = search ? `?search=${encodeURIComponent(search)}` : '';
-      const { data } = await api.get(`/api/${context}/organizations${params}`);
+      const { data } = await axios.get(`${API_URL}/api/${context}/organizations${params}`);
       if (data.success) {
         setOrganizations(data.data);
         setTotalOrganizations(data.total);
@@ -74,7 +70,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data } = await api.get(`/api/${context}/contacts/stats`);
+      const { data } = await axios.get(`${API_URL}/api/${context}/contacts/stats`);
       if (data.success) setStats(data.data);
     } catch (err) {
       console.error('Failed to fetch stats', err);
@@ -83,7 +79,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const fetchFollowUps = useCallback(async () => {
     try {
-      const { data } = await api.get(`/api/${context}/contacts/follow-ups`);
+      const { data } = await axios.get(`${API_URL}/api/${context}/contacts/follow-ups`);
       if (data.success) setFollowUps(data.data);
     } catch (err) {
       console.error('Failed to fetch follow-ups', err);
@@ -92,7 +88,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const fetchInteractions = useCallback(async (contactId: string) => {
     try {
-      const { data } = await api.get(`/api/${context}/contacts/${contactId}/timeline`);
+      const { data } = await axios.get(`${API_URL}/api/${context}/contacts/${contactId}/timeline`);
       if (data.success) setInteractions(data.data);
     } catch (err) {
       console.error('Failed to fetch interactions', err);
@@ -101,7 +97,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const createContact = useCallback(async (input: Partial<Contact>): Promise<Contact | null> => {
     try {
-      const { data } = await api.post(`/api/${context}/contacts`, input);
+      const { data } = await axios.post(`${API_URL}/api/${context}/contacts`, input);
       if (data.success) {
         await fetchContacts();
         await fetchStats();
@@ -115,7 +111,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const updateContact = useCallback(async (id: string, updates: Partial<Contact>): Promise<boolean> => {
     try {
-      const { data } = await api.put(`/api/${context}/contacts/${id}`, updates);
+      const { data } = await axios.put(`${API_URL}/api/${context}/contacts/${id}`, updates);
       if (data.success) {
         setContacts(prev => prev.map(c => c.id === id ? data.data : c));
         if (selectedContact?.id === id) setSelectedContact(data.data);
@@ -129,7 +125,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const deleteContact = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const { data } = await api.delete(`/api/${context}/contacts/${id}`);
+      const { data } = await axios.delete(`${API_URL}/api/${context}/contacts/${id}`);
       if (data.success) {
         setContacts(prev => prev.filter(c => c.id !== id));
         if (selectedContact?.id === id) setSelectedContact(null);
@@ -144,7 +140,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const createOrganization = useCallback(async (input: Partial<Organization>): Promise<Organization | null> => {
     try {
-      const { data } = await api.post(`/api/${context}/organizations`, input);
+      const { data } = await axios.post(`${API_URL}/api/${context}/organizations`, input);
       if (data.success) {
         await fetchOrganizations();
         return data.data;
@@ -157,7 +153,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
 
   const deleteOrganization = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const { data } = await api.delete(`/api/${context}/organizations/${id}`);
+      const { data } = await axios.delete(`${API_URL}/api/${context}/organizations/${id}`);
       if (data.success) {
         setOrganizations(prev => prev.filter(o => o.id !== id));
         return true;

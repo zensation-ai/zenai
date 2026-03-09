@@ -326,7 +326,7 @@ export async function smartCompose(input: SmartComposeInput): Promise<SmartCompo
 
   const tone = input.tone || 'neutral';
   const replyContext = input.replyTo
-    ? `\n\nDies ist eine Antwort auf folgende E-Mail:\nVon: ${input.replyTo.from}\nBetreff: ${input.replyTo.subject}\nInhalt: ${input.replyTo.body.substring(0, 1500)}`
+    ? `\n\nDies ist eine Antwort auf folgende E-Mail:\nVon: ${sanitizeForAI(input.replyTo.from)}\nBetreff: ${sanitizeForAI(input.replyTo.subject)}\nInhalt: ${sanitizeForAI(input.replyTo.body.substring(0, 1500))}`
     : '';
 
   const response = await executeWithProtection(() =>
@@ -349,7 +349,7 @@ Regeln:
 - Bei Antworten: Subject weglassen oder mit "Re: " Prefix`,
       messages: [{
         role: 'user',
-        content: `${input.prompt}${replyContext}${input.context_info ? `\n\nZusaetzlicher Kontext: ${input.context_info}` : ''}`,
+        content: `${sanitizeForAI(input.prompt)}${replyContext}${input.context_info ? `\n\nZusaetzlicher Kontext: ${sanitizeForAI(input.context_info)}` : ''}`,
       }],
     })
   );
@@ -360,7 +360,12 @@ Regeln:
   }
 
   const jsonStr = textBlock.text.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
-  const parsed = JSON.parse(jsonStr);
+  let parsed: { subject?: string; body?: string };
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch {
+    throw new Error('KI-Antwort konnte nicht als JSON geparst werden');
+  }
 
   const bodyText = parsed.body || '';
   const bodyHtml = bodyText
@@ -395,7 +400,7 @@ Antworte NUR mit dem verbesserten Text, keine Erklaerungen.
 Behalte die Sprache (Deutsch) bei und den allgemeinen Ton.`,
       messages: [{
         role: 'user',
-        content: `Anweisung: ${instruction}\n\nOriginal-Text:\n${text}`,
+        content: `Anweisung: ${sanitizeForAI(instruction)}\n\nOriginal-Text:\n${sanitizeForAI(text)}`,
       }],
     })
   );

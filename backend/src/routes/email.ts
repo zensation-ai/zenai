@@ -391,6 +391,10 @@ emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write')
 
   const { body_html, body_text, cc, account_id } = req.body;
 
+  if (cc && Array.isArray(cc) && cc.length > 0) {
+    validateEmailAddresses(cc, 'cc');
+  }
+
   const reply = await replyToEmail(context, id, { html: body_html, text: body_text }, { cc, account_id });
 
   res.status(201).json({ success: true, data: reply });
@@ -411,6 +415,8 @@ emailRouter.post('/:context/emails/:id/forward', apiKeyAuth, requireScope('write
   if (!to_addresses || !Array.isArray(to_addresses) || to_addresses.length === 0) {
     throw new ValidationError('At least one recipient is required for forwarding');
   }
+
+  validateEmailAddresses(to_addresses, 'to_addresses');
 
   const forwarded = await forwardEmail(context, id, to_addresses, { html: body_html, text: body_text }, { account_id });
 
