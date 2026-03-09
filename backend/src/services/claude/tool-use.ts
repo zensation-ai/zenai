@@ -931,6 +931,109 @@ export const TOOL_ESTIMATE_TRAVEL: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 42: Self-Editing Memory Tools (Letta Pattern)
+// ===========================================
+
+/**
+ * Memory update tool - AI updates existing facts in its own memory
+ * Implements the Letta "self-editing memory" pattern where the AI
+ * has agency over its own memory state.
+ */
+export const TOOL_MEMORY_UPDATE: ToolDefinition = {
+  name: 'memory_update',
+  description:
+    'Aktualisiert einen bestehenden Fakt im Langzeitgedaechtnis. Nutze dies wenn der Nutzer eine fruehre Information korrigiert (z.B. "Ich arbeite jetzt bei X" statt "bei Y"), oder wenn du merkst dass ein gespeicherter Fakt veraltet ist. Ersetzt den alten Fakt mit der neuen Information.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      fact_id: {
+        type: 'string',
+        description: 'ID des zu aktualisierenden Fakts (aus memory_introspect oder recall)',
+      },
+      search_content: {
+        type: 'string',
+        description: 'Alternativ: Suchtext um den Fakt zu finden (wenn keine ID bekannt)',
+      },
+      new_content: {
+        type: 'string',
+        description: 'Neuer Inhalt des Fakts',
+      },
+      new_fact_type: {
+        type: 'string',
+        description: 'Neuer Typ (optional, nur wenn sich der Typ aendert)',
+        enum: ['preference', 'behavior', 'knowledge', 'goal', 'context'],
+      },
+      confidence: {
+        type: 'number',
+        description: 'Neue Konfidenz 0.0-1.0 (optional, Standard: 0.9 fuer explizite Korrekturen)',
+      },
+    },
+    required: ['new_content'],
+  },
+};
+
+/**
+ * Memory delete tool - AI removes facts from its own memory
+ * Enables explicit forgetting when facts are wrong, irrelevant, or privacy-sensitive.
+ */
+export const TOOL_MEMORY_DELETE: ToolDefinition = {
+  name: 'memory_delete',
+  description:
+    'Loescht einen Fakt aus dem Langzeitgedaechtnis. Nutze dies wenn der Nutzer explizit sagt "vergiss das", "loesch das", oder wenn ein gespeicherter Fakt nachweislich falsch ist und nicht korrigiert werden kann.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      fact_id: {
+        type: 'string',
+        description: 'ID des zu loeschenden Fakts',
+      },
+      search_content: {
+        type: 'string',
+        description: 'Alternativ: Suchtext um den Fakt zu finden',
+      },
+      reason: {
+        type: 'string',
+        description: 'Grund fuer die Loeschung (fuer Audit-Log)',
+      },
+    },
+    required: [],
+  },
+};
+
+/**
+ * Memory update profile tool - AI updates personal profile facts
+ * Bridges to the PersonalizationChat personal_facts table.
+ */
+export const TOOL_MEMORY_UPDATE_PROFILE: ToolDefinition = {
+  name: 'memory_update_profile',
+  description:
+    'Aktualisiert das persoenliche Profil des Nutzers (Name, Beruf, Interessen, Kommunikationsstil etc.). Nutze dies wenn der Nutzer persoenliche Informationen teilt die sein Profil betreffen, z.B. "Nenn mich Alex", "Ich bin umgezogen nach Berlin", "Ich mag lieber Du als Sie".',
+  input_schema: {
+    type: 'object',
+    properties: {
+      category: {
+        type: 'string',
+        description: 'Kategorie des Profil-Fakts',
+        enum: [
+          'basic_info', 'personality', 'work_life', 'goals_dreams',
+          'interests_hobbies', 'communication_style', 'decision_making',
+          'daily_routines', 'values_beliefs', 'challenges',
+        ],
+      },
+      fact_key: {
+        type: 'string',
+        description: 'Schluessel des Fakts (z.B. "name", "beruf", "wohnort", "anrede")',
+      },
+      fact_value: {
+        type: 'string',
+        description: 'Wert des Fakts (z.B. "Alexander", "Software-Entwickler", "Berlin", "Du")',
+      },
+    },
+    required: ['category', 'fact_key', 'fact_value'],
+  },
+};
+
+// ===========================================
 // Phase 41: Google Maps Tools
 // ===========================================
 

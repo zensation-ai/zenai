@@ -10,6 +10,7 @@
 import { logger } from '../../utils/logger';
 import { AIContext } from '../../utils/database-context';
 import { getUnifiedContext, trackContextUsage } from '../business-context';
+import { getPersonalFactsPromptSection } from '../personal-facts-bridge';
 import {
   getClaudeClient,
   executeWithProtection,
@@ -167,6 +168,13 @@ export async function structureWithClaudeAdvanced(
     if (contextParts.length > 0) {
       enhancedPrompt += `\n\n[NUTZER-KONTEXT]\n${contextParts.join('\n')}\n\nBerücksichtige diesen Kontext bei der Kategorisierung und Priorisierung.`;
     }
+  }
+
+  // Add personal facts from PersonalizationChat (cross-context)
+  // Pass transcript for query-relevant fact selection
+  const personalFactsSection = await getPersonalFactsPromptSection(transcript);
+  if (personalFactsSection) {
+    enhancedPrompt += personalFactsSection;
   }
 
   logger.info('Structuring with Claude Advanced', {

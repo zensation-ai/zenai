@@ -44,6 +44,7 @@ export {
   LongTermMemory,
   LongTermRetrievalResult,
   ConsolidationResult,
+  DecayClass,
 } from './long-term-memory';
 
 // Memory coordinator (main entry point)

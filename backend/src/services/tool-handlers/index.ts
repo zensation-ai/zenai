@@ -56,6 +56,9 @@ import {
   TOOL_GET_OPENING_HOURS,
   TOOL_FIND_NEARBY,
   TOOL_OPTIMIZE_ROUTE,
+  TOOL_MEMORY_UPDATE,
+  TOOL_MEMORY_DELETE,
+  TOOL_MEMORY_UPDATE_PROFILE,
   ToolExecutionContext,
 } from '../claude/tool-use';
 import { createMeeting } from '../meetings';
@@ -89,6 +92,11 @@ import {
   handleFindNearbyPlaces,
   handleOptimizeDayRoute,
 } from './maps-tools';
+import {
+  handleMemoryUpdate,
+  handleMemoryDelete,
+  handleMemoryUpdateProfile,
+} from './memory-tools';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -963,6 +971,11 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_FIND_NEARBY, handleFindNearbyPlaces);
   toolRegistry.register(TOOL_OPTIMIZE_ROUTE, handleOptimizeDayRoute);
 
+  // Phase 42: Self-Editing Memory tools (Letta Pattern)
+  toolRegistry.register(TOOL_MEMORY_UPDATE, handleMemoryUpdate);
+  toolRegistry.register(TOOL_MEMORY_DELETE, handleMemoryDelete);
+  toolRegistry.register(TOOL_MEMORY_UPDATE_PROFILE, handleMemoryUpdateProfile);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1004,6 +1017,9 @@ export function registerAllToolHandlers(): void {
       'get_opening_hours',
       'find_nearby_places',
       'optimize_day_route',
+      'memory_update',
+      'memory_delete',
+      'memory_update_profile',
     ],
   });
 }

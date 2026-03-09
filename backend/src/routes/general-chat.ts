@@ -56,6 +56,7 @@ import {
 import { CHAT } from '../config/constants';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../services/memory';
 import { getUnifiedContext } from '../services/business-context';
+import { getPersonalFactsPromptSection } from '../services/personal-facts-bridge';
 
 export const generalChatRouter = Router();
 
@@ -608,9 +609,17 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
       }
     }
 
+    // Load personal facts from PersonalizationChat (cross-context, cached)
+    // Pass user message for query-relevant fact selection
+    const personalFactsSection = await getPersonalFactsPromptSection(message);
+    if (personalFactsSection) {
+      systemPrompt += personalFactsSection;
+    }
+
     logger.debug('Stream memory context prepared', {
       sessionId: id,
       memoryStats: enhancedContext.stats,
+      hasPersonalFacts: !!personalFactsSection,
     });
   } catch (error) {
     logger.warn('Stream memory enhancement failed, using fallback', { sessionId: id, error });

@@ -12,6 +12,7 @@ import { logger } from '../../utils/logger';
 import { StructuredIdea } from '../../utils/ollama';
 import { AIContext } from '../../utils/database-context';
 import { trackContextUsage, getUnifiedContext } from '../business-context';
+import { getPersonalFactsPromptSection } from '../personal-facts-bridge';
 import {
   getClaudeClient,
   executeWithProtection,
@@ -124,6 +125,13 @@ export async function structureWithClaudePersonalized(
     if (contextParts.length > 0) {
       personalizedPrompt += `\n\n[NUTZER-KONTEXT]\n${contextParts.join('\n')}\n\nBerücksichtige diesen Kontext bei der Kategorisierung und Priorisierung.`;
     }
+  }
+
+  // Add personal facts from PersonalizationChat (cross-context)
+  // Pass transcript for query-relevant fact selection
+  const personalFactsSection = await getPersonalFactsPromptSection(transcript);
+  if (personalFactsSection) {
+    personalizedPrompt += personalFactsSection;
   }
 
   // API call WITH retry and circuit breaker protection

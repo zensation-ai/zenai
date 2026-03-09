@@ -18,6 +18,7 @@ import axios from 'axios';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { recordLearningEvent } from '../services/evolution-analytics';
+import { invalidatePersonalFactsCache } from '../services/personal-facts-bridge';
 
 export const personalizationChatRouter = Router();
 
@@ -161,6 +162,11 @@ personalizationChatRouter.post('/chat', apiKeyAuth, asyncHandler(async (req: Req
   // Store extracted facts
   for (const fact of extractedFacts) {
     await storeFact(fact, message);
+  }
+
+  // Invalidate cached personal facts so next chat gets updated profile
+  if (extractedFacts.length > 0) {
+    invalidatePersonalFactsCache();
   }
 
   // Generate AI response

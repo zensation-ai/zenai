@@ -477,8 +477,11 @@ function analyzeKeywordsForTools(message: string): string[] {
     create_idea: ['erstellen', 'anlegen', 'speichern', 'merken', 'notieren', 'aufschreiben'],
     calculate: ['berechnen', 'rechnen', 'prozent', 'summe', 'durchschnitt', 'addieren'],
     get_related_ideas: ['verwandt', 'ähnlich', 'zusammenhang', 'verbunden', 'bezug'],
-    remember: ['merken', 'vergessen', 'behalten'],
+    remember: ['merken', 'behalten'],
     recall: ['erinnern', 'früher', 'gesagt', 'erwähnt'],
+    memory_update: ['korrigiere', 'aktualisiere', 'stimmt nicht mehr', 'nicht mehr richtig', 'jetzt stattdessen'],
+    memory_delete: ['vergiss', 'lösch', 'entferne', 'vergessen'],
+    memory_update_profile: ['nenn mich', 'ich heiße', 'ich bin umgezogen', 'ich arbeite jetzt'],
     create_meeting: ['meeting', 'termin', 'besprechung', 'treffen', 'kalender'],
     navigate_to: ['seite', 'navigieren', 'öffnen', 'gehen'],
     app_help: ['hilfe', 'erklären', 'funktioniert', 'feature', 'anleitung'],
@@ -499,9 +502,9 @@ function analyzeKeywordsForTools(message: string): string[] {
 export function getDefaultToolsForMode(mode: ChatMode): string[] {
   switch (mode) {
     case 'tool_assisted':
-      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
+      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
     case 'agent':
-      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'memory_introspect', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
+      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'memory_introspect', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
     case 'rag_enhanced':
       return ['search_ideas', 'recall'];
     default:

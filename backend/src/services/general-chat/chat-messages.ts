@@ -7,6 +7,7 @@ import { logger } from '../../utils/logger';
 import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable } from '../claude';
 import { getUnifiedContext } from '../business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../memory';
+import { getPersonalFactsPromptSection } from '../personal-facts-bridge';
 import { implicitFeedback } from '../memory/implicit-feedback';
 import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode } from '../chat-modes';
 import { classifyIntent, intentToRetrievalConfig } from '../query-intent-classifier';
@@ -156,9 +157,17 @@ export async function generateEnhancedResponse(
       }
     }
 
+    // Load personal facts from PersonalizationChat (cross-context, cached)
+    // Pass user message for query-relevant fact selection
+    const personalFactsSection = await getPersonalFactsPromptSection(userMessage);
+    if (personalFactsSection) {
+      systemPrompt += personalFactsSection;
+    }
+
     logger.debug('Enhanced context prepared', {
       sessionId,
       memoryStats,
+      hasPersonalFacts: !!personalFactsSection,
       systemPromptLength: systemPrompt.length,
     });
   } catch (error) {

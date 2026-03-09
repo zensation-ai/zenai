@@ -265,11 +265,22 @@ router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHand
  */
 router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const context = getContextFromRequest(req);
-  const { getPool } = await import('../utils/database-context');
+  const { getPool, isValidContext } = await import('../utils/database-context');
+  if (!isValidContext(context)) {
+    res.status(400).json({ success: false, error: 'Invalid context' });
+    return;
+  }
+  const SEARCH_PATHS: Record<string, string> = {
+    personal: 'SET search_path TO personal, public',
+    work: 'SET search_path TO work, public',
+    learning: 'SET search_path TO learning, public',
+    creative: 'SET search_path TO creative, public',
+  };
   const pool = getPool(context);
   const client = await pool.connect();
 
   try {
+    await client.query(SEARCH_PATHS[context]);
     // Get thoughts with embedding status
     const thoughtsResult = await client.query(
       `SELECT id, raw_input, is_processed, cluster_id, similarity_to_cluster,
