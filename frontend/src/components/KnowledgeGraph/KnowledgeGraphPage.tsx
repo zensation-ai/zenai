@@ -1,5 +1,6 @@
 import { logError } from '../../utils/errors';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { AIContext } from '../ContextSwitcher';
 import ReactFlow, {
   Node,
   Edge,
@@ -63,7 +64,7 @@ interface GraphData {
 interface KnowledgeGraphPageProps {
   onBack: () => void;
   onSelectIdea?: (ideaId: string) => void;
-  context: string; // validated as AIContext by parent (InsightsDashboard)
+  context: AIContext;
 }
 
 // Node colors based on idea type

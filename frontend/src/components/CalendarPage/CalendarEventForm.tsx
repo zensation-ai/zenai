@@ -8,6 +8,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { CalendarEvent, CreateEventInput, EventType } from './types';
 import { EVENT_TYPE_LABELS } from './types';
 import { LocationAutocomplete } from './LocationAutocomplete';
+import type { AIContext } from '../ContextSwitcher';
 
 interface CalendarEventFormProps {
   event: CalendarEvent | null;
@@ -15,7 +16,7 @@ interface CalendarEventFormProps {
   onSave: (input: CreateEventInput) => Promise<CalendarEvent | null>;
   onDelete?: () => Promise<boolean>;
   onClose: () => void;
-  context?: string;
+  context?: AIContext;
 }
 
 function toLocalDatetimeString(date: Date): string {

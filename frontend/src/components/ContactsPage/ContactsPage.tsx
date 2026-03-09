@@ -11,13 +11,14 @@ import { OrganizationList } from './OrganizationList';
 import { ContactForm } from './ContactForm';
 import { HubPage, type TabDef } from '../HubPage';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
+import type { AIContext } from '../ContextSwitcher';
 import type { Contact, Organization } from './types';
 import './ContactsPage.css';
 
 type ContactTab = 'all' | 'favorites' | 'organizations';
 
 interface ContactsPageProps {
-  context: string;
+  context: AIContext;
   initialTab?: ContactTab;
   onBack: () => void;
 }

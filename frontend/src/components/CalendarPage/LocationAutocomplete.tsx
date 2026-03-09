@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
+import type { AIContext } from '../ContextSwitcher';
 import './LocationAutocomplete.css';
 
 interface PlaceSuggestion {
@@ -20,7 +21,7 @@ interface LocationAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   onPlaceSelect?: (place: { placeId: string; description: string; lat?: number; lng?: number }) => void;
-  context: string;
+  context: AIContext;
   placeholder?: string;
   id?: string;
 }
