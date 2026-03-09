@@ -694,7 +694,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
     } else {
       // Use dynamic budget system for retrieval-worthy queries
       const taskType = classifyTaskType(message);
-      const budgetRec = await calculateDynamicBudget(message, taskType, 'personal');
+      const budgetRec = await calculateDynamicBudget(message, taskType, contextType);
       adaptiveThinkingBudget = budgetRec.recommendedBudget;
 
       logger.info('Adaptive thinking budget calculated', {

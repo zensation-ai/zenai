@@ -187,7 +187,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
    */
   const handleSendMessage = useCallback(async () => {
     // Allow sending with only images (no text required)
-    if ((!inputValue.trim() && selectedImages.length === 0) || sending) return;
+    // Guard against sending while session is still loading (race condition)
+    if ((!inputValue.trim() && selectedImages.length === 0) || sending || loading) return;
 
     const messageContent = inputValue.trim();
     const imagesToSend = [...selectedImages];
@@ -442,7 +443,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [inputValue, sending, sessionId, selectedImages, context, assistantMode, thinkingMode]);
+  }, [inputValue, sending, loading, sessionId, selectedImages, context, assistantMode, thinkingMode]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

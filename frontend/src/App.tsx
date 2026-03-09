@@ -294,14 +294,18 @@ function AuthenticatedApp() {
   // Email unread count for sidebar badge
   const [emailUnreadCount, setEmailUnreadCount] = useState(0);
   useEffect(() => {
+    const controller = new AbortController();
     const fetchUnread = () => {
-      axios.get(`/api/${context}/emails/stats`).then(res => {
+      axios.get(`/api/${context}/emails/stats`, { signal: controller.signal }).then(res => {
         setEmailUnreadCount(res.data?.data?.unread ?? 0);
-      }).catch(() => { /* silent */ });
+      }).catch(() => { /* silent - includes AbortError */ });
     };
     fetchUnread();
     const interval = setInterval(fetchUnread, 60_000);
-    return () => clearInterval(interval);
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [context]);
 
   const pageHistory = usePageHistory();

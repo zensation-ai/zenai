@@ -25,6 +25,7 @@ export function useEmailData(context: AIContext) {
   const [undoAction, setUndoAction] = useState<UndoAction | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  const contextAbortRef = useRef<AbortController>(new AbortController());
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFetchRef = useRef<{ folder: string; filters?: EmailFilters }>({ folder: 'inbox' });
@@ -69,7 +70,7 @@ export function useEmailData(context: AIContext) {
 
   const fetchEmail = useCallback(async (id: string): Promise<Email | null> => {
     try {
-      const res = await axios.get(`/api/${context}/emails/${id}`);
+      const res = await axios.get(`/api/${context}/emails/${id}`, { signal: contextAbortRef.current.signal });
       const email = res.data?.data ?? null;
       setSelectedEmail(email);
       // Optimistic: mark as read in list
@@ -85,7 +86,7 @@ export function useEmailData(context: AIContext) {
 
   const fetchThread = useCallback(async (id: string) => {
     try {
-      const res = await axios.get(`/api/${context}/emails/${id}/thread`);
+      const res = await axios.get(`/api/${context}/emails/${id}/thread`, { signal: contextAbortRef.current.signal });
       setThread(res.data?.data ?? []);
     } catch {
       setThread([]);
@@ -94,7 +95,7 @@ export function useEmailData(context: AIContext) {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get(`/api/${context}/emails/stats`);
+      const res = await axios.get(`/api/${context}/emails/stats`, { signal: contextAbortRef.current.signal });
       setStats(res.data?.data ?? null);
     } catch {
       // non-critical
@@ -103,7 +104,7 @@ export function useEmailData(context: AIContext) {
 
   const fetchAccounts = useCallback(async () => {
     try {
-      const res = await axios.get(`/api/${context}/emails/accounts`);
+      const res = await axios.get(`/api/${context}/emails/accounts`, { signal: contextAbortRef.current.signal });
       setAccounts(res.data?.data ?? []);
     } catch {
       // non-critical
@@ -351,7 +352,7 @@ export function useEmailData(context: AIContext) {
       if (filters?.category) params.category = filters.category;
       if (filters?.unread) params.status = 'received';
 
-      const res = await axios.get(`/api/${context}/emails`, { params });
+      const res = await axios.get(`/api/${context}/emails`, { params, signal: contextAbortRef.current.signal });
       const moreEmails = res.data?.data ?? [];
       setEmails(prev => [...prev, ...moreEmails]);
       setTotal(res.data?.total ?? total);
@@ -447,8 +448,21 @@ export function useEmailData(context: AIContext) {
   // ── Cleanup: abort pending requests on unmount AND context change ──
 
   useEffect(() => {
+    // Reset stale state from previous context
+    setEmails([]);
+    setSelectedEmail(null);
+    setThread([]);
+    setStats(null);
+    setError(null);
+    setTotal(0);
+    setUndoAction(null);
+
+    // Fresh abort controller for new context
+    contextAbortRef.current = new AbortController();
+
     return () => {
       abortRef.current?.abort();
+      contextAbortRef.current.abort();
       if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     };

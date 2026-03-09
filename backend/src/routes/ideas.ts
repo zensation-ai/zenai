@@ -18,10 +18,11 @@ import {
   validateContextParam,
 } from '../utils/validation';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError, AppError } from '../middleware/errorHandler';
 import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
 import { trackActivity } from '../services/activity-tracker';
 import { moveIdea } from '../services/idea-move';
+import { invalidateCacheForContext } from '../middleware/response-cache';
 
 // ===========================================
 // Type-safe row interfaces for aggregate queries
@@ -1510,22 +1511,44 @@ ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('wr
     throw new ValidationError('Source and target context are the same.');
   }
 
-  const result = await moveIdea(sourceContext, targetContext as AIContext, id);
+  try {
+    const result = await moveIdea(sourceContext, targetContext as AIContext, id);
 
-  // Track interaction (non-blocking)
-  trackInteraction({
-    idea_id: id,
-    interaction_type: 'edit',
-    metadata: { action: 'move', from: sourceContext, to: targetContext },
-  }).catch((err) => logger.debug('Background move tracking skipped', { error: err.message }));
+    // Invalidate cache for both contexts so lists are fresh
+    await Promise.all([
+      invalidateCacheForContext(sourceContext, 'ideas'),
+      invalidateCacheForContext(targetContext as AIContext, 'ideas'),
+    ]).catch(() => { /* cache invalidation is best-effort */ });
 
-  res.json({
-    success: true,
-    movedId: result.ideaId,
-    newIdeaId: result.newIdeaId,
-    from: result.sourceContext,
-    to: result.targetContext,
-  });
+    // Track interaction (non-blocking)
+    trackInteraction({
+      idea_id: id,
+      interaction_type: 'edit',
+      metadata: { action: 'move', from: sourceContext, to: targetContext },
+    }).catch((err) => logger.debug('Background move tracking skipped', { error: err.message }));
+
+    // Learn from context move (non-blocking)
+    learnFromCorrection(id, {
+      oldContext: sourceContext,
+      newContext: targetContext,
+    }).catch(() => { /* Background learning - ignore errors */ });
+
+    res.json({
+      success: true,
+      movedId: result.ideaId,
+      newIdeaId: result.newIdeaId,
+      from: result.sourceContext,
+      to: result.targetContext,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'IDEA_NOT_FOUND') {
+      throw new NotFoundError('Idea');
+    }
+    if (error instanceof Error && error.message === 'SCHEMA_MISMATCH') {
+      throw new AppError('Verschieben fehlgeschlagen — bitte versuche es erneut.', 500, 'SCHEMA_MISMATCH');
+    }
+    throw error;
+  }
 }));
 
 /**
@@ -1588,7 +1611,7 @@ ideasContextRouter.post('/:context/ideas/batch/archive', apiKeyAuth, requireScop
 
   const result = await queryContext(
     ctx,
-    `UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = ANY($1::uuid[]) AND is_archived = false RETURNING id`,
+    `UPDATE ideas SET is_archived = true, archived_at = NOW(), updated_at = NOW() WHERE id = ANY($1::uuid[]) AND is_archived = false RETURNING id`,
     [ids]
   );
 
