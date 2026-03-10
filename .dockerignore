@@ -1,0 +1,58 @@
+# Dependencies (installed fresh in container)
+**/node_modules
+npm-debug.log*
+
+# Build output (built fresh in container)
+**/dist
+
+# Frontend (not needed for backend deployment)
+frontend
+
+# Electron (not needed for backend deployment)
+packages/electron
+
+# Website (not needed for backend deployment)
+website
+
+# Development/lint config
+**/.eslintrc*
+**/.prettierrc*
+**/jest.config.*
+
+# IDE
+.vscode
+.idea
+**/*.swp
+**/*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment (handled by Railway)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*
+.dockerignore
+
+# Tests
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+**/coverage
+
+# Uploads (handled separately in production)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Documentation
+**/README.md
+docs
