@@ -34,6 +34,7 @@ function ChatSessionSidebarComponent({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchSessions = useCallback(async () => {
@@ -68,8 +69,21 @@ function ChatSessionSidebarComponent({
     }
   }, [activeSessionId, fetchSessions]);
 
-  const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
+    if (confirmDeleteId === sessionId) {
+      // Second click = confirmed, execute delete
+      handleDeleteConfirmed(sessionId);
+    } else {
+      // First click = show confirmation state
+      setConfirmDeleteId(sessionId);
+      // Auto-reset after 3 seconds if not confirmed
+      setTimeout(() => setConfirmDeleteId(prev => prev === sessionId ? null : prev), 3000);
+    }
+  };
+
+  const handleDeleteConfirmed = async (sessionId: string) => {
+    setConfirmDeleteId(null);
     setDeletingId(sessionId);
     try {
       await axios.delete(`/api/chat/sessions/${sessionId}`);
@@ -195,31 +209,37 @@ function ChatSessionSidebarComponent({
             <div key={group.label} className="chat-sidebar-group">
               <div className="chat-sidebar-group-label">{group.label}</div>
               {group.sessions.map(session => (
-                <button
+                <li
                   key={session.id}
-                  type="button"
-                  role="listitem"
-                  className={`chat-sidebar-item neuro-focus-ring ${session.id === activeSessionId ? 'active' : ''}`}
-                  onClick={() => onSelectSession(session.id)}
-                  title={session.title || 'Unbenannte Konversation'}
+                  className={`chat-sidebar-item ${session.id === activeSessionId ? 'active' : ''}`}
                 >
-                  <span className="chat-sidebar-item-title">
-                    {session.title || 'Neue Konversation'}
-                  </span>
-                  <span className="chat-sidebar-item-date">
-                    {formatDate(session.updatedAt)}
-                  </span>
                   <button
                     type="button"
-                    className="chat-sidebar-item-delete"
-                    onClick={(e) => handleDelete(e, session.id)}
-                    disabled={deletingId === session.id}
-                    title="Löschen"
-                    aria-label={`Konversation "${session.title || 'Unbenannt'}" löschen`}
+                    className="chat-sidebar-item-select neuro-focus-ring"
+                    onClick={() => onSelectSession(session.id)}
+                    title={session.title || 'Unbenannte Konversation'}
+                    aria-current={session.id === activeSessionId ? 'true' : undefined}
                   >
-                    {deletingId === session.id ? '...' : '×'}
+                    <span className="chat-sidebar-item-title">
+                      {session.title || 'Neue Konversation'}
+                    </span>
+                    <span className="chat-sidebar-item-date">
+                      {formatDate(session.updatedAt)}
+                    </span>
                   </button>
-                </button>
+                  <button
+                    type="button"
+                    className={`chat-sidebar-item-delete neuro-focus-ring ${confirmDeleteId === session.id ? 'confirming' : ''}`}
+                    onClick={(e) => handleDeleteClick(e, session.id)}
+                    disabled={deletingId === session.id}
+                    title={confirmDeleteId === session.id ? 'Nochmal klicken zum L\u00F6schen' : 'L\u00F6schen'}
+                    aria-label={confirmDeleteId === session.id
+                      ? `L\u00F6schen best\u00E4tigen: "${session.title || 'Unbenannt'}"`
+                      : `Konversation "${session.title || 'Unbenannt'}" l\u00F6schen`}
+                  >
+                    {deletingId === session.id ? '...' : confirmDeleteId === session.id ? '?' : '\u00D7'}
+                  </button>
+                </li>
               ))}
             </div>
           ))

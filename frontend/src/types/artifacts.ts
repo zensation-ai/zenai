@@ -91,12 +91,14 @@ export function extractArtifacts(content: string): { text: string; artifacts: Ar
   }
 
   // Pattern 3: Large code blocks (>20 lines) without explicit title
+  // Iterate over original content (like Patterns 1 & 2) to avoid stale regex lastIndex
+  // when processedContent is mutated by .replace() during the loop
   const largeCodeBlockRegex = /```(\w+)\n([\s\S]{500,}?)```/g;
 
-  while ((match = largeCodeBlockRegex.exec(processedContent)) !== null) {
+  while ((match = largeCodeBlockRegex.exec(content)) !== null) {
     const [fullMatch, language, code] = match;
-    // Skip if already processed
-    if (fullMatch.includes('[[ARTIFACT:')) continue;
+    // Skip if already replaced by Pattern 1 or 2
+    if (!processedContent.includes(fullMatch)) continue;
 
     const lineCount = code.split('\n').length;
     if (lineCount >= 20) {

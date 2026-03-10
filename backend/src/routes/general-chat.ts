@@ -818,7 +818,10 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         hadThinking: thinkingContent.length > 0,
       });
     } else {
-      logger.warn('Stream completed with no content - assistant message not stored', { sessionId: id });
+      // Stream completed but returned no content - store a fallback assistant message
+      // to prevent dangling user messages with no response in chat history
+      logger.warn('Stream completed with no content - storing fallback message', { sessionId: id });
+      await addMessage(id, 'assistant', 'Es tut mir leid, ich konnte keine Antwort generieren. Bitte versuche es erneut.');
     }
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);

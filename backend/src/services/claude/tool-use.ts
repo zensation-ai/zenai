@@ -728,11 +728,10 @@ export const TOOL_NAVIGATE_TO: ToolDefinition = {
         type: 'string',
         description: 'Zielseite',
         enum: [
-          'home', 'ideas', 'insights', 'archive', 'settings',
-          'ai-workshop', 'learning', 'profile', 'meetings', 'media',
-          'stories', 'documents', 'automations', 'integrations',
-          'notifications', 'export', 'sync', 'personalization',
-          'canvas', 'triage', 'voice-chat', 'agent-teams',
+          'home', 'chat', 'ideas', 'workshop', 'calendar', 'tasks',
+          'kanban', 'documents', 'email', 'contacts', 'finance',
+          'insights', 'business', 'my-ai', 'learning', 'settings',
+          'notifications', 'browser', 'screen-memory',
         ],
       },
       reason: {

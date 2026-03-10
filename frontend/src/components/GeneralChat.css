@@ -1018,6 +1018,38 @@
   font-weight: normal;
 }
 
+/* Stop Generating Button */
+.chat-stop-generating {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+}
+
+.chat-stop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.12));
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chat-stop-btn:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+.chat-stop-btn:active {
+  transform: scale(0.97);
+}
+
 @keyframes cursorBlink {
   0%, 100% {
     opacity: 1;

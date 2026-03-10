@@ -186,18 +186,10 @@
 
 .chat-sidebar-item {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
   width: 100%;
-  padding: 10px 10px;
-  background: transparent;
-  border: none;
+  list-style: none;
   border-radius: 8px;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
   transition: background 0.12s ease;
   position: relative;
 }
@@ -219,6 +211,22 @@
   width: 3px;
   background: var(--primary, #ff6b35);
   border-radius: 0 2px 2px 0;
+}
+
+.chat-sidebar-item-select {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 10px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
 .chat-sidebar-item-title {
@@ -246,6 +254,7 @@
   justify-content: center;
   width: 22px;
   height: 22px;
+  margin-right: 6px;
   padding: 0;
   background: transparent;
   border: none;
@@ -264,6 +273,19 @@
 .chat-sidebar-item-delete:hover {
   background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
+}
+
+.chat-sidebar-item-delete.confirming {
+  display: flex;
+  background: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+  font-weight: 700;
+  animation: confirmPulse 1s ease infinite;
+}
+
+@keyframes confirmPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* ============================================

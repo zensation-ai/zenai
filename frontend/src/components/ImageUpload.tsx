@@ -13,7 +13,7 @@
  * - Format validation (JPEG, PNG, GIF, WebP)
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import './ImageUpload.css';
 
 interface SelectedImage {
@@ -43,8 +43,7 @@ export function ImageUpload({
   onImagesChange,
   maxImages = 5,
   maxSizeMB = 10,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  images: _images = [],
+  images = [],
   disabled = false,
   compact = false,
 }: ImageUploadProps) {
@@ -52,6 +51,22 @@ export function ImageUpload({
   const [error, setError] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync with parent: when parent clears images (e.g., after sending), clear local state
+  useEffect(() => {
+    if (images.length === 0 && selectedImages.length > 0) {
+      selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
+      setSelectedImages([]);
+    }
+  }, [images.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup: revoke all Object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Generate unique ID for image

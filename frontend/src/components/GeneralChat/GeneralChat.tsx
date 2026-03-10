@@ -84,13 +84,29 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     };
   }, [context, initialSessionId]);
 
+  // Track whether this is an initial/session-switch load (instant scroll) vs new message (smooth)
+  const isInitialScrollRef = useRef(true);
+
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
+    // After first render with messages, switch to smooth scrolling for new messages
+    if (messages.length > 0) {
+      isInitialScrollRef.current = false;
+    }
   }, [messages]);
 
+  // Auto-scroll during streaming as new content arrives
+  useEffect(() => {
+    if (isStreaming && streamingContent) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isStreaming, streamingContent]);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use instant scroll on initial load / session switch, smooth for new messages
+    const behavior = isInitialScrollRef.current ? 'instant' as ScrollBehavior : 'smooth';
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
   // Listen for quick action input events from FloatingAssistant and ChatPage
@@ -150,6 +166,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       const res = await axios.get(`/api/chat/sessions/${id}`, { signal });
       const session = res.data?.session;
       if (session) {
+        isInitialScrollRef.current = true; // Reset to instant scroll for session switch
         setSessionId(session.id);
         setMessages(session.messages ?? []);
         onSessionChange?.(session.id);
@@ -384,23 +401,26 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
             }
           }
 
-          // Stream complete - create final assistant message
-          const finalAssistantMessage: ChatMessage = {
-            id: `assistant-${Date.now()}`,
-            sessionId: currentSessionId,
-            role: 'assistant',
-            content: accumulatedContent,
-            createdAt: new Date().toISOString(),
-          };
-
-          // Update messages with real user message (from temp) and assistant response
+          // Stream complete - update messages
           setMessages(prev => {
             const filtered = prev.filter(m => m.id !== tempUserMessage.id);
             const realUserMessage: ChatMessage = {
               ...tempUserMessage,
               id: `user-${Date.now()}`,
             };
-            return [...filtered, realUserMessage, finalAssistantMessage];
+
+            // Guard: only add assistant message if stream returned content
+            if (accumulatedContent.trim()) {
+              const finalAssistantMessage: ChatMessage = {
+                id: `assistant-${Date.now()}`,
+                sessionId: currentSessionId,
+                role: 'assistant',
+                content: accumulatedContent,
+                createdAt: new Date().toISOString(),
+              };
+              return [...filtered, realUserMessage, finalAssistantMessage];
+            }
+            return [...filtered, realUserMessage];
           });
         } finally {
           // Cancel any pending RAF and reset streaming state
@@ -440,12 +460,9 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           type: 'error',
           duration: 8000,
           onUndo: () => {
+            // Re-trigger send after restoring input (via setTimeout to let state update)
             setTimeout(() => {
-              inputRef.current?.focus();
-              const form = inputRef.current?.closest('form');
-              if (form) {
-                form.requestSubmit();
-              }
+              handleSendMessage();
             }, 100);
           },
           undoLabel: 'Erneut senden',
@@ -456,6 +473,19 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       inputRef.current?.focus();
     }
   }, [inputValue, sending, loading, sessionId, selectedImages, context, assistantMode, thinkingMode]);
+
+  const handleStopGenerating = useCallback(() => {
+    abortControllerRef.current?.abort();
+    setSending(false);
+    setIsStreaming(false);
+    setStreamingContent('');
+    setThinkingContent('');
+    if (streamingRafRef.current) {
+      cancelAnimationFrame(streamingRafRef.current);
+      streamingRafRef.current = null;
+    }
+    pendingStreamContentRef.current = '';
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -700,6 +730,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         sending={sending}
         renderContent={renderContent}
         messagesEndRef={messagesEndRef}
+        onStopGenerating={handleStopGenerating}
       />
 
       {/* Input Area with Thinking Mode and Error Display */}

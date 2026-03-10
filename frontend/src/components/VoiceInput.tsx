@@ -68,7 +68,28 @@ export function VoiceInput({
     onRecordingChange?.(recording);
   }, [recording, onRecordingChange]);
 
+  // Max recording duration in seconds (5 minutes)
+  const MAX_DURATION = 300;
+
+  // Auto-stop recording when max duration is reached
+  useEffect(() => {
+    if (recording && duration >= MAX_DURATION) {
+      stopRecording();
+      showToast(`Maximale Aufnahmedauer (${Math.floor(MAX_DURATION / 60)} Min.) erreicht`, 'info');
+    }
+  }, [recording, duration]);
+
   const startRecording = useCallback(async () => {
+    // Check browser support
+    if (!navigator.mediaDevices?.getUserMedia) {
+      showToast('Sprachaufnahme wird in diesem Browser nicht unterstützt', 'error');
+      return;
+    }
+    if (typeof MediaRecorder === 'undefined') {
+      showToast('MediaRecorder wird in diesem Browser nicht unterstützt', 'error');
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;

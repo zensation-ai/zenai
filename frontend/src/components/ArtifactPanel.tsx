@@ -176,7 +176,7 @@ export function ArtifactPanel({
           <div className="artifact-html-preview">
             <iframe
               srcDoc={artifact.content}
-              sandbox="allow-same-origin"
+              sandbox=""
               title={artifact.title}
               style={{
                 width: '100%',
@@ -334,12 +334,47 @@ export function ArtifactPanel({
   return createPortal(panel, document.body);
 }
 
+/**
+ * Parse a CSV line handling RFC 4180 quoted fields.
+ * Quoted fields may contain commas, newlines, and escaped quotes ("").
+ */
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++; // skip escaped quote
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      cells.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
 // CSV Preview Component
 function CsvPreview({ content }: { content: string }) {
   // Normalize line endings (Windows \r\n, old Mac \r, Unix \n)
   const rows = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(row => row.trim());
-  const headers = rows[0]?.split(',').map(h => h.trim()) || [];
-  const data = rows.slice(1).map(row => row.split(',').map(cell => cell.trim()));
+  const headers = parseCsvLine(rows[0] ?? '');
+  const data = rows.slice(1).map(row => parseCsvLine(row));
 
   return (
     <div className="artifact-csv">
