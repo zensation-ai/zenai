@@ -52,20 +52,31 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // AbortController ref to prevent memory leaks on unmount
+  // AbortController for session-loading requests only
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Separate AbortController for streaming — useEffect must NOT abort this
+  const streamAbortRef = useRef<AbortController | null>(null);
+  // Guard: skip useEffect reload when we caused the session change internally
+  const skipNextSessionLoadRef = useRef(false);
 
-  // Load session on mount, context change, or initialSessionId change
+  // Load session on mount, context change, or external initialSessionId change
   useEffect(() => {
-    // Abort any previous request
+    // If WE triggered this change (e.g. createNewSession), skip the reload
+    if (skipNextSessionLoadRef.current) {
+      skipNextSessionLoadRef.current = false;
+      return;
+    }
+
+    // Abort any previous session-loading request (NOT streaming)
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
 
     loadLastSession(abortControllerRef.current.signal);
 
-    // Cleanup: abort on unmount or context change + cancel pending RAF
+    // Cleanup: abort session load + streaming on unmount or context change + cancel pending RAF
     return () => {
       abortControllerRef.current?.abort();
+      streamAbortRef.current?.abort();
       if (streamingRafRef.current) {
         cancelAnimationFrame(streamingRafRef.current);
         streamingRafRef.current = null;
@@ -159,6 +170,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       if (session) {
         setSessionId(session.id);
         setMessages([]);
+        // Guard: prevent useEffect from reloading/aborting when WE change the session
+        skipNextSessionLoadRef.current = true;
         onSessionChange?.(session.id);
         return session.id;
       }
@@ -255,10 +268,9 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         setStreamingContent('');
         setThinkingContent('');
 
-        // Create a new AbortController for this streaming request
+        // Create a new AbortController for this streaming request (separate from session-load ref)
         const streamAbortController = new AbortController();
-        // Store reference for cleanup on unmount
-        abortControllerRef.current = streamAbortController;
+        streamAbortRef.current = streamAbortController;
 
         // Timeout: abort if no response starts within 30 seconds
         const streamTimeout = setTimeout(() => {
