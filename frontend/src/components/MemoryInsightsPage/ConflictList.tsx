@@ -3,12 +3,12 @@
  *
  * Displays detected memory conflicts with type badges
  * and side-by-side memory comparison.
+ *
+ * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
 import { useState, useEffect, useCallback } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
+import axios from 'axios';
 
 interface MemoryConflict {
   id: string;
@@ -35,19 +35,8 @@ export function ConflictList({ context }: ConflictListProps) {
   const loadConflicts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_URL}/api/${context}/memory/insights/conflicts?limit=20`,
-        {
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success) setConflicts(json.data);
-      }
+      const res = await axios.get(`/api/${context}/memory/insights/conflicts?limit=20`);
+      if (res.data?.success) setConflicts(res.data.data);
     } catch {
       // silent
     } finally {

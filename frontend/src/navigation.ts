@@ -150,7 +150,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: '🤖',
         label: 'Meine KI',
         description: 'KI auf dich abstimmen',
-        subPages: ['voice-chat'],
+        subPages: ['voice-chat', 'memory-insights'],
       },
       {
         page: 'learning',

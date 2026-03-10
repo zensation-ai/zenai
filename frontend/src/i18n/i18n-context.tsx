@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Locale, TranslationKey } from './types';
+import { setLocale as setGlobalLocale } from './i18n';
 import { de } from './locales/de';
 import { en } from './locales/en';
 import { fr } from './locales/fr';
@@ -64,6 +65,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
+    // Sync global i18n module so standalone t() calls also use new locale
+    setGlobalLocale(newLocale);
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
     } catch {

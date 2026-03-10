@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import {
@@ -30,6 +30,7 @@ router.use(apiKeyAuth);
  */
 router.post(
   '/:context/thinking/feedback',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -96,6 +97,7 @@ router.get(
  */
 router.post(
   '/:context/thinking/strategies/persist',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -134,6 +136,7 @@ router.get(
  */
 router.delete(
   '/:context/thinking/chains/:id',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {

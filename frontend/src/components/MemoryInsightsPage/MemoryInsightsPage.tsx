@@ -3,19 +3,24 @@
  *
  * Visualization and analysis tools for the HiMeS 4-layer memory system.
  * Tabs: Timeline, Conflicts, Curation, Impact
+ *
+ * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { MemoryTimeline } from './MemoryTimeline';
 import { ConflictList } from './ConflictList';
 import { CurationPanel } from './CurationPanel';
 import './MemoryInsightsPage.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
-
 type Tab = 'timeline' | 'conflicts' | 'curation' | 'impact';
-type Context = 'personal' | 'work' | 'learning' | 'creative';
+
+interface MemoryInsightsPageProps {
+  context: string;
+  initialTab?: Tab;
+  onBack?: () => void;
+}
 
 interface MemoryImpact {
   memoryId: string;
@@ -49,37 +54,28 @@ const LAYER_LABELS: Record<string, string> = {
   long_term: 'Long-Term Memory',
 };
 
-async function apiFetch<T>(path: string): Promise<T | null> {
-  try {
-    const res = await fetch(`${API_URL}${path}`, {
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.success ? json.data : null;
-  } catch {
-    return null;
-  }
-}
-
-export function MemoryInsightsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('timeline');
-  const [context, setContext] = useState<Context>('personal');
+export function MemoryInsightsPage({ context, initialTab = 'timeline' }: MemoryInsightsPageProps) {
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [stats, setStats] = useState<MemoryStats | null>(null);
   const [impacts, setImpacts] = useState<MemoryImpact[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadStats = useCallback(async () => {
-    const data = await apiFetch<MemoryStats>(`/api/${context}/memory/insights/stats`);
-    if (data) setStats(data);
+    try {
+      const res = await axios.get(`/api/${context}/memory/insights/stats`);
+      if (res.data?.success) setStats(res.data.data);
+    } catch {
+      // silent
+    }
   }, [context]);
 
   const loadImpacts = useCallback(async () => {
-    const data = await apiFetch<MemoryImpact[]>(`/api/${context}/memory/insights/impact?limit=20`);
-    if (data) setImpacts(data);
+    try {
+      const res = await axios.get(`/api/${context}/memory/insights/impact?limit=20`);
+      if (res.data?.success) setImpacts(res.data.data);
+    } catch {
+      // silent
+    }
   }, [context]);
 
   useEffect(() => {
@@ -99,16 +95,6 @@ export function MemoryInsightsPage() {
       <div className="memory-insights-header">
         <div className="memory-insights-title-row">
           <h1>Memory Insights</h1>
-          <select
-            className="memory-insights-context-select"
-            value={context}
-            onChange={(e) => setContext(e.target.value as Context)}
-          >
-            <option value="personal">Personal</option>
-            <option value="work">Work</option>
-            <option value="learning">Learning</option>
-            <option value="creative">Creative</option>
-          </select>
         </div>
 
         {stats && (

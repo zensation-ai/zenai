@@ -11,7 +11,7 @@ import type {
   FinancialOverview, TransactionType,
 } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+// Uses global axios instance configured in main.tsx (baseURL + auth interceptor)
 
 interface TransactionFilters {
   account_id?: string;
@@ -34,7 +34,7 @@ export function useFinanceData(context: string) {
 
   const fetchOverview = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/finance/overview`);
+      const res = await axios.get(`/api/${context}/finance/overview`);
       setOverview(res.data.data);
     } catch (err) {
       console.error('Failed to fetch overview', err);
@@ -52,7 +52,7 @@ export function useFinanceData(context: string) {
       if (filters.date_to) params.set('date_to', filters.date_to);
       params.set('limit', '50');
 
-      const res = await axios.get(`${API_URL}/api/${context}/finance/transactions?${params}`);
+      const res = await axios.get(`/api/${context}/finance/transactions?${params}`);
       setTransactions(res.data.data);
       setTransactionsTotal(res.data.total || 0);
     } catch (err) {
@@ -62,7 +62,7 @@ export function useFinanceData(context: string) {
 
   const fetchAccounts = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/finance/accounts`);
+      const res = await axios.get(`/api/${context}/finance/accounts`);
       setAccounts(res.data.data);
     } catch (err) {
       console.error('Failed to fetch accounts', err);
@@ -71,7 +71,7 @@ export function useFinanceData(context: string) {
 
   const fetchBudgets = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/finance/budgets`);
+      const res = await axios.get(`/api/${context}/finance/budgets`);
       setBudgets(res.data.data);
     } catch (err) {
       console.error('Failed to fetch budgets', err);
@@ -80,7 +80,7 @@ export function useFinanceData(context: string) {
 
   const fetchGoals = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/${context}/finance/goals?active=false`);
+      const res = await axios.get(`/api/${context}/finance/goals?active=false`);
       setGoals(res.data.data);
     } catch (err) {
       console.error('Failed to fetch goals', err);
@@ -89,52 +89,52 @@ export function useFinanceData(context: string) {
 
   // CRUD Operations
   const createTransaction = useCallback(async (data: Partial<Transaction>) => {
-    await axios.post(`${API_URL}/api/${context}/finance/transactions`, data);
+    await axios.post(`/api/${context}/finance/transactions`, data);
     await Promise.all([fetchTransactions(), fetchOverview(), fetchAccounts()]);
   }, [context, fetchTransactions, fetchOverview, fetchAccounts]);
 
   const deleteTransaction = useCallback(async (id: string) => {
-    await axios.delete(`${API_URL}/api/${context}/finance/transactions/${id}`);
+    await axios.delete(`/api/${context}/finance/transactions/${id}`);
     await Promise.all([fetchTransactions(), fetchOverview(), fetchAccounts()]);
   }, [context, fetchTransactions, fetchOverview, fetchAccounts]);
 
   const createAccount = useCallback(async (data: Partial<FinancialAccount>) => {
-    await axios.post(`${API_URL}/api/${context}/finance/accounts`, data);
+    await axios.post(`/api/${context}/finance/accounts`, data);
     await fetchAccounts();
   }, [context, fetchAccounts]);
 
   const deleteAccount = useCallback(async (id: string) => {
-    await axios.delete(`${API_URL}/api/${context}/finance/accounts/${id}`);
+    await axios.delete(`/api/${context}/finance/accounts/${id}`);
     await fetchAccounts();
   }, [context, fetchAccounts]);
 
   const createBudget = useCallback(async (data: Partial<Budget>) => {
-    await axios.post(`${API_URL}/api/${context}/finance/budgets`, data);
+    await axios.post(`/api/${context}/finance/budgets`, data);
     await fetchBudgets();
   }, [context, fetchBudgets]);
 
   const updateBudget = useCallback(async (id: string, data: Partial<Budget>) => {
-    await axios.put(`${API_URL}/api/${context}/finance/budgets/${id}`, data);
+    await axios.put(`/api/${context}/finance/budgets/${id}`, data);
     await fetchBudgets();
   }, [context, fetchBudgets]);
 
   const deleteBudget = useCallback(async (id: string) => {
-    await axios.delete(`${API_URL}/api/${context}/finance/budgets/${id}`);
+    await axios.delete(`/api/${context}/finance/budgets/${id}`);
     await fetchBudgets();
   }, [context, fetchBudgets]);
 
   const createGoal = useCallback(async (data: Partial<FinancialGoal>) => {
-    await axios.post(`${API_URL}/api/${context}/finance/goals`, data);
+    await axios.post(`/api/${context}/finance/goals`, data);
     await fetchGoals();
   }, [context, fetchGoals]);
 
   const updateGoal = useCallback(async (id: string, data: Partial<FinancialGoal>) => {
-    await axios.put(`${API_URL}/api/${context}/finance/goals/${id}`, data);
+    await axios.put(`/api/${context}/finance/goals/${id}`, data);
     await fetchGoals();
   }, [context, fetchGoals]);
 
   const deleteGoal = useCallback(async (id: string) => {
-    await axios.delete(`${API_URL}/api/${context}/finance/goals/${id}`);
+    await axios.delete(`/api/${context}/finance/goals/${id}`);
     await fetchGoals();
   }, [context, fetchGoals]);
 

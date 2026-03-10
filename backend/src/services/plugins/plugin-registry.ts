@@ -14,9 +14,13 @@ import {
   PluginPermission,
   PluginStatus,
 } from './plugin-types';
+import { createSandbox, SandboxContext } from './plugin-sandbox';
 
 // In-memory cache of active plugins keyed by `${context}:${pluginId}`
 const activePlugins = new Map<string, PluginInstance>();
+
+// In-memory cache of sandboxes for active plugins keyed by `${context}:${pluginId}`
+const activeSandboxes = new Map<string, SandboxContext>();
 
 /**
  * Map a database row to a PluginInstance object.
@@ -95,7 +99,13 @@ export async function activatePlugin(
   }
 
   const plugin = mapRowToPlugin(result.rows[0]);
-  activePlugins.set(`${context}:${pluginId}`, plugin);
+  const cacheKey = `${context}:${pluginId}`;
+  activePlugins.set(cacheKey, plugin);
+
+  // Create a sandbox with permission-based access control
+  const sandbox = createSandbox(plugin, context);
+  activeSandboxes.set(cacheKey, sandbox);
+
   logger.info(`Plugin activated: ${plugin.name} (${pluginId}) in ${context}`);
   return plugin;
 }
@@ -120,7 +130,9 @@ export async function deactivatePlugin(
   }
 
   const plugin = mapRowToPlugin(result.rows[0]);
-  activePlugins.delete(`${context}:${pluginId}`);
+  const deactivateKey = `${context}:${pluginId}`;
+  activePlugins.delete(deactivateKey);
+  activeSandboxes.delete(deactivateKey);
   logger.info(`Plugin deactivated: ${plugin.name} (${pluginId}) in ${context}`);
   return plugin;
 }
@@ -142,7 +154,9 @@ export async function uninstallPlugin(
     throw new Error(`Plugin not found: ${pluginId}`);
   }
 
-  activePlugins.delete(`${context}:${pluginId}`);
+  const uninstallKey = `${context}:${pluginId}`;
+  activePlugins.delete(uninstallKey);
+  activeSandboxes.delete(uninstallKey);
   logger.info(`Plugin uninstalled: ${result.rows[0].name} (${pluginId}) from ${context}`);
 }
 
@@ -227,8 +241,20 @@ export function getActivePlugins(): Map<string, PluginInstance> {
 }
 
 /**
+ * Get the sandbox for an active plugin.
+ * Returns null if plugin is not active or has no sandbox.
+ */
+export function getPluginSandbox(
+  context: AIContext,
+  pluginId: string
+): SandboxContext | null {
+  return activeSandboxes.get(`${context}:${pluginId}`) ?? null;
+}
+
+/**
  * Load active plugins from the database into the in-memory cache.
  * Called during startup to restore state.
+ * Also creates sandboxes for each active plugin.
  */
 export async function loadActivePlugins(context: AIContext): Promise<number> {
   const result = await queryContext(
@@ -240,7 +266,9 @@ export async function loadActivePlugins(context: AIContext): Promise<number> {
   let count = 0;
   for (const row of result.rows) {
     const plugin = mapRowToPlugin(row);
-    activePlugins.set(`${context}:${plugin.pluginId}`, plugin);
+    const cacheKey = `${context}:${plugin.pluginId}`;
+    activePlugins.set(cacheKey, plugin);
+    activeSandboxes.set(cacheKey, createSandbox(plugin, context));
     count++;
   }
 

@@ -32,13 +32,7 @@ interface CanvasPageProps {
   context: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
-
-const apiHeaders = {
-  'Content-Type': 'application/json',
-  'x-api-key': API_KEY,
-};
+// Uses global axios instance configured in main.tsx (baseURL + auth interceptor)
 
 export function CanvasPage({ context }: CanvasPageProps) {
   const [documents, setDocuments] = useState<CanvasDocument[]>([]);
@@ -63,9 +57,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
   useEffect(() => {
     const loadDocuments = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/canvas?context=${context}`, {
-          headers: apiHeaders,
-        });
+        const response = await axios.get(`/api/canvas?context=${context}`);
         if (response.data.success && isMountedRef.current) {
           const result = response.data.data;
           setDocuments(result.documents);
@@ -96,10 +88,8 @@ export function CanvasPage({ context }: CanvasPageProps) {
         setSaveStatus('saving');
         try {
           await axios.patch(
-            `${API_URL}/api/canvas/${activeDocument.id}`,
-            { content },
-            { headers: apiHeaders }
-          );
+            `/api/canvas/${activeDocument.id}`,
+            { content });
           if (isMountedRef.current) setSaveStatus('saved');
         } catch (error) {
           logError('canvas-save', error);
@@ -114,10 +104,8 @@ export function CanvasPage({ context }: CanvasPageProps) {
   const handleNewDocument = useCallback(async () => {
     try {
       const response = await axios.post(
-        `${API_URL}/api/canvas`,
-        { context, title: 'Neues Dokument', type: 'markdown' },
-        { headers: apiHeaders }
-      );
+        `/api/canvas`,
+        { context, title: 'Neues Dokument', type: 'markdown' }      );
       if (response.data.success) {
         const newDoc = response.data.data;
         setDocuments((prev) => [newDoc, ...prev]);
@@ -135,9 +123,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
   const handleSelectDocument = useCallback(
     async (id: string) => {
       try {
-        const response = await axios.get(`${API_URL}/api/canvas/${id}`, {
-          headers: apiHeaders,
-        });
+        const response = await axios.get(`/api/canvas/${id}`);
         if (response.data.success) {
           setActiveDocument(response.data.data);
           setSaveStatus('saved');
@@ -154,9 +140,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
   const handleDeleteDocument = useCallback(
     async (id: string) => {
       try {
-        await axios.delete(`${API_URL}/api/canvas/${id}`, {
-          headers: apiHeaders,
-        });
+        await axios.delete(`/api/canvas/${id}`);
         setDocuments((prev) => prev.filter((d) => d.id !== id));
         if (activeDocument?.id === id) {
           setActiveDocument(null);
@@ -177,9 +161,9 @@ export function CanvasPage({ context }: CanvasPageProps) {
       setActiveDocument((prev) => (prev ? { ...prev, title } : null));
       try {
         await axios.patch(
-          `${API_URL}/api/canvas/${activeDocument.id}`,
+          `/api/canvas/${activeDocument.id}`,
           { title },
-          { headers: apiHeaders }
+          {}
         );
         setDocuments((prev) =>
           prev.map((d) => (d.id === activeDocument.id ? { ...d, title } : d))
@@ -198,9 +182,9 @@ export function CanvasPage({ context }: CanvasPageProps) {
       setActiveDocument((prev) => (prev ? { ...prev, type } : null));
       try {
         await axios.patch(
-          `${API_URL}/api/canvas/${activeDocument.id}`,
+          `/api/canvas/${activeDocument.id}`,
           { type },
-          { headers: apiHeaders }
+          {}
         );
       } catch (error) {
         logError('canvas-type-update', error);
@@ -216,9 +200,9 @@ export function CanvasPage({ context }: CanvasPageProps) {
       setActiveDocument((prev) => (prev ? { ...prev, language } : null));
       try {
         await axios.patch(
-          `${API_URL}/api/canvas/${activeDocument.id}`,
+          `/api/canvas/${activeDocument.id}`,
           { language },
-          { headers: apiHeaders }
+          {}
         );
       } catch (error) {
         logError('canvas-language-update', error);
@@ -269,9 +253,9 @@ export function CanvasPage({ context }: CanvasPageProps) {
           setSaveStatus('saving');
           axios
             .patch(
-              `${API_URL}/api/canvas/${activeDocument.id}`,
+              `/api/canvas/${activeDocument.id}`,
               { content: activeDocument.content },
-              { headers: apiHeaders }
+              {}
             )
             .then(() => {
               if (isMountedRef.current) setSaveStatus('saved');

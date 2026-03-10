@@ -29,8 +29,9 @@ export function useScreenMemoryData({ context }: UseScreenMemoryDataProps) {
       if (filters?.offset) params.set('offset', String(filters.offset));
 
       const res = await axios.get(`/api/${context}/screen-memory?${params.toString()}`);
-      setCaptures(res.data?.data?.captures ?? []);
-      setTotalCaptures(res.data?.data?.total ?? 0);
+      // Backend sendList returns { success, data: [...], count: N }
+      setCaptures(res.data?.data ?? []);
+      setTotalCaptures(res.data?.count ?? 0);
     } catch {
       // silent
     } finally {

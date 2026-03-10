@@ -7,6 +7,15 @@ import request from 'supertest';
 import { mcpRouter, mcpConnectionsRouter } from '../../routes/mcp';
 import { errorHandler } from '../../middleware/errorHandler';
 
+// Mock auth middleware (MCP routes require apiKeyAuth)
+jest.mock('../../middleware/auth', () => ({
+  apiKeyAuth: jest.fn((_req: any, _res: any, next: any) => {
+    _req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
+    next();
+  }),
+  requireScope: jest.fn(() => (_req: any, _res: any, next: any) => next()),
+}));
+
 // Mock the MCP server
 jest.mock('../../mcp', () => ({
   createMCPServer: jest.fn().mockReturnValue({

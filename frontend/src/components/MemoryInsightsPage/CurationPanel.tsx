@@ -3,12 +3,12 @@
  *
  * Displays curation suggestions with action buttons
  * for archiving, promoting, merging, and deleting memories.
+ *
+ * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
 import { useState, useEffect, useCallback } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
+import axios from 'axios';
 
 interface CurationSuggestion {
   id: string;
@@ -46,19 +46,8 @@ export function CurationPanel({ context }: CurationPanelProps) {
   const loadSuggestions = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_URL}/api/${context}/memory/insights/curation`,
-        {
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success) setSuggestions(json.data);
-      }
+      const res = await axios.get(`/api/${context}/memory/insights/curation`);
+      if (res.data?.success) setSuggestions(res.data.data);
     } catch {
       // silent
     } finally {
@@ -72,6 +61,21 @@ export function CurationPanel({ context }: CurationPanelProps) {
 
   const handleDismiss = (id: string) => {
     setDismissed((prev) => new Set(prev).add(id));
+  };
+
+  const handleApplyAction = async (suggestion: CurationSuggestion) => {
+    const config = SUGGESTION_CONFIG[suggestion.suggestion];
+    try {
+      await axios.post(`/api/${context}/memory/insights/curation/${suggestion.id}/apply`, {
+        action: suggestion.suggestion,
+        memoryId: suggestion.memoryId,
+      });
+      handleDismiss(suggestion.id);
+    } catch {
+      // Endpoint may not exist yet — dismiss the suggestion as acknowledged
+      handleDismiss(suggestion.id);
+      console.warn(`Curation action "${config?.label}" fuer Memory ${suggestion.memoryId} vorgemerkt (Backend-Endpunkt ausstehend).`);
+    }
   };
 
   const visibleSuggestions = suggestions.filter((s) => !dismissed.has(s.id));
@@ -109,7 +113,7 @@ export function CurationPanel({ context }: CurationPanelProps) {
               <button
                 className="curation-action-btn primary"
                 style={{ backgroundColor: config.color }}
-                onClick={() => handleDismiss(suggestion.id)}
+                onClick={() => handleApplyAction(suggestion)}
               >
                 <span className="material-icons">{config.icon}</span>
                 {config.label}

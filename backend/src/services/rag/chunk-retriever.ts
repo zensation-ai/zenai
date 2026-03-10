@@ -102,6 +102,9 @@ export async function retrieveChunks(
     ? `WHERE ${conditions.join(' AND ')}`
     : '';
 
+  params.push(maxResults);
+  const limitParam = `$${params.length}`;
+
   const sql = `
     SELECT
       id, document_id, parent_chunk_id, content, strategy,
@@ -110,7 +113,7 @@ export async function retrieveChunks(
     FROM document_chunks
     ${whereClause}
     ORDER BY embedding <=> $1::vector
-    LIMIT ${maxResults}
+    LIMIT ${limitParam}
   `;
 
   const result = await queryContext(context, sql, params);
@@ -180,6 +183,9 @@ export async function retrieveWithParents(
 
   const whereClause = conditions.join(' AND ');
 
+  params.push(maxResults);
+  const limitParam = `$${params.length}`;
+
   const sql = `
     SELECT
       c.id, c.document_id, c.parent_chunk_id, c.content, c.strategy,
@@ -192,7 +198,7 @@ export async function retrieveWithParents(
     LEFT JOIN document_chunks p ON p.id = c.parent_chunk_id
     WHERE ${whereClause}
     ORDER BY c.embedding <=> $1::vector
-    LIMIT ${maxResults}
+    LIMIT ${limitParam}
   `;
 
   const result = await queryContext(context, sql, params);

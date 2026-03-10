@@ -8,6 +8,11 @@ import {
   formatInboxSummaryForChat,
 } from '../../../services/email-search';
 
+/** Format date as YYYY-MM-DD in local time (matching service implementation). */
+function toLocalDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 describe('Email Search Service', () => {
   describe('parseNaturalLanguageQuery', () => {
     it('should extract "from" filter', () => {
@@ -37,14 +42,14 @@ describe('Email Search Service', () => {
 
     it('should handle "heute" (today)', () => {
       const q = parseNaturalLanguageQuery('E-Mails von heute');
-      expect(q.after).toBe(new Date().toISOString().split('T')[0]);
+      expect(q.after).toBe(toLocalDate(new Date()));
     });
 
     it('should handle "gestern" (yesterday)', () => {
       const q = parseNaturalLanguageQuery('E-Mails von gestern');
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      expect(q.after).toBe(yesterday.toISOString().split('T')[0]);
+      expect(q.after).toBe(toLocalDate(yesterday));
     });
 
     it('should extract category filter', () => {
@@ -101,7 +106,7 @@ describe('Email Search Service', () => {
       const q = parseNaturalLanguageQuery('zeig mir dringende E-Mails von Max heute');
       expect(q.priority).toBe('urgent');
       expect(q.from).toContain('Max');
-      expect(q.after).toBe(new Date().toISOString().split('T')[0]);
+      expect(q.after).toBe(toLocalDate(new Date()));
     });
 
     it('should handle empty input gracefully', () => {

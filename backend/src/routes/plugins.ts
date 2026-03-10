@@ -6,7 +6,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
@@ -142,6 +142,7 @@ pluginsRouter.get(
  */
 pluginsRouter.post(
   '/:context/plugins',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -175,6 +176,7 @@ pluginsRouter.post(
  */
 pluginsRouter.put(
   '/:context/plugins/:id/activate',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -203,6 +205,7 @@ pluginsRouter.put(
  */
 pluginsRouter.put(
   '/:context/plugins/:id/deactivate',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -231,6 +234,7 @@ pluginsRouter.put(
  */
 pluginsRouter.put(
   '/:context/plugins/:id/config',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -266,6 +270,7 @@ pluginsRouter.put(
  */
 pluginsRouter.delete(
   '/:context/plugins/:id',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {

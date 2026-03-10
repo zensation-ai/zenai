@@ -15,6 +15,14 @@
 import { queryContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 
+/** Format a Date as YYYY-MM-DD in local time (avoids UTC shift from toISOString). */
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // ============================================================
 // Types
 // ============================================================
@@ -127,7 +135,7 @@ export function parseNaturalLanguageQuery(input: string): EmailSearchQuery {
   // Relative date patterns
   const todayMatch = remaining.match(/\b(heute|today)\b/i);
   if (todayMatch) {
-    query.after = new Date().toISOString().split('T')[0];
+    query.after = toLocalDateString(new Date());
     remaining = remaining.replace(todayMatch[0], '').trim();
   }
 
@@ -135,8 +143,8 @@ export function parseNaturalLanguageQuery(input: string): EmailSearchQuery {
   if (yesterdayMatch) {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    query.after = d.toISOString().split('T')[0];
-    query.before = new Date().toISOString().split('T')[0];
+    query.after = toLocalDateString(d);
+    query.before = toLocalDateString(new Date());
     remaining = remaining.replace(yesterdayMatch[0], '').trim();
   }
 
@@ -146,13 +154,13 @@ export function parseNaturalLanguageQuery(input: string): EmailSearchQuery {
     const isLast = /letzte|last/i.test(weekMatch[1]);
     if (isLast) {
       d.setDate(d.getDate() - 7);
-      query.before = new Date().toISOString().split('T')[0];
+      query.before = toLocalDateString(new Date());
     }
     // Start of week (Monday)
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
-    query.after = d.toISOString().split('T')[0];
+    query.after = toLocalDateString(d);
     remaining = remaining.replace(weekMatch[0], '').trim();
   }
 
@@ -162,9 +170,9 @@ export function parseNaturalLanguageQuery(input: string): EmailSearchQuery {
     const isLast = /letzten|last/i.test(monthMatch[1]);
     if (isLast) {
       d.setMonth(d.getMonth() - 1);
-      query.before = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString().split('T')[0];
+      query.before = toLocalDateString(new Date(d.getFullYear(), d.getMonth() + 1, 1));
     }
-    query.after = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    query.after = toLocalDateString(new Date(d.getFullYear(), d.getMonth(), 1));
     remaining = remaining.replace(monthMatch[0], '').trim();
   }
 
@@ -335,6 +343,8 @@ export async function searchEmails(
   const total = parseInt(countResult.rows[0]?.total || '0', 10);
 
   // Fetch results
+  params.push(limit);
+  const limitParam = `$${params.length}`;
   const result = await queryContext(context, `
     SELECT
       id, subject, from_address, from_name, to_addresses,
@@ -345,7 +355,7 @@ export async function searchEmails(
     FROM emails
     ${whereClause}
     ORDER BY received_at DESC
-    LIMIT ${limit}
+    LIMIT ${limitParam}
   `, params);
 
   const results: EmailSearchResult[] = result.rows.map(row => ({

@@ -810,6 +810,27 @@ async function startServer(): Promise<void> {
     } catch (error) {
       logger.error('MCP Connection Manager failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
     }
+
+    // Phase 46: Restore persisted thinking budget strategies
+    try {
+      const { loadPersistedStrategies } = await import('./services/thinking-management');
+      await loadPersistedStrategies('personal' as const);
+      logger.info('Thinking budget strategies restored (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Thinking strategies restore failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 51: Load active plugins from database
+    try {
+      const { loadActivePlugins } = await import('./services/plugins/plugin-registry');
+      const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+      for (const ctx of contexts) {
+        await loadActivePlugins(ctx);
+      }
+      logger.info('Active plugins loaded (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Plugin loading failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
   });
   });
 }

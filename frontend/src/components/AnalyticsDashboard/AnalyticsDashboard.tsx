@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { DateRangePicker, type DateRange } from './DateRangePicker';
 import { ProductivityCharts } from './ProductivityCharts';
 import { AIUsagePanel } from './AIUsagePanel';
@@ -117,15 +118,7 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
   const [aiUsageError, setAiUsageError] = useState<string | null>(null);
   const [memoryError, setMemoryError] = useState<string | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
-  const API_KEY = import.meta.env.VITE_API_KEY || '';
-
-  const apiFetch = useCallback(async (url: string, signal?: AbortSignal) => {
-    return fetch(`${API_URL}${url}`, {
-      headers: { 'x-api-key': API_KEY },
-      signal,
-    });
-  }, [API_URL, API_KEY]);
+  // Uses global axios instance configured in main.tsx (baseURL + auth interceptor)
 
   const fetchData = useCallback(async (range: DateRange) => {
     setLoading(true);
@@ -136,35 +129,28 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
       const qs = `from=${range.from}&to=${range.to}`;
 
       const [ovRes, trRes, prRes] = await Promise.all([
-        apiFetch(`/api/${context}/analytics/v2/overview?${qs}`, controller.signal),
-        apiFetch(`/api/${context}/analytics/v2/trends?${qs}&granularity=day`, controller.signal),
-        apiFetch(`/api/${context}/analytics/v2/productivity?${qs}`, controller.signal),
+        axios.get(`/api/${context}/analytics/v2/overview?${qs}`, { signal: controller.signal }),
+        axios.get(`/api/${context}/analytics/v2/trends?${qs}&granularity=day`, { signal: controller.signal }),
+        axios.get(`/api/${context}/analytics/v2/productivity?${qs}`, { signal: controller.signal }),
       ]);
 
-      const [ovJson, trJson, prJson] = await Promise.all([
-        ovRes.json(),
-        trRes.json(),
-        prRes.json(),
-      ]);
+      if (ovRes.data?.success) setOverview(ovRes.data.data);
+      if (trRes.data?.success) setTrends(trRes.data.data);
+      if (prRes.data?.success) setProductivity(prRes.data.data);
 
-      if (ovJson.success) setOverview(ovJson.data);
-      if (trJson.success) setTrends(trJson.data);
-      if (prJson.success) setProductivity(prJson.data);
-
-      if (!ovJson.success && !trJson.success && !prJson.success) {
+      if (!ovRes.data?.success && !trRes.data?.success && !prRes.data?.success) {
         setError('Daten konnten nicht geladen werden.');
       }
     } catch (err) {
-      if ((err as Error).name !== 'AbortError') {
-        logError('AnalyticsDashboardV2:fetchData', err instanceof Error ? err : new Error(String(err)));
-        setError('Netzwerkfehler beim Laden der Daten.');
-      }
+      if (axios.isCancel(err)) return;
+      logError('AnalyticsDashboardV2:fetchData', err instanceof Error ? err : new Error(String(err)));
+      setError('Netzwerkfehler beim Laden der Daten.');
     } finally {
       setLoading(false);
     }
 
     return () => controller.abort();
-  }, [context, apiFetch]);
+  }, [context]);
 
   const fetchAIUsage = useCallback(async (range: DateRange) => {
     setAiUsageLoading(true);
@@ -172,13 +158,12 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
     try {
       const qs = `from=${range.from}&to=${range.to}`;
       const [statsRes, dailyRes] = await Promise.all([
-        apiFetch(`/api/${context}/analytics/v2/ai-usage?${qs}`),
-        apiFetch(`/api/${context}/analytics/v2/ai-usage/daily?${qs}`),
+        axios.get(`/api/${context}/analytics/v2/ai-usage?${qs}`),
+        axios.get(`/api/${context}/analytics/v2/ai-usage/daily?${qs}`),
       ]);
-      const [statsJson, dailyJson] = await Promise.all([statsRes.json(), dailyRes.json()]);
-      if (statsJson.success) setAiUsage(statsJson.data);
-      if (dailyJson.success) setDailyUsage(dailyJson.data);
-      if (!statsJson.success && !dailyJson.success) {
+      if (statsRes.data?.success) setAiUsage(statsRes.data.data);
+      if (dailyRes.data?.success) setDailyUsage(dailyRes.data.data);
+      if (!statsRes.data?.success && !dailyRes.data?.success) {
         setAiUsageError('KI-Nutzungsdaten konnten nicht geladen werden.');
       }
     } catch (err) {
@@ -187,15 +172,14 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
     } finally {
       setAiUsageLoading(false);
     }
-  }, [context, apiFetch]);
+  }, [context]);
 
   const fetchMemoryHealth = useCallback(async () => {
     setMemoryLoading(true);
     setMemoryError(null);
     try {
-      const res = await apiFetch(`/api/${context}/analytics/v2/memory-health`);
-      const json = await res.json();
-      if (json.success) setMemoryHealth(json.data);
+      const res = await axios.get(`/api/${context}/analytics/v2/memory-health`);
+      if (res.data?.success) setMemoryHealth(res.data.data);
       else setMemoryError('Memory-Daten konnten nicht geladen werden.');
     } catch (err) {
       logError('AnalyticsDashboardV2:fetchMemoryHealth', err instanceof Error ? err : new Error(String(err)));
@@ -203,7 +187,7 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
     } finally {
       setMemoryLoading(false);
     }
-  }, [context, apiFetch]);
+  }, [context]);
 
   useEffect(() => {
     const cleanup = fetchData(dateRange);

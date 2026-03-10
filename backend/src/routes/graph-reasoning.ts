@@ -6,7 +6,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext, queryContext } from '../utils/database-context';
 import {
@@ -30,6 +30,7 @@ router.use(apiKeyAuth);
  */
 router.post(
   '/:context/knowledge-graph/infer',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -67,6 +68,7 @@ router.get(
  */
 router.post(
   '/:context/knowledge-graph/communities',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -158,6 +160,7 @@ router.get(
  */
 router.post(
   '/:context/knowledge-graph/relations',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -180,6 +183,7 @@ router.post(
  */
 router.put(
   '/:context/knowledge-graph/relations',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
@@ -202,6 +206,7 @@ router.put(
  */
 router.delete(
   '/:context/knowledge-graph/relations',
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {

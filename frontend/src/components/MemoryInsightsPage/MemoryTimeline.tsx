@@ -3,12 +3,12 @@
  *
  * Vertical timeline showing memory creation over time, grouped by layer.
  * Supports day/week/month granularity toggle.
+ *
+ * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
 import { useState, useEffect, useCallback } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
+import axios from 'axios';
 
 interface TimelineEntry {
   date: string;
@@ -36,6 +36,14 @@ const LAYER_LABELS: Record<string, string> = {
 
 type Granularity = 'day' | 'week' | 'month';
 
+/** Format a Date as YYYY-MM-DD in local time (avoids UTC shift from toISOString). */
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function MemoryTimeline({ context }: MemoryTimelineProps) {
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [granularity, setGranularity] = useState<Granularity>('week');
@@ -44,24 +52,15 @@ export function MemoryTimeline({ context }: MemoryTimelineProps) {
   const loadTimeline = useCallback(async () => {
     setLoading(true);
     try {
-      const to = new Date().toISOString().split('T')[0];
+      const to = toLocalDateString(new Date());
       const fromDate = new Date();
       fromDate.setDate(fromDate.getDate() - (granularity === 'day' ? 30 : granularity === 'week' ? 90 : 365));
-      const from = fromDate.toISOString().split('T')[0];
+      const from = toLocalDateString(fromDate);
 
-      const res = await fetch(
-        `${API_URL}/api/${context}/memory/insights/timeline?from=${from}&to=${to}&granularity=${granularity}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
+      const res = await axios.get(
+        `/api/${context}/memory/insights/timeline?from=${from}&to=${to}&granularity=${granularity}`
       );
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success) setEntries(json.data);
-      }
+      if (res.data?.success) setEntries(res.data.data);
     } catch {
       // silent
     } finally {
