@@ -11,7 +11,15 @@
 
 import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
-import { generateEmbedding } from '../ai';
+// Lazy import to break circular dependency: ai.ts -> claude/ -> thinking-budget -> ai.ts
+let _generateEmbedding: typeof import('../ai').generateEmbedding | null = null;
+async function getGenerateEmbedding() {
+  if (!_generateEmbedding) {
+    const ai = await import('../ai');
+    _generateEmbedding = ai.generateEmbedding;
+  }
+  return _generateEmbedding;
+}
 import { formatForPgVector } from '../../utils/embedding';
 import crypto from 'crypto';
 
@@ -424,7 +432,8 @@ export async function storeThinkingChain(
     const inputHash = crypto.createHash('sha256').update(input).digest('hex').substring(0, 64);
 
     // Generate embedding for similarity search
-    const embedding = await generateEmbedding(input.substring(0, 1000));
+    const genEmbedding = await getGenerateEmbedding();
+    const embedding = await genEmbedding(input.substring(0, 1000));
 
     const result = await queryContext(
       context,
@@ -476,7 +485,8 @@ export async function findSimilarSuccessfulChains(
   limit: number = CONFIG.MAX_SIMILAR_CHAINS
 ): Promise<ThinkingChain[]> {
   try {
-    const embedding = await generateEmbedding(input.substring(0, 1000));
+    const genEmbedding = await getGenerateEmbedding();
+    const embedding = await genEmbedding(input.substring(0, 1000));
 
     if (embedding.length === 0) {
       return [];

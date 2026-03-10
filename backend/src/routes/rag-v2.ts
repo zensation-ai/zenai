@@ -15,7 +15,7 @@
 import { Router, Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { apiKeyAuth } from '../middleware/auth';
-import { asyncHandler } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { queryContext } from '../utils/database-context';
 import { retrieve, AdaptiveStrategy } from '../services/rag/adaptive-retrieval';
@@ -40,7 +40,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { query, strategy, maxResults } = req.body;
@@ -82,7 +82,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { messageId } = req.params;
@@ -110,7 +110,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { sourceId, helpful, queryType } = req.body;
@@ -144,7 +144,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const days = parseInt(req.query.days as string, 10) || 30;

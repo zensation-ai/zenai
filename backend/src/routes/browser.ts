@@ -64,7 +64,7 @@ browserRouter.get('/:context/browser/history/:id', apiKeyAuth, asyncHandler(asyn
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid history entry ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid history entry ID'); }
 
   const entry = await getHistoryEntry(context, id);
   if (!entry) {
@@ -123,7 +123,7 @@ browserRouter.delete('/:context/browser/history/:id', apiKeyAuth, requireScope('
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid history entry ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid history entry ID'); }
 
   const deleted = await deleteHistoryEntry(context, id);
   if (!deleted) {
@@ -189,7 +189,7 @@ browserRouter.get('/:context/browser/bookmarks/:id', apiKeyAuth, asyncHandler(as
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid bookmark ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
   const bookmark = await getBookmark(context, id);
   if (!bookmark) {
@@ -226,7 +226,7 @@ browserRouter.put('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope('w
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid bookmark ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
   const updated = await updateBookmark(context, id, req.body);
   if (!updated) {
@@ -244,7 +244,7 @@ browserRouter.delete('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid bookmark ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
   const deleted = await deleteBookmark(context, id);
   if (!deleted) {

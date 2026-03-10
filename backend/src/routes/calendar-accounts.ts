@@ -63,10 +63,10 @@ calendarAccountsRouter.get('/:context/calendar/accounts', apiKeyAuth, asyncHandl
  */
 calendarAccountsRouter.get('/:context/calendar/accounts/:id', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  if (!isValidUUID(req.params.id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(req.params.id)) { throw new ValidationError('Invalid account ID'); }
 
   const account = await getCalendarAccount(context, req.params.id);
-  if (!account) throw new NotFoundError('Calendar account');
+  if (!account) { throw new NotFoundError('Calendar account'); }
 
   res.json({
     success: true,
@@ -149,7 +149,7 @@ calendarAccountsRouter.post('/:context/calendar/accounts', apiKeyAuth, requireSc
  */
 calendarAccountsRouter.put('/:context/calendar/accounts/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  if (!isValidUUID(req.params.id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(req.params.id)) { throw new ValidationError('Invalid account ID'); }
 
   const { display_name, caldav_url, calendars, is_enabled, sync_interval_minutes, password } = req.body;
 
@@ -157,7 +157,7 @@ calendarAccountsRouter.put('/:context/calendar/accounts/:id', apiKeyAuth, requir
     display_name, caldav_url, calendars, is_enabled, sync_interval_minutes, password,
   });
 
-  if (!updated) throw new NotFoundError('Calendar account');
+  if (!updated) { throw new NotFoundError('Calendar account'); }
 
   res.json({
     success: true,
@@ -171,10 +171,10 @@ calendarAccountsRouter.put('/:context/calendar/accounts/:id', apiKeyAuth, requir
  */
 calendarAccountsRouter.delete('/:context/calendar/accounts/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  if (!isValidUUID(req.params.id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(req.params.id)) { throw new ValidationError('Invalid account ID'); }
 
   const deleted = await deleteCalendarAccount(context, req.params.id);
-  if (!deleted) throw new NotFoundError('Calendar account');
+  if (!deleted) { throw new NotFoundError('Calendar account'); }
 
   res.json({ success: true, message: 'Account und synchronisierte Termine gelöscht.' });
 }));
@@ -185,10 +185,10 @@ calendarAccountsRouter.delete('/:context/calendar/accounts/:id', apiKeyAuth, req
  */
 calendarAccountsRouter.post('/:context/calendar/accounts/:id/test', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  if (!isValidUUID(req.params.id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(req.params.id)) { throw new ValidationError('Invalid account ID'); }
 
   const account = await getCalendarAccount(context, req.params.id);
-  if (!account) throw new NotFoundError('Calendar account');
+  if (!account) { throw new NotFoundError('Calendar account'); }
 
   const result = await testConnection({
     serverUrl: account.caldav_url,
@@ -205,7 +205,7 @@ calendarAccountsRouter.post('/:context/calendar/accounts/:id/test', apiKeyAuth, 
  */
 calendarAccountsRouter.post('/:context/calendar/accounts/:id/sync', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  if (!isValidUUID(req.params.id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(req.params.id)) { throw new ValidationError('Invalid account ID'); }
 
   const result = await syncAccount(context, req.params.id);
 
@@ -222,10 +222,10 @@ calendarAccountsRouter.post('/:context/calendar/accounts/:id/sync', apiKeyAuth, 
  */
 calendarAccountsRouter.post('/:context/calendar/accounts/:id/discover', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  if (!isValidUUID(req.params.id)) throw new ValidationError('Invalid account ID');
+  if (!isValidUUID(req.params.id)) { throw new ValidationError('Invalid account ID'); }
 
   const account = await getCalendarAccount(context, req.params.id);
-  if (!account) throw new NotFoundError('Calendar account');
+  if (!account) { throw new NotFoundError('Calendar account'); }
 
   const calendars = await discoverCalendars({
     serverUrl: account.caldav_url,

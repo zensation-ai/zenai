@@ -849,7 +849,7 @@ if (isMainModule) {
   startServer().catch((error) => {
     logger.error('FATAL: Server startup failed', error instanceof Error ? error : undefined);
     // Fallback to console.error in case logger pipeline is broken
-    console.error('Server startup failed:', error); // eslint-disable-line no-console
+    console.error('Server startup failed:', error);
     process.exit(1);
   });
 }

@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
-import { asyncHandler } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext, queryContext } from '../utils/database-context';
 import {
   inferTransitiveRelations,
@@ -33,7 +33,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const minStrength = parseFloat(req.body.minStrength) || 0.5;
@@ -53,7 +53,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const contradictions = await detectContradictions(context);
@@ -70,7 +70,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const minSize = parseInt(req.body.minSize, 10) || 3;
@@ -90,7 +90,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const result = await queryContext(
@@ -125,7 +125,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const limit = parseInt(req.query.limit as string, 10) || 20;
@@ -143,7 +143,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const maxSteps = parseInt(req.query.maxSteps as string, 10) || 8;
@@ -161,7 +161,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { sourceId, targetId, relationType, strength } = req.body;
@@ -183,7 +183,7 @@ router.put(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { sourceId, targetId, strength } = req.body;
@@ -205,7 +205,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { sourceId, targetId } = req.body;

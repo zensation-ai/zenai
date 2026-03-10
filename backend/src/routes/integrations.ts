@@ -165,7 +165,7 @@ integrationsRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: R
     dbRows = result.rows;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : '';
-    if (!msg.includes('does not exist')) throw err;
+    if (!msg.includes('does not exist')) { throw err; }
     logger.warn('integrations table not found, returning defaults');
   }
 
@@ -234,7 +234,7 @@ integrationsRouter.get('/:provider', apiKeyAuth, asyncHandler(async (req: Reques
     row = result.rows[0];
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : '';
-    if (!msg.includes('does not exist')) throw err;
+    if (!msg.includes('does not exist')) { throw err; }
     logger.warn('integrations table not found');
   }
 

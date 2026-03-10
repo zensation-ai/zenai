@@ -80,7 +80,7 @@ pluginsRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const statusFilter = req.query.status as string | undefined;
@@ -108,7 +108,7 @@ pluginsRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     return res.json({ success: true, data: MARKETPLACE_PLUGINS });
@@ -124,7 +124,7 @@ pluginsRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const plugin = await getPlugin(context, req.params.id);
@@ -145,7 +145,7 @@ pluginsRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { manifest, config } = req.body;
@@ -178,7 +178,7 @@ pluginsRouter.put(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     try {
@@ -206,7 +206,7 @@ pluginsRouter.put(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     try {
@@ -234,7 +234,7 @@ pluginsRouter.put(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { config } = req.body;
@@ -269,7 +269,7 @@ pluginsRouter.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     try {

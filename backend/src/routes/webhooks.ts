@@ -147,7 +147,7 @@ webhooksRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
     rows = result.rows;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : '';
-    if (!msg.includes('does not exist')) throw err;
+    if (!msg.includes('does not exist')) { throw err; }
     // Table missing — return empty list gracefully
   }
 

@@ -6,7 +6,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
-import { asyncHandler } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import {
   recordRAGFeedback,
@@ -28,7 +28,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { queryId, queryText, sessionId, resultId, wasHelpful, relevanceRating, feedbackText, strategiesUsed, confidence, responseTimeMs } = req.body;
@@ -63,7 +63,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const days = parseInt(req.query.days as string, 10) || 30;
@@ -81,7 +81,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const days = parseInt(req.query.days as string, 10) || 30;
@@ -99,7 +99,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const limit = parseInt(req.query.limit as string, 10) || 50;

@@ -182,7 +182,7 @@ mcpConnectionsRouter.get('/:context/mcp/connections/:id', validateContext, async
   try {
     const context = req.params.context as AIContext;
     const conn = await mcpConnectionManager.getConnection(context, req.params.id);
-    if (!conn) return res.status(404).json({ success: false, error: 'Connection not found' });
+    if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
     res.json({ success: true, data: conn });
   } catch (error) {
     logger.error('Get MCP connection failed', error instanceof Error ? error : undefined);
@@ -219,7 +219,7 @@ mcpConnectionsRouter.put('/:context/mcp/connections/:id', validateContext, async
   try {
     const context = req.params.context as AIContext;
     const conn = await mcpConnectionManager.updateConnection(context, req.params.id, req.body);
-    if (!conn) return res.status(404).json({ success: false, error: 'Connection not found' });
+    if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
     res.json({ success: true, data: conn });
   } catch (error) {
     logger.error('Update MCP connection failed', error instanceof Error ? error : undefined);
@@ -234,7 +234,7 @@ mcpConnectionsRouter.delete('/:context/mcp/connections/:id', validateContext, as
   try {
     const context = req.params.context as AIContext;
     const deleted = await mcpConnectionManager.deleteConnection(context, req.params.id);
-    if (!deleted) return res.status(404).json({ success: false, error: 'Connection not found' });
+    if (!deleted) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
     res.json({ success: true });
   } catch (error) {
     logger.error('Delete MCP connection failed', error instanceof Error ? error : undefined);
@@ -249,7 +249,7 @@ mcpConnectionsRouter.post('/:context/mcp/connections/:id/check', validateContext
   try {
     const context = req.params.context as AIContext;
     const conn = await mcpConnectionManager.checkConnection(context, req.params.id);
-    if (!conn) return res.status(404).json({ success: false, error: 'Connection not found' });
+    if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
     res.json({ success: true, data: conn });
   } catch (error) {
     logger.error('MCP connection check failed', error instanceof Error ? error : undefined);
@@ -264,7 +264,7 @@ mcpConnectionsRouter.get('/:context/mcp/connections/:id/tools', validateContext,
   try {
     const context = req.params.context as AIContext;
     const conn = await mcpConnectionManager.getConnection(context, req.params.id);
-    if (!conn) return res.status(404).json({ success: false, error: 'Connection not found' });
+    if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
 
     // Get tools via unified tool list filtered to this connection
     const allTools = await mcpConnectionManager.getAllTools(context);
@@ -305,7 +305,7 @@ mcpConnectionsRouter.get('/:context/mcp/connections/:id/resources', validateCont
   try {
     const context = req.params.context as AIContext;
     const conn = await mcpConnectionManager.getConnection(context, req.params.id);
-    if (!conn) return res.status(404).json({ success: false, error: 'Connection not found' });
+    if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
 
     const allResources = await mcpConnectionManager.getAllResources(context);
     const resources = allResources.filter(r => r.connectionId === req.params.id);

@@ -27,7 +27,7 @@ function validateContext(context: string): AIContext {
 }
 
 function validateTriggers(triggers: unknown[]): AgentTrigger[] {
-  if (!Array.isArray(triggers)) throw new ValidationError('triggers must be an array');
+  if (!Array.isArray(triggers)) { throw new ValidationError('triggers must be an array'); }
   for (const t of triggers) {
     const trigger = t as { type?: string; config?: unknown };
     if (!trigger.type || !VALID_TRIGGER_TYPES.includes(trigger.type as TriggerType)) {

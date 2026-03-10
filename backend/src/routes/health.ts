@@ -227,38 +227,15 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
   const dbHealthCheckStatus = getHealthCheckStatus();
 
   // SECURITY: Minimal response in production without API key
-  // Include basic service status for frontend health indicators
+  // Only expose overall status for monitoring tools (e.g. UptimeRobot)
+  // No internal details (latencies, model names, service configs)
   if (isProduction && !hasApiKey) {
-    const minimalStatus = {
-      status: isHealthy ? 'healthy' : (isDegraded ? 'degraded' : 'unhealthy'),
+    const overallStatus = isHealthy ? 'healthy' : (isDegraded ? 'degraded' : 'unhealthy');
+    const httpStatus = overallStatus === 'unhealthy' ? 503 : 200;
+    return res.status(httpStatus).json({
+      status: overallStatus,
       timestamp: new Date().toISOString(),
-      responseTime: Date.now() - startTime,
-      services: {
-        databases: {
-          personal: { status: dbHealth.personal ? 'connected' : 'disconnected', latencyMs: personalLatency.latencyMs },
-          work: { status: dbHealth.work ? 'connected' : 'disconnected', latencyMs: workLatency.latencyMs },
-          learning: { status: dbHealth.learning ? 'connected' : 'disconnected', latencyMs: learningLatency.latencyMs },
-          creative: { status: dbHealth.creative ? 'connected' : 'disconnected', latencyMs: creativeLatency.latencyMs },
-          healthCheck: dbHealthCheckStatus,
-        },
-        ai: {
-          primary: aiServices.primary,
-          claude: { status: claudeHealth.available ? 'healthy' : 'unavailable' },
-          ollama: { status: ollamaHealth.available ? 'connected' : 'disconnected', models: ollamaHealth.models || [] },
-        },
-        cache: {
-          status: cacheStats.connected ? 'connected' : 'disconnected',
-          type: 'redis',
-        },
-        dependencies: {
-          webSearch: braveSearchStatus,
-          codeExecution: codeExecutionStatus,
-        },
-      },
-    };
-    const httpStatus = minimalStatus.status === 'healthy' ? 200 :
-                       minimalStatus.status === 'degraded' ? 200 : 503;
-    return res.status(httpStatus).json(minimalStatus);
+    });
   }
 
   // Full response for development or authenticated requests

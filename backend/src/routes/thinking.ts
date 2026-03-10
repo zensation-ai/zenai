@@ -6,7 +6,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
-import { asyncHandler } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import {
   recordThinkingFeedback,
@@ -33,7 +33,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const { chainId, wasHelpful, qualityRating, feedbackText } = req.body;
@@ -65,7 +65,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const stats = await getThinkingStats(context);
@@ -82,7 +82,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const strategies = await getStrategyHistory(context);
@@ -99,7 +99,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     await persistStrategies(context);
@@ -116,7 +116,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     const chain = await getThinkingChainById(req.params.id, context);
@@ -137,7 +137,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      return res.status(400).json({ success: false, error: 'Invalid context' });
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
     await deleteThinkingChain(req.params.id, context);
