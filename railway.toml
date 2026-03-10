@@ -1,2 +1,4 @@
 [build]
 dockerfilePath = "Dockerfile"
+# Ensure build context is repo root for pnpm workspace access
+dockerContext = "."

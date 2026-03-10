@@ -1,20 +1,29 @@
-# PersonalAIBrain Backend - Railway Deployment
+# ZenAI Backend - Railway Deployment (pnpm monorepo)
 # Build stage
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
-# Install all dependencies (including devDependencies for build)
-RUN npm ci
+# Copy workspace config and lockfile
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 
-# Copy source code
-COPY . .
+# Copy package.json files for all workspace packages
+COPY backend/package.json backend/package.json
+COPY packages/shared/package.json packages/shared/package.json
 
-# Build TypeScript
-RUN npm run build
+# Install all dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy shared package source and build it first
+COPY packages/shared/ packages/shared/
+RUN pnpm --filter @zenai/shared run build
+
+# Copy backend source and build
+COPY backend/ backend/
+RUN pnpm --filter zenai-backend run build
 
 # Production stage
 FROM node:20-alpine AS production
@@ -28,29 +37,37 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy package files
-COPY package*.json ./
+# Install pnpm for production install
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+# Copy workspace config
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY backend/package.json backend/package.json
+COPY packages/shared/package.json packages/shared/package.json
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN pnpm install --frozen-lockfile --prod
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+# Copy built shared package
+COPY --from=builder /app/packages/shared/dist packages/shared/dist
+
+# Copy built backend
+COPY --from=builder /app/backend/dist backend/dist
 
 # Copy SQL migrations (needed for db:init)
-COPY --from=builder /app/sql ./sql
-COPY --from=builder /app/src/migrations ./src/migrations
+COPY --from=builder /app/backend/sql backend/sql
+COPY --from=builder /app/backend/src/migrations backend/src/migrations
 
 # Create uploads directory
-RUN mkdir -p uploads && chown -R nodejs:nodejs /app
+RUN mkdir -p backend/uploads && chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
 
+WORKDIR /app/backend
+
 # Expose port
 EXPOSE 3000
-
-# Railway handles health checks - no HEALTHCHECK needed
 
 # Start with dumb-init
 ENTRYPOINT ["dumb-init", "--"]
