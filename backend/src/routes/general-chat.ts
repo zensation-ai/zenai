@@ -32,7 +32,9 @@ import { isValidContext } from '../utils/database-context';
 import { validateBody } from '../utils/schemas';
 import { trackActivity } from '../services/activity-tracker';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
+import Anthropic from '@anthropic-ai/sdk';
 import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
+import { toolRegistry, ToolExecutionContext } from '../services/claude/tool-use';
 import { detectChatMode } from '../services/chat-modes';
 import { isValidThinkingMode, getAvailableModes, applyThinkingMode, ThinkingMode } from '../services/thinking-partner';
 import {
@@ -773,8 +775,23 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
 
   res.write = interceptWrite;
 
+  // === Tool Definitions (Pass to streaming for assistant + tool_assisted modes) ===
+  const shouldUseTools = isAssistantMode || modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent';
+  const toolDefinitions = shouldUseTools ? toolRegistry.getDefinitions() as unknown as Anthropic.Tool[] : undefined;
+  const toolExecContext: ToolExecutionContext = {
+    aiContext: contextType,
+    sessionId: id,
+  };
+
+  // Tool executor that uses the registry with request-scoped context
+  const toolExecutor = shouldUseTools
+    ? async (name: string, input: Record<string, unknown>) => {
+        return toolRegistry.execute(name, input, toolExecContext);
+      }
+    : undefined;
+
   try {
-    // Stream the response with adaptive thinking + compaction
+    // Stream the response with adaptive thinking + compaction + tools
     if (enableThinking) {
       await thinkingStream(
         res,
@@ -782,7 +799,9 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         systemPrompt,
         adaptiveThinkingBudget,
         compactionConfig,
-        id
+        id,
+        toolDefinitions,
+        toolExecutor
       );
     } else {
       // Simple queries: skip thinking entirely for faster response
@@ -793,6 +812,8 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         maxTokens: 4096,
         compactionConfig,
         sessionId: id,
+        tools: toolDefinitions,
+        toolExecutor,
       });
     }
 

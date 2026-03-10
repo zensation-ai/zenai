@@ -70,6 +70,14 @@ export interface StreamEvent {
 }
 
 /**
+ * Tool execution handler for streaming tool use
+ */
+export type StreamingToolExecutor = (
+  name: string,
+  input: Record<string, unknown>
+) => Promise<string>;
+
+/**
  * Streaming options
  */
 export interface StreamingOptions {
@@ -85,6 +93,10 @@ export interface StreamingOptions {
   maxTokens?: number;
   /** Tools to enable */
   tools?: Anthropic.Tool[];
+  /** Tool executor for handling tool_use responses during streaming */
+  toolExecutor?: StreamingToolExecutor;
+  /** Maximum tool execution iterations (default: 5) */
+  maxToolIterations?: number;
   /** Context compaction configuration (enables infinite conversations) */
   compactionConfig?: CompactionConfig;
   /** Session ID for compaction state tracking */
@@ -131,7 +143,7 @@ const DEFAULT_OPTIONS: StreamingOptions = {
 /**
  * Send an SSE event to the client
  */
-function sendSSE(res: Response, event: StreamEvent): void {
+export function sendSSE(res: Response, event: StreamEvent): void {
   const eventString = `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`;
   res.write(eventString);
 }
@@ -302,6 +314,149 @@ export async function streamToSSE(
         sessionId: opts.sessionId,
         tokensSaved,
       });
+    }
+
+    // === Tool Execution Loop ===
+    // When Claude returns tool_use, execute tools and stream a follow-up response
+    if (
+      finalMessage.stop_reason === 'tool_use' &&
+      opts.toolExecutor &&
+      opts.tools &&
+      opts.tools.length > 0
+    ) {
+      const maxIterations = opts.maxToolIterations ?? 5;
+      let currentMessages = [...messages];
+      let currentFinalMessage = finalMessage;
+      let iteration = 0;
+
+      while (
+        currentFinalMessage.stop_reason === 'tool_use' &&
+        iteration < maxIterations
+      ) {
+        iteration++;
+
+        // Extract tool_use blocks from the response
+        const toolUseBlocks = currentFinalMessage.content.filter(
+          (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
+        );
+
+        if (toolUseBlocks.length === 0) break;
+
+        // Execute each tool and collect results
+        const toolResults: Array<{
+          type: 'tool_result';
+          tool_use_id: string;
+          content: string;
+          is_error?: boolean;
+        }> = [];
+
+        for (const toolBlock of toolUseBlocks) {
+          sendSSE(res, {
+            type: 'tool_use_start',
+            data: { tool: { name: toolBlock.name, input: toolBlock.input as Record<string, unknown> } },
+          });
+
+          try {
+            const result = await opts.toolExecutor(
+              toolBlock.name,
+              toolBlock.input as Record<string, unknown>
+            );
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: toolBlock.id,
+              content: result,
+            });
+            sendSSE(res, {
+              type: 'tool_use_end',
+              data: { tool: { name: toolBlock.name, result } },
+            });
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Tool execution failed';
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: toolBlock.id,
+              content: `Error: ${errorMsg}`,
+              is_error: true,
+            });
+            sendSSE(res, {
+              type: 'tool_use_end',
+              data: { tool: { name: toolBlock.name, result: `Error: ${errorMsg}` } },
+            });
+          }
+        }
+
+        // Build follow-up messages: assistant response (with tool_use) + tool results
+        currentMessages = [
+          ...currentMessages,
+          { role: 'assistant' as const, content: currentFinalMessage.content },
+          { role: 'user' as const, content: toolResults },
+        ];
+
+        // Stream follow-up response with tool results
+        const followUpParams: Record<string, unknown> = {
+          model: CLAUDE_MODEL,
+          max_tokens: opts.maxTokens ?? 16000,
+          messages: currentMessages,
+          stream: true,
+          tools: opts.tools,
+        };
+
+        if (opts.enableThinking) {
+          followUpParams.thinking = {
+            type: 'enabled',
+            budget_tokens: opts.thinkingBudget ?? 10000,
+          };
+          followUpParams.temperature = 1;
+        } else if (opts.temperature !== undefined) {
+          followUpParams.temperature = opts.temperature;
+        }
+
+        if (opts.systemPrompt) {
+          followUpParams.system = opts.systemPrompt;
+        }
+
+        const followUpStream = client.messages.stream(
+          followUpParams as unknown as Anthropic.MessageCreateParams
+        );
+
+        // Reset content tracking for follow-up
+        isInContent = false;
+        isInThinking = false;
+
+        followUpStream.on('text', (text: string) => {
+          if (!isInContent) {
+            sendSSE(res, { type: 'content_start', data: {} });
+            isInContent = true;
+          }
+          responseContent += text;
+          sendSSE(res, { type: 'content_delta', data: { content: text } });
+        });
+
+        followUpStream.on('thinking', (thinkingDelta: string) => {
+          thinkingContent += thinkingDelta;
+          sendSSE(res, { type: 'thinking_delta', data: { thinking: thinkingDelta } });
+        });
+
+        followUpStream.on('streamEvent', (event: Anthropic.MessageStreamEvent) => {
+          if (event.type === 'content_block_start') {
+            if (event.content_block.type === 'thinking') {
+              sendSSE(res, { type: 'thinking_start', data: {} });
+              isInThinking = true;
+            }
+          } else if (event.type === 'content_block_stop' && isInThinking) {
+            sendSSE(res, { type: 'thinking_end', data: { thinking: thinkingContent } });
+            isInThinking = false;
+          }
+        });
+
+        currentFinalMessage = await followUpStream.finalMessage();
+
+        logger.info('Tool follow-up stream complete', {
+          iteration,
+          stopReason: currentFinalMessage.stop_reason,
+          toolsCalled: toolUseBlocks.map(b => b.name),
+        });
+      }
     }
 
     // Send completion event with metadata
@@ -489,7 +644,9 @@ export async function thinkingStream(
   systemPrompt?: string,
   thinkingBudget: number = 10000,
   compactionConfig?: CompactionConfig,
-  sessionId?: string
+  sessionId?: string,
+  tools?: Anthropic.Tool[],
+  toolExecutor?: StreamingToolExecutor
 ): Promise<void> {
   setupSSEHeaders(res);
 
@@ -500,5 +657,7 @@ export async function thinkingStream(
     maxTokens: 16000,
     compactionConfig,
     sessionId,
+    tools,
+    toolExecutor,
   });
 }

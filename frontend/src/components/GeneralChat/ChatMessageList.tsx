@@ -90,8 +90,8 @@ export function ChatMessageList({
               </div>
             </div>
           ))}
-          {/* Streaming response - shows content as it arrives */}
-          {isStreaming && streamingContent && (
+          {/* Streaming response - shows content as it arrives (including empty state while waiting for first delta) */}
+          {isStreaming && (
             <div className="chat-message assistant neuro-human-fade-in streaming" role="status" aria-live="polite">
               <div className="chat-message-avatar" title={AI_PERSONALITY.name} aria-hidden="true">{AI_AVATAR.emoji}</div>
               <div className="chat-message-content">
@@ -106,7 +106,7 @@ export function ChatMessageList({
                   </div>
                 )}
                 <div className="chat-message-text">
-                  {renderContent(streamingContent)}
+                  {streamingContent ? renderContent(streamingContent) : null}
                   <span className="streaming-cursor" aria-hidden="true">{'\u258B'}</span>
                 </div>
               </div>

@@ -720,7 +720,7 @@ export const TOOL_CREATE_MEETING: ToolDefinition = {
 
 export const TOOL_NAVIGATE_TO: ToolDefinition = {
   name: 'navigate_to',
-  description: 'Navigiert den Nutzer zu einer bestimmten Seite der App. Nutze dies wenn der Nutzer eine Seite besuchen möchte oder nach einem Feature fragt.',
+  description: 'Navigiert den Nutzer zu einer bestimmten Seite der App. Nutze dies wenn der Nutzer eine Seite besuchen moechte oder nach einem Feature fragt.',
   input_schema: {
     type: 'object',
     properties: {
@@ -728,15 +728,20 @@ export const TOOL_NAVIGATE_TO: ToolDefinition = {
         type: 'string',
         description: 'Zielseite',
         enum: [
-          'home', 'chat', 'ideas', 'workshop', 'calendar', 'tasks',
-          'kanban', 'documents', 'email', 'contacts', 'finance',
-          'insights', 'business', 'my-ai', 'learning', 'settings',
-          'notifications', 'browser', 'screen-memory',
+          'home', 'chat', 'browser',
+          'ideas', 'incubator', 'archive', 'triage',
+          'workshop', 'agent-teams',
+          'calendar', 'tasks', 'kanban', 'gantt', 'meetings',
+          'contacts', 'email', 'documents', 'media', 'canvas',
+          'insights', 'finance', 'business',
+          'my-ai', 'voice-chat', 'learning', 'screen-memory',
+          'settings', 'profile', 'automations', 'integrations',
+          'notifications',
         ],
       },
       reason: {
         type: 'string',
-        description: 'Kurze Erklärung warum diese Seite relevant ist',
+        description: 'Kurze Erklaerung warum diese Seite relevant ist',
       },
     },
     required: ['page'],
@@ -745,16 +750,88 @@ export const TOOL_NAVIGATE_TO: ToolDefinition = {
 
 export const TOOL_APP_HELP: ToolDefinition = {
   name: 'app_help',
-  description: 'Erklärt ein Feature oder eine Seite der ZenAI App. Nutze dies wenn der Nutzer fragt wie etwas funktioniert oder was eine Seite tut.',
+  description: 'Erklaert ein Feature oder eine Seite der ZenAI App. Nutze dies wenn der Nutzer fragt wie etwas funktioniert oder was eine Seite tut.',
   input_schema: {
     type: 'object',
     properties: {
       topic: {
         type: 'string',
-        description: 'Das Feature oder die Seite über die Hilfe gebraucht wird',
+        description: 'Das Feature oder die Seite ueber die Hilfe gebraucht wird',
       },
     },
     required: ['topic'],
+  },
+};
+
+// ===========================================
+// CRUD Tools (Update, Archive, Delete)
+// ===========================================
+
+export const TOOL_UPDATE_IDEA: ToolDefinition = {
+  name: 'update_idea',
+  description: 'Aktualisiert eine bestehende Idee. Nutze dies wenn der Nutzer eine Idee aendern, umbenennen, die Prioritaet aendern oder Details hinzufuegen moechte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'Die ID der zu aktualisierenden Idee',
+      },
+      title: {
+        type: 'string',
+        description: 'Neuer Titel (optional)',
+      },
+      summary: {
+        type: 'string',
+        description: 'Neue Zusammenfassung (optional)',
+      },
+      priority: {
+        type: 'string',
+        description: 'Neue Prioritaet',
+        enum: ['low', 'medium', 'high'],
+      },
+      category: {
+        type: 'string',
+        description: 'Neue Kategorie',
+        enum: ['business', 'technical', 'personal', 'learning'],
+      },
+      type: {
+        type: 'string',
+        description: 'Neuer Typ',
+        enum: ['idea', 'task', 'insight', 'problem', 'question'],
+      },
+    },
+    required: ['id'],
+  },
+};
+
+export const TOOL_ARCHIVE_IDEA: ToolDefinition = {
+  name: 'archive_idea',
+  description: 'Archiviert eine Idee. Nutze dies wenn der Nutzer eine Idee archivieren, beiseitelegen oder als erledigt markieren moechte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'Die ID der zu archivierenden Idee',
+      },
+    },
+    required: ['id'],
+  },
+};
+
+export const TOOL_DELETE_IDEA: ToolDefinition = {
+  name: 'delete_idea',
+  description: 'Loescht eine Idee dauerhaft. Nutze dies NUR wenn der Nutzer explizit sagt er will eine Idee loeschen. Frage vorher nach Bestaetigung.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'Die ID der zu loeschenden Idee',
+      },
+    },
+    required: ['id'],
   },
 };
 

@@ -362,6 +362,24 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                         continue;
                       }
 
+                      // Handle tool use events - dispatch navigation actions to the app
+                      if (currentEventType === 'tool_use_end' && data.tool) {
+                        try {
+                          const toolResult = JSON.parse(data.tool.result || '{}');
+                          if (toolResult.action === 'navigate' && toolResult.page) {
+                            window.dispatchEvent(new CustomEvent('zenai-assistant-navigate', {
+                              detail: { action: 'navigate', page: toolResult.page },
+                            }));
+                          }
+                        } catch { /* tool result not JSON, skip */ }
+                        currentEventType = '';
+                        continue;
+                      }
+                      if (currentEventType === 'tool_use_start') {
+                        currentEventType = '';
+                        continue;
+                      }
+
                       if (data.error) {
                         throw new Error(data.error);
                       }
