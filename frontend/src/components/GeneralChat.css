@@ -404,7 +404,7 @@
   border: 1.5px solid var(--glass-border);
   background: rgba(255, 255, 255, 0.8);
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 16px; /* Prevents iOS auto-zoom on focus — must be >= 16px */
   font-family: inherit;
   resize: none;
   transition: all 0.2s;
@@ -556,6 +556,11 @@
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+  /* Stack chat page vertically, hide session sidebar on mobile */
+  .chat-page {
+    flex-direction: column;
+  }
+
   .chat-page-chat {
     padding: 8px 8px 8px;
   }
@@ -577,6 +582,7 @@
   .chat-messages {
     min-height: 150px;
     max-height: 280px;
+    padding: 0.75rem;
   }
 
   .chat-message-content {
@@ -604,7 +610,6 @@
 
   .chat-input {
     min-height: 44px;
-    font-size: 16px; /* Prevents iOS zoom */
   }
 
   .new-chat-btn {
@@ -629,6 +634,7 @@
 
   .chat-input-area {
     padding: 0.5rem 0.5rem 0.75rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   .chat-input {
@@ -637,6 +643,7 @@
 
   .chat-messages {
     gap: 0.5rem;
+    padding: 0.5rem;
   }
 
   .chat-empty {

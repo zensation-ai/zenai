@@ -1,18 +1,18 @@
 {
-  "name": "My Brain - Personal AI Assistant",
-  "short_name": "My Brain",
-  "description": "Personal AI Assistant. Designed, Developed and Owned by Alexander Bering",
+  "name": "ZenAI - Enterprise AI Platform",
+  "short_name": "ZenAI",
+  "description": "Enterprise AI Platform by ZenSation. Designed & Developed by Alexander Bering.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#667eea",
+  "background_color": "#0a0f14",
+  "theme_color": "#0a0f14",
   "orientation": "any",
   "scope": "/",
   "lang": "de",
   "categories": ["productivity", "business", "utilities"],
   "icons": [
     {
-      "src": "/mybrain-logo.svg",
+      "src": "/zenai-brain.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

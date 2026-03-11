@@ -69,7 +69,7 @@ vi.mock('../../contexts/ThemeContext', () => ({
 
 // Mock AI personality
 vi.mock('../../utils/aiPersonality', () => ({
-  AI_PERSONALITY: { name: 'My Brain', title: 'Your AI Assistant' },
+  AI_PERSONALITY: { name: 'ZenAI', title: 'Your AI Assistant' },
   AI_AVATAR: '🤖',
   EMPTY_STATE_MESSAGES: {
     chat: { title: 'Start chatting', subtitle: 'Ask me anything' },

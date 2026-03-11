@@ -1,1 +1,10 @@
 .vercel
+
+# pnpm monorepo — npm lock files are stale
+package-lock.json
+
+# Capacitor iOS - exclude build artifacts, keep project config
+ios/App/Pods/
+ios/App/App/public/
+ios/App/output/
+ios/DerivedData/

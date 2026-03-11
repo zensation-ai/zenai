@@ -17,14 +17,27 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent 300ms tap delay on touch devices */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea {
+  touch-action: manipulation;
 }
 
 /* Global Input Baseline - crystal clear readability */
+/* iOS auto-zooms on focus when font-size < 16px — enforce minimum */
 input,
 textarea,
 select {
   color: var(--text);
   font-family: inherit;
+  font-size: 16px;
 }
 
 input::placeholder,
