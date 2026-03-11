@@ -315,7 +315,7 @@ export async function updateContact(
     params.push(JSON.stringify(updates.metadata));
   }
 
-  if (sets.length === 0) return getContact(context, id);
+  if (sets.length === 0) {return getContact(context, id);}
 
   sets.push('updated_at = NOW()');
 
@@ -424,7 +424,7 @@ export async function getOrganization(
     FROM organizations o
     WHERE o.id = $1
   `, [id]);
-  if (!result.rows[0]) return null;
+  if (!result.rows[0]) {return null;}
   return {
     ...result.rows[0],
     contact_count: parseInt(result.rows[0].contact_count || '0', 10),
@@ -467,7 +467,7 @@ export async function updateOrganization(
     params.push(JSON.stringify(updates.metadata));
   }
 
-  if (sets.length === 0) return getOrganization(context, id);
+  if (sets.length === 0) {return getOrganization(context, id);}
 
   sets.push('updated_at = NOW()');
 

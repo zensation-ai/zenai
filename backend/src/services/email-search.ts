@@ -187,9 +187,9 @@ export function parseNaturalLanguageQuery(input: string): EmailSearchQuery {
   const prioMatch = remaining.match(/\b(urgent|dringend\w*|wichtig\w*|high|niedrig\w*|low)\b/i);
   if (prioMatch) {
     const p = prioMatch[1].toLowerCase();
-    if (p.startsWith('dringend') || p === 'urgent') query.priority = 'urgent';
-    else if (p.startsWith('wichtig') || p === 'high') query.priority = 'high';
-    else if (p.startsWith('niedrig') || p === 'low') query.priority = 'low';
+    if (p.startsWith('dringend') || p === 'urgent') {query.priority = 'urgent';}
+    else if (p.startsWith('wichtig') || p === 'high') {query.priority = 'high';}
+    else if (p.startsWith('niedrig') || p === 'low') {query.priority = 'low';}
     remaining = remaining.replace(prioMatch[0], '').trim();
   }
 
@@ -574,23 +574,23 @@ function calculateRelevance(row: Record<string, unknown>, query: EmailSearchQuer
     const summary = ((row.ai_summary as string) || '').toLowerCase();
     const fromName = ((row.from_name as string) || '').toLowerCase();
 
-    if (subject.includes(text)) score += 0.3;
-    if (summary.includes(text)) score += 0.2;
-    if (fromName.includes(text)) score += 0.1;
+    if (subject.includes(text)) {score += 0.3;}
+    if (summary.includes(text)) {score += 0.2;}
+    if (fromName.includes(text)) {score += 0.1;}
   }
 
   // Boost priority emails
-  if (row.ai_priority === 'urgent') score += 0.15;
-  else if (row.ai_priority === 'high') score += 0.1;
+  if (row.ai_priority === 'urgent') {score += 0.15;}
+  else if (row.ai_priority === 'high') {score += 0.1;}
 
   // Boost starred
-  if (row.is_starred) score += 0.05;
+  if (row.is_starred) {score += 0.05;}
 
   // Boost recent emails
   const age = Date.now() - new Date(row.received_at as string).getTime();
   const dayAge = age / (1000 * 60 * 60 * 24);
-  if (dayAge < 1) score += 0.1;
-  else if (dayAge < 7) score += 0.05;
+  if (dayAge < 1) {score += 0.1;}
+  else if (dayAge < 7) {score += 0.05;}
 
   return Math.min(score, 1.0);
 }

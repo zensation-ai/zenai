@@ -204,10 +204,10 @@ export async function getMemoryHealth(context: AIContext): Promise<MemoryHealthR
   // Calculate health score:
   // 25 points for each layer that has at least one memory
   let healthScore = 0;
-  if (working.count > 0) healthScore += 25;
-  if (episodic.count > 0) healthScore += 25;
-  if (shortTerm.count > 0) healthScore += 25;
-  if (longTerm.count > 0) healthScore += 25;
+  if (working.count > 0) {healthScore += 25;}
+  if (episodic.count > 0) {healthScore += 25;}
+  if (shortTerm.count > 0) {healthScore += 25;}
+  if (longTerm.count > 0) {healthScore += 25;}
 
   return {
     working,

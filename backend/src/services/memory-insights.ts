@@ -466,7 +466,7 @@ export async function getMemoryStats(
           newestMemory = maxDate;
         }
       }
-    } catch (error) {
+    } catch {
       // skip
     }
   }
@@ -481,7 +481,7 @@ export async function getMemoryStats(
          WHERE ${layer.createdColumn} >= NOW() - INTERVAL '30 days'`
       );
       growthRate += Number(result.rows[0]?.count) || 0;
-    } catch (error) {
+    } catch {
       // skip
     }
   }

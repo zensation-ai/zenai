@@ -172,9 +172,9 @@ function formatOpeningHoursResponse(
     ...openingHours.weekdayText.map(t => `  ${t}`),
   ];
 
-  if (details.phone) lines.push(`\nTelefon: ${details.phone}`);
-  if (details.rating) lines.push(`Bewertung: ${details.rating}/5`);
-  if (details.website) lines.push(`Website: ${details.website}`);
+  if (details.phone) {lines.push(`\nTelefon: ${details.phone}`);}
+  if (details.rating) {lines.push(`Bewertung: ${details.rating}/5`);}
+  if (details.website) {lines.push(`Website: ${details.website}`);}
 
   return lines.join('\n');
 }
@@ -235,8 +235,8 @@ export async function handleFindNearbyPlaces(
 
     for (const place of results.slice(0, 10)) {
       const parts = [`- **${place.name}**`];
-      if (place.vicinity) parts.push(`(${place.vicinity})`);
-      if (place.rating) parts.push(`- Bewertung: ${place.rating}/5`);
+      if (place.vicinity) {parts.push(`(${place.vicinity})`);}
+      if (place.rating) {parts.push(`- Bewertung: ${place.rating}/5`);}
       if (place.openNow !== null) {
         parts.push(`- ${place.openNow ? 'Geoeffnet' : 'Geschlossen'}`);
       }
@@ -312,7 +312,7 @@ export async function handleOptimizeDayRoute(
         }
       }
 
-      if (bestNext === -1) break;
+      if (bestNext === -1) {break;}
       route.push(bestNext);
       visited.add(bestNext);
     }
@@ -354,9 +354,9 @@ export async function handleOptimizeDayRoute(
 // ============================================================
 
 function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} Min.`;
+  if (minutes < 60) {return `${minutes} Min.`;}
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  if (mins === 0) return `${hours} Std.`;
+  if (mins === 0) {return `${hours} Std.`;}
   return `${hours} Std. ${mins} Min.`;
 }

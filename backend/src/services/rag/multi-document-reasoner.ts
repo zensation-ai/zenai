@@ -79,9 +79,9 @@ function inferSourceType(result: EnhancedResult): SourceAttribution['type'] {
   const title = (result.title || '').toLowerCase();
   const summary = (result.summary || '').toLowerCase();
 
-  if (title.includes('chat') || summary.includes('conversation')) return 'chat';
-  if (title.includes('http') || summary.includes('url') || summary.includes('website')) return 'web';
-  if (result.sources?.includes('agentic')) return 'idea';
+  if (title.includes('chat') || summary.includes('conversation')) {return 'chat';}
+  if (title.includes('http') || summary.includes('url') || summary.includes('website')) {return 'web';}
+  if (result.sources?.includes('agentic')) {return 'idea';}
 
   return 'document';
 }
@@ -104,7 +104,7 @@ function formatSourcesForPrompt(documents: EnhancedResult[]): string {
  */
 function extractSnippet(doc: EnhancedResult, maxLength: number = 200): string {
   const text = doc.content || doc.summary || '';
-  if (text.length <= maxLength) return text;
+  if (text.length <= maxLength) {return text;}
   return text.substring(0, maxLength).replace(/\s\S*$/, '') + '...';
 }
 
@@ -278,14 +278,14 @@ Analyze the relationships between these sources. Identify:
  * Uses score distribution of the source documents.
  */
 function calculateFallbackConfidence(documents: EnhancedResult[]): number {
-  if (!documents || documents.length === 0) return 0;
+  if (!documents || documents.length === 0) {return 0;}
 
   const avgScore = documents.reduce((sum, d) => sum + d.score, 0) / documents.length;
   const hasMultipleSources = documents.length >= 2;
 
   let confidence = avgScore;
-  if (hasMultipleSources) confidence *= 1.1;
-  if (documents.length < 3) confidence *= 0.9;
+  if (hasMultipleSources) {confidence *= 1.1;}
+  if (documents.length < 3) {confidence *= 0.9;}
 
   return Math.max(0, Math.min(1, confidence));
 }

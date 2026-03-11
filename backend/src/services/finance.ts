@@ -169,7 +169,7 @@ export async function updateAccount(
       idx++;
     }
   }
-  if (fields.length === 0) return getAccount(context, id);
+  if (fields.length === 0) {return getAccount(context, id);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
@@ -358,7 +358,7 @@ export async function updateTransaction(
       idx++;
     }
   }
-  if (fields.length === 0) return getTransaction(context, id);
+  if (fields.length === 0) {return getTransaction(context, id);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
@@ -373,7 +373,7 @@ export async function updateTransaction(
 export async function deleteTransaction(context: AIContext, id: string): Promise<boolean> {
   // Get transaction to reverse balance
   const tx = await getTransaction(context, id);
-  if (!tx) return false;
+  if (!tx) {return false;}
 
   const result = await queryContext(context,
     `DELETE FROM transactions WHERE id = $1`,
@@ -450,7 +450,7 @@ export async function updateBudget(
       idx++;
     }
   }
-  if (fields.length === 0) return getBudget(context, id);
+  if (fields.length === 0) {return getBudget(context, id);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
@@ -477,7 +477,7 @@ async function updateBudgetSpent(context: AIContext, category: string, amount: n
        WHERE category = $2 AND is_active = TRUE`,
       [amount, category]
     );
-  } catch (err) {
+  } catch {
     logger.warn(`Failed to update budget for category ${category}`);
   }
 }
@@ -553,7 +553,7 @@ export async function updateGoal(
       idx++;
     }
   }
-  if (fields.length === 0) return getGoal(context, id);
+  if (fields.length === 0) {return getGoal(context, id);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);

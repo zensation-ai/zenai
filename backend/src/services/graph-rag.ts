@@ -16,7 +16,7 @@
 import { logger } from '../utils/logger';
 import { AIContext } from '../utils/database-context';
 import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from './enhanced-rag';
-import { getRelationships, getSuggestedConnections, IdeaRelation } from './knowledge-graph/graph-core';
+import { getRelationships, getSuggestedConnections } from './knowledge-graph/graph-core';
 import { multiHopSearch } from './knowledge-graph';
 import { queryContext } from '../utils/database-context';
 

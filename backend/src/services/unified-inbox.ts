@@ -118,7 +118,7 @@ export async function getUnifiedInbox(
   const priorityOrder: Record<InboxPriority, number> = { high: 0, medium: 1, low: 2 };
   allItems.sort((a, b) => {
     const priDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-    if (priDiff !== 0) return priDiff;
+    if (priDiff !== 0) {return priDiff;}
     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
 

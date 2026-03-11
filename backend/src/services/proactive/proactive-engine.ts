@@ -243,7 +243,7 @@ export async function generateMeetingPrep(context: AIContext, eventId: string): 
     WHERE id = $1
   `, [eventId] as QueryParam[]);
 
-  if (eventRes.rows.length === 0) return null;
+  if (eventRes.rows.length === 0) {return null;}
   const event = eventRes.rows[0] as Record<string, unknown>;
   const attendees: string[] = (event.attendees as string[]) ?? [];
 

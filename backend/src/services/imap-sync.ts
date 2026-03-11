@@ -237,8 +237,8 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
       flags: true,
     }, { uid: true })) {
       // Skip if UID is not actually newer
-      if (msg.uid <= lastSyncUid && !needsFullResync) continue;
-      if (!msg.uid) continue;
+      if (msg.uid <= lastSyncUid && !needsFullResync) {continue;}
+      if (!msg.uid) {continue;}
 
       try {
         // Check if we already have this message (by message-id)
@@ -249,7 +249,7 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
             [messageId],
           );
           if (existing.rows.length > 0) {
-            if (msg.uid > maxUid) maxUid = msg.uid;
+            if (msg.uid > maxUid) {maxUid = msg.uid;}
             continue; // Already synced (maybe via Resend)
           }
         }
@@ -266,7 +266,7 @@ export async function syncAccount(context: AIContext, account: ImapAccount): Pro
         });
       }
 
-      if (msg.uid > maxUid) maxUid = msg.uid;
+      if (msg.uid > maxUid) {maxUid = msg.uid;}
     }
 
     result.lastUid = maxUid;
@@ -514,7 +514,7 @@ export async function syncAllAccounts(): Promise<{ synced: number; failed: numbe
   try {
     const accounts = await getImapAccounts();
 
-    if (accounts.length === 0) return { synced: 0, failed: 0 };
+    if (accounts.length === 0) {return { synced: 0, failed: 0 };}
 
     logger.debug(`IMAP sync starting for ${accounts.length} account(s)`, { operation: 'imapScheduler' });
 

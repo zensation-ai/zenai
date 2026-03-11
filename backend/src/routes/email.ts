@@ -675,7 +675,7 @@ emailRouter.post('/:context/emails/search', apiKeyAuth, requireScope('read'), as
     searchQuery = { text, from, to, after, before, category, priority, status, direction, starred };
   }
 
-  if (limit) searchQuery.limit = Math.min(Number(limit), 50);
+  if (limit) {searchQuery.limit = Math.min(Number(limit), 50);}
 
   const results = await searchEmails(context, searchQuery);
   res.json({ success: true, data: results });

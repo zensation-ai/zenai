@@ -344,7 +344,7 @@ export async function streamToSSE(
           (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
         );
 
-        if (toolUseBlocks.length === 0) break;
+        if (toolUseBlocks.length === 0) {break;}
 
         // Execute each tool and collect results
         const toolResults: Array<{

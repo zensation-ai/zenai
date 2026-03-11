@@ -171,7 +171,7 @@ export async function geocode(address: string): Promise<GeocodingResult | null> 
  * Convert coordinates to an address (reverse geocoding)
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<GeocodingResult | null> {
-  if (!getApiKey()) return null;
+  if (!getApiKey()) {return null;}
 
   try {
     const response = await axios.get(`${BASE_URL}/geocode/json`, {
@@ -184,7 +184,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<Geocodin
     });
 
     const result = response.data.results?.[0];
-    if (!result) return null;
+    if (!result) {return null;}
 
     return {
       lat: result.geometry.location.lat,
@@ -210,7 +210,7 @@ export async function autocomplete(
   input: string,
   options?: { location?: { lat: number; lng: number }; radius?: number; types?: string }
 ): Promise<PlaceAutocompleteResult[]> {
-  if (!getApiKey()) return [];
+  if (!getApiKey()) {return [];}
 
   try {
     const params: Record<string, string | number> = {
@@ -259,7 +259,7 @@ export async function autocomplete(
  * Get detailed information about a place (opening hours, phone, etc.)
  */
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | null> {
-  if (!getApiKey()) return null;
+  if (!getApiKey()) {return null;}
 
   try {
     const response = await axios.get(`${BASE_URL}/place/details/json`, {
@@ -317,7 +317,7 @@ export async function getDirections(
   mode: TravelMode = 'driving',
   departureTime?: Date
 ): Promise<DirectionsResult | null> {
-  if (!getApiKey()) return null;
+  if (!getApiKey()) {return null;}
 
   try {
     const params: Record<string, string | number> = {
@@ -349,7 +349,7 @@ export async function getDirections(
 
     const route = response.data.routes?.[0];
     const leg = route?.legs?.[0];
-    if (!leg) return null;
+    if (!leg) {return null;}
 
     return {
       origin: leg.start_address,
@@ -387,7 +387,7 @@ export async function getDistanceMatrix(
   destinations: string[],
   mode: TravelMode = 'driving'
 ): Promise<DistanceMatrixEntry[]> {
-  if (!getApiKey()) return [];
+  if (!getApiKey()) {return [];}
 
   try {
     const params: Record<string, string | number> = {
@@ -453,7 +453,7 @@ export async function searchNearby(
   lng: number,
   options?: { radius?: number; type?: string; keyword?: string }
 ): Promise<NearbyPlace[]> {
-  if (!getApiKey()) return [];
+  if (!getApiKey()) {return [];}
 
   try {
     const params: Record<string, string | number> = {
@@ -463,8 +463,8 @@ export async function searchNearby(
       language: 'de',
     };
 
-    if (options?.type) params.type = options.type;
-    if (options?.keyword) params.keyword = options.keyword;
+    if (options?.type) {params.type = options.type;}
+    if (options?.keyword) {params.keyword = options.keyword;}
 
     const response = await axios.get(`${BASE_URL}/place/nearbysearch/json`, {
       params,

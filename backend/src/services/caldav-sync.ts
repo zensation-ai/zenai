@@ -160,7 +160,7 @@ export async function updateCalendarAccount(
     params.push(encrypt(updates.password));
   }
 
-  if (setClauses.length === 0) return null;
+  if (setClauses.length === 0) {return null;}
   setClauses.push('updated_at = NOW()');
 
   const result = await queryContext(context, `
@@ -215,7 +215,7 @@ export async function syncAccount(
       totalResult.updated += result.updated;
       totalResult.deleted += result.deleted;
       totalResult.errors += result.errors;
-      if (result.syncToken) totalResult.syncToken = result.syncToken;
+      if (result.syncToken) {totalResult.syncToken = result.syncToken;}
     } catch (err) {
       totalResult.errors++;
       logger.error('Calendar sync failed', err instanceof Error ? err : undefined, {
@@ -315,7 +315,7 @@ async function syncCalendar(
 
   for (const remoteEvent of remoteEvents) {
     const parsed = parseICal(remoteEvent.data);
-    if (!parsed) continue;
+    if (!parsed) {continue;}
 
     seenUids.add(parsed.uid);
     const existing = localByUid.get(parsed.uid);
@@ -478,7 +478,7 @@ let syncInterval: NodeJS.Timeout | null = null;
 const SYNC_CHECK_INTERVAL = 60_000; // Check every minute
 
 export function startCalDAVScheduler(): void {
-  if (syncInterval) return;
+  if (syncInterval) {return;}
 
   syncInterval = setInterval(async () => {
     try {
@@ -540,7 +540,7 @@ export async function pushEventToRemote(
     WHERE e.id = $1
   `, [eventId]);
 
-  if (eventResult.rows.length === 0) return false;
+  if (eventResult.rows.length === 0) {return false;}
   const row = eventResult.rows[0];
 
   const credentials: CalDAVCredentials = {
@@ -552,7 +552,7 @@ export async function pushEventToRemote(
   const calendarsJson = typeof row.calendars === 'string'
     ? JSON.parse(row.calendars) : row.calendars;
   const enabledCal = (calendarsJson as CalendarAccountCalendar[]).find(c => c.enabled);
-  if (!enabledCal) return false;
+  if (!enabledCal) {return false;}
 
   const ical = eventToICal({
     id: row.external_uid as string || row.id as string,
@@ -621,7 +621,7 @@ export async function deleteEventFromRemote(
     WHERE e.id = $1 AND e.external_uid IS NOT NULL
   `, [eventId]);
 
-  if (eventResult.rows.length === 0) return false;
+  if (eventResult.rows.length === 0) {return false;}
   const row = eventResult.rows[0];
 
   const credentials: CalDAVCredentials = {
@@ -633,7 +633,7 @@ export async function deleteEventFromRemote(
   const calendarsJson = typeof row.calendars === 'string'
     ? JSON.parse(row.calendars) : row.calendars;
   const enabledCal = (calendarsJson as CalendarAccountCalendar[]).find(c => c.enabled);
-  if (!enabledCal) return false;
+  if (!enabledCal) {return false;}
 
   return deleteRemoteEvent(
     credentials,

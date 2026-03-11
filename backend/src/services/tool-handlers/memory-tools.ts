@@ -33,7 +33,7 @@ function findFact(
 ): { fact: PersonalizationFact; index: number } | null {
   if (factId) {
     const index = facts.findIndex(f => f.id === factId);
-    if (index >= 0) return { fact: facts[index], index };
+    if (index >= 0) {return { fact: facts[index], index };}
   }
 
   if (searchContent) {
@@ -42,7 +42,7 @@ function findFact(
       f.content.toLowerCase().includes(searchLower) ||
       searchLower.includes(f.content.toLowerCase())
     );
-    if (index >= 0) return { fact: facts[index], index };
+    if (index >= 0) {return { fact: facts[index], index };}
   }
 
   return null;
@@ -219,7 +219,7 @@ Ich werde diese Information nicht mehr verwenden.`;
  */
 export async function handleMemoryUpdateProfile(
   input: Record<string, unknown>,
-  execContext: ToolExecutionContext
+  _execContext: ToolExecutionContext
 ): Promise<string> {
   const category = input.category as string;
   const factKey = input.fact_key as string;

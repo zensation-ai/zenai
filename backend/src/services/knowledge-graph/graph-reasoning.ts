@@ -394,7 +394,7 @@ export async function generateLearningPath(
       [startIdeaId]
     );
 
-    if (startResult.rows.length === 0) return [];
+    if (startResult.rows.length === 0) {return [];}
 
     path.push({
       ideaId: startResult.rows[0].id,
@@ -430,7 +430,7 @@ export async function generateLearningPath(
         [currentId, context, minStrength, preferredTypes, Array.from(visited)]
       );
 
-      if (nextResult.rows.length === 0) break;
+      if (nextResult.rows.length === 0) {break;}
 
       const next = nextResult.rows[0];
       path.push({

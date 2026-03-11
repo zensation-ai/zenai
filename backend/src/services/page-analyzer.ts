@@ -110,7 +110,7 @@ Antworte als JSON mit diesen Feldern:
  */
 export async function quickSummarize(text: string, maxLength = 200): Promise<string | null> {
   const client = getClient();
-  if (!client) return null;
+  if (!client) {return null;}
 
   const truncated = text.length > 4000 ? text.slice(0, 4000) + '...' : text;
 

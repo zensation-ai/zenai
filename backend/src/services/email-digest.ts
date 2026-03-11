@@ -91,10 +91,10 @@ export async function generateEmailDigest(config: DigestConfig): Promise<EmailDi
   ]);
 
   const byCategory: Record<string, number> = {};
-  for (const row of catRes.rows) byCategory[row.ai_category] = parseInt(row.c, 10);
+  for (const row of catRes.rows) {byCategory[row.ai_category] = parseInt(row.c, 10);}
 
   const byPriority: Record<string, number> = {};
-  for (const row of prioRes.rows) byPriority[row.ai_priority] = parseInt(row.c, 10);
+  for (const row of prioRes.rows) {byPriority[row.ai_priority] = parseInt(row.c, 10);}
 
   const stats = {
     total_received: parseInt(receivedRes.rows[0]?.c || '0', 10),
@@ -217,10 +217,10 @@ async function generateDigestNarrative(
 
   // Fallback: generate simple text
   const parts = [`${periodLabel === 'heute' ? 'Heute' : 'Diese Woche'}: ${stats.total_received} E-Mails empfangen, ${stats.total_sent} gesendet.`];
-  if (stats.unread > 0) parts.push(`${stats.unread} ungelesen.`);
-  if (highlights.length > 0) parts.push(`${highlights.length} wichtige E-Mail${highlights.length > 1 ? 's' : ''}.`);
+  if (stats.unread > 0) {parts.push(`${stats.unread} ungelesen.`);}
+  if (highlights.length > 0) {parts.push(`${highlights.length} wichtige E-Mail${highlights.length > 1 ? 's' : ''}.`);}
   const totalActs = actionItems.reduce((s, e) => s + e.items.length, 0);
-  if (totalActs > 0) parts.push(`${totalActs} offene Aufgabe${totalActs > 1 ? 'n' : ''}.`);
+  if (totalActs > 0) {parts.push(`${totalActs} offene Aufgabe${totalActs > 1 ? 'n' : ''}.`);}
   return parts.join(' ');
 }
 
@@ -245,7 +245,7 @@ export function formatDigestForChat(digest: EmailDigest): string {
     for (const h of digest.highlights) {
       const emoji = h.priority === 'urgent' ? '🔴' : '🟠';
       lines.push(`  ${emoji} **${h.subject}** — ${h.from}`);
-      if (h.summary) lines.push(`    _${h.summary}_`);
+      if (h.summary) {lines.push(`    _${h.summary}_`);}
     }
     lines.push('');
   }

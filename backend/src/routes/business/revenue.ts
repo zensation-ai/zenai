@@ -8,7 +8,6 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../../middleware/auth';
 import { asyncHandler, ValidationError } from '../../middleware/errorHandler';
 import { stripeConnector } from '../../services/business';
-import { logger } from '../../utils/logger';
 
 export const revenueRouter = Router();
 

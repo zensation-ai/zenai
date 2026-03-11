@@ -108,7 +108,7 @@ export class MCPClient {
    * List available tools from the remote MCP server
    */
   async listTools(useCache = true): Promise<MCPExternalTool[]> {
-    if (useCache && this.cachedTools) return this.cachedTools;
+    if (useCache && this.cachedTools) {return this.cachedTools;}
 
     const response = await this.request('tools/list');
     const tools = (response.tools as MCPExternalTool[]) || [];
@@ -131,7 +131,7 @@ export class MCPClient {
    * List available resources from the remote MCP server
    */
   async listResources(useCache = true): Promise<MCPExternalResource[]> {
-    if (useCache && this.cachedResources) return this.cachedResources;
+    if (useCache && this.cachedResources) {return this.cachedResources;}
 
     const response = await this.request('resources/list');
     const resources = (response.resources as MCPExternalResource[]) || [];

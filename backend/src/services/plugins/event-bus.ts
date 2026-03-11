@@ -22,7 +22,7 @@ export function subscribe(eventType: string, handler: EventHandler): () => void 
     handlers.set(eventType, new Set());
   }
 
-  handlers.get(eventType)!.add(handler);
+  handlers.get(eventType)?.add(handler);
 
   return () => {
     const set = handlers.get(eventType);
@@ -41,7 +41,7 @@ export function subscribe(eventType: string, handler: EventHandler): () => void 
  */
 export function emit(event: PluginEvent): void {
   const set = handlers.get(event.type);
-  if (!set || set.size === 0) return;
+  if (!set || set.size === 0) {return;}
 
   for (const handler of set) {
     try {
@@ -72,7 +72,7 @@ export function emit(event: PluginEvent): void {
  */
 export async function emitAsync(event: PluginEvent): Promise<void> {
   const set = handlers.get(event.type);
-  if (!set || set.size === 0) return;
+  if (!set || set.size === 0) {return;}
 
   const promises: Promise<void>[] = [];
 

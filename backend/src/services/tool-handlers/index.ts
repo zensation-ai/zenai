@@ -779,7 +779,7 @@ async function handleUpdateIdea(
   execContext: ToolExecutionContext
 ): Promise<string> {
   const ideaId = input.idea_id as string;
-  if (!ideaId) return 'Fehler: Keine Idee-ID angegeben.';
+  if (!ideaId) {return 'Fehler: Keine Idee-ID angegeben.';}
 
   const context = execContext.aiContext;
   const updates: string[] = [];
@@ -832,7 +832,7 @@ async function handleArchiveIdea(
   execContext: ToolExecutionContext
 ): Promise<string> {
   const ideaId = input.idea_id as string;
-  if (!ideaId) return 'Fehler: Keine Idee-ID angegeben.';
+  if (!ideaId) {return 'Fehler: Keine Idee-ID angegeben.';}
 
   const context = execContext.aiContext;
 
@@ -860,7 +860,7 @@ async function handleDeleteIdea(
   execContext: ToolExecutionContext
 ): Promise<string> {
   const ideaId = input.idea_id as string;
-  if (!ideaId) return 'Fehler: Keine Idee-ID angegeben.';
+  if (!ideaId) {return 'Fehler: Keine Idee-ID angegeben.';}
 
   const context = execContext.aiContext;
 

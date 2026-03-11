@@ -263,7 +263,7 @@ browserRouter.delete('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope
  * Analyze page content with AI
  */
 browserRouter.post('/:context/browser/analyze', apiKeyAuth, asyncHandler(async (req, res) => {
-  const context = validateContextParam(req.params.context);
+  validateContextParam(req.params.context); // validates context, throws on invalid
   const { url, title, text, domain } = req.body;
 
   if (!url || !text) {

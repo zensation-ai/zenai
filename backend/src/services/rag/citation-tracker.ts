@@ -98,9 +98,9 @@ function inferSourceType(result: EnhancedResult): SourceType {
   // Check sources array for hints
   const sourcesStr = (result.sources || []).join(' ').toLowerCase();
 
-  if (sourcesStr.includes('web') || sourcesStr.includes('url')) return 'web';
-  if (sourcesStr.includes('chat') || sourcesStr.includes('conversation')) return 'chat';
-  if (sourcesStr.includes('document') || sourcesStr.includes('doc')) return 'document';
+  if (sourcesStr.includes('web') || sourcesStr.includes('url')) {return 'web';}
+  if (sourcesStr.includes('chat') || sourcesStr.includes('conversation')) {return 'chat';}
+  if (sourcesStr.includes('document') || sourcesStr.includes('doc')) {return 'document';}
 
   // Default to idea (most common in ZenAI)
   return 'idea';
@@ -118,11 +118,11 @@ export function formatCitationContext(
   results: EnhancedResult[],
   citations: CitationResult
 ): string {
-  if (results.length === 0) return '';
+  if (results.length === 0) {return '';}
 
   const sections = results.map((result) => {
     const citationNum = citations.citationMap.get(result.id);
-    if (citationNum === undefined) return '';
+    if (citationNum === undefined) {return '';}
 
     const content = result.content || result.summary || '';
     const title = result.title || 'Unbenannt';
@@ -172,7 +172,7 @@ export async function saveCitations(
   citations: SourceAttribution[],
   context: AIContext
 ): Promise<void> {
-  if (citations.length === 0) return;
+  if (citations.length === 0) {return;}
 
   try {
     // Insert all citations in a single query using UNNEST

@@ -158,7 +158,7 @@ function formatFacts(rows: PersonalFactRow[]): string {
  * Fast heuristic: no embedding computation needed.
  */
 function scoreFactRelevance(fact: PersonalFactRow, queryWords: Set<string>): number {
-  if (queryWords.size === 0) return 0;
+  if (queryWords.size === 0) {return 0;}
 
   const factText = `${fact.category} ${fact.fact_key} ${fact.fact_value}`.toLowerCase();
   const factKeyLower = fact.fact_key.toLowerCase();
@@ -193,7 +193,7 @@ function scoreFactRelevance(fact: PersonalFactRow, queryWords: Set<string>): num
  */
 export async function getPersonalFacts(): Promise<string | null> {
   const rows = await loadAllFacts();
-  if (rows.length === 0) return null;
+  if (rows.length === 0) {return null;}
   return formatFacts(rows);
 }
 
@@ -212,7 +212,7 @@ export async function getPersonalFacts(): Promise<string | null> {
  */
 export async function getPersonalFactsPromptSection(query?: string): Promise<string> {
   const allRows = await loadAllFacts();
-  if (allRows.length === 0) return '';
+  if (allRows.length === 0) {return '';}
 
   let selectedRows: PersonalFactRow[];
 
@@ -236,7 +236,7 @@ export async function getPersonalFactsPromptSection(query?: string): Promise<str
       .map(f => ({ fact: f, score: scoreFactRelevance(f, queryWords) }))
       .sort((a, b) => {
         // Sort by relevance score, then by confidence
-        if (b.score !== a.score) return b.score - a.score;
+        if (b.score !== a.score) {return b.score - a.score;}
         return b.fact.confidence - a.fact.confidence;
       });
 
@@ -249,7 +249,7 @@ export async function getPersonalFactsPromptSection(query?: string): Promise<str
   }
 
   const formatted = formatFacts(selectedRows);
-  if (!formatted) return '';
+  if (!formatted) {return '';}
 
   return `\n\n${CONFIG.SECTION_HEADER}\nFolgendes weißt du über den Benutzer (aus persönlichen Gesprächen):\n${formatted}\n${CONFIG.SECTION_FOOTER}`;
 }

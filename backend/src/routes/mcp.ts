@@ -34,7 +34,6 @@ import { Router, Request, Response } from 'express';
 import { createMCPServer } from '../mcp';
 import { mcpConnectionManager } from '../services/mcp-connections';
 import { isValidContext, AIContext } from '../utils/database-context';
-import { logger } from '../utils/logger';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 

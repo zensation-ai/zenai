@@ -64,7 +64,7 @@ const DEFAULTS = {
  * This is a fast approximation — no tiktoken dependency needed.
  */
 export function estimateTokens(text: string): number {
-  if (!text) return 0;
+  if (!text) {return 0;}
   // Split on whitespace, count words, multiply by ~1.3 for sub-word tokens
   const wordCount = text.split(/\s+/).filter(Boolean).length;
   return Math.ceil(wordCount * 1.3);
@@ -110,7 +110,7 @@ function splitByTokens(
     chunks.push(words.slice(start, end).join(' '));
     start = end - overlapWords;
     // Prevent infinite loop if overlap >= maxWords
-    if (start >= end) break;
+    if (start >= end) {break;}
   }
 
   return chunks;
@@ -120,7 +120,7 @@ function splitByTokens(
  * Compute cosine similarity between two embedding vectors.
  */
 function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length || a.length === 0) return 0;
+  if (a.length !== b.length || a.length === 0) {return 0;}
 
   let dotProduct = 0;
   let normA = 0;
@@ -133,7 +133,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
   }
 
   const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-  if (denominator === 0) return 0;
+  if (denominator === 0) {return 0;}
 
   return dotProduct / denominator;
 }

@@ -19,7 +19,6 @@ import { AIContext, queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import {
   MCPClient,
-  MCPClientConfig,
   MCPExternalTool,
   MCPExternalResource,
   MCPToolResult,
@@ -196,7 +195,7 @@ class MCPConnectionManager {
     if (data.headers !== undefined) { sets.push(`headers = $${idx++}`); params.push(data.headers ? JSON.stringify(data.headers) : null); }
     if (data.enabled !== undefined) { sets.push(`enabled = $${idx++}`); params.push(data.enabled); }
 
-    if (sets.length === 0) return this.getConnection(context, connectionId);
+    if (sets.length === 0) {return this.getConnection(context, connectionId);}
 
     sets.push('updated_at = NOW()');
     params.push(connectionId);
@@ -205,7 +204,7 @@ class MCPConnectionManager {
       UPDATE mcp_connections SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *
     `, params);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const conn = this.rowToConnection(result.rows[0]);
     this.connections.set(conn.id, conn);
@@ -253,7 +252,7 @@ class MCPConnectionManager {
    */
   async checkConnection(context: AIContext, connectionId: string): Promise<MCPConnection | null> {
     const client = this.clients.get(connectionId);
-    if (!client) return null;
+    if (!client) {return null;}
 
     let status: MCPConnectionStatus = 'disconnected';
     let toolCount = 0;
@@ -304,10 +303,10 @@ class MCPConnectionManager {
     const connections = await this.listConnections(context);
 
     for (const conn of connections) {
-      if (!conn.enabled || conn.status !== 'connected') continue;
+      if (!conn.enabled || conn.status !== 'connected') {continue;}
 
       const client = this.clients.get(conn.id);
-      if (!client) continue;
+      if (!client) {continue;}
 
       try {
         const tools = await client.listTools();
@@ -371,10 +370,10 @@ class MCPConnectionManager {
     const connections = await this.listConnections(context);
 
     for (const conn of connections) {
-      if (!conn.enabled || conn.status !== 'connected') continue;
+      if (!conn.enabled || conn.status !== 'connected') {continue;}
 
       const client = this.clients.get(conn.id);
-      if (!client) continue;
+      if (!client) {continue;}
 
       try {
         const resources = await client.listResources();

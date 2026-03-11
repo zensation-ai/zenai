@@ -36,7 +36,7 @@ function validateContextParam(req: Request, res: Response): AIContext | null {
 // GET /api/:context/contacts
 router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   const filters: contactsService.ContactFilters = {
     search: req.query.search as string | undefined,
@@ -55,7 +55,7 @@ router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response
 // GET /api/:context/contacts/stats
 router.get('/:context/contacts/stats', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   const stats = await contactsService.getContactStats(context);
   res.json({ success: true, data: stats });
@@ -64,7 +64,7 @@ router.get('/:context/contacts/stats', asyncHandler(async (req: Request, res: Re
 // GET /api/:context/contacts/follow-ups
 router.get('/:context/contacts/follow-ups', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
   const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
@@ -75,7 +75,7 @@ router.get('/:context/contacts/follow-ups', asyncHandler(async (req: Request, re
 // GET /api/:context/contacts/:id
 router.get('/:context/contacts/:id', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
@@ -91,7 +91,7 @@ router.get('/:context/contacts/:id', asyncHandler(async (req: Request, res: Resp
 // POST /api/:context/contacts
 router.post('/:context/contacts', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   const { display_name } = req.body;
   if (!display_name || typeof display_name !== 'string') {
@@ -105,7 +105,7 @@ router.post('/:context/contacts', requireScope('write'), asyncHandler(async (req
 // PUT /api/:context/contacts/:id
 router.put('/:context/contacts/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
@@ -121,7 +121,7 @@ router.put('/:context/contacts/:id', requireScope('write'), asyncHandler(async (
 // DELETE /api/:context/contacts/:id
 router.delete('/:context/contacts/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
@@ -141,7 +141,7 @@ router.delete('/:context/contacts/:id', requireScope('write'), asyncHandler(asyn
 // GET /api/:context/contacts/:id/timeline
 router.get('/:context/contacts/:id/timeline', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
@@ -156,7 +156,7 @@ router.get('/:context/contacts/:id/timeline', asyncHandler(async (req: Request, 
 // POST /api/:context/contacts/:id/interactions
 router.post('/:context/contacts/:id/interactions', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
@@ -181,7 +181,7 @@ router.post('/:context/contacts/:id/interactions', requireScope('write'), asyncH
 // GET /api/:context/organizations
 router.get('/:context/organizations', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   const filters: contactsService.OrganizationFilters = {
     search: req.query.search as string | undefined,
@@ -197,7 +197,7 @@ router.get('/:context/organizations', asyncHandler(async (req: Request, res: Res
 // GET /api/:context/organizations/:id
 router.get('/:context/organizations/:id', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid organization ID' });
@@ -213,7 +213,7 @@ router.get('/:context/organizations/:id', asyncHandler(async (req: Request, res:
 // POST /api/:context/organizations
 router.post('/:context/organizations', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   const { name } = req.body;
   if (!name || typeof name !== 'string') {
@@ -227,7 +227,7 @@ router.post('/:context/organizations', requireScope('write'), asyncHandler(async
 // PUT /api/:context/organizations/:id
 router.put('/:context/organizations/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid organization ID' });
@@ -243,7 +243,7 @@ router.put('/:context/organizations/:id', requireScope('write'), asyncHandler(as
 // DELETE /api/:context/organizations/:id
 router.delete('/:context/organizations/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
-  if (!context) return;
+  if (!context) { return; }
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid organization ID' });

@@ -98,26 +98,26 @@ export function selectStrategy(query: string): StrategySelection {
   let denseScore = 0;
 
   // Short, specific queries favor sparse
-  if (wordCount <= 3) sparseScore += 2;
-  if (wordCount <= 2) sparseScore += 1;
+  if (wordCount <= 3) {sparseScore += 2;}
+  if (wordCount <= 2) {sparseScore += 1;}
 
   // Keyword indicators favor sparse
-  if (hasKeywordIndicators) sparseScore += 3;
-  if (hasEntities) sparseScore += 1;
+  if (hasKeywordIndicators) {sparseScore += 3;}
+  if (hasEntities) {sparseScore += 1;}
 
   // Low word diversity suggests keyword search
-  if (diversityRatio < 0.7 && wordCount > 2) sparseScore += 1;
+  if (diversityRatio < 0.7 && wordCount > 2) {sparseScore += 1;}
 
   // Questions favor dense
-  if (hasQuestionMark) denseScore += 2;
-  if (hasQuestionWord) denseScore += 2;
+  if (hasQuestionMark) {denseScore += 2;}
+  if (hasQuestionWord) {denseScore += 2;}
 
   // Longer, more complex queries favor dense
-  if (wordCount >= 6) denseScore += 1;
-  if (wordCount >= 10) denseScore += 1;
+  if (wordCount >= 6) {denseScore += 1;}
+  if (wordCount >= 10) {denseScore += 1;}
 
   // High word diversity suggests conceptual query
-  if (diversityRatio > 0.85 && wordCount > 3) denseScore += 1;
+  if (diversityRatio > 0.85 && wordCount > 3) {denseScore += 1;}
 
   // Determine strategy
   const diff = Math.abs(denseScore - sparseScore);
@@ -160,7 +160,7 @@ export async function denseRetrieve(
 ): Promise<RetrievalResult[]> {
   try {
     const queryEmbedding = await generateEmbedding(query);
-    if (queryEmbedding.length === 0) return [];
+    if (queryEmbedding.length === 0) {return [];}
 
     const result = await queryContext(
       context,
@@ -205,7 +205,7 @@ export async function sparseRetrieve(
       .filter(t => t.length > 2)
       .join(' & ');
 
-    if (!searchTerms) return [];
+    if (!searchTerms) {return [];}
 
     const result = await queryContext(
       context,
@@ -278,7 +278,7 @@ export function rrfFusion(
   const sorted = Array.from(scoreMap.values())
     .sort((a, b) => b.rrfScore - a.rrfScore);
 
-  if (sorted.length === 0) return [];
+  if (sorted.length === 0) {return [];}
 
   const maxRRF = sorted[0].rrfScore;
 

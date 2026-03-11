@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
+import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';

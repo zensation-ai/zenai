@@ -235,7 +235,7 @@ export async function generateEnhancedResponse(
         ragDecision.urgency === 'required';
 
       let ragResults: EnhancedResult[];
-      let ragMetadata: EnhancedRAGResult | undefined;
+      let _ragMetadata: EnhancedRAGResult | undefined;
 
       if (useDeepRAG) {
         // Full GraphRAG: Knowledge Graph traversal + HyDE + Cross-Encoder
@@ -243,7 +243,7 @@ export async function generateEnhancedResponse(
           maxResults: retrievalConfig.maxResults,
           maxHops: 2,
         });
-        ragMetadata = graphResult;
+        _ragMetadata = graphResult;
         ragResults = graphResult.results;
 
         // Build quality metrics

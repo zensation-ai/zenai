@@ -430,7 +430,7 @@ export async function updateBookmark(
     params.push(updates.favicon_url);
   }
 
-  if (sets.length === 0) return getBookmark(context, id);
+  if (sets.length === 0) {return getBookmark(context, id);}
 
   sets.push('updated_at = NOW()');
 

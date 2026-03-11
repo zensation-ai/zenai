@@ -101,7 +101,7 @@ class AgentRuntime {
    * Initialize runtime: load all active agents from DB
    */
   async start(): Promise<void> {
-    if (this.started) return;
+    if (this.started) {return;}
 
     const contexts: AIContext[] = ['personal', 'work', 'learning', 'creative'];
     let totalLoaded = 0;
@@ -152,14 +152,14 @@ class AgentRuntime {
       const def = state.definition;
 
       // Must be in same context
-      if (def.context !== event.context) continue;
+      if (def.context !== event.context) {continue;}
 
       // Must be active
-      if (def.status !== 'active') continue;
+      if (def.status !== 'active') {continue;}
 
       // Check if any trigger matches
       const matchingTrigger = def.triggers.find(t => t.type === event.type);
-      if (!matchingTrigger) continue;
+      if (!matchingTrigger) {continue;}
 
       // Check daily limits
       this.resetDailyCountersIfNeeded(state);
@@ -194,7 +194,7 @@ class AgentRuntime {
   private async executeAgent(
     state: RunningAgentState,
     event: AgentEvent,
-    trigger: AgentTrigger
+    _trigger: AgentTrigger
   ): Promise<AgentExecution> {
     const def = state.definition;
     const executionId = uuidv4();
@@ -344,7 +344,7 @@ class AgentRuntime {
       WHERE e.id = $1 AND e.approval_status = 'pending'
     `, [executionId]);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const row = result.rows[0];
 
@@ -499,7 +499,7 @@ class AgentRuntime {
     if (data.maxActionsPerDay !== undefined) { sets.push(`max_actions_per_day = $${idx++}`); params.push(data.maxActionsPerDay); }
     if (data.tokenBudgetDaily !== undefined) { sets.push(`token_budget_daily = $${idx++}`); params.push(data.tokenBudgetDaily); }
 
-    if (sets.length === 0) return this.getAgent(context, agentId);
+    if (sets.length === 0) {return this.getAgent(context, agentId);}
 
     sets.push(`updated_at = NOW()`);
     params.push(agentId);
@@ -508,7 +508,7 @@ class AgentRuntime {
       UPDATE agent_definitions SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *
     `, params);
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const def = this.rowToDefinition(result.rows[0]);
 
@@ -539,7 +539,7 @@ class AgentRuntime {
       WHERE id = $1 RETURNING *
     `, [agentId]);
 
-    if (result.rows.length === 0) return false;
+    if (result.rows.length === 0) {return false;}
 
     const def = this.rowToDefinition(result.rows[0]);
     this.agents.set(agentId, {

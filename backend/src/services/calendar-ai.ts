@@ -74,7 +74,7 @@ export async function generateDailyBriefing(
   // Calculate free slots (working hours 8-18)
   const freeSlots = calculateFreeSlots(events, dayStart, 8, 18);
   const busyMinutes = events.reduce((sum, e) => {
-    if (!e.end_time) return sum + 60;
+    if (!e.end_time) {return sum + 60;}
     return sum + (new Date(e.end_time).getTime() - new Date(e.start_time).getTime()) / 60000;
   }, 0);
 
@@ -282,9 +282,9 @@ export async function suggestTimeSlots(
 
         // Prefer preferred time
         const hour = slotStart.getHours();
-        if (params.preferred_time === 'morning' && hour >= 8 && hour < 12) score += 20;
-        else if (params.preferred_time === 'afternoon' && hour >= 12 && hour < 17) score += 20;
-        else if (params.preferred_time === 'evening' && hour >= 17) score += 20;
+        if (params.preferred_time === 'morning' && hour >= 8 && hour < 12) {score += 20;}
+        else if (params.preferred_time === 'afternoon' && hour >= 12 && hour < 17) {score += 20;}
+        else if (params.preferred_time === 'evening' && hour >= 17) {score += 20;}
 
         // Boost based on historical preference
         score += Math.min(hourHistogram[hour] * 3, 15);
@@ -292,8 +292,8 @@ export async function suggestTimeSlots(
         // Buffer scoring: prefer slots with buffer before/after
         const minutesBefore = getMinutesToPrevEvent(dayEvents, slotStart);
         const minutesAfter = getMinutesToNextEvent(dayEvents, slotEnd);
-        if (minutesBefore >= 30) score += 5;
-        if (minutesAfter >= 30) score += 5;
+        if (minutesBefore >= 30) {score += 5;}
+        if (minutesAfter >= 30) {score += 5;}
 
         // Earlier in the week is slightly preferred
         const daysFromNow = Math.floor((slotStart.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
@@ -407,13 +407,13 @@ export async function detectConflicts(
   const eventsByDay = new Map<string, CalendarEvent[]>();
   for (const e of events) {
     const day = new Date(e.start_time).toISOString().split('T')[0];
-    if (!eventsByDay.has(day)) eventsByDay.set(day, []);
-    eventsByDay.get(day)!.push(e);
+    if (!eventsByDay.has(day)) { eventsByDay.set(day, []); }
+    eventsByDay.get(day)?.push(e);
   }
 
   for (const [day, dayEvents] of eventsByDay) {
     const totalMinutes = dayEvents.reduce((sum, e) => {
-      if (!e.end_time) return sum + 60;
+      if (!e.end_time) {return sum + 60;}
       return sum + (new Date(e.end_time).getTime() - new Date(e.start_time).getTime()) / 60000;
     }, 0);
 
@@ -546,7 +546,7 @@ function getMinutesToPrevEvent(events: CalendarEvent[], time: Date): number {
     const eEnd = e.end_time ? new Date(e.end_time) : new Date(new Date(e.start_time).getTime() + 60 * 60 * 1000);
     if (eEnd <= time) {
       const gap = (time.getTime() - eEnd.getTime()) / 60000;
-      if (gap < minGap) minGap = gap;
+      if (gap < minGap) {minGap = gap;}
     }
   }
   return minGap === Infinity ? 999 : minGap;
@@ -558,7 +558,7 @@ function getMinutesToNextEvent(events: CalendarEvent[], time: Date): number {
     const eStart = new Date(e.start_time);
     if (eStart >= time) {
       const gap = (eStart.getTime() - time.getTime()) / 60000;
-      if (gap < minGap) minGap = gap;
+      if (gap < minGap) {minGap = gap;}
     }
   }
   return minGap === Infinity ? 999 : minGap;

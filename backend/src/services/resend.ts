@@ -77,13 +77,13 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     to: options.to,
     subject: options.subject,
   };
-  if (options.cc) params.cc = options.cc;
-  if (options.bcc) params.bcc = options.bcc;
-  if (options.replyTo) params.replyTo = options.replyTo;
-  if (options.html) params.html = options.html;
-  if (options.text) params.text = options.text;
-  if (options.tags) params.tags = options.tags;
-  if (options.headers) params.headers = options.headers;
+  if (options.cc) {params.cc = options.cc;}
+  if (options.bcc) {params.bcc = options.bcc;}
+  if (options.replyTo) {params.replyTo = options.replyTo;}
+  if (options.html) {params.html = options.html;}
+  if (options.text) {params.text = options.text;}
+  if (options.tags) {params.tags = options.tags;}
+  if (options.headers) {params.headers = options.headers;}
   if (options.attachments) {
     params.attachments = options.attachments.map(a => ({
       filename: a.filename,

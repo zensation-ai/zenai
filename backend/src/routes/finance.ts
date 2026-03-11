@@ -61,7 +61,7 @@ router.get('/:context/finance/accounts', asyncHandler(async (req: Request, res: 
 }));
 
 router.get('/:context/finance/accounts/:id', asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const account = await financeService.getAccount(getContext(req), req.params.id);
   if (!account) {
     res.status(404).json({ success: false, error: 'Account not found' });
@@ -76,7 +76,7 @@ router.post('/:context/finance/accounts', requireScope('write'), asyncHandler(as
 }));
 
 router.put('/:context/finance/accounts/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const account = await financeService.updateAccount(getContext(req), req.params.id, req.body);
   if (!account) {
     res.status(404).json({ success: false, error: 'Account not found' });
@@ -86,7 +86,7 @@ router.put('/:context/finance/accounts/:id', requireScope('write'), asyncHandler
 }));
 
 router.delete('/:context/finance/accounts/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const deleted = await financeService.deleteAccount(getContext(req), req.params.id);
   if (!deleted) {
     res.status(404).json({ success: false, error: 'Account not found' });
@@ -119,7 +119,7 @@ router.get('/:context/finance/transactions', asyncHandler(async (req: Request, r
 }));
 
 router.get('/:context/finance/transactions/:id', asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const tx = await financeService.getTransaction(getContext(req), req.params.id);
   if (!tx) {
     res.status(404).json({ success: false, error: 'Transaction not found' });
@@ -134,7 +134,7 @@ router.post('/:context/finance/transactions', requireScope('write'), asyncHandle
 }));
 
 router.put('/:context/finance/transactions/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const tx = await financeService.updateTransaction(getContext(req), req.params.id, req.body);
   if (!tx) {
     res.status(404).json({ success: false, error: 'Transaction not found' });
@@ -144,7 +144,7 @@ router.put('/:context/finance/transactions/:id', requireScope('write'), asyncHan
 }));
 
 router.delete('/:context/finance/transactions/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const deleted = await financeService.deleteTransaction(getContext(req), req.params.id);
   if (!deleted) {
     res.status(404).json({ success: false, error: 'Transaction not found' });
@@ -164,7 +164,7 @@ router.get('/:context/finance/budgets', asyncHandler(async (req: Request, res: R
 }));
 
 router.get('/:context/finance/budgets/:id', asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const budget = await financeService.getBudget(getContext(req), req.params.id);
   if (!budget) {
     res.status(404).json({ success: false, error: 'Budget not found' });
@@ -179,7 +179,7 @@ router.post('/:context/finance/budgets', requireScope('write'), asyncHandler(asy
 }));
 
 router.put('/:context/finance/budgets/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const budget = await financeService.updateBudget(getContext(req), req.params.id, req.body);
   if (!budget) {
     res.status(404).json({ success: false, error: 'Budget not found' });
@@ -189,7 +189,7 @@ router.put('/:context/finance/budgets/:id', requireScope('write'), asyncHandler(
 }));
 
 router.delete('/:context/finance/budgets/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const deleted = await financeService.deleteBudget(getContext(req), req.params.id);
   if (!deleted) {
     res.status(404).json({ success: false, error: 'Budget not found' });
@@ -209,7 +209,7 @@ router.get('/:context/finance/goals', asyncHandler(async (req: Request, res: Res
 }));
 
 router.get('/:context/finance/goals/:id', asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const goal = await financeService.getGoal(getContext(req), req.params.id);
   if (!goal) {
     res.status(404).json({ success: false, error: 'Goal not found' });
@@ -224,7 +224,7 @@ router.post('/:context/finance/goals', requireScope('write'), asyncHandler(async
 }));
 
 router.put('/:context/finance/goals/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const goal = await financeService.updateGoal(getContext(req), req.params.id, req.body);
   if (!goal) {
     res.status(404).json({ success: false, error: 'Goal not found' });
@@ -234,7 +234,7 @@ router.put('/:context/finance/goals/:id', requireScope('write'), asyncHandler(as
 }));
 
 router.delete('/:context/finance/goals/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  if (!validateId(res, req.params.id)) return;
+  if (!validateId(res, req.params.id)) {return;}
   const deleted = await financeService.deleteGoal(getContext(req), req.params.id);
   if (!deleted) {
     res.status(404).json({ success: false, error: 'Goal not found' });

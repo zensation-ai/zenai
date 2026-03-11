@@ -24,7 +24,6 @@ import { getUserProfile, getRecommendations } from '../services/user-profile';
 import { AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
 
 const router = Router();
 

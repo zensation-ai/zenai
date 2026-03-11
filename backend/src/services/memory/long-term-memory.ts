@@ -209,20 +209,20 @@ const CONFIG = {
  */
 function inferDecayClass(factType: string, source: string): DecayClass {
   // Explicit goals and core identity facts should persist
-  if (factType === 'goal' && source === 'explicit') return 'permanent';
+  if (factType === 'goal' && source === 'explicit') {return 'permanent';}
 
   // Explicit preferences are stable
-  if (factType === 'preference' && source === 'explicit') return 'slow_decay';
+  if (factType === 'preference' && source === 'explicit') {return 'slow_decay';}
 
   // Knowledge from user is durable
-  if (factType === 'knowledge' && source === 'explicit') return 'slow_decay';
+  if (factType === 'knowledge' && source === 'explicit') {return 'slow_decay';}
 
   // Consolidated facts have been verified
-  if (source === 'consolidated') return 'normal_decay';
+  if (source === 'consolidated') {return 'normal_decay';}
 
   // Behaviors and context change fast
-  if (factType === 'behavior') return 'normal_decay';
-  if (factType === 'context') return 'fast_decay';
+  if (factType === 'behavior') {return 'normal_decay';}
+  if (factType === 'context') {return 'fast_decay';}
 
   // Default for inferred knowledge
   return 'normal_decay';
@@ -928,7 +928,7 @@ Antworte als JSON:
             queryLower.includes(fact.content.toLowerCase());
           const isRelevant = textMatch || fact.confidence >= 0.8;
 
-          if (!isRelevant) return null;
+          if (!isRelevant) {return null;}
 
           // Composite importance score (Phase 42)
           const compositeScore = this.computeCompositeImportance(fact);
@@ -1134,7 +1134,7 @@ Antworte als JSON:
    */
   removeFact(context: AIContext, factId: string): boolean {
     const memory = this.memories.get(context);
-    if (!memory) return false;
+    if (!memory) {return false;}
 
     const index = memory.facts.findIndex(f => f.id === factId);
     if (index >= 0) {

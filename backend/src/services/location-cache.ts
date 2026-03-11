@@ -34,7 +34,7 @@ export async function getCachedGeocode(
       [normalized]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const row = result.rows[0];
     return {
@@ -101,7 +101,7 @@ export async function getCachedPlaceDetails(
       [placeId]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const row = result.rows[0];
     return {
