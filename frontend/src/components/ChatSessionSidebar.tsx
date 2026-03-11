@@ -68,6 +68,13 @@ function ChatSessionSidebarComponent({
     }
   }, [activeSessionId, fetchSessions]);
 
+  // Refresh when a new message is sent (session title/updatedAt may change)
+  useEffect(() => {
+    const handler = () => { fetchSessions(); };
+    window.addEventListener('zenai-chat-message-sent', handler);
+    return () => { window.removeEventListener('zenai-chat-message-sent', handler); };
+  }, [fetchSessions]);
+
   const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
     setDeletingId(sessionId);

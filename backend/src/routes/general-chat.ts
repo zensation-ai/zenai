@@ -33,7 +33,8 @@ import { validateBody } from '../utils/schemas';
 import { trackActivity } from '../services/activity-tracker';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
 import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
-import { detectChatMode } from '../services/chat-modes';
+import { detectChatMode, getDefaultToolsForMode } from '../services/chat-modes';
+import { executeWithTools, ToolExecutionContext } from '../services/claude/tool-use';
 import { isValidThinkingMode, getAvailableModes, applyThinkingMode, ThinkingMode } from '../services/thinking-partner';
 import {
   buildCompactionConfig,
@@ -685,7 +686,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
     } else {
       // Use dynamic budget system for retrieval-worthy queries
       const taskType = classifyTaskType(message);
-      const budgetRec = await calculateDynamicBudget(message, taskType, 'personal');
+      const budgetRec = await calculateDynamicBudget(message, taskType, contextType);
       adaptiveThinkingBudget = budgetRec.recommendedBudget;
 
       logger.info('Adaptive thinking budget calculated', {
@@ -705,6 +706,91 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
       error: error instanceof Error ? error.message : 'Unknown',
       fallbackBudget: thinkingBudget,
     });
+  }
+
+  // === Tool Execution for Streaming (Phase 31 Fix) ===
+  // When mode detection indicates tool use is needed, execute tools BEFORE streaming.
+  // The tool results are injected into the conversation context so the streamed response
+  // includes tool-derived information naturally.
+  let toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }> = [];
+  let toolEnhancedMessages = messages;
+
+  if (modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent') {
+    const tools = modeResult.suggestedTools || getDefaultToolsForMode(modeResult.mode);
+    const executionContext: ToolExecutionContext = {
+      aiContext: contextType,
+      sessionId: id,
+    };
+
+    // Add tool usage instructions to system prompt
+    systemPrompt += `\n\n[WERKZEUG-MODUS]\nDu hast Zugriff auf Werkzeuge um dem Benutzer zu helfen. Nutze sie proaktiv wenn sinnvoll.`;
+
+    try {
+      logger.info('Executing tools before streaming', {
+        sessionId: id,
+        mode: modeResult.mode,
+        toolCount: tools.length,
+      });
+
+      const toolResult = await executeWithTools(
+        messages,
+        tools.length > 0 ? tools : 'all',
+        {
+          systemPrompt,
+          maxIterations: modeResult.mode === 'agent' ? 5 : 3,
+          temperature: 0.7,
+          executionContext,
+        }
+      );
+
+      toolsCalled = toolResult.toolsCalled;
+
+      if (toolsCalled.length > 0) {
+        // Inject tool results as context for the streaming response.
+        // We add a synthetic assistant+user exchange so Claude sees the tool results.
+        const toolSummary = toolsCalled
+          .map(t => `[Tool: ${t.name}] ${t.result.slice(0, 500)}`)
+          .join('\n\n');
+
+        toolEnhancedMessages = [
+          ...messages,
+          {
+            role: 'assistant' as const,
+            content: `Ich nutze Werkzeuge um diese Anfrage zu bearbeiten...\n\n${toolSummary}`,
+          },
+          {
+            role: 'user' as const,
+            content: `Basierend auf den Werkzeug-Ergebnissen, bitte antworte ausführlich auf meine vorherige Frage: "${message}"`,
+          },
+        ];
+
+        logger.info('Tool execution complete, streaming with results', {
+          sessionId: id,
+          toolsCalled: toolsCalled.map(t => t.name),
+          iterations: toolResult.iterations,
+        });
+      } else if (toolResult.response) {
+        // Tools were available but Claude chose not to use them - use the direct response.
+        // Inject it as prior context so the streamed reply is based on it.
+        toolEnhancedMessages = [
+          ...messages.slice(0, -1), // all except the last user message
+          {
+            role: 'assistant' as const,
+            content: toolResult.response,
+          },
+          {
+            role: 'user' as const,
+            content: `Bitte formuliere diese Antwort ausführlich und im Chat-Format: "${toolResult.response.slice(0, 200)}"`,
+          },
+        ];
+      }
+    } catch (error) {
+      // Fallback: stream without tools if tool execution fails
+      logger.warn('Tool execution failed for streaming, continuing without tools', {
+        sessionId: id,
+        error: error instanceof Error ? error.message : 'Unknown',
+      });
+    }
   }
 
   // Setup SSE and stream response
@@ -737,7 +823,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         let dataStr = '';
         for (const line of lines) {
           if (line.startsWith('event: ')) {eventType = line.slice(7).trim();}
-          else if (line.startsWith('data: ')) {dataStr = line.slice(6);}
+          else if (line.startsWith('data:')) {dataStr = line.startsWith('data: ') ? line.slice(6) : line.slice(5);}
         }
 
         if (eventType && dataStr) {
@@ -765,11 +851,19 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
   res.write = interceptWrite;
 
   try {
+    // Send tool execution info via SSE before streaming the response
+    if (toolsCalled.length > 0) {
+      const toolInfoEvent = `event: tool_use\ndata: ${JSON.stringify({
+        tools: toolsCalled.map(t => ({ name: t.name, result: t.result.slice(0, 200) })),
+      })}\n\n`;
+      originalWrite(toolInfoEvent);
+    }
+
     // Stream the response with adaptive thinking + compaction
     if (enableThinking) {
       await thinkingStream(
         res,
-        messages,
+        toolEnhancedMessages,
         systemPrompt,
         adaptiveThinkingBudget,
         compactionConfig,
@@ -777,7 +871,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
       );
     } else {
       // Simple queries: skip thinking entirely for faster response
-      await streamToSSE(res, messages, {
+      await streamToSSE(res, toolEnhancedMessages, {
         enableThinking: false,
         systemPrompt,
         temperature: 0.7,
@@ -807,6 +901,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         sessionId: id,
         responseLength: fullResponse.length,
         hadThinking: thinkingContent.length > 0,
+        toolsUsed: toolsCalled.length > 0 ? toolsCalled.map(t => t.name) : undefined,
       });
     } else {
       logger.warn('Stream completed with no content - assistant message not stored', { sessionId: id });
