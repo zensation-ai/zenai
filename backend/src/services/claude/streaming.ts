@@ -248,10 +248,14 @@ export async function streamToSSE(
       stream.abort();
     }, 90000);
 
-    // Handle stream-level errors (connection lost, API errors)
+    // Handle stream-level errors (connection lost, API errors, timeout abort)
     stream.on('error', (err: Error) => {
       logger.error('Stream error event', err);
       clearTimeout(streamTimeout);
+      // Propagate error to SSE client so it doesn't hang
+      try {
+        sendSSE(res, { type: 'error', data: { error: err.message || 'Stream connection lost' } });
+      } catch { /* stream already broken */ }
     });
 
     // Handle text content deltas

@@ -9,13 +9,12 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { showToast } from '../Toast';
-import { getErrorMessage } from '../../utils/errors';
+import { getErrorMessage, logError } from '../../utils/errors';
 import { safeLocalStorage } from '../../utils/storage';
 import { ArtifactButton } from '../ArtifactButton';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { extractArtifacts, type Artifact } from '../../types/artifacts';
 import '../GeneralChat.css';
-import { logError } from '../../utils/errors';
 
 import { ChatMessageList } from './ChatMessageList';
 import { ChatInput } from './ChatInput';
@@ -325,9 +324,6 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
             throw new Error(statusMessages[response.status] || `Serverfehler (${response.status})`);
           }
 
-          // Response received - clear initial timeout
-          clearTimeout(streamTimeout);
-
           const reader = response.body?.getReader();
           const decoder = new TextDecoder();
           let accumulatedContent = '';
@@ -448,6 +444,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
             detail: { sessionId: currentSessionId },
           }));
         } finally {
+          // Always clear the stream timeout to prevent late aborts
+          clearTimeout(streamTimeout);
           // Cancel any pending RAF and reset streaming state
           if (streamingRafRef.current) {
             cancelAnimationFrame(streamingRafRef.current);

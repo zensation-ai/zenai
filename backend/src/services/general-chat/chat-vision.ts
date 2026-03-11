@@ -119,7 +119,9 @@ export async function sendMessageWithVision(
     }
   } catch (error) {
     logger.error('Vision processing failed', error instanceof Error ? error : undefined);
-    aiResponse = 'Es tut mir leid, bei der Bildanalyse ist ein Fehler aufgetreten. Bitte versuche es erneut.';
+    throw new Error(
+      `Vision processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 
   // Store AI response

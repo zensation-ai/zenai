@@ -61,9 +61,10 @@ Du hilfst bei allen Arten von Fragen: Recherche, Erklärungen, Brainstorming, Pr
 export async function generateResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal'
+  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
+  thinkingMode: ThinkingMode = 'assist'
 ): Promise<string> {
-  const enhanced = await generateEnhancedResponse(sessionId, userMessage, contextType);
+  const enhanced = await generateEnhancedResponse(sessionId, userMessage, contextType, thinkingMode);
   return enhanced.content;
 }
 
@@ -105,8 +106,8 @@ export async function generateEnhancedResponse(
     FROM general_chat_messages
     WHERE session_id = $1
     ORDER BY created_at ASC
-    LIMIT ${CHAT.MAX_HISTORY_MESSAGES}
-  `, [sessionId]);
+    LIMIT $2
+  `, [sessionId, CHAT.MAX_HISTORY_MESSAGES]);
 
   // Convert to ConversationMessage format
   const conversationHistory: ConversationMessage[] = messagesResult.rows.map(row => ({
@@ -134,7 +135,7 @@ export async function generateEnhancedResponse(
       sessionId,
       userMessage,
       contextType,
-      { maxContextTokens: 2000, includeEpisodic: true, includeLongTerm: true, enableSerendipity }
+      { maxContextTokens: CHAT.MAX_MEMORY_CONTEXT_TOKENS, includeEpisodic: true, includeLongTerm: true, enableSerendipity }
     );
 
     memoryStats = enhancedContext.stats;
@@ -535,7 +536,7 @@ export async function sendMessage(
     aiResponse = enhancedResult.content;
     metadata = enhancedResult.metadata;
   } else {
-    aiResponse = await generateResponse(sessionId, userMessage, contextType);
+    aiResponse = await generateResponse(sessionId, userMessage, contextType, thinkingMode);
   }
 
   // Store AI response

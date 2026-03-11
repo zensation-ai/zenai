@@ -8,6 +8,7 @@ import { PersonalizationMessages } from './PersonalizationMessages';
 import { PersonalizationFacts } from './PersonalizationFacts';
 import { PersonalizationSummary } from './PersonalizationSummary';
 import { logError } from '../utils/errors';
+import { safeLocalStorage } from '../utils/storage';
 import './PersonalizationChat.css';
 import '../neurodesign.css';
 
@@ -73,7 +74,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
   const sessionKey = `${SESSION_KEY_PREFIX}${context}`;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(
-    () => localStorage.getItem(sessionKey)
+    () => safeLocalStorage('get', sessionKey)
   );
   const [facts, setFacts] = useState<LearnedFact[]>([]);
   const [progress, setProgress] = useState<LearningProgress[]>([]);
@@ -88,7 +89,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
 
   const persistSessionId = useCallback((id: string) => {
     setSessionId(id);
-    localStorage.setItem(sessionKey, id);
+    safeLocalStorage('set', sessionKey, id);
   }, [sessionKey]);
 
   const startNewConversation = useCallback(async (signal?: AbortSignal) => {
@@ -122,7 +123,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
         axios.get('/api/personalization/summary', { signal }).catch(() => ({ data: { data: { summary: null } } })),
       ]);
 
-      const storedSessionId = localStorage.getItem(sessionKey);
+      const storedSessionId = safeLocalStorage('get', sessionKey);
       if (storedSessionId) {
         try {
           const historyRes = await axios.get('/api/personalization/history', {
@@ -248,6 +249,8 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
         showToast(`${newFacts.length} neue(s) Fakt(en) gelernt! ${reaction}`, 'success');
       }
     } catch (err) {
+      // Remove the optimistic user message on error
+      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
       logError('PersonalizationChat:sendMessage', err);
       // Remove optimistic user message on error
       setMessages(prev => prev.filter(m => m.id !== userMessage.id));
@@ -365,7 +368,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
                 type="button"
                 className="new-conversation-btn"
                 onClick={async () => {
-                  localStorage.removeItem(sessionKey);
+                  safeLocalStorage('remove', sessionKey);
                   setMessages([]);
                   setSessionId(null);
                   await startNewConversation();

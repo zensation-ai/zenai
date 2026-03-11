@@ -60,14 +60,7 @@ function ChatSessionSidebarComponent({
   useEffect(() => {
     fetchSessions();
     return () => { abortRef.current?.abort(); };
-  }, [fetchSessions]);
-
-  // Refresh when activeSessionId changes (new session created)
-  useEffect(() => {
-    if (activeSessionId) {
-      fetchSessions();
-    }
-  }, [activeSessionId, fetchSessions]);
+  }, [fetchSessions, activeSessionId]);
 
   // Refresh when a new message is sent (session title/updatedAt may change)
   useEffect(() => {
@@ -216,9 +209,19 @@ function ChatSessionSidebarComponent({
             <div key={group.label} className="chat-sidebar-group">
               <div className="chat-sidebar-group-label">{group.label}</div>
               {group.sessions.map(session => (
-                <li
+                <div
                   key={session.id}
-                  className={`chat-sidebar-item ${session.id === activeSessionId ? 'active' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  className={`chat-sidebar-item neuro-focus-ring ${session.id === activeSessionId ? 'active' : ''}`}
+                  onClick={() => onSelectSession(session.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectSession(session.id);
+                    }
+                  }}
+                  title={session.title || 'Unbenannte Konversation'}
                 >
                   <button
                     type="button"
@@ -239,14 +242,14 @@ function ChatSessionSidebarComponent({
                     className={`chat-sidebar-item-delete neuro-focus-ring ${confirmDeleteId === session.id ? 'confirming' : ''}`}
                     onClick={(e) => handleDeleteClick(e, session.id)}
                     disabled={deletingId === session.id}
-                    title={confirmDeleteId === session.id ? 'Nochmal klicken zum L\u00F6schen' : 'L\u00F6schen'}
+                    title={confirmDeleteId === session.id ? 'Nochmal klicken zum Löschen' : 'Löschen'}
                     aria-label={confirmDeleteId === session.id
-                      ? `L\u00F6schen best\u00E4tigen: "${session.title || 'Unbenannt'}"`
-                      : `Konversation "${session.title || 'Unbenannt'}" l\u00F6schen`}
+                      ? `Löschen bestätigen: "${session.title || 'Unbenannt'}"`
+                      : `Konversation "${session.title || 'Unbenannt'}" löschen`}
                   >
-                    {deletingId === session.id ? '...' : confirmDeleteId === session.id ? '?' : '\u00D7'}
+                    {deletingId === session.id ? '...' : confirmDeleteId === session.id ? '?' : '×'}
                   </button>
-                </li>
+                </div>
               ))}
             </div>
           ))

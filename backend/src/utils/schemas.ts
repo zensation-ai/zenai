@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod';
+import { CHAT } from '../config/constants';
 
 // ===========================================
 // Common Schemas
@@ -368,7 +369,7 @@ export const CreateChatSessionSchema = z.object({
 export const ChatMessageSchema = z.object({
   message: z.string()
     .min(1, 'Message is required')
-    .max(32000, 'Message must be at most 32000 characters')
+    .max(CHAT.MAX_MESSAGE_LENGTH, `Message must be at most ${CHAT.MAX_MESSAGE_LENGTH} characters`)
     .transform((s: string) => s.trim()),
   include_metadata: z.boolean().optional(),
   thinking_mode: z.string().optional(),

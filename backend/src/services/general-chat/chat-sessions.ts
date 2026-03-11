@@ -314,17 +314,9 @@ export async function addMessage(
 
 /**
  * Helper to update session title (extracted for reuse)
+ * Uses a single atomic UPDATE to avoid TOCTOU race conditions
  */
 export async function updateSessionTitle(sessionId: string, userMessage: string): Promise<void> {
-  // Check if title is already set
-  const sessionResult = await query(`
-    SELECT title FROM general_chat_sessions WHERE id = $1
-  `, [sessionId]);
-
-  if (sessionResult.rows[0]?.title) {
-    return; // Title already set
-  }
-
   // Generate a short title from the first message (max 50 chars)
   // Use Array.from to correctly handle multi-byte/emoji characters
   const chars = Array.from(userMessage);
@@ -332,9 +324,14 @@ export async function updateSessionTitle(sessionId: string, userMessage: string)
     ? chars.slice(0, 47).join('') + '...'
     : userMessage;
 
-  await query(`
+  // Atomic: only sets title if it is currently NULL or empty
+  const result = await query(`
     UPDATE general_chat_sessions
-    SET title = $2
-    WHERE id = $1
+    SET title = $2, updated_at = NOW()
+    WHERE id = $1 AND (title IS NULL OR title = '')
   `, [sessionId, title]);
+
+  if (result.rowCount && result.rowCount > 0) {
+    logger.debug('Session title set', { sessionId, title });
+  }
 }

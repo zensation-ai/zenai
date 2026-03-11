@@ -403,28 +403,6 @@ export const TOOL_CALCULATE: ToolDefinition = {
 };
 
 /**
- * Set reminder tool - create a reminder
- */
-export const TOOL_SET_REMINDER: ToolDefinition = {
-  name: 'set_reminder',
-  description: 'Erstellt eine Erinnerung für den Benutzer.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      message: {
-        type: 'string',
-        description: 'Der Erinnerungstext',
-      },
-      when: {
-        type: 'string',
-        description: 'Zeitpunkt (z.B. "in 1 hour", "tomorrow 9am", "2024-01-15 14:00")',
-      },
-    },
-    required: ['message', 'when'],
-  },
-};
-
-/**
  * Remember tool - store important information in long-term memory
  * Used to persist facts, preferences, and knowledge about the user
  */
@@ -1482,6 +1460,17 @@ export async function executeWithTools(
     }
   }
 
+  // Guard against empty response when max iterations reached
+  if (!finalResponse && toolsCalled.length > 0) {
+    finalResponse = toolsCalled.map(t =>
+      `[${t.name}]: ${t.result.substring(0, 200)}`
+    ).join('\n\n');
+    logger.warn('Tool iteration limit reached without final text response, using tool results as fallback', {
+      iterations,
+      toolsCalled: toolsCalled.length,
+    });
+  }
+
   logger.info('Tool-enabled conversation complete', {
     iterations,
     toolsCalled: toolsCalled.length,
@@ -1559,129 +1548,3 @@ export function extractText(content: Anthropic.ContentBlock[]): string {
     .join('\n');
 }
 
-// ===========================================
-// Default Tool Handlers (Placeholder)
-// ===========================================
-
-/**
- * Safe math expression evaluator using recursive descent parsing.
- * Supports: +, -, *, /, %, parentheses, and decimal numbers.
- * No eval() or Function() — immune to code injection.
- */
-function safeMathEval(expr: string): number {
-  let pos = 0;
-  const str = expr.replace(/\s/g, '');
-
-  function parseExpression(): number {
-    let left = parseTerm();
-    while (pos < str.length && (str[pos] === '+' || str[pos] === '-')) {
-      const op = str[pos++];
-      const right = parseTerm();
-      left = op === '+' ? left + right : left - right;
-    }
-    return left;
-  }
-
-  function parseTerm(): number {
-    let left = parseFactor();
-    while (pos < str.length && (str[pos] === '*' || str[pos] === '/' || str[pos] === '%')) {
-      const op = str[pos++];
-      const right = parseFactor();
-      if (op === '*') left *= right;
-      else if (op === '/') {
-        if (right === 0) throw new Error('Division by zero');
-        left /= right;
-      } else {
-        if (right === 0) throw new Error('Modulo by zero');
-        left %= right;
-      }
-    }
-    return left;
-  }
-
-  function parseFactor(): number {
-    // Unary minus
-    if (str[pos] === '-') {
-      pos++;
-      return -parseFactor();
-    }
-    // Unary plus
-    if (str[pos] === '+') {
-      pos++;
-      return parseFactor();
-    }
-    // Parenthesized expression
-    if (str[pos] === '(') {
-      pos++; // skip '('
-      const val = parseExpression();
-      if (str[pos] !== ')') throw new Error('Missing closing parenthesis');
-      pos++; // skip ')'
-      return val;
-    }
-    // Number (integer or decimal)
-    const start = pos;
-    while (pos < str.length && (str[pos] >= '0' && str[pos] <= '9' || str[pos] === '.')) {
-      pos++;
-    }
-    if (pos === start) throw new Error('Unexpected character');
-    const num = parseFloat(str.slice(start, pos));
-    if (isNaN(num)) throw new Error('Invalid number');
-    return num;
-  }
-
-  const result = parseExpression();
-  if (pos < str.length) throw new Error('Unexpected trailing characters');
-  return result;
-}
-
-/**
- * Register default tools with placeholder handlers
- * Real handlers should be registered by the application
- */
-export function registerDefaultTools(): void {
-  // These are placeholders - real handlers should be injected
-  toolRegistry.register(TOOL_CALCULATE, async (input, _context) => {
-    const expr = input.expression as string;
-    if (!expr || typeof expr !== 'string') {
-      return 'Fehler: Ungültiger mathematischer Ausdruck';
-    }
-
-    try {
-      // Safe math evaluation - only allow numbers, operators, and parentheses
-      const sanitized = expr.replace(/[^0-9+\-*/().%\s,]/g, '');
-
-      // Additional validation: check for valid expression structure
-      // Prevent empty expressions or only whitespace
-      if (!sanitized.trim() || !/\d/.test(sanitized)) {
-        return 'Fehler: Ungültiger mathematischer Ausdruck';
-      }
-
-      // Check for balanced parentheses
-      let parenCount = 0;
-      for (const char of sanitized) {
-        if (char === '(') {parenCount++;}
-        if (char === ')') {parenCount--;}
-        if (parenCount < 0) {
-          return 'Fehler: Unbalancierte Klammern';
-        }
-      }
-      if (parenCount !== 0) {
-        return 'Fehler: Unbalancierte Klammern';
-      }
-
-      // Safe math evaluation using recursive descent parser (no eval/Function)
-      const result = safeMathEval(sanitized);
-
-      // Validate result is a finite number
-      if (typeof result !== 'number' || !Number.isFinite(result)) {
-        return 'Fehler: Das Ergebnis ist keine gültige Zahl';
-      }
-
-      return `Ergebnis: ${result}`;
-    } catch {
-      return 'Fehler: Ungültiger mathematischer Ausdruck';
-    }
-  });
-
-  logger.info('Default tools registered');
-}

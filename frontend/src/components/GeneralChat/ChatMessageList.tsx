@@ -25,6 +25,16 @@ interface ChatMessageListProps {
   onStopGenerating?: () => void;
 }
 
+function formatTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('de-DE', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function ChatMessageList({
   messages,
   isStreaming,
@@ -43,15 +53,6 @@ export function ChatMessageList({
     }
   }, [sending, isStreaming]);
 
-  const formatTime = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   return (
     <div className="chat-messages" role="log" aria-label="Chat-Nachrichten">
@@ -102,7 +103,7 @@ export function ChatMessageList({
                 {thinkingContent && (
                   <div className="chat-thinking-block" aria-label="KI denkt nach">
                     <span className="thinking-label">Denke nach...</span>
-                    <span className="thinking-preview">{thinkingContent.slice(0, 100)}...</span>
+                    <span className="thinking-preview">{thinkingContent.length > 100 ? `${thinkingContent.slice(0, 100)}...` : thinkingContent}</span>
                   </div>
                 )}
                 <div className="chat-message-text">

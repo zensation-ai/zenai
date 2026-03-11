@@ -24,7 +24,9 @@ import {
   sendMessage,
   sendMessageWithVision,
   addMessage,
+  updateSessionTitle,
   GENERAL_CHAT_SYSTEM_PROMPT,
+  type SendMessageResult,
 } from '../services/general-chat';
 import { getAssistantSystemPrompt } from '../services/assistant-knowledge';
 import { isValidUUID, toIntBounded } from '../utils/validation';
@@ -61,6 +63,33 @@ import { getUnifiedContext } from '../services/business-context';
 import { getPersonalFactsPromptSection } from '../services/personal-facts-bridge';
 
 export const generalChatRouter = Router();
+
+/**
+ * Build metadata response from raw result metadata.
+ * Extracted to avoid 3x code duplication across endpoints.
+ */
+function buildMetadataResponse(metadata: NonNullable<SendMessageResult['metadata']>) {
+  return {
+    mode: metadata.mode,
+    modeConfidence: metadata.modeConfidence,
+    modeReasoning: metadata.modeReasoning,
+    toolsCalled: metadata.toolsCalled.map(t => ({
+      name: t.name,
+      input: t.input,
+    })),
+    ragUsed: metadata.ragUsed,
+    ragDocumentsCount: metadata.ragDocumentsCount,
+    ragQuality: metadata.ragQuality ? {
+      confidence: metadata.ragQuality.confidence,
+      methodsUsed: metadata.ragQuality.methodsUsed,
+      topResultScore: metadata.ragQuality.topResultScore,
+      hydeUsed: metadata.ragQuality.hydeUsed,
+      crossEncoderUsed: metadata.ragQuality.crossEncoderUsed,
+      timingMs: metadata.ragQuality.timing.total,
+    } : undefined,
+    processingTimeMs: metadata.processingTimeMs,
+  };
+}
 
 // ===========================================
 // Multer Configuration for Vision Chat
@@ -108,7 +137,7 @@ const visionUpload = multer({
  * POST /api/chat/sessions
  * Create a new chat session
  */
-generalChatRouter.post('/sessions', apiKeyAuth, validateBody(CreateChatSessionSchema), asyncHandler(async (req: Request, res: Response) => {
+generalChatRouter.post('/sessions', apiKeyAuth, requireScope('write'), validateBody(CreateChatSessionSchema), asyncHandler(async (req: Request, res: Response) => {
   const { context, type } = req.body;
   const sessionType = type === 'assistant' ? 'assistant' as const : 'general' as const;
 
@@ -189,7 +218,7 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
  * Query params:
  * - include_metadata: boolean - Include processing metadata in response
  */
-generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
+generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, requireScope('write'), validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { message, include_metadata, thinking_mode } = req.body;
   const includeMetadata = req.query.include_metadata === 'true' || include_metadata === true;
@@ -246,26 +275,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, validateBody(ChatMe
 
   // Include metadata if requested
   if (includeMetadata && result.metadata) {
-    responseData.metadata = {
-      mode: result.metadata.mode,
-      modeConfidence: result.metadata.modeConfidence,
-      modeReasoning: result.metadata.modeReasoning,
-      toolsCalled: result.metadata.toolsCalled.map(t => ({
-        name: t.name,
-        input: t.input,
-      })),
-      ragUsed: result.metadata.ragUsed,
-      ragDocumentsCount: result.metadata.ragDocumentsCount,
-      ragQuality: result.metadata.ragQuality ? {
-        confidence: result.metadata.ragQuality.confidence,
-        methodsUsed: result.metadata.ragQuality.methodsUsed,
-        topResultScore: result.metadata.ragQuality.topResultScore,
-        hydeUsed: result.metadata.ragQuality.hydeUsed,
-        crossEncoderUsed: result.metadata.ragQuality.crossEncoderUsed,
-        timingMs: result.metadata.ragQuality.timing.total,
-      } : undefined,
-      processingTimeMs: result.metadata.processingTimeMs,
-    };
+    responseData.metadata = buildMetadataResponse(result.metadata);
   }
 
   res.json({
@@ -314,7 +324,7 @@ generalChatRouter.delete('/sessions/:id', apiKeyAuth, requireScope('write'), asy
  * Body params:
  * - include_metadata: boolean - Include processing metadata in response
  */
-generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+generalChatRouter.post('/quick', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { message, context = 'personal', include_metadata = false } = req.body;
   const includeMetadata = include_metadata === true;
 
@@ -358,26 +368,7 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
 
   // Include metadata if requested
   if (includeMetadata && result.metadata) {
-    responseData.metadata = {
-      mode: result.metadata.mode,
-      modeConfidence: result.metadata.modeConfidence,
-      modeReasoning: result.metadata.modeReasoning,
-      toolsCalled: result.metadata.toolsCalled.map(t => ({
-        name: t.name,
-        input: t.input,
-      })),
-      ragUsed: result.metadata.ragUsed,
-      ragDocumentsCount: result.metadata.ragDocumentsCount,
-      ragQuality: result.metadata.ragQuality ? {
-        confidence: result.metadata.ragQuality.confidence,
-        methodsUsed: result.metadata.ragQuality.methodsUsed,
-        topResultScore: result.metadata.ragQuality.topResultScore,
-        hydeUsed: result.metadata.ragQuality.hydeUsed,
-        crossEncoderUsed: result.metadata.ragQuality.crossEncoderUsed,
-        timingMs: result.metadata.ragQuality.timing.total,
-      } : undefined,
-      processingTimeMs: result.metadata.processingTimeMs,
-    };
+    responseData.metadata = buildMetadataResponse(result.metadata);
   }
 
   res.json({
@@ -403,6 +394,7 @@ generalChatRouter.post('/quick', apiKeyAuth, asyncHandler(async (req: Request, r
 generalChatRouter.post(
   '/sessions/:id/messages/vision',
   apiKeyAuth,
+  requireScope('write'),
   visionUpload.array('images', 5),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -516,7 +508,7 @@ generalChatRouter.get('/thinking-modes', apiKeyAuth, asyncHandler(async (_req: R
   });
 }));
 
-generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
+generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope('write'), validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { message, thinking_mode, assistantMode } = req.body;
   const isAssistantMode = assistantMode === true;
@@ -547,6 +539,9 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
   // Store user message first (already trimmed by Zod schema)
   await addMessage(id, 'user', message);
 
+  // Update title if this is the first message (same as non-streaming sendMessage)
+  await updateSessionTitle(id, message);
+
   // Get context type from session for memory integration
   const contextType = (session.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
 
@@ -563,8 +558,8 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
     FROM general_chat_messages
     WHERE session_id = $1
     ORDER BY created_at ASC
-    LIMIT 50
-  `, [id]);
+    LIMIT $2
+  `, [id, CHAT.MAX_HISTORY_MESSAGES]);
 
   // Build messages array
   const messages = historyResult.rows.map((row: { role: string; content: string }) => ({
@@ -592,7 +587,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
       id,
       message,
       contextType,
-      { maxContextTokens: 2000, includeEpisodic: true, includeLongTerm: true }
+      { maxContextTokens: CHAT.MAX_MEMORY_CONTEXT_TOKENS, includeEpisodic: true, includeLongTerm: true }
     );
 
     if (enhancedContext.systemEnhancement) {
@@ -808,8 +803,8 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
       await streamToSSE(res, messages, {
         enableThinking: false,
         systemPrompt,
-        temperature: 0.7,
-        maxTokens: 4096,
+        temperature: CHAT.DEFAULT_TEMPERATURE,
+        maxTokens: CHAT.DEFAULT_MAX_TOKENS,
         compactionConfig,
         sessionId: id,
         tools: toolDefinitions,

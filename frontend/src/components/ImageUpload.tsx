@@ -13,7 +13,7 @@
  * - Format validation (JPEG, PNG, GIF, WebP)
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import './ImageUpload.css';
 
 interface SelectedImage {
@@ -49,29 +49,37 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef<Map<File, string>>(new Map());
 
-  // Sync with parent: when parent clears images (e.g., after sending), clear local state
-  useEffect(() => {
-    if (images.length === 0 && selectedImages.length > 0) {
-      selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
-      setSelectedImages([]);
+  // Build SelectedImage[] from the images prop, reusing existing preview URLs
+  const selectedImages = useMemo(() => {
+    const oldMap = previewUrlsRef.current;
+    const newMap = new Map<File, string>();
+
+    const result: SelectedImage[] = images.map((file, index) => {
+      let preview = oldMap.get(file);
+      if (!preview) {
+        preview = URL.createObjectURL(file);
+      }
+      newMap.set(file, preview);
+      return {
+        id: `img-${index}-${file.name}`,
+        file,
+        preview,
+      };
+    });
+
+    // Revoke preview URLs for files no longer in the list
+    for (const [file, url] of oldMap) {
+      if (!newMap.has(file)) {
+        URL.revokeObjectURL(url);
+      }
     }
-  }, [images.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cleanup: revoke all Object URLs on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /**
-   * Generate unique ID for image
-   */
-  const generateId = () => `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    previewUrlsRef.current = newMap;
+    return result;
+  }, [images]);
 
   /**
    * Validate file
@@ -96,39 +104,26 @@ export function ImageUpload({
     const fileArray = Array.from(files);
 
     // Check total count
-    if (selectedImages.length + fileArray.length > maxImages) {
+    if (images.length + fileArray.length > maxImages) {
       setError(`Du kannst maximal ${maxImages} Bilder gleichzeitig hochladen.`);
       return;
     }
 
-    const validFiles: SelectedImage[] = [];
-    const createdUrls: string[] = []; // Track created URLs for cleanup on error
+    const validFiles: File[] = [];
 
     for (const file of fileArray) {
       const validationError = validateFile(file);
       if (validationError) {
         setError(validationError);
-        // Clean up any URLs created so far in this batch on validation error
-        createdUrls.forEach(url => URL.revokeObjectURL(url));
         return; // Stop processing on first error
       }
-
-      // Create preview URL
-      const preview = URL.createObjectURL(file);
-      createdUrls.push(preview);
-      validFiles.push({
-        id: generateId(),
-        file,
-        preview,
-      });
+      validFiles.push(file);
     }
 
     if (validFiles.length > 0) {
-      const newImages = [...selectedImages, ...validFiles];
-      setSelectedImages(newImages);
-      onImagesChange(newImages.map(img => img.file));
+      onImagesChange([...images, ...validFiles]);
     }
-  }, [selectedImages, maxImages, maxSizeMB, onImagesChange]);
+  }, [images, maxImages, maxSizeMB, onImagesChange]);
 
   /**
    * Handle drag events
@@ -179,27 +174,20 @@ export function ImageUpload({
    * Remove an image
    */
   const removeImage = useCallback((id: string) => {
-    setSelectedImages(prev => {
-      const img = prev.find(i => i.id === id);
-      if (img) {
-        URL.revokeObjectURL(img.preview);
-      }
-      const newImages = prev.filter(i => i.id !== id);
-      onImagesChange(newImages.map(i => i.file));
-      return newImages;
-    });
+    const img = selectedImages.find(i => i.id === id);
+    if (img) {
+      onImagesChange(images.filter(f => f !== img.file));
+    }
     setError(null);
-  }, [onImagesChange]);
+  }, [selectedImages, images, onImagesChange]);
 
   /**
    * Clear all images
    */
   const clearAll = useCallback(() => {
-    selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
-    setSelectedImages([]);
     onImagesChange([]);
     setError(null);
-  }, [selectedImages, onImagesChange]);
+  }, [onImagesChange]);
 
   /**
    * Trigger file input click
@@ -218,7 +206,7 @@ export function ImageUpload({
           type="button"
           className="image-upload-button"
           onClick={openFilePicker}
-          disabled={disabled || selectedImages.length >= maxImages}
+          disabled={disabled || images.length >= maxImages}
           title="Bild hinzufügen"
           aria-label="Bild hinzufügen"
         >

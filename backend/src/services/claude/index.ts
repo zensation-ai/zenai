@@ -103,13 +103,11 @@ export {
   parseToolCalls,
   hasToolUse,
   extractText,
-  registerDefaultTools,
   TOOL_SEARCH_IDEAS,
   TOOL_CREATE_IDEA,
   TOOL_GET_RELATED,
   TOOL_WEB_SEARCH,
   TOOL_CALCULATE,
-  TOOL_SET_REMINDER,
 } from './tool-use';
 
 export type {

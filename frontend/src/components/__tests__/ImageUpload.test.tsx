@@ -7,6 +7,7 @@
  * @module tests/components/ImageUpload
  */
 
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -36,6 +37,31 @@ const uploadFiles = (input: HTMLInputElement, files: File | File[]) => {
   });
   fireEvent.change(input);
 };
+
+// Wrapper that manages state for controlled component tests
+function ControlledImageUpload(props: {
+  onImagesChange?: (files: File[]) => void;
+  maxImages?: number;
+  maxSizeMB?: number;
+  disabled?: boolean;
+  compact?: boolean;
+  initialImages?: File[];
+}) {
+  const [images, setImages] = React.useState<File[]>(props.initialImages ?? []);
+  return (
+    <ImageUpload
+      images={images}
+      onImagesChange={(files) => {
+        setImages(files);
+        props.onImagesChange?.(files);
+      }}
+      maxImages={props.maxImages}
+      maxSizeMB={props.maxSizeMB}
+      disabled={props.disabled}
+      compact={props.compact}
+    />
+  );
+}
 
 describe('ImageUpload Component', () => {
   const mockOnImagesChange = vi.fn();
@@ -287,7 +313,7 @@ describe('ImageUpload Component', () => {
 
   describe('Preview', () => {
     it('should show preview count after selecting files', async () => {
-      render(<ImageUpload onImagesChange={mockOnImagesChange} />);
+      render(<ControlledImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const files = [createImageFile('img1.png'), createImageFile('img2.png')];
@@ -300,7 +326,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show "Bild" for single file', async () => {
-      render(<ImageUpload onImagesChange={mockOnImagesChange} />);
+      render(<ControlledImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
@@ -312,7 +338,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show "Alle entfernen" button with previews', async () => {
-      render(<ImageUpload onImagesChange={mockOnImagesChange} />);
+      render(<ControlledImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
@@ -325,7 +351,7 @@ describe('ImageUpload Component', () => {
 
     it('should clear all images when "Alle entfernen" is clicked', async () => {
       const user = userEvent.setup({ pointerEventsCheck: 0 });
-      render(<ImageUpload onImagesChange={mockOnImagesChange} />);
+      render(<ControlledImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
@@ -351,7 +377,7 @@ describe('ImageUpload Component', () => {
   describe('Remove Individual Image', () => {
     it('should remove image when remove button is clicked', async () => {
       const user = userEvent.setup({ pointerEventsCheck: 0 });
-      render(<ImageUpload onImagesChange={mockOnImagesChange} />);
+      render(<ControlledImageUpload onImagesChange={mockOnImagesChange} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const files = [createImageFile('img1.png'), createImageFile('img2.png')];
@@ -384,7 +410,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should show mini previews in compact mode', async () => {
-      render(<ImageUpload onImagesChange={mockOnImagesChange} compact />);
+      render(<ControlledImageUpload onImagesChange={mockOnImagesChange} compact />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 
@@ -397,7 +423,7 @@ describe('ImageUpload Component', () => {
     });
 
     it('should disable button when at max images in compact mode', async () => {
-      render(<ImageUpload onImagesChange={mockOnImagesChange} compact maxImages={1} />);
+      render(<ControlledImageUpload onImagesChange={mockOnImagesChange} compact maxImages={1} />);
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
 

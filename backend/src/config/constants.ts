@@ -185,6 +185,12 @@ export const CHAT = {
   MAX_VISION_IMAGES: 5,
   /** Maximum image size in bytes (10MB) */
   MAX_IMAGE_SIZE: 10 * 1024 * 1024,
+  /** Maximum tokens for memory context injection */
+  MAX_MEMORY_CONTEXT_TOKENS: 2000,
+  /** Default temperature for chat responses */
+  DEFAULT_TEMPERATURE: 0.7,
+  /** Default max tokens for non-streaming responses */
+  DEFAULT_MAX_TOKENS: 4096,
 } as const;
 
 // ===========================================
