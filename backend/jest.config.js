@@ -42,6 +42,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   testTimeout: 30000,
   verbose: true,
+  maxWorkers: 2,
   forceExit: true,
   workerIdleMemoryLimit: '256MB'
 };

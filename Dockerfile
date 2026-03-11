@@ -8,7 +8,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Copy workspace config and lockfile
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
 
 # Copy package.json files for all workspace packages
 COPY backend/package.json backend/package.json
@@ -41,7 +41,7 @@ RUN addgroup -g 1001 -S nodejs && \
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Copy workspace config
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
 COPY backend/package.json backend/package.json
 COPY packages/shared/package.json packages/shared/package.json
 

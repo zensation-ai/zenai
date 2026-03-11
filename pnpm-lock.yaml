@@ -252,9 +252,6 @@ importers:
       '@types/react-syntax-highlighter':
         specifier: ^15.5.13
         version: 15.5.13
-      '@zenai/shared':
-        specifier: workspace:*
-        version: link:../packages/shared
       axios:
         specifier: ^1.6.5
         version: 1.13.6
