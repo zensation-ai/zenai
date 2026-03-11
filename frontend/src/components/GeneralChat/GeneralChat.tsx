@@ -352,9 +352,11 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                     currentEventType = line.slice(7).trim();
                     continue;
                   }
-                  if (line.startsWith('data: ')) {
+                  // Handle data lines - SSE spec allows both "data: " and "data:" (no space)
+                  if (line.startsWith('data:')) {
+                    const dataStr = line.startsWith('data: ') ? line.slice(6) : line.slice(5);
                     try {
-                      const data = JSON.parse(line.slice(6));
+                      const data = JSON.parse(dataStr);
 
                       // Skip non-delta events that contain full content (would duplicate)
                       if (currentEventType === 'done' || currentEventType === 'compaction_info' || currentEventType === 'thinking_end') {
@@ -440,6 +442,11 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
             }
             return [...filtered, realUserMessage];
           });
+
+          // Notify sidebar that session content was updated (title/updatedAt changed)
+          window.dispatchEvent(new CustomEvent('zenai-chat-message-sent', {
+            detail: { sessionId: currentSessionId },
+          }));
         } finally {
           // Cancel any pending RAF and reset streaming state
           if (streamingRafRef.current) {

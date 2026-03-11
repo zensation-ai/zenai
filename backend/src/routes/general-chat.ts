@@ -748,7 +748,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         let dataStr = '';
         for (const line of lines) {
           if (line.startsWith('event: ')) {eventType = line.slice(7).trim();}
-          else if (line.startsWith('data: ')) {dataStr = line.slice(6);}
+          else if (line.startsWith('data:')) {dataStr = line.startsWith('data: ') ? line.slice(6) : line.slice(5);}
         }
 
         if (eventType && dataStr) {
@@ -837,6 +837,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         sessionId: id,
         responseLength: fullResponse.length,
         hadThinking: thinkingContent.length > 0,
+        hadTools: shouldUseTools,
       });
     } else {
       // Stream completed but returned no content - store a fallback assistant message
