@@ -9,7 +9,7 @@ import {
   calculateNextReview,
 } from '../../../services/active-recall';
 
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
 }));

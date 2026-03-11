@@ -5,171 +5,278 @@
  * Contains navigation structure, feature descriptions, and capabilities.
  * Used to build the assistant's system prompt so it can answer app questions
  * and guide users through features.
+ *
+ * IMPORTANT: Keep routes in sync with frontend/src/navigation.ts
  */
 
 import { logger } from '../utils/logger';
 
 // Feature descriptions keyed by topic keywords
 const FEATURE_MAP: Record<string, { title: string; page: string; description: string }> = {
+  // === Dashboard ===
+  dashboard: {
+    title: 'Dashboard',
+    page: '/',
+    description: 'Startseite mit Schnellzugriff auf haeufig genutzte Features, aktuelle Statistiken und Quick Actions.',
+  },
+
+  // === Chat ===
+  chat: {
+    title: 'Chat',
+    page: '/chat',
+    description: 'Vollbild-Chat mit der KI. Hier kannst du laenger und ausfuehrlicher mit der KI sprechen. Unterstuetzt Bilder, Spracheingabe, Extended Thinking und Code-Ausfuehrung.',
+  },
+
+  // === Browser ===
+  browser: {
+    title: 'Browser',
+    page: '/browser',
+    description: 'Eingebetteter Browser zum Durchsuchen und Speichern von Webseiten direkt in der App.',
+  },
+
+  // === Ideen Sektion ===
   gedanken: {
-    title: 'Meine Gedanken',
+    title: 'Gedanken',
     page: '/ideas',
-    description: 'Hier verwaltest du alle deine Ideen, Notizen und Gedanken. Du kannst per Spracheingabe oder Text neue Gedanken erfassen. Die KI strukturiert sie automatisch mit Titel, Typ, Kategorie und Priorität.',
+    description: 'Alle Ideen, Notizen und Gedanken verwalten. 4 Tabs: Aktiv, Inkubator, Archiv, Sortieren. Per Spracheingabe oder Text neue Gedanken erfassen. Die KI strukturiert sie automatisch.',
   },
   ideas: {
-    title: 'Meine Gedanken',
+    title: 'Gedanken',
     page: '/ideas',
-    description: 'Die Hauptseite für deine Ideen. Du kannst nach Ideen suchen, sie filtern, priorisieren und archivieren. Jede Idee wird automatisch mit einem Embedding versehen für semantische Suche.',
+    description: 'Die Hauptseite fuer deine Ideen. Suchen, filtern, priorisieren, archivieren. Semantische Suche ueber Embeddings.',
+  },
+  inkubator: {
+    title: 'Inkubator',
+    page: '/ideas/incubator',
+    description: 'Ideen reifen lassen. Die KI entwickelt Gedanken im Hintergrund weiter und schlaegt Verbindungen vor.',
   },
   archiv: {
     title: 'Archiv',
-    page: '/archive',
-    description: 'Archivierte Gedanken durchsuchen und wiederherstellen. Hier findest du Ideen die du archiviert hast.',
+    page: '/ideas/archive',
+    description: 'Archivierte Gedanken durchsuchen und wiederherstellen.',
   },
   sortieren: {
     title: 'Sortieren (Triage)',
-    page: '/triage',
-    description: 'Neue Gedanken einordnen, priorisieren und kategorisieren. Ideal um unbearbeitete Ideen schnell zu sortieren.',
+    page: '/ideas/triage',
+    description: 'Neue Gedanken einordnen, priorisieren und kategorisieren. Schnelles Wischen zum Sortieren.',
   },
   triage: {
     title: 'Sortieren (Triage)',
-    page: '/triage',
-    description: 'Schnelles Sortieren neuer Gedanken. Wische oder klicke um Ideen zu priorisieren und einzuordnen.',
+    page: '/ideas/triage',
+    description: 'Schnelles Sortieren neuer Gedanken per Wischen oder Klick.',
   },
-  insights: {
-    title: 'Insights',
-    page: '/insights',
-    description: 'Dashboard mit Analytics, Digest und Knowledge Graph. Zeigt dir Muster in deinen Gedanken, Verbindungen zwischen Ideen und einen regelmäßigen Digest.',
+  werkstatt: {
+    title: 'KI-Werkstatt',
+    page: '/workshop',
+    description: '3 Tabs: Vorschlaege, Entwicklung, Agenten. Die KI analysiert deine Ideen und schlaegt Verbesserungen, Verbindungen und neue Perspektiven vor.',
+  },
+  workshop: {
+    title: 'KI-Werkstatt',
+    page: '/workshop',
+    description: 'AI Workshop mit proaktiven Vorschlaegen, Ideen-Evolution und Multi-Agent Teams fuer komplexe Aufgaben.',
   },
   'ki-werkstatt': {
     title: 'KI-Werkstatt',
-    page: '/ai-workshop',
-    description: 'Inkubator für Ideen-Evolution und proaktive KI-Vorschläge. Die KI analysiert deine Ideen und schlägt Verbesserungen, Verbindungen und neue Perspektiven vor.',
+    page: '/workshop',
+    description: 'Inkubator fuer Ideen-Evolution und proaktive KI-Vorschlaege.',
   },
-  'ai-workshop': {
-    title: 'KI-Werkstatt',
-    page: '/ai-workshop',
-    description: 'Der AI Workshop hilft dir Ideen weiterzuentwickeln. Die KI kann Ideen kombinieren, hinterfragen und evolutionieren.',
+  'agent-teams': {
+    title: 'Agent Teams',
+    page: '/workshop/agent-teams',
+    description: 'Multi-Agent Teams fuer komplexe Aufgaben. Mehrere KI-Agenten arbeiten zusammen.',
   },
-  lernen: {
-    title: 'Lernen',
-    page: '/learning',
-    description: 'Lernziele setzen und Aufgaben verwalten. Die KI erstellt personalisierte Lernpfade basierend auf deinen Interessen.',
+
+  // === Organisieren Sektion ===
+  planer: {
+    title: 'Planer',
+    page: '/calendar',
+    description: 'Zentrale Planungs-Hub mit 4 Tabs: Kalender, Aufgaben, Projekte, Meetings. Kanban-Board, Gantt-Chart, Meeting-Protokolle.',
   },
-  learning: {
-    title: 'Lernen',
-    page: '/learning',
-    description: 'Lernbereich mit personalisierten Lernaufgaben und Fortschrittstracking.',
+  kalender: {
+    title: 'Kalender',
+    page: '/calendar',
+    description: 'Kalender mit Terminen, Deadlines und Erinnerungen. Drag-and-Drop, Tages-/Wochen-/Monatsansicht.',
   },
-  personalisierung: {
-    title: 'Personalisierung',
-    page: '/personalization',
-    description: 'KI-Verhalten anpassen und trainieren. Stelle ein wie die KI antwortet, welche Persona sie nutzt und wie sie lernt.',
+  calendar: {
+    title: 'Planer',
+    page: '/calendar',
+    description: 'Planer mit Kalender, Aufgaben (Kanban + Gantt), Projekten und Meeting-Protokollen.',
+  },
+  aufgaben: {
+    title: 'Aufgaben',
+    page: '/calendar/tasks',
+    description: 'Aufgaben-Management mit Kanban-Board (Backlog, Todo, In Arbeit, Erledigt) und Gantt-Chart.',
+  },
+  tasks: {
+    title: 'Aufgaben',
+    page: '/calendar/tasks',
+    description: 'Task-Management mit Drag-and-Drop Kanban, Projekt-Zuweisungen und Abhaengigkeiten.',
+  },
+  kanban: {
+    title: 'Kanban-Board',
+    page: '/calendar/kanban',
+    description: '4-Spalten Kanban: Backlog, Todo, In Arbeit, Erledigt. HTML5 Drag-and-Drop, Projekt-Filter.',
+  },
+  gantt: {
+    title: 'Gantt-Chart',
+    page: '/calendar/gantt',
+    description: 'Gantt-Diagramm mit 3 Zoom-Stufen (Tag/Woche/Monat), Projekt-Gruppierung und Today-Line.',
+  },
+  meetings: {
+    title: 'Meetings',
+    page: '/calendar/meetings',
+    description: 'Meeting-Protokolle mit VoiceInput und KI-Strukturierung: Zusammenfassung, Entscheidungen, Action Items.',
+  },
+  kontakte: {
+    title: 'Kontakte',
+    page: '/contacts',
+    description: 'Kontakte und Organisationen verwalten. Kontaktdaten, Notizen und Verbindungen.',
+  },
+  contacts: {
+    title: 'Kontakte',
+    page: '/contacts',
+    description: 'Kontaktverwaltung mit Organisationen und Verbindungen.',
+  },
+  email: {
+    title: 'E-Mail',
+    page: '/email',
+    description: 'E-Mails senden und empfangen. KI-Analyse mit Zusammenfassung, Kategorie, Prioritaet, Sentiment und Antwort-Vorschlaegen.',
+  },
+  'e-mail': {
+    title: 'E-Mail',
+    page: '/email',
+    description: 'E-Mail-Verwaltung mit KI-gestuetzter Verarbeitung und intelligenten Antwort-Vorschlaegen.',
+  },
+  wissensbasis: {
+    title: 'Wissensbasis',
+    page: '/documents',
+    description: '3 Tabs: Dokumente, Editor, Medien. Dokumente hochladen, analysieren und durchsuchen. Semantische Suche.',
   },
   dokumente: {
     title: 'Dokumente',
     page: '/documents',
-    description: 'Dokumentenverwaltung und -analyse. Lade Dokumente hoch und die KI analysiert sie mit verschiedenen Templates (Zusammenfassung, Extraktion, Bewertung).',
+    description: 'Document Vault - Dokumente hochladen, analysieren und durchsuchen mit KI-Templates.',
   },
   documents: {
-    title: 'Dokumente',
+    title: 'Wissensbasis',
     page: '/documents',
-    description: 'Document Vault - Dokumente hochladen, analysieren und durchsuchen. Unterstützt semantische Suche über Dokumentinhalte.',
-  },
-  canvas: {
-    title: 'Canvas',
-    page: '/canvas',
-    description: 'Interaktiver visueller Editor. Hier kannst du Ideen visuell anordnen, verbinden und strukturieren.',
-  },
-  meetings: {
-    title: 'Meetings',
-    page: '/meetings',
-    description: 'Meeting-Verwaltung mit Notizen, Transkriptionen und Action Items. Erstelle Meetings, füge Teilnehmer hinzu und lass die KI Zusammenfassungen generieren.',
+    description: 'Wissensbasis mit Dokumenten, Editor und Medien.',
   },
   medien: {
     title: 'Medien',
-    page: '/media',
-    description: 'Bilder und Dateien verwalten. Die KI kann Bilder analysieren, Text extrahieren (OCR) und Ideen aus Bildern ableiten.',
+    page: '/documents/media',
+    description: 'Bilder und Dateien verwalten. KI-gestützte Bildanalyse, OCR und Ideen-Extraktion.',
   },
   media: {
     title: 'Medien',
-    page: '/media',
-    description: 'Medienverwaltung mit KI-gestützter Bildanalyse und OCR.',
+    page: '/documents/media',
+    description: 'Medienverwaltung mit Vision-AI und OCR.',
   },
-  stories: {
-    title: 'Stories',
-    page: '/stories',
-    description: 'Gedanken als zusammenhängende Geschichten darstellen. Die KI fasst verwandte Ideen zu narrativen Texten zusammen.',
+
+  // === Auswerten Sektion ===
+  insights: {
+    title: 'Insights',
+    page: '/insights',
+    description: '3 Tabs: Statistiken, Zusammenfassung, Verbindungen (Knowledge Graph). Muster und Trends in deinen Gedanken.',
   },
-  automationen: {
-    title: 'Automationen',
-    page: '/automations',
-    description: 'Workflows automatisieren. Erstelle Regeln wie "Wenn eine neue Idee mit Priorität hoch erstellt wird, sende eine Benachrichtigung".',
+  finanzen: {
+    title: 'Finanzen',
+    page: '/finance',
+    description: 'Ausgaben, Budgets und Sparziele verwalten.',
   },
-  automations: {
-    title: 'Automationen',
-    page: '/automations',
-    description: 'Automation-Engine mit Triggern (Webhook, Schedule, Event, Pattern) und Actions (Notification, Tag, Archive, etc.).',
+  finance: {
+    title: 'Finanzen',
+    page: '/finance',
+    description: 'Finanz-Dashboard mit Ausgaben-Tracking und Budget-Planung.',
   },
-  integrationen: {
-    title: 'Integrationen',
-    page: '/integrations',
-    description: 'Externe Dienste verbinden. GitHub-Integration, Webhooks und API-Schlüssel verwalten.',
+  business: {
+    title: 'Business',
+    page: '/business',
+    description: '8 Tabs: Revenue (Stripe), Traffic (GA4), SEO (Search Console), Performance (Lighthouse), Berichte, Anomalien, und mehr.',
   },
-  export: {
-    title: 'Export',
-    page: '/export',
-    description: 'Daten exportieren in verschiedenen Formaten.',
+
+  // === KI & Lernen Sektion ===
+  'meine ki': {
+    title: 'Meine KI',
+    page: '/my-ai',
+    description: '3 Tabs: KI anpassen, KI-Wissen, Sprach-Chat. Persoenlichkeit, Verhalten und Wissen der KI konfigurieren.',
   },
-  sync: {
-    title: 'Sync',
-    page: '/sync',
-    description: 'Geräte synchronisieren. Offline-Aktionen werden automatisch synchronisiert wenn du wieder online bist.',
+  'my-ai': {
+    title: 'Meine KI',
+    page: '/my-ai',
+    description: 'KI-Personalisierung mit Memory-Transparenz und Voice-Chat.',
   },
-  profil: {
-    title: 'Profil',
-    page: '/profile',
-    description: 'Nutzerprofil mit Statistiken. Zeigt deine Aktivität, Gedanken-Anzahl und Nutzungsmuster.',
+  personalisierung: {
+    title: 'KI anpassen',
+    page: '/my-ai',
+    description: 'KI-Verhalten anpassen. Persoenlichkeit, Antwort-Stil und Lernverhalten konfigurieren.',
   },
-  profile: {
-    title: 'Profil',
-    page: '/profile',
-    description: 'Dein Nutzerprofil mit persönlichen Statistiken und Einstellungen.',
+  'voice-chat': {
+    title: 'Sprach-Chat',
+    page: '/my-ai/voice-chat',
+    description: 'Echtzeit-Sprachkonversation mit der KI. Natuerliches Sprechen mit gesprochenen Antworten.',
   },
-  benachrichtigungen: {
-    title: 'Benachrichtigungen',
-    page: '/notifications',
-    description: 'Benachrichtigungen verwalten. Push-Notifications und In-App-Benachrichtigungen konfigurieren.',
+  lernen: {
+    title: 'Lernen',
+    page: '/learning',
+    description: 'Lernziele setzen und Aufgaben verwalten. Personalisierte Lernpfade basierend auf Interessen.',
   },
-  notifications: {
-    title: 'Benachrichtigungen',
-    page: '/notifications',
-    description: 'Notification Center für alle App-Benachrichtigungen.',
+  learning: {
+    title: 'Lernen',
+    page: '/learning',
+    description: 'Lernbereich mit personalisierten Aufgaben und Fortschrittstracking.',
   },
+  'screen-memory': {
+    title: 'Screen Memory',
+    page: '/screen-memory',
+    description: 'Bildschirmaktivitaet durchsuchen und wiederfinden.',
+  },
+
+  // === Footer ===
   einstellungen: {
     title: 'Einstellungen',
     page: '/settings',
-    description: 'App-Konfiguration. API-Schlüssel, Theme, Sprache und weitere Einstellungen.',
+    description: '7 Tabs: Profil, Allgemein, KI, Datenschutz, Automationen, Integrationen, Daten. Komplette App-Konfiguration.',
   },
   settings: {
     title: 'Einstellungen',
     page: '/settings',
-    description: 'Allgemeine App-Einstellungen und Konfiguration.',
+    description: 'Allgemeine App-Einstellungen, Profil, Automationen und Integrationen.',
   },
-  dashboard: {
-    title: 'Dashboard',
-    page: '/',
-    description: 'Startseite mit Schnellzugriff auf häufig genutzte Features, aktuelle Statistiken und Quick Actions.',
+  profil: {
+    title: 'Profil',
+    page: '/settings/profile',
+    description: 'Nutzerprofil mit persoenlichen Statistiken und Einstellungen.',
   },
-  'agent-teams': {
-    title: 'Agent Teams',
-    page: '/agent-teams',
-    description: 'Multi-Agent Teams für komplexe Aufgaben. Mehrere KI-Agenten arbeiten zusammen an einem Problem.',
+  profile: {
+    title: 'Profil',
+    page: '/settings/profile',
+    description: 'Nutzerprofil und persoenliche Daten.',
   },
-  'voice-chat': {
-    title: 'Sprachkonversation',
-    page: '/voice-chat',
-    description: 'Echtzeit-Sprachkonversation mit der KI. Sprich natürlich und erhalte gesprochene Antworten.',
+  automationen: {
+    title: 'Automationen',
+    page: '/settings/automations',
+    description: 'Workflows automatisieren mit Triggern (Webhook, Schedule, Event, Pattern) und Actions.',
+  },
+  automations: {
+    title: 'Automationen',
+    page: '/settings/automations',
+    description: 'Automation-Engine mit Triggern und Actions.',
+  },
+  integrationen: {
+    title: 'Integrationen',
+    page: '/settings/integrations',
+    description: 'Externe Dienste verbinden: GitHub, Webhooks, API-Schluessel.',
+  },
+  benachrichtigungen: {
+    title: 'Benachrichtigungen',
+    page: '/notifications',
+    description: 'Benachrichtigungs-Center fuer alle App-Benachrichtigungen.',
+  },
+  notifications: {
+    title: 'Benachrichtigungen',
+    page: '/notifications',
+    description: 'Notification Center fuer Push- und In-App-Benachrichtigungen.',
   },
 };
 
@@ -197,70 +304,86 @@ export function getFeatureHelp(topic: string): string {
   }
 
   // No match found
-  return `Ich konnte kein Feature zu "${topic}" finden. Verfügbare Bereiche: Gedanken, Insights, KI-Werkstatt, Dokumente, Meetings, Canvas, Medien, Stories, Automationen, Integrationen, Lernen, Profil, Einstellungen.`;
+  return `Ich konnte kein Feature zu "${topic}" finden. Verfuegbare Bereiche: Dashboard, Chat, Gedanken, Werkstatt, Planer, Kontakte, E-Mail, Wissensbasis, Insights, Finanzen, Business, Meine KI, Lernen, Einstellungen.`;
 }
 
 /**
  * Build the assistant-specific system prompt with full app knowledge
  */
 export function getAssistantSystemPrompt(): string {
-  return `Du bist Zen, der eingebaute KI-Assistent der ZenAI App.
+  return `Du bist Zen, der eingebaute KI-Assistent der ZenAI App. Du bist wie Siri fuer diese Anwendung.
 
 Deine Rolle:
-- Du hilfst Nutzern die App zu bedienen
-- Du führst Aktionen aus (Meetings erstellen, Ideen notieren, suchen, navigieren)
+- Du hilfst Nutzern die App zu bedienen und steuerst sie aktiv
+- Du fuehrst Aktionen aus (Meetings erstellen, Ideen notieren, suchen, navigieren, E-Mails verwalten)
 - Du beantwortest Fragen zu Features und Funktionen
-- Du bist freundlich, schnell und präzise
-- Du nutzt Tools aktiv wenn eine Aktion gefordert ist
-- Du gibst kurze, hilfreiche Antworten (max 2-3 Sätze für einfache Fragen)
+- Du bist freundlich, schnell und praezise
+- Du nutzt Tools IMMER aktiv wenn eine Aktion gefordert ist - erklaere nie nur wie es geht
+- Du gibst kurze, hilfreiche Antworten (max 2-3 Saetze fuer einfache Fragen)
 - Du sprichst Deutsch, es sei denn der Nutzer schreibt auf Englisch
 
 [APP-WISSEN: ZenAI Platform]
 
-## Verfügbare Seiten & Navigation
+## Navigation & Seiten
 
-### Gedanken
-- **Meine Gedanken** (/ideas) - Ideen, Notizen und Gedanken verwalten. Spracheingabe, Text, KI-Strukturierung.
-- **Archiv** (/archive) - Archivierte Gedanken durchsuchen und wiederherstellen.
-- **Sortieren** (/triage) - Neue Gedanken einordnen, priorisieren, kategorisieren.
+### Hauptseiten
+- **Dashboard** (/) - Startseite mit Statistiken und Schnellzugriff
+- **Chat** (/chat) - Vollbild-Chat mit KI (Bilder, Sprache, Code)
+- **Browser** (/browser) - Eingebetteter Browser
 
-### KI & Insights
-- **Insights** (/insights) - Dashboard mit Analytics, Digest, Knowledge Graph.
-- **KI-Werkstatt** (/ai-workshop) - Inkubator für Ideen-Evolution, proaktive Vorschläge.
-- **Lernen** (/learning) - Lernziele setzen und Aufgaben verwalten.
-- **Personalisierung** (/personalization) - KI-Verhalten anpassen und trainieren.
+### Ideen
+- **Gedanken** (/ideas) - Ideen sammeln & ordnen (4 Tabs: Aktiv, Inkubator, Archiv, Sortieren)
+- **Werkstatt** (/workshop) - KI entwickelt Ideen weiter (Vorschlaege, Evolution, Agent Teams)
 
-### Inhalte
-- **Dokumente** (/documents) - Dokumentenverwaltung und -analyse.
-- **Canvas** (/canvas) - Interaktiver visueller Editor.
-- **Meetings** (/meetings) - Meeting-Notizen, Transkriptionen, Action Items.
-- **Medien** (/media) - Bilder und Dateien verwalten (Vision AI, OCR).
-- **Stories** (/stories) - Gedanken als zusammenhängende Geschichten.
+### Organisieren
+- **Planer** (/calendar) - Kalender, Aufgaben, Kanban, Gantt, Meetings
+- **Kontakte** (/contacts) - Kontakte & Organisationen
+- **E-Mail** (/email) - E-Mails mit KI-Analyse & Antwort-Vorschlaegen
+- **Wissensbasis** (/documents) - Dokumente, Editor, Medien
+
+### Auswerten
+- **Insights** (/insights) - Statistiken, Zusammenfassung, Knowledge Graph
+- **Finanzen** (/finance) - Ausgaben, Budgets, Sparziele
+- **Business** (/business) - Revenue, Traffic, SEO, Performance
+
+### KI & Lernen
+- **Meine KI** (/my-ai) - KI personalisieren, KI-Wissen, Sprach-Chat
+- **Lernen** (/learning) - Lernziele & Aufgaben
+- **Screen Memory** (/screen-memory) - Bildschirmaktivitaet durchsuchen
 
 ### System
-- **Automationen** (/automations) - Workflows automatisieren (Trigger + Actions).
-- **Integrationen** (/integrations) - Externe Dienste verbinden (GitHub, Webhooks).
-- **Export** (/export) - Daten exportieren.
-- **Sync** (/sync) - Geräte synchronisieren.
-- **Dashboard** (/) - Startseite mit Statistiken und Schnellzugriff.
-- **Profil** (/profile) - Nutzerprofil und Statistiken.
-- **Einstellungen** (/settings) - App-Konfiguration.
+- **Einstellungen** (/settings) - Profil, Allgemein, KI, Datenschutz, Automationen, Integrationen, Daten
+- **Benachrichtigungen** (/notifications) - Notification Center
 
-## Was du kannst
-- **Meetings erstellen**: "Ich habe ein Meeting am Donnerstag um 14 Uhr mit Peter" → Erstelle es mit dem create_meeting Tool.
-- **Ideen erstellen**: "Notiere mir eine Idee: ..." → Erstelle mit create_idea Tool.
-- **Suchen**: "Suche nach meinen Ideen zu React" → Nutze search_ideas Tool.
-- **Navigieren**: "Wo finde ich die Meetings?" → Nutze navigate_to Tool und erkläre die Seite.
-- **Erklären**: "Wie funktioniert die KI-Werkstatt?" → Nutze app_help Tool.
-- **Web-Suche**: "Suche im Web nach ..." → Nutze web_search Tool.
-- **Code ausführen**: "Führe Python-Code aus: ..." → Nutze execute_code Tool.
-- **Erinnern**: "Merke dir dass ..." → Nutze remember Tool.
+## Was du kannst (Tools)
+- **Ideen erstellen**: "Notiere: ..." → create_idea Tool
+- **Ideen suchen**: "Suche nach React" → search_ideas Tool
+- **Ideen aktualisieren**: "Aendere Prioritaet auf hoch" → update_idea Tool
+- **Ideen archivieren/loeschen**: "Archiviere diese Idee" → archive_idea / delete_idea Tool
+- **Meetings erstellen**: "Meeting am Donnerstag 14 Uhr mit Peter" → create_meeting Tool
+- **Kalender**: "Termin am Freitag" → create_calendar_event Tool
+- **Kalender anzeigen**: "Was steht heute an?" → list_calendar_events Tool
+- **Navigieren**: "Zeig mir die Einstellungen" → navigate_to Tool
+- **Feature-Hilfe**: "Wie funktioniert die Werkstatt?" → app_help Tool
+- **Web-Suche**: "Suche im Web nach ..." → web_search Tool
+- **URL abrufen**: "Was steht auf dieser Seite?" → fetch_url Tool
+- **Code ausfuehren**: "Berechne ..." → execute_code Tool
+- **E-Mail schreiben**: "Schreib eine E-Mail an ..." → draft_email Tool
+- **Erinnern**: "Merke dir dass ..." → remember Tool
+- **Erinnern abrufen**: "Was weisst du ueber ...?" → recall Tool
+- **Business-Daten**: "Wie ist der Umsatz?" → get_revenue_metrics Tool
+- **Traffic**: "Zeig mir die Besucherzahlen" → get_traffic_analytics Tool
+- **Route berechnen**: "Wie komme ich nach ...?" → get_directions Tool
+- **Oeffnungszeiten**: "Hat der Baumarkt offen?" → get_opening_hours Tool
+- **In der Naehe**: "Wo ist das naechste Cafe?" → find_nearby_places Tool
+- **Dokumente suchen**: "Suche in meinen Dokumenten" → search_documents Tool
 
 ## Dein Verhalten
 - Sei proaktiv: Wenn jemand sagt "Meeting erstellen" - frag direkt nach den Details (Wann? Mit wem?).
-- Nutze IMMER Tools wenn der Nutzer eine Aktion will - erkläre nicht nur wie es geht.
-- Gib Navigationshinweise mit Seitenname und Pfad.
-- Halte Antworten kurz und auf den Punkt.`;
+- Nutze IMMER Tools wenn der Nutzer eine Aktion will - erklaere nicht nur wie es geht.
+- Bei Navigation: Nutze navigate_to UND erklaere kurz was die Seite bietet.
+- Halte Antworten kurz und auf den Punkt.
+- Wenn du eine Aktion ausfuehrst, bestaetige kurz was du getan hast.`;
 }
 
 logger.debug('Assistant knowledge service loaded');

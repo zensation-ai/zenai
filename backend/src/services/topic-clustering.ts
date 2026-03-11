@@ -5,9 +5,31 @@
  * on the 768-dimensional embeddings stored in PostgreSQL.
  */
 
-import { queryContext, AIContext, getPool } from '../utils/database-context';
+import { queryContext, AIContext, getPool, isValidContext } from '../utils/database-context';
 import { queryOllamaJSON } from '../utils/ollama';
 import { logger } from '../utils/logger';
+import { PoolClient } from 'pg';
+
+// Pre-built search_path statements for schema isolation
+const SEARCH_PATH_SQL: Record<AIContext, string> = {
+  personal: 'SET search_path TO personal, public',
+  work: 'SET search_path TO work, public',
+  learning: 'SET search_path TO learning, public',
+  creative: 'SET search_path TO creative, public',
+};
+
+/**
+ * Get a pool client with search_path set to the correct context schema.
+ */
+async function getClient(context: AIContext): Promise<PoolClient> {
+  if (!isValidContext(context)) {
+    throw new Error(`Invalid context: ${context}`);
+  }
+  const pool = getPool(context);
+  const client = await pool.connect();
+  await client.query(SEARCH_PATH_SQL[context]);
+  return client;
+}
 
 // Topic colors for visualization (matching Zensation theme)
 const TOPIC_COLORS = [
@@ -113,9 +135,8 @@ export async function generateTopics(
   const validClusters = clusters.filter(c => c.ideaIds.length >= minClusterSize);
   logger.debug('Valid clusters found', { validCount: validClusters.length, minClusterSize });
 
-  // 5-6. Database operations in transaction
-  const pool = getPool(context);
-  const client = await pool.connect();
+  // 5-6. Database operations in transaction with correct schema isolation
+  const client = await getClient(context);
 
   let topicsCreated = 0;
   let ideasAssigned = 0;
@@ -581,8 +602,7 @@ export async function mergeTopics(
 ): Promise<Topic | null> {
   if (topicIds.length < 2) {return null;}
 
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     // Start transaction

@@ -18,6 +18,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import Anthropic from '@anthropic-ai/sdk';
+import { Response } from 'express';
 import { AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { getClaudeClient, CLAUDE_MODEL } from './claude/client';
@@ -26,12 +27,19 @@ import { BaseAgent, AgentOutput } from './agents/base-agent';
 import { createResearcher } from './agents/researcher';
 import { createWriter } from './agents/writer';
 import { createReviewer } from './agents/reviewer';
+import { createCoder } from './agents/coder';
 
 // ===========================================
 // Types & Interfaces
 // ===========================================
 
-export type TeamStrategy = 'research_write_review' | 'research_only' | 'write_only' | 'custom';
+export type TeamStrategy =
+  | 'research_write_review'
+  | 'research_only'
+  | 'write_only'
+  | 'code_solve'
+  | 'research_code_review'
+  | 'custom';
 
 export interface TeamTask {
   /** Description of the complex task */
@@ -76,6 +84,104 @@ export interface TeamResult {
   memoryStats: { totalEntries: number; byAgent: Record<string, number> };
 }
 
+/** SSE progress callback for streaming execution updates */
+export type AgentProgressCallback = (event: AgentProgressEvent) => void;
+
+export interface AgentProgressEvent {
+  type: 'team_start' | 'agent_start' | 'agent_complete' | 'agent_error' | 'team_complete';
+  teamId: string;
+  strategy?: TeamStrategy;
+  pipeline?: AgentRole[];
+  agentRole?: AgentRole;
+  agentIndex?: number;
+  totalAgents?: number;
+  subTask?: string;
+  result?: Partial<AgentOutput>;
+  finalOutput?: string;
+  stats?: TeamResult['totalTokens'] & { executionTimeMs: number; memoryEntries: number };
+}
+
+/** Agent template definition */
+export interface AgentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  strategy: TeamStrategy;
+  pipeline?: AgentRole[];
+  skipReview?: boolean;
+  promptHint?: string;
+}
+
+/** Predefined agent templates */
+export const AGENT_TEMPLATES: AgentTemplate[] = [
+  {
+    id: 'deep_research',
+    name: 'Tiefenrecherche',
+    description: 'Gründliche Recherche mit Fakten-Check und Quellenanalyse',
+    icon: '🔬',
+    strategy: 'research_write_review',
+    promptHint: 'Recherchiere gründlich und prüfe alle Fakten',
+  },
+  {
+    id: 'blog_article',
+    name: 'Blog-Artikel',
+    description: 'Recherchierter Blog-Artikel mit SEO-optimiertem Aufbau',
+    icon: '📝',
+    strategy: 'research_write_review',
+    promptHint: 'Erstelle einen gut strukturierten Blog-Artikel',
+  },
+  {
+    id: 'code_solution',
+    name: 'Code-Lösung',
+    description: 'Code generieren, testen und optimieren',
+    icon: '💻',
+    strategy: 'code_solve',
+    promptHint: 'Implementiere eine funktionierende Code-Lösung',
+  },
+  {
+    id: 'competitive_analysis',
+    name: 'Wettbewerbsanalyse',
+    description: 'Markt- und Wettbewerbsanalyse mit Empfehlungen',
+    icon: '📊',
+    strategy: 'research_write_review',
+    promptHint: 'Analysiere den Wettbewerb und gib strategische Empfehlungen',
+  },
+  {
+    id: 'email_draft',
+    name: 'E-Mail verfassen',
+    description: 'Professionelle E-Mail basierend auf Kontext',
+    icon: '✉️',
+    strategy: 'write_only',
+    skipReview: false,
+    promptHint: 'Verfasse eine professionelle E-Mail',
+  },
+  {
+    id: 'code_review',
+    name: 'Code-Review',
+    description: 'Code analysieren, Bugs finden, Verbesserungen vorschlagen',
+    icon: '🔍',
+    strategy: 'research_code_review',
+    promptHint: 'Analysiere den Code und schlage Verbesserungen vor',
+  },
+  {
+    id: 'quick_summary',
+    name: 'Schnelle Zusammenfassung',
+    description: 'Schnelle Recherche und kompakte Zusammenfassung',
+    icon: '⚡',
+    strategy: 'research_only',
+    promptHint: 'Fasse die wichtigsten Punkte zusammen',
+  },
+  {
+    id: 'strategy_paper',
+    name: 'Strategiepapier',
+    description: 'Umfassende Analyse mit Strategieempfehlung',
+    icon: '🎯',
+    strategy: 'research_write_review',
+    promptHint: 'Erstelle ein detailliertes Strategiepapier mit Handlungsempfehlungen',
+  },
+];
+
 // ===========================================
 // Task Classification
 // ===========================================
@@ -85,6 +191,32 @@ export interface TeamResult {
  */
 export function classifyTeamStrategy(task: string): TeamStrategy {
   const taskLower = task.toLowerCase();
+
+  // Code-heavy patterns
+  const codePatterns = [
+    /schreib(e|t)? (mir )?(einen? |den |das )?code/,
+    /implementier(e|en)/,
+    /programmier(e|en)/,
+    /code.*schreib/,
+    /python.*(script|programm|code)/,
+    /javascript.*funktion/,
+    /typescript.*implementierung/,
+    /erstelle? .*(shell|bash|python|node).*script/,
+    /debug(ge|gen)?/,
+    /fix(e|en)? .*bug/,
+    /algorithmus/,
+    /funktion.*erstell/,
+  ];
+
+  // Research + Code patterns
+  const researchCodePatterns = [
+    /analysiere.*code/,
+    /code.*review/,
+    /code.*prüf/,
+    /überprüf.*implementierung/,
+    /such.*fehler.*code/,
+    /optimier.*code/,
+  ];
 
   // Research-heavy patterns
   const researchPatterns = [
@@ -114,7 +246,21 @@ export function classifyTeamStrategy(task: string): TeamStrategy {
     /zusammenfass.*und.*empfehl/,
   ];
 
-  // Check full pipeline first (most complex)
+  // Check research + code patterns first
+  for (const pattern of researchCodePatterns) {
+    if (pattern.test(taskLower)) {
+      return 'research_code_review';
+    }
+  }
+
+  // Check code-only patterns
+  for (const pattern of codePatterns) {
+    if (pattern.test(taskLower)) {
+      return 'code_solve';
+    }
+  }
+
+  // Check full pipeline (most complex)
   for (const pattern of fullPipelinePatterns) {
     if (pattern.test(taskLower)) {
       return 'research_write_review';
@@ -154,6 +300,10 @@ export function getAgentPipeline(strategy: TeamStrategy, skipReview?: boolean): 
       return skipReview ? ['writer'] : ['writer', 'reviewer'];
     case 'research_write_review':
       return skipReview ? ['researcher', 'writer'] : ['researcher', 'writer', 'reviewer'];
+    case 'code_solve':
+      return skipReview ? ['coder'] : ['coder', 'reviewer'];
+    case 'research_code_review':
+      return ['researcher', 'coder', 'reviewer'];
     case 'custom':
       return []; // Will be provided by customPipeline
   }
@@ -171,6 +321,8 @@ function createAgent(role: AgentRole): BaseAgent {
       return createWriter();
     case 'reviewer':
       return createReviewer();
+    case 'coder':
+      return createCoder();
     default:
       throw new Error(`Unknown agent role: ${role}`);
   }
@@ -266,7 +418,7 @@ REGELN:
         researcher: `Recherchiere zum Thema: ${task}`,
         writer: `Erstelle einen strukturierten Text basierend auf den Recherche-Ergebnissen zum Thema: ${task}`,
         reviewer: `Überprüfe und verbessere den erstellten Text zum Thema: ${task}`,
-        coder: `Implementiere eine Lösung für: ${task}`,
+        coder: `Implementiere und teste eine Code-Lösung für: ${task}`,
         orchestrator: task,
       };
       subTasks.push({
@@ -287,10 +439,16 @@ REGELN:
 // Agent Orchestrator
 // ===========================================
 
+/** Maximum retries per agent on failure */
+const MAX_AGENT_RETRIES = 1;
+
 /**
  * Execute a complex task with a team of agents
  */
-export async function executeTeamTask(task: TeamTask): Promise<TeamResult> {
+export async function executeTeamTask(
+  task: TeamTask,
+  onProgress?: AgentProgressCallback
+): Promise<TeamResult> {
   const startTime = Date.now();
   const teamId = uuidv4();
   const agentResults: AgentOutput[] = [];
@@ -317,6 +475,14 @@ export async function executeTeamTask(task: TeamTask): Promise<TeamResult> {
       throw new Error('Empty agent pipeline');
     }
 
+    // Emit team_start
+    onProgress?.({
+      type: 'team_start',
+      teamId,
+      strategy,
+      pipeline,
+    });
+
     // Write plan to shared memory
     sharedMemory.write(
       teamId,
@@ -335,10 +501,19 @@ export async function executeTeamTask(task: TeamTask): Promise<TeamResult> {
     });
 
     // Execute pipeline sequentially (respecting dependencies)
-    for (const subTask of subTasks) {
+    for (let i = 0; i < subTasks.length; i++) {
+      const subTask = subTasks[i];
       subTask.status = 'in_progress';
 
-      const agent = createAgent(subTask.assignedAgent);
+      // Emit agent_start
+      onProgress?.({
+        type: 'agent_start',
+        teamId,
+        agentRole: subTask.assignedAgent,
+        agentIndex: i,
+        totalAgents: subTasks.length,
+        subTask: subTask.description,
+      });
 
       // Build context from previous results
       const previousResults = agentResults
@@ -353,19 +528,94 @@ export async function executeTeamTask(task: TeamTask): Promise<TeamResult> {
         teamId,
       };
 
-      const result = await agent.execute(agentInput);
+      // Execute with retry on failure
+      let result: AgentOutput | null = null;
+      let retries = 0;
+
+      while (retries <= MAX_AGENT_RETRIES) {
+        const agent = createAgent(subTask.assignedAgent);
+        result = await agent.execute(agentInput);
+
+        if (result.success) {
+          break;
+        }
+
+        retries++;
+        if (retries <= MAX_AGENT_RETRIES) {
+          logger.info('Retrying failed agent', {
+            teamId,
+            agent: subTask.assignedAgent,
+            attempt: retries + 1,
+            error: result.error,
+          });
+
+          // Write retry info to shared memory
+          sharedMemory.write(
+            teamId,
+            'orchestrator',
+            'decision',
+            `Retry für ${subTask.assignedAgent}: ${result.error}`,
+            { retry: retries }
+          );
+        }
+      }
+
+      if (!result) {
+        result = {
+          role: subTask.assignedAgent,
+          success: false,
+          content: '',
+          toolsUsed: [],
+          tokensUsed: { input: 0, output: 0 },
+          executionTimeMs: 0,
+          error: 'Agent execution returned no result',
+        };
+      }
+
       agentResults.push(result);
 
       if (result.success) {
         subTask.status = 'completed';
         subTask.result = result;
+
+        // Emit agent_complete
+        onProgress?.({
+          type: 'agent_complete',
+          teamId,
+          agentRole: subTask.assignedAgent,
+          agentIndex: i,
+          totalAgents: subTasks.length,
+          result: {
+            role: result.role,
+            success: true,
+            toolsUsed: result.toolsUsed,
+            executionTimeMs: result.executionTimeMs,
+          },
+        });
       } else {
         subTask.status = 'failed';
         subTask.result = result;
-        logger.warn('Sub-task failed, continuing pipeline', {
+
+        // Emit agent_error
+        onProgress?.({
+          type: 'agent_error',
+          teamId,
+          agentRole: subTask.assignedAgent,
+          agentIndex: i,
+          totalAgents: subTasks.length,
+          result: {
+            role: result.role,
+            success: false,
+            error: result.error,
+            executionTimeMs: result.executionTimeMs,
+          },
+        });
+
+        logger.warn('Sub-task failed after retries, continuing pipeline', {
           teamId,
           agent: subTask.assignedAgent,
           error: result.error,
+          retries,
         });
       }
     }
@@ -385,7 +635,7 @@ export async function executeTeamTask(task: TeamTask): Promise<TeamResult> {
       { input: 0, output: 0 }
     );
 
-    const result: TeamResult = {
+    const teamResult: TeamResult = {
       teamId,
       success: agentResults.some(r => r.success),
       finalOutput,
@@ -399,18 +649,97 @@ export async function executeTeamTask(task: TeamTask): Promise<TeamResult> {
       },
     };
 
-    logger.info('Team task completed', {
+    // Emit team_complete
+    onProgress?.({
+      type: 'team_complete',
       teamId,
-      success: result.success,
-      agentCount: agentResults.length,
-      totalTokens,
-      executionTimeMs: result.executionTimeMs,
+      finalOutput,
+      stats: {
+        input: totalTokens.input,
+        output: totalTokens.output,
+        executionTimeMs: teamResult.executionTimeMs,
+        memoryEntries: memoryStats.totalEntries,
+      },
     });
 
-    return result;
+    logger.info('Team task completed', {
+      teamId,
+      success: teamResult.success,
+      agentCount: agentResults.length,
+      totalTokens,
+      executionTimeMs: teamResult.executionTimeMs,
+    });
+
+    return teamResult;
   } finally {
     // Cleanup shared memory after execution
     sharedMemory.clear(teamId);
+  }
+}
+
+/**
+ * Execute a team task with SSE streaming progress
+ */
+export async function executeTeamTaskStreaming(
+  task: TeamTask,
+  res: Response
+): Promise<void> {
+  // Setup SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+
+  const sendEvent = (event: AgentProgressEvent) => {
+    res.write(`data: ${JSON.stringify(event)}\n\n`);
+  };
+
+  let closed = false;
+  res.on('close', () => { closed = true; });
+
+  try {
+    const result = await executeTeamTask(task, (event) => {
+      if (!closed) {
+        sendEvent(event);
+      }
+    });
+
+    // Send final result as JSON event
+    if (!closed) {
+      res.write(`data: ${JSON.stringify({
+        type: 'result',
+        teamId: result.teamId,
+        success: result.success,
+        finalOutput: result.finalOutput,
+        strategy: result.strategy,
+        agents: result.agentResults.map(a => ({
+          role: a.role,
+          success: a.success,
+          toolsUsed: a.toolsUsed,
+          executionTimeMs: a.executionTimeMs,
+          error: a.error,
+        })),
+        stats: {
+          executionTimeMs: result.executionTimeMs,
+          totalTokens: result.totalTokens,
+          sharedMemoryEntries: result.memoryStats.totalEntries,
+        },
+      })}\n\n`);
+
+      res.write('data: [DONE]\n\n');
+    }
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    if (!closed) {
+      res.write(`data: ${JSON.stringify({ type: 'error', error: errorMsg })}\n\n`);
+      res.write('data: [DONE]\n\n');
+    }
+  } finally {
+    if (!closed) {
+      res.end();
+    }
   }
 }
 

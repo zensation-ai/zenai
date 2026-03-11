@@ -260,11 +260,49 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
       operation: 'processEmailWithAI',
     });
   });
+
+  // Phase 43: Re-summarize thread if this email joins an existing thread
+  if (threadId && threadId !== id) {
+    resummarizeThreadAsync(context, threadId).catch(err => {
+      logger.warn('Async thread re-summarization failed', {
+        threadId,
+        error: (err as Error).message,
+        operation: 'resummarizeThread',
+      });
+    });
+  }
 }
 
 // ============================================================
 // Async AI Processing (placeholder - implemented in email-ai.ts)
 // ============================================================
+
+/**
+ * Phase 43: Re-summarize a thread when a new email arrives.
+ * Updates thread summary so "Ask My Inbox" has current context.
+ */
+async function resummarizeThreadAsync(context: AIContext, threadId: string): Promise<void> {
+  try {
+    const { summarizeThread } = await import('../services/email-ai');
+    const summary = await summarizeThread(context, threadId);
+
+    // Store updated summary as metadata on the first email of the thread
+    await queryContext(context, `
+      UPDATE emails SET
+        metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('thread_summary', $2, 'thread_summary_at', NOW()::text),
+        updated_at = NOW()
+      WHERE thread_id = $1 AND id = $1
+    `, [threadId, summary]);
+
+    logger.info('Thread re-summarized', { threadId, summaryLength: summary.length, operation: 'resummarizeThread' });
+  } catch (err) {
+    logger.warn('Thread re-summarization not available', {
+      threadId,
+      error: (err as Error).message,
+      operation: 'resummarizeThreadAsync',
+    });
+  }
+}
 
 async function processEmailWithAIAsync(context: AIContext, emailId: string): Promise<void> {
   try {

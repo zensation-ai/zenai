@@ -5,7 +5,7 @@
  * textarea, send button, thinking mode bar, and inline error display.
  */
 
-import type { RefObject, Dispatch, SetStateAction } from 'react';
+import { useCallback, useEffect, type RefObject, type Dispatch, type SetStateAction } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { ImageUpload } from '../ImageUpload';
 import { VoiceInput } from '../VoiceInput';
@@ -45,16 +45,28 @@ export function ChatInput({
   setInlineError,
   thinkingMode,
   setThinkingMode,
-  voiceChatOpen: _voiceChatOpen,
+  voiceChatOpen: _voiceChatOpen, // eslint-disable-line @typescript-eslint/no-unused-vars
   setVoiceChatOpen,
   inputRef,
   context,
-  assistantMode: _assistantMode,
+  assistantMode,
 }: ChatInputProps) {
+  // Auto-resize textarea to fit content (up to max-height set in CSS)
+  const autoResize = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto'; // Reset to measure scrollHeight
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [inputRef]);
+
+  useEffect(() => {
+    autoResize();
+  }, [inputValue, autoResize]);
+
   return (
     <>
-      {/* Thinking Mode Toggle (Phase 32C-1) */}
-      <div className="thinking-mode-bar">
+      {/* Thinking Mode Toggle (Phase 32C-1) - hidden in assistantMode where it has no effect */}
+      {!assistantMode && <div className="thinking-mode-bar">
         {([
           { mode: 'assist' as const, icon: '\u{1F4A1}', label: 'Hilf mir' },
           { mode: 'challenge' as const, icon: '\u{1F525}', label: 'Fordere mich heraus' },
@@ -72,7 +84,7 @@ export function ChatInput({
             <span className="thinking-mode-label">{label}</span>
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Inline Error Display (for assistant mode where toast is hidden) */}
       {inlineError && (

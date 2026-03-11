@@ -1373,7 +1373,7 @@ Regeln:
     const relationship_type = args.relationship_type as string | undefined;
     const limit = (args.limit as number | undefined) ?? 20;
 
-    if (!query) throw new Error('Suchbegriff ist erforderlich');
+    if (!query) { throw new Error('Suchbegriff ist erforderlich'); }
 
     const result = await getContacts(context, {
       search: query,
@@ -1402,10 +1402,10 @@ Regeln:
     const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
     const limit = (args.limit as number | undefined) ?? 20;
 
-    if (!contactId) throw new Error('contact_id ist erforderlich');
+    if (!contactId) { throw new Error('contact_id ist erforderlich'); }
 
     const contact = await getContact(context, contactId);
-    if (!contact) throw new Error('Kontakt nicht gefunden');
+    if (!contact) { throw new Error('Kontakt nicht gefunden'); }
 
     const interactions = await getContactInteractions(context, contactId, limit);
 
@@ -1513,7 +1513,7 @@ Regeln:
     const query = args.query as string | undefined;
     const context = (args.context as AIContext | undefined) ?? this.config.defaultContext;
 
-    if (!query) throw new Error('Suchbegriff ist erforderlich');
+    if (!query) { throw new Error('Suchbegriff ist erforderlich'); }
 
     const result = await getScreenCaptures(context, {
       search: query,

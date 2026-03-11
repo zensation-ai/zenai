@@ -271,9 +271,10 @@ export async function getEmails(
   }
 
   if (filters?.search) {
-    conditions.push(`(e.subject ILIKE $${paramIdx} OR e.body_text ILIKE $${paramIdx} OR e.from_address ILIKE $${paramIdx})`);
-    params.push(`%${filters.search}%`);
-    paramIdx++;
+    conditions.push(`(e.subject ILIKE $${paramIdx} OR e.body_text ILIKE $${paramIdx + 1} OR e.from_address ILIKE $${paramIdx + 2})`);
+    const searchPattern = `%${filters.search}%`;
+    params.push(searchPattern, searchPattern, searchPattern);
+    paramIdx += 3;
   }
 
   const limit = Math.min(filters?.limit || 50, 200);

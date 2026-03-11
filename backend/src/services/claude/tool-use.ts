@@ -720,7 +720,7 @@ export const TOOL_CREATE_MEETING: ToolDefinition = {
 
 export const TOOL_NAVIGATE_TO: ToolDefinition = {
   name: 'navigate_to',
-  description: 'Navigiert den Nutzer zu einer bestimmten Seite der App. Nutze dies wenn der Nutzer eine Seite besuchen möchte oder nach einem Feature fragt.',
+  description: 'Navigiert den Nutzer zu einer bestimmten Seite der App. Nutze dies wenn der Nutzer eine Seite besuchen moechte oder nach einem Feature fragt.',
   input_schema: {
     type: 'object',
     properties: {
@@ -728,16 +728,20 @@ export const TOOL_NAVIGATE_TO: ToolDefinition = {
         type: 'string',
         description: 'Zielseite',
         enum: [
-          'home', 'ideas', 'insights', 'archive', 'settings',
-          'ai-workshop', 'learning', 'profile', 'meetings', 'media',
-          'stories', 'documents', 'automations', 'integrations',
-          'notifications', 'export', 'sync', 'personalization',
-          'canvas', 'triage', 'voice-chat', 'agent-teams',
+          'home', 'chat', 'browser',
+          'ideas', 'incubator', 'archive', 'triage',
+          'workshop', 'agent-teams',
+          'calendar', 'tasks', 'kanban', 'gantt', 'meetings',
+          'contacts', 'email', 'documents', 'media', 'canvas',
+          'insights', 'finance', 'business',
+          'my-ai', 'voice-chat', 'learning', 'screen-memory',
+          'settings', 'profile', 'automations', 'integrations',
+          'notifications',
         ],
       },
       reason: {
         type: 'string',
-        description: 'Kurze Erklärung warum diese Seite relevant ist',
+        description: 'Kurze Erklaerung warum diese Seite relevant ist',
       },
     },
     required: ['page'],
@@ -746,16 +750,88 @@ export const TOOL_NAVIGATE_TO: ToolDefinition = {
 
 export const TOOL_APP_HELP: ToolDefinition = {
   name: 'app_help',
-  description: 'Erklärt ein Feature oder eine Seite der ZenAI App. Nutze dies wenn der Nutzer fragt wie etwas funktioniert oder was eine Seite tut.',
+  description: 'Erklaert ein Feature oder eine Seite der ZenAI App. Nutze dies wenn der Nutzer fragt wie etwas funktioniert oder was eine Seite tut.',
   input_schema: {
     type: 'object',
     properties: {
       topic: {
         type: 'string',
-        description: 'Das Feature oder die Seite über die Hilfe gebraucht wird',
+        description: 'Das Feature oder die Seite ueber die Hilfe gebraucht wird',
       },
     },
     required: ['topic'],
+  },
+};
+
+// ===========================================
+// CRUD Tools (Update, Archive, Delete)
+// ===========================================
+
+export const TOOL_UPDATE_IDEA: ToolDefinition = {
+  name: 'update_idea',
+  description: 'Aktualisiert eine bestehende Idee. Nutze dies wenn der Nutzer eine Idee aendern, umbenennen, die Prioritaet aendern oder Details hinzufuegen moechte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'Die ID der zu aktualisierenden Idee',
+      },
+      title: {
+        type: 'string',
+        description: 'Neuer Titel (optional)',
+      },
+      summary: {
+        type: 'string',
+        description: 'Neue Zusammenfassung (optional)',
+      },
+      priority: {
+        type: 'string',
+        description: 'Neue Prioritaet',
+        enum: ['low', 'medium', 'high'],
+      },
+      category: {
+        type: 'string',
+        description: 'Neue Kategorie',
+        enum: ['business', 'technical', 'personal', 'learning'],
+      },
+      type: {
+        type: 'string',
+        description: 'Neuer Typ',
+        enum: ['idea', 'task', 'insight', 'problem', 'question'],
+      },
+    },
+    required: ['id'],
+  },
+};
+
+export const TOOL_ARCHIVE_IDEA: ToolDefinition = {
+  name: 'archive_idea',
+  description: 'Archiviert eine Idee. Nutze dies wenn der Nutzer eine Idee archivieren, beiseitelegen oder als erledigt markieren moechte.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'Die ID der zu archivierenden Idee',
+      },
+    },
+    required: ['id'],
+  },
+};
+
+export const TOOL_DELETE_IDEA: ToolDefinition = {
+  name: 'delete_idea',
+  description: 'Loescht eine Idee dauerhaft. Nutze dies NUR wenn der Nutzer explizit sagt er will eine Idee loeschen. Frage vorher nach Bestaetigung.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'Die ID der zu loeschenden Idee',
+      },
+    },
+    required: ['id'],
   },
 };
 
@@ -931,6 +1007,109 @@ export const TOOL_ESTIMATE_TRAVEL: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 42: Self-Editing Memory Tools (Letta Pattern)
+// ===========================================
+
+/**
+ * Memory update tool - AI updates existing facts in its own memory
+ * Implements the Letta "self-editing memory" pattern where the AI
+ * has agency over its own memory state.
+ */
+export const TOOL_MEMORY_UPDATE: ToolDefinition = {
+  name: 'memory_update',
+  description:
+    'Aktualisiert einen bestehenden Fakt im Langzeitgedaechtnis. Nutze dies wenn der Nutzer eine fruehre Information korrigiert (z.B. "Ich arbeite jetzt bei X" statt "bei Y"), oder wenn du merkst dass ein gespeicherter Fakt veraltet ist. Ersetzt den alten Fakt mit der neuen Information.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      fact_id: {
+        type: 'string',
+        description: 'ID des zu aktualisierenden Fakts (aus memory_introspect oder recall)',
+      },
+      search_content: {
+        type: 'string',
+        description: 'Alternativ: Suchtext um den Fakt zu finden (wenn keine ID bekannt)',
+      },
+      new_content: {
+        type: 'string',
+        description: 'Neuer Inhalt des Fakts',
+      },
+      new_fact_type: {
+        type: 'string',
+        description: 'Neuer Typ (optional, nur wenn sich der Typ aendert)',
+        enum: ['preference', 'behavior', 'knowledge', 'goal', 'context'],
+      },
+      confidence: {
+        type: 'number',
+        description: 'Neue Konfidenz 0.0-1.0 (optional, Standard: 0.9 fuer explizite Korrekturen)',
+      },
+    },
+    required: ['new_content'],
+  },
+};
+
+/**
+ * Memory delete tool - AI removes facts from its own memory
+ * Enables explicit forgetting when facts are wrong, irrelevant, or privacy-sensitive.
+ */
+export const TOOL_MEMORY_DELETE: ToolDefinition = {
+  name: 'memory_delete',
+  description:
+    'Loescht einen Fakt aus dem Langzeitgedaechtnis. Nutze dies wenn der Nutzer explizit sagt "vergiss das", "loesch das", oder wenn ein gespeicherter Fakt nachweislich falsch ist und nicht korrigiert werden kann.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      fact_id: {
+        type: 'string',
+        description: 'ID des zu loeschenden Fakts',
+      },
+      search_content: {
+        type: 'string',
+        description: 'Alternativ: Suchtext um den Fakt zu finden',
+      },
+      reason: {
+        type: 'string',
+        description: 'Grund fuer die Loeschung (fuer Audit-Log)',
+      },
+    },
+    required: [],
+  },
+};
+
+/**
+ * Memory update profile tool - AI updates personal profile facts
+ * Bridges to the PersonalizationChat personal_facts table.
+ */
+export const TOOL_MEMORY_UPDATE_PROFILE: ToolDefinition = {
+  name: 'memory_update_profile',
+  description:
+    'Aktualisiert das persoenliche Profil des Nutzers (Name, Beruf, Interessen, Kommunikationsstil etc.). Nutze dies wenn der Nutzer persoenliche Informationen teilt die sein Profil betreffen, z.B. "Nenn mich Alex", "Ich bin umgezogen nach Berlin", "Ich mag lieber Du als Sie".',
+  input_schema: {
+    type: 'object',
+    properties: {
+      category: {
+        type: 'string',
+        description: 'Kategorie des Profil-Fakts',
+        enum: [
+          'basic_info', 'personality', 'work_life', 'goals_dreams',
+          'interests_hobbies', 'communication_style', 'decision_making',
+          'daily_routines', 'values_beliefs', 'challenges',
+        ],
+      },
+      fact_key: {
+        type: 'string',
+        description: 'Schluessel des Fakts (z.B. "name", "beruf", "wohnort", "anrede")',
+      },
+      fact_value: {
+        type: 'string',
+        description: 'Wert des Fakts (z.B. "Alexander", "Software-Entwickler", "Berlin", "Du")',
+      },
+    },
+    required: ['category', 'fact_key', 'fact_value'],
+  },
+};
+
+// ===========================================
 // Phase 41: Google Maps Tools
 // ===========================================
 
@@ -999,6 +1178,88 @@ export const TOOL_OPTIMIZE_ROUTE: ToolDefinition = {
       mode: { type: 'string', enum: ['driving', 'transit', 'walking', 'bicycling'], description: 'Transportmittel (Standard: driving)' },
     },
     required: ['locations'],
+  },
+};
+
+// ===========================================
+// Phase 43: Email Intelligence Tools
+// ===========================================
+
+/**
+ * Ask My Inbox tool - natural language email search
+ */
+export const TOOL_ASK_INBOX: ToolDefinition = {
+  name: 'ask_inbox',
+  description: 'Durchsucht die E-Mails des Nutzers mit natuerlicher Sprache. Nutze dies wenn der Nutzer Fragen zu seinen E-Mails stellt, z.B. "Was hat mir X geschrieben?", "Gibt es dringende E-Mails?", "Zeig mir E-Mails von letzter Woche". Kann nach Absender, Datum, Kategorie, Prioritaet und Freitext filtern.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      question: {
+        type: 'string',
+        description: 'Die Frage oder Suchanfrage zu E-Mails in natuerlicher Sprache',
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximale Anzahl Ergebnisse (Standard: 10)',
+      },
+    },
+    required: ['question'],
+  },
+};
+
+/**
+ * Inbox Summary tool - quick inbox overview
+ */
+export const TOOL_INBOX_SUMMARY: ToolDefinition = {
+  name: 'inbox_summary',
+  description: 'Gibt einen Ueberblick ueber den aktuellen Inbox-Status: Anzahl E-Mails, ungelesen, Kategorien, Prioritaeten, haeufigste Absender, offene Aufgaben. Nutze dies wenn der Nutzer nach einem Inbox-Ueberblick oder E-Mail-Status fragt.',
+  input_schema: {
+    type: 'object',
+    properties: {},
+    required: [],
+  },
+};
+
+// ===========================================
+// Phase 44: MCP Ecosystem Tools
+// ===========================================
+
+/**
+ * MCP Call Tool - call a tool on a connected external MCP server
+ */
+export const TOOL_MCP_CALL_TOOL: ToolDefinition = {
+  name: 'mcp_call_tool',
+  description: 'Ruft ein Tool auf einem verbundenen externen MCP-Server auf. Nutze zuerst mcp_list_tools um verfuegbare Tools zu sehen, dann rufe das gewuenschte Tool mit connection_id und tool_name auf.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      connection_id: {
+        type: 'string',
+        description: 'Die UUID der MCP-Server-Verbindung',
+      },
+      tool_name: {
+        type: 'string',
+        description: 'Der Name des Tools auf dem externen Server',
+      },
+      arguments: {
+        type: 'object',
+        description: 'Die Argumente fuer das Tool (als JSON-Objekt)',
+      },
+    },
+    required: ['connection_id', 'tool_name'],
+  },
+};
+
+/**
+ * MCP List Tools - list all available tools from connected MCP servers
+ */
+export const TOOL_MCP_LIST_TOOLS: ToolDefinition = {
+  name: 'mcp_list_tools',
+  description: 'Listet alle verfuegbaren Tools von verbundenen externen MCP-Servern auf. Zeigt Tool-Namen, Beschreibungen und den zugehoerigen Server.',
+  input_schema: {
+    type: 'object',
+    properties: {},
+    required: [],
   },
 };
 

@@ -13,7 +13,7 @@ import {
 } from '../services/browsing-memory';
 import { analyzePage } from '../services/page-analyzer';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateContextParam } from '../utils/validation';
 
 export const browserRouter = Router();
@@ -64,11 +64,11 @@ browserRouter.get('/:context/browser/history/:id', apiKeyAuth, asyncHandler(asyn
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid history entry ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid history entry ID'); }
 
   const entry = await getHistoryEntry(context, id);
   if (!entry) {
-    return res.status(404).json({ success: false, error: 'History entry not found' });
+    throw new NotFoundError('History entry not found');
   }
 
   res.json({ success: true, data: entry });
@@ -123,11 +123,11 @@ browserRouter.delete('/:context/browser/history/:id', apiKeyAuth, requireScope('
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid history entry ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid history entry ID'); }
 
   const deleted = await deleteHistoryEntry(context, id);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'History entry not found' });
+    throw new NotFoundError('History entry not found');
   }
 
   res.json({ success: true, message: 'History entry deleted' });
@@ -189,11 +189,11 @@ browserRouter.get('/:context/browser/bookmarks/:id', apiKeyAuth, asyncHandler(as
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid bookmark ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
   const bookmark = await getBookmark(context, id);
   if (!bookmark) {
-    return res.status(404).json({ success: false, error: 'Bookmark not found' });
+    throw new NotFoundError('Bookmark not found');
   }
 
   res.json({ success: true, data: bookmark });
@@ -226,11 +226,11 @@ browserRouter.put('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope('w
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid bookmark ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
   const updated = await updateBookmark(context, id, req.body);
   if (!updated) {
-    return res.status(404).json({ success: false, error: 'Bookmark not found' });
+    throw new NotFoundError('Bookmark not found');
   }
 
   res.json({ success: true, data: updated });
@@ -244,11 +244,11 @@ browserRouter.delete('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope
   const context = validateContextParam(req.params.context);
   const { id } = req.params;
 
-  if (!isValidUUID(id)) throw new ValidationError('Invalid bookmark ID');
+  if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
   const deleted = await deleteBookmark(context, id);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'Bookmark not found' });
+    throw new NotFoundError('Bookmark not found');
   }
 
   res.json({ success: true, message: 'Bookmark deleted' });

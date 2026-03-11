@@ -35,13 +35,13 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 // Mock calendar service
-const mockCreateEvent = jest.fn();
-const mockGetEvents = jest.fn();
-const mockGetEvent = jest.fn();
-const mockUpdateEvent = jest.fn();
-const mockDeleteEvent = jest.fn();
-const mockGetUpcoming = jest.fn();
-const mockSearchEvents = jest.fn();
+var mockCreateEvent = jest.fn();
+var mockGetEvents = jest.fn();
+var mockGetEvent = jest.fn();
+var mockUpdateEvent = jest.fn();
+var mockDeleteEvent = jest.fn();
+var mockGetUpcoming = jest.fn();
+var mockSearchEvents = jest.fn();
 
 jest.mock('../../services/calendar', () => ({
   createCalendarEvent: (...args: any[]) => mockCreateEvent(...args),
@@ -86,7 +86,7 @@ beforeEach(() => {
   mockSearchEvents.mockReset();
 });
 
-const mockEvent = {
+var mockEvent = {
   id: '11111111-1111-1111-1111-111111111111',
   title: 'Test Event',
   description: 'A test event',

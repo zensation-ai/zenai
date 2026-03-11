@@ -7,12 +7,14 @@ import { logger } from '../../utils/logger';
 import { generateWithConversationHistory, ConversationMessage, isClaudeAvailable } from '../claude';
 import { getUnifiedContext } from '../business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../memory';
+import { getPersonalFactsPromptSection } from '../personal-facts-bridge';
 import { implicitFeedback } from '../memory/implicit-feedback';
 import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode } from '../chat-modes';
 import { classifyIntent, intentToRetrievalConfig } from '../query-intent-classifier';
 import { ThinkingMode, applyThinkingMode } from '../thinking-partner';
 import { executeWithTools, ToolExecutionContext } from '../claude/tool-use';
 import { enhancedRAG, EnhancedRAGResult, EnhancedResult } from '../enhanced-rag';
+import { graphRAGRetrieve, GraphRAGResult, buildGraphContextPrompt } from '../graph-rag';
 import { searchWeb } from '../web-search';
 import { CHAT } from '../../config/constants';
 import { routeToModel, recordUsage } from '../model-orchestrator';
@@ -156,9 +158,17 @@ export async function generateEnhancedResponse(
       }
     }
 
+    // Load personal facts from PersonalizationChat (cross-context, cached)
+    // Pass user message for query-relevant fact selection
+    const personalFactsSection = await getPersonalFactsPromptSection(userMessage);
+    if (personalFactsSection) {
+      systemPrompt += personalFactsSection;
+    }
+
     logger.debug('Enhanced context prepared', {
       sessionId,
       memoryStats,
+      hasPersonalFacts: !!personalFactsSection,
       systemPromptLength: systemPrompt.length,
     });
   } catch (error) {
@@ -227,35 +237,41 @@ export async function generateEnhancedResponse(
       let ragMetadata: EnhancedRAGResult | undefined;
 
       if (useDeepRAG) {
-        // Full RAG with HyDE + Cross-Encoder for knowledge-intensive queries
-        ragMetadata = await enhancedRAG.retrieve(userMessage, contextType, {
-          enableHyDE: retrievalConfig.enableHyDE,
-          autoDetectHyDE: true,
-          enableCrossEncoder: retrievalConfig.enableCrossEncoder,
-          crossEncodeTop: 10,
-          minRelevance: 0.35,
+        // Full GraphRAG: Knowledge Graph traversal + HyDE + Cross-Encoder
+        const graphResult: GraphRAGResult = await graphRAGRetrieve(userMessage, contextType, {
           maxResults: retrievalConfig.maxResults,
-          agenticConfig: { maxIterations: retrievalConfig.maxIterations },
+          maxHops: 2,
         });
-        ragResults = ragMetadata.results;
+        ragMetadata = graphResult;
+        ragResults = graphResult.results;
 
         // Build quality metrics
         ragQuality = {
           used: true,
           documentsCount: ragResults.length,
-          confidence: ragMetadata.confidence,
-          methodsUsed: ragMetadata.methodsUsed,
-          timing: ragMetadata.timing,
+          confidence: graphResult.confidence,
+          methodsUsed: graphResult.methodsUsed,
+          timing: graphResult.timing,
           topResultScore: ragResults[0]?.score || 0,
-          hydeUsed: ragMetadata.debug?.hydeUsed || false,
-          crossEncoderUsed: ragMetadata.methodsUsed.includes('cross_encoder'),
+          hydeUsed: graphResult.debug?.hydeUsed || false,
+          crossEncoderUsed: graphResult.methodsUsed.includes('cross_encoder'),
         };
 
-        logger.info('Deep RAG retrieval completed', {
+        // Enrich system prompt with graph context
+        if (graphResult.graphEnriched) {
+          const graphPrompt = buildGraphContextPrompt(graphResult.graphContext);
+          if (graphPrompt) {
+            systemPrompt += graphPrompt;
+          }
+        }
+
+        logger.info('GraphRAG retrieval completed', {
           sessionId,
-          confidence: ragMetadata.confidence,
-          methods: ragMetadata.methodsUsed,
-          timing: ragMetadata.timing,
+          confidence: graphResult.confidence,
+          methods: graphResult.methodsUsed,
+          graphEnriched: graphResult.graphEnriched,
+          graphRelated: graphResult.graphContext.relatedIdeas.length,
+          timing: graphResult.timing,
         });
       } else {
         // Quick RAG for supplementary context

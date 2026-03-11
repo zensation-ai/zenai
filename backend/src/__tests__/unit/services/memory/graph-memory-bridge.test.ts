@@ -10,7 +10,7 @@ import {
 } from '../../../../services/memory/graph-memory-bridge';
 
 // Mock database-context
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
 }));

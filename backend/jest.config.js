@@ -1,6 +1,5 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+/** @type {import('jest').Config} */
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: [
@@ -8,8 +7,17 @@ module.exports = {
     '**/*.test.ts'
   ],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.json'
+    '^.+\\.tsx?$': ['@swc/jest', {
+      jsc: {
+        parser: {
+          syntax: 'typescript',
+          decorators: true
+        },
+        target: 'es2022'
+      },
+      module: {
+        type: 'commonjs'
+      }
     }]
   },
   collectCoverageFrom: [
@@ -34,7 +42,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   testTimeout: 30000,
   verbose: true,
-  // Force exit after tests complete to avoid hanging from open handles
-  // (database connections, HTTP servers, timers, etc.)
-  forceExit: true
+  maxWorkers: 2,
+  forceExit: true,
+  workerIdleMemoryLimit: '256MB'
 };

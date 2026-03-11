@@ -21,8 +21,8 @@ jest.mock('fs');
 
 import { transcribeAudio, checkWhisperAvailable } from '../../../services/whisper';
 
-const mockedSpawn = spawn as jest.MockedFunction<typeof spawn>;
-const mockedFs = fs as jest.Mocked<typeof fs>;
+var mockedSpawn = spawn as jest.MockedFunction<typeof spawn>;
+var mockedFs = fs as jest.Mocked<typeof fs>;
 
 // Helper to create a controllable mock process
 function createMockProcess() {

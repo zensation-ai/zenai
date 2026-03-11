@@ -5,9 +5,9 @@
  */
 
 // Mock ollama
-const mockQueryOllamaJSON = jest.fn();
+var mockQueryOllamaJSON = jest.fn();
 jest.mock('../../../utils/ollama', () => ({
-  queryOllamaJSON: mockQueryOllamaJSON,
+  queryOllamaJSON: (...args: any[]) => mockQueryOllamaJSON(...args),
 }));
 
 // Mock logger

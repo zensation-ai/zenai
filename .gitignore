@@ -24,11 +24,10 @@ build/
 !.vscode/settings.json
 !.vscode/extensions.json
 
-# Xcode / Capacitor iOS
+# Xcode user state
 *.xcuserstate
 xcuserdata/
 *.xcworkspace/xcuserdata/
-frontend/ios/
 
 # OS
 .DS_Store

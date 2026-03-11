@@ -11,7 +11,7 @@ import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import './InsightsDashboard.css';
 
-const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
+const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboardV2 })));
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
 

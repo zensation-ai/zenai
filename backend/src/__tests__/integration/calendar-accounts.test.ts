@@ -53,12 +53,12 @@ jest.mock('../../utils/encryption', () => ({
 }));
 
 // Mock CalDAV sync service
-const mockCreateAccount = jest.fn();
-const mockGetAccounts = jest.fn();
-const mockGetAccount = jest.fn();
-const mockUpdateAccount = jest.fn();
-const mockDeleteAccount = jest.fn();
-const mockSyncAccount = jest.fn();
+var mockCreateAccount = jest.fn();
+var mockGetAccounts = jest.fn();
+var mockGetAccount = jest.fn();
+var mockUpdateAccount = jest.fn();
+var mockDeleteAccount = jest.fn();
+var mockSyncAccount = jest.fn();
 
 jest.mock('../../services/caldav-sync', () => ({
   createCalendarAccount: (...args: any[]) => mockCreateAccount(...args),
@@ -70,8 +70,8 @@ jest.mock('../../services/caldav-sync', () => ({
 }));
 
 // Mock CalDAV connector
-const mockTestConnection = jest.fn();
-const mockDiscoverCalendars = jest.fn();
+var mockTestConnection = jest.fn();
+var mockDiscoverCalendars = jest.fn();
 
 jest.mock('../../services/caldav-connector', () => ({
   testConnection: (...args: any[]) => mockTestConnection(...args),
@@ -79,10 +79,10 @@ jest.mock('../../services/caldav-connector', () => ({
 }));
 
 // Mock Calendar AI
-const mockGenerateBriefing = jest.fn();
-const mockSuggestSlots = jest.fn();
-const mockDetectConflicts = jest.fn();
-const mockCheckConflicts = jest.fn();
+var mockGenerateBriefing = jest.fn();
+var mockSuggestSlots = jest.fn();
+var mockDetectConflicts = jest.fn();
+var mockCheckConflicts = jest.fn();
 
 jest.mock('../../services/calendar-ai', () => ({
   generateDailyBriefing: (...args: any[]) => mockGenerateBriefing(...args),
@@ -118,7 +118,7 @@ beforeEach(() => {
 
 const TEST_UUID = '12345678-1234-1234-1234-123456789012';
 
-const mockAccount = {
+var mockAccount = {
   id: TEST_UUID,
   provider: 'icloud',
   username: 'test@icloud.com',

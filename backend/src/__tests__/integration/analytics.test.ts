@@ -42,7 +42,7 @@ jest.mock('../../utils/logger', () => ({
 import { queryContext } from '../../utils/database-context';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 
 describe('Analytics API Integration Tests', () => {
   let app: Express;

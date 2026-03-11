@@ -2,8 +2,6 @@
  * Maps Tool Handlers Tests - Phase 41
  */
 
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-
 // Mock google-maps service
 jest.mock('../../../services/google-maps', () => ({
   isGoogleMapsAvailable: jest.fn<any>(),
@@ -49,7 +47,7 @@ import { isGoogleMapsAvailable, getDirections, autocomplete, getPlaceDetails, ge
 import { estimateTravelDuration } from '../../../services/travel-estimator';
 import type { ToolExecutionContext } from '../../../services/claude/tool-use';
 
-const mockContext: ToolExecutionContext = {
+var mockContext: ToolExecutionContext = {
   aiContext: 'personal',
   sessionId: 'test-session',
 };

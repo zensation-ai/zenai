@@ -9,8 +9,9 @@
  */
 
 import { app, BrowserWindow, Tray, Menu, nativeImage, globalShortcut, shell } from 'electron';
-import { fork, ChildProcess } from 'child_process';
+import { spawn, ChildProcess, execSync } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 import { DEFAULT_API_PORT, DEFAULT_FRONTEND_PORT, APP_NAME } from '@zenai/shared';
 import { registerIpcHandlers } from './ipc/handlers';
 import { createAppMenu } from './menu';
@@ -23,6 +24,7 @@ import { initAutoUpdater } from './updater';
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let backendProcess: ChildProcess | null = null;
+let backendWatcher: fs.FSWatcher | null = null;
 
 const isDev = !app.isPackaged;
 const BACKEND_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_API_PORT;
@@ -42,50 +44,125 @@ function getMainWindow(): BrowserWindow | null {
 // ===========================
 
 /**
- * Start the Express backend as a forked child process.
- * In production, the backend dist is bundled alongside the Electron app.
- * In development, it points to the workspace backend/dist.
+ * Get the backend directory path.
+ */
+function getBackendDir(): string {
+  return isDev
+    ? path.resolve(__dirname, '../../../backend')
+    : path.resolve(process.resourcesPath, 'backend');
+}
+
+/**
+ * Find the system Node.js binary (not Electron's).
+ * Uses PATH resolution which works cross-platform.
+ */
+function findNodeBin(): string {
+  if (process.platform === 'win32') return 'node.exe';
+  try {
+    return execSync('which node', { encoding: 'utf-8' }).trim();
+  } catch {
+    return 'node';
+  }
+}
+
+/**
+ * Find npx binary for ts-node-dev.
+ */
+function findNpxBin(): string {
+  if (process.platform === 'win32') return 'npx.cmd';
+  try {
+    return execSync('which npx', { encoding: 'utf-8' }).trim();
+  } catch {
+    return 'npx';
+  }
+}
+
+/**
+ * Start the Express backend as a spawned child process.
+ * In dev mode: uses ts-node-dev with --respawn for auto-restart on file changes.
+ * In production: uses the pre-built dist/main.js with system Node.js.
  */
 function startBackend(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const backendEntry = isDev
-      ? path.resolve(__dirname, '../../backend/dist/main.js')
-      : path.resolve(process.resourcesPath, 'backend/dist/main.js');
+    const backendDir = getBackendDir();
 
-    console.log(`[Backend] Starting from: ${backendEntry}`);
+    if (isDev) {
+      // Dev mode: use ts-node-dev for auto-restart on backend file changes
+      const npxBin = findNpxBin();
+      console.log(`[Backend] Starting in dev mode with ts-node-dev (auto-reload)`);
+      console.log(`[Backend] Working directory: ${backendDir}`);
 
-    backendProcess = fork(backendEntry, [], {
-      env: {
-        ...process.env,
-        PORT: String(BACKEND_PORT),
-        ELECTRON_MODE: 'true',
-        NODE_ENV: isDev ? 'development' : 'production',
-      },
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-    });
+      backendProcess = spawn(npxBin, [
+        'ts-node-dev',
+        '--respawn',
+        '--transpile-only',
+        '--clear',
+        '--ignore-watch', 'node_modules',
+        '--ignore-watch', '__tests__',
+        '--ignore-watch', 'dist',
+        'src/main.ts',
+      ], {
+        cwd: backendDir,
+        env: {
+          ...process.env,
+          PORT: String(BACKEND_PORT),
+          ELECTRON_MODE: 'true',
+          NODE_ENV: 'development',
+        },
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    } else {
+      // Production: use pre-built dist
+      const nodeBin = findNodeBin();
+      const backendEntry = path.join(backendDir, 'dist/main.js');
+      console.log(`[Backend] Starting from: ${backendEntry}`);
+      console.log(`[Backend] Using node: ${nodeBin}`);
 
-    // Forward backend stdout/stderr to console
+      backendProcess = spawn(nodeBin, [backendEntry], {
+        cwd: backendDir,
+        env: {
+          ...process.env,
+          PORT: String(BACKEND_PORT),
+          ELECTRON_MODE: 'true',
+          NODE_ENV: 'production',
+        },
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    }
+
+    // Detect backend readiness from stdout
+    let resolved = false;
     backendProcess.stdout?.on('data', (data: Buffer) => {
-      console.log(`[Backend] ${data.toString().trim()}`);
+      const text = data.toString().trim();
+      console.log(`[Backend] ${text}`);
+      // Backend logs "Server:      http://localhost:XXXX" when ready
+      if (!resolved && (text.includes('Server:') || text.includes('listening on') || text.includes('Server running'))) {
+        resolved = true;
+        console.log('[Backend] Server ready (detected from stdout)');
+        resolve();
+      }
+      // ts-node-dev restart detection
+      if (text.includes('Restarting:') || text.includes('[INFO] Restarting')) {
+        console.log('[Backend] Restarting due to file change...');
+      }
     });
 
     backendProcess.stderr?.on('data', (data: Buffer) => {
-      console.error(`[Backend] ${data.toString().trim()}`);
-    });
-
-    backendProcess.on('message', (msg: unknown) => {
-      if (typeof msg === 'object' && msg !== null && 'type' in msg) {
-        const typedMsg = msg as { type: string };
-        if (typedMsg.type === 'ready') {
-          console.log('[Backend] Server ready');
-          resolve();
-        }
+      const text = data.toString().trim();
+      // ts-node-dev outputs restart info to stderr
+      if (text.includes('Restarting') || text.includes('Watching')) {
+        console.log(`[Backend] ${text}`);
+      } else {
+        console.error(`[Backend] ${text}`);
       }
     });
 
     backendProcess.on('error', (err) => {
       console.error('[Backend] Process error:', err);
-      reject(err);
+      if (!resolved) {
+        resolved = true;
+        reject(err);
+      }
     });
 
     backendProcess.on('exit', (code) => {
@@ -93,11 +170,50 @@ function startBackend(): Promise<void> {
       backendProcess = null;
     });
 
-    // Fallback: resolve after timeout if no 'ready' message
+    // Fallback: resolve after timeout
     setTimeout(() => {
-      console.log('[Backend] Startup timeout - proceeding');
-      resolve();
-    }, 8000);
+      if (!resolved) {
+        resolved = true;
+        console.log('[Backend] Startup timeout - proceeding');
+        resolve();
+      }
+    }, 15000);
+  });
+}
+
+/**
+ * Watch Electron main process source files for changes.
+ * On change, recompile and restart Electron.
+ */
+function watchElectronSource(): void {
+  if (!isDev) return;
+
+  const electronSrcDir = path.resolve(__dirname, '../../../packages/electron/src');
+  if (!fs.existsSync(electronSrcDir)) return;
+
+  console.log(`[ZenAI] Watching Electron source: ${electronSrcDir}`);
+
+  let debounceTimer: NodeJS.Timeout | null = null;
+  backendWatcher = fs.watch(electronSrcDir, { recursive: true }, (event, filename) => {
+    if (!filename?.endsWith('.ts')) return;
+
+    // Debounce rapid changes
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      console.log(`[ZenAI] Electron source changed: ${filename}`);
+      console.log('[ZenAI] Recompiling... (restart Electron manually with Cmd+R or relaunch)');
+
+      // Recompile TypeScript
+      try {
+        const electronDir = path.resolve(__dirname, '../../../packages/electron');
+        execSync('npx tsc', { cwd: electronDir, encoding: 'utf-8' });
+        console.log('[ZenAI] Recompile complete. Reloading window...');
+        // Reload the renderer to pick up any preload changes
+        mainWindow?.webContents.reload();
+      } catch (err) {
+        console.error('[ZenAI] Recompile failed:', err);
+      }
+    }, 500);
   });
 }
 
@@ -266,6 +382,9 @@ app.whenReady().then(async () => {
   // Initialize auto-updater (production only)
   initAutoUpdater(getMainWindow);
 
+  // Watch Electron source for changes in dev mode
+  watchElectronSource();
+
   console.log(`[${APP_NAME}] Desktop app ready (${isDev ? 'development' : 'production'})`);
 
   app.on('activate', () => {
@@ -285,6 +404,11 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+
+  if (backendWatcher) {
+    backendWatcher.close();
+    backendWatcher = null;
+  }
 
   if (backendProcess) {
     backendProcess.kill();

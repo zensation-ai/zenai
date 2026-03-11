@@ -5,15 +5,15 @@
  */
 
 // Mock database context
-const mockQueryContext = jest.fn();
+var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
-  queryContext: mockQueryContext,
+  queryContext: (...args: any[]) => mockQueryContext(...args),
   isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
   AIContext: {},
 }));
 
 // Mock Anthropic
-const mockCreate = jest.fn().mockResolvedValue({
+var mockCreate = jest.fn().mockResolvedValue({
   content: [{ type: 'text', text: JSON.stringify({
     summary: 'Ein produktiver Tag mit 3 Meetings.',
     tips: ['Plane Pausen ein', 'Bereite das Meeting vor'],
@@ -23,7 +23,7 @@ const mockCreate = jest.fn().mockResolvedValue({
 });
 jest.mock('@anthropic-ai/sdk', () => {
   return jest.fn().mockImplementation(() => ({
-    messages: { create: mockCreate },
+    messages: { create: (...args: any[]) => mockCreate(...args) },
   }));
 });
 
@@ -43,7 +43,7 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock calendar service
-const mockGetCalendarEvents = jest.fn().mockResolvedValue([]);
+var mockGetCalendarEvents = jest.fn().mockResolvedValue([]);
 jest.mock('../../../services/calendar', () => ({
   getCalendarEvents: (...args: any[]) => mockGetCalendarEvents(...args),
 }));

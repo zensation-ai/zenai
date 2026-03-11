@@ -254,7 +254,11 @@ export async function updateTask(
 
   setClauses.push('updated_at = NOW()');
 
-  if (setClauses.length <= 1) {return null;}
+  if (setClauses.length <= 1) {
+    // No fields to update (only updated_at = NOW()) - return existing task unchanged
+    const existing = await queryContext(context, 'SELECT * FROM tasks WHERE id = $1', [id]);
+    return existing.rows.length > 0 ? mapRowToTask(existing.rows[0]) : null;
+  }
 
   const result = await queryContext(context, `
     UPDATE tasks
@@ -300,18 +304,18 @@ export async function reorderTasks(
     return;
   }
 
-  // Batch update: single query using unnest instead of N individual updates
+  // Batch update: single query using unnest WITH ORDINALITY for guaranteed row pairing
   await queryContext(context, `
     UPDATE tasks
     SET sort_order = batch.new_order,
         status = $1,
         updated_at = NOW()
     FROM (
-      SELECT unnest($2::uuid[]) AS id,
-             generate_series(0, $3::int) AS new_order
+      SELECT u.id, (u.ord - 1) AS new_order
+      FROM unnest($2::uuid[]) WITH ORDINALITY AS u(id, ord)
     ) AS batch
     WHERE tasks.id = batch.id
-  `, [status, taskIds, taskIds.length - 1]);
+  `, [status, taskIds]);
 
   logger.info('Tasks reordered', {
     status, count: taskIds.length, context, operation: 'reorderTasks'

@@ -75,6 +75,8 @@ export type Page =
   | 'learning'
   // Screen Memory
   | 'screen-memory'
+  // Memory Insights (sub-page of my-ai)
+  | 'memory-insights'
   // Footer
   | 'notifications'
   | 'settings'

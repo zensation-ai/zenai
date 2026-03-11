@@ -32,9 +32,10 @@ import { isValidContext } from '../utils/database-context';
 import { validateBody } from '../utils/schemas';
 import { trackActivity } from '../services/activity-tracker';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
+import Anthropic from '@anthropic-ai/sdk';
 import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
-import { detectChatMode, getDefaultToolsForMode } from '../services/chat-modes';
-import { executeWithTools, ToolExecutionContext } from '../services/claude/tool-use';
+import { toolRegistry, ToolExecutionContext } from '../services/claude/tool-use';
+import { detectChatMode } from '../services/chat-modes';
 import { isValidThinkingMode, getAvailableModes, applyThinkingMode, ThinkingMode } from '../services/thinking-partner';
 import {
   buildCompactionConfig,
@@ -57,6 +58,7 @@ import {
 import { CHAT } from '../config/constants';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../services/memory';
 import { getUnifiedContext } from '../services/business-context';
+import { getPersonalFactsPromptSection } from '../services/personal-facts-bridge';
 
 export const generalChatRouter = Router();
 
@@ -609,9 +611,17 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
       }
     }
 
+    // Load personal facts from PersonalizationChat (cross-context, cached)
+    // Pass user message for query-relevant fact selection
+    const personalFactsSection = await getPersonalFactsPromptSection(message);
+    if (personalFactsSection) {
+      systemPrompt += personalFactsSection;
+    }
+
     logger.debug('Stream memory context prepared', {
       sessionId: id,
       memoryStats: enhancedContext.stats,
+      hasPersonalFacts: !!personalFactsSection,
     });
   } catch (error) {
     logger.warn('Stream memory enhancement failed, using fallback', { sessionId: id, error });
@@ -708,91 +718,6 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
     });
   }
 
-  // === Tool Execution for Streaming (Phase 31 Fix) ===
-  // When mode detection indicates tool use is needed, execute tools BEFORE streaming.
-  // The tool results are injected into the conversation context so the streamed response
-  // includes tool-derived information naturally.
-  let toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }> = [];
-  let toolEnhancedMessages = messages;
-
-  if (modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent') {
-    const tools = modeResult.suggestedTools || getDefaultToolsForMode(modeResult.mode);
-    const executionContext: ToolExecutionContext = {
-      aiContext: contextType,
-      sessionId: id,
-    };
-
-    // Add tool usage instructions to system prompt
-    systemPrompt += `\n\n[WERKZEUG-MODUS]\nDu hast Zugriff auf Werkzeuge um dem Benutzer zu helfen. Nutze sie proaktiv wenn sinnvoll.`;
-
-    try {
-      logger.info('Executing tools before streaming', {
-        sessionId: id,
-        mode: modeResult.mode,
-        toolCount: tools.length,
-      });
-
-      const toolResult = await executeWithTools(
-        messages,
-        tools.length > 0 ? tools : 'all',
-        {
-          systemPrompt,
-          maxIterations: modeResult.mode === 'agent' ? 5 : 3,
-          temperature: 0.7,
-          executionContext,
-        }
-      );
-
-      toolsCalled = toolResult.toolsCalled;
-
-      if (toolsCalled.length > 0) {
-        // Inject tool results as context for the streaming response.
-        // We add a synthetic assistant+user exchange so Claude sees the tool results.
-        const toolSummary = toolsCalled
-          .map(t => `[Tool: ${t.name}] ${t.result.slice(0, 500)}`)
-          .join('\n\n');
-
-        toolEnhancedMessages = [
-          ...messages,
-          {
-            role: 'assistant' as const,
-            content: `Ich nutze Werkzeuge um diese Anfrage zu bearbeiten...\n\n${toolSummary}`,
-          },
-          {
-            role: 'user' as const,
-            content: `Basierend auf den Werkzeug-Ergebnissen, bitte antworte ausführlich auf meine vorherige Frage: "${message}"`,
-          },
-        ];
-
-        logger.info('Tool execution complete, streaming with results', {
-          sessionId: id,
-          toolsCalled: toolsCalled.map(t => t.name),
-          iterations: toolResult.iterations,
-        });
-      } else if (toolResult.response) {
-        // Tools were available but Claude chose not to use them - use the direct response.
-        // Inject it as prior context so the streamed reply is based on it.
-        toolEnhancedMessages = [
-          ...messages.slice(0, -1), // all except the last user message
-          {
-            role: 'assistant' as const,
-            content: toolResult.response,
-          },
-          {
-            role: 'user' as const,
-            content: `Bitte formuliere diese Antwort ausführlich und im Chat-Format: "${toolResult.response.slice(0, 200)}"`,
-          },
-        ];
-      }
-    } catch (error) {
-      // Fallback: stream without tools if tool execution fails
-      logger.warn('Tool execution failed for streaming, continuing without tools', {
-        sessionId: id,
-        error: error instanceof Error ? error.message : 'Unknown',
-      });
-    }
-  }
-
   // Setup SSE and stream response
   setupSSEHeaders(res);
 
@@ -850,34 +775,45 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
 
   res.write = interceptWrite;
 
-  try {
-    // Send tool execution info via SSE before streaming the response
-    if (toolsCalled.length > 0) {
-      const toolInfoEvent = `event: tool_use\ndata: ${JSON.stringify({
-        tools: toolsCalled.map(t => ({ name: t.name, result: t.result.slice(0, 200) })),
-      })}\n\n`;
-      originalWrite(toolInfoEvent);
-    }
+  // === Tool Definitions (Pass to streaming for assistant + tool_assisted modes) ===
+  const shouldUseTools = isAssistantMode || modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent';
+  const toolDefinitions = shouldUseTools ? toolRegistry.getDefinitions() as unknown as Anthropic.Tool[] : undefined;
+  const toolExecContext: ToolExecutionContext = {
+    aiContext: contextType,
+    sessionId: id,
+  };
 
-    // Stream the response with adaptive thinking + compaction
+  // Tool executor that uses the registry with request-scoped context
+  const toolExecutor = shouldUseTools
+    ? async (name: string, input: Record<string, unknown>) => {
+        return toolRegistry.execute(name, input, toolExecContext);
+      }
+    : undefined;
+
+  try {
+    // Stream the response with adaptive thinking + compaction + tools
     if (enableThinking) {
       await thinkingStream(
         res,
-        toolEnhancedMessages,
+        messages,
         systemPrompt,
         adaptiveThinkingBudget,
         compactionConfig,
-        id
+        id,
+        toolDefinitions,
+        toolExecutor
       );
     } else {
       // Simple queries: skip thinking entirely for faster response
-      await streamToSSE(res, toolEnhancedMessages, {
+      await streamToSSE(res, messages, {
         enableThinking: false,
         systemPrompt,
         temperature: 0.7,
         maxTokens: 4096,
         compactionConfig,
         sessionId: id,
+        tools: toolDefinitions,
+        toolExecutor,
       });
     }
 
@@ -901,10 +837,13 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, validateBody
         sessionId: id,
         responseLength: fullResponse.length,
         hadThinking: thinkingContent.length > 0,
-        toolsUsed: toolsCalled.length > 0 ? toolsCalled.map(t => t.name) : undefined,
+        hadTools: shouldUseTools,
       });
     } else {
-      logger.warn('Stream completed with no content - assistant message not stored', { sessionId: id });
+      // Stream completed but returned no content - store a fallback assistant message
+      // to prevent dangling user messages with no response in chat history
+      logger.warn('Stream completed with no content - storing fallback message', { sessionId: id });
+      await addMessage(id, 'assistant', 'Es tut mir leid, ich konnte keine Antwort generieren. Bitte versuche es erneut.');
     }
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);

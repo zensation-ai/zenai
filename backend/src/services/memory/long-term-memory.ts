@@ -42,6 +42,18 @@ function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
 // Types & Interfaces
 // ===========================================
 
+/**
+ * Graduated Decay Class
+ * Controls how fast a fact's confidence decays over time.
+ * Based on 2026 State-of-the-Art memory architecture research.
+ *
+ * - permanent: Core identity facts (name, language) - near-zero decay
+ * - slow_decay: Stable preferences (editor, communication style) - very slow
+ * - normal_decay: General knowledge - standard decay
+ * - fast_decay: Ephemeral observations (mood, one-time mentions) - rapid decay
+ */
+export type DecayClass = 'permanent' | 'slow_decay' | 'normal_decay' | 'fast_decay';
+
 export interface PersonalizationFact {
   id: string;
   factType: 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context';
@@ -52,6 +64,12 @@ export interface PersonalizationFact {
   lastConfirmed: Date;
   occurrences: number;
   embedding?: number[];
+  /** How often this fact has been retrieved and used (for composite scoring) */
+  retrievalCount: number;
+  /** When this fact was last retrieved (for recency scoring) */
+  lastRetrieved: Date | null;
+  /** Graduated decay class controlling decay speed */
+  decayClass: DecayClass;
 }
 
 export interface FrequentPattern {
@@ -146,15 +164,69 @@ const CONFIG = {
   RETRIEVAL_THRESHOLD: 0.5,
   /** Minimum confidence before a fact is pruned */
   MIN_FACT_PRUNE_CONFIDENCE: 0.3,
-  /** Fact decay rates by type (per month of inactivity) */
+
+  // === Composite Importance Scoring (Phase 42) ===
+  // Weights for the three-factor composite score: recency × usage × confidence
+  // Based on 2026 State-of-the-Art research (Stanford Generative Agents + Mem0)
+  COMPOSITE_WEIGHTS: {
+    recency: 0.3,    // How recently the fact was confirmed/retrieved
+    usage: 0.4,      // How often the fact is actually used in conversations
+    confidence: 0.3,  // How reliable the fact source is
+  },
+
+  // === Graduated Decay Rates (Phase 42) ===
+  // Decay class rates override per-type rates when a decay class is set
+  DECAY_CLASS_RATES: {
+    permanent: 1.0,       // No decay at all (core identity)
+    slow_decay: 0.9998,   // ~0.6% loss per month (stable preferences)
+    normal_decay: 0.998,  // ~6% loss per month (general knowledge)
+    fast_decay: 0.990,    // ~26% loss per month (ephemeral observations)
+  } as Record<DecayClass, number>,
+
+  /** Fact decay rates by type (used when no decay class is set) */
   FACT_DECAY_RATES: {
     goal: 0.9995,       // Goals persist nearly forever (~2% loss per year)
     preference: 0.999,  // Preferences are stable (~3% loss per month)
     knowledge: 0.998,   // Knowledge is durable (~6% loss per month)
     behavior: 0.995,    // Behaviors can change (~15% loss per month)
     context: 0.990,     // Context info ages fastest (~26% loss per month)
-  } as Record<string, number>,
+  } as Record<PersonalizationFact['factType'], number>,
 };
+
+// ===========================================
+// Decay Class Inference
+// ===========================================
+
+/**
+ * Infer the appropriate decay class for a fact based on its type and source.
+ *
+ * Rules:
+ * - Explicit goal facts → permanent (core identity)
+ * - Explicit preferences from user → slow_decay
+ * - Inferred behaviors → fast_decay (may change quickly)
+ * - Context facts → fast_decay (ephemeral by nature)
+ * - Everything else → normal_decay
+ */
+function inferDecayClass(factType: string, source: string): DecayClass {
+  // Explicit goals and core identity facts should persist
+  if (factType === 'goal' && source === 'explicit') return 'permanent';
+
+  // Explicit preferences are stable
+  if (factType === 'preference' && source === 'explicit') return 'slow_decay';
+
+  // Knowledge from user is durable
+  if (factType === 'knowledge' && source === 'explicit') return 'slow_decay';
+
+  // Consolidated facts have been verified
+  if (source === 'consolidated') return 'normal_decay';
+
+  // Behaviors and context change fast
+  if (factType === 'behavior') return 'normal_decay';
+  if (factType === 'context') return 'fast_decay';
+
+  // Default for inferred knowledge
+  return 'normal_decay';
+}
 
 // ===========================================
 // Long-Term Memory Service
@@ -253,7 +325,8 @@ class LongTermMemoryService {
       try {
         const factsResult = await queryContext(
           context,
-          `SELECT id, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences
+          `SELECT id, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences,
+                  COALESCE(retrieval_count, 0) as retrieval_count, last_retrieved
            FROM personalization_facts
            WHERE context = $1 AND is_active = true
            ORDER BY confidence DESC, occurrences DESC
@@ -270,6 +343,9 @@ class LongTermMemoryService {
           firstSeen: new Date(r.first_seen as string),
           lastConfirmed: new Date(r.last_confirmed as string),
           occurrences: r.occurrences as number,
+          retrievalCount: (r.retrieval_count as number) || 0,
+          lastRetrieved: r.last_retrieved ? new Date(r.last_retrieved as string) : null,
+          decayClass: inferDecayClass(r.fact_type as string, r.source as string),
         }));
       } catch (hiMeSError) {
         logger.warn('HiMeS schema query failed, falling back to legacy', {
@@ -293,16 +369,23 @@ class LongTermMemoryService {
         );
 
         if (legacyResult.rows.length > 0) {
-          facts = legacyResult.rows.map((r: Record<string, unknown>) => ({
-            id: r.id as string,
-            factType: ((r.category as string) || 'knowledge') as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
-            content: (r.fact_value as string) || (r.fact_key as string) || '',
-            confidence: parseFloat(r.confidence as string) || 0.7,
-            source: ((r.source as string) || 'inferred') as 'explicit' | 'inferred' | 'consolidated',
-            firstSeen: new Date((r.created_at as string) || Date.now()),
-            lastConfirmed: new Date((r.updated_at as string) || Date.now()),
-            occurrences: 1,
-          }));
+          facts = legacyResult.rows.map((r: Record<string, unknown>) => {
+            const factType = ((r.category as string) || 'knowledge') as PersonalizationFact['factType'];
+            const source = ((r.source as string) || 'inferred') as PersonalizationFact['source'];
+            return {
+              id: r.id as string,
+              factType,
+              content: (r.fact_value as string) || (r.fact_key as string) || '',
+              confidence: parseFloat(r.confidence as string) || 0.7,
+              source,
+              firstSeen: new Date((r.created_at as string) || Date.now()),
+              lastConfirmed: new Date((r.updated_at as string) || Date.now()),
+              occurrences: 1,
+              retrievalCount: 0,
+              lastRetrieved: null,
+              decayClass: inferDecayClass(factType, source),
+            };
+          });
 
           logger.info('Loaded facts from legacy schema', {
             context,
@@ -605,16 +688,22 @@ Antworte als JSON:
 
       return (result.facts || [])
         .filter((f: ExtractedFact) => (f.confidence ?? 0) >= CONFIG.MIN_FACT_CONFIDENCE)
-        .map((f: ExtractedFact) => ({
-          id: uuidv4(),
-          factType: f.factType || 'knowledge',
-          content: f.content,
-          confidence: f.confidence || 0.5,
-          source: 'inferred' as const,
-          firstSeen: new Date(),
-          lastConfirmed: new Date(),
-          occurrences: 1,
-        }));
+        .map((f: ExtractedFact) => {
+          const factType = (f.factType || 'knowledge') as PersonalizationFact['factType'];
+          return {
+            id: uuidv4(),
+            factType,
+            content: f.content,
+            confidence: f.confidence || 0.5,
+            source: 'inferred' as const,
+            firstSeen: new Date(),
+            lastConfirmed: new Date(),
+            occurrences: 1,
+            retrievalCount: 0,
+            lastRetrieved: null,
+            decayClass: inferDecayClass(factType, 'inferred'),
+          };
+        });
     } catch (error) {
       logger.debug('Fact extraction failed', { error });
       return [];
@@ -829,16 +918,49 @@ Antworte als JSON:
     }
 
     try {
-      const _queryEmbedding = await generateEmbedding(query);
       const queryLower = query.toLowerCase();
 
-      // Find relevant facts
-      const relevantFacts = memory.facts.filter(fact => {
-        // Check text match
-        const textMatch = fact.content.toLowerCase().includes(queryLower) ||
-          queryLower.includes(fact.content.toLowerCase());
-        return textMatch || fact.confidence >= 0.8;
-      });
+      // Find relevant facts with composite importance scoring
+      const scoredFacts = memory.facts
+        .map(fact => {
+          // Text match check
+          const textMatch = fact.content.toLowerCase().includes(queryLower) ||
+            queryLower.includes(fact.content.toLowerCase());
+          const isRelevant = textMatch || fact.confidence >= 0.8;
+
+          if (!isRelevant) return null;
+
+          // Composite importance score (Phase 42)
+          const compositeScore = this.computeCompositeImportance(fact);
+          return { fact, compositeScore };
+        })
+        .filter((entry): entry is { fact: PersonalizationFact; compositeScore: number } => entry !== null)
+        .sort((a, b) => b.compositeScore - a.compositeScore);
+
+      // Track usage for retrieved facts (Phase 42: Usage Tracking)
+      const now = new Date();
+      const topFacts = scoredFacts.slice(0, 10);
+      for (const { fact } of topFacts) {
+        fact.retrievalCount++;
+        fact.lastRetrieved = now;
+      }
+
+      // Persist usage tracking to DB (fire-and-forget)
+      if (topFacts.length > 0) {
+        const ids = topFacts.map(s => s.fact.id);
+        queryContext(
+          context,
+          `UPDATE personalization_facts
+           SET retrieval_count = COALESCE(retrieval_count, 0) + 1,
+               last_retrieved = NOW()
+           WHERE id = ANY($1::text[])`,
+          [ids]
+        ).catch(err => logger.debug('Failed to persist retrieval tracking', {
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      }
+
+      const relevantFacts = scoredFacts.map(s => s.fact);
 
       // Find relevant patterns
       const relevantPatterns = memory.frequentPatterns.filter(pattern => {
@@ -856,7 +978,7 @@ Antworte als JSON:
 
       // Build contextual memory string
       const contextualMemory = this.buildContextualMemory(
-        relevantFacts,
+        relevantFacts.slice(0, 10),
         relevantPatterns,
         relevantInteractions
       );
@@ -876,6 +998,37 @@ Antworte als JSON:
         contextualMemory: '',
       };
     }
+  }
+
+  /**
+   * Compute composite importance score for a fact.
+   *
+   * Three-factor scoring (based on 2026 State-of-the-Art research):
+   * - Recency (0.3): How recently the fact was confirmed or retrieved
+   * - Usage (0.4): How frequently the fact is retrieved and useful
+   * - Confidence (0.3): How reliable the source and how often confirmed
+   *
+   * Returns a score between 0 and 1.
+   */
+  private computeCompositeImportance(fact: PersonalizationFact): number {
+    const now = Date.now();
+    const w = CONFIG.COMPOSITE_WEIGHTS;
+
+    // 1. Recency score (exponential decay from last confirmation or retrieval)
+    const lastActive = fact.lastRetrieved
+      ? Math.max(fact.lastConfirmed.getTime(), fact.lastRetrieved.getTime())
+      : fact.lastConfirmed.getTime();
+    const daysSinceActive = (now - lastActive) / (1000 * 60 * 60 * 24);
+    const recencyScore = Math.exp(-0.02 * daysSinceActive); // ~50% after 35 days
+
+    // 2. Usage score (logarithmic, based on retrieval count + occurrences)
+    const totalUsage = fact.retrievalCount + fact.occurrences;
+    const usageScore = Math.min(1.0, Math.log(1 + totalUsage) / Math.log(20)); // Saturates at ~20 uses
+
+    // 3. Confidence score (direct)
+    const confidenceScore = fact.confidence;
+
+    return (w.recency * recencyScore) + (w.usage * usageScore) + (w.confidence * confidenceScore);
   }
 
   /**
@@ -926,7 +1079,7 @@ Antworte als JSON:
   /**
    * Add a fact explicitly
    */
-  async addFact(context: AIContext, fact: Omit<PersonalizationFact, 'id' | 'firstSeen' | 'lastConfirmed' | 'occurrences'>): Promise<void> {
+  async addFact(context: AIContext, fact: Omit<PersonalizationFact, 'id' | 'firstSeen' | 'lastConfirmed' | 'occurrences' | 'retrievalCount' | 'lastRetrieved' | 'decayClass'> & { decayClass?: DecayClass }): Promise<void> {
     await this.initialize(context);
     const memory = this.memories.get(context);
     if (!memory) {return;}
@@ -957,17 +1110,38 @@ Antworte als JSON:
 
     const fullFact: PersonalizationFact = {
       id: uuidv4(),
-      ...fact,
+      factType: fact.factType,
+      content: fact.content,
+      confidence: fact.confidence,
       source: fact.source || 'explicit',
       firstSeen: new Date(),
       lastConfirmed: new Date(),
       occurrences: 1,
+      retrievalCount: 0,
+      lastRetrieved: null,
+      decayClass: fact.decayClass || inferDecayClass(fact.factType, fact.source || 'explicit'),
     };
 
     memory.facts.push(fullFact);
     await this.persistFact(context, fullFact);
 
     logger.info('Explicit fact added', { context, factType: fact.factType });
+  }
+
+  /**
+   * Remove a fact from in-memory storage by ID.
+   * Does NOT touch the database — the caller is responsible for DB operations.
+   */
+  removeFact(context: AIContext, factId: string): boolean {
+    const memory = this.memories.get(context);
+    if (!memory) return false;
+
+    const index = memory.facts.findIndex(f => f.id === factId);
+    if (index >= 0) {
+      memory.facts.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -981,7 +1155,7 @@ Antworte als JSON:
    */
   private detectContradiction(
     existingFacts: PersonalizationFact[],
-    newFact: Omit<PersonalizationFact, 'id' | 'firstSeen' | 'lastConfirmed' | 'occurrences'>
+    newFact: Pick<PersonalizationFact, 'factType' | 'content' | 'confidence' | 'source'>
   ): { existingFact: PersonalizationFact; resolution: 'replace' | 'skip' | 'add_both' } | null {
     const NEGATION_PATTERNS = [
       /\bnicht\b/i, /\bkein[e]?\b/i, /\bnever\b/i, /\bnot\b/i,
@@ -1088,8 +1262,16 @@ Antworte als JSON:
       // Skip recently confirmed facts (within last 7 days)
       if (daysSinceConfirmed < 7) { continue; }
 
-      // Get type-specific decay rate
-      const baseDecayRate = CONFIG.FACT_DECAY_RATES[fact.factType] || 0.995;
+      // Phase 42: Use graduated decay class if available, otherwise fall back to type-based rate
+      let baseDecayRate: number;
+      if (fact.decayClass === 'permanent') {
+        // Permanent facts never decay
+        continue;
+      } else if (fact.decayClass && CONFIG.DECAY_CLASS_RATES[fact.decayClass]) {
+        baseDecayRate = CONFIG.DECAY_CLASS_RATES[fact.decayClass];
+      } else {
+        baseDecayRate = CONFIG.FACT_DECAY_RATES[fact.factType] || 0.995;
+      }
 
       // Explicit facts from user decay 50% slower
       const sourceMultiplier = fact.source === 'explicit' ? 0.5 : 1.0;
@@ -1097,8 +1279,13 @@ Antworte als JSON:
       // High-occurrence facts decay slower (logarithmic dampening)
       const occurrenceDampening = 1.0 / (1.0 + Math.log(Math.max(1, fact.occurrences)));
 
-      // Effective decay: base^(days * sourceMultiplier * occurrenceDampening)
-      const effectiveDays = daysSinceConfirmed * sourceMultiplier * occurrenceDampening;
+      // Phase 42: Usage-based decay dampening (frequently retrieved facts decay slower)
+      const usageDampening = fact.retrievalCount > 0
+        ? 1.0 / (1.0 + Math.log(1 + fact.retrievalCount) * 0.5)
+        : 1.0;
+
+      // Effective decay: base^(days * sourceMultiplier * occurrenceDampening * usageDampening)
+      const effectiveDays = daysSinceConfirmed * sourceMultiplier * occurrenceDampening * usageDampening;
       const decayFactor = Math.pow(baseDecayRate, effectiveDays);
 
       fact.confidence = fact.confidence * decayFactor;

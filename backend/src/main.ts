@@ -317,6 +317,15 @@ app.use('/api/documents', documentAnalysisRouter);
 import { agentTeamsRouter } from './routes/agent-teams';
 app.use('/api/agents', agentTeamsRouter);
 
+// Phase 42: Autonomous Agents - Context-aware: /api/:context/agents/*
+import { autonomousAgentsRouter } from './routes/autonomous-agents';
+app.use('/api', autonomousAgentsRouter);
+
+// Phase 44: MCP HTTP Gateway - Must be before context-aware routes
+import { mcpRouter, mcpConnectionsRouter } from './routes/mcp';
+app.use('/api/mcp', mcpRouter);             // /api/mcp/tools, /api/mcp/resources, /api/mcp/status
+app.use('/api', mcpConnectionsRouter);       // /api/:context/mcp/connections/*, /api/:context/mcp/tools, /api/:context/mcp/resources
+
 // Phase 34: Business Manager - Must be before context-aware routes
 app.use('/api/business', businessRouter);
 
@@ -463,6 +472,38 @@ app.use('/api', unifiedInboxRouter); // /api/:context/inbox, /api/:context/inbox
 
 // Phase 32: Document Vault - KI-erkennbarer Dokumentenspeicher
 app.use('/api', documentsRouter);  // /api/:context/documents, /api/documents/file/:id, etc.
+
+// Phase 46: Extended Thinking Excellence
+import { thinkingRouter } from './routes/thinking';
+app.use('/api', thinkingRouter);  // /api/:context/thinking/feedback, /api/:context/thinking/stats, etc.
+
+// Phase 47: RAG Analytics & Feedback
+import { ragAnalyticsRouter } from './routes/rag-analytics';
+app.use('/api', ragAnalyticsRouter);  // /api/:context/rag/feedback, /api/:context/rag/analytics, etc.
+
+// Phase 48: Knowledge Graph Reasoning
+import { graphReasoningRouter } from './routes/graph-reasoning';
+app.use('/api', graphReasoningRouter);  // /api/:context/knowledge-graph/infer, /api/:context/knowledge-graph/communities, etc.
+
+// Phase 49: Advanced RAG v2
+import { ragV2Router } from './routes/rag-v2';
+app.use('/api', ragV2Router);  // /api/:context/rag/v2/retrieve, /api/:context/rag/v2/citations, etc.
+
+// Phase 50: Analytics V2 - Interactive Visualizations & Custom Date Ranges
+import { analyticsV2Router } from './routes/analytics-v2';
+app.use('/api', analyticsV2Router);  // /api/:context/analytics/v2/overview, /api/:context/analytics/v2/trends, etc.
+
+// Phase 51: Plugin System
+import { pluginsRouter } from './routes/plugins';
+app.use('/api', pluginsRouter);
+
+// Phase 52: i18n
+import { i18nRouter } from './routes/i18n';
+app.use('/api', i18nRouter);
+
+// Phase 53: Memory Insights - HiMeS Memory Analysis & Visualization
+import { memoryInsightsRouter } from './routes/memory-insights';
+app.use('/api', memoryInsightsRouter);  // /api/:context/memory/insights/timeline, /api/:context/memory/insights/conflicts, etc.
 
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 
@@ -619,132 +660,18 @@ async function startServer(): Promise<void> {
   const aiStatus = secretsManager.getAIProviderStatus();
   const cacheStatus = secretsManager.getCacheStatus();
 
-  console.log(`
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║   ███████╗███████╗███╗   ██╗ █████╗ ██╗                       ║
-║   ╚══███╔╝██╔════╝████╗  ██║██╔══██╗██║                       ║
-║     ███╔╝ █████╗  ██╔██╗ ██║███████║██║                       ║
-║    ███╔╝  ██╔══╝  ██║╚██╗██║██╔══██║██║                       ║
-║   ███████╗███████╗██║ ╚████║██║  ██║██║                       ║
-║   ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝                       ║
-║                                                               ║
-║   Enterprise AI Platform by ZenSation Enterprise Solutions   ║
-║   © ${new Date().getFullYear()} Alexander Bering. All rights reserved.            ║
-║                                                               ║
-╠═══════════════════════════════════════════════════════════════╣
-║   zensation.ai  |  zensation.app  |  zensation.sh            ║
-╚═══════════════════════════════════════════════════════════════╝
-
-ZenAI Backend - Phase 31
-========================================================
-Server:      http://localhost:${PORT}
-API Docs:    http://localhost:${PORT}/api-docs
-Environment: ${secretsManager.isProduction() ? 'PRODUCTION' : secretsManager.isDevelopment() ? 'development' : 'unknown'}
---------------------------------------------------------
-Secrets:     ${secretsHealth.healthy ? 'OK' : 'WARNINGS'} (${secretsHealth.secretsConfigured} configured)
-Database:    ${secretsDbStatus.configured ? secretsDbStatus.type.toUpperCase() : 'NOT CONFIGURED'}
-AI:          ${aiStatus.configured ? aiStatus.providers.join(', ').toUpperCase() : 'NOT CONFIGURED'}
-Cache:       ${cacheStatus.type.toUpperCase()}
-========================================================
-Phase 31 APIs (Vision Integration):
-  - Vision Status:     GET /api/vision/status
-  - Analyze Image:     POST /api/vision/analyze
-  - Extract Text (OCR):POST /api/vision/extract-text
-  - Extract Ideas:     POST /api/vision/extract-ideas
-  - Describe Image:    POST /api/vision/describe
-  - Ask About Image:   POST /api/vision/ask
-  - Compare Images:    POST /api/vision/compare
-  - Process Document:  POST /api/vision/document
-
-Phase 32 APIs (Document Analysis):
-  - Service Status:  GET /api/documents/status
-  - Templates:       GET /api/documents/templates
-  - Analyze Document:POST /api/documents/analyze
-
-Phase 30 APIs (Memory Scheduler):
-  - Domain Strengths:    GET /api/:context/evolution/domain-strengths
-  - Scheduler Status:  GET /api/memory/status
-  - Trigger Consolidate: POST /api/memory/consolidate
-  - Trigger Decay:     POST /api/memory/decay
-  - Memory Stats:      GET /api/memory/stats/:context
-  - Get Facts:         GET /api/memory/facts/:context
-  - Get Patterns:      GET /api/memory/patterns/:context
-
-Phase 29 APIs:
-  - Create Session:    POST /api/chat/sessions
-  - List Sessions:     GET /api/chat/sessions
-  - Get Session:       GET /api/chat/sessions/:id
-  - Send Message:      POST /api/chat/sessions/:id/messages
-  - Delete Session:    DELETE /api/chat/sessions/:id
-  - Quick Chat:        POST /api/chat/quick
-
-Phase 28 APIs:
-  - Learning Curve:      GET /api/:context/evolution/learning-curve
-  - Domain Strengths:    GET /api/:context/evolution/domain-strengths
-  - Proact. Effective.:  GET /api/:context/evolution/proactive-effectiveness
-  - AI Insights:         GET /api/:context/evolution/insights
-  - Full Metrics:        GET /api/:context/evolution/metrics
-
-Phase 27 APIs:
-  - Suggestions:     GET /api/proactive/suggestions?context=personal
-  - Accept/Dismiss:  POST /api/proactive/suggestions/:id/accept|dismiss
-  - Routines:        GET /api/proactive/routines?context=personal
-  - Analyze:         POST /api/:context/proactive/routines/analyze
-  - Log Action:      POST /api/:context/proactive/actions
-  - Settings:        GET/PUT /api/:context/proactive/settings
-  - Stats:           GET /api/:context/proactive/stats
-
-Phase 23 APIs:
-  - Domain Focus:    /api/:context/focus
-  - AI Feedback:     /api/:context/feedback
-  - Proactive Res.:  /api/:context/research
-  - AI Suggestions:  /api/:context/suggestions
-  - Learning Dash:   /api/:context/learning/dashboard
-  - Run Learning:    POST /api/:context/learning/run
-
-Phase 22 APIs:
-  - Learning Tasks:  /api/:context/learning-tasks
-  - Create Task:     POST /api/:context/learning-tasks
-  - Log Session:     POST /api/:context/learning-tasks/:id/session
-  - Stats:           /api/:context/learning-stats
-  - Daily Summary:   /api/:context/learning-daily-summary
-
-Phase 21 APIs:
-  - Start Chat:      /api/personalization/start
-  - Send Message:    /api/personalization/chat
-  - Get Facts:       /api/personalization/facts
-  - Progress:        /api/personalization/progress
-  - Summary:         /api/personalization/summary
-
-Phase 20 APIs:
-  - Daily Digest:    /api/:context/digest/generate/daily
-  - Weekly Digest:   /api/:context/digest/generate/weekly
-  - Analytics Dash:  /api/:context/analytics/dashboard
-  - Productivity:    /api/:context/analytics/productivity-score
-
-Phase 19 APIs (APNs Push Notifications):
-  - Register Device: POST /api/:context/notifications/device
-  - Preferences:     GET/PUT /api/:context/notifications/preferences/:deviceId
-  - Send Push:       POST /api/:context/notifications/push
-  - Stats:           GET /api/:context/notifications/stats
-  - Status:          GET /api/:context/notifications/status
-
-Phase 18 APIs:
-  - Export PDF:      /api/export/ideas/pdf
-  - Export Markdown: /api/export/ideas/markdown
-  - Export CSV:      /api/export/ideas/csv
-  - Export JSON:     /api/export/ideas/json
-  - Full Backup:     /api/export/backup
-
-Phase 5 APIs:
-  - Incubator:    /api/incubator
-Phase 4 APIs:
-  - API Keys:     /api/keys
-  - Webhooks:     /api/webhooks
-  - Integrations: /api/integrations
-========================================================
-  `);
+  logger.info('ZenAI Backend starting', {
+    operation: 'startup',
+    phase: 41,
+    server: `http://localhost:${PORT}`,
+    apiDocs: `http://localhost:${PORT}/api-docs`,
+    environment: secretsManager.isProduction() ? 'PRODUCTION' : secretsManager.isDevelopment() ? 'development' : 'unknown',
+    secrets: secretsHealth.healthy ? 'OK' : 'WARNINGS',
+    secretsConfigured: secretsHealth.secretsConfigured,
+    database: secretsDbStatus.configured ? secretsDbStatus.type.toUpperCase() : 'NOT CONFIGURED',
+    ai: aiStatus.configured ? aiStatus.providers.join(', ').toUpperCase() : 'NOT CONFIGURED',
+    cache: cacheStatus.type.toUpperCase(),
+  });
 
   // Ensure all 4 context schemas exist before testing connections
   try {
@@ -862,6 +789,48 @@ Phase 4 APIs:
     } catch (error) {
       logger.error('CalDAV Scheduler failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
     }
+
+    // Phase 42: Start Autonomous Agent Runtime
+    try {
+      const { agentRuntime } = await import('./services/agents/agent-runtime');
+      await agentRuntime.start();
+      logger.info('Agent Runtime started (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Agent Runtime failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 44: Initialize MCP Connection Manager
+    try {
+      const { mcpConnectionManager } = await import('./services/mcp-connections');
+      const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+      for (const ctx of contexts) {
+        await mcpConnectionManager.initialize(ctx);
+      }
+      logger.info('MCP Connection Manager initialized (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('MCP Connection Manager failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 46: Restore persisted thinking budget strategies
+    try {
+      const { loadPersistedStrategies } = await import('./services/thinking-management');
+      await loadPersistedStrategies('personal' as const);
+      logger.info('Thinking budget strategies restored (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Thinking strategies restore failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 51: Load active plugins from database
+    try {
+      const { loadActivePlugins } = await import('./services/plugins/plugin-registry');
+      const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+      for (const ctx of contexts) {
+        await loadActivePlugins(ctx);
+      }
+      logger.info('Active plugins loaded (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Plugin loading failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
   });
   });
 }
@@ -901,7 +870,7 @@ if (isMainModule) {
   startServer().catch((error) => {
     logger.error('FATAL: Server startup failed', error instanceof Error ? error : undefined);
     // Fallback to console.error in case logger pipeline is broken
-    console.error('Server startup failed:', error); // eslint-disable-line no-console
+    console.error('Server startup failed:', error);
     process.exit(1);
   });
 }

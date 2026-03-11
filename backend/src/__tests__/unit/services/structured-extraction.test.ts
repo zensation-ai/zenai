@@ -5,7 +5,7 @@
 import { extractStructuredKnowledge } from '../../../services/structured-extraction';
 
 // Mock Claude client
-const mockCreate = jest.fn();
+var mockCreate = jest.fn();
 jest.mock('../../../services/claude/client', () => ({
   getClaudeClient: () => ({ messages: { create: mockCreate } }),
   CLAUDE_MODEL: 'claude-sonnet-4-20250514',
@@ -13,7 +13,7 @@ jest.mock('../../../services/claude/client', () => ({
 }));
 
 // Mock enhanced-rag for auto-linking
-const mockQuickRetrieve = jest.fn();
+var mockQuickRetrieve = jest.fn();
 jest.mock('../../../services/enhanced-rag', () => ({
   enhancedRAG: {
     quickRetrieve: (...args: unknown[]) => mockQuickRetrieve(...args),

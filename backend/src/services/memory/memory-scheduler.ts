@@ -18,6 +18,7 @@ import { proactiveDigest } from '../proactive-digest';
 import { memoryGovernance } from './memory-governance';
 import { getAllDomainFocus } from '../domain-focus';
 import { researchFocusTopic, shouldResearchNow } from '../proactive-intelligence';
+import { redisLock } from '../redis-lock';
 
 // ===========================================
 // Types & Interfaces
@@ -388,9 +389,35 @@ class MemorySchedulerService {
   }
 
   /**
-   * Run Long-Term Memory Consolidation for all contexts
+   * Run Long-Term Memory Consolidation for all contexts.
+   * Uses distributed lock to ensure only one instance runs at a time.
    */
   async runConsolidation(): Promise<ConsolidationStats> {
+    const result = await redisLock.withLock(
+      'memory:consolidation',
+      () => this.executeConsolidation(),
+      600 // 10 min TTL - consolidation can be long-running
+    );
+
+    // If lock was not acquired, return empty result
+    if (result === null) {
+      logger.info('Memory consolidation skipped (another instance holds the lock)', {
+        operation: 'consolidationSkipped',
+      });
+      return {
+        longTerm: { patternsAdded: 0, factsAdded: 0, factsUpdated: 0, interactionsStored: 0 },
+        episodic: { episodesProcessed: 0, factsExtracted: 0, strongEpisodes: 0 },
+        duration: 0,
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * Internal consolidation logic (called within lock)
+   */
+  private async executeConsolidation(): Promise<ConsolidationStats> {
     const start = Date.now();
     this.stats.totalRuns++;
 
@@ -554,9 +581,31 @@ class MemorySchedulerService {
   }
 
   /**
-   * Run Memory Decay for all contexts (episodic + long-term facts)
+   * Run Memory Decay for all contexts (episodic + long-term facts).
+   * Uses distributed lock to ensure only one instance runs at a time.
    */
   async runDecay(): Promise<{ totalAffected: number; factsDecayed: number; factsPruned: number; duration: number }> {
+    const result = await redisLock.withLock(
+      'memory:decay',
+      () => this.executeDecay(),
+      300 // 5 min TTL
+    );
+
+    // If lock was not acquired, return empty result
+    if (result === null) {
+      logger.info('Memory decay skipped (another instance holds the lock)', {
+        operation: 'decaySkipped',
+      });
+      return { totalAffected: 0, factsDecayed: 0, factsPruned: 0, duration: 0 };
+    }
+
+    return result;
+  }
+
+  /**
+   * Internal decay logic (called within lock)
+   */
+  private async executeDecay(): Promise<{ totalAffected: number; factsDecayed: number; factsPruned: number; duration: number }> {
     const start = Date.now();
     this.stats.totalRuns++;
 

@@ -58,17 +58,17 @@ import {
 } from '../../services/tasks';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockCreateTask = createTask as jest.MockedFunction<typeof createTask>;
-const mockGetTasks = getTasks as jest.MockedFunction<typeof getTasks>;
-const mockGetTask = getTask as jest.MockedFunction<typeof getTask>;
-const mockUpdateTask = updateTask as jest.MockedFunction<typeof updateTask>;
-const mockDeleteTask = deleteTask as jest.MockedFunction<typeof deleteTask>;
-const mockReorderTasks = reorderTasks as jest.MockedFunction<typeof reorderTasks>;
-const mockGetTasksForGantt = getTasksForGantt as jest.MockedFunction<typeof getTasksForGantt>;
-const mockAddDependency = addDependency as jest.MockedFunction<typeof addDependency>;
-const mockRemoveDependency = removeDependency as jest.MockedFunction<typeof removeDependency>;
-const mockGetTaskDependencies = getTaskDependencies as jest.MockedFunction<typeof getTaskDependencies>;
-const mockConvertIdeaToTask = convertIdeaToTask as jest.MockedFunction<typeof convertIdeaToTask>;
+var mockCreateTask = createTask as jest.MockedFunction<typeof createTask>;
+var mockGetTasks = getTasks as jest.MockedFunction<typeof getTasks>;
+var mockGetTask = getTask as jest.MockedFunction<typeof getTask>;
+var mockUpdateTask = updateTask as jest.MockedFunction<typeof updateTask>;
+var mockDeleteTask = deleteTask as jest.MockedFunction<typeof deleteTask>;
+var mockReorderTasks = reorderTasks as jest.MockedFunction<typeof reorderTasks>;
+var mockGetTasksForGantt = getTasksForGantt as jest.MockedFunction<typeof getTasksForGantt>;
+var mockAddDependency = addDependency as jest.MockedFunction<typeof addDependency>;
+var mockRemoveDependency = removeDependency as jest.MockedFunction<typeof removeDependency>;
+var mockGetTaskDependencies = getTaskDependencies as jest.MockedFunction<typeof getTaskDependencies>;
+var mockConvertIdeaToTask = convertIdeaToTask as jest.MockedFunction<typeof convertIdeaToTask>;
 
 // Sample data
 const UUID_1 = '550e8400-e29b-41d4-a716-446655440001';

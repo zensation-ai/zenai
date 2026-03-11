@@ -340,13 +340,39 @@ Use the \`X-AI-Context\` header or \`context\` query parameter:
 const swaggerSpec = swaggerJsdoc(options);
 
 export function setupSwagger(app: Express): void {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Personal AI Brain API',
-  }));
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // Serve raw OpenAPI spec
-  app.get('/api-docs.json', (req, res) => {
-    res.json(swaggerSpec);
-  });
+  // In production, require API key authentication for Swagger UI access
+  // This prevents exposing internal API documentation to unauthenticated users
+  if (isProduction) {
+    const swaggerAuth = (req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
+      const apiKey = req.headers['x-api-key'] || req.headers.authorization?.replace('Bearer ', '');
+      if (!apiKey) {
+        res.status(401).json({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'API key required to access documentation in production' },
+        });
+        return;
+      }
+      next();
+    };
+
+    app.use('/api-docs', swaggerAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'ZenAI Platform API',
+    }));
+
+    app.get('/api-docs.json', swaggerAuth, (req, res) => {
+      res.json(swaggerSpec);
+    });
+  } else {
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'ZenAI Platform API',
+    }));
+
+    app.get('/api-docs.json', (req, res) => {
+      res.json(swaggerSpec);
+    });
+  }
 }

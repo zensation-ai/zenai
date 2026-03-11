@@ -44,7 +44,7 @@ jest.mock('../../utils/database-context', () => ({
 }));
 
 // Mock memory services
-const mockGetStatus = jest.fn().mockReturnValue({
+var mockGetStatus = jest.fn().mockReturnValue({
   isRunning: true,
   tasks: [
     { name: 'long-term-consolidation', schedule: '0 2 * * *', enabled: true, lastRun: null, lastResult: null, nextRun: new Date() },
@@ -55,7 +55,7 @@ const mockGetStatus = jest.fn().mockReturnValue({
   lastError: null,
 });
 
-const mockGetConfig = jest.fn().mockReturnValue({
+var mockGetConfig = jest.fn().mockReturnValue({
   TIMEZONE: 'Europe/Berlin',
   CONSOLIDATION_SCHEDULE: '0 2 * * *',
   DECAY_SCHEDULE: '0 3 * * *',
@@ -66,18 +66,18 @@ const mockGetConfig = jest.fn().mockReturnValue({
   CONTEXTS: ['personal', 'work', 'learning', 'creative'] as const,
 });
 
-const mockTriggerConsolidation = jest.fn().mockResolvedValue({
+var mockTriggerConsolidation = jest.fn().mockResolvedValue({
   longTerm: { patternsAdded: 2, factsAdded: 3, factsUpdated: 1, interactionsStored: 4 },
   episodic: { episodesProcessed: 10, factsExtracted: 5, strongEpisodes: 3 },
   duration: 1500,
 });
 
-const mockTriggerDecay = jest.fn().mockResolvedValue({
+var mockTriggerDecay = jest.fn().mockResolvedValue({
   totalAffected: 15,
   duration: 800,
 });
 
-const mockGetLtStats = jest.fn().mockResolvedValue({
+var mockGetLtStats = jest.fn().mockResolvedValue({
   factCount: 25,
   patternCount: 8,
   interactionCount: 12,
@@ -85,13 +85,13 @@ const mockGetLtStats = jest.fn().mockResolvedValue({
   hasProfileEmbedding: true,
 });
 
-const mockGetEpStats = jest.fn().mockResolvedValue({
+var mockGetEpStats = jest.fn().mockResolvedValue({
   totalEpisodes: 50,
   avgRetrievalStrength: 0.72,
   recentEpisodes: 5,
 });
 
-const mockGetFacts = jest.fn().mockResolvedValue([
+var mockGetFacts = jest.fn().mockResolvedValue([
   {
     id: 'fact-1',
     factType: 'preference' as const,
@@ -114,7 +114,7 @@ const mockGetFacts = jest.fn().mockResolvedValue([
   },
 ]);
 
-const mockGetPatterns = jest.fn().mockResolvedValue([
+var mockGetPatterns = jest.fn().mockResolvedValue([
   {
     id: 'pattern-1',
     patternType: 'topic' as const,
@@ -128,18 +128,18 @@ const mockGetPatterns = jest.fn().mockResolvedValue([
 
 jest.mock('../../services/memory', () => ({
   memoryScheduler: {
-    getStatus: mockGetStatus,
-    getConfig: mockGetConfig,
-    triggerConsolidation: mockTriggerConsolidation,
-    triggerDecay: mockTriggerDecay,
+    getStatus: (...args: any[]) => mockGetStatus(...args),
+    getConfig: (...args: any[]) => mockGetConfig(...args),
+    triggerConsolidation: (...args: any[]) => mockTriggerConsolidation(...args),
+    triggerDecay: (...args: any[]) => mockTriggerDecay(...args),
   },
   longTermMemory: {
-    getStats: mockGetLtStats,
-    getFacts: mockGetFacts,
-    getPatterns: mockGetPatterns,
+    getStats: (...args: any[]) => mockGetLtStats(...args),
+    getFacts: (...args: any[]) => mockGetFacts(...args),
+    getPatterns: (...args: any[]) => mockGetPatterns(...args),
   },
   episodicMemory: {
-    getStats: mockGetEpStats,
+    getStats: (...args: any[]) => mockGetEpStats(...args),
   },
   memoryGovernance: {
     getPrivacySettings: jest.fn().mockResolvedValue({

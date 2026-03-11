@@ -21,7 +21,7 @@ jest.mock('../../../utils/logger', () => ({
 import { SemanticCache, semanticCache, cosineSimilarity } from '../../../utils/semantic-cache';
 import { generateEmbedding } from '../../../utils/ollama';
 
-const mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
+var mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof generateEmbedding>;
 
 describe('Semantic Cache', () => {
   let cache: SemanticCache;

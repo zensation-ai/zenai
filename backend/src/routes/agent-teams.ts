@@ -13,8 +13,10 @@ import { logger } from '../utils/logger';
 import { AIContext, queryContext, isValidContext } from '../utils/database-context';
 import {
   executeTeamTask,
+  executeTeamTaskStreaming,
   classifyTeamStrategy,
   TeamTask,
+  AGENT_TEMPLATES,
 } from '../services/agent-orchestrator';
 import { trackActivity } from '../services/activity-tracker';
 import { toIntBounded } from '../utils/validation';
@@ -86,7 +88,7 @@ agentTeamsRouter.post(
           error: a.error,
         }))),
         result.executionTimeMs,
-        result.totalTokens,
+        JSON.stringify(result.totalTokens),
         result.success,
         aiContext,
         JSON.stringify({ sharedMemoryEntries: result.memoryStats.totalEntries }),
@@ -149,15 +151,19 @@ agentTeamsRouter.post(
 
     const strategy = classifyTeamStrategy(task);
 
+    const descriptions: Record<string, string> = {
+      research_write_review: 'Vollständige Pipeline: Recherche → Schreiben → Review',
+      research_only: 'Nur Recherche',
+      write_only: 'Nur Schreiben (optional mit Review)',
+      code_solve: 'Code generieren und testen (optional mit Review)',
+      research_code_review: 'Recherche → Code → Review',
+      custom: 'Benutzerdefinierte Pipeline',
+    };
+
     res.json({
       success: true,
       strategy,
-      description: {
-        research_write_review: 'Vollständige Pipeline: Recherche → Schreiben → Review',
-        research_only: 'Nur Recherche',
-        write_only: 'Nur Schreiben (optional mit Review)',
-        custom: 'Benutzerdefinierte Pipeline',
-      }[strategy],
+      description: descriptions[strategy] || strategy,
     });
   })
 );
@@ -318,6 +324,198 @@ agentTeamsRouter.post(
       success: true,
       ideaId,
       message: 'Ergebnis als Gedanke gespeichert',
+    });
+  })
+);
+
+/**
+ * POST /api/agents/execute/stream
+ * Execute a task with agent team using SSE streaming
+ */
+agentTeamsRouter.post(
+  '/execute/stream',
+  apiKeyAuth,
+  requireScope('write'),
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        task,
+        context,
+        aiContext = 'personal',
+        strategy,
+        skipReview,
+        templateId,
+      } = req.body as {
+        task: string;
+        context?: string;
+        aiContext?: AIContext;
+        strategy?: string;
+        skipReview?: boolean;
+        templateId?: string;
+      };
+
+      if (!task || typeof task !== 'string' || task.trim().length === 0) {
+        res.status(400).json({
+          success: false,
+          error: 'Task description is required',
+        });
+        return;
+      }
+
+      // Apply template if specified
+      let effectiveStrategy = strategy;
+      let effectiveSkipReview = skipReview;
+      let effectiveTask = task;
+
+      if (templateId) {
+        const template = AGENT_TEMPLATES.find(t => t.id === templateId);
+        if (template) {
+          effectiveStrategy = effectiveStrategy || template.strategy;
+          effectiveSkipReview = effectiveSkipReview ?? template.skipReview;
+          if (template.promptHint) {
+            effectiveTask = `${template.promptHint}: ${task}`;
+          }
+        }
+      }
+
+      logger.info('Agent team streaming execution requested', {
+        taskLength: task.length,
+        strategy: effectiveStrategy,
+        templateId,
+        aiContext,
+      });
+
+      const teamTask: TeamTask = {
+        description: effectiveTask,
+        context,
+        aiContext,
+        strategy: effectiveStrategy as TeamTask['strategy'],
+        skipReview: effectiveSkipReview,
+      };
+
+      // Execute with SSE streaming (handles response internally)
+      await executeTeamTaskStreaming(teamTask, res);
+
+      // Track activity in background
+      trackActivity(aiContext, {
+        eventType: 'behavior_adapted',
+        title: `Agent-Team (Stream): ${task.substring(0, 50)}${task.length > 50 ? '...' : ''}`,
+        description: `Strategie: ${effectiveStrategy || 'auto'}`,
+        impact_score: 0.6,
+        actionType: 'agent_execution',
+        actionData: { strategy: effectiveStrategy, templateId },
+      }).catch((err) => logger.debug('Failed to record agent team activity', { error: err instanceof Error ? err.message : String(err) }));
+    } catch (error) {
+      // Only send error if headers haven't been sent yet
+      if (!res.headersSent) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        logger.error('Agent streaming execution failed', error instanceof Error ? error : undefined);
+        res.status(500).json({ success: false, error: errorMsg });
+      } else {
+        logger.error('Agent streaming execution failed after headers sent', error instanceof Error ? error : undefined);
+      }
+    }
+  }
+);
+
+/**
+ * GET /api/agents/templates
+ * Get available agent templates
+ */
+agentTeamsRouter.get(
+  '/templates',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.json({
+      success: true,
+      templates: AGENT_TEMPLATES,
+    });
+  })
+);
+
+/**
+ * GET /api/agents/analytics
+ * Get agent execution analytics
+ */
+agentTeamsRouter.get(
+  '/analytics',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = (req.query.context as string) || 'personal';
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context');
+    }
+
+    const days = toIntBounded(req.query.days as string, 30, 1, 365);
+
+    const result = await queryContext(
+      context as AIContext,
+      `SELECT
+        COUNT(*) as total_executions,
+        COUNT(*) FILTER (WHERE success = true) as successful,
+        COUNT(*) FILTER (WHERE success = false) as failed,
+        AVG(execution_time_ms) as avg_execution_time,
+        SUM((tokens->>'input')::int + (tokens->>'output')::int) as total_tokens,
+        AVG((tokens->>'input')::int + (tokens->>'output')::int) as avg_tokens,
+        strategy,
+        COUNT(*) as strategy_count
+       FROM agent_executions
+       WHERE context = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2
+       GROUP BY strategy
+       ORDER BY strategy_count DESC`,
+      [context, days]
+    );
+
+    // Also get recent trends (last 7 days daily)
+    const trendResult = await queryContext(
+      context as AIContext,
+      `SELECT
+        DATE(created_at) as date,
+        COUNT(*) as executions,
+        COUNT(*) FILTER (WHERE success = true) as successful,
+        AVG(execution_time_ms) as avg_time
+       FROM agent_executions
+       WHERE context = $1 AND created_at >= NOW() - INTERVAL '7 days'
+       GROUP BY DATE(created_at)
+       ORDER BY date DESC`,
+      [context]
+    );
+
+    const strategies = result.rows.map(row => ({
+      strategy: row.strategy,
+      count: parseInt(row.strategy_count),
+      successful: parseInt(row.successful),
+      failed: parseInt(row.failed),
+      avgExecutionTime: Math.round(parseFloat(row.avg_execution_time || '0')),
+      totalTokens: parseInt(row.total_tokens || '0'),
+      avgTokens: Math.round(parseFloat(row.avg_tokens || '0')),
+    }));
+
+    const totals = strategies.reduce((acc, s) => ({
+      executions: acc.executions + s.count,
+      successful: acc.successful + s.successful,
+      failed: acc.failed + s.failed,
+      tokens: acc.tokens + s.totalTokens,
+    }), { executions: 0, successful: 0, failed: 0, tokens: 0 });
+
+    res.json({
+      success: true,
+      period: `${days} days`,
+      totals: {
+        ...totals,
+        successRate: totals.executions > 0
+          ? Math.round((totals.successful / totals.executions) * 100)
+          : 0,
+      },
+      byStrategy: strategies,
+      dailyTrend: trendResult.rows.map(row => ({
+        date: row.date,
+        executions: parseInt(row.executions),
+        successful: parseInt(row.successful),
+        avgTime: Math.round(parseFloat(row.avg_time || '0')),
+      })),
     });
   })
 );

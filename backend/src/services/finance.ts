@@ -297,6 +297,12 @@ export async function getTransactions(
   const limit = filters.limit || 50;
   const offset = filters.offset || 0;
 
+  // Count query uses only filter params; data query adds limit/offset
+  const countParams = [...params];
+  params.push(limit, offset);
+  const limitParam = `$${params.length - 1}`;
+  const offsetParam = `$${params.length}`;
+
   const [dataResult, countResult] = await Promise.all([
     queryContext(context,
       `SELECT t.*, fa.name as account_name
@@ -304,12 +310,12 @@ export async function getTransactions(
        LEFT JOIN financial_accounts fa ON t.account_id = fa.id
        ${where}
        ORDER BY t.transaction_date DESC, t.created_at DESC
-       LIMIT ${limit} OFFSET ${offset}`,
+       LIMIT ${limitParam} OFFSET ${offsetParam}`,
       params
     ),
     queryContext(context,
       `SELECT COUNT(*) as total FROM transactions t ${where}`,
-      params
+      countParams
     ),
   ]);
 

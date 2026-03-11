@@ -13,7 +13,7 @@ jest.mock('../../../utils/database-context', () => ({
 
 import { queryContext } from '../../../utils/database-context';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 
 describe('AI Evolution Analytics Service', () => {
   beforeEach(() => {

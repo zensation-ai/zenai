@@ -61,6 +61,7 @@ const LearningDashboard = lazy(() => import('./components/LearningDashboard').th
 const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
 const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
 const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
+const MemoryInsightsPage = lazy(() => import('./components/MemoryInsightsPage/MemoryInsightsPage').then(m => ({ default: m.MemoryInsightsPage })));
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
 
 const PageLoader = () => (
@@ -119,6 +120,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'knowledge-graph': '/insights/connections',
   'learning-tasks': '/learning',
   'voice-chat': '/my-ai/voice-chat',
+  'memory-insights': '/my-ai/memory-insights',
   'agent-teams': '/workshop/agent-teams',
 };
 
@@ -204,7 +206,7 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning', 'contacts', 'finance', 'screen-memory'];
+      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning', 'contacts', 'finance', 'screen-memory', 'memory-insights'];
       if (tabPages.includes(page)) {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
@@ -294,14 +296,18 @@ function AuthenticatedApp() {
   // Email unread count for sidebar badge
   const [emailUnreadCount, setEmailUnreadCount] = useState(0);
   useEffect(() => {
+    const controller = new AbortController();
     const fetchUnread = () => {
-      axios.get(`/api/${context}/emails/stats`).then(res => {
+      axios.get(`/api/${context}/emails/stats`, { signal: controller.signal }).then(res => {
         setEmailUnreadCount(res.data?.data?.unread ?? 0);
-      }).catch(() => { /* silent */ });
+      }).catch(() => { /* silent - includes AbortError */ });
     };
     fetchUnread();
     const interval = setInterval(fetchUnread, 60_000);
-    return () => clearInterval(interval);
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [context]);
 
   const pageHistory = usePageHistory();
@@ -727,6 +733,16 @@ function AuthenticatedApp() {
         );
 
       case 'my-ai':
+        if (tabParam === 'memory-insights') {
+          return (
+            <Suspense fallback={<PageLoader />}>
+              <MemoryInsightsPage
+                context={context}
+                onBack={() => navigateToPage('my-ai')}
+              />
+            </Suspense>
+          );
+        }
         return (
           <Suspense fallback={<PageLoader />}>
             <MyAIPage

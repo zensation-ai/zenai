@@ -17,7 +17,7 @@ BEGIN
           final_output TEXT,
           agent_results JSONB DEFAULT '[]'::jsonb,
           execution_time_ms INTEGER DEFAULT 0,
-          tokens INTEGER DEFAULT 0,
+          tokens JSONB DEFAULT '{"input":0,"output":0}'::jsonb,
           success BOOLEAN DEFAULT false,
           context TEXT NOT NULL DEFAULT 'personal',
           saved_as_idea_id UUID,

@@ -48,7 +48,7 @@ export async function moveIdea(
       SELECT
         title, type, category, priority, summary, raw_input, raw_transcript,
         next_steps, context_needed, keywords, embedding, is_archived,
-        viewed_count, created_at
+        is_favorite, viewed_count, created_at
       FROM ideas
       WHERE id = $1
     `, [ideaId]);
@@ -58,7 +58,7 @@ export async function moveIdea(
       SELECT
         title, type, category, priority, summary, raw_input,
         next_steps, context_needed, keywords, embedding, is_archived,
-        created_at
+        is_favorite, created_at
       FROM ideas
       WHERE id = $1
     `, [ideaId]);
@@ -83,11 +83,11 @@ export async function moveIdea(
         INSERT INTO ideas (
           title, type, category, priority, summary, raw_input, raw_transcript,
           next_steps, context_needed, keywords, embedding, is_archived,
-          context, viewed_count, created_at, updated_at
+          is_favorite, context, viewed_count, created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7,
           $8, $9, $10, $11, $12,
-          $13, $14, $15, NOW()
+          $13, $14, $15, $16, NOW()
         )
         RETURNING id
       `, [
@@ -103,6 +103,7 @@ export async function moveIdea(
         jsonb(idea.keywords),
         idea.embedding,
         idea.is_archived,
+        idea.is_favorite ?? false,
         targetContext,
         idea.viewed_count || 0,
         idea.created_at,
@@ -119,11 +120,11 @@ export async function moveIdea(
           INSERT INTO ideas (
             title, type, category, priority, summary, raw_input,
             next_steps, context_needed, keywords, embedding, is_archived,
-            context, created_at, updated_at
+            is_favorite, context, created_at, updated_at
           ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10, $11,
-            $12, $13, NOW()
+            $12, $13, $14, NOW()
           )
           RETURNING id
         `, [
@@ -138,6 +139,7 @@ export async function moveIdea(
           jsonb(idea.keywords),
           idea.embedding,
           idea.is_archived,
+          idea.is_favorite ?? false,
           targetContext,
           idea.created_at,
         ]);
@@ -160,11 +162,11 @@ export async function moveIdea(
         INSERT INTO ideas (
           title, type, category, priority, summary, raw_input,
           next_steps, context_needed, keywords, embedding, is_archived,
-          context, created_at, updated_at
+          is_favorite, context, created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, $6,
           $7, $8, $9, $10, $11,
-          $12, $13, NOW()
+          $12, $13, $14, NOW()
         )
         RETURNING id
       `, [
@@ -179,6 +181,7 @@ export async function moveIdea(
         jsonb(idea.keywords),
         idea.embedding,
         idea.is_archived,
+        idea.is_favorite ?? false,
         targetContext,
         idea.created_at,
       ]);
@@ -206,14 +209,26 @@ export async function moveIdea(
   try {
     await queryContext(sourceContext, 'DELETE FROM ideas WHERE id = $1', [ideaId]);
   } catch (deleteError) {
-    // If delete fails, we have a duplicate. Log it for manual cleanup.
-    logger.error('Failed to delete source idea after move - duplicate may exist', deleteError instanceof Error ? deleteError : undefined, {
-      operation: 'moveIdea',
-      sourceContext,
-      targetContext,
-      oldIdeaId: ideaId,
-      newIdeaId,
-    });
+    // Compensation: remove the newly-inserted duplicate from target to avoid data inconsistency
+    try {
+      await queryContext(targetContext, 'DELETE FROM ideas WHERE id = $1', [newIdeaId]);
+      logger.warn('Compensated: removed duplicate from target after source DELETE failed', {
+        operation: 'moveIdea',
+        sourceContext,
+        targetContext,
+        oldIdeaId: ideaId,
+        newIdeaId,
+      });
+    } catch (compensationError) {
+      // Compensation also failed — duplicate exists. Log for manual cleanup.
+      logger.error('Compensation failed - duplicate exists in target', compensationError instanceof Error ? compensationError : undefined, {
+        operation: 'moveIdea',
+        sourceContext,
+        targetContext,
+        oldIdeaId: ideaId,
+        newIdeaId,
+      });
+    }
     throw deleteError;
   }
 

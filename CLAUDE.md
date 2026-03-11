@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 38
+## Current Phase: 48
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -133,6 +133,11 @@
 - Enhanced RAG: `backend/src/services/enhanced-rag.ts`
 - Topic Enhancement: `backend/src/services/topic-enhancement.ts`
 - Streaming: `backend/src/services/claude/streaming.ts`
+- Thinking Budget: `backend/src/services/claude/thinking-budget.ts`
+- Thinking Management: `backend/src/services/thinking-management.ts`
+- RAG Feedback: `backend/src/services/rag-feedback.ts`
+- RAG Query Decomposition: `backend/src/services/rag-query-decomposition.ts`
+- Graph Reasoning: `backend/src/services/knowledge-graph/graph-reasoning.ts`
 - Tasks Service: `backend/src/services/tasks.ts`
 - Tasks Routes: `backend/src/routes/tasks.ts`
 - Projects Service: `backend/src/services/projects.ts`
@@ -142,6 +147,25 @@
 - Email AI Service: `backend/src/services/email-ai.ts`
 - Email Routes: `backend/src/routes/email.ts`
 - Email Webhooks: `backend/src/routes/email-webhooks.ts`
+- Browser Routes: `backend/src/routes/browser.ts`
+- Browser Memory: `backend/src/services/browsing-memory.ts`
+- Contacts Routes: `backend/src/routes/contacts.ts`
+- Finance Routes: `backend/src/routes/finance.ts`
+- Screen Memory Routes: `backend/src/routes/screen-memory.ts`
+- Unified Inbox Routes: `backend/src/routes/unified-inbox.ts`
+- Maps Routes: `backend/src/routes/maps.ts`
+- Google Maps Service: `backend/src/services/google-maps.ts`
+- Location Cache: `backend/src/services/location-cache.ts`
+- Canvas Routes: `backend/src/routes/canvas.ts`
+- Canvas Service: `backend/src/services/canvas.ts`
+- Agent Orchestrator: `backend/src/services/agent-orchestrator.ts`
+- Agent Base Class: `backend/src/services/agents/base-agent.ts`
+- Researcher Agent: `backend/src/services/agents/researcher.ts`
+- Writer Agent: `backend/src/services/agents/writer.ts`
+- Reviewer Agent: `backend/src/services/agents/reviewer.ts`
+- Coder Agent: `backend/src/services/agents/coder.ts`
+- Agent Teams Routes: `backend/src/routes/agent-teams.ts`
+- Shared Memory: `backend/src/services/memory/shared-memory.ts`
 
 ### Frontend
 
@@ -165,13 +189,21 @@
 - Image Upload: `frontend/src/components/ImageUpload.tsx`
 - Artifact Panel: `frontend/src/components/ArtifactPanel.tsx`
 - Command Palette: `frontend/src/components/CommandPalette.tsx`
+- Email Page: `frontend/src/components/EmailPage/EmailPage.tsx`
+- Browser Page: `frontend/src/components/BrowserPage/BrowserPage.tsx`
+- Contacts Page: `frontend/src/components/ContactsPage/ContactsPage.tsx`
+- Finance Page: `frontend/src/components/FinancePage/FinancePage.tsx`
+- Screen Memory: `frontend/src/components/ScreenMemoryPage/ScreenMemoryPage.tsx`
+- Canvas Page: `frontend/src/components/CanvasPage.tsx`
+- Hub Page: `frontend/src/components/HubPage.tsx`
+- Agent Teams Page: `frontend/src/components/AgentTeamsPage.tsx`
 
 ### Tests
 
 - Backend: `backend/src/__tests__/`
 - Frontend: `frontend/src/__tests__/` and `frontend/src/components/__tests__/`
 
-## API Endpoints (Phase 37)
+## API Endpoints (Phase 41)
 
 ### Tasks API (Phase 37)
 
@@ -294,6 +326,164 @@ GET  /api/:context/sync/status               - Get sync status and counts
 GET  /api/:context/sync/pending              - Get pending changes (last hour)
 POST /api/:context/sync/trigger              - Trigger manual sync
 DELETE /api/sync/devices/:deviceId           - Remove sync device
+```
+
+### Browser API (Phase 41)
+
+```
+GET    /api/:context/browser/history                  - List browsing history with filters
+GET    /api/:context/browser/history/domains          - Get domain visit statistics
+GET    /api/:context/browser/history/:id              - Get single history entry
+POST   /api/:context/browser/history                  - Record a page visit
+DELETE /api/:context/browser/history/:id              - Delete a single history entry
+DELETE /api/:context/browser/history                  - Clear browsing history
+GET    /api/:context/browser/bookmarks                - List bookmarks with filters
+GET    /api/:context/browser/bookmarks/folders        - Get bookmark folder structure
+GET    /api/:context/browser/bookmarks/:id            - Get single bookmark
+POST   /api/:context/browser/bookmarks                - Create a bookmark
+PUT    /api/:context/browser/bookmarks/:id            - Update a bookmark
+DELETE /api/:context/browser/bookmarks/:id            - Delete a bookmark
+POST   /api/:context/browser/analyze                  - Analyze page content with AI
+```
+
+### Contacts & CRM API (Phase 41)
+
+```
+GET    /api/:context/contacts                         - List contacts with filters
+GET    /api/:context/contacts/stats                   - Get contact statistics
+GET    /api/:context/contacts/follow-ups              - Get follow-up suggestions
+GET    /api/:context/contacts/:id                     - Get single contact
+POST   /api/:context/contacts                         - Create contact
+PUT    /api/:context/contacts/:id                     - Update contact
+DELETE /api/:context/contacts/:id                     - Delete contact
+GET    /api/:context/contacts/:id/timeline            - Get contact interactions timeline
+POST   /api/:context/contacts/:id/interactions        - Add interaction record
+GET    /api/:context/organizations                    - List organizations with filters
+GET    /api/:context/organizations/:id                - Get single organization
+POST   /api/:context/organizations                    - Create organization
+PUT    /api/:context/organizations/:id                - Update organization
+DELETE /api/:context/organizations/:id                - Delete organization
+```
+
+### Finance API (Phase 41)
+
+```
+GET    /api/:context/finance/overview                 - Get financial overview
+GET    /api/:context/finance/categories               - Get category spending breakdown
+GET    /api/:context/finance/accounts                 - List financial accounts
+GET    /api/:context/finance/accounts/:id             - Get single account
+POST   /api/:context/finance/accounts                 - Create account
+PUT    /api/:context/finance/accounts/:id             - Update account
+DELETE /api/:context/finance/accounts/:id             - Delete account
+GET    /api/:context/finance/transactions             - List transactions with filters
+GET    /api/:context/finance/transactions/:id         - Get single transaction
+POST   /api/:context/finance/transactions             - Create transaction
+PUT    /api/:context/finance/transactions/:id         - Update transaction
+DELETE /api/:context/finance/transactions/:id         - Delete transaction
+GET    /api/:context/finance/budgets                  - List budgets
+GET    /api/:context/finance/budgets/:id              - Get single budget
+POST   /api/:context/finance/budgets                  - Create budget
+PUT    /api/:context/finance/budgets/:id              - Update budget
+DELETE /api/:context/finance/budgets/:id              - Delete budget
+GET    /api/:context/finance/goals                    - List financial goals
+GET    /api/:context/finance/goals/:id                - Get single goal
+POST   /api/:context/finance/goals                    - Create goal
+PUT    /api/:context/finance/goals/:id                - Update goal
+DELETE /api/:context/finance/goals/:id                - Delete goal
+```
+
+### Screen Memory API (Phase 41)
+
+```
+GET    /api/:context/screen-memory                    - List screen captures with filters
+GET    /api/:context/screen-memory/stats              - Get screen memory statistics
+GET    /api/:context/screen-memory/:id                - Get single capture
+POST   /api/:context/screen-memory                    - Store new screen capture
+DELETE /api/:context/screen-memory/:id                - Delete capture
+POST   /api/:context/screen-memory/cleanup            - Cleanup old captures
+```
+
+### Unified Inbox API (Phase 41)
+
+```
+GET    /api/:context/inbox                            - Get unified inbox items
+GET    /api/:context/inbox/counts                     - Get item counts per type
+```
+
+### Maps API (Phase 41)
+
+```
+GET    /api/:context/maps/status                      - Check Google Maps availability
+POST   /api/:context/maps/geocode                     - Convert address to coordinates
+POST   /api/:context/maps/reverse-geocode             - Convert coordinates to address
+GET    /api/:context/maps/autocomplete                - Get place suggestions
+GET    /api/:context/maps/places/:placeId             - Get place details
+POST   /api/:context/maps/directions                  - Get directions between locations
+POST   /api/:context/maps/distance-matrix             - Calculate travel times
+POST   /api/:context/maps/nearby                      - Find places near location
+GET    /api/:context/maps/saved-locations             - List saved locations
+POST   /api/:context/maps/saved-locations             - Save new location
+DELETE /api/:context/maps/saved-locations/:id         - Delete saved location
+```
+
+### Canvas API (Phase 33)
+
+```
+POST   /api/canvas                                    - Create canvas document
+GET    /api/canvas?context=personal                   - List canvas documents
+GET    /api/canvas/:id                                - Get canvas document
+PATCH  /api/canvas/:id                                - Update canvas document
+DELETE /api/canvas/:id                                - Delete canvas document
+POST   /api/canvas/:id/link-chat                      - Link chat session to document
+GET    /api/canvas/:id/versions                       - Get document version history
+POST   /api/canvas/:id/restore/:versionId             - Restore document version
+```
+
+### Extended Thinking API (Phase 46)
+
+```
+POST   /api/:context/thinking/feedback                 - Record thinking quality feedback
+GET    /api/:context/thinking/stats                    - Get thinking chain statistics
+GET    /api/:context/thinking/strategies               - Get budget strategy performance
+POST   /api/:context/thinking/strategies/persist       - Persist strategies to database
+GET    /api/:context/thinking/chains/:id               - Get specific thinking chain
+DELETE /api/:context/thinking/chains/:id               - Delete thinking chain
+```
+
+### RAG Analytics API (Phase 47)
+
+```
+POST   /api/:context/rag/feedback                      - Record RAG retrieval feedback
+GET    /api/:context/rag/analytics                     - Get RAG performance analytics
+GET    /api/:context/rag/strategies                    - Get strategy performance breakdown
+GET    /api/:context/rag/history                       - Get recent RAG query history
+```
+
+### Knowledge Graph Reasoning API (Phase 48)
+
+```
+POST   /api/:context/knowledge-graph/infer             - Run transitive inference
+GET    /api/:context/knowledge-graph/contradictions    - Detect contradiction chains
+POST   /api/:context/knowledge-graph/communities       - Detect graph communities
+GET    /api/:context/knowledge-graph/communities       - Get cached communities
+GET    /api/:context/knowledge-graph/centrality        - Get centrality metrics
+GET    /api/:context/knowledge-graph/learning-path/:id - Generate learning path
+POST   /api/:context/knowledge-graph/relations         - Create manual relation
+PUT    /api/:context/knowledge-graph/relations         - Update relation strength
+DELETE /api/:context/knowledge-graph/relations         - Delete relation
+```
+
+### Agent Teams API (Phase 45)
+
+```
+POST   /api/agents/execute                              - Execute task with agent team
+POST   /api/agents/execute/stream                       - Execute with SSE streaming progress
+POST   /api/agents/classify                             - Preview strategy classification
+GET    /api/agents/templates                            - List agent templates
+GET    /api/agents/analytics                            - Agent execution analytics
+GET    /api/agents/history                              - List past executions
+GET    /api/agents/history/:id                          - Get single execution
+POST   /api/agents/history/:id/save-as-idea             - Persist result as idea
 ```
 
 ## Environment Variables (Backend)
@@ -541,6 +731,146 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-09: Phase 46-48 - Extended Thinking, RAG Analytics & Knowledge Graph Reasoning
+
+**Drei strategische Phasen zur Verbesserung der KI-Kernbereiche.**
+
+**Phase 46: Extended Thinking Excellence**
+
+| Feature | Details |
+|---------|---------|
+| **DB Migration** | `thinking_chains` + `thinking_budget_strategies` Tabellen in 4 Schemas |
+| **Thinking Chain Persistence** | Speichert Denkprozesse mit Embeddings fuer Similarity Search |
+| **Strategy Persistence** | Budget-Strategien werden in DB persistiert (ueberlebt Neustart) |
+| **Feedback API** | Quality Ratings (1-5) fuer Thinking Chains |
+| **Statistics API** | Aggregierte Metriken pro Task-Typ |
+| **Strategy Learning** | Automatische Optimierung basierend auf Token-Quality-Korrelation |
+
+**Phase 47: Agentic RAG Enhancement**
+
+| Feature | Details |
+|---------|---------|
+| **RAG Feedback** | Thumbs up/down + Relevance Ratings fuer Retrieval-Ergebnisse |
+| **Query Analytics** | Automatische Erfassung: Strategy, Confidence, Response-Time, Result-Count |
+| **Query Decomposition** | Komplexe Queries in Sub-Queries zerlegen (Vergleich, Kausal, Temporal, Multi-Part) |
+| **Strategy Performance** | Per-Strategy Metriken (Confidence, Speed, HyDE-Rate, Cross-Encoder-Rate) |
+| **Daily Trends** | Zeitverlauf der RAG-Performance |
+| **Enhanced RAG Integration** | Automatische Analytics-Erfassung bei jedem Retrieval |
+
+**Phase 48: Knowledge Graph Expansion**
+
+| Feature | Details |
+|---------|---------|
+| **Transitive Inference** | Findet versteckte A→C Verbindungen ueber 2-Hop-Pfade |
+| **Contradiction Detection** | Erkennt logische Konflikte (A supports B, B contradicts C) |
+| **Community Detection** | Label Propagation fuer Cluster-Erkennung (Connected Components) |
+| **Centrality Analysis** | Degree + Betweenness Centrality, Hub/Bridge Identifikation |
+| **Learning Paths** | Generiert Lernpfade durch den Knowledge Graph |
+| **Manual Relation CRUD** | Erstellen, Aktualisieren, Loeschen von Beziehungen |
+| **Reasoning Cache** | 7-Tage-Cache fuer Inference-Ergebnisse |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/sql/migrations/phase46_thinking_chains.sql` | DB-Migration (7 neue Tabellen in 4 Schemas) |
+| `backend/src/routes/thinking.ts` | Extended Thinking API (6 Endpoints) |
+| `backend/src/services/thinking-management.ts` | Strategy Persistence & Chain Management |
+| `backend/src/routes/rag-analytics.ts` | RAG Analytics API (4 Endpoints) |
+| `backend/src/services/rag-feedback.ts` | RAG Feedback & Analytics Service |
+| `backend/src/services/rag-query-decomposition.ts` | Query Decomposition (5 Typen) |
+| `backend/src/routes/graph-reasoning.ts` | Graph Reasoning API (9 Endpoints) |
+| `backend/src/services/knowledge-graph/graph-reasoning.ts` | Inference, Communities, Centrality, Learning Paths |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | 3 neue Router registriert (thinking, rag-analytics, graph-reasoning) |
+| `backend/src/services/enhanced-rag.ts` | Query Decomposition + Analytics Tracking integriert |
+| `CLAUDE.md` | Phase auf 48 aktualisiert, 3 neue API-Sektionen, Changelog |
+
+**Tests:** 39 neue Tests (4 Test Suites), TypeScript: 0 Fehler
+
+---
+
+### 2026-03-09: Phase 45 - Enhanced Multi-Agent Intelligence
+
+**Multi-Agent System erweitert mit Coder Agent, SSE Streaming, Templates, Analytics und Error Recovery.**
+
+**Neue Features:**
+
+| Feature | Details |
+|---------|---------|
+| **Coder Agent** | Neuer spezialisierter Agent fuer Code-Generierung, Testing und Debugging (Sonnet Model) |
+| **SSE Streaming** | `POST /api/agents/execute/stream` - Echtzeit-Fortschrittsanzeige per Server-Sent Events |
+| **Agent Templates** | 8 vordefinierte Templates (Tiefenrecherche, Blog-Artikel, Code-Loesung, Wettbewerbsanalyse, etc.) |
+| **Agent Analytics** | `GET /api/agents/analytics` - Erfolgsraten, Token-Kosten, Strategie-Breakdown, Daily Trends |
+| **Error Recovery** | Automatischer Retry bei Agent-Fehlern (1 Retry pro Agent) mit Shared Memory Logging |
+| **Code Strategies** | 2 neue Strategien: `code_solve` (Coder + Reviewer) und `research_code_review` (Researcher + Coder + Reviewer) |
+| **Progress Callbacks** | `AgentProgressCallback` fuer team_start, agent_start, agent_complete, agent_error, team_complete Events |
+| **Frontend Streaming UI** | Echtzeit-Fortschrittsbalken, Agent-Status-Updates, Streaming Fallback zu Regular Execution |
+| **Frontend Templates** | Template-Auswahl im UI, Template-Badge, Apply/Clear Funktionalitaet |
+| **Frontend Analytics** | Analytics-Panel mit Erfolgsrate, Token-Verbrauch und Strategie-Statistiken |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/agents/coder.ts` | Coder Agent (execute_code, web_search, search_ideas, fetch_url Tools) |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/services/agent-orchestrator.ts` | +Coder Factory, +SSE Streaming, +Error Recovery, +Templates, +Progress Callbacks, +Code Strategies |
+| `backend/src/routes/agent-teams.ts` | +Streaming Endpoint, +Templates Endpoint, +Analytics Endpoint, Code Strategy Descriptions |
+| `frontend/src/components/AgentTeamsPage.tsx` | +Streaming UI, +Templates Grid, +Analytics Panel, +Coder Role Config, +Strategy Fallback |
+| `frontend/src/components/AgentTeamsPage.css` | +Streaming Progress, +Templates Styles, +Analytics Styles, +Template Badge |
+
+**Tests:** 56 Agent-Tests bestanden (41 Orchestrator + 15 Route), 0 fehlgeschlagen
+
+---
+
+### 2026-03-09: Comprehensive Function Audit & Fixes
+
+**Vollstaendige Funktionspruefung des gesamten Projekts mit 3 Fixes.**
+
+**Audit-Ergebnis:**
+
+| Bereich | Status | Details |
+|---------|--------|---------|
+| **Backend TSC** | PASS | 0 Fehler |
+| **Frontend TSC** | PASS | 1 pre-existing (dompurify in Worktree) |
+| **Backend Tests** | 2353 passed | 23 skipped, 0 failed |
+| **Frontend Tests** | 548 passed | 0 failed |
+| **Backend Routes** | 99% | 1 Response-Format-Issue (Canvas) |
+| **Frontend Pages** | 98% | Alle 17 Pages geroutet und funktional |
+
+**Fixes:**
+
+| Fix | Dateien | Details |
+|-----|---------|---------|
+| **Canvas Response-Format** | `backend/src/routes/canvas.ts`, `frontend/src/components/CanvasPage.tsx` | `{ success, ...doc }` → `{ success, data: doc }` standardisiert (5 Endpoints + 3 Frontend-Stellen) |
+| **Maps Auth & Error Handling** | `backend/src/routes/maps.ts` | `apiKeyAuth` Middleware + `asyncHandler()` fuer alle 11 Routes, inline try-catch durch zentrale Fehlerbehandlung ersetzt |
+| **CLAUDE.md API-Dokumentation** | `CLAUDE.md` | 8 fehlende API-Sektionen ergaenzt (Browser, Contacts, Finance, Screen Memory, Unified Inbox, Maps, Canvas), Phase auf 41 aktualisiert |
+
+**Neue API-Dokumentation (vorher fehlend):**
+
+| API | Endpoints |
+|-----|-----------|
+| Browser | 13 Endpoints (History CRUD, Bookmarks CRUD, AI Analyze) |
+| Contacts & CRM | 15 Endpoints (Contacts, Organizations, Timeline, Interactions) |
+| Finance | 21 Endpoints (Accounts, Transactions, Budgets, Goals) |
+| Screen Memory | 6 Endpoints (Captures CRUD, Stats, Cleanup) |
+| Unified Inbox | 2 Endpoints (Items, Counts) |
+| Maps | 11 Endpoints (Geocoding, Autocomplete, Directions, Places, Saved Locations) |
+| Canvas | 8 Endpoints (Documents CRUD, Versions, Restore) |
+
+**Tests:** 2353 Backend + 548 Frontend = 2901 Tests bestanden, 0 fehlgeschlagen
+
+---
 
 ### 2026-02-17: Phase 38 - Resend E-Mail Integration mit KI-Analyse
 

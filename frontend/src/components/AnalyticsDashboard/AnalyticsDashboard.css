@@ -1,0 +1,457 @@
+/* ===========================================
+   Phase 50: Analytics Dashboard V2
+   =========================================== */
+
+.av2-dashboard {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.av2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  flex-wrap: wrap;
+}
+
+.av2-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.av2-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: var(--text-primary, #f5f9fc);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.av2-back-btn:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.av2-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary, #f5f9fc);
+}
+
+.av2-context-badge {
+  background: var(--primary, #ff6b35);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* Date Range Picker */
+.av2-date-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.av2-presets {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.av2-preset-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-primary, #f5f9fc);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.av2-preset-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.av2-preset-btn.active {
+  background: var(--primary, #ff6b35);
+  border-color: var(--primary, #ff6b35);
+  color: white;
+}
+
+.av2-custom-range {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.av2-date-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-primary, #f5f9fc);
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.av2-date-input:focus {
+  outline: none;
+  border-color: var(--primary, #ff6b35);
+}
+
+.av2-date-separator {
+  color: var(--text-primary, rgba(255,255,255,0.5));
+  font-size: 0.75rem;
+}
+
+/* Tabs */
+.av2-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+}
+
+.av2-tab {
+  background: none;
+  border: none;
+  color: var(--text-primary, rgba(255,255,255,0.6));
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.av2-tab:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary, #f5f9fc);
+}
+
+.av2-tab.active {
+  background: rgba(255, 107, 53, 0.15);
+  color: var(--primary, #ff6b35);
+  font-weight: 500;
+}
+
+/* Content */
+.av2-content {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Loading */
+.av2-tab-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: var(--text-primary, rgba(255,255,255,0.6));
+}
+
+.av2-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--primary, #ff6b35);
+  border-radius: 50%;
+  animation: av2-spin 0.8s linear infinite;
+}
+
+@keyframes av2-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error */
+.av2-error {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.875rem;
+}
+
+.av2-empty {
+  text-align: center;
+  color: var(--text-primary, rgba(255,255,255,0.5));
+  padding: 2rem;
+}
+
+/* Overview Grid */
+.av2-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.av2-stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.15s;
+}
+
+.av2-stat-card:hover {
+  border-color: rgba(255,255,255,0.15);
+}
+
+.av2-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.av2-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-primary, rgba(255,255,255,0.6));
+}
+
+.av2-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary, #f5f9fc);
+}
+
+.av2-stat-total {
+  font-size: 0.75rem;
+  color: var(--text-primary, rgba(255,255,255,0.4));
+}
+
+.av2-stat-trend {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.av2-trend-positive {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.av2-trend-negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.av2-trend-neutral {
+  color: var(--text-primary, rgba(255,255,255,0.5));
+  background: rgba(255,255,255,0.05);
+}
+
+/* Charts */
+.av2-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.av2-chart-section {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.av2-chart-title {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary, #f5f9fc);
+}
+
+.av2-empty-charts {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-primary, rgba(255,255,255,0.5));
+}
+
+/* Productivity KPIs */
+.av2-productivity-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.av2-kpi-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.av2-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary, #ff6b35);
+}
+
+.av2-kpi-label {
+  font-size: 0.7rem;
+  color: var(--text-primary, rgba(255,255,255,0.5));
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Export Panel */
+.av2-export-panel {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+}
+
+.av2-export-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #f5f9fc);
+}
+
+.av2-export-desc {
+  font-size: 0.85rem;
+  color: var(--text-primary, rgba(255,255,255,0.6));
+  margin: 0 0 1.25rem 0;
+  line-height: 1.5;
+}
+
+.av2-export-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-primary, rgba(255,255,255,0.5));
+}
+
+.av2-export-btn {
+  background: var(--primary, #ff6b35);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.av2-export-btn:hover {
+  opacity: 0.9;
+}
+
+.av2-export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.av2-export-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.av2-export-btn-secondary {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.av2-export-btn-secondary:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* Granularity controls */
+.av2-granularity-controls {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.av2-granularity-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-primary, rgba(255,255,255,0.6));
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.av2-granularity-btn.active {
+  background: var(--primary, #ff6b35);
+  border-color: var(--primary, #ff6b35);
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .av2-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .av2-date-range-picker {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .av2-overview-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .av2-productivity-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .av2-tabs {
+    overflow-x: auto;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .av2-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .av2-productivity-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .av2-spinner {
+    animation: none;
+  }
+}

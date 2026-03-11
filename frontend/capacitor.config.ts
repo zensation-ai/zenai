@@ -1,34 +1,32 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'ai.zensation.mybrain',
-  appName: 'My Brain',
+  appId: 'de.personal.aibrain',
+  appName: 'ZenAI',
   webDir: 'dist',
   server: {
-    // Production: Use Railway backend
-    // The web assets are bundled in the app, API calls go to production
+    // Live URL mode: loads directly from Vercel production
+    // Every Vercel deploy = instant update on iPhone (no rebuild needed)
+    url: 'https://frontend-mu-six-93.vercel.app',
+    cleartext: false,
     androidScheme: 'https',
   },
   ios: {
-    // iOS-specific settings
     contentInset: 'automatic',
     allowsLinkPreview: false,
     scrollEnabled: true,
-    // Disable web view bounce for more native feel
+    preferredContentMode: 'mobile',
     backgroundColor: '#0a0f14',
   },
   plugins: {
-    // Keyboard plugin settings
     Keyboard: {
       resize: 'body',
       resizeOnFullScreen: true,
     },
-    // Status bar settings
     StatusBar: {
       style: 'dark',
       backgroundColor: '#0a0f14',
     },
-    // Splash screen settings
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,

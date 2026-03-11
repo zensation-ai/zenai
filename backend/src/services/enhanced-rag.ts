@@ -16,6 +16,8 @@ import { AIContext } from '../utils/database-context';
 import { agenticRAG, RetrievalResult, RAGAgentConfig } from './agentic-rag';
 import { hybridRerank, RerankedResult } from './cross-encoder-rerank';
 import { hydeService, shouldUseHyDE, HyDERetrievalResult } from './hyde-retrieval';
+import { recordRAGQueryAnalytics } from './rag-feedback';
+import { decomposeQuery } from './rag-query-decomposition';
 
 // ===========================================
 // Types & Interfaces
@@ -85,6 +87,7 @@ export interface EnhancedRAGResult {
     hydeUsed: boolean;
     hydeReason?: string;
     queryReformulations?: string[];
+    queryDecomposition?: { original: string; subQueries: Array<{ query: string; purpose: string }>; decompositionType: string };
   };
 }
 
@@ -146,6 +149,9 @@ class EnhancedRAGService {
     const startTime = Date.now();
     const methodsUsed: string[] = [];
     const timing: EnhancedRAGResult['timing'] = { total: 0 };
+
+    // Phase 47: Query decomposition for complex queries
+    const decomposition = decomposeQuery(query);
 
     logger.info('Enhanced RAG retrieval starting', {
       query: query.substring(0, 50),
@@ -251,6 +257,24 @@ class EnhancedRAGService {
       timing,
     });
 
+    // Phase 47: Record query analytics (async, non-blocking)
+    recordRAGQueryAnalytics(context, {
+      queryText: query,
+      queryType: decomposition?.decompositionType,
+      strategiesUsed: methodsUsed,
+      strategySelected: methodsUsed[0] || undefined,
+      resultCount: finalResults.length,
+      topScore: finalResults.length > 0 ? finalResults[0].score : undefined,
+      avgScore: finalResults.length > 0
+        ? finalResults.reduce((sum, r) => sum + r.score, 0) / finalResults.length
+        : undefined,
+      confidence,
+      responseTimeMs: timing.total,
+      hydeUsed: useHyDE,
+      crossEncoderUsed: cfg.enableCrossEncoder && finalResults.length > 0,
+      reformulationCount: 0,
+    }).catch(() => {/* non-critical */});
+
     return {
       results: finalResults,
       confidence,
@@ -259,6 +283,7 @@ class EnhancedRAGService {
       debug: {
         hydeUsed: useHyDE,
         hydeReason: useHyDE ? 'Query matches HyDE patterns' : 'Direct search preferred',
+        queryDecomposition: decomposition?.isComplex ? decomposition : undefined,
       },
     };
   }

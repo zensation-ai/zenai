@@ -40,7 +40,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
   const data = useEmailData(context);
-  const searchInputRef = useRef<HTMLInputElement>(null!);  // eslint-disable-line @typescript-eslint/no-non-null-assertion
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Data loading ──────────────────────────────────────────
@@ -55,7 +55,10 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
     data.fetchStats();
     data.fetchAccounts();
     data.startAutoRefresh();
-    return () => data.stopAutoRefresh();
+    return () => {
+      data.stopAutoRefresh();
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
   }, [activeFolder, context, activeCategory, showUnreadOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Search with debounce ──────────────────────────────────

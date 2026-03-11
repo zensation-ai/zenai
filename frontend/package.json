@@ -2,10 +2,11 @@
   "name": "zenai-frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "My Brain - Personal AI Assistant. Designed, Developed and Owned by Alexander Bering",
+  "description": "ZenAI - Enterprise AI Platform by ZenSation",
   "author": "Alexander Bering",
   "homepage": "https://zensation.ai",
   "type": "module",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -23,7 +24,6 @@
     "test:e2e:chromium": "playwright test --project=chromium"
   },
   "dependencies": {
-    "@zenai/shared": "workspace:*",
     "@capacitor/cli": "^8.0.2",
     "@capacitor/core": "^8.0.0",
     "@capacitor/haptics": "^8.0.0",

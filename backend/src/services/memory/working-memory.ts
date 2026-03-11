@@ -10,6 +10,7 @@
  * - Spreading activation to related concepts
  * - Time-based decay
  * - Priority-based eviction
+ * - Redis-backed persistence with in-memory fallback (Week 49)
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -18,6 +19,7 @@ import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
 import { cosineSimilarity } from '../../utils/embedding';
 import { longTermMemory } from './long-term-memory';
+import { cache } from '../../utils/cache';
 
 // ===========================================
 // Types & Interfaces
@@ -64,6 +66,10 @@ const CONFIG = {
   SPREADING_THRESHOLD: 0.5,
   /** Session timeout in milliseconds (30 minutes) */
   SESSION_TIMEOUT_MS: 30 * 60 * 1000,
+  /** Redis TTL in seconds (30 minutes, matches SESSION_TIMEOUT_MS) */
+  REDIS_TTL_SECONDS: 30 * 60,
+  /** Redis key prefix for working memory states */
+  REDIS_KEY_PREFIX: 'wm:',
   /** Maximum sessions in memory */
   MAX_SESSIONS: 100,
   /** Minimum activation for a slot to be promoted to long-term memory */
@@ -95,6 +101,101 @@ export class WorkingMemoryService {
   }
 
   // ===========================================
+  // Redis Persistence Helpers
+  // ===========================================
+
+  /** Generate Redis key for a session */
+  private redisKey(sessionId: string): string {
+    return `${CONFIG.REDIS_KEY_PREFIX}${sessionId}`;
+  }
+
+  /**
+   * Persist state to Redis (fire-and-forget).
+   * Serializes dates to ISO strings and strips embeddings to save space.
+   */
+  private persistToRedis(state: WorkingMemoryState): void {
+    const key = this.redisKey(state.sessionId);
+    const serializable = {
+      ...state,
+      createdAt: state.createdAt.toISOString(),
+      lastActivity: state.lastActivity.toISOString(),
+      slots: state.slots.map(s => ({
+        ...s,
+        addedAt: s.addedAt.toISOString(),
+        lastAccessed: s.lastAccessed.toISOString(),
+        // Strip embeddings to reduce Redis storage
+        embedding: undefined,
+      })),
+    };
+
+    cache.set(key, serializable, CONFIG.REDIS_TTL_SECONDS).catch(err => {
+      logger.debug('Failed to persist working memory to Redis', {
+        sessionId: state.sessionId,
+        error: err instanceof Error ? err.message : 'Unknown',
+      });
+    });
+  }
+
+  /**
+   * Try to restore state from Redis into the in-memory Map.
+   * Returns the restored state or null if not found.
+   */
+  private async restoreFromRedis(sessionId: string): Promise<WorkingMemoryState | null> {
+    try {
+      const key = this.redisKey(sessionId);
+      const data = await cache.get<Record<string, unknown>>(key);
+      if (!data) {return null;}
+
+      // Rehydrate dates from ISO strings
+      const state: WorkingMemoryState = {
+        sessionId: data.sessionId as string,
+        context: data.context as AIContext,
+        capacity: data.capacity as number,
+        currentGoal: data.currentGoal as string,
+        subGoals: data.subGoals as string[],
+        createdAt: new Date(data.createdAt as string),
+        lastActivity: new Date(data.lastActivity as string),
+        slots: (data.slots as Array<Record<string, unknown>>).map(s => ({
+          id: s.id as string,
+          type: s.type as SlotType,
+          content: s.content as string,
+          priority: s.priority as number,
+          activation: s.activation as number,
+          addedAt: new Date(s.addedAt as string),
+          lastAccessed: new Date(s.lastAccessed as string),
+          // Embeddings are not persisted; will be regenerated on demand
+        })),
+      };
+
+      // Check if expired
+      if (Date.now() - state.lastActivity.getTime() > CONFIG.SESSION_TIMEOUT_MS) {
+        return null;
+      }
+
+      // Cache locally
+      this.states.set(sessionId, state);
+
+      logger.debug('Working memory restored from Redis', { sessionId });
+      return state;
+    } catch (error) {
+      logger.debug('Failed to restore working memory from Redis', {
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown',
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Delete state from Redis.
+   */
+  private deleteFromRedis(sessionId: string): void {
+    cache.del(this.redisKey(sessionId)).catch(() => {
+      // Silently ignore - cleanup is best-effort
+    });
+  }
+
+  // ===========================================
   // Session Management
   // ===========================================
 
@@ -114,6 +215,7 @@ export class WorkingMemoryService {
       if (existing.currentGoal !== goal) {
         existing.currentGoal = goal;
         existing.lastActivity = new Date();
+        this.persistToRedis(existing);
       }
       return existing;
     }
@@ -156,27 +258,42 @@ export class WorkingMemoryService {
       this.evictOldestSession();
     }
 
+    // Persist to Redis
+    this.persistToRedis(state);
+
     return state;
   }
 
   /**
-   * Get or initialize working memory state
+   * Get or initialize working memory state.
+   * Tries local Map first, then Redis, then creates new.
    */
-  getOrInitialize(
+  async getOrInitialize(
     sessionId: string,
     goal: string,
     context: AIContext
-  ): WorkingMemoryState {
+  ): Promise<WorkingMemoryState> {
     const existing = this.states.get(sessionId);
     if (existing) {
       existing.lastActivity = new Date();
+      this.persistToRedis(existing);
       return existing;
     }
+
+    // Try to restore from Redis
+    const restored = await this.restoreFromRedis(sessionId);
+    if (restored) {
+      restored.lastActivity = new Date();
+      this.persistToRedis(restored);
+      return restored;
+    }
+
     return this.initialize(sessionId, goal, context);
   }
 
   /**
-   * Get state by session ID
+   * Get state by session ID (sync - from local Map only).
+   * For Redis-aware lookup, use getStateAsync().
    */
   getState(sessionId: string): WorkingMemoryState | null {
     const state = this.states.get(sessionId);
@@ -185,10 +302,24 @@ export class WorkingMemoryService {
     // Check if expired
     if (Date.now() - state.lastActivity.getTime() > CONFIG.SESSION_TIMEOUT_MS) {
       this.states.delete(sessionId);
+      this.deleteFromRedis(sessionId);
       return null;
     }
 
     return state;
+  }
+
+  /**
+   * Get state by session ID with Redis fallback.
+   * Tries local Map first, then Redis.
+   */
+  async getStateAsync(sessionId: string): Promise<WorkingMemoryState | null> {
+    // Try local first
+    const local = this.getState(sessionId);
+    if (local) {return local;}
+
+    // Try Redis
+    return this.restoreFromRedis(sessionId);
   }
 
   // ===========================================
@@ -224,6 +355,7 @@ export class WorkingMemoryService {
       existing.activation = Math.min(1.0, existing.activation + 0.3);
       existing.lastAccessed = new Date();
       state.lastActivity = new Date();
+      this.persistToRedis(state);
       return existing;
     }
 
@@ -253,6 +385,9 @@ export class WorkingMemoryService {
       slotsCount: state.slots.length,
       capacity: state.capacity,
     });
+
+    // Persist to Redis
+    this.persistToRedis(state);
 
     return slot;
   }
@@ -291,6 +426,9 @@ export class WorkingMemoryService {
 
     // Spreading activation to similar slots
     await this.spreadActivation(state, slot);
+
+    // Persist to Redis
+    this.persistToRedis(state);
   }
 
   /**
@@ -312,6 +450,10 @@ export class WorkingMemoryService {
     }
 
     state.lastActivity = new Date();
+
+    if (matchingSlots.length > 0) {
+      this.persistToRedis(state);
+    }
   }
 
   /**
@@ -381,6 +523,8 @@ export class WorkingMemoryService {
     state.slots.splice(index, 1);
     state.lastActivity = new Date();
 
+    this.persistToRedis(state);
+
     return true;
   }
 
@@ -398,6 +542,7 @@ export class WorkingMemoryService {
     if (!state.subGoals.includes(subGoal)) {
       state.subGoals.push(subGoal);
       state.lastActivity = new Date();
+      this.persistToRedis(state);
     }
   }
 
@@ -412,6 +557,7 @@ export class WorkingMemoryService {
     if (index !== -1) {
       state.subGoals.splice(index, 1);
       state.lastActivity = new Date();
+      this.persistToRedis(state);
     }
   }
 
@@ -488,6 +634,7 @@ export class WorkingMemoryService {
 
     if (oldestId) {
       this.states.delete(oldestId);
+      this.deleteFromRedis(oldestId);
       logger.info('Evicted oldest working memory session', { sessionId: oldestId });
     }
   }
@@ -569,6 +716,7 @@ export class WorkingMemoryService {
    */
   clear(sessionId: string): void {
     this.states.delete(sessionId);
+    this.deleteFromRedis(sessionId);
     logger.debug('Working memory cleared', { sessionId });
   }
 
@@ -608,6 +756,7 @@ export class WorkingMemoryService {
         });
       });
       this.states.delete(state.sessionId);
+      this.deleteFromRedis(state.sessionId);
     }
 
     if (expiredStates.length > 0) {

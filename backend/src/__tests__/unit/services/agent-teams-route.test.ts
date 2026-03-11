@@ -2,6 +2,7 @@
  * Agent Teams Route Tests
  *
  * Tests the API endpoints for multi-agent task execution.
+ * Phase 45: Added templates, analytics, streaming tests.
  */
 
 import express from 'express';
@@ -16,8 +17,9 @@ jest.mock('../../../middleware/auth', () => ({
 }));
 
 // Mock database-context (for queryContext + isValidContext)
+var mockQueryContext = jest.fn().mockResolvedValue({ rows: [] });
 jest.mock('../../../utils/database-context', () => ({
-  queryContext: jest.fn().mockResolvedValue({ rows: [] }),
+  queryContext: (...args: unknown[]) => mockQueryContext(...args),
   isValidContext: jest.fn().mockReturnValue(true),
 }));
 
@@ -58,7 +60,24 @@ jest.mock('../../../services/agent-orchestrator', () => ({
       byAgent: { researcher: 4, writer: 3, orchestrator: 1 },
     },
   }),
+  executeTeamTaskStreaming: jest.fn(),
   classifyTeamStrategy: jest.fn().mockReturnValue('research_write_review'),
+  AGENT_TEMPLATES: [
+    {
+      id: 'deep_research',
+      name: 'Tiefenrecherche',
+      description: 'Gründliche Recherche',
+      icon: '🔬',
+      strategy: 'research_write_review',
+    },
+    {
+      id: 'code_solution',
+      name: 'Code-Lösung',
+      description: 'Code generieren',
+      icon: '💻',
+      strategy: 'code_solve',
+    },
+  ],
 }));
 
 // Mock logger
@@ -71,6 +90,11 @@ jest.mock('../../../utils/logger', () => ({
   },
 }));
 
+// Mock validation
+jest.mock('../../../utils/validation', () => ({
+  toIntBounded: jest.fn().mockImplementation((val, def) => def),
+}));
+
 describe('Agent Teams Route', () => {
   let app: express.Express;
 
@@ -79,6 +103,11 @@ describe('Agent Teams Route', () => {
     app.use(express.json());
     app.use('/api/agents', agentTeamsRouter);
     app.use(errorHandler);
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockQueryContext.mockResolvedValue({ rows: [] });
   });
 
   describe('POST /api/agents/execute', () => {
@@ -164,6 +193,167 @@ describe('Agent Teams Route', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
+    });
+  });
+
+  // Phase 45: Template tests
+  describe('GET /api/agents/templates', () => {
+    it('should return available templates', async () => {
+      const res = await request(app)
+        .get('/api/agents/templates');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.templates).toHaveLength(2);
+      expect(res.body.templates[0].id).toBe('deep_research');
+      expect(res.body.templates[1].id).toBe('code_solution');
+    });
+
+    it('should include required fields for each template', async () => {
+      const res = await request(app)
+        .get('/api/agents/templates');
+
+      for (const template of res.body.templates) {
+        expect(template).toHaveProperty('id');
+        expect(template).toHaveProperty('name');
+        expect(template).toHaveProperty('description');
+        expect(template).toHaveProperty('icon');
+        expect(template).toHaveProperty('strategy');
+      }
+    });
+  });
+
+  // Phase 45: Analytics tests
+  describe('GET /api/agents/analytics', () => {
+    it('should return analytics with empty data', async () => {
+      mockQueryContext
+        .mockResolvedValueOnce({ rows: [] })  // strategy breakdown
+        .mockResolvedValueOnce({ rows: [] }); // daily trend
+
+      const res = await request(app)
+        .get('/api/agents/analytics')
+        .query({ context: 'personal' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.totals).toBeDefined();
+      expect(res.body.totals.executions).toBe(0);
+      expect(res.body.totals.successRate).toBe(0);
+      expect(res.body.byStrategy).toEqual([]);
+      expect(res.body.dailyTrend).toEqual([]);
+    });
+
+    it('should return analytics with data', async () => {
+      mockQueryContext
+        .mockResolvedValueOnce({
+          rows: [{
+            strategy: 'research_write_review',
+            strategy_count: '5',
+            successful: '4',
+            failed: '1',
+            total_executions: '5',
+            avg_execution_time: '3500',
+            total_tokens: '10000',
+            avg_tokens: '2000',
+          }],
+        })
+        .mockResolvedValueOnce({
+          rows: [{
+            date: '2026-03-09',
+            executions: '3',
+            successful: '2',
+            avg_time: '4000',
+          }],
+        });
+
+      const res = await request(app)
+        .get('/api/agents/analytics')
+        .query({ context: 'personal', days: 30 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.byStrategy).toHaveLength(1);
+      expect(res.body.byStrategy[0].strategy).toBe('research_write_review');
+      expect(res.body.byStrategy[0].count).toBe(5);
+      expect(res.body.dailyTrend).toHaveLength(1);
+    });
+  });
+
+  // Phase 45: History tests
+  describe('GET /api/agents/history', () => {
+    it('should return execution history', async () => {
+      mockQueryContext.mockResolvedValueOnce({
+        rows: [{
+          id: 'exec-1',
+          team_id: 'team-1',
+          task_description: 'Test task',
+          strategy: 'research_only',
+          final_output: 'Research results',
+          agent_results: JSON.stringify([{ role: 'researcher', success: true }]),
+          execution_time_ms: 2000,
+          tokens: JSON.stringify({ input: 500, output: 300 }),
+          success: true,
+          saved_as_idea_id: null,
+          created_at: '2026-03-09T10:00:00Z',
+        }],
+      });
+
+      const res = await request(app)
+        .get('/api/agents/history')
+        .query({ context: 'personal' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.executions).toHaveLength(1);
+      expect(res.body.executions[0].task).toBe('Test task');
+      expect(res.body.executions[0].strategy).toBe('research_only');
+    });
+  });
+
+  describe('GET /api/agents/history/:id', () => {
+    it('should return 404 for non-existent execution', async () => {
+      mockQueryContext.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/agents/history/non-existent-id')
+        .query({ context: 'personal' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+    });
+  });
+
+  describe('POST /api/agents/history/:id/save-as-idea', () => {
+    it('should save execution as idea', async () => {
+      mockQueryContext
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'exec-1',
+            task_description: 'Test task',
+            final_output: 'Results to save',
+            strategy: 'research_only',
+          }],
+        })
+        .mockResolvedValueOnce({ rows: [{ id: 'idea-1' }] })
+        .mockResolvedValueOnce({ rows: [] }); // update link
+
+      const res = await request(app)
+        .post('/api/agents/history/exec-1/save-as-idea')
+        .send({ context: 'personal' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.ideaId).toBe('idea-1');
+    });
+
+    it('should return 404 for non-existent execution', async () => {
+      mockQueryContext.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/agents/history/non-existent/save-as-idea')
+        .send({ context: 'personal' });
+
+      expect(res.status).toBe(404);
     });
   });
 });

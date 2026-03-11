@@ -63,7 +63,7 @@ jest.mock('../../utils/logger', () => ({
 import { queryContext } from '../../utils/database-context';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 
 // Shared test data
 const TEST_UUID = '550e8400-e29b-41d4-a716-446655440001';

@@ -28,8 +28,9 @@ import { longTermMemory, PersonalizationFact } from './long-term-memory';
 // ===========================================
 
 const CONFIG = {
-  /** Fact types that should be shared across contexts */
-  SHARED_FACT_TYPES: ['preference', 'goal'] as const,
+  /** Fact types that should be shared across contexts.
+   * basic_info and personality are user identity facts that apply everywhere. */
+  SHARED_FACT_TYPES: ['preference', 'goal', 'basic_info', 'personality'] as const,
   /** Minimum confidence for a fact to be shared */
   MIN_SHARE_CONFIDENCE: 0.75,
   /** Minimum occurrences for a fact to be shared */
@@ -46,7 +47,7 @@ const CONFIG = {
 
 export interface SharedInsight {
   id: string;
-  factType: 'preference' | 'goal';
+  factType: 'preference' | 'goal' | 'basic_info' | 'personality';
   content: string;
   confidence: number;
   originContext: AIContext;

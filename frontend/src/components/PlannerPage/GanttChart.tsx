@@ -263,9 +263,9 @@ export function GanttChart({
                 >
                   <span
                     className="gantt-left__priority"
-                    style={{ backgroundColor: PRIORITY_COLORS[row.task!.priority] }}
+                    style={{ backgroundColor: row.task ? PRIORITY_COLORS[row.task.priority] : undefined }}
                   />
-                  <span className="gantt-left__task-title">{row.task!.title}</span>
+                  <span className="gantt-left__task-title">{row.task?.title}</span>
                 </div>
               )}
             </div>

@@ -86,8 +86,8 @@ import { queryContext } from '../../utils/database-context';
 import { query as dbQuery } from '../../utils/database';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
-const mockDbQuery = dbQuery as jest.MockedFunction<typeof dbQuery>;
+var mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
+var mockDbQuery = dbQuery as jest.MockedFunction<typeof dbQuery>;
 
 // Standard test UUID
 const UUID = '550e8400-e29b-41d4-a716-446655440001';

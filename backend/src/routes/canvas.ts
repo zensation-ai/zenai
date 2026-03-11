@@ -82,7 +82,7 @@ canvasRouter.post(
 
     res.status(201).json({
       success: true,
-      ...document,
+      data: document,
     });
   })
 );
@@ -107,7 +107,7 @@ canvasRouter.get(
 
     res.json({
       success: true,
-      ...result,
+      data: result,
     });
   })
 );
@@ -133,7 +133,7 @@ canvasRouter.get(
 
     res.json({
       success: true,
-      ...document,
+      data: document,
     });
   })
 );
@@ -171,7 +171,7 @@ canvasRouter.patch(
 
     res.json({
       success: true,
-      ...document,
+      data: document,
     });
   })
 );
@@ -290,7 +290,7 @@ canvasRouter.post(
 
     res.json({
       success: true,
-      ...document,
+      data: document,
     });
   })
 );

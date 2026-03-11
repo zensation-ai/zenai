@@ -45,11 +45,11 @@ import {
 } from '../../services/projects';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockCreateProject = createProject as jest.MockedFunction<typeof createProject>;
-const mockGetProjects = getProjects as jest.MockedFunction<typeof getProjects>;
-const mockGetProject = getProject as jest.MockedFunction<typeof getProject>;
-const mockUpdateProject = updateProject as jest.MockedFunction<typeof updateProject>;
-const mockDeleteProject = deleteProject as jest.MockedFunction<typeof deleteProject>;
+var mockCreateProject = createProject as jest.MockedFunction<typeof createProject>;
+var mockGetProjects = getProjects as jest.MockedFunction<typeof getProjects>;
+var mockGetProject = getProject as jest.MockedFunction<typeof getProject>;
+var mockUpdateProject = updateProject as jest.MockedFunction<typeof updateProject>;
+var mockDeleteProject = deleteProject as jest.MockedFunction<typeof deleteProject>;
 
 const UUID_1 = '550e8400-e29b-41d4-a716-446655440001';
 

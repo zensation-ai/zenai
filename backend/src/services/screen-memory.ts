@@ -103,16 +103,22 @@ export async function getCaptures(
   const limit = filters.limit || 50;
   const offset = filters.offset || 0;
 
+  // Count query uses only filter params; data query adds limit/offset
+  const countParams = [...params];
+  params.push(limit, offset);
+  const limitParam = `$${params.length - 1}`;
+  const offsetParam = `$${params.length}`;
+
   const [dataResult, countResult] = await Promise.all([
     queryContext(context,
       `SELECT * FROM screen_captures ${where}
        ORDER BY timestamp DESC
-       LIMIT ${limit} OFFSET ${offset}`,
+       LIMIT ${limitParam} OFFSET ${offsetParam}`,
       params
     ),
     queryContext(context,
       `SELECT COUNT(*) as total FROM screen_captures ${where}`,
-      params
+      countParams
     ),
   ]);
 

@@ -56,6 +56,16 @@ import {
   TOOL_GET_OPENING_HOURS,
   TOOL_FIND_NEARBY,
   TOOL_OPTIMIZE_ROUTE,
+  TOOL_MEMORY_UPDATE,
+  TOOL_MEMORY_DELETE,
+  TOOL_MEMORY_UPDATE_PROFILE,
+  TOOL_ASK_INBOX,
+  TOOL_INBOX_SUMMARY,
+  TOOL_MCP_CALL_TOOL,
+  TOOL_MCP_LIST_TOOLS,
+  TOOL_UPDATE_IDEA,
+  TOOL_ARCHIVE_IDEA,
+  TOOL_DELETE_IDEA,
   ToolExecutionContext,
 } from '../claude/tool-use';
 import { createMeeting } from '../meetings';
@@ -89,6 +99,19 @@ import {
   handleFindNearbyPlaces,
   handleOptimizeDayRoute,
 } from './maps-tools';
+import {
+  handleMemoryUpdate,
+  handleMemoryDelete,
+  handleMemoryUpdateProfile,
+} from './memory-tools';
+import {
+  handleAskInbox,
+  handleInboxSummary,
+} from './email-tools';
+import {
+  handleMCPCallTool,
+  handleMCPListTools,
+} from './mcp-tools';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -748,6 +771,119 @@ async function handleAppHelp(
 }
 
 // ===========================================
+// CRUD Tools: Update, Archive, Delete Ideas
+// ===========================================
+
+async function handleUpdateIdea(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const ideaId = input.idea_id as string;
+  if (!ideaId) return 'Fehler: Keine Idee-ID angegeben.';
+
+  const context = execContext.aiContext;
+  const updates: string[] = [];
+  const values: (string | number | boolean | null)[] = [];
+  let paramIdx = 1;
+
+  const fields: [string, string][] = [
+    ['title', 'title'],
+    ['summary', 'summary'],
+    ['priority', 'priority'],
+    ['category', 'category'],
+    ['type', 'type'],
+  ];
+
+  for (const [inputKey, dbCol] of fields) {
+    if (input[inputKey] !== undefined) {
+      updates.push(`${dbCol} = $${paramIdx++}`);
+      values.push(input[inputKey] as string);
+    }
+  }
+
+  if (updates.length === 0) {
+    return 'Fehler: Keine Felder zum Aktualisieren angegeben.';
+  }
+
+  updates.push(`updated_at = NOW()`);
+  values.push(ideaId, context);
+
+  try {
+    const result = await queryContext(
+      context,
+      `UPDATE ideas SET ${updates.join(', ')} WHERE id = $${paramIdx++} AND context = $${paramIdx} RETURNING id, title`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return `Idee mit ID ${ideaId} nicht gefunden.`;
+    }
+
+    logger.info('Idea updated via tool', { id: ideaId });
+    return `Idee "${result.rows[0].title}" erfolgreich aktualisiert.`;
+  } catch (error) {
+    logger.error('Tool update_idea failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Aktualisieren der Idee.';
+  }
+}
+
+async function handleArchiveIdea(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const ideaId = input.idea_id as string;
+  if (!ideaId) return 'Fehler: Keine Idee-ID angegeben.';
+
+  const context = execContext.aiContext;
+
+  try {
+    const result = await queryContext(
+      context,
+      `UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 AND context = $2 RETURNING id, title`,
+      [ideaId, context]
+    );
+
+    if (result.rows.length === 0) {
+      return `Idee mit ID ${ideaId} nicht gefunden.`;
+    }
+
+    logger.info('Idea archived via tool', { id: ideaId });
+    return `Idee "${result.rows[0].title}" wurde archiviert.`;
+  } catch (error) {
+    logger.error('Tool archive_idea failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Archivieren der Idee.';
+  }
+}
+
+async function handleDeleteIdea(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const ideaId = input.idea_id as string;
+  if (!ideaId) return 'Fehler: Keine Idee-ID angegeben.';
+
+  const context = execContext.aiContext;
+
+  try {
+    const result = await queryContext(
+      context,
+      `DELETE FROM ideas WHERE id = $1 AND context = $2 RETURNING id, title`,
+      [ideaId, context]
+    );
+
+    if (result.rows.length === 0) {
+      return `Idee mit ID ${ideaId} nicht gefunden.`;
+    }
+
+    logger.info('Idea deleted via tool', { id: ideaId });
+    return `Idee "${result.rows[0].title}" wurde geloescht.`;
+  } catch (error) {
+    logger.error('Tool delete_idea failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Loeschen der Idee.';
+  }
+}
+
+// ===========================================
 // Phase 35: Calendar, Email, Travel Handlers
 // ===========================================
 
@@ -963,6 +1099,24 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_FIND_NEARBY, handleFindNearbyPlaces);
   toolRegistry.register(TOOL_OPTIMIZE_ROUTE, handleOptimizeDayRoute);
 
+  // Phase 42: Self-Editing Memory tools (Letta Pattern)
+  toolRegistry.register(TOOL_MEMORY_UPDATE, handleMemoryUpdate);
+  toolRegistry.register(TOOL_MEMORY_DELETE, handleMemoryDelete);
+  toolRegistry.register(TOOL_MEMORY_UPDATE_PROFILE, handleMemoryUpdateProfile);
+
+  // Phase 43: Email Intelligence tools
+  toolRegistry.register(TOOL_ASK_INBOX, handleAskInbox);
+  toolRegistry.register(TOOL_INBOX_SUMMARY, handleInboxSummary);
+
+  // Phase 44: MCP Ecosystem tools
+  toolRegistry.register(TOOL_MCP_CALL_TOOL, handleMCPCallTool);
+  toolRegistry.register(TOOL_MCP_LIST_TOOLS, handleMCPListTools);
+
+  // CRUD tools (Idea management)
+  toolRegistry.register(TOOL_UPDATE_IDEA, handleUpdateIdea);
+  toolRegistry.register(TOOL_ARCHIVE_IDEA, handleArchiveIdea);
+  toolRegistry.register(TOOL_DELETE_IDEA, handleDeleteIdea);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1004,6 +1158,16 @@ export function registerAllToolHandlers(): void {
       'get_opening_hours',
       'find_nearby_places',
       'optimize_day_route',
+      'memory_update',
+      'memory_delete',
+      'memory_update_profile',
+      'ask_inbox',
+      'inbox_summary',
+      'mcp_call_tool',
+      'mcp_list_tools',
+      'update_idea',
+      'archive_idea',
+      'delete_idea',
     ],
   });
 }

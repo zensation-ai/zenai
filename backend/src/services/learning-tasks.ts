@@ -5,10 +5,32 @@
  * Tracks learning progress, generates study plans, and provides insights.
  */
 
-import { getPool, AIContext } from '../utils/database-context';
+import { getPool, AIContext, isValidContext } from '../utils/database-context';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { parseJsonb } from '../types';
+import { PoolClient } from 'pg';
+
+// Pre-built search_path statements for schema isolation
+const SEARCH_PATH_SQL: Record<AIContext, string> = {
+  personal: 'SET search_path TO personal, public',
+  work: 'SET search_path TO work, public',
+  learning: 'SET search_path TO learning, public',
+  creative: 'SET search_path TO creative, public',
+};
+
+/**
+ * Get a pool client with search_path set to the correct context schema.
+ */
+async function getClient(context: AIContext): Promise<PoolClient> {
+  if (!isValidContext(context)) {
+    throw new Error(`Invalid context: ${context}`);
+  }
+  const pool = getPool(context);
+  const client = await pool.connect();
+  await client.query(SEARCH_PATH_SQL[context]);
+  return client;
+}
 
 // Types
 export interface LearningTask {
@@ -120,8 +142,7 @@ export async function createLearningTask(
   userId: string = 'default',
   context: AIContext = 'personal'
 ): Promise<LearningTask> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
   const id = uuidv4();
 
   try {
@@ -172,8 +193,7 @@ export async function getLearningTasks(
   userId: string = 'default',
   context: AIContext = 'personal'
 ): Promise<{ tasks: LearningTask[]; total: number }> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const conditions: string[] = ['user_id = $1', 'context = $2'];
@@ -236,8 +256,7 @@ export async function getLearningTask(
   taskId: string,
   context: AIContext = 'personal'
 ): Promise<LearningTask | null> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -263,8 +282,7 @@ export async function updateLearningTask(
   updates: Partial<Pick<LearningTask, 'topic' | 'description' | 'category' | 'priority' | 'status' | 'target_completion_date' | 'learning_outline' | 'summary'>>,
   context: AIContext = 'personal'
 ): Promise<LearningTask | null> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const setClauses: string[] = ['updated_at = NOW()'];
@@ -346,8 +364,7 @@ export async function deleteLearningTask(
   taskId: string,
   context: AIContext = 'personal'
 ): Promise<boolean> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -380,8 +397,7 @@ export async function logStudySession(
   userId: string = 'default',
   context: AIContext = 'personal'
 ): Promise<LearningSession> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
   const sessionId = uuidv4();
 
   try {
@@ -439,8 +455,7 @@ export async function getStudySessions(
   limit: number = 20,
   context: AIContext = 'personal'
 ): Promise<LearningSession[]> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     // PERFORMANCE: Explicit column selection instead of SELECT *
@@ -468,8 +483,7 @@ export async function getLearningStats(
   userId: string = 'default',
   context: AIContext = 'personal'
 ): Promise<LearningStats> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -573,8 +587,7 @@ export async function updateTaskProgress(
   taskId: string,
   context: AIContext = 'personal'
 ): Promise<number> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     // Calculate progress based on sessions and understanding levels
@@ -621,8 +634,7 @@ export async function getLearningInsights(
   userId: string = 'default',
   context: AIContext = 'personal'
 ): Promise<LearningInsight[]> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -659,8 +671,7 @@ export async function acknowledgeInsight(
   insightId: string,
   context: AIContext = 'personal'
 ): Promise<boolean> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     const result = await client.query(
@@ -690,8 +701,7 @@ export async function getDailyLearningSummary(
   streak_days: number;
   next_recommended_task?: LearningTask;
 }> {
-  const pool = getPool(context);
-  const client = await pool.connect();
+  const client = await getClient(context);
 
   try {
     // Get today's stats

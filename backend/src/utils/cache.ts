@@ -100,6 +100,16 @@ function getClient(): Redis | null {
 // Cache Operations
 // ===========================================
 
+/**
+ * Get the raw Redis client (for advanced operations like SET NX EX)
+ * Returns null if Redis is not configured or not connected.
+ */
+export function getRedisClient(): Redis | null {
+  const client = getClient();
+  if (!client || !isConnected) {return null;}
+  return client;
+}
+
 export const cache = {
   /**
    * Check if Redis is available

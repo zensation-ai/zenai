@@ -1,12 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
-import { asyncHandler, ValidationError, NotFoundError, AppError } from '../middleware/errorHandler';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';
 import { getRecentAIActivities, markActivitiesAsRead, getUnreadActivityCount } from '../services/ai-activity-logger';
-import { moveIdea } from '../services/idea-move';
-import { learnFromCorrection } from '../services/learning-engine';
-import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -226,70 +223,7 @@ router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asy
   res.json({ success: true, restoredId: id, idea: result.rows[0] });
 }));
 
-/**
- * POST /api/:context/ideas/:id/move
- * Move an idea to a different context
- */
-router.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  const { context, id } = req.params;
-  const { targetContext } = req.body;
-
-  if (!isValidContext(context)) {
-    throw new ValidationError('Invalid source context.');
-  }
-
-  if (!targetContext || !isValidContext(targetContext)) {
-    throw new ValidationError('Invalid target context. Must be one of: personal, work, learning, creative.');
-  }
-
-  if (context === targetContext) {
-    throw new ValidationError('Source and target context must be different.');
-  }
-
-  if (!isValidUUID(id)) {
-    throw new ValidationError('Invalid idea ID format.');
-  }
-
-  try {
-    const result = await moveIdea(context as AIContext, targetContext as AIContext, id);
-
-    // Invalidate cache for both contexts
-    await Promise.all([
-      invalidateCacheForContext(context as AIContext, 'ideas'),
-      invalidateCacheForContext(targetContext as AIContext, 'ideas'),
-    ]);
-
-    // Learn from context move (non-blocking)
-    learnFromCorrection(id, {
-      oldContext: context,
-      newContext: targetContext,
-    }).catch(() => { /* Background learning - ignore errors */ });
-
-    res.json({
-      success: true,
-      message: `Idea moved from ${context} to ${targetContext}`,
-      ideaId: result.ideaId,
-      newIdeaId: result.newIdeaId,
-      sourceContext: result.sourceContext,
-      targetContext: result.targetContext,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message === 'IDEA_NOT_FOUND') {
-      throw new NotFoundError('Idea');
-    }
-    if (error instanceof Error && error.message === 'SCHEMA_MISMATCH') {
-      throw new AppError('Verschieben fehlgeschlagen — bitte versuche es erneut.', 500, 'SCHEMA_MISMATCH');
-    }
-    logger.error('Idea move failed', error instanceof Error ? error : undefined, {
-      operation: 'moveIdea',
-      sourceContext: context,
-      targetContext,
-      ideaId: id,
-      pgCode: (error as Record<string, unknown>)?.code,
-    });
-    throw error;
-  }
-}));
+// NOTE: Move route removed — handled by ideasContextRouter in ideas.ts (registered earlier in main.ts)
 
 /**
  * GET /api/:context/ideas/search

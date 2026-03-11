@@ -136,6 +136,23 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
   { pattern: /antwort(e|en?)?\s+(auf\s+)?(die\s+)?(e-?mail|mail|nachricht)/i, tools: ['draft_email'], weight: 0.9 },
   { pattern: /mail\s+an\s+/i, tools: ['draft_email'], weight: 0.9 },
 
+  // Phase 43: Ask My Inbox patterns
+  { pattern: /was\s+(hat|haben)\s+.{1,30}\s+(geschrieben|gemailt|gesendet|geschickt)/i, tools: ['ask_inbox'], weight: 0.95 },
+  { pattern: /gibt\s+es\s+(neue?|ungelesene?|dringende?|wichtige?)\s+(e-?mails?|mails?|nachrichten?)/i, tools: ['ask_inbox'], weight: 0.95 },
+  { pattern: /zeig(e?)\s+(mir\s+)?(meine?\s+)?(e-?mails?|mails?|inbox|posteingang|postfach)/i, tools: ['ask_inbox'], weight: 0.9 },
+  { pattern: /(e-?mails?|mails?)\s+(von|an|über|zu|mit|seit|letzte|diese)\s/i, tools: ['ask_inbox'], weight: 0.9 },
+  { pattern: /inbox\s*(überblick|übersicht|zusammenfassung|status|summary)/i, tools: ['inbox_summary'], weight: 0.95 },
+  { pattern: /wie\s+viele\s+(e-?mails?|mails?|nachrichten?)/i, tools: ['inbox_summary'], weight: 0.9 },
+  { pattern: /was\s+liegt\s+(im\s+)?(postfach|posteingang|inbox)/i, tools: ['ask_inbox'], weight: 0.9 },
+  { pattern: /(habe|hab)\s+ich\s+(e-?mails?|mails?|post|nachrichten?)/i, tools: ['ask_inbox'], weight: 0.9 },
+  { pattern: /such(e|en?)?\s+(in\s+)?(meinen?\s+)?(e-?mails?|mails?|inbox)/i, tools: ['ask_inbox'], weight: 0.95 },
+
+  // Phase 44: MCP Ecosystem patterns
+  { pattern: /mcp\s*(tools?|server|verbindung(en)?|connection)/i, tools: ['mcp_list_tools'], weight: 0.95 },
+  { pattern: /externe?\s*(tools?|werkzeuge?|server)/i, tools: ['mcp_list_tools'], weight: 0.85 },
+  { pattern: /welche\s*(mcp|externen?)\s*(tools?|werkzeuge?)\s*(gibt|sind|habe)/i, tools: ['mcp_list_tools'], weight: 0.95 },
+  { pattern: /nutze?\s*(das\s+)?(mcp|externe)\s*tool/i, tools: ['mcp_call_tool'], weight: 0.9 },
+
   // Phase 35: Travel estimation patterns
   { pattern: /wie\s+lange\s+brauche?\s+ich\s+(nach|zu|von|bis|zum|zur)/i, tools: ['estimate_travel'], weight: 0.95 },
   { pattern: /fahrt?\s+nach\s+/i, tools: ['estimate_travel'], weight: 0.85 },
@@ -477,11 +494,18 @@ function analyzeKeywordsForTools(message: string): string[] {
     create_idea: ['erstellen', 'anlegen', 'speichern', 'merken', 'notieren', 'aufschreiben'],
     calculate: ['berechnen', 'rechnen', 'prozent', 'summe', 'durchschnitt', 'addieren'],
     get_related_ideas: ['verwandt', 'ähnlich', 'zusammenhang', 'verbunden', 'bezug'],
-    remember: ['merken', 'vergessen', 'behalten'],
+    remember: ['merken', 'behalten'],
     recall: ['erinnern', 'früher', 'gesagt', 'erwähnt'],
+    memory_update: ['korrigiere', 'aktualisiere', 'stimmt nicht mehr', 'nicht mehr richtig', 'jetzt stattdessen'],
+    memory_delete: ['vergiss', 'lösch', 'entferne', 'vergessen'],
+    memory_update_profile: ['nenn mich', 'ich heiße', 'ich bin umgezogen', 'ich arbeite jetzt'],
     create_meeting: ['meeting', 'termin', 'besprechung', 'treffen', 'kalender'],
     navigate_to: ['seite', 'navigieren', 'öffnen', 'gehen'],
     app_help: ['hilfe', 'erklären', 'funktioniert', 'feature', 'anleitung'],
+    ask_inbox: ['inbox', 'postfach', 'posteingang', 'e-mail', 'email', 'mails'],
+    inbox_summary: ['inbox-überblick', 'mailstatus', 'postfach-status'],
+    mcp_list_tools: ['mcp', 'externe tools', 'externe werkzeuge', 'mcp-server'],
+    mcp_call_tool: ['mcp tool aufrufen', 'externes tool nutzen'],
   };
 
   for (const [tool, keywords] of Object.entries(toolKeywords)) {
@@ -499,9 +523,9 @@ function analyzeKeywordsForTools(message: string): string[] {
 export function getDefaultToolsForMode(mode: ChatMode): string[] {
   switch (mode) {
     case 'tool_assisted':
-      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
+      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods', 'ask_inbox', 'inbox_summary', 'mcp_list_tools', 'mcp_call_tool'];
     case 'agent':
-      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'memory_introspect', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods'];
+      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'memory_introspect', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods', 'ask_inbox', 'inbox_summary', 'mcp_list_tools', 'mcp_call_tool'];
     case 'rag_enhanced':
       return ['search_ideas', 'recall'];
     default:

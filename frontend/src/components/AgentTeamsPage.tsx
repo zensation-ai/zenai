@@ -2,9 +2,9 @@
  * AgentTeamsPage Component
  *
  * Frontend for the Multi-Agent Task Orchestration system.
- * Allows users to submit tasks, select strategies, and view per-agent results.
+ * Features: SSE Streaming, Agent Templates, Coder Agent, Analytics.
  *
- * Phase 33 Sprint 3 - Agent Teams & Multi-Agent Intelligence
+ * Phase 45 - Enhanced Multi-Agent Intelligence
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -13,6 +13,7 @@ import { AIContext } from './ContextSwitcher';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { logError } from '../utils/errors';
+import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
 import '../neurodesign.css';
 import './AgentTeamsPage.css';
 
@@ -31,7 +32,7 @@ interface TeamResult {
   agents: AgentResult[];
   stats: {
     executionTimeMs: number;
-    totalTokens: number;
+    totalTokens: { input: number; output: number } | number;
     sharedMemoryEntries: number;
   };
 }
@@ -44,25 +45,61 @@ interface HistoryEntry {
   finalOutput: string;
   agents: AgentResult[];
   executionTimeMs: number;
-  tokens: number;
+  tokens: { input: number; output: number } | number;
   success: boolean;
   savedAsIdeaId?: string;
   createdAt: string;
 }
 
-type Strategy = 'research_write_review' | 'research_only' | 'write_only' | 'custom';
+interface AgentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  strategy: string;
+  pipeline?: string[];
+  skipReview?: boolean;
+  promptHint?: string;
+}
+
+interface StreamEvent {
+  type: string;
+  teamId?: string;
+  strategy?: string;
+  pipeline?: string[];
+  agentRole?: string;
+  agentIndex?: number;
+  totalAgents?: number;
+  subTask?: string;
+  result?: Partial<AgentResult>;
+  finalOutput?: string;
+  error?: string;
+  // Full result payload
+  success?: boolean;
+  agents?: AgentResult[];
+  stats?: {
+    executionTimeMs: number;
+    totalTokens: { input: number; output: number };
+    sharedMemoryEntries: number;
+  };
+}
+
+type Strategy = 'research_write_review' | 'research_only' | 'write_only' | 'code_solve' | 'research_code_review' | 'custom';
 
 const STRATEGIES: { id: Strategy; label: string; icon: string; desc: string }[] = [
   { id: 'research_write_review', label: 'Komplett', icon: '🔬', desc: 'Recherche, Schreiben, Review' },
   { id: 'research_only', label: 'Recherche', icon: '🔍', desc: 'Nur Informationen sammeln' },
   { id: 'write_only', label: 'Schreiben', icon: '✍️', desc: 'Nur Content erstellen' },
+  { id: 'code_solve', label: 'Code', icon: '💻', desc: 'Code generieren & testen' },
+  { id: 'research_code_review', label: 'Code-Review', icon: '🔍', desc: 'Code analysieren & verbessern' },
   { id: 'custom', label: 'Angepasst', icon: '🛠️', desc: 'Eigene Pipeline' },
 ];
 
-const ROLE_CONFIG: Record<string, { icon: string; label: string }> = {
-  researcher: { icon: '🔍', label: 'Researcher' },
-  writer: { icon: '✍️', label: 'Writer' },
-  reviewer: { icon: '📋', label: 'Reviewer' },
+const ROLE_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
+  researcher: { icon: '🔍', label: 'Researcher', color: '#3b82f6' },
+  writer: { icon: '✍️', label: 'Writer', color: '#8b5cf6' },
+  reviewer: { icon: '📋', label: 'Reviewer', color: '#22c55e' },
+  coder: { icon: '💻', label: 'Coder', color: '#f59e0b' },
 };
 
 interface AgentTeamsPageProps {
@@ -85,8 +122,26 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
   const [savingIdeaId, setSavingIdeaId] = useState<string | null>(null);
 
+  // Streaming state
+  const [streamEvents, setStreamEvents] = useState<StreamEvent[]>([]);
+  const [currentAgent, setCurrentAgent] = useState<{ role: string; index: number; total: number; subTask: string } | null>(null);
+
+  // Templates state
+  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  // Analytics state
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analytics, setAnalytics] = useState<{
+    totals: { executions: number; successful: number; failed: number; tokens: number; successRate: number };
+    byStrategy: Array<{ strategy: string; count: number; successful: number; avgExecutionTime: number; avgTokens: number }>;
+    dailyTrend: Array<{ date: string; executions: number; successful: number; avgTime: number }>;
+  } | null>(null);
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
+  const eventSourceRef = useRef<{ abort: () => void } | null>(null);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -101,23 +156,50 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
     }
   }, [context]);
 
-  // Load history on mount and context change
+  const loadTemplates = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/agents/templates');
+      if (res.data.success) {
+        setTemplates(res.data.templates);
+      }
+    } catch (err) {
+      logError('AgentTeamsPage:loadTemplates', err);
+    }
+  }, []);
+
+  const loadAnalytics = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/agents/analytics', {
+        params: { context, days: 30 },
+      });
+      if (res.data.success) {
+        setAnalytics(res.data);
+      }
+    } catch (err) {
+      logError('AgentTeamsPage:loadAnalytics', err);
+    }
+  }, [context]);
+
   useEffect(() => {
     loadHistory();
-  }, [loadHistory]);
+    loadTemplates();
+  }, [loadHistory, loadTemplates]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
+      eventSourceRef.current?.abort();
     };
   }, []);
 
-  // Escape key to cancel running execution
+  // Escape key to cancel
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && loading) {
       abortControllerRef.current?.abort();
+      eventSourceRef.current?.abort();
       setLoading(false);
+      setCurrentAgent(null);
       showToast('Ausführung abgebrochen', 'info');
     }
   }, [loading]);
@@ -129,7 +211,6 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
 
   const handleClassify = async () => {
     if (!task.trim()) return;
-
     setClassifying(true);
     setClassifiedStrategy(null);
     try {
@@ -146,7 +227,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
     }
   };
 
-  const handleExecute = async () => {
+  const handleExecuteStreaming = async () => {
     if (!task.trim()) {
       showToast('Bitte beschreibe die Aufgabe', 'error');
       return;
@@ -155,10 +236,106 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
     setLoading(true);
     setError(null);
     setResult(null);
+    setStreamEvents([]);
+    setCurrentAgent(null);
 
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
 
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/agents/execute/stream`, {
+        method: 'POST',
+        headers: getApiFetchHeaders('application/json'),
+        body: JSON.stringify({
+          task,
+          aiContext: context,
+          strategy,
+          skipReview: strategy === 'write_only' || strategy === 'code_solve' ? skipReview : undefined,
+          templateId: selectedTemplate,
+        }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      eventSourceRef.current = {
+        abort: () => reader.cancel(),
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+
+          if (data === '[DONE]') continue;
+
+          try {
+            const event: StreamEvent = JSON.parse(data);
+            setStreamEvents(prev => [...prev, event]);
+
+            // Update UI based on event type
+            if (event.type === 'agent_start' && event.agentRole) {
+              setCurrentAgent({
+                role: event.agentRole,
+                index: event.agentIndex ?? 0,
+                total: event.totalAgents ?? 1,
+                subTask: event.subTask ?? '',
+              });
+            } else if (event.type === 'agent_complete' || event.type === 'agent_error') {
+              // Agent finished, clear current
+            } else if (event.type === 'result') {
+              // Final result
+              setResult({
+                teamId: event.teamId ?? '',
+                finalOutput: event.finalOutput ?? '',
+                strategy: event.strategy ?? strategy,
+                agents: event.agents ?? [],
+                stats: event.stats ?? { executionTimeMs: 0, totalTokens: 0, sharedMemoryEntries: 0 },
+              });
+              setCurrentAgent(null);
+              loadHistory();
+              setTimeout(() => {
+                resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            } else if (event.type === 'error') {
+              setError(event.error || 'Unbekannter Fehler');
+              setCurrentAgent(null);
+            }
+          } catch {
+            // Skip malformed JSON
+          }
+        }
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      logError('AgentTeamsPage:executeStreaming', err);
+      // Fallback to non-streaming
+      await handleExecuteFallback();
+      return;
+    } finally {
+      setLoading(false);
+      setCurrentAgent(null);
+      eventSourceRef.current = null;
+    }
+  };
+
+  // Fallback to regular execution if streaming fails
+  const handleExecuteFallback = async () => {
     try {
       const res = await axios.post(
         '/api/agents/execute',
@@ -166,36 +343,20 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           task,
           aiContext: context,
           strategy,
-          skipReview: strategy === 'write_only' ? skipReview : undefined,
+          skipReview: strategy === 'write_only' || strategy === 'code_solve' ? skipReview : undefined,
         },
-        { signal: abortControllerRef.current.signal, timeout: 120000 }
+        { timeout: 120000 }
       );
 
       if (res.data.success) {
         setResult(res.data);
-        loadHistory(); // Refresh history
-        // Scroll to results
-        setTimeout(() => {
-          resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        loadHistory();
       } else {
         setError(res.data.error || 'Ausführung fehlgeschlagen');
       }
     } catch (err) {
-      if (axios.isCancel(err)) return;
-      logError('AgentTeamsPage:execute', err);
-      if (axios.isAxiosError(err)) {
-        if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-          setError('Zeitüberschreitung - die Aufgabe war zu komplex. Versuche eine einfachere Beschreibung.');
-        } else if (!err.response) {
-          setError('Server nicht erreichbar. Bitte prüfe deine Verbindung.');
-        } else {
-          const apiError = (err.response.data as { error?: string })?.error;
-          setError(apiError || 'Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
-        }
-      } else {
-        setError('Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
-      }
+      logError('AgentTeamsPage:executeFallback', err);
+      setError('Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
     } finally {
       setLoading(false);
     }
@@ -204,6 +365,11 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`;
     return `${(ms / 1000).toFixed(1)}s`;
+  };
+
+  const formatTokens = (tokens: { input: number; output: number } | number): string => {
+    if (typeof tokens === 'number') return tokens.toLocaleString('de-DE');
+    return (tokens.input + tokens.output).toLocaleString('de-DE');
   };
 
   const handleSaveAsIdea = async (executionId: string) => {
@@ -222,6 +388,14 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
     }
   };
 
+  const applyTemplate = (template: AgentTemplate) => {
+    setSelectedTemplate(template.id);
+    setStrategy(template.strategy as Strategy);
+    if (template.skipReview !== undefined) setSkipReview(template.skipReview);
+    setShowTemplates(false);
+    showToast(`Template "${template.name}" angewendet`, 'success');
+  };
+
   return (
     <div className="agent-teams-page neuro-page-enter">
       {!embedded && (
@@ -235,12 +409,85 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
               Multi-Agent Aufgaben orchestrieren
             </span>
           </div>
+          <button
+            type="button"
+            className="analytics-toggle-btn neuro-hover-lift"
+            onClick={() => {
+              setShowAnalytics(!showAnalytics);
+              if (!analytics) loadAnalytics();
+            }}
+          >
+            📊
+          </button>
         </div>
       )}
 
-      {/* Task Input */}
+      {/* Analytics Panel */}
+      {showAnalytics && analytics && (
+        <div className="agent-analytics liquid-glass neuro-stagger-item">
+          <h3>Agent Analytics (letzte 30 Tage)</h3>
+          <div className="analytics-totals">
+            <div className="analytics-stat">
+              <span className="analytics-stat-value">{analytics.totals.executions}</span>
+              <span className="analytics-stat-label">Ausführungen</span>
+            </div>
+            <div className="analytics-stat">
+              <span className="analytics-stat-value analytics-success">{analytics.totals.successRate}%</span>
+              <span className="analytics-stat-label">Erfolgsrate</span>
+            </div>
+            <div className="analytics-stat">
+              <span className="analytics-stat-value">{analytics.totals.tokens.toLocaleString('de-DE')}</span>
+              <span className="analytics-stat-label">Tokens gesamt</span>
+            </div>
+          </div>
+          {analytics.byStrategy.length > 0 && (
+            <div className="analytics-strategies">
+              {analytics.byStrategy.map(s => (
+                <div key={s.strategy} className="analytics-strategy-row">
+                  <span className="strategy-name">
+                    {STRATEGIES.find(st => st.id === s.strategy)?.icon || '🤖'}{' '}
+                    {STRATEGIES.find(st => st.id === s.strategy)?.label || s.strategy}
+                  </span>
+                  <span className="strategy-stats">
+                    {s.count}x | {formatDuration(s.avgExecutionTime)} avg | ~{s.avgTokens.toLocaleString('de-DE')} Tokens
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Templates Section */}
       <div className="agent-teams-section liquid-glass neuro-stagger-item">
-        <h3>Aufgabe beschreiben</h3>
+        <div className="section-header-row">
+          <h3>Aufgabe beschreiben</h3>
+          <button
+            type="button"
+            className="templates-toggle neuro-hover-lift"
+            onClick={() => setShowTemplates(!showTemplates)}
+          >
+            {showTemplates ? '✕ Schließen' : '📋 Templates'}
+          </button>
+        </div>
+
+        {showTemplates && templates.length > 0 && (
+          <div className="templates-grid neuro-stagger-item">
+            {templates.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`template-card neuro-hover-lift ${selectedTemplate === t.id ? 'active' : ''}`}
+                onClick={() => applyTemplate(t)}
+              >
+                <span className="template-icon">{t.icon}</span>
+                <span className="template-name">{t.name}</span>
+                <span className="template-desc">{t.description}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <textarea
           className="agent-task-input liquid-glass-input"
           value={task}
@@ -262,6 +509,18 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           {classifiedStrategy && (
             <span className="classified-badge neuro-stagger-item">
               Empfohlen: {STRATEGIES.find(s => s.id === classifiedStrategy)?.label || classifiedStrategy}
+            </span>
+          )}
+          {selectedTemplate && (
+            <span className="template-badge neuro-stagger-item">
+              📋 {templates.find(t => t.id === selectedTemplate)?.name}
+              <button
+                type="button"
+                className="clear-template"
+                onClick={() => setSelectedTemplate(null)}
+              >
+                ✕
+              </button>
             </span>
           )}
         </div>
@@ -286,7 +545,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
             </button>
           ))}
         </div>
-        {strategy === 'write_only' && (
+        {(strategy === 'write_only' || strategy === 'code_solve') && (
           <label className="skip-review-toggle neuro-stagger-item">
             <input
               type="checkbox"
@@ -303,7 +562,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
       <button
         type="button"
         className="execute-btn neuro-button neuro-stagger-item"
-        onClick={handleExecute}
+        onClick={handleExecuteStreaming}
         disabled={loading || !task.trim()}
       >
         {loading ? (
@@ -315,10 +574,63 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           <>🚀 Aufgabe starten</>
         )}
       </button>
+
+      {/* Streaming Progress */}
       {loading && (
-        <p className="loading-hint neuro-stagger-item">
-          Dies kann 30-60 Sekunden dauern. Drücke Escape zum Abbrechen.
-        </p>
+        <div className="streaming-progress liquid-glass neuro-stagger-item">
+          {currentAgent ? (
+            <div className="current-agent-progress">
+              <div className="progress-header">
+                <span className="progress-agent-icon">
+                  {ROLE_CONFIG[currentAgent.role]?.icon || '🤖'}
+                </span>
+                <span className="progress-agent-label">
+                  {ROLE_CONFIG[currentAgent.role]?.label || currentAgent.role}
+                </span>
+                <span className="progress-step">
+                  Schritt {currentAgent.index + 1} / {currentAgent.total}
+                </span>
+              </div>
+              <div className="progress-bar-container">
+                <div
+                  className="progress-bar-fill"
+                  style={{ width: `${((currentAgent.index + 0.5) / currentAgent.total) * 100}%` }}
+                />
+              </div>
+              {currentAgent.subTask && (
+                <p className="progress-subtask">{currentAgent.subTask}</p>
+              )}
+            </div>
+          ) : (
+            <div className="progress-init">
+              <span className="loading-spinner" />
+              <span>Aufgabe wird zerlegt und Pipeline vorbereitet...</span>
+            </div>
+          )}
+
+          {/* Completed agents during streaming */}
+          {streamEvents
+            .filter(e => e.type === 'agent_complete' || e.type === 'agent_error')
+            .map((e, i) => {
+              const config = ROLE_CONFIG[e.agentRole || ''] || { icon: '🤖', label: e.agentRole || 'Agent', color: '#888' };
+              return (
+                <div key={i} className={`stream-agent-done ${e.type === 'agent_complete' ? 'success' : 'failed'}`}>
+                  <span>{config.icon} {config.label}</span>
+                  <span className={e.type === 'agent_complete' ? 'done-success' : 'done-failed'}>
+                    {e.type === 'agent_complete' ? '✓' : '✗'}
+                  </span>
+                  {e.result?.executionTimeMs && (
+                    <span className="done-time">{formatDuration(e.result.executionTimeMs)}</span>
+                  )}
+                  {e.result?.toolsUsed && e.result.toolsUsed.length > 0 && (
+                    <span className="done-tools">{e.result.toolsUsed.join(', ')}</span>
+                  )}
+                </div>
+              );
+            })}
+
+          <p className="loading-hint">Drücke Escape zum Abbrechen</p>
+        </div>
       )}
 
       {/* Error */}
@@ -346,7 +658,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
             </div>
             <div className="stat-item">
               <span className="stat-label">Tokens</span>
-              <span className="stat-value">{result.stats.totalTokens.toLocaleString('de-DE')}</span>
+              <span className="stat-value">{formatTokens(result.stats.totalTokens)}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">Shared Memory</span>
@@ -357,7 +669,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           {/* Per-Agent Results */}
           <div className="agent-cards">
             {result.agents.map((agent, index) => {
-              const config = ROLE_CONFIG[agent.role] || { icon: '🤖', label: agent.role };
+              const config = ROLE_CONFIG[agent.role] || { icon: '🤖', label: agent.role, color: '#888' };
               return (
                 <div
                   key={`${agent.role}-${index}`}
@@ -403,7 +715,9 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
               setResult(null);
               setTask('');
               setClassifiedStrategy(null);
+              setSelectedTemplate(null);
               setError(null);
+              setStreamEvents([]);
             }}
           >
             + Neue Aufgabe

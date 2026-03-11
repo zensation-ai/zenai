@@ -35,12 +35,12 @@
   "author": "Alexander Bering <alex@zensation.ai> (https://zensation.ai)",
   "license": "MIT",
   "dependencies": {
-    "@zenai/shared": "workspace:*",
     "@anthropic-ai/sdk": "^0.71.2",
     "@google-analytics/data": "^5.2.1",
     "@supabase/supabase-js": "^2.90.1",
     "@types/mailparser": "^3.4.6",
     "@types/pdfkit": "^0.17.4",
+    "@zenai/shared": "workspace:*",
     "axios": "^1.6.5",
     "bcrypt": "^6.0.0",
     "cheerio": "^1.2.0",
@@ -80,6 +80,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@swc/core": "^1.15.18",
+    "@swc/jest": "^0.2.39",
     "@types/bcrypt": "^6.0.0",
     "@types/cheerio": "^0.22.35",
     "@types/compression": "^1.8.1",

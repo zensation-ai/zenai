@@ -204,6 +204,11 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
     { label: 'Sprach-Chat', page: 'voice-chat', icon: '🎙️' },
   ],
+  'memory-insights': [
+    ROOT,
+    { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
+    { label: 'Memory Insights', page: 'memory-insights', icon: '🧠' },
+  ],
 
   // Footer: Einstellungen
   'settings': [ROOT, { label: 'Einstellungen', page: 'settings', icon: '⚙️' }],

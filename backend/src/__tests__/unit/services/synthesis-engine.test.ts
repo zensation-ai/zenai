@@ -8,7 +8,7 @@ import {
 } from '../../../services/synthesis-engine';
 
 // Mock enhanced-rag
-const mockRetrieve = jest.fn();
+var mockRetrieve = jest.fn();
 jest.mock('../../../services/enhanced-rag', () => ({
   enhancedRAG: {
     retrieve: (...args: unknown[]) => mockRetrieve(...args),
@@ -16,13 +16,13 @@ jest.mock('../../../services/enhanced-rag', () => ({
 }));
 
 // Mock graph-memory-bridge
-const mockExpandViaGraph = jest.fn();
+var mockExpandViaGraph = jest.fn();
 jest.mock('../../../services/memory/graph-memory-bridge', () => ({
   expandViaGraph: (...args: unknown[]) => mockExpandViaGraph(...args),
 }));
 
 // Mock Claude client
-const mockCreate = jest.fn();
+var mockCreate = jest.fn();
 jest.mock('../../../services/claude/client', () => ({
   getClaudeClient: () => ({ messages: { create: mockCreate } }),
   CLAUDE_MODEL: 'claude-sonnet-4-20250514',

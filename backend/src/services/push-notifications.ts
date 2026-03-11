@@ -718,6 +718,33 @@ export async function notifyIdeaConnection(
   return result.sent > 0;
 }
 
+/**
+ * Sends a proactive suggestion notification
+ */
+export async function notifyProactiveSuggestion(
+  context: AIContext,
+  suggestion: {
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    priority: string;
+  }
+): Promise<boolean> {
+  const result = await sendNotification(context, {
+    type: 'learning_suggestion',
+    title: suggestion.title,
+    body: truncate(suggestion.description, 100),
+    subtitle: suggestion.priority === 'high' ? 'Hohe Prioritaet' : undefined,
+    data: {
+      suggestionId: suggestion.id,
+      suggestionType: suggestion.type,
+    },
+  });
+
+  return result.sent > 0;
+}
+
 // ===========================================
 // Analytics
 // ===========================================

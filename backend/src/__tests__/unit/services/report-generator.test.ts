@@ -5,21 +5,21 @@
  * correct DB column names, and AI summary generation.
  */
 
-const mockPoolQuery = jest.fn<any, any[]>();
+var mockPoolQuery = jest.fn<any, any[]>();
 
 jest.mock('../../../utils/database', () => ({
-  pool: { query: mockPoolQuery },
+  pool: { query: (...args: any[]) => mockPoolQuery(...args) },
 }));
 
 jest.mock('../../../utils/logger', () => ({
   logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
 }));
 
-const mockMessagesCreate = jest.fn();
+var mockMessagesCreate = jest.fn();
 
 jest.mock('@anthropic-ai/sdk', () => {
   return jest.fn().mockImplementation(() => ({
-    messages: { create: mockMessagesCreate },
+    messages: { create: (...args: any[]) => mockMessagesCreate(...args) },
   }));
 });
 

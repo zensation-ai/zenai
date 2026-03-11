@@ -55,14 +55,14 @@ import {
 } from '../../services/meetings';
 import { errorHandler } from '../../middleware/errorHandler';
 
-const mockCreateMeeting = createMeeting as jest.MockedFunction<typeof createMeeting>;
-const mockGetMeetings = getMeetings as jest.MockedFunction<typeof getMeetings>;
-const mockGetMeeting = getMeeting as jest.MockedFunction<typeof getMeeting>;
-const mockUpdateMeetingStatus = updateMeetingStatus as jest.MockedFunction<typeof updateMeetingStatus>;
-const mockProcessMeetingNotes = processMeetingNotes as jest.MockedFunction<typeof processMeetingNotes>;
-const mockGetMeetingNotes = getMeetingNotes as jest.MockedFunction<typeof getMeetingNotes>;
-const mockSearchMeetings = searchMeetings as jest.MockedFunction<typeof searchMeetings>;
-const mockGetAllActionItems = getAllActionItems as jest.MockedFunction<typeof getAllActionItems>;
+var mockCreateMeeting = createMeeting as jest.MockedFunction<typeof createMeeting>;
+var mockGetMeetings = getMeetings as jest.MockedFunction<typeof getMeetings>;
+var mockGetMeeting = getMeeting as jest.MockedFunction<typeof getMeeting>;
+var mockUpdateMeetingStatus = updateMeetingStatus as jest.MockedFunction<typeof updateMeetingStatus>;
+var mockProcessMeetingNotes = processMeetingNotes as jest.MockedFunction<typeof processMeetingNotes>;
+var mockGetMeetingNotes = getMeetingNotes as jest.MockedFunction<typeof getMeetingNotes>;
+var mockSearchMeetings = searchMeetings as jest.MockedFunction<typeof searchMeetings>;
+var mockGetAllActionItems = getAllActionItems as jest.MockedFunction<typeof getAllActionItems>;
 
 // Sample meeting data
 const sampleMeeting = {
