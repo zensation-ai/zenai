@@ -10,6 +10,7 @@
 import { Router, Request, Response } from 'express';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
+import { validateContextParam } from '../utils/validation';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import {
   getMemoryTimeline,
@@ -30,7 +31,7 @@ memoryInsightsRouter.use(apiKeyAuth);
 memoryInsightsRouter.get(
   '/:context/memory/insights/timeline',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
@@ -59,7 +60,7 @@ memoryInsightsRouter.get(
 memoryInsightsRouter.get(
   '/:context/memory/insights/conflicts',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
@@ -77,7 +78,7 @@ memoryInsightsRouter.get(
 memoryInsightsRouter.get(
   '/:context/memory/insights/curation',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
@@ -94,7 +95,7 @@ memoryInsightsRouter.get(
 memoryInsightsRouter.get(
   '/:context/memory/insights/impact',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }
@@ -112,7 +113,7 @@ memoryInsightsRouter.get(
 memoryInsightsRouter.get(
   '/:context/memory/insights/stats',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
     }

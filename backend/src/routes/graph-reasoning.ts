@@ -7,6 +7,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { validateContextParam } from '../utils/validation';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext, queryContext } from '../utils/database-context';
 import {
@@ -32,7 +33,7 @@ router.post(
   '/:context/knowledge-graph/infer',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -52,7 +53,7 @@ router.post(
 router.get(
   '/:context/knowledge-graph/contradictions',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -70,7 +71,7 @@ router.post(
   '/:context/knowledge-graph/communities',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -90,7 +91,7 @@ router.post(
 router.get(
   '/:context/knowledge-graph/communities',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -125,7 +126,7 @@ router.get(
 router.get(
   '/:context/knowledge-graph/centrality',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -143,7 +144,7 @@ router.get(
 router.get(
   '/:context/knowledge-graph/learning-path/:ideaId',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -162,7 +163,7 @@ router.post(
   '/:context/knowledge-graph/relations',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -185,7 +186,7 @@ router.put(
   '/:context/knowledge-graph/relations',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -208,7 +209,7 @@ router.delete(
   '/:context/knowledge-graph/relations',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }

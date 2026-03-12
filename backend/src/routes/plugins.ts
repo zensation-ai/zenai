@@ -7,6 +7,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { validateContextParam } from '../utils/validation';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
@@ -78,7 +79,7 @@ const MARKETPLACE_PLUGINS = [
 pluginsRouter.get(
   '/:context/plugins',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -106,7 +107,7 @@ pluginsRouter.get(
 pluginsRouter.get(
   '/:context/plugins/marketplace',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -122,7 +123,7 @@ pluginsRouter.get(
 pluginsRouter.get(
   '/:context/plugins/:id',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -144,7 +145,7 @@ pluginsRouter.post(
   '/:context/plugins',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -178,7 +179,7 @@ pluginsRouter.put(
   '/:context/plugins/:id/activate',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -207,7 +208,7 @@ pluginsRouter.put(
   '/:context/plugins/:id/deactivate',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -236,7 +237,7 @@ pluginsRouter.put(
   '/:context/plugins/:id/config',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -272,7 +273,7 @@ pluginsRouter.delete(
   '/:context/plugins/:id',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }

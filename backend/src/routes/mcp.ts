@@ -34,7 +34,8 @@ import { Router, Request, Response } from 'express';
 import { createMCPServer } from '../mcp';
 import { mcpConnectionManager } from '../services/mcp-connections';
 import { isValidContext, AIContext } from '../utils/database-context';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { validateContextParam } from '../utils/validation';
 import { asyncHandler } from '../middleware/errorHandler';
 
 // ===========================================
@@ -148,7 +149,7 @@ function validateContext(req: Request, res: Response, next: () => void) {
  * GET /api/:context/mcp/connections - List all connections
  */
 mcpConnectionsRouter.get('/:context/mcp/connections', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const connections = await mcpConnectionManager.listConnections(context);
   res.json({ success: true, data: connections });
 }));
@@ -157,7 +158,7 @@ mcpConnectionsRouter.get('/:context/mcp/connections', validateContext, asyncHand
  * GET /api/:context/mcp/connections/:id - Get single connection
  */
 mcpConnectionsRouter.get('/:context/mcp/connections/:id', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const conn = await mcpConnectionManager.getConnection(context, req.params.id);
   if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
   res.json({ success: true, data: conn });
@@ -166,14 +167,14 @@ mcpConnectionsRouter.get('/:context/mcp/connections/:id', validateContext, async
 /**
  * POST /api/:context/mcp/connections - Create connection
  */
-mcpConnectionsRouter.post('/:context/mcp/connections', validateContext, asyncHandler(async (req: Request, res: Response) => {
+mcpConnectionsRouter.post('/:context/mcp/connections', validateContext, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { name, url, apiKey, headers, enabled } = req.body;
 
   if (!name || !url) {
     return res.status(400).json({ success: false, error: 'Name and URL are required' });
   }
 
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const conn = await mcpConnectionManager.createConnection(context, {
     name, url, apiKey, headers, enabled,
   });
@@ -183,8 +184,8 @@ mcpConnectionsRouter.post('/:context/mcp/connections', validateContext, asyncHan
 /**
  * PUT /api/:context/mcp/connections/:id - Update connection
  */
-mcpConnectionsRouter.put('/:context/mcp/connections/:id', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+mcpConnectionsRouter.put('/:context/mcp/connections/:id', validateContext, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = validateContextParam(req.params.context);
   const conn = await mcpConnectionManager.updateConnection(context, req.params.id, req.body);
   if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
   res.json({ success: true, data: conn });
@@ -193,8 +194,8 @@ mcpConnectionsRouter.put('/:context/mcp/connections/:id', validateContext, async
 /**
  * DELETE /api/:context/mcp/connections/:id - Delete connection
  */
-mcpConnectionsRouter.delete('/:context/mcp/connections/:id', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+mcpConnectionsRouter.delete('/:context/mcp/connections/:id', validateContext, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = validateContextParam(req.params.context);
   const deleted = await mcpConnectionManager.deleteConnection(context, req.params.id);
   if (!deleted) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
   res.json({ success: true });
@@ -203,8 +204,8 @@ mcpConnectionsRouter.delete('/:context/mcp/connections/:id', validateContext, as
 /**
  * POST /api/:context/mcp/connections/:id/check - Health check
  */
-mcpConnectionsRouter.post('/:context/mcp/connections/:id/check', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+mcpConnectionsRouter.post('/:context/mcp/connections/:id/check', validateContext, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const context = validateContextParam(req.params.context);
   const conn = await mcpConnectionManager.checkConnection(context, req.params.id);
   if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
   res.json({ success: true, data: conn });
@@ -214,7 +215,7 @@ mcpConnectionsRouter.post('/:context/mcp/connections/:id/check', validateContext
  * GET /api/:context/mcp/connections/:id/tools - List tools from specific connection
  */
 mcpConnectionsRouter.get('/:context/mcp/connections/:id/tools', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const conn = await mcpConnectionManager.getConnection(context, req.params.id);
   if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
 
@@ -229,14 +230,14 @@ mcpConnectionsRouter.get('/:context/mcp/connections/:id/tools', validateContext,
 /**
  * POST /api/:context/mcp/connections/:id/tools/call - Call tool on specific connection
  */
-mcpConnectionsRouter.post('/:context/mcp/connections/:id/tools/call', validateContext, asyncHandler(async (req: Request, res: Response) => {
+mcpConnectionsRouter.post('/:context/mcp/connections/:id/tools/call', validateContext, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { name, arguments: args } = req.body;
 
   if (!name) {
     return res.status(400).json({ success: false, error: 'Tool name is required' });
   }
 
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const conn = await mcpConnectionManager.getConnection(context, req.params.id);
   if (!conn) {
     return res.status(404).json({ success: false, error: 'Connection not found' });
@@ -249,7 +250,7 @@ mcpConnectionsRouter.post('/:context/mcp/connections/:id/tools/call', validateCo
  * GET /api/:context/mcp/connections/:id/resources - List resources from specific connection
  */
 mcpConnectionsRouter.get('/:context/mcp/connections/:id/resources', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const conn = await mcpConnectionManager.getConnection(context, req.params.id);
   if (!conn) { return res.status(404).json({ success: false, error: 'Connection not found' }); }
 
@@ -262,7 +263,7 @@ mcpConnectionsRouter.get('/:context/mcp/connections/:id/resources', validateCont
 /**
  * POST /api/:context/mcp/connections/:id/resources/read - Read resource from specific connection
  */
-mcpConnectionsRouter.post('/:context/mcp/connections/:id/resources/read', validateContext, asyncHandler(async (req: Request, res: Response) => {
+mcpConnectionsRouter.post('/:context/mcp/connections/:id/resources/read', validateContext, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { uri } = req.body;
 
   if (!uri) {
@@ -277,7 +278,7 @@ mcpConnectionsRouter.post('/:context/mcp/connections/:id/resources/read', valida
  * GET /api/:context/mcp/tools - Unified tool list across all connections
  */
 mcpConnectionsRouter.get('/:context/mcp/tools', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const tools = await mcpConnectionManager.getAllTools(context);
   res.json({ success: true, data: { tools, total: tools.length } });
 }));
@@ -286,7 +287,7 @@ mcpConnectionsRouter.get('/:context/mcp/tools', validateContext, asyncHandler(as
  * GET /api/:context/mcp/resources - Unified resource list across all connections
  */
 mcpConnectionsRouter.get('/:context/mcp/resources', validateContext, asyncHandler(async (req: Request, res: Response) => {
-  const context = req.params.context as AIContext;
+  const context = validateContextParam(req.params.context);
   const resources = await mcpConnectionManager.getAllResources(context);
   res.json({ success: true, data: { resources, total: resources.length } });
 }));

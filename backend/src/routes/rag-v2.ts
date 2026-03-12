@@ -15,6 +15,7 @@
 import { Router, Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { apiKeyAuth } from '../middleware/auth';
+import { validateContextParam } from '../utils/validation';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { queryContext } from '../utils/database-context';
@@ -38,7 +39,7 @@ router.use(apiKeyAuth);
 router.post(
   '/:context/rag/v2/retrieve',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -80,7 +81,7 @@ router.post(
 router.get(
   '/:context/rag/v2/citations/:messageId',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -108,7 +109,7 @@ router.get(
 router.post(
   '/:context/rag/v2/source-feedback',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -142,7 +143,7 @@ router.post(
 router.get(
   '/:context/rag/v2/strategy-stats',
   asyncHandler(async (req: Request, res: Response) => {
-    const context = req.params.context as AIContext;
+    const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }

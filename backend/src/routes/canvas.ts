@@ -17,7 +17,7 @@
 
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import {
   createCanvasDocument,
@@ -69,6 +69,7 @@ function isValidUUID(id: string): boolean {
 canvasRouter.post(
   '/',
   apiKeyAuth,
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const parseResult = CreateCanvasSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -145,6 +146,7 @@ canvasRouter.get(
 canvasRouter.patch(
   '/:id',
   apiKeyAuth,
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -183,6 +185,7 @@ canvasRouter.patch(
 canvasRouter.delete(
   '/:id',
   apiKeyAuth,
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -209,6 +212,7 @@ canvasRouter.delete(
 canvasRouter.post(
   '/:id/link-chat',
   apiKeyAuth,
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { chatSessionId } = req.body;
@@ -270,6 +274,7 @@ canvasRouter.get(
 canvasRouter.post(
   '/:id/restore/:versionId',
   apiKeyAuth,
+  requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const { id, versionId } = req.params;
 

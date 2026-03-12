@@ -36,6 +36,7 @@ function ChatSessionSidebarComponent({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const confirmResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchSessions = useCallback(async () => {
     abortRef.current?.abort();
@@ -59,7 +60,10 @@ function ChatSessionSidebarComponent({
 
   useEffect(() => {
     fetchSessions();
-    return () => { abortRef.current?.abort(); };
+    return () => {
+      abortRef.current?.abort();
+      if (confirmResetRef.current) clearTimeout(confirmResetRef.current);
+    };
   }, [fetchSessions, activeSessionId]);
 
   // Refresh when a new message is sent (session title/updatedAt may change)
@@ -78,7 +82,8 @@ function ChatSessionSidebarComponent({
       // First click = show confirmation state
       setConfirmDeleteId(sessionId);
       // Auto-reset after 3 seconds if not confirmed
-      setTimeout(() => setConfirmDeleteId(prev => prev === sessionId ? null : prev), 3000);
+      if (confirmResetRef.current) clearTimeout(confirmResetRef.current);
+      confirmResetRef.current = setTimeout(() => setConfirmDeleteId(prev => prev === sessionId ? null : prev), 3000);
     }
   };
 

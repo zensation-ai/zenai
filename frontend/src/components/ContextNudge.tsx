@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AIContext } from './ContextSwitcher';
 import '../neurodesign.css';
 
@@ -29,11 +29,15 @@ export function ContextNudge({
   onDismiss,
 }: ContextNudgeProps) {
   const [visible, setVisible] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Animate in
     const timer = setTimeout(() => setVisible(true), 100);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   // Don't show if same context or low confidence
@@ -46,12 +50,12 @@ export function ContextNudge({
 
   const handleMove = () => {
     setVisible(false);
-    setTimeout(() => onMove(ideaId, suggestedContext), 200);
+    timerRef.current = setTimeout(() => onMove(ideaId, suggestedContext), 200);
   };
 
   const handleDismiss = () => {
     setVisible(false);
-    setTimeout(onDismiss, 200);
+    timerRef.current = setTimeout(onDismiss, 200);
   };
 
   const truncatedTitle = ideaTitle.length > 40

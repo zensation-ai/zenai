@@ -101,6 +101,7 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
 
       showToast('Export erfolgreich!', 'success');
       loadExportHistory();
@@ -127,6 +128,7 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
 
       showToast('Backup erstellt!', 'success');
     } catch (err) {

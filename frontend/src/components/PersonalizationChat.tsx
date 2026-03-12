@@ -252,8 +252,6 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
       // Remove the optimistic user message on error
       setMessages(prev => prev.filter(m => m.id !== userMessage.id));
       logError('PersonalizationChat:sendMessage', err);
-      // Remove optimistic user message on error
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
       setInputValue(userMessage.content); // Restore input
       const message = axios.isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error ?? 'Nachricht fehlgeschlagen'

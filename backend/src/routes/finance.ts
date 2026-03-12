@@ -8,7 +8,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { AIContext } from '../utils/database-context';
-import { isValidUUID } from '../utils/validation';
+import { isValidUUID, validateContextParam } from '../utils/validation';
 import * as financeService from '../services/finance';
 
 const router = Router();
@@ -20,7 +20,7 @@ router.use(apiKeyAuth);
 // ============================================================
 
 function getContext(req: Request): AIContext {
-  return req.params.context as AIContext;
+  return validateContextParam(req.params.context);
 }
 
 function validateId(res: Response, id: string): boolean {

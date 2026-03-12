@@ -34,7 +34,7 @@ import {
   deleteSavedLocation,
 } from '../services/location-cache';
 import { isValidContext } from '../utils/database-context';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -284,7 +284,7 @@ router.get('/:context/maps/saved-locations', apiKeyAuth, asyncHandler(async (req
  * POST /api/:context/maps/saved-locations
  * Save a new location
  */
-router.post('/:context/maps/saved-locations', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.post('/:context/maps/saved-locations', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = extractContext(req);
 
   const { label, address, lat, lng, googlePlaceId, icon, isDefault } = req.body;
@@ -310,7 +310,7 @@ router.post('/:context/maps/saved-locations', apiKeyAuth, asyncHandler(async (re
  * DELETE /api/:context/maps/saved-locations/:id
  * Delete a saved location
  */
-router.delete('/:context/maps/saved-locations/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:context/maps/saved-locations/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = extractContext(req);
   const { id } = req.params;
 

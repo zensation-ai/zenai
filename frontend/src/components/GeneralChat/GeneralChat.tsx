@@ -498,7 +498,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   }, [inputValue, sending, loading, sessionId, selectedImages, context, assistantMode, thinkingMode]);
 
   const handleStopGenerating = useCallback(() => {
-    abortControllerRef.current?.abort();
+    streamAbortRef.current?.abort();
     setSending(false);
     setIsStreaming(false);
     setStreamingContent('');
