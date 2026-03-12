@@ -164,6 +164,8 @@ function checkConditions(
         return stringValue.toLowerCase().endsWith(conditionValue.toLowerCase());
       case 'regex':
         try {
+          // ReDoS protection: reject patterns with nested quantifiers
+          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(conditionValue) || conditionValue.length > 200) return false;
           return new RegExp(conditionValue, 'i').test(stringValue);
         } catch {
           return false;
@@ -311,7 +313,8 @@ export async function approveAction(
   );
 
   if (result.rows.length === 0) {
-    throw new Error(`Action ${actionId} not found or not pending`);
+    const { NotFoundError } = await import('../middleware/errorHandler');
+    throw new NotFoundError(`Action ${actionId} not found or not pending`);
   }
 
   const action = result.rows[0] as GovernanceAction;
@@ -345,7 +348,8 @@ export async function rejectAction(
   );
 
   if (result.rows.length === 0) {
-    throw new Error(`Action ${actionId} not found or not pending`);
+    const { NotFoundError } = await import('../middleware/errorHandler');
+    throw new NotFoundError(`Action ${actionId} not found or not pending`);
   }
 
   const action = result.rows[0] as GovernanceAction;
@@ -592,7 +596,8 @@ export async function updatePolicy(
   }
 
   if (setClauses.length === 0) {
-    throw new Error('No fields to update');
+    const { ValidationError } = await import('../middleware/errorHandler');
+    throw new ValidationError('No fields to update');
   }
 
   setClauses.push('updated_at = NOW()');
@@ -604,7 +609,8 @@ export async function updatePolicy(
   );
 
   if (result.rows.length === 0) {
-    throw new Error(`Policy ${policyId} not found`);
+    const { NotFoundError } = await import('../middleware/errorHandler');
+    throw new NotFoundError(`Policy ${policyId} not found`);
   }
 
   return result.rows[0] as GovernancePolicy;
@@ -613,8 +619,9 @@ export async function updatePolicy(
 export async function deletePolicy(
   context: AIContext,
   policyId: string
-): Promise<void> {
-  await queryContext(context, 'DELETE FROM governance_policies WHERE id = $1', [policyId]);
+): Promise<boolean> {
+  const result = await queryContext(context, 'DELETE FROM governance_policies WHERE id = $1 RETURNING id', [policyId]);
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function listPolicies(

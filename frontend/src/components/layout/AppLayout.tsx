@@ -18,6 +18,7 @@ import { safeLocalStorage } from '../../utils/storage';
 import { FloatingAssistant } from '../FloatingAssistant/FloatingAssistant';
 import { useFeatureHint } from '../../hooks/useFeatureHint';
 import { FeatureHintCard } from '../FeatureHintCard';
+import { ProactivePanel, ProactiveBellButton } from '../ProactivePanel';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -74,6 +75,9 @@ export function AppLayout({
 
   // Mobile chat overlay state
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+
+  // Proactive panel state
+  const [proactivePanelOpen, setProactivePanelOpen] = useState(false);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => {
@@ -173,16 +177,27 @@ export function AppLayout({
 
       {/* Main Content Area */}
       <div className={`layout-main ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <TopBar
-          currentPage={currentPage}
+        <div className="topbar-with-proactive">
+          <TopBar
+            currentPage={currentPage}
+            context={context}
+            onContextChange={onContextChange}
+            apiStatus={apiStatus}
+            onOpenSearch={onOpenSearch}
+            onOpenMobileSidebar={handleOpenMobileSidebar}
+            onRefresh={onRefresh}
+            isFavorited={isFavorited?.(currentPage)}
+            onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
+          />
+          <div className="topbar-proactive-wrapper">
+            <ProactiveBellButton onClick={() => setProactivePanelOpen(prev => !prev)} />
+          </div>
+        </div>
+
+        <ProactivePanel
           context={context}
-          onContextChange={onContextChange}
-          apiStatus={apiStatus}
-          onOpenSearch={onOpenSearch}
-          onOpenMobileSidebar={handleOpenMobileSidebar}
-          onRefresh={onRefresh}
-          isFavorited={isFavorited?.(currentPage)}
-          onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
+          isOpen={proactivePanelOpen}
+          onClose={() => setProactivePanelOpen(false)}
         />
 
         <div className="layout-breadcrumbs">

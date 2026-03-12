@@ -238,7 +238,10 @@ function evaluateConditions(conditions: ContextCondition[], query: string): bool
         if (fieldValue.toLowerCase() !== condValue.toLowerCase()) return false;
         break;
       case 'regex':
-        try { if (!new RegExp(condValue, 'i').test(fieldValue)) return false; } catch { return false; }
+        try {
+          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(condValue) || condValue.length > 200) return false;
+          if (!new RegExp(condValue, 'i').test(fieldValue)) return false;
+        } catch { return false; }
         break;
       case 'gt':
         if (!(parseFloat(fieldValue) > parseFloat(condValue))) return false;

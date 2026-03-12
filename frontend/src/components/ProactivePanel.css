@@ -1,0 +1,231 @@
+/* ProactivePanel Styles */
+
+.proactive-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.proactive-panel {
+  position: absolute;
+  top: 52px;
+  right: 1rem;
+  width: 380px;
+  max-height: calc(100vh - 80px);
+  background: var(--bg-secondary, #1a1a2e);
+  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.proactive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+}
+
+.proactive-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-primary, #fff);
+}
+
+.proactive-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #a0a0a0);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.proactive-close:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary, #fff);
+}
+
+.proactive-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.proactive-loading,
+.proactive-error {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.proactive-error {
+  color: #ef4444;
+}
+
+.proactive-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.proactive-empty-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.proactive-empty p {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.proactive-empty span {
+  font-size: 0.8rem;
+}
+
+.proactive-event {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.proactive-event:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.proactive-event-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.proactive-event-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.proactive-event-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.proactive-event-type {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  text-transform: capitalize;
+}
+
+.proactive-decision {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.proactive-decision-notify {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.proactive-decision-prepare_context {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+.proactive-decision-take_action,
+.proactive-decision-trigger_agent {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.proactive-decision-ignored {
+  background: rgba(156, 163, 175, 0.1);
+  color: #9ca3af;
+}
+
+.proactive-event-reason {
+  margin: 0.2rem 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #a0a0a0);
+  line-height: 1.3;
+}
+
+.proactive-event-time {
+  font-size: 0.7rem;
+  color: var(--text-tertiary, #666);
+}
+
+/* Bell Button */
+.proactive-bell-btn {
+  position: relative;
+  background: none;
+  border: none;
+  color: var(--text-secondary, #a0a0a0);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proactive-bell-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary, #fff);
+}
+
+.proactive-bell-btn:focus-visible {
+  outline: 2px solid var(--accent-color, #8b5cf6);
+  outline-offset: 2px;
+}
+
+.proactive-bell-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(25%, -25%);
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (max-width: 480px) {
+  .proactive-panel {
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+  }
+}

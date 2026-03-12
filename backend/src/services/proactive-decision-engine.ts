@@ -299,7 +299,10 @@ function evaluateConditions(
         break;
       case 'regex':
         try {
-          if (!new RegExp(String(condValue), 'i').test(String(fieldValue))) return false;
+          const pattern = String(condValue);
+          // ReDoS protection: reject patterns with nested quantifiers
+          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(pattern) || pattern.length > 200) return false;
+          if (!new RegExp(pattern, 'i').test(String(fieldValue))) return false;
         } catch { return false; }
         break;
     }

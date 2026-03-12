@@ -143,15 +143,17 @@ export async function getEventHistory(
   const offset = options?.offset || 0;
 
   try {
-    const whereClause = options?.eventType
+    const hasEventType = !!options?.eventType;
+    const whereClause = hasEventType
       ? 'WHERE context = $1 AND event_type = $2'
       : 'WHERE context = $1';
-    const params = options?.eventType ? [context, options.eventType] : [context];
+    const baseParams: (string | number)[] = hasEventType ? [context, options!.eventType!] : [context];
+    const nextIdx = baseParams.length + 1;
 
     const countResult = await queryContext(
       context,
       `SELECT COUNT(*) as total FROM system_events ${whereClause}`,
-      params
+      baseParams
     );
 
     const result = await queryContext(
@@ -160,8 +162,8 @@ export async function getEventHistory(
               decision, decision_reason, processed_by, created_at, processed_at
        FROM system_events ${whereClause}
        ORDER BY created_at DESC
-       LIMIT ${limit} OFFSET ${offset}`,
-      params
+       LIMIT $${nextIdx} OFFSET $${nextIdx + 1}`,
+      [...baseParams, limit, offset]
     );
 
     return {

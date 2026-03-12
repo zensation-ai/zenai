@@ -3,6 +3,9 @@
  *
  * CRUD for programmatic context engineering rules.
  * Rules define how context is built per domain (finance, email, code, learning, general).
+ *
+ * IMPORTANT: /performance and /test routes are registered BEFORE /:id
+ * to prevent Express from matching them as UUID params.
  */
 
 import { Router } from 'express';
@@ -41,6 +44,46 @@ contextRulesRouter.get(
 
     const rules = await listContextRules(context, domain);
     res.json({ success: true, data: rules });
+  })
+);
+
+// ─── Rule performance metrics (BEFORE /:id to avoid shadowing) ───
+contextRulesRouter.get(
+  '/:context/context-rules/performance',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req, res) => {
+    const context = req.params.context as AIContext;
+    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+
+    const ruleId = req.query.ruleId as string | undefined;
+    const perf = await getRulePerformance(context, ruleId);
+    res.json({ success: true, data: perf });
+  })
+);
+
+// ─── Test rule against sample query (BEFORE /:id to avoid shadowing) ───
+contextRulesRouter.post(
+  '/:context/context-rules/test',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req, res) => {
+    const context = req.params.context as AIContext;
+    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+
+    const { query } = req.body;
+    if (!query || typeof query !== 'string') throw new ValidationError('query is required');
+
+    const domain = classifyDomain(query);
+    const result = await buildContext(query, context, { maxTokens: req.body.maxTokens || 4000 });
+
+    res.json({
+      success: true,
+      data: {
+        classifiedDomain: domain,
+        ...result,
+      },
+    });
   })
 );
 
@@ -134,45 +177,5 @@ contextRulesRouter.delete(
     if (!deleted) throw new NotFoundError('Context rule not found');
 
     res.json({ success: true, message: 'Context rule deleted' });
-  })
-);
-
-// ─── Rule performance metrics ─────────────────────────────
-contextRulesRouter.get(
-  '/:context/context-rules/performance',
-  apiKeyAuth,
-  requireScope('read'),
-  asyncHandler(async (req, res) => {
-    const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
-
-    const ruleId = req.query.ruleId as string | undefined;
-    const perf = await getRulePerformance(context, ruleId);
-    res.json({ success: true, data: perf });
-  })
-);
-
-// ─── Test rule against sample query ───────────────────────
-contextRulesRouter.post(
-  '/:context/context-rules/test',
-  apiKeyAuth,
-  requireScope('read'),
-  asyncHandler(async (req, res) => {
-    const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
-
-    const { query } = req.body;
-    if (!query || typeof query !== 'string') throw new ValidationError('query is required');
-
-    const domain = classifyDomain(query);
-    const result = await buildContext(query, context, { maxTokens: req.body.maxTokens || 4000 });
-
-    res.json({
-      success: true,
-      data: {
-        classifiedDomain: domain,
-        ...result,
-      },
-    });
   })
 );

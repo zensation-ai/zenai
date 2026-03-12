@@ -35,16 +35,17 @@ import {
 export const governanceRouter = Router();
 
 // SSE connections for real-time approval notifications
-const sseClients = new Map<string, Response[]>();
+const sseClients = new Map<string, Set<Response>>();
 
 function notifySSEClients(context: string, data: Record<string, unknown>): void {
-  const clients = sseClients.get(context) || [];
+  const clients = sseClients.get(context);
+  if (!clients || clients.size === 0) return;
   const payload = `data: ${JSON.stringify(data)}\n\n`;
   for (const client of clients) {
     try {
       client.write(payload);
     } catch {
-      // Client disconnected, will be cleaned up
+      clients.delete(client);
     }
   }
 }
@@ -74,9 +75,9 @@ governanceRouter.get(
 
     // Register client
     if (!sseClients.has(context)) {
-      sseClients.set(context, []);
+      sseClients.set(context, new Set());
     }
-    sseClients.get(context)!.push(res);
+    sseClients.get(context)!.add(res);
 
     // Heartbeat every 30s
     const heartbeat = setInterval(() => {
@@ -85,11 +86,7 @@ governanceRouter.get(
 
     req.on('close', () => {
       clearInterval(heartbeat);
-      const clients = sseClients.get(context);
-      if (clients) {
-        const idx = clients.indexOf(res);
-        if (idx >= 0) clients.splice(idx, 1);
-      }
+      sseClients.get(context)?.delete(res);
     });
   }
 );
@@ -101,6 +98,7 @@ governanceRouter.get(
 governanceRouter.get(
   '/:context/governance/pending',
   apiKeyAuth,
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
@@ -122,6 +120,7 @@ governanceRouter.get(
 governanceRouter.get(
   '/:context/governance/history',
   apiKeyAuth,
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
@@ -253,6 +252,7 @@ governanceRouter.post(
 governanceRouter.get(
   '/:context/governance/audit',
   apiKeyAuth,
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
@@ -279,6 +279,7 @@ governanceRouter.get(
 governanceRouter.get(
   '/:context/governance/policies',
   apiKeyAuth,
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
@@ -347,7 +348,8 @@ governanceRouter.delete(
     const { context, id } = req.params;
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
 
-    await deletePolicy(context as AIContext, id);
+    const deleted = await deletePolicy(context as AIContext, id);
+    if (!deleted) throw new NotFoundError('Policy not found');
 
     res.json({ success: true, message: 'Policy deleted' });
   })

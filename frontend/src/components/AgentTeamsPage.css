@@ -858,3 +858,64 @@
     min-width: 80px;
   }
 }
+
+/* Durable Execution UI */
+.history-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.history-pause-reason {
+  padding: 0.5rem 0.75rem;
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #f59e0b;
+  margin-bottom: 0.75rem;
+}
+
+.history-checkpoint-info {
+  font-size: 0.75rem;
+  color: var(--text-tertiary, #666);
+  margin-bottom: 0.5rem;
+}
+
+.agent-control-btn {
+  padding: 0.35rem 0.7rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.agent-control-btn.pause-btn {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.agent-control-btn.pause-btn:hover {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+.agent-control-btn.cancel-btn {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.agent-control-btn.cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+.governance-link-hint {
+  font-size: 0.75rem;
+  color: var(--text-tertiary, #888);
+  font-style: italic;
+}

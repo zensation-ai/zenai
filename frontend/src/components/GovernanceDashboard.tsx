@@ -7,10 +7,10 @@
  * - Policies: Governance-Richtlinien verwalten
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import '../neurodesign.css';
+import './GovernanceDashboard.css';
 
 interface GovernanceAction {
   id: string;
@@ -118,7 +118,11 @@ function PendingActions({ context }: { context: AIContext }) {
   const [actions, setActions] = useState<GovernanceAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [actionsInProgress, setActionsInProgress] = useState<Set<string>>(new Set());
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const rejectionInputRef = useRef<HTMLInputElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const loadPending = useCallback(async () => {
     try {
@@ -137,8 +141,53 @@ function PendingActions({ context }: { context: AIContext }) {
 
   useEffect(() => { loadPending(); }, [loadPending]);
 
+  // SSE for real-time updates
+  useEffect(() => {
+    const url = `${getApiBaseUrl()}/api/${context}/governance/stream`;
+    const headers = getApiFetchHeaders('text/event-stream');
+    const apiKey = headers['x-api-key'] || '';
+    const es = new EventSource(`${url}?apiKey=${encodeURIComponent(apiKey)}`);
+
+    es.addEventListener('approval_requested', () => {
+      loadPending();
+    });
+
+    es.addEventListener('action_approved', () => {
+      loadPending();
+    });
+
+    es.addEventListener('action_rejected', () => {
+      loadPending();
+    });
+
+    es.onerror = () => {
+      // SSE reconnects automatically; no action needed
+    };
+
+    eventSourceRef.current = es;
+    return () => { es.close(); };
+  }, [context, loadPending]);
+
+  // Focus rejection input when it appears
+  useEffect(() => {
+    if (rejectingId && rejectionInputRef.current) {
+      rejectionInputRef.current.focus();
+    }
+  }, [rejectingId]);
+
+  const markInProgress = (id: string) => {
+    setActionsInProgress(prev => new Set(prev).add(id));
+  };
+  const clearInProgress = (id: string) => {
+    setActionsInProgress(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
   const handleApprove = async (actionId: string) => {
-    setActionInProgress(actionId);
+    markInProgress(actionId);
     try {
       await apiCall(`/api/${context}/governance/${actionId}/approve`, {
         method: 'POST',
@@ -148,34 +197,42 @@ function PendingActions({ context }: { context: AIContext }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Genehmigen');
     } finally {
-      setActionInProgress(null);
+      clearInProgress(actionId);
     }
   };
 
-  const handleReject = async (actionId: string) => {
-    const reason = prompt('Ablehnungsgrund:');
-    if (!reason) return;
-    setActionInProgress(actionId);
+  const handleRejectSubmit = async (actionId: string) => {
+    if (!rejectionReason.trim()) return;
+    markInProgress(actionId);
     try {
       await apiCall(`/api/${context}/governance/${actionId}/reject`, {
         method: 'POST',
-        body: JSON.stringify({ rejected_by: 'user', reason }),
+        body: JSON.stringify({ rejected_by: 'user', reason: rejectionReason }),
       });
+      setRejectingId(null);
+      setRejectionReason('');
       await loadPending();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Ablehnen');
     } finally {
-      setActionInProgress(null);
+      clearInProgress(actionId);
     }
   };
 
   if (loading) return <div className="settings-tab-loader">Lade ausstehende Aktionen...</div>;
-  if (error) return <div className="settings-error">{error}</div>;
+  if (error) return (
+    <div className="governance-error">
+      <span>{error}</span>
+      <button className="governance-btn governance-btn-toggle" onClick={() => { setError(null); loadPending(); }}>
+        Erneut versuchen
+      </button>
+    </div>
+  );
 
   if (actions.length === 0) {
     return (
       <div className="governance-empty">
-        <span className="governance-empty-icon">✓</span>
+        <span className="governance-empty-icon" aria-hidden="true">&#10003;</span>
         <p>Keine ausstehenden Genehmigungen</p>
         <span className="governance-empty-sub">Alle KI-Aktionen sind verarbeitet.</span>
       </div>
@@ -183,42 +240,82 @@ function PendingActions({ context }: { context: AIContext }) {
   }
 
   return (
-    <div className="governance-list">
-      {actions.map((action) => (
-        <div key={action.id} className="governance-card">
-          <div className="governance-card-header">
-            <span
-              className="governance-risk-badge"
-              style={{ background: RISK_COLORS[action.risk_level] || '#888' }}
-            >
-              {action.risk_level.toUpperCase()}
-            </span>
-            <span className="governance-type">{action.action_type}</span>
-            <span className="governance-source">von {action.action_source}</span>
+    <div className="governance-list" role="list">
+      {actions.map((action) => {
+        const inProgress = actionsInProgress.has(action.id);
+        const isRejecting = rejectingId === action.id;
+
+        return (
+          <div key={action.id} className="governance-card" role="listitem">
+            <div className="governance-card-header">
+              <span
+                className="governance-risk-badge"
+                style={{ background: RISK_COLORS[action.risk_level] || '#888' }}
+              >
+                {action.risk_level.toUpperCase()}
+              </span>
+              <span className="governance-type">{action.action_type}</span>
+              <span className="governance-source">von {action.action_source}</span>
+            </div>
+            <p className="governance-description">{action.description}</p>
+            <div className="governance-meta">
+              <span>Erstellt: {formatDate(action.created_at)}</span>
+              {action.expires_at && <span>Ablauf: {formatDate(action.expires_at)}</span>}
+            </div>
+
+            {isRejecting ? (
+              <div className="governance-reject-form">
+                <input
+                  ref={rejectionInputRef}
+                  type="text"
+                  className="governance-input"
+                  placeholder="Ablehnungsgrund eingeben..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleRejectSubmit(action.id);
+                    if (e.key === 'Escape') { setRejectingId(null); setRejectionReason(''); }
+                  }}
+                  disabled={inProgress}
+                />
+                <div className="governance-reject-form-actions">
+                  <button
+                    className="governance-btn governance-btn-reject"
+                    onClick={() => handleRejectSubmit(action.id)}
+                    disabled={inProgress || !rejectionReason.trim()}
+                  >
+                    {inProgress ? 'Wird abgelehnt...' : 'Ablehnen'}
+                  </button>
+                  <button
+                    className="governance-btn governance-btn-toggle"
+                    onClick={() => { setRejectingId(null); setRejectionReason(''); }}
+                    disabled={inProgress}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="governance-actions">
+                <button
+                  className="governance-btn governance-btn-approve"
+                  onClick={() => handleApprove(action.id)}
+                  disabled={inProgress}
+                >
+                  {inProgress ? 'Wird genehmigt...' : 'Genehmigen'}
+                </button>
+                <button
+                  className="governance-btn governance-btn-reject"
+                  onClick={() => setRejectingId(action.id)}
+                  disabled={inProgress}
+                >
+                  Ablehnen
+                </button>
+              </div>
+            )}
           </div>
-          <p className="governance-description">{action.description}</p>
-          <div className="governance-meta">
-            <span>Erstellt: {formatDate(action.created_at)}</span>
-            {action.expires_at && <span>Ablauf: {formatDate(action.expires_at)}</span>}
-          </div>
-          <div className="governance-actions">
-            <button
-              className="governance-btn governance-btn-approve"
-              onClick={() => handleApprove(action.id)}
-              disabled={actionInProgress === action.id}
-            >
-              {actionInProgress === action.id ? '...' : 'Genehmigen'}
-            </button>
-            <button
-              className="governance-btn governance-btn-reject"
-              onClick={() => handleReject(action.id)}
-              disabled={actionInProgress === action.id}
-            >
-              Ablehnen
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -231,38 +328,59 @@ function ActionHistory({ context }: { context: AIContext }) {
   const [actions, setActions] = useState<GovernanceAction[]>([]);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'actions' | 'audit'>('actions');
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const [actionsData, auditData] = await Promise.all([
-          apiCall<{ data: GovernanceAction[] }>(`/api/${context}/governance/history?limit=50`),
-          apiCall<{ data: AuditEntry[] }>(`/api/${context}/governance/audit?limit=50&days=30`),
-        ]);
-        setActions(actionsData.data || []);
-        setAudit(auditData.data || []);
-      } catch {
-        // Silently handle - empty lists shown
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const loadHistory = useCallback(async (pageNum: number) => {
+    try {
+      setLoading(true);
+      const offset = pageNum * PAGE_SIZE;
+      const [actionsData, auditData] = await Promise.all([
+        apiCall<{ data: GovernanceAction[] }>(
+          `/api/${context}/governance/history?limit=${PAGE_SIZE}&offset=${offset}`
+        ),
+        apiCall<{ data: AuditEntry[] }>(
+          `/api/${context}/governance/audit?limit=${PAGE_SIZE}&offset=${offset}&days=30`
+        ),
+      ]);
+      setActions(actionsData.data || []);
+      setAudit(auditData.data || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden des Verlaufs');
+    } finally {
+      setLoading(false);
+    }
   }, [context]);
 
+  useEffect(() => { loadHistory(page); }, [loadHistory, page]);
+
   if (loading) return <div className="settings-tab-loader">Lade Verlauf...</div>;
+  if (error) return (
+    <div className="governance-error">
+      <span>{error}</span>
+      <button className="governance-btn governance-btn-toggle" onClick={() => loadHistory(page)}>
+        Erneut versuchen
+      </button>
+    </div>
+  );
 
   return (
     <div className="governance-history">
-      <div className="governance-view-toggle">
+      <div className="governance-view-toggle" role="tablist" aria-label="Verlauf-Ansicht">
         <button
+          role="tab"
+          aria-selected={viewMode === 'actions'}
           className={`governance-toggle-btn ${viewMode === 'actions' ? 'active' : ''}`}
           onClick={() => setViewMode('actions')}
         >
           Aktionen ({actions.length})
         </button>
         <button
+          role="tab"
+          aria-selected={viewMode === 'audit'}
           className={`governance-toggle-btn ${viewMode === 'audit' ? 'active' : ''}`}
           onClick={() => setViewMode('audit')}
         >
@@ -271,7 +389,7 @@ function ActionHistory({ context }: { context: AIContext }) {
       </div>
 
       {viewMode === 'actions' ? (
-        <div className="governance-list">
+        <div className="governance-list" role="tabpanel">
           {actions.length === 0 ? (
             <p className="governance-empty-text">Noch keine Aktionen im Verlauf.</p>
           ) : actions.map((action) => (
@@ -300,7 +418,7 @@ function ActionHistory({ context }: { context: AIContext }) {
           ))}
         </div>
       ) : (
-        <div className="governance-list">
+        <div className="governance-list" role="tabpanel">
           {audit.length === 0 ? (
             <p className="governance-empty-text">Noch keine Audit-Einträge.</p>
           ) : audit.map((entry) => (
@@ -315,6 +433,28 @@ function ActionHistory({ context }: { context: AIContext }) {
           ))}
         </div>
       )}
+
+      {/* Pagination */}
+      <div className="governance-pagination">
+        <button
+          className="governance-btn governance-btn-toggle"
+          onClick={() => setPage(p => Math.max(0, p - 1))}
+          disabled={page === 0}
+        >
+          Zurück
+        </button>
+        <span className="governance-page-info">Seite {page + 1}</span>
+        <button
+          className="governance-btn governance-btn-toggle"
+          onClick={() => setPage(p => p + 1)}
+          disabled={
+            (viewMode === 'actions' && actions.length < PAGE_SIZE) ||
+            (viewMode === 'audit' && audit.length < PAGE_SIZE)
+          }
+        >
+          Weiter
+        </button>
+      </div>
     </div>
   );
 }
@@ -326,19 +466,19 @@ function ActionHistory({ context }: { context: AIContext }) {
 function PoliciesManager({ context }: { context: AIContext }) {
   const [policies, setPolicies] = useState<GovernancePolicy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<{
-    name: string;
-    description: string;
-    action_type: string;
-    risk_level: 'low' | 'medium' | 'high' | 'critical';
-    auto_approve: boolean;
-  }>({
+  const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
     action_type: 'agent_action',
-    risk_level: 'medium',
+    risk_level: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     auto_approve: false,
+    notify_on_auto_approve: true,
+    conditions: [] as unknown[],
   });
 
   const loadPolicies = useCallback(async () => {
@@ -348,8 +488,9 @@ function PoliciesManager({ context }: { context: AIContext }) {
         `/api/${context}/governance/policies`
       );
       setPolicies(data.data || []);
-    } catch {
-      // Empty list fallback
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Richtlinien');
     } finally {
       setLoading(false);
     }
@@ -359,26 +500,44 @@ function PoliciesManager({ context }: { context: AIContext }) {
 
   const handleCreate = async () => {
     if (!formData.name.trim()) return;
+    setCreating(true);
     try {
       await apiCall(`/api/${context}/governance/policies`, {
         method: 'POST',
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description || null,
+          action_type: formData.action_type,
+          risk_level: formData.risk_level,
+          auto_approve: formData.auto_approve,
+          notify_on_auto_approve: formData.notify_on_auto_approve,
+          conditions: formData.conditions,
+        }),
       });
       setShowForm(false);
-      setFormData({ name: '', description: '', action_type: 'agent_action', risk_level: 'medium', auto_approve: false });
+      setFormData({
+        name: '', description: '', action_type: 'agent_action',
+        risk_level: 'medium', auto_approve: false,
+        notify_on_auto_approve: true, conditions: [],
+      });
       await loadPolicies();
-    } catch {
-      // Error silently handled
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Erstellen');
+    } finally {
+      setCreating(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Richtlinie wirklich löschen?')) return;
+    setDeletingId(id);
     try {
       await apiCall(`/api/${context}/governance/policies/${id}`, { method: 'DELETE' });
+      setConfirmDeleteId(null);
       await loadPolicies();
-    } catch {
-      // Error silently handled
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Löschen');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -389,8 +548,8 @@ function PoliciesManager({ context }: { context: AIContext }) {
         body: JSON.stringify({ is_active: !policy.is_active }),
       });
       await loadPolicies();
-    } catch {
-      // Error silently handled
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Umschalten');
     }
   };
 
@@ -398,6 +557,15 @@ function PoliciesManager({ context }: { context: AIContext }) {
 
   return (
     <div className="governance-policies">
+      {error && (
+        <div className="governance-error governance-error-inline">
+          <span>{error}</span>
+          <button className="governance-btn governance-btn-toggle" onClick={() => setError(null)}>
+            Schließen
+          </button>
+        </div>
+      )}
+
       <div className="governance-policies-header">
         <h3>Governance-Richtlinien</h3>
         <button
@@ -416,6 +584,7 @@ function PoliciesManager({ context }: { context: AIContext }) {
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="governance-input"
+            autoFocus
           />
           <input
             type="text"
@@ -429,6 +598,7 @@ function PoliciesManager({ context }: { context: AIContext }) {
               value={formData.action_type}
               onChange={(e) => setFormData({ ...formData, action_type: e.target.value })}
               className="governance-select"
+              aria-label="Aktionstyp"
             >
               <option value="agent_action">Agent-Aktion</option>
               <option value="send_email">E-Mail senden</option>
@@ -438,14 +608,17 @@ function PoliciesManager({ context }: { context: AIContext }) {
             </select>
             <select
               value={formData.risk_level}
-              onChange={(e) => setFormData({ ...formData, risk_level: e.target.value as 'low' | 'medium' | 'high' | 'critical' })}
+              onChange={(e) => setFormData({ ...formData, risk_level: e.target.value as typeof formData.risk_level })}
               className="governance-select"
+              aria-label="Risikostufe"
             >
               <option value="low">Niedrig</option>
               <option value="medium">Mittel</option>
               <option value="high">Hoch</option>
               <option value="critical">Kritisch</option>
             </select>
+          </div>
+          <div className="governance-form-row">
             <label className="governance-checkbox-label">
               <input
                 type="checkbox"
@@ -454,25 +627,41 @@ function PoliciesManager({ context }: { context: AIContext }) {
               />
               Auto-Genehmigung
             </label>
+            <label className="governance-checkbox-label">
+              <input
+                type="checkbox"
+                checked={formData.notify_on_auto_approve}
+                onChange={(e) => setFormData({ ...formData, notify_on_auto_approve: e.target.checked })}
+              />
+              Benachrichtigung bei Auto-Genehmigung
+            </label>
           </div>
-          <button className="governance-btn governance-btn-approve" onClick={handleCreate}>
-            Erstellen
+          <button
+            className="governance-btn governance-btn-approve"
+            onClick={handleCreate}
+            disabled={creating || !formData.name.trim()}
+          >
+            {creating ? 'Wird erstellt...' : 'Erstellen'}
           </button>
         </div>
       )}
 
       {policies.length === 0 ? (
         <div className="governance-empty">
-          <span className="governance-empty-icon">📋</span>
+          <span className="governance-empty-icon" aria-hidden="true">&#128203;</span>
           <p>Keine Richtlinien konfiguriert</p>
           <span className="governance-empty-sub">
             Erstelle Richtlinien, um KI-Aktionen automatisch zu genehmigen oder zur Prüfung vorzulegen.
           </span>
         </div>
       ) : (
-        <div className="governance-list">
+        <div className="governance-list" role="list">
           {policies.map((policy) => (
-            <div key={policy.id} className={`governance-card ${!policy.is_active ? 'governance-card-inactive' : ''}`}>
+            <div
+              key={policy.id}
+              className={`governance-card ${!policy.is_active ? 'governance-card-inactive' : ''}`}
+              role="listitem"
+            >
               <div className="governance-card-header">
                 <span
                   className="governance-risk-badge"
@@ -488,20 +677,43 @@ function PoliciesManager({ context }: { context: AIContext }) {
                 <span>Typ: {policy.action_type}</span>
                 <span>{policy.is_active ? 'Aktiv' : 'Inaktiv'}</span>
               </div>
-              <div className="governance-actions">
-                <button
-                  className="governance-btn governance-btn-toggle"
-                  onClick={() => handleToggle(policy)}
-                >
-                  {policy.is_active ? 'Deaktivieren' : 'Aktivieren'}
-                </button>
-                <button
-                  className="governance-btn governance-btn-reject"
-                  onClick={() => handleDelete(policy.id)}
-                >
-                  Löschen
-                </button>
-              </div>
+
+              {confirmDeleteId === policy.id ? (
+                <div className="governance-confirm-delete">
+                  <span>Richtlinie wirklich löschen?</span>
+                  <div className="governance-actions">
+                    <button
+                      className="governance-btn governance-btn-reject"
+                      onClick={() => handleDelete(policy.id)}
+                      disabled={deletingId === policy.id}
+                    >
+                      {deletingId === policy.id ? 'Wird gelöscht...' : 'Ja, löschen'}
+                    </button>
+                    <button
+                      className="governance-btn governance-btn-toggle"
+                      onClick={() => setConfirmDeleteId(null)}
+                      disabled={deletingId === policy.id}
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="governance-actions">
+                  <button
+                    className="governance-btn governance-btn-toggle"
+                    onClick={() => handleToggle(policy)}
+                  >
+                    {policy.is_active ? 'Deaktivieren' : 'Aktivieren'}
+                  </button>
+                  <button
+                    className="governance-btn governance-btn-reject"
+                    onClick={() => setConfirmDeleteId(policy.id)}
+                  >
+                    Löschen
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -517,30 +729,45 @@ function PoliciesManager({ context }: { context: AIContext }) {
 export function GovernanceDashboard({ context }: GovernanceDashboardProps) {
   const [subView, setSubView] = useState<SubView>('pending');
 
+  const handleKeyDown = (e: React.KeyboardEvent, view: SubView) => {
+    const views: SubView[] = ['pending', 'history', 'policies'];
+    const currentIdx = views.indexOf(view);
+    let nextIdx = currentIdx;
+
+    if (e.key === 'ArrowRight') nextIdx = Math.min(currentIdx + 1, views.length - 1);
+    else if (e.key === 'ArrowLeft') nextIdx = Math.max(currentIdx - 1, 0);
+    else return;
+
+    e.preventDefault();
+    setSubView(views[nextIdx]);
+    const nextBtn = document.querySelector(`[data-gov-tab="${views[nextIdx]}"]`) as HTMLElement;
+    nextBtn?.focus();
+  };
+
   return (
     <div className="governance-dashboard">
-      <div className="governance-nav">
-        <button
-          className={`governance-nav-btn ${subView === 'pending' ? 'active' : ''}`}
-          onClick={() => setSubView('pending')}
-        >
-          Ausstehend
-        </button>
-        <button
-          className={`governance-nav-btn ${subView === 'history' ? 'active' : ''}`}
-          onClick={() => setSubView('history')}
-        >
-          Verlauf
-        </button>
-        <button
-          className={`governance-nav-btn ${subView === 'policies' ? 'active' : ''}`}
-          onClick={() => setSubView('policies')}
-        >
-          Richtlinien
-        </button>
+      <div className="governance-nav" role="tablist" aria-label="Governance-Bereiche">
+        {([
+          { key: 'pending' as const, label: 'Ausstehend' },
+          { key: 'history' as const, label: 'Verlauf' },
+          { key: 'policies' as const, label: 'Richtlinien' },
+        ]).map(({ key, label }) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={subView === key}
+            tabIndex={subView === key ? 0 : -1}
+            data-gov-tab={key}
+            className={`governance-nav-btn ${subView === key ? 'active' : ''}`}
+            onClick={() => setSubView(key)}
+            onKeyDown={(e) => handleKeyDown(e, key)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="governance-content">
+      <div className="governance-content" role="tabpanel" aria-label={subView}>
         {subView === 'pending' && <PendingActions context={context} />}
         {subView === 'history' && <ActionHistory context={context} />}
         {subView === 'policies' && <PoliciesManager context={context} />}

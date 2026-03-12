@@ -49,7 +49,19 @@ interface HistoryEntry {
   success: boolean;
   savedAsIdeaId?: string;
   createdAt: string;
+  status?: string;
+  checkpointStep?: number;
+  pauseReason?: string;
 }
+
+const EXECUTION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  running: { label: 'Läuft', color: '#3b82f6' },
+  completed: { label: 'Abgeschlossen', color: '#22c55e' },
+  failed: { label: 'Fehlgeschlagen', color: '#ef4444' },
+  paused: { label: 'Pausiert', color: '#f59e0b' },
+  awaiting_approval: { label: 'Genehmigung nötig', color: '#f97316' },
+  cancelled: { label: 'Abgebrochen', color: '#9ca3af' },
+};
 
 interface AgentTemplate {
   id: string;
@@ -179,6 +191,29 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
       logError('AgentTeamsPage:loadAnalytics', err);
     }
   }, [context]);
+
+  // Durable execution controls
+  const handlePauseExecution = async (executionId: string) => {
+    try {
+      await axios.post(`/api/agents/executions/${executionId}/pause`, { context });
+      showToast('Ausführung pausiert', 'success');
+      await loadHistory();
+    } catch (err) {
+      logError('AgentTeamsPage:pause', err);
+      showToast('Fehler beim Pausieren', 'error');
+    }
+  };
+
+  const handleCancelExecution = async (executionId: string) => {
+    try {
+      await axios.post(`/api/agents/executions/${executionId}/cancel`, { context });
+      showToast('Ausführung abgebrochen', 'success');
+      await loadHistory();
+    } catch (err) {
+      logError('AgentTeamsPage:cancel', err);
+      showToast('Fehler beim Abbrechen', 'error');
+    }
+  };
 
   useEffect(() => {
     loadHistory();
@@ -740,9 +775,18 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
                   className="history-card-header"
                   onClick={() => setExpandedHistoryId(expandedHistoryId === entry.id ? null : entry.id)}
                 >
-                  <span className={`history-status ${entry.success ? 'success' : 'failed'}`}>
-                    {entry.success ? '✓' : '✗'}
-                  </span>
+                  {entry.status && entry.status !== 'completed' && entry.status !== 'failed' ? (
+                    <span
+                      className="history-status-badge"
+                      style={{ background: `${EXECUTION_STATUS_LABELS[entry.status]?.color || '#888'}22`, color: EXECUTION_STATUS_LABELS[entry.status]?.color || '#888' }}
+                    >
+                      {EXECUTION_STATUS_LABELS[entry.status]?.label || entry.status}
+                    </span>
+                  ) : (
+                    <span className={`history-status ${entry.success ? 'success' : 'failed'}`}>
+                      {entry.success ? '✓' : '✗'}
+                    </span>
+                  )}
                   <span className="history-task">{entry.task.substring(0, 80)}{entry.task.length > 80 ? '...' : ''}</span>
                   <span className="history-meta">
                     {STRATEGIES.find(s => s.id === entry.strategy)?.icon || '🤖'}{' '}
@@ -754,9 +798,51 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
                 </button>
                 {expandedHistoryId === entry.id && (
                   <div className="history-card-body">
+                    {entry.pauseReason && (
+                      <div className="history-pause-reason">
+                        Pausiert: {entry.pauseReason}
+                      </div>
+                    )}
+                    {entry.checkpointStep != null && entry.checkpointStep > 0 && (
+                      <div className="history-checkpoint-info">
+                        Checkpoint bei Schritt {entry.checkpointStep}
+                      </div>
+                    )}
                     <div className="history-output">{entry.finalOutput}</div>
                     <div className="history-actions">
-                      {!entry.savedAsIdeaId && (
+                      {(entry.status === 'running') && (
+                        <>
+                          <button
+                            type="button"
+                            className="agent-control-btn pause-btn"
+                            onClick={() => handlePauseExecution(entry.id)}
+                          >
+                            Pausieren
+                          </button>
+                          <button
+                            type="button"
+                            className="agent-control-btn cancel-btn"
+                            onClick={() => handleCancelExecution(entry.id)}
+                          >
+                            Abbrechen
+                          </button>
+                        </>
+                      )}
+                      {(entry.status === 'paused' || entry.status === 'awaiting_approval') && (
+                        <button
+                          type="button"
+                          className="agent-control-btn cancel-btn"
+                          onClick={() => handleCancelExecution(entry.id)}
+                        >
+                          Abbrechen
+                        </button>
+                      )}
+                      {entry.status === 'awaiting_approval' && (
+                        <span className="governance-link-hint">
+                          Genehmigung in Einstellungen &rarr; Governance
+                        </span>
+                      )}
+                      {!entry.savedAsIdeaId && entry.finalOutput && (
                         <button
                           type="button"
                           className="save-idea-btn neuro-hover-lift"

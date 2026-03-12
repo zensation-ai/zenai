@@ -869,7 +869,7 @@ describe('Governance Routes', () => {
 
   describe('DELETE /:context/governance/policies/:id', () => {
     it('should delete a policy', async () => {
-      mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
+      mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'pol-001' }], rowCount: 1 } as never);
 
       const res = await request(app)
         .delete('/api/personal/governance/policies/pol-001');

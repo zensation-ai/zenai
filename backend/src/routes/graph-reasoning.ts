@@ -57,6 +57,7 @@ router.post(
  */
 router.get(
   '/:context/knowledge-graph/contradictions',
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
@@ -95,6 +96,7 @@ router.post(
  */
 router.get(
   '/:context/knowledge-graph/communities',
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
@@ -130,6 +132,7 @@ router.get(
  */
 router.get(
   '/:context/knowledge-graph/centrality',
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
@@ -148,6 +151,7 @@ router.get(
  */
 router.get(
   '/:context/knowledge-graph/learning-path/:ideaId',
+  requireScope('read'),
   requireUUID('ideaId'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
@@ -240,6 +244,7 @@ router.delete(
  */
 router.get(
   '/:context/knowledge-graph/temporal/:ideaId',
+  requireScope('read'),
   requireUUID('ideaId'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
@@ -261,6 +266,7 @@ router.get(
  */
 router.get(
   '/:context/knowledge-graph/temporal-history',
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
@@ -284,6 +290,7 @@ router.get(
  */
 router.get(
   '/:context/knowledge-graph/temporal-contradictions',
+  requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
@@ -301,6 +308,7 @@ router.get(
  */
 router.get(
   '/:context/knowledge-graph/fact-versions/:factId',
+  requireScope('read'),
   requireUUID('factId'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);

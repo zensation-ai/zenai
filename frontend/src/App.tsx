@@ -816,7 +816,7 @@ function AuthenticatedApp() {
               context={context}
               onBack={() => navigateToPage('home')}
               onNavigate={(page) => navigateToPage(page as Page)}
-              initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'integrations' | 'data'}
+              initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data'}
             />
           </Suspense>
         );

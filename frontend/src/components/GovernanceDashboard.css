@@ -29,6 +29,11 @@
   color: var(--text-primary, #fff);
 }
 
+.governance-nav-btn:focus-visible {
+  outline: 2px solid var(--accent-color, #8b5cf6);
+  outline-offset: 2px;
+}
+
 .governance-nav-btn.active {
   background: rgba(139, 92, 246, 0.15);
   color: var(--accent-color, #8b5cf6);
@@ -166,6 +171,11 @@
   cursor: not-allowed;
 }
 
+.governance-btn:focus-visible {
+  outline: 2px solid var(--accent-color, #8b5cf6);
+  outline-offset: 2px;
+}
+
 .governance-btn-approve {
   background: rgba(74, 222, 128, 0.15);
   color: #4ade80;
@@ -198,7 +208,7 @@
   color: var(--text-secondary, #a0a0a0);
 }
 
-.governance-btn-toggle:hover {
+.governance-btn-toggle:hover:not(:disabled) {
   background: rgba(255,255,255,0.1);
 }
 
@@ -241,6 +251,67 @@
   font-size: 0.875rem;
 }
 
+/* Error State */
+.governance-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.875rem;
+}
+
+.governance-error-inline {
+  margin-bottom: 1rem;
+}
+
+/* Reject Form (inline) */
+.governance-reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));
+}
+
+.governance-reject-form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Confirm Delete (inline) */
+.governance-confirm-delete {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(239, 68, 68, 0.15);
+  font-size: 0.85rem;
+  color: #ef4444;
+}
+
+/* Pagination */
+.governance-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));
+}
+
+.governance-page-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a0a0a0);
+}
+
 /* View Toggle */
 .governance-view-toggle {
   display: flex;
@@ -261,6 +332,11 @@
   border-radius: 6px;
   font-size: 0.8rem;
   transition: all 0.2s;
+}
+
+.governance-toggle-btn:focus-visible {
+  outline: 2px solid var(--accent-color, #8b5cf6);
+  outline-offset: -2px;
 }
 
 .governance-toggle-btn.active {
@@ -366,8 +442,16 @@
 @media (max-width: 640px) {
   .governance-form-row {
     flex-direction: column;
+    align-items: stretch;
   }
   .governance-select {
     width: 100%;
+  }
+  .governance-pagination {
+    gap: 0.5rem;
+  }
+  .governance-error {
+    flex-direction: column;
+    text-align: center;
   }
 }

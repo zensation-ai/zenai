@@ -169,6 +169,26 @@
    Print
    ============================================ */
 
+/* Proactive Bell + TopBar wrapper */
+.topbar-with-proactive {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.topbar-with-proactive .topbar {
+  flex: 1;
+}
+
+.topbar-proactive-wrapper {
+  display: flex;
+  align-items: center;
+  padding-right: 0.75rem;
+  flex-shrink: 0;
+  background: var(--bg-secondary, transparent);
+  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));
+}
+
 @media print {
   .layout-main {
     margin-left: 0;

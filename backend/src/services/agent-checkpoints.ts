@@ -174,25 +174,31 @@ export async function updateExecutionStatus(
   status: ExecutionStatus,
   extra?: { pauseReason?: string; }
 ): Promise<void> {
+  const validStatuses: ExecutionStatus[] = ['running', 'completed', 'failed', 'paused', 'awaiting_approval', 'cancelled'];
+  if (!validStatuses.includes(status)) {
+    throw new Error(`Invalid execution status: ${status}`);
+  }
+
   try {
-    const updates: string[] = [`status = '${status}'`];
+    const params: (string | number | boolean | null)[] = [executionId, status];
+    const updates: string[] = ['status = $2'];
+    let paramIdx = 3;
 
     if (status === 'paused' || status === 'awaiting_approval') {
-      updates.push(`paused_at = NOW()`);
+      updates.push('paused_at = NOW()');
       if (extra?.pauseReason) {
-        updates.push(`pause_reason = $2`);
+        updates.push(`pause_reason = $${paramIdx++}`);
+        params.push(extra.pauseReason);
       }
     }
 
     if (status === 'running') {
-      updates.push(`resume_count = COALESCE(resume_count, 0) + 1`);
-      updates.push(`paused_at = NULL`);
-      updates.push(`pause_reason = NULL`);
+      updates.push('resume_count = COALESCE(resume_count, 0) + 1');
+      updates.push('paused_at = NULL');
+      updates.push('pause_reason = NULL');
     }
 
     const sql = `UPDATE agent_executions SET ${updates.join(', ')} WHERE id = $1`;
-    const params: (string | number | boolean | null)[] = [executionId];
-    if (extra?.pauseReason) params.push(extra.pauseReason);
 
     await queryContext(context, sql, params);
   } catch (error) {
