@@ -385,7 +385,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
         <button
           type="button"
           role="tab"
-          aria-current={activeIdeasTab === 'ideas' ? 'true' : undefined}
+          aria-selected={activeIdeasTab === 'ideas'}
           className={`ideas-tab ${activeIdeasTab === 'ideas' ? 'active' : ''}`}
           onClick={() => handleTabChange('ideas')}
         >
@@ -394,7 +394,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
         <button
           type="button"
           role="tab"
-          aria-current={activeIdeasTab === 'incubator' ? 'true' : undefined}
+          aria-selected={activeIdeasTab === 'incubator'}
           className={`ideas-tab ${activeIdeasTab === 'incubator' ? 'active' : ''}`}
           onClick={() => handleTabChange('incubator')}
         >
@@ -403,7 +403,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
         <button
           type="button"
           role="tab"
-          aria-current={activeIdeasTab === 'archive' ? 'true' : undefined}
+          aria-selected={activeIdeasTab === 'archive'}
           className={`ideas-tab ${activeIdeasTab === 'archive' ? 'active' : ''}`}
           onClick={() => handleTabChange('archive')}
         >
@@ -413,7 +413,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
         <button
           type="button"
           role="tab"
-          aria-current={activeIdeasTab === 'triage' ? 'true' : undefined}
+          aria-selected={activeIdeasTab === 'triage'}
           className={`ideas-tab ${activeIdeasTab === 'triage' ? 'active' : ''}`}
           onClick={() => handleTabChange('triage')}
         >

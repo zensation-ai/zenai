@@ -45,7 +45,7 @@ export function IdeaDetailRelations({
                 onClick={() => onNavigate?.(rel.targetId)}
                 role="listitem"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && onNavigate?.(rel.targetId)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate?.(rel.targetId); } }}
                 aria-label={`${relationLabels[rel.relationType] || rel.relationType}: ${rel.target_title || rel.targetId}`}
               >
                 <span className="relation-type">{relationLabels[rel.relationType]}</span>

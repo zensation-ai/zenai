@@ -140,9 +140,9 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
 
   const getSentimentEmoji = (sentiment?: string) => {
     switch (sentiment) {
-      case 'positive': return '\uD83D\uDE0A';
-      case 'negative': return '\uD83D\uDE1F';
-      case 'neutral': return '\uD83D\uDE10';
+      case 'positive': return '😊';
+      case 'negative': return '😟';
+      case 'neutral': return '😐';
       default: return '';
     }
   };
@@ -154,7 +154,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
   return (
     <div className="meeting-protocol">
       <h3 className="meeting-protocol__title">
-        {'\uD83C\uDF99\uFE0F'} Protokoll: {meetingTitle}
+        {'🎙️'} Protokoll: {meetingTitle}
       </h3>
 
       {/* Recording controls */}
@@ -164,7 +164,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
             className="meeting-protocol__record-btn"
             onClick={startRecording}
           >
-            {'\uD83C\uDF99\uFE0F'} Aufnahme starten
+            {'🎙️'} Aufnahme starten
           </button>
         ) : (
           <button

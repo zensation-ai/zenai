@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import type { FinancialGoal, GoalPriority } from './types';
 import { GOAL_PRIORITY_LABELS } from './types';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 
 interface GoalsTabProps {
   goals: FinancialGoal[];
@@ -19,6 +20,7 @@ function formatCurrency(amount: number): string {
 
 export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps) {
   const [showForm, setShowForm] = useState(false);
+  useEscapeKey(() => setShowForm(false), showForm);
   const [formData, setFormData] = useState({
     name: '', target_amount: '', current_amount: '0', deadline: '', category: '', priority: 'medium' as GoalPriority,
   });
@@ -79,8 +81,8 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
                   </span>
                 </div>
                 <div className="goal-actions">
-                  <button className="contact-action-btn" onClick={() => handleToggleComplete(goal)} title="Abschließen">✓</button>
-                  <button className="contact-action-btn danger" onClick={() => handleDelete(goal.id)} title="Löschen">✕</button>
+                  <button className="contact-action-btn" onClick={() => handleToggleComplete(goal)} title="Abschließen" aria-label="Ziel abschliessen">✓</button>
+                  <button className="contact-action-btn danger" onClick={() => handleDelete(goal.id)} title="Löschen" aria-label="Ziel loeschen">✕</button>
                 </div>
               </div>
               <div className="goal-progress">
@@ -119,11 +121,11 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
 
       {/* Form Modal */}
       {showForm && (
-        <div className="contact-form-overlay" onClick={() => setShowForm(false)}>
-          <div className="contact-form-modal" onClick={e => e.stopPropagation()}>
+        <div className="contact-form-overlay" onClick={() => setShowForm(false)} role="presentation">
+          <div className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Sparziel">
             <div className="contact-form-header">
               <h2>Neues Sparziel</h2>
-              <button className="contact-form-close" onClick={() => setShowForm(false)}>✕</button>
+              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
             </div>
             <div className="contact-form">
               <div className="form-row">

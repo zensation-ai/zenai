@@ -544,7 +544,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   }, [artifacts]);
 
   // Render markdown-like formatting (safe, no dangerouslySetInnerHTML)
-  const renderContent = (content: string, messageId?: string) => {
+  const renderContent = useCallback((content: string, messageId?: string) => {
     // Extract artifacts if messageId provided
     let processedContent = content;
     let messageArtifacts: Artifact[] = [];
@@ -716,7 +716,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
       return <span key={i}>{renderBlockFormatting(part)}</span>;
     });
-  };
+  }, [getMessageArtifacts, setActiveArtifact]);
 
   // Navigate between artifacts in the same message (skip inline artifacts with index -1)
   const navigateArtifact = useCallback((direction: 'prev' | 'next') => {

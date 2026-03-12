@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import type { EmailAccount } from './types';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 import { getErrorMessage } from '../../utils/errors';
 import './ImapAccountSetup.css';
 
@@ -48,6 +49,7 @@ export function ImapAccountSetup({
   onSync,
   onClose,
 }: ImapAccountSetupProps) {
+  useEscapeKey(onClose);
   // Form state
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -152,8 +154,8 @@ export function ImapAccountSetup({
   };
 
   return (
-    <div className="imap-setup-overlay" onClick={onClose}>
-      <div className="imap-setup-modal" onClick={e => e.stopPropagation()}>
+    <div className="imap-setup-overlay" onClick={onClose} role="presentation">
+      <div className="imap-setup-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="E-Mail-Konto verbinden">
         <div className="imap-setup-header">
           <h2>E-Mail-Konto verbinden</h2>
           <button className="imap-setup-close" onClick={onClose}>&times;</button>

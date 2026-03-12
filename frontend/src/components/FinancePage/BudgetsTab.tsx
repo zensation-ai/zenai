@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import type { Budget, BudgetPeriod } from './types';
 import { BUDGET_PERIOD_LABELS, DEFAULT_CATEGORIES } from './types';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 
 interface BudgetsTabProps {
   budgets: Budget[];
@@ -19,6 +20,7 @@ function formatCurrency(amount: number): string {
 
 export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
   const [showForm, setShowForm] = useState(false);
+  useEscapeKey(() => setShowForm(false), showForm);
   const [formData, setFormData] = useState({
     name: '', category: '', amount_limit: '', period: 'monthly' as BudgetPeriod, alert_threshold: '80',
   });
@@ -88,11 +90,11 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
       </div>
 
       {showForm && (
-        <div className="contact-form-overlay" onClick={() => setShowForm(false)}>
-          <div className="contact-form-modal" onClick={e => e.stopPropagation()}>
+        <div className="contact-form-overlay" onClick={() => setShowForm(false)} role="presentation">
+          <div className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Budget">
             <div className="contact-form-header">
               <h2>Neues Budget</h2>
-              <button className="contact-form-close" onClick={() => setShowForm(false)}>✕</button>
+              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
             </div>
             <div className="contact-form">
               <div className="form-row">

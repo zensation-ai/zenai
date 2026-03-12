@@ -7,6 +7,7 @@
 
 import { useState, useCallback } from 'react';
 import type { CalendarAccount, CalendarAccountCalendar } from './useCalendarAccounts';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 import './CalendarAccountsPanel.css';
 
 interface Props {
@@ -123,10 +124,11 @@ export function CalendarAccountsPanel({
   }, [onUpdateAccount]);
 
   const providerInfo = PROVIDER_INFO[formData.provider] || PROVIDER_INFO.caldav;
+  useEscapeKey(onClose);
 
   return (
-    <div className="cal-accounts-overlay" onClick={onClose}>
-      <div className="cal-accounts" onClick={e => e.stopPropagation()}>
+    <div className="cal-accounts-overlay" onClick={onClose} role="presentation">
+      <div className="cal-accounts" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Kalender-Verbindungen">
         {/* Header */}
         <div className="cal-accounts__header">
           <div className="cal-accounts__header-left">

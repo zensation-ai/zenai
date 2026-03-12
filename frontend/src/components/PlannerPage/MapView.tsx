@@ -125,11 +125,11 @@ export function MapView({ context }: MapViewProps) {
   }, []);
 
   const eventTypeIcons: Record<string, string> = useMemo(() => ({
-    appointment: '\uD83D\uDCC5',
-    reminder: '\u23F0',
-    deadline: '\u26A0\uFE0F',
-    focus_time: '\uD83C\uDFAF',
-    travel_block: '\uD83D\uDE97',
+    appointment: '📅',
+    reminder: '⏰',
+    deadline: '⚠️',
+    focus_time: '🎯',
+    travel_block: '🚗',
   }), []);
 
   if (loading) {
@@ -144,7 +144,7 @@ export function MapView({ context }: MapViewProps) {
   if (events.length === 0) {
     return (
       <div className="mapview-empty">
-        <span className="mapview-empty__icon">{'\uD83D\uDDFA\uFE0F'}</span>
+        <span className="mapview-empty__icon">{'🗺️'}</span>
         <h3>Keine Termine mit Ort</h3>
         <p>Erstelle Kalendereintraege mit einem Ort, um sie auf der Karte zu sehen.</p>
       </div>
@@ -155,7 +155,7 @@ export function MapView({ context }: MapViewProps) {
     <div className="mapview">
       <div className="mapview__header">
         <h3>
-          {'\uD83D\uDDFA\uFE0F'} Karte ({geocodedEvents.length} Orte)
+          {'🗺️'} Karte ({geocodedEvents.length} Orte)
         </h3>
         {!mapsAvailable && (
           <span className="mapview__badge mapview__badge--warning">
@@ -169,7 +169,7 @@ export function MapView({ context }: MapViewProps) {
         <div className="mapview__map-container">
           {mapsAvailable && geocodedEvents.length > 0 ? (
             <div className="mapview__map-placeholder">
-              <span>{'\uD83D\uDDFA\uFE0F'}</span>
+              <span>{'🗺️'}</span>
               <p>Google Maps Kartenansicht</p>
               <p className="mapview__map-hint">
                 Installiere <code>@vis.gl/react-google-maps</code> und setze <code>VITE_GOOGLE_MAPS_API_KEY</code> fuer die interaktive Karte.
@@ -186,7 +186,7 @@ export function MapView({ context }: MapViewProps) {
             </div>
           ) : (
             <div className="mapview__map-placeholder">
-              <span>{'\uD83D\uDDFA\uFE0F'}</span>
+              <span>{'🗺️'}</span>
               <p>Setze <code>GOOGLE_MAPS_API_KEY</code> im Backend fuer Kartenfunktionen</p>
             </div>
           )}
@@ -208,7 +208,7 @@ export function MapView({ context }: MapViewProps) {
                 >
                   <div className="mapview__event-header">
                     <span className="mapview__event-icon">
-                      {eventTypeIcons[event.event_type] || '\uD83D\uDCC5'}
+                      {eventTypeIcons[event.event_type] || '📅'}
                     </span>
                     <span className="mapview__event-title">{event.title}</span>
                   </div>
@@ -216,7 +216,7 @@ export function MapView({ context }: MapViewProps) {
                     <span>{formatDate(event.start_time)} {formatTime(event.start_time)}</span>
                   </div>
                   <div className="mapview__event-location">
-                    {'\uD83D\uDCCD'} {event.location}
+                    {'📍'} {event.location}
                     {geocoded && (
                       <span className="mapview__event-coords">
                         ({geocoded.lat.toFixed(2)}, {geocoded.lng.toFixed(2)})
@@ -243,9 +243,9 @@ export function MapView({ context }: MapViewProps) {
               &times;
             </button>
           </div>
-          <p>{'\uD83D\uDCCD'} {selectedEvent.location}</p>
-          <p>{'\uD83D\uDD52'} {formatDate(selectedEvent.start_time)} {formatTime(selectedEvent.start_time)}</p>
-          <p>{'\uD83C\uDF10'} {selectedEvent.lat.toFixed(6)}, {selectedEvent.lng.toFixed(6)}</p>
+          <p>{'📍'} {selectedEvent.location}</p>
+          <p>{'🕒'} {formatDate(selectedEvent.start_time)} {formatTime(selectedEvent.start_time)}</p>
+          <p>{'🌐'} {selectedEvent.lat.toFixed(6)}, {selectedEvent.lng.toFixed(6)}</p>
         </div>
       )}
     </div>

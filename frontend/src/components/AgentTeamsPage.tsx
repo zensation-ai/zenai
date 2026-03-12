@@ -451,6 +451,9 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
               setShowAnalytics(!showAnalytics);
               if (!analytics) loadAnalytics();
             }}
+            aria-label="Analytics anzeigen"
+            aria-expanded={showAnalytics}
+            title="Analytics (letzte 30 Tage)"
           >
             📊
           </button>
@@ -649,7 +652,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
             .map((e, i) => {
               const config = ROLE_CONFIG[e.agentRole || ''] || { icon: '🤖', label: e.agentRole || 'Agent', color: '#888' };
               return (
-                <div key={i} className={`stream-agent-done ${e.type === 'agent_complete' ? 'success' : 'failed'}`}>
+                <div key={`${e.agentRole || 'agent'}-${i}`} className={`stream-agent-done ${e.type === 'agent_complete' ? 'success' : 'failed'}`}>
                   <span>{config.icon} {config.label}</span>
                   <span className={e.type === 'agent_complete' ? 'done-success' : 'done-failed'}>
                     {e.type === 'agent_complete' ? '✓' : '✗'}

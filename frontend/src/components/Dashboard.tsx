@@ -119,6 +119,7 @@ const Sparkline = memo<{ data: TrendPoint[] }>(({ data }) => {
     days.push(point?.count || 0);
   }
 
+  const gradientId = `sparkFill-${days.join('-')}`;
   const max = Math.max(...days, 1);
   const width = 200;
   const height = 40;
@@ -145,12 +146,12 @@ const Sparkline = memo<{ data: TrendPoint[] }>(({ data }) => {
     <div className="bento-sparkline" aria-label={`${days.reduce((s, v) => s + v, 0)} Gedanken in den letzten 7 Tagen`}>
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
         <defs>
-          <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--primary, #ff6b35)" stopOpacity="0.3" />
             <stop offset="100%" stopColor="var(--primary, #ff6b35)" stopOpacity="0.02" />
           </linearGradient>
         </defs>
-        <path d={areaPath} fill="url(#sparkFill)" />
+        <path d={areaPath} fill={`url(#${gradientId})`} />
         <polyline
           points={points.join(' ')}
           fill="none"
@@ -230,7 +231,6 @@ const DashboardComponent: React.FC<DashboardProps> = ({
       if (!res.data && !hasFetched.current) {
         hasFetched.current = true;
         retryTimer.current = setTimeout(() => fetchData(signal), 1500);
-        return;
       }
     } catch (err) {
       if (axios.isCancel(err)) return;
@@ -508,7 +508,9 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                     role: 'button',
                     tabIndex: 0,
                     onClick: () => onNavigate('ideas'),
-                    onKeyDown: (e: React.KeyboardEvent) => e.key === 'Enter' && onNavigate('ideas'),
+                    onKeyDown: (e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('ideas'); }
+                    },
                   } : {})}
                 >
                   <span className="bento-activity-icon">{ACTIVITY_ICONS[item.activityType] || '🔹'}</span>

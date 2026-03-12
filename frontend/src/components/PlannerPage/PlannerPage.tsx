@@ -39,11 +39,11 @@ interface PlannerPageProps {
 }
 
 const TABS: TabDef<PlannerTab>[] = [
-  { id: 'calendar', label: 'Kalender', icon: '\uD83D\uDCC5' },
-  { id: 'tasks', label: 'Aufgaben', icon: '\u2705' },
-  { id: 'projects', label: 'Projekte', icon: '\uD83D\uDCCA' },
-  { id: 'meetings', label: 'Meetings', icon: '\uD83C\uDF99\uFE0F' },
-  { id: 'map', label: 'Karte', icon: '\uD83D\uDDFA\uFE0F' },
+  { id: 'calendar', label: 'Kalender', icon: '📅' },
+  { id: 'tasks', label: 'Aufgaben', icon: '✅' },
+  { id: 'projects', label: 'Projekte', icon: '📊' },
+  { id: 'meetings', label: 'Meetings', icon: '🎙️' },
+  { id: 'map', label: 'Karte', icon: '🗺️' },
 ];
 
 export function PlannerPage({ context, initialTab = 'calendar', onBack }: PlannerPageProps) {
@@ -110,7 +110,7 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
     <>
       <HubPage
         title="Planer"
-        icon="\uD83D\uDCC5"
+        icon="📅"
         subtitle="Kalender, Aufgaben, Projekte & Meetings"
         tabs={tabsWithBadge}
         activeTab={activeTab}
@@ -155,7 +155,7 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
       </HubPage>
 
       {showTaskForm && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="modal-loading-overlay" role="status" aria-label="Formular wird geladen"><span className="loading-spinner" /></div>}>
           <TaskForm
             task={editingTask}
             projects={projects}

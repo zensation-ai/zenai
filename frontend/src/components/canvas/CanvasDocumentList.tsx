@@ -7,6 +7,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 
 interface CanvasDocumentSummary {
   id: string;
@@ -35,6 +36,7 @@ export function CanvasDocumentList({
 }: CanvasDocumentListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  useEscapeKey(onClose);
 
   const filteredDocs = useMemo(() => {
     if (!searchQuery.trim()) return documents;
@@ -67,8 +69,8 @@ export function CanvasDocumentList({
   };
 
   return (
-    <div className="canvas-doc-list-overlay" onClick={onClose}>
-      <div className="canvas-doc-list" onClick={(e) => e.stopPropagation()}>
+    <div className="canvas-doc-list-overlay" onClick={onClose} role="presentation">
+      <div className="canvas-doc-list" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Dokumente">
         <div className="canvas-doc-list-header">
           <h3>Dokumente</h3>
           <button className="canvas-doc-list-close" onClick={onClose} aria-label="Schlie\u00dfen">

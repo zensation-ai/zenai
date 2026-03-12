@@ -7,6 +7,7 @@
 
 import { Folder } from '../../types/document';
 import { getFolderIcon } from './types';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 
 export interface FolderSidebarProps {
   folders: Folder[];
@@ -33,6 +34,7 @@ export function FolderSidebar({
   showMobileFolders,
   setShowMobileFolders,
 }: FolderSidebarProps) {
+  useEscapeKey(() => { setShowCreateFolder(false); setNewFolderName(''); }, showCreateFolder);
   const folderList = (
     <nav className="folder-list">
       {folders.map(folder => (
@@ -94,8 +96,8 @@ export function FolderSidebar({
 
       {/* Create Folder Modal */}
       {showCreateFolder && (
-        <div className="create-folder-overlay" onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }}>
-          <div className="create-folder-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="create-folder-overlay" onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }} role="presentation">
+          <div className="create-folder-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neuer Ordner">
             <h3>Neuer Ordner</h3>
             <input
               type="text"

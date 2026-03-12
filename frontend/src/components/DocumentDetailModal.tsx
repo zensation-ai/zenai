@@ -149,8 +149,8 @@ export function DocumentDetailModal({
   const hasFailed = doc.processingStatus === 'failed';
 
   return (
-    <div className="document-detail-overlay" onClick={onClose}>
-      <div className="document-detail-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="document-detail-overlay" onClick={onClose} role="presentation">
+      <div className="document-detail-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Dokument-Details">
         {/* Header */}
         <header className="detail-header">
           <div className="header-title">

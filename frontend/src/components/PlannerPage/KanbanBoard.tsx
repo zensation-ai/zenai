@@ -140,7 +140,7 @@ export function KanbanBoard({
           ))}
         </select>
 
-        <button className="kanban-add-btn" onClick={onCreateTask}>
+        <button type="button" className="kanban-add-btn" onClick={onCreateTask}>
           + Neue Aufgabe
         </button>
       </div>
@@ -210,7 +210,7 @@ export function KanbanBoard({
 
                           {task.calendar_event_id && (
                             <span className="kanban-card__linked" title="Mit Termin verknuepft">
-                              {'\uD83D\uDCC5'}
+                              {'📅'}
                             </span>
                           )}
                         </div>
@@ -227,6 +227,7 @@ export function KanbanBoard({
               </div>
 
               <button
+                type="button"
                 className="kanban-column__add"
                 onClick={onCreateTask}
                 title={`Aufgabe in "${col.label}" erstellen`}

@@ -59,7 +59,7 @@ export function OrganizationList({
               onClick={() => onSelect(org)}
               role="button"
               tabIndex={0}
-              onKeyDown={e => e.key === 'Enter' && onSelect(org)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(org); } }}
             >
               <div className="contact-avatar org-avatar">
                 <span className="contact-initials">🏢</span>

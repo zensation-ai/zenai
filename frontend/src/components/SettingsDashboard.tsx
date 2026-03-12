@@ -52,11 +52,12 @@ const TABS: readonly TabDef<SettingsTab>[] = [
 
 function ToggleSwitch({ checked, onChange, label }: { checked: boolean; onChange: (val: boolean) => void; label: string }) {
   return (
-    <label className="settings-toggle" aria-label={label}>
+    <label className="settings-toggle">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        aria-label={label}
       />
       <span className="settings-toggle-slider" />
     </label>

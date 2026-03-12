@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import type { Transaction, FinancialAccount, TransactionType } from './types';
 import { TRANSACTION_TYPE_LABELS, DEFAULT_CATEGORIES } from './types';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 
 interface TransactionsTabProps {
   transactions: Transaction[];
@@ -27,6 +28,7 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<TransactionType | ''>('');
   const [showForm, setShowForm] = useState(false);
+  useEscapeKey(() => setShowForm(false), showForm);
   const [formData, setFormData] = useState({
     amount: '',
     transaction_type: 'expense' as TransactionType,
@@ -136,11 +138,11 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
 
       {/* Transaction Form Modal */}
       {showForm && (
-        <div className="contact-form-overlay" onClick={() => setShowForm(false)}>
-          <div className="contact-form-modal" onClick={e => e.stopPropagation()}>
+        <div className="contact-form-overlay" onClick={() => setShowForm(false)} role="presentation">
+          <div className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neue Transaktion">
             <div className="contact-form-header">
               <h2>Neue Transaktion</h2>
-              <button className="contact-form-close" onClick={() => setShowForm(false)}>✕</button>
+              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
             </div>
             <div className="contact-form">
               <div className="form-row two-col">

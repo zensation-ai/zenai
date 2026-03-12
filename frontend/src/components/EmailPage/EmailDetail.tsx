@@ -171,11 +171,11 @@ export function EmailDetail({
             ↪ <span className="ed-act-label">Weiterleiten</span>
           </button>
           <div className="ed-act-divider" />
-          <button className="ed-act" onClick={onStar} title={email.is_starred ? 'Stern entfernen (s)' : 'Stern setzen (s)'}>
+          <button className="ed-act" onClick={onStar} title={email.is_starred ? 'Stern entfernen (s)' : 'Stern setzen (s)'} aria-label={email.is_starred ? 'Stern entfernen' : 'Stern setzen'} aria-pressed={email.is_starred}>
             {email.is_starred ? '★' : '☆'}
           </button>
-          <button className="ed-act" onClick={onArchive} title="Archivieren (e)">📦</button>
-          <button className="ed-act ed-act--danger" onClick={onDelete} title="Loeschen (#)">🗑</button>
+          <button className="ed-act" onClick={onArchive} title="Archivieren (e)" aria-label="Archivieren">📦</button>
+          <button className="ed-act ed-act--danger" onClick={onDelete} title="Loeschen (#)" aria-label="Loeschen">🗑</button>
         </div>
       </div>
 
@@ -289,7 +289,7 @@ export function EmailDetail({
         {(email.attachments?.length ?? 0) > 0 && (
           <div className="ed-attachments">
             <div className="ed-section-label">📎 Anhaenge ({email.attachments?.length})</div>
-            <div className="ed-attachment-grid">
+            <div className="ed-attachment-grid" role="list">
               {(email.attachments ?? []).map((att, i) => (
                 <div key={i} className="ed-attachment" role="listitem">
                   <span className="ed-attachment-icon" aria-hidden="true">

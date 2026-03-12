@@ -122,7 +122,7 @@ function PendingActions({ context }: { context: AIContext }) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const rejectionInputRef = useRef<HTMLInputElement>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  // SSE controller ref removed - now using fetch-based streaming
 
   const loadPending = useCallback(async () => {
     try {
@@ -141,31 +141,52 @@ function PendingActions({ context }: { context: AIContext }) {
 
   useEffect(() => { loadPending(); }, [loadPending]);
 
-  // SSE for real-time updates
+  // SSE for real-time updates (fetch-based to keep API key in headers)
   useEffect(() => {
     const url = `${getApiBaseUrl()}/api/${context}/governance/stream`;
     const headers = getApiFetchHeaders('text/event-stream');
-    const apiKey = headers['x-api-key'] || '';
-    const es = new EventSource(`${url}?apiKey=${encodeURIComponent(apiKey)}`);
+    const controller = new AbortController();
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
 
-    es.addEventListener('approval_requested', () => {
-      loadPending();
-    });
+    async function connectSSE() {
+      try {
+        const res = await fetch(url, {
+          headers: { ...headers, Accept: 'text/event-stream' },
+          signal: controller.signal,
+        });
+        if (!res.ok || !res.body) return;
 
-    es.addEventListener('action_approved', () => {
-      loadPending();
-    });
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
 
-    es.addEventListener('action_rejected', () => {
-      loadPending();
-    });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          for (const line of lines) {
+            if (line.startsWith('event:')) {
+              const eventType = line.slice(6).trim();
+              if (['approval_requested', 'action_approved', 'action_rejected'].includes(eventType)) {
+                loadPending();
+              }
+            }
+          }
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        retryCount++;
+        if (retryCount < MAX_RETRIES) {
+          setTimeout(connectSSE, 5000 * retryCount);
+        }
+      }
+    }
 
-    es.onerror = () => {
-      // SSE reconnects automatically; no action needed
-    };
-
-    eventSourceRef.current = es;
-    return () => { es.close(); };
+    connectSSE();
+    return () => { controller.abort(); };
   }, [context, loadPending]);
 
   // Focus rejection input when it appears

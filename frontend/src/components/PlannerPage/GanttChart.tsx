@@ -182,6 +182,7 @@ export function GanttChart({
       <div className="gantt-toolbar">
         <div className="gantt-toolbar__left">
           <button
+            type="button"
             className="gantt-btn"
             onClick={() => setShowProjectForm(!showProjectForm)}
           >
@@ -198,8 +199,8 @@ export function GanttChart({
                 onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
                 autoFocus
               />
-              <button onClick={handleCreateProject}>Erstellen</button>
-              <button onClick={() => setShowProjectForm(false)}>Abbrechen</button>
+              <button type="button" onClick={handleCreateProject}>Erstellen</button>
+              <button type="button" onClick={() => setShowProjectForm(false)}>Abbrechen</button>
             </div>
           )}
         </div>
@@ -208,6 +209,7 @@ export function GanttChart({
           <div className="gantt-zoom" role="group" aria-label="Zoom">
             {(['day', 'week', 'month'] as ZoomLevel[]).map(z => (
               <button
+                type="button"
                 key={z}
                 className={`gantt-zoom__btn ${zoom === z ? 'gantt-zoom__btn--active' : ''}`}
                 onClick={() => setZoom(z)}

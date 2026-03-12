@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { logError } from '../../utils/errors';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 import { useNavigate } from 'react-router-dom';
 import { DocumentUpload } from '../DocumentUpload';
 import { DocumentCard } from '../DocumentCard';
@@ -41,6 +42,7 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
   // UI State
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showUpload, setShowUpload] = useState(false);
+  useEscapeKey(() => setShowUpload(false), showUpload);
   const [showMobileFolders, setShowMobileFolders] = useState(false);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -549,8 +551,8 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="upload-modal-overlay" onClick={() => setShowUpload(false)}>
-          <div className="upload-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="upload-modal-overlay" onClick={() => setShowUpload(false)} role="presentation">
+          <div className="upload-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Dokumente hochladen">
             <div className="modal-header">
               <h2>Dokumente hochladen</h2>
               <button

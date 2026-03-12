@@ -115,7 +115,7 @@ export function MeetingsTab({ context }: MeetingsTabProps) {
 
       {meetings.length === 0 ? (
         <div className="meetings-tab__empty">
-          <span className="meetings-tab__empty-icon">{'\uD83C\uDF99\uFE0F'}</span>
+          <span className="meetings-tab__empty-icon">{'🎙️'}</span>
           <p>Noch keine Meetings</p>
           <p className="meetings-tab__hint">
             Starte ein Meeting direkt aus einem Kalender-Termin heraus.

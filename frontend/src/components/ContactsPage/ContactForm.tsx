@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import type { Contact, Organization, RelationshipType } from './types';
 import { RELATIONSHIP_LABELS } from './types';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 
 interface ContactFormProps {
   contact?: Contact | null;
@@ -16,6 +17,7 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ contact, organizations, onSubmit, onCancel }: ContactFormProps) {
+  useEscapeKey(onCancel);
   const [displayName, setDisplayName] = useState(contact?.display_name || '');
   const [firstName, setFirstName] = useState(contact?.first_name || '');
   const [lastName, setLastName] = useState(contact?.last_name || '');
@@ -46,8 +48,8 @@ export function ContactForm({ contact, organizations, onSubmit, onCancel }: Cont
   };
 
   return (
-    <div className="contact-form-overlay" onClick={onCancel}>
-      <div className="contact-form-modal" onClick={e => e.stopPropagation()}>
+    <div className="contact-form-overlay" onClick={onCancel} role="presentation">
+      <div className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={contact ? 'Kontakt bearbeiten' : 'Neuer Kontakt'}>
         <div className="contact-form-header">
           <h2>{contact ? 'Kontakt bearbeiten' : 'Neuer Kontakt'}</h2>
           <button type="button" className="contact-form-close" onClick={onCancel}>✕</button>

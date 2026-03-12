@@ -112,8 +112,8 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
   };
 
   return (
-    <div className="meeting-detail-overlay neuro-focus-mode active" onClick={onClose}>
-      <div className="meeting-detail-modal liquid-glass neuro-human-fade-in" onClick={(e) => e.stopPropagation()}>
+    <div className="meeting-detail-overlay neuro-focus-mode active" onClick={onClose} role="presentation">
+      <div className="meeting-detail-modal liquid-glass neuro-human-fade-in" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Meeting-Details">
         <button type="button" className="close-button neuro-press-effect" onClick={onClose} aria-label="Schließen">×</button>
 
         <div className="detail-header">

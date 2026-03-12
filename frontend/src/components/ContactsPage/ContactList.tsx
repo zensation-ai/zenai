@@ -112,7 +112,7 @@ export function ContactList({
               onClick={() => onSelect(contact)}
               role="button"
               tabIndex={0}
-              onKeyDown={e => e.key === 'Enter' && onSelect(contact)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(contact); } }}
             >
               <div className="contact-avatar">
                 {contact.avatar_url ? (

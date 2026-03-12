@@ -116,6 +116,7 @@ export function ProactivePanel({ context, isOpen, onClose }: ProactivePanelProps
         ref={panelRef}
         className="proactive-panel"
         role="dialog"
+        aria-modal="true"
         aria-label="Proaktive Benachrichtigungen"
       >
         <div className="proactive-header">
@@ -170,14 +171,33 @@ export function ProactivePanel({ context, isOpen, onClose }: ProactivePanelProps
   );
 }
 
-// Bell icon button for TopBar/AppLayout
+// Bell icon button for TopBar/AppLayout — self-fetching count
 export function ProactiveBellButton({
   onClick,
-  count = 0,
+  context,
 }: {
   onClick: () => void;
-  count?: number;
+  context: AIContext;
 }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${getApiBaseUrl()}/api/${context}/proactive/events?limit=50`, {
+      headers: getApiFetchHeaders(),
+      signal: controller.signal,
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.data) {
+          const unprocessed = data.data.filter((e: ProactiveEvent) => !e.decision).length;
+          setCount(unprocessed);
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [context]);
+
   return (
     <button
       type="button"

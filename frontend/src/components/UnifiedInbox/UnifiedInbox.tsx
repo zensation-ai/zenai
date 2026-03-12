@@ -208,7 +208,7 @@ export function UnifiedInbox({ context, onNavigate }: UnifiedInboxProps) {
               role={item.is_actionable ? 'button' : undefined}
               tabIndex={item.is_actionable ? 0 : undefined}
               onKeyDown={e => {
-                if (e.key === 'Enter' && item.is_actionable) handleAction(item);
+                if ((e.key === 'Enter' || e.key === ' ') && item.is_actionable) { e.preventDefault(); handleAction(item); }
               }}
             >
               <div className="inbox-item-icon" style={{ color: typeInfo.color }}>

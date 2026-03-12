@@ -190,7 +190,7 @@ export function AppLayout({
             onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
           />
           <div className="topbar-proactive-wrapper">
-            <ProactiveBellButton onClick={() => setProactivePanelOpen(prev => !prev)} />
+            <ProactiveBellButton context={context} onClick={() => setProactivePanelOpen(prev => !prev)} />
           </div>
         </div>
 

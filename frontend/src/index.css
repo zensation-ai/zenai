@@ -80,6 +80,19 @@ textarea::placeholder {
   --accent: #a855f7;
   --accent-glow: rgba(168, 85, 247, 0.25);
 
+  /* Aliases consumed by component CSS files */
+  --bg-primary: var(--background);
+  --accent-color: var(--accent);
+  --accent-primary: var(--primary);
+  --accent-hover: var(--primary-dark);
+  --primary-hover: var(--primary-dark);
+  --success-light: rgba(16, 185, 129, 0.12);
+  --danger-light: rgba(239, 68, 68, 0.12);
+  --accent-color-light: rgba(168, 85, 247, 0.12);
+  --ambient-bg: var(--background-gradient);
+  --text-light: var(--text-secondary);
+  --text-muted-dark: var(--text-muted);
+
   /* Richer Background - Less white, more warmth and petrol tones */
   --background: #dce5eb;
   --background-gradient: linear-gradient(
@@ -304,6 +317,10 @@ textarea::placeholder {
     --primary-light: #ff9a70;
     --primary-lighter: #ffbb99;
     --primary-glow: rgba(255, 122, 74, 0.4);
+
+    /* Dark mode aliases */
+    --success-light: rgba(16, 185, 129, 0.18);
+    --danger-light: rgba(239, 68, 68, 0.18);
 
     /* Background - Midnight Dark Petrol Theme */
     --background: #0a1a24;

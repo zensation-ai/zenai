@@ -8,6 +8,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useContactsData } from './useContactsData';
 import { ContactList } from './ContactList';
 import { OrganizationList } from './OrganizationList';
+import { useEscapeKey } from '../../hooks/useClickOutside';
 import { ContactForm } from './ContactForm';
 import { HubPage, type TabDef } from '../HubPage';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
@@ -40,6 +41,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [showOrgForm, setShowOrgForm] = useState(false);
+  useEscapeKey(() => setShowOrgForm(false), showOrgForm);
   const [orgName, setOrgName] = useState('');
   const [orgIndustry, setOrgIndustry] = useState('');
   const {
@@ -193,8 +195,8 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
       )}
 
       {showOrgForm && (
-        <div className="modal-overlay" onClick={() => setShowOrgForm(false)}>
-          <div className="modal-content org-form-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setShowOrgForm(false)} role="presentation">
+          <div className="modal-content org-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neue Organisation">
             <h3>Neue Organisation</h3>
             <label>
               Name *
