@@ -138,6 +138,44 @@ export async function getUnifiedInbox(
   };
 }
 
+/**
+ * Lightweight counts-only query for badge display.
+ * Runs COUNT(*) queries instead of fetching full records.
+ */
+export async function getUnifiedInboxCounts(
+  context: AIContext
+): Promise<{ counts: Record<InboxItemType, number>; total: number }> {
+  const counts = {} as Record<InboxItemType, number>;
+
+  const queries = [
+    { type: 'email' as InboxItemType, sql: `SELECT COUNT(*) as cnt FROM emails WHERE status = 'unread' AND direction = 'inbound'` },
+    { type: 'task_due' as InboxItemType, sql: `SELECT COUNT(*) as cnt FROM tasks WHERE status NOT IN ('done', 'cancelled') AND due_date IS NOT NULL AND due_date <= NOW() + INTERVAL '1 day'` },
+    { type: 'meeting_soon' as InboxItemType, sql: `SELECT COUNT(*) as cnt FROM calendar_events WHERE start_time BETWEEN NOW() AND NOW() + INTERVAL '2 hours'` },
+    { type: 'follow_up' as InboxItemType, sql: `SELECT COUNT(*) as cnt FROM contacts WHERE last_interaction_at IS NOT NULL AND last_interaction_at < NOW() - INTERVAL '14 days'` },
+    { type: 'budget_alert' as InboxItemType, sql: `SELECT COUNT(*) as cnt FROM budgets WHERE is_active = true AND current_spent >= amount_limit * alert_threshold` },
+    { type: 'briefing' as InboxItemType, sql: `SELECT COUNT(*) as cnt FROM proactive_briefings WHERE read_at IS NULL AND generated_at > NOW() - INTERVAL '24 hours'` },
+  ];
+
+  const results = await Promise.allSettled(
+    queries.map(async ({ type, sql }) => {
+      try {
+        const result = await queryContext(context, sql);
+        counts[type] = parseInt(result.rows[0]?.cnt || '0', 10);
+      } catch {
+        counts[type] = 0;
+      }
+    })
+  );
+
+  // Ensure all types have a count
+  for (const { type } of queries) {
+    if (counts[type] === undefined) counts[type] = 0;
+  }
+
+  const total = Object.values(counts).reduce((sum, c) => sum + c, 0);
+  return { counts, total };
+}
+
 // ===========================================
 // Data Fetchers
 // ===========================================

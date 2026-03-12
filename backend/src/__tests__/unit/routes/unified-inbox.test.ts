@@ -17,9 +17,11 @@ jest.mock('../../../middleware/auth', () => ({
 
 // Mock unified-inbox service
 const mockGetUnifiedInbox = jest.fn();
+const mockGetUnifiedInboxCounts = jest.fn();
 
 jest.mock('../../../services/unified-inbox', () => ({
   getUnifiedInbox: (...args: unknown[]) => mockGetUnifiedInbox(...args),
+  getUnifiedInboxCounts: (...args: unknown[]) => mockGetUnifiedInboxCounts(...args),
 }));
 
 // Mock response utils
@@ -54,6 +56,11 @@ describe('Unified Inbox Routes', () => {
         { type: 'task_due', title: 'Fix bug', timestamp: '2026-03-12' },
       ],
       counts: { email: 1, task_due: 1 },
+      total: 2,
+    });
+
+    mockGetUnifiedInboxCounts.mockResolvedValue({
+      counts: { email: 1, task_due: 1, meeting_soon: 0, follow_up: 0, budget_alert: 0, briefing: 0 },
       total: 2,
     });
   });

@@ -20,6 +20,11 @@ jest.mock('../../../utils/logger', () => ({
   },
 }));
 
+// Mock Redis (returns null = memory fallback)
+jest.mock('../../../utils/cache', () => ({
+  getRedisClient: jest.fn(() => null),
+}));
+
 describe('CSRF Protection', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
@@ -60,32 +65,32 @@ describe('CSRF Protection', () => {
   });
 
   describe('csrfProtection middleware', () => {
-    it('should allow GET requests without CSRF token', () => {
+    it('should allow GET requests without CSRF token', async () => {
       mockRequest.method = 'GET';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
       expect(mockResponse.status).not.toHaveBeenCalled();
     });
 
-    it('should allow HEAD requests without CSRF token', () => {
+    it('should allow HEAD requests without CSRF token', async () => {
       mockRequest.method = 'HEAD';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should allow OPTIONS requests without CSRF token', () => {
+    it('should allow OPTIONS requests without CSRF token', async () => {
       mockRequest.method = 'OPTIONS';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should skip CSRF for API key authenticated requests', () => {
+    it('should skip CSRF for API key authenticated requests', async () => {
       mockRequest.method = 'POST';
       mockRequest.apiKey = {
         id: 'test-key-id',
@@ -94,26 +99,26 @@ describe('CSRF Protection', () => {
         rateLimit: 1000,
       };
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
       expect(mockResponse.status).not.toHaveBeenCalled();
     });
 
-    it('should skip CSRF for webhook endpoints', () => {
+    it('should skip CSRF for webhook endpoints', async () => {
       (mockRequest as any).method = 'POST';
       (mockRequest as any).path = '/api/webhooks/github';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
     });
 
-    it('should reject POST requests without CSRF token', () => {
+    it('should reject POST requests without CSRF token', async () => {
       (mockRequest as any).method = 'POST';
       (mockRequest as any).path = '/api/test';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(403);
       expect(mockResponse.json).toHaveBeenCalledWith(
@@ -124,34 +129,34 @@ describe('CSRF Protection', () => {
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should reject PUT requests without CSRF token', () => {
+    it('should reject PUT requests without CSRF token', async () => {
       mockRequest.method = 'PUT';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(403);
     });
 
-    it('should reject DELETE requests without CSRF token', () => {
+    it('should reject DELETE requests without CSRF token', async () => {
       mockRequest.method = 'DELETE';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(403);
     });
 
-    it('should reject PATCH requests without CSRF token', () => {
+    it('should reject PATCH requests without CSRF token', async () => {
       mockRequest.method = 'PATCH';
 
-      csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
+      await csrfProtection(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(403);
     });
   });
 
   describe('getCsrfTokenHandler', () => {
-    it('should return a new CSRF token', () => {
-      getCsrfTokenHandler(mockRequest as Request, mockResponse as Response);
+    it('should return a new CSRF token', async () => {
+      await getCsrfTokenHandler(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.cookie).toHaveBeenCalled();
       expect(mockResponse.json).toHaveBeenCalledWith(
@@ -162,8 +167,8 @@ describe('CSRF Protection', () => {
       );
     });
 
-    it('should set CSRF cookie with secure options', () => {
-      getCsrfTokenHandler(mockRequest as Request, mockResponse as Response);
+    it('should set CSRF cookie with secure options', async () => {
+      await getCsrfTokenHandler(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         '_csrf_token',

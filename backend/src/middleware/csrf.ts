@@ -14,6 +14,7 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
+import { getRedisClient } from '../utils/cache';
 
 // CSRF token configuration
 const CSRF_TOKEN_LENGTH = 32; // 256 bits
@@ -21,21 +22,57 @@ const CSRF_COOKIE_NAME = '_csrf_token';
 const CSRF_HEADER_NAME = 'x-csrf-token';
 const CSRF_BODY_FIELD = '_csrf';
 const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CSRF_REDIS_PREFIX = 'csrf:';
+const CSRF_REDIS_TTL = Math.ceil(TOKEN_EXPIRY_MS / 1000); // seconds
 
 // Safe HTTP methods that don't require CSRF protection
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 
-// Store for token validation (in production, use Redis for distributed systems)
-// Format: { token: { createdAt: timestamp, expiresAt: timestamp } }
-const tokenStore = new Map<string, { createdAt: number; expiresAt: number }>();
+// In-memory fallback store (used when Redis is unavailable)
+const memoryTokenStore = new Map<string, { createdAt: number; expiresAt: number }>();
 
-// Cleanup function for expired tokens
+// Token store abstraction: Redis primary, in-memory fallback
+async function storeToken(token: string): Promise<void> {
+  const now = Date.now();
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await redis.set(`${CSRF_REDIS_PREFIX}${token}`, JSON.stringify({ createdAt: now }), 'EX', CSRF_REDIS_TTL);
+      return;
+    } catch {
+      // Fall through to memory store
+    }
+  }
+  memoryTokenStore.set(token, { createdAt: now, expiresAt: now + TOKEN_EXPIRY_MS });
+}
+
+async function checkToken(token: string): Promise<boolean> {
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const result = await redis.get(`${CSRF_REDIS_PREFIX}${token}`);
+      if (result) return true;
+      // Also check memory fallback (token may have been created during Redis downtime)
+    } catch {
+      // Fall through to memory check
+    }
+  }
+  const tokenData = memoryTokenStore.get(token);
+  if (!tokenData) return false;
+  if (tokenData.expiresAt < Date.now()) {
+    memoryTokenStore.delete(token);
+    return false;
+  }
+  return true;
+}
+
+// Cleanup function for expired in-memory tokens
 function cleanupExpiredTokens(): void {
   const now = Date.now();
   let cleaned = 0;
-  for (const [token, data] of tokenStore.entries()) {
+  for (const [token, data] of memoryTokenStore.entries()) {
     if (data.expiresAt < now) {
-      tokenStore.delete(token);
+      memoryTokenStore.delete(token);
       cleaned++;
     }
   }
@@ -43,7 +80,7 @@ function cleanupExpiredTokens(): void {
     logger.debug('CSRF tokens cleaned up', {
       operation: 'csrfCleanup',
       cleaned,
-      remaining: tokenStore.size
+      remaining: memoryTokenStore.size
     });
   }
 }
@@ -71,25 +108,13 @@ export function generateCsrfToken(): string {
 
 /**
  * Validate a CSRF token
- * Uses timing-safe comparison to prevent timing attacks
+ * Uses Redis-backed store with in-memory fallback
  */
-function validateToken(token: string): boolean {
+async function validateToken(token: string): Promise<boolean> {
   if (!token || token.length !== CSRF_TOKEN_LENGTH * 2) {
     return false;
   }
-
-  const tokenData = tokenStore.get(token);
-  if (!tokenData) {
-    return false;
-  }
-
-  // Check if token has expired
-  if (tokenData.expiresAt < Date.now()) {
-    tokenStore.delete(token);
-    return false;
-  }
-
-  return true;
+  return checkToken(token);
 }
 
 /**
@@ -137,16 +162,12 @@ export function setSecureCookie(
  * Generates and sets a CSRF token for the session.
  * Should be applied to routes that render forms.
  */
-export function csrfTokenGenerator(req: Request, res: Response, next: NextFunction): void {
+export async function csrfTokenGenerator(req: Request, res: Response, next: NextFunction): Promise<void> {
   // Generate new token
   const token = generateCsrfToken();
-  const now = Date.now();
 
-  // Store token
-  tokenStore.set(token, {
-    createdAt: now,
-    expiresAt: now + TOKEN_EXPIRY_MS,
-  });
+  // Store token (Redis primary, memory fallback)
+  await storeToken(token);
 
   // Set cookie with secure options
   res.cookie(CSRF_COOKIE_NAME, token, getCookieOptions());
@@ -164,14 +185,11 @@ export function csrfTokenGenerator(req: Request, res: Response, next: NextFuncti
  * Get CSRF token endpoint handler
  * Returns a fresh CSRF token for AJAX clients
  */
-export function getCsrfTokenHandler(req: Request, res: Response): void {
+export async function getCsrfTokenHandler(req: Request, res: Response): Promise<void> {
   const token = generateCsrfToken();
-  const now = Date.now();
 
-  tokenStore.set(token, {
-    createdAt: now,
-    expiresAt: now + TOKEN_EXPIRY_MS,
-  });
+  // Store token (Redis primary, memory fallback)
+  await storeToken(token);
 
   res.cookie(CSRF_COOKIE_NAME, token, getCookieOptions());
 
@@ -192,7 +210,7 @@ export function getCsrfTokenHandler(req: Request, res: Response): void {
  * 2. _csrf field in request body
  * 3. Cookie (Double Submit Cookie pattern)
  */
-export function csrfProtection(req: Request, res: Response, next: NextFunction): void | Response {
+export async function csrfProtection(req: Request, res: Response, next: NextFunction): Promise<void | Response> {
   // Skip CSRF for safe methods
   if (SAFE_METHODS.includes(req.method)) {
     return next();
@@ -250,8 +268,8 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   let isValid = false;
 
   if (providedToken) {
-    // Validate against token store
-    isValid = validateToken(providedToken);
+    // Validate against token store (Redis primary, memory fallback)
+    isValid = await validateToken(providedToken);
 
     // Also accept if token matches cookie (Double Submit Cookie)
     if (!isValid && cookieToken) {

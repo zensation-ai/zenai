@@ -39,7 +39,8 @@ function validateDocumentId(id: string): void {
 // Multer Configuration
 // ===========================================
 
-const UPLOAD_DIR = path.join(__dirname, '../../uploads/documents');
+// Use process.cwd() for consistent path resolution across dev (ts-node) and production (dist/)
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads/documents');
 
 // Ensure upload directory exists
 fs.mkdir(UPLOAD_DIR, { recursive: true }).catch((err) => logger.debug('Failed to create upload directory', { error: err instanceof Error ? err.message : String(err) }));

@@ -423,6 +423,12 @@ export async function streamToSSE(
           followUpParams as unknown as Anthropic.MessageCreateParams
         );
 
+        // Safety timeout for follow-up streams (90 seconds each)
+        const followUpTimeout = setTimeout(() => {
+          logger.warn('Follow-up stream timeout reached (90s), aborting', { iteration });
+          followUpStream.abort();
+        }, 90000);
+
         // Reset content tracking for follow-up
         isInContent = false;
         isInThinking = false;
@@ -454,6 +460,7 @@ export async function streamToSSE(
         });
 
         currentFinalMessage = await followUpStream.finalMessage();
+        clearTimeout(followUpTimeout);
 
         logger.info('Tool follow-up stream complete', {
           iteration,

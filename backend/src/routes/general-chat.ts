@@ -812,6 +812,26 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
       });
     }
 
+    // Flush any remaining SSE events in the intercept buffer
+    if (sseBuffer.length > 0) {
+      try {
+        const lines = sseBuffer.split('\n');
+        let eventType = '';
+        let dataStr = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+          else if (line.startsWith('data:')) dataStr = line.startsWith('data: ') ? line.slice(6) : line.slice(5);
+        }
+        if (eventType && dataStr) {
+          try {
+            const data = JSON.parse(dataStr);
+            if (eventType === 'content_delta' && data.content) fullResponse += data.content;
+            else if (eventType === 'thinking_delta' && data.thinking) thinkingContent += data.thinking;
+          } catch { /* skip */ }
+        }
+      } catch { /* ignore flush errors */ }
+    }
+
     // Store assistant response after stream completes
     if (fullResponse) {
       await addMessage(id, 'assistant', fullResponse);

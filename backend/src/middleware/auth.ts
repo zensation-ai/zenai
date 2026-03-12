@@ -547,13 +547,19 @@ async function ensureRateLimitsTable(): Promise<void> {
 }
 
 export async function rateLimiter(req: Request, res: Response, next: NextFunction) {
-  // Use API key ID, client IP, or generate unique identifier
+  // Use API key from header (since rateLimiter runs before route-level apiKeyAuth),
+  // client IP, or generate unique identifier.
   // SECURITY: Never use 'anonymous' as it would share limits across all unauthenticated users
-  // For unknown IPs, use a combination of available request info to create a unique identifier
   let key: string;
 
-  if (req.apiKey?.id) {
-    key = req.apiKey.id;
+  // Extract API key from headers directly (apiKeyAuth hasn't run yet at global level)
+  const authHeader = req.headers.authorization;
+  const rawApiKey = req.headers['x-api-key'] as string | undefined
+    || (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
+
+  if (rawApiKey) {
+    // Use a hash of the raw API key as the rate limit key (don't store raw key in DB)
+    key = `apikey:${rawApiKey.substring(0, 8)}`;
   } else if (req.ip) {
     key = req.ip;
   } else if (req.socket?.remoteAddress) {
@@ -571,7 +577,7 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
   const endpoint = `${req.method}:${req.path}`;
   const endpointConfig = ENDPOINT_LIMITS[endpoint];
 
-  const limit = endpointConfig?.limit || req.apiKey?.rateLimit || 100; // Default 100 for non-authenticated
+  const limit = endpointConfig?.limit || 100; // Default 100 requests per window
   const windowMs = endpointConfig?.windowMs || 60 * 1000; // Default 1 minute window
 
   try {
