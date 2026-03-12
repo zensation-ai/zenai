@@ -13,7 +13,7 @@
  * - Apple Human Interface Guidelines 2025
  */
 
-import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, createContext, useContext, type ReactNode } from 'react';
 import './NeuroFeedback.css';
 
 // ===========================================
@@ -294,6 +294,18 @@ export const NeuroFeedbackProvider = ({ children }: NeuroFeedbackProviderProps) 
     message: string;
   }>({ visible: false, message: '' });
 
+  // Timer refs for cleanup
+  const progressTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const streakTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
+      if (streakTimerRef.current) clearTimeout(streakTimerRef.current);
+    };
+  }, []);
+
   // Streak tracking (session-basiert)
   const [actionCount, setActionCount] = useState(0);
   const [lastActionTime, setLastActionTime] = useState<number>(0);
@@ -358,7 +370,7 @@ export const NeuroFeedbackProvider = ({ children }: NeuroFeedbackProviderProps) 
 
     // Auto-hide nach Abschluss
     if (step >= total) {
-      setTimeout(() => {
+      progressTimerRef.current = setTimeout(() => {
         setProgress(prev => ({ ...prev, visible: false }));
       }, 1000);
     }
@@ -368,7 +380,7 @@ export const NeuroFeedbackProvider = ({ children }: NeuroFeedbackProviderProps) 
     const streakInfo = getStreakMessage(count);
     if (streakInfo) {
       setStreak({ visible: true, count });
-      setTimeout(() => {
+      streakTimerRef.current = setTimeout(() => {
         setStreak(prev => ({ ...prev, visible: false }));
       }, 3000);
     }

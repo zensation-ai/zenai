@@ -232,13 +232,21 @@ export function EmailList({
               onTouchEnd={isTouchDevice ? handleTouchEnd : undefined}
             >
               {/* Checkbox (visible on hover or when batch mode) */}
-              <div className="el-row-check" onClick={(e) => toggleSelect(email.id, e)}>
+              <div
+                className="el-row-check"
+                onClick={(e) => toggleSelect(email.id, e)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelect(email.id, e as unknown as React.MouseEvent); } }}
+                role="checkbox"
+                tabIndex={0}
+                aria-checked={isChecked}
+                aria-label={`${sender} auswaehlen`}
+              >
                 <input
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => {}}
                   tabIndex={-1}
-                  aria-label={`${sender} auswaehlen`}
+                  aria-hidden="true"
                 />
               </div>
 

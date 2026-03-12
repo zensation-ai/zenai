@@ -97,7 +97,15 @@ export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTa
       {error && <div className="business-empty-text" style={{ color: 'var(--danger, #f87171)', marginBottom: '1rem' }}>{error}</div>}
       <div className="business-kpi-grid">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="business-kpi-card neuro-hover-lift" onClick={() => onNavigateTab(kpi.tab)}>
+          <div
+            key={kpi.label}
+            className="business-kpi-card neuro-hover-lift"
+            onClick={() => onNavigateTab(kpi.tab)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigateTab(kpi.tab); } }}
+            role="button"
+            tabIndex={0}
+            aria-label={`${kpi.label}: ${kpi.value}`}
+          >
             <div className="business-kpi-header">
               <span className="business-kpi-icon">{kpi.icon}</span>
               {kpi.growth !== 0 && (

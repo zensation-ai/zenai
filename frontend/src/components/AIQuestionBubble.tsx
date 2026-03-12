@@ -41,6 +41,7 @@ const AIQuestionBubbleComponent: React.FC<AIQuestionBubbleProps> = ({
 }) => {
   const [isLeaving, setIsLeaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const animTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const defaults = CATEGORY_DEFAULTS[category];
   const displayEmoji = emoji || defaults.emoji;
 
@@ -52,20 +53,21 @@ const AIQuestionBubbleComponent: React.FC<AIQuestionBubbleProps> = ({
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (animTimerRef.current) clearTimeout(animTimerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoHideAfter]);
 
   const handleDismiss = () => {
     setIsLeaving(true);
-    setTimeout(() => {
+    animTimerRef.current = setTimeout(() => {
       onDismiss();
     }, 250); // match exit animation duration
   };
 
   const handleAction = () => {
     setIsLeaving(true);
-    setTimeout(() => {
+    animTimerRef.current = setTimeout(() => {
       onAction();
     }, 250);
   };

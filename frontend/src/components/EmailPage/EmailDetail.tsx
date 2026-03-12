@@ -8,7 +8,7 @@
  * - Keyboard shortcuts hint
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import type { Email, ReplySuggestion } from './types';
 import {
@@ -48,6 +48,14 @@ export function EmailDetail({
   const [threadSummary, setThreadSummary] = useState<string | null>(null);
   const [loadingThreadSummary, setLoadingThreadSummary] = useState(false);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Cleanup focus timer on unmount
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+    };
+  }, []);
 
   // Load cached suggestions and reset state on email change
   useEffect(() => {
@@ -115,10 +123,10 @@ export function EmailDetail({
     }
   };
 
-  const openInlineReply = () => {
+  const openInlineReply = useCallback(() => {
     setShowInlineReply(true);
-    setTimeout(() => replyTextareaRef.current?.focus(), 100);
-  };
+    focusTimerRef.current = setTimeout(() => replyTextareaRef.current?.focus(), 100);
+  }, []);
 
   const hasThread = thread.length > 1;
   const otherThreadEmails = thread.filter(t => t.id !== email.id);

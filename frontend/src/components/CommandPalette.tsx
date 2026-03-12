@@ -223,7 +223,8 @@ export const CommandPalette = memo(function CommandPalette({
       setQuery('');
       setSelectedIndex(0);
       // Focus input after animation
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 

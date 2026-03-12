@@ -271,7 +271,14 @@ export function EmailCompose({
 
   if (minimized) {
     return (
-      <div className="ec-minimized" onClick={() => setMinimized(false)}>
+      <div
+        className="ec-minimized"
+        onClick={() => setMinimized(false)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMinimized(false); } }}
+        role="button"
+        tabIndex={0}
+        aria-label={`${modeLabel} maximieren`}
+      >
         <span className="ec-minimized-label">{modeLabel}</span>
         {subject && <span className="ec-minimized-subject"> — {subject}</span>}
         <button className="ec-minimized-close" onClick={(e) => { e.stopPropagation(); onCancel(); }}>&times;</button>

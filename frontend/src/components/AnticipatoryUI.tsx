@@ -341,7 +341,16 @@ export const RippleButton = ({
   type = 'button',
 }: RippleButtonProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const rippleTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
+
+  // Cleanup all ripple timers on unmount
+  useEffect(() => {
+    const timers = rippleTimersRef.current;
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, []);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     if (disabled || loading) return;
@@ -357,9 +366,11 @@ export const RippleButton = ({
       setRipples(prev => [...prev, { x, y, id }]);
 
       // Remove ripple after animation
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setRipples(prev => prev.filter(r => r.id !== id));
+        rippleTimersRef.current.delete(timer);
       }, 600);
+      rippleTimersRef.current.add(timer);
     }
 
     onClick?.(e);
