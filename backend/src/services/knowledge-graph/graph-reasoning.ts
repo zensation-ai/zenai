@@ -525,6 +525,340 @@ export async function deleteRelation(
 // Helpers
 // ===========================================
 
+// ===========================================
+// Temporal Knowledge Graph
+// ===========================================
+
+export interface TemporalRelation {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  relationType: string;
+  strength: number;
+  validFrom: string;
+  validUntil: string | null;
+  supersededBy: string | null;
+  isActive: boolean;
+}
+
+export interface FactVersion {
+  id: string;
+  factId: string;
+  content: string;
+  confidence: number;
+  source: string | null;
+  validFrom: string;
+  validUntil: string | null;
+  versionNumber: number;
+  changeReason: string | null;
+  previousVersionId: string | null;
+}
+
+/**
+ * Query relations for an idea within a specific time range.
+ * Returns both active and historical relations within the window.
+ */
+export async function queryTemporalRelations(
+  context: AIContext,
+  ideaId: string,
+  timeRange?: { from?: string; to?: string }
+): Promise<TemporalRelation[]> {
+  try {
+    const fromDate = timeRange?.from || '1970-01-01';
+    const toDate = timeRange?.to || new Date().toISOString();
+
+    const result = await queryContext(
+      context,
+      `SELECT id, source_id, target_id, relation_type, strength,
+              valid_from, valid_until, superseded_by,
+              (valid_until IS NULL) as is_active
+       FROM idea_relations
+       WHERE context = $1
+         AND (source_id = $2 OR target_id = $2)
+         AND valid_from <= $4::timestamptz
+         AND (valid_until IS NULL OR valid_until >= $3::timestamptz)
+       ORDER BY valid_from DESC`,
+      [context, ideaId, fromDate, toDate]
+    );
+
+    return result.rows.map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      sourceId: r.source_id as string,
+      targetId: r.target_id as string,
+      relationType: r.relation_type as string,
+      strength: parseFloat(r.strength as string) || 0,
+      validFrom: (r.valid_from as string) || '',
+      validUntil: r.valid_until as string | null,
+      supersededBy: r.superseded_by as string | null,
+      isActive: r.is_active === true,
+    }));
+  } catch (error) {
+    logger.error('Temporal relation query failed', error instanceof Error ? error : undefined);
+    return [];
+  }
+}
+
+/**
+ * Get the full change history between two specific ideas.
+ */
+export async function getRelationHistory(
+  context: AIContext,
+  sourceId: string,
+  targetId: string
+): Promise<TemporalRelation[]> {
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT id, source_id, target_id, relation_type, strength,
+              valid_from, valid_until, superseded_by,
+              (valid_until IS NULL) as is_active
+       FROM idea_relations
+       WHERE context = $1
+         AND source_id = $2 AND target_id = $3
+       ORDER BY valid_from ASC`,
+      [context, sourceId, targetId]
+    );
+
+    return result.rows.map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      sourceId: r.source_id as string,
+      targetId: r.target_id as string,
+      relationType: r.relation_type as string,
+      strength: parseFloat(r.strength as string) || 0,
+      validFrom: (r.valid_from as string) || '',
+      validUntil: r.valid_until as string | null,
+      supersededBy: r.superseded_by as string | null,
+      isActive: r.is_active === true,
+    }));
+  } catch (error) {
+    logger.error('Relation history query failed', error instanceof Error ? error : undefined);
+    return [];
+  }
+}
+
+/**
+ * Detect temporal contradictions: facts or relations that were previously true
+ * but have been superseded by contradicting information.
+ */
+export async function detectTemporalContradictions(
+  context: AIContext
+): Promise<{ current: TemporalRelation; previous: TemporalRelation; conflictType: string }[]> {
+  try {
+    // Find cases where a relation was superseded and the replacement contradicts it
+    const result = await queryContext(
+      context,
+      `SELECT
+         old.id as old_id, old.source_id as old_source, old.target_id as old_target,
+         old.relation_type as old_type, old.strength as old_strength,
+         old.valid_from as old_from, old.valid_until as old_until,
+         new.id as new_id, new.source_id as new_source, new.target_id as new_target,
+         new.relation_type as new_type, new.strength as new_strength,
+         new.valid_from as new_from
+       FROM idea_relations old
+       JOIN idea_relations new ON old.superseded_by = new.id
+       WHERE old.context = $1
+         AND old.valid_until IS NOT NULL
+         AND new.valid_until IS NULL
+         AND (
+           (old.relation_type = 'supports' AND new.relation_type = 'contradicts')
+           OR (old.relation_type = 'contradicts' AND new.relation_type = 'supports')
+           OR (old.relation_type = 'builds_on' AND new.relation_type = 'contradicts')
+           OR (old.relation_type = 'similar_to' AND new.relation_type = 'contradicts')
+         )
+       ORDER BY new.valid_from DESC
+       LIMIT 20`,
+      [context]
+    );
+
+    return result.rows.map((r: Record<string, unknown>) => ({
+      current: {
+        id: r.new_id as string,
+        sourceId: r.new_source as string,
+        targetId: r.new_target as string,
+        relationType: r.new_type as string,
+        strength: parseFloat(r.new_strength as string) || 0,
+        validFrom: r.new_from as string,
+        validUntil: null,
+        supersededBy: null,
+        isActive: true,
+      },
+      previous: {
+        id: r.old_id as string,
+        sourceId: r.old_source as string,
+        targetId: r.old_target as string,
+        relationType: r.old_type as string,
+        strength: parseFloat(r.old_strength as string) || 0,
+        validFrom: r.old_from as string,
+        validUntil: r.old_until as string | null,
+        supersededBy: r.new_id as string,
+        isActive: false,
+      },
+      conflictType: `${r.old_type} → ${r.new_type}`,
+    }));
+  } catch (error) {
+    logger.error('Temporal contradiction detection failed', error instanceof Error ? error : undefined);
+    return [];
+  }
+}
+
+/**
+ * Create a temporal relation: sets valid_until on existing active relation
+ * before inserting the new one. Returns the new relation ID.
+ */
+export async function createTemporalRelation(
+  context: AIContext,
+  sourceId: string,
+  targetId: string,
+  relationType: string,
+  strength: number = 0.8,
+  changeReason?: string
+): Promise<string | null> {
+  try {
+    // Supersede existing active relation of same type
+    const existing = await queryContext(
+      context,
+      `SELECT id FROM idea_relations
+       WHERE source_id = $1 AND target_id = $2 AND relation_type = $3
+         AND context = $4 AND valid_until IS NULL
+       LIMIT 1`,
+      [sourceId, targetId, relationType, context]
+    );
+
+    // Insert new relation
+    const newResult = await queryContext(
+      context,
+      `INSERT INTO idea_relations (source_id, target_id, relation_type, strength, context, discovery_method, confidence, valid_from)
+       VALUES ($1, $2, $3, $4, $5, 'temporal', $4, NOW())
+       RETURNING id`,
+      [sourceId, targetId, relationType, Math.min(Math.max(strength, 0), 1), context]
+    );
+
+    const newId = newResult.rows[0]?.id;
+    if (!newId) return null;
+
+    // Mark old relation as superseded
+    if (existing.rows.length > 0) {
+      const oldId = existing.rows[0].id;
+      await queryContext(
+        context,
+        `UPDATE idea_relations
+         SET valid_until = NOW(), superseded_by = $1
+         WHERE id = $2 AND context = $3`,
+        [newId, oldId, context]
+      );
+    }
+
+    return newId;
+  } catch (error) {
+    logger.error('Temporal relation creation failed', error instanceof Error ? error : undefined);
+    return null;
+  }
+}
+
+/**
+ * Get version history for a learned fact.
+ */
+export async function getFactVersionHistory(
+  context: AIContext,
+  factId: string
+): Promise<FactVersion[]> {
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT id, fact_id, content, confidence, source,
+              valid_from, valid_until, version_number, change_reason, previous_version_id
+       FROM fact_versions
+       WHERE fact_id = $1
+       ORDER BY version_number DESC`,
+      [factId]
+    );
+
+    return result.rows.map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      factId: r.fact_id as string,
+      content: r.content as string,
+      confidence: parseFloat(r.confidence as string) || 0,
+      source: r.source as string | null,
+      validFrom: r.valid_from as string,
+      validUntil: r.valid_until as string | null,
+      versionNumber: parseInt(r.version_number as string, 10) || 1,
+      changeReason: r.change_reason as string | null,
+      previousVersionId: r.previous_version_id as string | null,
+    }));
+  } catch (error) {
+    logger.error('Fact version history query failed', error instanceof Error ? error : undefined);
+    return [];
+  }
+}
+
+/**
+ * Create a new version of a fact (called when fact content changes).
+ * Archives the current version and creates a new one.
+ */
+export async function versionFact(
+  context: AIContext,
+  factId: string,
+  newContent: string,
+  newConfidence: number,
+  source: string,
+  changeReason: string
+): Promise<FactVersion | null> {
+  try {
+    // Get current version
+    const currentResult = await queryContext(
+      context,
+      `SELECT fv.id, fv.version_number
+       FROM fact_versions fv
+       WHERE fv.fact_id = $1 AND fv.valid_until IS NULL
+       ORDER BY fv.version_number DESC LIMIT 1`,
+      [factId]
+    );
+
+    let prevId: string | null = null;
+    let nextVersion = 1;
+
+    if (currentResult.rows.length > 0) {
+      prevId = currentResult.rows[0].id;
+      nextVersion = (parseInt(currentResult.rows[0].version_number, 10) || 0) + 1;
+
+      // Close current version
+      await queryContext(
+        context,
+        `UPDATE fact_versions SET valid_until = NOW() WHERE id = $1`,
+        [prevId]
+      );
+    }
+
+    // Insert new version
+    const result = await queryContext(
+      context,
+      `INSERT INTO fact_versions (fact_id, content, confidence, source, version_number, change_reason, previous_version_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [factId, newContent, newConfidence, source, nextVersion, changeReason, prevId]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    const r = result.rows[0];
+    return {
+      id: r.id,
+      factId: r.fact_id,
+      content: r.content,
+      confidence: parseFloat(r.confidence) || 0,
+      source: r.source,
+      validFrom: r.valid_from,
+      validUntil: r.valid_until,
+      versionNumber: parseInt(r.version_number, 10) || 1,
+      changeReason: r.change_reason,
+      previousVersionId: r.previous_version_id,
+    };
+  } catch (error) {
+    logger.error('Fact versioning failed', error instanceof Error ? error : undefined);
+    return null;
+  }
+}
+
 async function cacheInference(context: AIContext, inference: InferredRelation): Promise<void> {
   try {
     await queryContext(

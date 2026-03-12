@@ -505,6 +505,18 @@ app.use('/api', i18nRouter);
 import { memoryInsightsRouter } from './routes/memory-insights';
 app.use('/api', memoryInsightsRouter);  // /api/:context/memory/insights/timeline, /api/:context/memory/insights/conflicts, etc.
 
+// Phase 54: Governance & Audit Trail
+import { governanceRouter } from './routes/governance';
+app.use('/api', governanceRouter);  // /api/:context/governance/pending, /api/:context/governance/audit, etc.
+
+// Phase 54: Programmatic Context Engineering
+import { contextRulesRouter } from './routes/context-rules';
+app.use('/api', contextRulesRouter);  // /api/:context/context-rules CRUD, performance, test
+
+// Phase 54: Proactive Event Engine
+import { proactiveEngineRouter } from './routes/proactive-engine';
+app.use('/api', proactiveEngineRouter);  // /api/:context/proactive-engine/events, rules, stats, process
+
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"

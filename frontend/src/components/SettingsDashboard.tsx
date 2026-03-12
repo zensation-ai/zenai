@@ -1,5 +1,5 @@
 /**
- * SettingsDashboard - Einstellungen (7 Tabs)
+ * SettingsDashboard - Einstellungen (8 Tabs)
  *
  * Tabs:
  * - Profil: Benutzerprofil und Business-Profil
@@ -7,6 +7,7 @@
  * - KI: Modell-Präferenzen, Antwort-Stil, Tool-Einstellungen
  * - Datenschutz: Daten-Kontrolle, Löschen, Export-Hinweis
  * - Automationen: Workflows und AI-Vorschläge
+ * - Governance: Genehmigungen, Audit-Trail, Richtlinien
  * - Integrationen: OAuth, API Keys, Webhooks
  * - Daten: Export + Sync kombiniert
  */
@@ -27,8 +28,9 @@ const AutomationDashboard = lazy(() => import('./AutomationDashboard').then(m =>
 const IntegrationsPage = lazy(() => import('./IntegrationsPage').then(m => ({ default: m.IntegrationsPage })));
 const DataManagement = lazy(() => import('./DataManagement').then(m => ({ default: m.DataManagement })));
 const MemoryGovernance = lazy(() => import('./MemoryGovernance').then(m => ({ default: m.MemoryGovernance })));
+const GovernanceDashboard = lazy(() => import('./GovernanceDashboard').then(m => ({ default: m.GovernanceDashboard })));
 
-type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'integrations' | 'data';
+type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data';
 
 interface SettingsDashboardProps {
   context: AIContext;
@@ -43,6 +45,7 @@ const TABS: readonly TabDef<SettingsTab>[] = [
   { id: 'ai', label: 'KI', icon: '🧠', description: 'KI-Modell und Antwort-Stil' },
   { id: 'privacy', label: 'Datenschutz', icon: '🔒', description: 'Daten-Kontrolle und Privatsphäre' },
   { id: 'automations', label: 'Automationen', icon: '⚡', description: 'Workflows und AI-Vorschläge' },
+  { id: 'governance', label: 'Governance', icon: '🛡️', description: 'Genehmigungen, Audit-Trail, Richtlinien' },
   { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
   { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
@@ -277,6 +280,13 @@ export const SettingsDashboard = memo(({
         return (
           <Suspense fallback={<TabLoader />}>
             <AutomationDashboard context={context} onBack={() => handleTabChange('general')} embedded />
+          </Suspense>
+        );
+
+      case 'governance':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <GovernanceDashboard context={context} />
           </Suspense>
         );
 

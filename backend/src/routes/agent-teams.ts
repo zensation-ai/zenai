@@ -21,6 +21,12 @@ import {
 } from '../services/agent-orchestrator';
 import { trackActivity } from '../services/activity-tracker';
 import { toIntBounded } from '../utils/validation';
+import {
+  loadCheckpoint,
+  listCheckpoints,
+  updateExecutionStatus,
+  getExecutionStatus,
+} from '../services/agent-checkpoints';
 
 export const agentTeamsRouter = Router();
 
@@ -536,5 +542,126 @@ agentTeamsRouter.get(
         avgTime: Math.round(parseFloat(row.avg_time || '0')),
       })),
     });
+  })
+);
+
+// ===========================================
+// Durable Execution: Pause / Resume / Cancel
+// ===========================================
+
+/**
+ * POST /api/agents/executions/:id/pause
+ * Pause a running execution
+ */
+agentTeamsRouter.post(
+  '/executions/:id/pause',
+  apiKeyAuth,
+  requireScope('write'),
+  requireUUID('id'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = (req.body.context as string) || 'personal';
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context');
+    }
+
+    const reason = req.body.reason || 'User requested pause';
+
+    await updateExecutionStatus(context as AIContext, req.params.id, 'paused', {
+      pauseReason: reason,
+    });
+
+    res.json({ success: true, message: 'Execution paused' });
+  })
+);
+
+/**
+ * POST /api/agents/executions/:id/cancel
+ * Cancel an execution
+ */
+agentTeamsRouter.post(
+  '/executions/:id/cancel',
+  apiKeyAuth,
+  requireScope('write'),
+  requireUUID('id'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = (req.body.context as string) || 'personal';
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context');
+    }
+
+    await updateExecutionStatus(context as AIContext, req.params.id, 'cancelled');
+
+    res.json({ success: true, message: 'Execution cancelled' });
+  })
+);
+
+/**
+ * GET /api/agents/executions/:id/status
+ * Get execution status including checkpoint info
+ */
+agentTeamsRouter.get(
+  '/executions/:id/status',
+  apiKeyAuth,
+  requireScope('read'),
+  requireUUID('id'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = (req.query.context as string) || 'personal';
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context');
+    }
+
+    const status = await getExecutionStatus(context as AIContext, req.params.id);
+    if (!status) {
+      res.status(404).json({ success: false, error: 'Execution not found' });
+      return;
+    }
+
+    res.json({ success: true, data: status });
+  })
+);
+
+/**
+ * GET /api/agents/executions/:id/checkpoints
+ * List checkpoints for an execution
+ */
+agentTeamsRouter.get(
+  '/executions/:id/checkpoints',
+  apiKeyAuth,
+  requireScope('read'),
+  requireUUID('id'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = (req.query.context as string) || 'personal';
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context');
+    }
+
+    const checkpoints = await listCheckpoints(context as AIContext, req.params.id);
+
+    res.json({ success: true, data: checkpoints });
+  })
+);
+
+/**
+ * GET /api/agents/executions/:id/checkpoint
+ * Get the latest checkpoint for an execution
+ */
+agentTeamsRouter.get(
+  '/executions/:id/checkpoint',
+  apiKeyAuth,
+  requireScope('read'),
+  requireUUID('id'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = (req.query.context as string) || 'personal';
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context');
+    }
+
+    const checkpoint = await loadCheckpoint(context as AIContext, req.params.id);
+    if (!checkpoint) {
+      res.status(404).json({ success: false, error: 'No checkpoint found' });
+      return;
+    }
+
+    res.json({ success: true, data: checkpoint });
   })
 );

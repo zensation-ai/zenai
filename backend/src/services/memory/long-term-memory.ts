@@ -1126,6 +1126,11 @@ Antworte als JSON:
     await this.persistFact(context, fullFact);
 
     logger.info('Explicit fact added', { context, factType: fact.factType });
+
+    // Emit system event for proactive engine
+    import('../event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({ context, eventType: 'memory.fact_learned', eventSource: 'long_term_memory', payload: { factType: fact.factType, content: fact.content?.substring(0, 200) } })
+    ).catch(() => {});
   }
 
   /**

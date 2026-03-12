@@ -127,6 +127,12 @@ export async function createTask(
   ]);
 
   logger.info('Task created', { id, title: input.title, status, context, operation: 'createTask' });
+
+  // Emit system event for proactive engine
+  import('./event-system').then(({ emitSystemEvent }) =>
+    emitSystemEvent({ context, eventType: 'task.created', eventSource: 'tasks', payload: { taskId: id, title: input.title, status, priority: input.priority || 'medium' } })
+  ).catch(() => {});
+
   return mapRowToTask(result.rows[0]);
 }
 

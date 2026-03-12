@@ -20,6 +20,10 @@ import {
   createManualRelation,
   updateRelationStrength,
   deleteRelation,
+  queryTemporalRelations,
+  getRelationHistory,
+  detectTemporalContradictions,
+  getFactVersionHistory,
 } from '../services/knowledge-graph/graph-reasoning';
 
 const router = Router();
@@ -223,6 +227,89 @@ router.delete(
 
     await deleteRelation(context, sourceId, targetId);
     return res.json({ success: true, message: 'Relation deleted' });
+  })
+);
+
+// ===========================================
+// Temporal Knowledge Graph
+// ===========================================
+
+/**
+ * GET /api/:context/knowledge-graph/temporal/:ideaId
+ * Get temporal relations for an idea (active + historical within time range)
+ */
+router.get(
+  '/:context/knowledge-graph/temporal/:ideaId',
+  requireUUID('ideaId'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+    }
+
+    const from = req.query.from as string | undefined;
+    const to = req.query.to as string | undefined;
+
+    const relations = await queryTemporalRelations(context, req.params.ideaId, { from, to });
+    return res.json({ success: true, data: relations });
+  })
+);
+
+/**
+ * GET /api/:context/knowledge-graph/temporal-history
+ * Get full relation history between two ideas
+ */
+router.get(
+  '/:context/knowledge-graph/temporal-history',
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+    }
+
+    const sourceId = req.query.sourceId as string;
+    const targetId = req.query.targetId as string;
+    if (!sourceId || !targetId) {
+      throw new ValidationError('sourceId and targetId query parameters are required');
+    }
+
+    const history = await getRelationHistory(context, sourceId, targetId);
+    return res.json({ success: true, data: history });
+  })
+);
+
+/**
+ * GET /api/:context/knowledge-graph/temporal-contradictions
+ * Detect temporal contradictions (superseded relations that conflict)
+ */
+router.get(
+  '/:context/knowledge-graph/temporal-contradictions',
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+    }
+
+    const contradictions = await detectTemporalContradictions(context);
+    return res.json({ success: true, data: contradictions });
+  })
+);
+
+/**
+ * GET /api/:context/knowledge-graph/fact-versions/:factId
+ * Get version history for a learned fact
+ */
+router.get(
+  '/:context/knowledge-graph/fact-versions/:factId',
+  requireUUID('factId'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+    }
+
+    const versions = await getFactVersionHistory(context, req.params.factId);
+    return res.json({ success: true, data: versions });
   })
 );
 
