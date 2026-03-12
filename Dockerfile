@@ -4,8 +4,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm
-RUN echo "bust-cache-20260312" && corepack enable && corepack prepare pnpm@9.15.0 --activate
+# Install pnpm via npm (more reliable than corepack on CI)
+RUN npm install -g pnpm@9.15.0
 
 # Copy workspace config and lockfile
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
@@ -21,7 +21,7 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared/ packages/shared/
 RUN pnpm --filter @zenai/shared run build
 
-# Copy backend source and build (cache-bust: 2026-03-12)
+# Copy backend source and build
 COPY backend/ backend/
 RUN pnpm --filter zenai-backend run build
 
@@ -38,7 +38,7 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Install pnpm for production install
-RUN echo "bust-cache-20260312" && corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN npm install -g pnpm@9.15.0
 
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
