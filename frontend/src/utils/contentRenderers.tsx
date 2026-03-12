@@ -83,7 +83,7 @@ export function renderHtmlContent(
     <div className="artifact-html-preview">
       <iframe
         srcDoc={content}
-        sandbox="allow-same-origin"
+        sandbox=""
         title={title}
         style={{
           width: '100%',

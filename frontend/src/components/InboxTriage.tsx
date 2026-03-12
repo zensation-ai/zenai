@@ -142,7 +142,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
     }
   }, [apiBase, context, processedIds]);
 
-  useEffect(() => { fetchTriageIdeas(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchTriageIdeas(); }, [context]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showDopamineReward = useCallback((action: TriageAction) => {
     const reward = getRandomReward('ideaCreated');

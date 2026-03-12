@@ -78,6 +78,9 @@ export function CanvasPage({ context }: CanvasPageProps) {
     (content: string) => {
       if (!activeDocument) return;
 
+      // Capture document ID at call time to prevent saving to wrong document on quick switch
+      const documentId = activeDocument.id;
+
       setActiveDocument((prev) => (prev ? { ...prev, content } : null));
       setSaveStatus('unsaved');
 
@@ -88,7 +91,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
         setSaveStatus('saving');
         try {
           await axios.patch(
-            `/api/canvas/${activeDocument.id}`,
+            `/api/canvas/${documentId}`,
             { content });
           if (isMountedRef.current) setSaveStatus('saved');
         } catch (error) {
@@ -122,6 +125,8 @@ export function CanvasPage({ context }: CanvasPageProps) {
   // Select document
   const handleSelectDocument = useCallback(
     async (id: string) => {
+      // Cancel any pending save from the previous document
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       try {
         const response = await axios.get(`/api/canvas/${id}`);
         if (response.data.success) {

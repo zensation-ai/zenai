@@ -55,6 +55,14 @@ agentTeamsRouter.post(
       return;
     }
 
+    if (!isValidContext(aiContext)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid aiContext. Must be one of: personal, work, learning, creative',
+      });
+      return;
+    }
+
     logger.info('Agent team execution requested', {
       taskLength: task.length,
       strategy,
@@ -365,6 +373,14 @@ agentTeamsRouter.post(
         return;
       }
 
+      if (!isValidContext(aiContext)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid aiContext. Must be one of: personal, work, learning, creative',
+        });
+        return;
+      }
+
       // Apply template if specified
       let effectiveStrategy = strategy;
       let effectiveSkipReview = skipReview;
@@ -460,8 +476,8 @@ agentTeamsRouter.get(
         COUNT(*) FILTER (WHERE success = true) as successful,
         COUNT(*) FILTER (WHERE success = false) as failed,
         AVG(execution_time_ms) as avg_execution_time,
-        SUM((tokens->>'input')::int + (tokens->>'output')::int) as total_tokens,
-        AVG((tokens->>'input')::int + (tokens->>'output')::int) as avg_tokens,
+        SUM(COALESCE((tokens->>'input')::numeric, 0) + COALESCE((tokens->>'output')::numeric, 0))::int as total_tokens,
+        AVG(COALESCE((tokens->>'input')::numeric, 0) + COALESCE((tokens->>'output')::numeric, 0))::int as avg_tokens,
         strategy,
         COUNT(*) as strategy_count
        FROM agent_executions

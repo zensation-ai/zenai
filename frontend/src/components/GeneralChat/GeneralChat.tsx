@@ -689,8 +689,14 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
           const matched = match[0];
           if (match[2] && match[3]) {
-            // Link: [text](url)
-            result.push(<a key={`a-${ki++}`} href={match[3]} target="_blank" rel="noopener noreferrer" className="chat-link">{match[2]}</a>);
+            // Link: [text](url) - validate protocol to prevent javascript: XSS
+            const url = match[3];
+            const isSafeUrl = /^https?:\/\//.test(url) || url.startsWith('mailto:');
+            if (isSafeUrl) {
+              result.push(<a key={`a-${ki++}`} href={url} target="_blank" rel="noopener noreferrer" className="chat-link">{match[2]}</a>);
+            } else {
+              result.push(<span key={`a-${ki++}`} className="chat-link-text">{match[2]}</span>);
+            }
           } else if (matched.startsWith('**') && matched.endsWith('**')) {
             result.push(<strong key={`b-${ki++}`}>{matched.slice(2, -2)}</strong>);
           } else if (matched.startsWith('*') && matched.endsWith('*')) {

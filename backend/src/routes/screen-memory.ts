@@ -75,7 +75,8 @@ router.delete('/:context/screen-memory/:id', requireScope('write'), asyncHandler
 }));
 
 router.post('/:context/screen-memory/cleanup', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  const retentionDays = parseInt(req.body.retention_days) || 30;
+  const parsed = parseInt(req.body.retention_days);
+  const retentionDays = Number.isNaN(parsed) ? 30 : Math.max(1, Math.min(365, parsed));
   const deleted = await screenMemoryService.cleanupOldCaptures(getContext(req), retentionDays);
   sendMessage(res, `Cleaned up ${deleted} old captures`, { deleted });
 }));

@@ -147,6 +147,15 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
     }
   }
 
+  // Truncate email body to prevent excessive storage and AI processing costs
+  const MAX_BODY_LENGTH = 100_000; // 100KB
+  if (bodyHtml && bodyHtml.length > MAX_BODY_LENGTH) {
+    bodyHtml = bodyHtml.substring(0, MAX_BODY_LENGTH) + '\n<!-- truncated -->';
+  }
+  if (bodyText && bodyText.length > MAX_BODY_LENGTH) {
+    bodyText = bodyText.substring(0, MAX_BODY_LENGTH) + '\n[truncated]';
+  }
+
   // Map recipient addresses to JSON
   const toAddresses = (data.to || []).map(addr => {
     const parsed = extractNameAndAddress(addr);

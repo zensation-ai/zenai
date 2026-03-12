@@ -38,11 +38,21 @@ router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response
   const context = validateContextParam(req, res);
   if (!context) { return; }
 
+  const search = req.query.search as string | undefined;
+  const tag = req.query.tag as string | undefined;
+  const relationshipType = req.query.relationship_type as string | undefined;
+
+  // Input length validation to prevent oversized query params
+  if ((search && search.length > 500) || (tag && tag.length > 200) || (relationshipType && relationshipType.length > 100)) {
+    res.status(400).json({ success: false, error: 'Query parameter exceeds maximum length' });
+    return;
+  }
+
   const filters: contactsService.ContactFilters = {
-    search: req.query.search as string | undefined,
-    relationship_type: req.query.relationship_type as string | undefined,
+    search,
+    relationship_type: relationshipType,
     organization_id: req.query.organization_id as string | undefined,
-    tag: req.query.tag as string | undefined,
+    tag,
     is_favorite: req.query.is_favorite === 'true' ? true : undefined,
     limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
     offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,

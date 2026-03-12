@@ -392,8 +392,8 @@ export function setupGracefulShutdown(): void {
   };
 
   // Handle different termination signals
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.once('SIGTERM', () => shutdown('SIGTERM'));
+  process.once('SIGINT', () => shutdown('SIGINT'));
 
   // Handle uncaught exceptions gracefully
   process.on('uncaughtException', async (error) => {
