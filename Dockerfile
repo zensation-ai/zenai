@@ -5,7 +5,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN echo "bust-cache-20260312" && corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Copy workspace config and lockfile
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
@@ -38,7 +38,7 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Install pnpm for production install
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN echo "bust-cache-20260312" && corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
