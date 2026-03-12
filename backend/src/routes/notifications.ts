@@ -12,6 +12,7 @@ import { Router, Request, Response } from 'express';
 import { queryContext, AIContext, isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import {
   registerDeviceToken,
@@ -803,6 +804,7 @@ notificationsRouter.post(
   '/:context/notifications/:notificationId/opened',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('notificationId'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, notificationId } = req.params;
 

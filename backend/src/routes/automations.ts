@@ -8,6 +8,7 @@
 import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { toIntBounded } from '../utils/validation';
@@ -126,6 +127,7 @@ automationsRouter.post(
   '/:context/automations/suggestions/:id/accept',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
 
@@ -155,6 +157,7 @@ automationsRouter.post(
   '/:context/automations/suggestions/:id/dismiss',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
 
@@ -210,6 +213,7 @@ automationsRouter.get(
 automationsRouter.get(
   '/:context/automations/:id',
   apiKeyAuth,
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
 
@@ -311,6 +315,7 @@ automationsRouter.put(
   '/:context/automations/:id',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
     const { name, description, trigger, conditions, actions, is_active } = req.body;
@@ -369,6 +374,7 @@ automationsRouter.delete(
   '/:context/automations/:id',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
 
@@ -401,6 +407,7 @@ automationsRouter.post(
   '/:context/automations/:id/execute',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
     const { trigger_data } = req.body;
@@ -429,6 +436,7 @@ automationsRouter.post(
 automationsRouter.get(
   '/:context/automations/:id/executions',
   apiKeyAuth,
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
     // SECURITY FIX: Use bounded integer parsing to prevent DoS via large limits
@@ -464,6 +472,7 @@ automationsRouter.post(
   '/:context/automations/:id/toggle',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
 

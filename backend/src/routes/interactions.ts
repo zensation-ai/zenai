@@ -8,6 +8,7 @@
 import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import {
@@ -228,6 +229,7 @@ interactionsRouter.post(
 interactionsRouter.get(
   '/:context/corrections/idea/:ideaId',
   apiKeyAuth,
+  requireUUID('ideaId'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, ideaId } = req.params;
 

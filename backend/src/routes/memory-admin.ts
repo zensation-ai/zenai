@@ -14,6 +14,7 @@ import type { MemoryLayer } from '../services/memory/memory-governance';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -428,6 +429,7 @@ router.delete('/erase/:context/:layer', apiKeyAuth, requireScope('admin'), async
  * DELETE /api/memory/facts/:context/:factId
  * Delete a specific learned fact
  */
+requireUUID('factId'),
 router.delete('/facts/:context/:factId', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, factId } = req.params;
 
@@ -448,6 +450,7 @@ router.delete('/facts/:context/:factId', apiKeyAuth, requireScope('write'), asyn
  * GET /api/memory/export/:context
  * Data Portability (Art. 20 DSGVO): Export all memory data
  */
+requireUUID('factId'),
 router.get('/export/:context', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 

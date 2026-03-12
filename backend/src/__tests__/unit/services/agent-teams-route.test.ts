@@ -16,6 +16,11 @@ jest.mock('../../../middleware/auth', () => ({
   requireScope: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
+// Mock validate-params middleware (UUID validation tested separately)
+jest.mock('../../../middleware/validate-params', () => ({
+  requireUUID: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
 // Mock database-context (for queryContext + isValidContext)
 var mockQueryContext = jest.fn().mockResolvedValue({ rows: [] });
 jest.mock('../../../utils/database-context', () => ({
@@ -284,7 +289,7 @@ describe('Agent Teams Route', () => {
     it('should return execution history', async () => {
       mockQueryContext.mockResolvedValueOnce({
         rows: [{
-          id: 'exec-1',
+          id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
           team_id: 'team-1',
           task_description: 'Test task',
           strategy: 'research_only',
@@ -315,7 +320,7 @@ describe('Agent Teams Route', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
-        .get('/api/agents/history/non-existent-id')
+        .get('/api/agents/history/00000000-0000-4000-8000-000000000000')
         .query({ context: 'personal' });
 
       expect(res.status).toBe(404);
@@ -328,7 +333,7 @@ describe('Agent Teams Route', () => {
       mockQueryContext
         .mockResolvedValueOnce({
           rows: [{
-            id: 'exec-1',
+            id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
             task_description: 'Test task',
             final_output: 'Results to save',
             strategy: 'research_only',
@@ -338,7 +343,7 @@ describe('Agent Teams Route', () => {
         .mockResolvedValueOnce({ rows: [] }); // update link
 
       const res = await request(app)
-        .post('/api/agents/history/exec-1/save-as-idea')
+        .post('/api/agents/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/save-as-idea')
         .send({ context: 'personal' });
 
       expect(res.status).toBe(200);
@@ -350,7 +355,7 @@ describe('Agent Teams Route', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
-        .post('/api/agents/history/non-existent/save-as-idea')
+        .post('/api/agents/history/00000000-0000-4000-8000-000000000000/save-as-idea')
         .send({ context: 'personal' });
 
       expect(res.status).toBe(404);

@@ -8,6 +8,7 @@ import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { requireUUID } from '../middleware/validate-params';
 import { sendData, sendList, sendMessage, sendNotFound, parsePagination } from '../utils/response';
 import { agentRuntime, AgentTrigger, TriggerType } from '../services/agents/agent-runtime';
 import { AGENT_TEMPLATES } from '../services/agents/agent-templates';
@@ -104,6 +105,7 @@ autonomousAgentsRouter.get(
   '/:context/agents/:id',
   apiKeyAuth,
   requireScope('read'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const agent = await agentRuntime.getAgent(context, req.params.id);
@@ -145,6 +147,7 @@ autonomousAgentsRouter.put(
   '/:context/agents/:id',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const { name, description, instructions, triggers, tools, approvalRequired, maxActionsPerDay, tokenBudgetDaily } = req.body;
@@ -170,6 +173,7 @@ autonomousAgentsRouter.delete(
   '/:context/agents/:id',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const deleted = await agentRuntime.deleteAgent(context, req.params.id);
@@ -183,6 +187,7 @@ autonomousAgentsRouter.post(
   '/:context/agents/:id/start',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const started = await agentRuntime.startAgent(context, req.params.id);
@@ -196,6 +201,7 @@ autonomousAgentsRouter.post(
   '/:context/agents/:id/stop',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const stopped = await agentRuntime.stopAgent(context, req.params.id);
@@ -209,6 +215,7 @@ autonomousAgentsRouter.get(
   '/:context/agents/:id/logs',
   apiKeyAuth,
   requireScope('read'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const { limit } = parsePagination(req, { defaultLimit: 20 });
@@ -222,6 +229,7 @@ autonomousAgentsRouter.get(
   '/:context/agents/:id/stats',
   apiKeyAuth,
   requireScope('read'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const stats = await agentRuntime.getAgentStats(context, req.params.id);
@@ -234,6 +242,7 @@ autonomousAgentsRouter.post(
   '/:context/agents/:id/approve/:execId',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id', 'execId'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const execution = await agentRuntime.approveExecution(context, req.params.execId);
@@ -247,6 +256,7 @@ autonomousAgentsRouter.post(
   '/:context/agents/:id/reject/:execId',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id', 'execId'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContext(req.params.context);
     const rejected = await agentRuntime.rejectExecution(context, req.params.execId);

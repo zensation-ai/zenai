@@ -8,6 +8,7 @@
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext, queryContext } from '../utils/database-context';
 import {
@@ -143,6 +144,7 @@ router.get(
  */
 router.get(
   '/:context/knowledge-graph/learning-path/:ideaId',
+  requireUUID('ideaId'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {

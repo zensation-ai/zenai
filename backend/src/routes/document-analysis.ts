@@ -23,6 +23,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { requireUUID } from '../middleware/validate-params';
 import { isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import {
@@ -466,6 +467,7 @@ documentAnalysisRouter.get(
 documentAnalysisRouter.get(
   '/history/:id',
   apiKeyAuth,
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const entry = await documentAnalysis.getAnalysisById(req.params.id);
 
@@ -499,6 +501,7 @@ documentAnalysisRouter.get(
 documentAnalysisRouter.delete(
   '/history/:id',
   apiKeyAuth,
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const deleted = await documentAnalysis.deleteFromHistory(req.params.id);
 
@@ -610,6 +613,7 @@ documentAnalysisRouter.post(
 documentAnalysisRouter.put(
   '/templates/custom/:id',
   apiKeyAuth,
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { name, system_prompt, instruction, icon } = req.body;
 
@@ -663,6 +667,7 @@ documentAnalysisRouter.put(
 documentAnalysisRouter.delete(
   '/templates/custom/:id',
   apiKeyAuth,
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const deleted = await documentAnalysis.deleteCustomTemplate(req.params.id);
 

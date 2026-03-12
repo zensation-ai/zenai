@@ -298,6 +298,11 @@ describe('Document Analysis - Routes', () => {
     app.use(errorHandler);
   });
 
+// Mock validate-params middleware (UUID validation tested separately)
+jest.mock('../middleware/validate-params', () => ({
+  requireUUID: () => (_req: any, _res: any, next: any) => next(),
+}));
+
   afterAll(() => {
     jest.restoreAllMocks();
   });
@@ -735,6 +740,11 @@ describe('Document Analysis - Phase 3 Routes', () => {
     app.use('/api/documents', documentAnalysisRouter);
     app.use(errorHandler);
   });
+
+// Mock validate-params middleware (UUID validation tested separately)
+jest.mock('../middleware/validate-params', () => ({
+  requireUUID: () => (_req: any, _res: any, next: any) => next(),
+}));
 
   afterAll(() => {
     jest.restoreAllMocks();

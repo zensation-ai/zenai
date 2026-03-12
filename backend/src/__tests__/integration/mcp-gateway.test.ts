@@ -16,6 +16,11 @@ jest.mock('../../middleware/auth', () => ({
   requireScope: jest.fn(() => (_req: any, _res: any, next: any) => next()),
 }));
 
+// Mock validate-params middleware (UUID validation tested separately)
+jest.mock('../../middleware/validate-params', () => ({
+  requireUUID: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 // Mock the MCP server
 jest.mock('../../mcp', () => ({
   createMCPServer: jest.fn().mockReturnValue({
@@ -54,27 +59,27 @@ jest.mock('../../mcp', () => ({
 jest.mock('../../services/mcp-connections', () => ({
   mcpConnectionManager: {
     listConnections: jest.fn().mockResolvedValue([
-      { id: 'c1', name: 'Test Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true },
+      { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', name: 'Test Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true },
     ]),
     getConnection: jest.fn().mockResolvedValue({
-      id: 'c1', name: 'Test Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true,
+      id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', name: 'Test Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true,
     }),
     createConnection: jest.fn().mockResolvedValue({
       id: 'new-c', name: 'New Server', url: 'https://new.com', status: 'pending', toolCount: 0, resourceCount: 0, enabled: true,
     }),
     updateConnection: jest.fn().mockResolvedValue({
-      id: 'c1', name: 'Updated Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true,
+      id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', name: 'Updated Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true,
     }),
     deleteConnection: jest.fn().mockResolvedValue(true),
     checkConnection: jest.fn().mockResolvedValue({
-      id: 'c1', name: 'Test Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true,
+      id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', name: 'Test Server', url: 'https://test.com', status: 'connected', toolCount: 3, resourceCount: 1, enabled: true,
     }),
     callTool: jest.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'External result' }],
       isError: false,
     }),
     getAllTools: jest.fn().mockResolvedValue([
-      { qualifiedName: 'c1:tool1', originalName: 'tool1', connectionId: 'c1', connectionName: 'Test', tool: { name: 'tool1', description: 'T1' } },
+      { qualifiedName: 'c1:tool1', originalName: 'tool1', connectionId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', connectionName: 'Test', tool: { name: 'tool1', description: 'T1' } },
     ]),
     getAllResources: jest.fn().mockResolvedValue([]),
     readResource: jest.fn().mockResolvedValue({ contents: [] }),
@@ -201,7 +206,7 @@ describe('MCP HTTP Gateway', () => {
   describe('PUT /api/:context/mcp/connections/:id', () => {
     it('should update a connection', async () => {
       const res = await request(app)
-        .put('/api/personal/mcp/connections/c1')
+        .put('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .send({ name: 'Updated Server' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Server');
@@ -211,7 +216,7 @@ describe('MCP HTTP Gateway', () => {
   describe('DELETE /api/:context/mcp/connections/:id', () => {
     it('should delete a connection', async () => {
       const res = await request(app)
-        .delete('/api/personal/mcp/connections/c1');
+        .delete('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -220,7 +225,7 @@ describe('MCP HTTP Gateway', () => {
   describe('POST /api/:context/mcp/connections/:id/check', () => {
     it('should health check a connection', async () => {
       const res = await request(app)
-        .post('/api/personal/mcp/connections/c1/check');
+        .post('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/check');
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('connected');
     });
@@ -229,7 +234,7 @@ describe('MCP HTTP Gateway', () => {
   describe('POST /api/:context/mcp/connections/:id/tools/call', () => {
     it('should call tool on external connection', async () => {
       const res = await request(app)
-        .post('/api/personal/mcp/connections/c1/tools/call')
+        .post('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/tools/call')
         .send({ name: 'tool1', arguments: {} });
       expect(res.status).toBe(200);
       expect(res.body.data.content[0].text).toBe('External result');

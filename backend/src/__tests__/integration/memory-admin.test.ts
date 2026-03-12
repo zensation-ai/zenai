@@ -55,6 +55,11 @@ var mockGetStatus = jest.fn().mockReturnValue({
   lastError: null,
 });
 
+// Mock validate-params middleware (UUID validation tested separately)
+jest.mock('../../middleware/validate-params', () => ({
+  requireUUID: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 var mockGetConfig = jest.fn().mockReturnValue({
   TIMEZONE: 'Europe/Berlin',
   CONSOLIDATION_SCHEDULE: '0 2 * * *',

@@ -16,6 +16,7 @@ import { Router, Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { apiKeyAuth } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { queryContext } from '../utils/database-context';
@@ -80,6 +81,7 @@ router.post(
  */
 router.get(
   '/:context/rag/v2/citations/:messageId',
+  requireUUID('messageId'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {

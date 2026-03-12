@@ -70,6 +70,11 @@ describe('Canvas API Tests', () => {
     app.use(errorHandler);
   });
 
+// Mock validate-params middleware (UUID validation tested separately)
+jest.mock('../middleware/validate-params', () => ({
+  requireUUID: () => (_req: any, _res: any, next: any) => next(),
+}));
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockQuery.mockReset();

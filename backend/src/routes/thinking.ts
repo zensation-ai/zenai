@@ -7,6 +7,7 @@
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { AIContext, isValidContext } from '../utils/database-context';
 import {
@@ -116,6 +117,7 @@ router.post(
  */
 router.get(
   '/:context/thinking/chains/:id',
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
@@ -138,6 +140,7 @@ router.get(
 router.delete(
   '/:context/thinking/chains/:id',
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {

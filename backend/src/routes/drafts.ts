@@ -11,6 +11,7 @@ import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
+import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import {
   getDraftForIdea,
@@ -90,6 +91,7 @@ draftsRouter.post(
 draftsRouter.get(
   '/:context/ideas/:ideaId/draft',
   requireScope('read'),
+  requireUUID('ideaId'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, ideaId } = req.params;
 
@@ -134,6 +136,7 @@ draftsRouter.get(
 draftsRouter.post(
   '/:context/ideas/:ideaId/draft',
   requireScope('write'),
+  requireUUID('ideaId'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, ideaId } = req.params;
     const { forceRegenerate = false, title, summary, rawTranscript, keywords, type, category } = req.body;

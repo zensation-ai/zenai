@@ -18,6 +18,11 @@ jest.mock('../../middleware/auth', () => ({
   requireScope: jest.fn(() => (req: any, res: any, next: any) => next()),
 }));
 
+// Mock validate-params middleware (UUID validation tested separately)
+jest.mock('../../middleware/validate-params', () => ({
+  requireUUID: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 // Mock database context
 jest.mock('../../utils/database-context', () => ({
   isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
@@ -209,7 +214,7 @@ describe('Automations API Integration Tests', () => {
     it('should list all automations', async () => {
       const mockAutomations = [
         {
-          id: 'auto-1',
+          id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
           context: 'personal' as const,
           name: 'Daily Digest',
           description: 'Sends daily digest',
@@ -273,7 +278,7 @@ describe('Automations API Integration Tests', () => {
   describe('GET /api/:context/automations/:id', () => {
     it('should return a specific automation', async () => {
       const mockAutomation = {
-        id: 'auto-1',
+        id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
         context: 'personal' as const,
         name: 'Daily Digest',
         description: 'Sends daily digest email',
@@ -293,7 +298,7 @@ describe('Automations API Integration Tests', () => {
       mockGetAutomation.mockResolvedValueOnce(mockAutomation);
 
       const response = await request(app)
-        .get('/api/personal/automations/auto-1')
+        .get('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -375,8 +380,8 @@ describe('Automations API Integration Tests', () => {
   describe('POST /api/:context/automations/:id/execute', () => {
     it('should execute an automation manually', async () => {
       const executionResult = {
-        id: 'exec-123',
-        automation_id: 'auto-1',
+        id: 'b1ffcd00-0d1c-5fa9-cc7e-7ccace491b22',
+        automation_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
         trigger_data: {},
         actions_executed: 1,
         success: true,
@@ -388,7 +393,7 @@ describe('Automations API Integration Tests', () => {
       mockExecuteAutomation.mockResolvedValueOnce(executionResult);
 
       const response = await request(app)
-        .post('/api/personal/automations/auto-1/execute')
+        .post('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/execute')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -399,7 +404,7 @@ describe('Automations API Integration Tests', () => {
       mockExecuteAutomation.mockRejectedValueOnce(new Error('Execution failed'));
 
       const response = await request(app)
-        .post('/api/personal/automations/auto-1/execute')
+        .post('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/execute')
         .expect(500);
 
       expect(response.body.error).toBeDefined();
@@ -415,11 +420,11 @@ describe('Automations API Integration Tests', () => {
       mockDeleteAutomation.mockResolvedValueOnce(true);
 
       const response = await request(app)
-        .delete('/api/personal/automations/auto-1')
+        .delete('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(mockDeleteAutomation).toHaveBeenCalledWith('personal', 'auto-1');
+      expect(mockDeleteAutomation).toHaveBeenCalledWith('personal', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
     });
 
     it('should return 404 if automation does not exist', async () => {
@@ -441,8 +446,8 @@ describe('Automations API Integration Tests', () => {
     it('should return execution history', async () => {
       const mockExecutions = [
         {
-          id: 'exec-1',
-          automation_id: 'auto-1',
+          id: 'b1ffcd00-0d1c-5fa9-cc7e-7ccace491b22',
+          automation_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
           trigger_data: {},
           actions_executed: 1,
           success: true,
@@ -452,7 +457,7 @@ describe('Automations API Integration Tests', () => {
         },
         {
           id: 'exec-2',
-          automation_id: 'auto-1',
+          automation_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
           trigger_data: {},
           actions_executed: 1,
           success: true,
@@ -465,7 +470,7 @@ describe('Automations API Integration Tests', () => {
       mockGetExecutionHistory.mockResolvedValueOnce(mockExecutions);
 
       const response = await request(app)
-        .get('/api/personal/automations/auto-1/executions')
+        .get('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/executions')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -476,11 +481,11 @@ describe('Automations API Integration Tests', () => {
       mockGetExecutionHistory.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/automations/auto-1/executions')
+        .get('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/executions')
         .query({ limit: '5' })
         .expect(200);
 
-      expect(mockGetExecutionHistory).toHaveBeenCalledWith('personal', 'auto-1', 5);
+      expect(mockGetExecutionHistory).toHaveBeenCalledWith('personal', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 5);
     });
   });
 

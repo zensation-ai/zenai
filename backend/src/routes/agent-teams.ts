@@ -8,6 +8,7 @@
 
 import { Router, Request, Response } from 'express';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { requireUUID } from '../middleware/validate-params';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { AIContext, queryContext, isValidContext } from '../utils/database-context';
@@ -223,6 +224,7 @@ agentTeamsRouter.get(
   '/history/:id',
   apiKeyAuth,
   requireScope('read'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
@@ -272,6 +274,7 @@ agentTeamsRouter.post(
   '/history/:id/save-as-idea',
   apiKeyAuth,
   requireScope('write'),
+  requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {

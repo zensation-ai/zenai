@@ -12,6 +12,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { requireUUID } from '../middleware/validate-params';
 import { toIntBounded, toFloatBounded } from '../utils/validation';
 import { logger } from '../utils/logger';
 import {
@@ -83,7 +84,7 @@ router.get('/suggestions', apiKeyAuth, requireScope('read'), asyncHandler(async 
  * POST /api/proactive/suggestions/:id/accept
  * Accept a suggestion and optionally execute its action
  */
-router.post('/suggestions/:id/accept', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/suggestions/:id/accept', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
@@ -117,7 +118,7 @@ router.post('/suggestions/:id/accept', apiKeyAuth, requireScope('write'), asyncH
  * POST /api/proactive/suggestions/:id/dismiss
  * Dismiss a suggestion with optional reason
  */
-router.post('/suggestions/:id/dismiss', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/suggestions/:id/dismiss', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
@@ -468,7 +469,7 @@ router.get('/digest/recent', apiKeyAuth, requireScope('read'), asyncHandler(asyn
  * POST /api/proactive/digest/:id/viewed
  * Mark a digest as viewed
  */
-router.post('/digest/:id/viewed', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/digest/:id/viewed', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -548,7 +549,7 @@ router.get('/briefings', apiKeyAuth, requireScope('read'), asyncHandler(async (r
  * GET /api/proactive/briefings/:id
  * Get a single briefing by ID
  */
-router.get('/briefings/:id', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+router.get('/briefings/:id', apiKeyAuth, requireScope('read'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -573,7 +574,7 @@ router.get('/briefings/:id', apiKeyAuth, requireScope('read'), asyncHandler(asyn
  * POST /api/proactive/briefings/:id/dismiss
  * Dismiss a briefing
  */
-router.post('/briefings/:id/dismiss', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/briefings/:id/dismiss', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.body.context as string) || (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -630,7 +631,7 @@ router.post('/patterns', apiKeyAuth, requireScope('write'), asyncHandler(async (
  * POST /api/proactive/patterns/:id/confirm
  * Confirm a workflow pattern (optionally automate)
  */
-router.post('/patterns/:id/confirm', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/patterns/:id/confirm', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -645,7 +646,7 @@ router.post('/patterns/:id/confirm', apiKeyAuth, requireScope('write'), asyncHan
  * DELETE /api/proactive/patterns/:id
  * Dismiss/delete a workflow pattern
  */
-router.delete('/patterns/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.delete('/patterns/:id', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const context = (req.query.context as string) || 'personal';
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
