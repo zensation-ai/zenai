@@ -21,7 +21,7 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared/ packages/shared/
 RUN pnpm --filter @zenai/shared run build
 
-# Copy backend source and build
+# Copy backend source and build (cache-bust: 2026-03-12)
 COPY backend/ backend/
 RUN pnpm --filter zenai-backend run build
 
