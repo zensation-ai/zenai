@@ -9,7 +9,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { AIContext, isValidContext } from '../utils/database-context';
+import { isValidContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import {
   installPlugin,

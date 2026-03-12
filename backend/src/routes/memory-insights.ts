@@ -8,7 +8,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { isValidContext, AIContext } from '../utils/database-context';
+import { isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';

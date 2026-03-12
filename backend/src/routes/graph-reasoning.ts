@@ -10,7 +10,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { AIContext, isValidContext, queryContext } from '../utils/database-context';
+import { isValidContext, queryContext } from '../utils/database-context';
 import {
   inferTransitiveRelations,
   detectContradictions,

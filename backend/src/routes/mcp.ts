@@ -33,7 +33,7 @@
 import { Router, Request, Response } from 'express';
 import { createMCPServer } from '../mcp';
 import { mcpConnectionManager } from '../services/mcp-connections';
-import { isValidContext, AIContext } from '../utils/database-context';
+import { isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
 import { requireUUID } from '../middleware/validate-params';

@@ -18,7 +18,7 @@ import { apiKeyAuth } from '../middleware/auth';
 import { validateContextParam } from '../utils/validation';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
-import { AIContext, isValidContext } from '../utils/database-context';
+import { isValidContext } from '../utils/database-context';
 import { queryContext } from '../utils/database-context';
 import { retrieve, AdaptiveStrategy } from '../services/rag/adaptive-retrieval';
 import { getCitations } from '../services/rag/citation-tracker';
