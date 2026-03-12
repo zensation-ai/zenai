@@ -359,6 +359,7 @@ async function _incrementTopicInterest(profileId: string, topic: string): Promis
 /**
  * Batch increment topic interests
  * PERFORMANCE FIX: Single query instead of N queries for N keywords
+ * SECURITY FIX: Uses parameterized JSONB merge instead of string interpolation
  */
 async function batchIncrementTopicInterests(profileId: string, topics: string[]): Promise<void> {
   if (topics.length === 0) {
@@ -371,9 +372,12 @@ async function batchIncrementTopicInterests(profileId: string, topics: string[])
     return;
   }
 
-  // Build a single UPDATE query that increments all topics at once
-  // Using jsonb_object_agg to merge all increments in one operation
-  const topicUpdates = normalizedTopics.map(topic => `'${topic.replace(/'/g, "''")}', 1`).join(', ');
+  // Build a JSONB object of {topic: 1, topic: 1, ...} as a parameterized value
+  // This avoids string interpolation in SQL entirely
+  const incrementObj: Record<string, number> = {};
+  for (const topic of normalizedTopics) {
+    incrementObj[topic] = 1;
+  }
 
   await query(
     `UPDATE user_profile
@@ -385,13 +389,13 @@ async function batchIncrementTopicInterests(profileId: string, topics: string[])
        FROM (
          SELECT key FROM jsonb_object_keys(COALESCE(topic_interests, '{}')) AS key
          UNION
-         SELECT key FROM jsonb_object_keys(jsonb_build_object(${topicUpdates})) AS key
+         SELECT key FROM jsonb_each_text($2::jsonb) AS x(key, val)
        ) AS keys,
-       LATERAL (SELECT jsonb_build_object(${topicUpdates}) AS new_values) nv
+       LATERAL (SELECT $2::jsonb AS new_values) nv
      ),
      updated_at = NOW()
      WHERE id = $1`,
-    [profileId]
+    [profileId, JSON.stringify(incrementObj)]
   );
 }
 

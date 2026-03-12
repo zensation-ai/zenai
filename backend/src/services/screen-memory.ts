@@ -189,8 +189,9 @@ export async function getStats(context: AIContext): Promise<ScreenMemoryStats> {
 export async function cleanupOldCaptures(context: AIContext, retentionDays = 30): Promise<number> {
   const result = await queryContext(context,
     `DELETE FROM screen_captures
-     WHERE timestamp < NOW() - INTERVAL '${retentionDays} days'
-     RETURNING id`
+     WHERE timestamp < NOW() - make_interval(days := $1)
+     RETURNING id`,
+    [retentionDays]
   );
   const count = result.rowCount ?? 0;
   if (count > 0) {

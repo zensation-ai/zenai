@@ -625,13 +625,13 @@ export class EpisodicMemoryService {
                 created_at, retrieval_strength, context
          FROM episodic_memories
          WHERE context = $1
-           AND created_at < NOW() - INTERVAL '${CONFIG.TEMPORAL_MERGE.WEEKLY_THRESHOLD_DAYS} days'
-           AND created_at >= NOW() - INTERVAL '${CONFIG.TEMPORAL_MERGE.MONTHLY_THRESHOLD_DAYS} days'
-           AND retrieval_strength <= $2
+           AND created_at < NOW() - make_interval(days := $2)
+           AND created_at >= NOW() - make_interval(days := $3)
+           AND retrieval_strength <= $4
            AND trigger NOT LIKE '[weekly summary]%'
            AND trigger NOT LIKE '[monthly summary]%'
          ORDER BY created_at ASC`,
-        [context, CONFIG.TEMPORAL_MERGE.MAX_STRENGTH_FOR_MERGE]
+        [context, CONFIG.TEMPORAL_MERGE.WEEKLY_THRESHOLD_DAYS, CONFIG.TEMPORAL_MERGE.MONTHLY_THRESHOLD_DAYS, CONFIG.TEMPORAL_MERGE.MAX_STRENGTH_FOR_MERGE]
       );
 
       // Group by ISO week
@@ -698,11 +698,11 @@ export class EpisodicMemoryService {
                 created_at, retrieval_strength, context
          FROM episodic_memories
          WHERE context = $1
-           AND created_at < NOW() - INTERVAL '${CONFIG.TEMPORAL_MERGE.MONTHLY_THRESHOLD_DAYS} days'
-           AND retrieval_strength <= $2
+           AND created_at < NOW() - make_interval(days := $2)
+           AND retrieval_strength <= $3
            AND trigger NOT LIKE '[monthly summary]%'
          ORDER BY created_at ASC`,
-        [context, CONFIG.TEMPORAL_MERGE.MAX_STRENGTH_FOR_MERGE]
+        [context, CONFIG.TEMPORAL_MERGE.MONTHLY_THRESHOLD_DAYS, CONFIG.TEMPORAL_MERGE.MAX_STRENGTH_FOR_MERGE]
       );
 
       // Group by month

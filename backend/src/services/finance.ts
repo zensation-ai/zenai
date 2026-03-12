@@ -595,17 +595,19 @@ export async function getOverview(context: AIContext, months = 6): Promise<Finan
       `SELECT category, SUM(ABS(amount)) as total, COUNT(*) as count
        FROM transactions
        WHERE transaction_type = 'expense' AND category IS NOT NULL
-         AND transaction_date >= (CURRENT_DATE - INTERVAL '${months} months')
-       GROUP BY category ORDER BY total DESC LIMIT 10`
+         AND transaction_date >= (CURRENT_DATE - make_interval(months := $1))
+       GROUP BY category ORDER BY total DESC LIMIT 10`,
+      [months]
     ),
     queryContext(context,
       `SELECT TO_CHAR(transaction_date, 'YYYY-MM') as month,
               SUM(CASE WHEN transaction_type = 'income' THEN ABS(amount) ELSE 0 END) as income,
               SUM(CASE WHEN transaction_type = 'expense' THEN ABS(amount) ELSE 0 END) as expenses
        FROM transactions
-       WHERE transaction_date >= (CURRENT_DATE - INTERVAL '${months} months')
+       WHERE transaction_date >= (CURRENT_DATE - make_interval(months := $1))
        GROUP BY TO_CHAR(transaction_date, 'YYYY-MM')
-       ORDER BY month ASC`
+       ORDER BY month ASC`,
+      [months]
     ),
     getBudgets(context),
     getGoals(context),
