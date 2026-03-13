@@ -305,6 +305,10 @@ app.use(csrfProtection);
 // Phase 12: API Documentation
 setupSwagger(app);
 
+// Phase 56: Auth - Registration, Login, OAuth, MFA, Sessions
+import { authRouter } from './routes/auth';
+app.use('/api/auth', authRouter);
+
 // Phase 37: Global Search - Must be before context-aware routes
 app.use('/api/search', globalSearchRouter);
 

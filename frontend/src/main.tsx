@@ -48,12 +48,16 @@ fetchCsrfToken();
 
 // Configure axios interceptors
 axios.interceptors.request.use((config) => {
-  // API key authentication
+  // Phase 56: Prefer JWT token over API key
+  const jwtToken = safeLocalStorage('get', 'zenai_access_token');
   const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
-  if (apiKey) {
+
+  if (jwtToken) {
+    config.headers.Authorization = `Bearer ${jwtToken}`;
+  } else if (apiKey) {
     config.headers.Authorization = `Bearer ${apiKey}`;
   } else if (import.meta.env.DEV) {
-    console.warn('No API key configured. Set VITE_API_KEY in .env or localStorage.apiKey');
+    console.warn('No JWT token or API key configured.');
   }
 
   // Attach CSRF token to mutating requests (defense-in-depth)

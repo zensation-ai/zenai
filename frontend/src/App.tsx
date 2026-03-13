@@ -21,7 +21,7 @@ import type { AdvancedFilters } from './components/SearchFilterBar';
 import { safeLocalStorage } from './utils/storage';
 import { getErrorMessage } from './utils/errors';
 import { useAuth } from './contexts/AuthContext';
-import { LoginPage } from './components/LoginPage';
+import { AuthPage } from './components/AuthPage/AuthPage';
 import { safeParseResponse, IdeaCreationResponseSchema, SearchResponseSchema, ProgressiveSearchResponseSchema } from './utils/apiSchemas';
 import { GeneralChat } from './components/GeneralChat';
 import { ContextNudge } from './components/ContextNudge';
@@ -235,7 +235,7 @@ function App() {
   }
 
   if (!session) {
-    return <LoginPage />;
+    return <AuthPage />;
   }
 
   return <AuthenticatedApp />;

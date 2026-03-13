@@ -1,69 +1,334 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+/**
+ * Phase 56: JWT-based Authentication Context
+ *
+ * Replaces Supabase Auth with our own JWT backend.
+ * Provides: user, session (backward compat), loading, signIn, signOut, register, resetPassword.
+ *
+ * Token storage:
+ * - accessToken: localStorage (short-lived, 15min)
+ * - refreshToken: localStorage (7 days, rotated on use)
+ *
+ * Auto-refresh: Silently refreshes accessToken when it expires.
+ */
+
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../utils/supabase';
+
+// ===========================================
+// Types
+// ===========================================
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  email_verified: boolean;
+  display_name: string | null;
+  avatar_url: string | null;
+  auth_provider: string;
+  mfa_enabled: boolean;
+  role: string;
+  preferences: Record<string, unknown>;
+  last_login: string | null;
+  login_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Backward-compatible session object (truthy when logged in) */
+export interface AuthSession {
+  access_token: string;
+  user: AuthUser;
+}
 
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+  /** Backward compatibility: truthy when authenticated, null when not */
+  session: AuthSession | null;
+  /** The authenticated user, or null */
+  user: AuthUser | null;
+  /** True while initial auth state is being loaded */
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  /** Sign in with email/password */
+  signIn: (email: string, password: string, mfaCode?: string) => Promise<{ error: Error | null; mfaRequired?: boolean }>;
+  /** Sign out and revoke session */
   signOut: () => Promise<void>;
+  /** Register a new account */
+  register: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
+  /** Reset password (sends email) */
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  /** Get the current access token (for API calls) */
+  getAccessToken: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+// ===========================================
+// Storage Keys
+// ===========================================
 
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'zenai_access_token',
+  REFRESH_TOKEN: 'zenai_refresh_token',
+  USER: 'zenai_user',
+} as const;
+
+// ===========================================
+// API Helper
+// ===========================================
+
+function getApiUrl(): string {
+  return import.meta.env.VITE_API_URL || 'http://localhost:3000';
+}
+
+async function authFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const url = `${getApiUrl()}${path}`;
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+}
+
+async function authFetchWithToken(path: string, token: string, options: RequestInit = {}): Promise<Response> {
+  return authFetch(path, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+}
+
+// ===========================================
+// Auth Provider
+// ===========================================
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load stored auth state on mount
   useEffect(() => {
-    // Get initial session (with error handling to prevent infinite loading)
-    supabase.auth.getSession()
-      .then(({ data: { session: s } }) => {
-        setSession(s);
-      })
-      .catch(() => {
-        // Supabase unreachable — show login instead of infinite spinner
-      })
-      .finally(() => {
-        setLoading(false);
+    const storedToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+    const storedRefresh = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+
+    if (storedToken && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser) as AuthUser;
+        setUser(parsedUser);
+        setAccessToken(storedToken);
+        // Verify token is still valid by fetching /auth/me
+        verifyAndRefresh(storedToken, storedRefresh);
+      } catch {
+        clearAuthState();
+      }
+    } else if (storedRefresh) {
+      // No access token but have refresh — try to refresh
+      refreshTokens(storedRefresh);
+    } else {
+      setLoading(false);
+    }
+
+    return () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const clearAuthState = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    setUser(null);
+    setAccessToken(null);
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+  }, []);
+
+  const storeAuthState = useCallback((token: string, refreshToken: string, userData: AuthUser, expiresIn: number) => {
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+    setUser(userData);
+    setAccessToken(token);
+
+    // Schedule token refresh 1 minute before expiry
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    const refreshDelay = Math.max((expiresIn - 60) * 1000, 10000);
+    refreshTimerRef.current = setTimeout(() => {
+      const rt = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (rt) refreshTokens(rt);
+    }, refreshDelay);
+  }, []);
+
+  const verifyAndRefresh = useCallback(async (token: string, refreshToken: string | null) => {
+    try {
+      const response = await authFetchWithToken('/api/auth/me', token);
+      if (response.ok) {
+        const data = await response.json();
+        const userData = data.data as AuthUser;
+        setUser(userData);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+
+        // Schedule refresh
+        if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = setTimeout(() => {
+          const rt = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+          if (rt) refreshTokens(rt);
+        }, 12 * 60 * 1000); // 12 minutes
+      } else if (response.status === 401 && refreshToken) {
+        // Token expired, try refresh
+        await refreshTokens(refreshToken);
+      } else {
+        clearAuthState();
+      }
+    } catch {
+      // Network error — keep cached state, try refresh later
+      if (refreshToken) {
+        refreshTimerRef.current = setTimeout(() => {
+          refreshTokens(refreshToken);
+        }, 30000);
+      }
+    } finally {
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refreshTokens = useCallback(async (refreshToken: string) => {
+    try {
+      const response = await authFetch('/api/auth/refresh', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
       });
 
-    // Listen for auth state changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, s) => {
-        setSession(s);
+      if (response.ok) {
+        const data = await response.json();
+        const { accessToken: newAccess, refreshToken: newRefresh, expiresIn } = data.data;
+
+        // Fetch updated user profile
+        const meResponse = await authFetchWithToken('/api/auth/me', newAccess);
+        if (meResponse.ok) {
+          const meData = await meResponse.json();
+          storeAuthState(newAccess, newRefresh, meData.data, expiresIn);
+        } else {
+          // Use cached user data
+          const cachedUser = localStorage.getItem(STORAGE_KEYS.USER);
+          if (cachedUser) {
+            storeAuthState(newAccess, newRefresh, JSON.parse(cachedUser), expiresIn);
+          }
+        }
+      } else {
+        clearAuthState();
       }
-    );
-
-    return () => subscription.unsubscribe();
+    } catch {
+      // Network error — keep cached state
+    } finally {
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ? new Error(error.message) : null };
-  }, []);
+  // ===========================================
+  // Public API
+  // ===========================================
+
+  const signIn = useCallback(async (email: string, password: string, mfaCode?: string): Promise<{ error: Error | null; mfaRequired?: boolean }> => {
+    try {
+      const response = await authFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, mfa_code: mfaCode }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { error: new Error(data.error || 'Login failed') };
+      }
+
+      if (data.data.mfa_required) {
+        return { error: null, mfaRequired: true };
+      }
+
+      const { user: userData, accessToken: token, refreshToken: refresh, expiresIn } = data.data;
+      storeAuthState(token, refresh, userData, expiresIn);
+      setLoading(false);
+
+      return { error: null };
+    } catch (err) {
+      return { error: new Error('Network error. Please check your connection.') };
+    }
+  }, [storeAuthState]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+
+    if (token) {
+      try {
+        await authFetchWithToken('/api/auth/logout', token, {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch {
+        // Best effort
+      }
+    }
+
+    clearAuthState();
+  }, [clearAuthState]);
+
+  const register = useCallback(async (email: string, password: string, displayName?: string): Promise<{ error: Error | null }> => {
+    try {
+      const response = await authFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, display_name: displayName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { error: new Error(data.error || 'Registration failed') };
+      }
+
+      const { user: userData, accessToken: token, refreshToken: refresh, expiresIn } = data.data;
+      storeAuthState(token, refresh, userData, expiresIn);
+      setLoading(false);
+
+      return { error: null };
+    } catch {
+      return { error: new Error('Network error. Please check your connection.') };
+    }
+  }, [storeAuthState]);
+
+  const resetPassword = useCallback(async (_email: string): Promise<{ error: Error | null }> => {
+    // Password reset will be implemented in a future phase
+    return { error: new Error('Password reset is not yet available. Please contact support.') };
   }, []);
 
-  const resetPassword = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    return { error: error ? new Error(error.message) : null };
-  }, []);
+  const getAccessToken = useCallback((): string | null => {
+    return accessToken || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  }, [accessToken]);
+
+  // Build backward-compatible session object
+  const session: AuthSession | null = user && accessToken
+    ? { access_token: accessToken, user }
+    : null;
 
   return (
     <AuthContext.Provider
       value={{
         session,
-        user: session?.user ?? null,
+        user,
         loading,
         signIn,
         signOut,
+        register,
         resetPassword,
+        getAccessToken,
       }}
     >
       {children}
