@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 54
+## Current Phase: 56
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -174,6 +174,18 @@
 - Proactive Decision Engine: `backend/src/services/proactive-decision-engine.ts`
 - Proactive Engine Routes: `backend/src/routes/proactive-engine.ts`
 - Agent Checkpoints: `backend/src/services/agent-checkpoints.ts`
+- MCP Client SDK: `backend/src/services/mcp/mcp-client.ts`
+- MCP Transport: `backend/src/services/mcp/mcp-transport.ts`
+- MCP Registry: `backend/src/services/mcp/mcp-registry.ts`
+- MCP Tool Bridge: `backend/src/services/mcp/mcp-tool-bridge.ts`
+- MCP Server (Internal): `backend/src/services/mcp-server.ts`
+- MCP Connections Routes: `backend/src/routes/mcp-connections.ts`
+- Auth Routes: `backend/src/routes/auth.ts`
+- JWT Auth Middleware: `backend/src/middleware/jwt-auth.ts`
+- User Service: `backend/src/services/auth/user-service.ts`
+- JWT Service: `backend/src/services/auth/jwt-service.ts`
+- OAuth Providers: `backend/src/services/auth/oauth-providers.ts`
+- Session Store: `backend/src/services/auth/session-store.ts`
 
 ### Frontend
 
@@ -206,6 +218,10 @@
 - Hub Page: `frontend/src/components/HubPage.tsx`
 - Agent Teams Page: `frontend/src/components/AgentTeamsPage.tsx`
 - Governance Dashboard: `frontend/src/components/GovernanceDashboard.tsx`
+- MCP Connections Page: `frontend/src/components/MCPConnectionsPage.tsx`
+- Auth Page: `frontend/src/components/AuthPage/AuthPage.tsx`
+- OAuth Buttons: `frontend/src/components/AuthPage/OAuthButtons.tsx`
+- Auth Context: `frontend/src/contexts/AuthContext.tsx`
 
 ### Tests
 
@@ -553,6 +569,47 @@ GET    /api/agents/history/:id                          - Get single execution
 POST   /api/agents/history/:id/save-as-idea             - Persist result as idea
 ```
 
+### MCP Server Connections API (Phase 55)
+
+```
+GET    /api/:context/mcp/servers                            - List server connections
+GET    /api/:context/mcp/servers/:id                        - Get server connection
+POST   /api/:context/mcp/servers                            - Create server connection
+PUT    /api/:context/mcp/servers/:id                        - Update server connection
+DELETE /api/:context/mcp/servers/:id                        - Delete server connection
+POST   /api/:context/mcp/servers/:id/connect                - Connect and sync server
+POST   /api/:context/mcp/servers/:id/disconnect             - Disconnect server
+POST   /api/:context/mcp/servers/:id/health                 - Health check server
+GET    /api/:context/mcp/servers/:id/tools                  - List server tools
+GET    /api/:context/mcp/tools                              - Unified tools across all servers
+POST   /api/:context/mcp/tools/execute                      - Execute bridged tool
+GET    /api/mcp/status                                      - Internal MCP server status
+GET    /api/mcp/tools                                       - List internal MCP tools
+POST   /api/mcp/tools/call                                  - Call internal MCP tool
+GET    /api/mcp/resources                                   - List internal MCP resources
+POST   /api/mcp/resources/read                              - Read internal MCP resource
+```
+
+### Authentication API (Phase 56)
+
+```
+POST   /api/auth/register                                   - Register new user
+POST   /api/auth/login                                      - Login with email/password
+POST   /api/auth/refresh                                    - Refresh access token
+POST   /api/auth/logout                                     - Logout (revoke refresh token)
+POST   /api/auth/logout-all                                 - Revoke all sessions
+GET    /api/auth/profile                                    - Get current user profile
+PUT    /api/auth/profile                                    - Update user profile
+POST   /api/auth/change-password                            - Change password
+POST   /api/auth/mfa/enable                                 - Enable MFA (TOTP)
+POST   /api/auth/mfa/verify                                 - Verify MFA token
+POST   /api/auth/mfa/disable                                - Disable MFA
+GET    /api/auth/sessions                                   - List active sessions
+DELETE /api/auth/sessions/:id                                - Revoke specific session
+GET    /api/auth/oauth/:provider                            - OAuth redirect (Google/Microsoft/GitHub)
+GET    /api/auth/oauth/:provider/callback                   - OAuth callback
+```
+
 ## Environment Variables (Backend)
 
 ```bash
@@ -696,13 +753,13 @@ cd backend && npm test -- --coverage
 cd frontend && npm test
 ```
 
-### Test-Status (2026-03-12)
+### Test-Status (2026-03-13)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 3049 | 24 | 0 |
-| **Frontend** | 562 | 0 | 0 |
-| **Gesamt** | 3611 | 24 | 0 |
+| **Backend** | 3121 | 24 | 0 |
+| **Frontend** | 572 | 0 | 0 |
+| **Gesamt** | 3693 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -798,6 +855,69 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-13: Phase 55+56 - MCP SDK Upgrade + OAuth/JWT Multi-User
+
+**Zwei parallele Phasen: MCP Client SDK Migration + Authentication Foundation.**
+
+**Phase 55: MCP Client SDK Upgrade + Extended MCP Server**
+
+| Feature | Details |
+|---------|---------|
+| **SDK-basierter Client** | `MCPClientInstance` + `MCPClientManager` mit @modelcontextprotocol/sdk |
+| **3 Transports** | Streamable HTTP, SSE (legacy), stdio mit Auth-Support |
+| **Transport Abstraction** | Factory Pattern, Timeout-Handling, Error-Parsing |
+| **Database Registry** | Schema-aware CRUD fuer Server-Connections + External Tools |
+| **Tool Bridge** | Externe Tools mit qualifizierten Namen (`mcp_serverId_toolName`) |
+| **Usage Tracking** | Aufrufzaehler, Latenz-Statistiken pro Tool |
+| **Health Monitoring** | Konfigurierbares Intervall, Background-Polling |
+| **MCP Server 2.0** | 30 Built-in Tools, 5 Resources, 5 Prompts |
+| **Frontend** | MCPConnectionsPage mit Transport-Auswahl, Health Badges |
+
+**Phase 56: OAuth 2.1 + JWT + Multi-User Foundation**
+
+| Feature | Details |
+|---------|---------|
+| **JWT Tokens** | Access (15min) + Refresh (7d) mit RS256, Token-Rotation |
+| **Dual-Auth** | JWT Bearer + API Key backward-kompatibel |
+| **OAuth 2.1 PKCE** | Google, Microsoft, GitHub Provider |
+| **User Management** | bcrypt Password Hashing, MFA (TOTP) Support |
+| **Refresh Token Security** | Reuse Detection → revokes alle Sessions |
+| **Session Store** | Redis Cache + PostgreSQL Persistenz |
+| **Frontend** | AuthPage (Login/Register/Reset) + OAuth Buttons |
+| **AuthContext** | Dual JWT/Supabase Auth, Token Auto-Refresh |
+
+**Neue Dateien Phase 55:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/mcp/mcp-client.ts` | SDK-basierter MCP Client (378 LOC) |
+| `backend/src/services/mcp/mcp-transport.ts` | Transport Abstraction (268 LOC) |
+| `backend/src/services/mcp/mcp-registry.ts` | DB Registry mit CRUD (311 LOC) |
+| `backend/src/services/mcp/mcp-tool-bridge.ts` | Tool Bridge (213 LOC) |
+| `backend/src/routes/mcp-connections.ts` | MCP Connections API (373 LOC) |
+| `backend/sql/migrations/phase55_mcp_connections.sql` | 8 Tabellen (2 pro Schema) |
+| `frontend/src/components/MCPConnectionsPage.tsx` | MCP UI (596 LOC) |
+
+**Neue Dateien Phase 56:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/auth/user-service.ts` | User CRUD + Password (381 LOC) |
+| `backend/src/services/auth/jwt-service.ts` | JWT Sign/Verify RS256 (223 LOC) |
+| `backend/src/services/auth/oauth-providers.ts` | OAuth 2.1 PKCE (342 LOC) |
+| `backend/src/services/auth/session-store.ts` | Redis + DB Sessions (124 LOC) |
+| `backend/src/middleware/jwt-auth.ts` | Dual JWT/APIKey Auth (216 LOC) |
+| `backend/src/routes/auth.ts` | 15 Auth Endpoints (513 LOC) |
+| `backend/sql/migrations/phase56_auth.sql` | 4 Tabellen + ALTER api_keys |
+| `frontend/src/components/AuthPage/AuthPage.tsx` | Login/Register UI (210 LOC) |
+| `frontend/src/contexts/AuthContext.tsx` | Dual Auth Context (331 LOC) |
+
+**DB-Migration:** Phase 55: 8 Tabellen (mcp_server_connections + mcp_external_tools in 4 Schemas) | Phase 56: 4 Tabellen in public (users, user_sessions, oauth_states, user_contexts) + ALTER api_keys
+
+**Tests:** 272 neue Tests (Phase 55: 156, Phase 56: 116), Backend 3121 + Frontend 572 = 3693 bestanden, 24 uebersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-03-12: Phase 54 - AI OS Architecture (Proactive Intelligence)
 
