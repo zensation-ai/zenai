@@ -5,7 +5,7 @@
  * productivity insights, and period comparison.
  */
 
-import { queryContext, AIContext } from '../utils/database-context';
+import { queryContext, queryPublic, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 
 // ===========================================
@@ -107,7 +107,7 @@ export async function getOverview(
       SELECT
         COUNT(*) AS total,
         COUNT(*) FILTER (WHERE created_at >= $1 AND created_at <= $2) AS created,
-        COUNT(*) FILTER (WHERE status = 'completed' AND updated_at >= $1 AND updated_at <= $2) AS completed
+        COUNT(*) FILTER (WHERE is_archived = true AND updated_at >= $1 AND updated_at <= $2) AS completed
       FROM ideas
       WHERE created_at <= $2
     `, [from, to]),
@@ -121,22 +121,22 @@ export async function getOverview(
       WHERE created_at <= $2
     `, [to]),
 
-    queryContext(context, `
+    queryPublic(`
       SELECT
         COUNT(*) AS total,
-        COALESCE(SUM(message_count), 0) AS messages,
+        COUNT(*)::integer AS messages,
         COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60), 0) AS avg_duration
       FROM general_chat_sessions
-      WHERE created_at >= $1 AND created_at <= $2
-    `, [from, to]),
+      WHERE context = $1 AND created_at >= $2 AND created_at <= $3
+    `, [context, from, to]),
 
-    queryContext(context, `
+    queryPublic(`
       SELECT
         COUNT(*) AS total,
         COUNT(*) FILTER (WHERE created_at >= $1 AND created_at <= $2) AS uploaded
       FROM documents
-      WHERE created_at <= $2
-    `, [from, to]),
+      WHERE context = $3 AND created_at <= $2
+    `, [from, to, context]),
   ]);
 
   // Previous period counts (for trend)
@@ -153,17 +153,17 @@ export async function getOverview(
       WHERE updated_at >= $1 AND updated_at <= $2
     `, [prev.from, prev.to]),
 
-    queryContext(context, `
+    queryPublic(`
       SELECT COUNT(*) AS total
       FROM general_chat_sessions
-      WHERE created_at >= $1 AND created_at <= $2
-    `, [prev.from, prev.to]),
+      WHERE context = $1 AND created_at >= $2 AND created_at <= $3
+    `, [context, prev.from, prev.to]),
 
-    queryContext(context, `
+    queryPublic(`
       SELECT COUNT(*) AS uploaded
       FROM documents
-      WHERE created_at >= $1 AND created_at <= $2
-    `, [prev.from, prev.to]),
+      WHERE context = $1 AND created_at >= $2 AND created_at <= $3
+    `, [context, prev.from, prev.to]),
   ]);
 
   const ideasRow = ideasCur.rows[0] || {};
@@ -236,13 +236,13 @@ export async function getTrends(
       ORDER BY date
     `, [from, to]),
 
-    queryContext(context, `
+    queryPublic(`
       SELECT ${trunc} AS date, COUNT(*) AS value
       FROM general_chat_sessions
-      WHERE created_at >= $1 AND created_at <= $2
+      WHERE context = $1 AND created_at >= $2 AND created_at <= $3
       GROUP BY date
       ORDER BY date
-    `, [from, to]),
+    `, [context, from, to]),
   ]);
 
   const mapRows = (rows: Array<{ date: string; value: string }>): TrendDataPoint[] =>
@@ -293,25 +293,25 @@ export async function getProductivityInsights(
     `, [from, to]),
 
     // Focus time: total chat minutes
-    queryContext(context, `
+    queryPublic(`
       SELECT COALESCE(
         SUM(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60),
         0
       ) AS focus_minutes
       FROM general_chat_sessions
-      WHERE created_at >= $1 AND created_at <= $2
-    `, [from, to]),
+      WHERE context = $1 AND created_at >= $2 AND created_at <= $3
+    `, [context, from, to]),
 
     // Context switches: count of distinct sessions per day, averaged
-    queryContext(context, `
+    queryPublic(`
       SELECT COALESCE(AVG(daily_sessions), 0) AS avg_switches
       FROM (
         SELECT DATE(created_at) AS day, COUNT(*) AS daily_sessions
         FROM general_chat_sessions
-        WHERE created_at >= $1 AND created_at <= $2
+        WHERE context = $1 AND created_at >= $2 AND created_at <= $3
         GROUP BY day
       ) sub
-    `, [from, to]),
+    `, [context, from, to]),
   ]);
 
   const compRow = completionResult.rows[0] || {};

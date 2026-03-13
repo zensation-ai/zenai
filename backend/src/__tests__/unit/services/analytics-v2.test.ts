@@ -11,8 +11,10 @@ import {
 
 // Mock database-context
 var mockQueryContext = jest.fn();
+var mockQueryPublic = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
+  queryPublic: (...args: unknown[]) => mockQueryPublic(...args),
   isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
 }));
 
@@ -29,6 +31,7 @@ describe('Analytics V2 Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockQueryContext.mockReset();
+    mockQueryPublic.mockReset();
   });
 
   // ===========================================
@@ -37,15 +40,18 @@ describe('Analytics V2 Service', () => {
 
   describe('getOverview', () => {
     it('should return overview with all metrics', async () => {
-      // Current period: ideas, tasks, chats, docs
+      // Current period: ideas (queryContext), tasks (queryContext)
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ total: '50', created: '10', completed: '3' }] })
         .mockResolvedValueOnce({ rows: [{ total: '20', completed: '8', in_progress: '5' }] })
+        // Previous period: ideas, tasks
+        .mockResolvedValueOnce({ rows: [{ created: '5' }] })
+        .mockResolvedValueOnce({ rows: [{ completed: '4' }] });
+      // Current period: chats (queryPublic), docs (queryPublic)
+      mockQueryPublic
         .mockResolvedValueOnce({ rows: [{ total: '15', messages: '120', avg_duration: '12.5' }] })
         .mockResolvedValueOnce({ rows: [{ total: '30', uploaded: '7' }] })
-        // Previous period
-        .mockResolvedValueOnce({ rows: [{ created: '5' }] })
-        .mockResolvedValueOnce({ rows: [{ completed: '4' }] })
+        // Previous period: chats, docs
         .mockResolvedValueOnce({ rows: [{ total: '10' }] })
         .mockResolvedValueOnce({ rows: [{ uploaded: '3' }] });
 
@@ -65,17 +71,19 @@ describe('Analytics V2 Service', () => {
       expect(result.documents.total).toBe(30);
       expect(result.documents.uploaded).toBe(7);
       expect(result.documents.trend).toBe(133); // 7 vs 3 = 133%
-      expect(mockQueryContext).toHaveBeenCalledTimes(8);
+      expect(mockQueryContext).toHaveBeenCalledTimes(4);
+      expect(mockQueryPublic).toHaveBeenCalledTimes(4);
     });
 
     it('should handle zero previous period gracefully', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ total: '5', created: '5', completed: '0' }] })
         .mockResolvedValueOnce({ rows: [{ total: '2', completed: '1', in_progress: '1' }] })
+        .mockResolvedValueOnce({ rows: [{ created: '0' }] })
+        .mockResolvedValueOnce({ rows: [{ completed: '0' }] });
+      mockQueryPublic
         .mockResolvedValueOnce({ rows: [{ total: '3', messages: '10', avg_duration: '5' }] })
         .mockResolvedValueOnce({ rows: [{ total: '1', uploaded: '1' }] })
-        .mockResolvedValueOnce({ rows: [{ created: '0' }] })
-        .mockResolvedValueOnce({ rows: [{ completed: '0' }] })
         .mockResolvedValueOnce({ rows: [{ total: '0' }] })
         .mockResolvedValueOnce({ rows: [{ uploaded: '0' }] });
 
@@ -89,6 +97,7 @@ describe('Analytics V2 Service', () => {
 
     it('should handle empty results', async () => {
       mockQueryContext.mockResolvedValue({ rows: [{}] });
+      mockQueryPublic.mockResolvedValue({ rows: [{}] });
 
       const result = await getOverview('learning' as const, '2026-01-01', '2026-01-31');
 
@@ -101,6 +110,7 @@ describe('Analytics V2 Service', () => {
 
     it('should handle missing rows', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
+      mockQueryPublic.mockResolvedValue({ rows: [] });
 
       const result = await getOverview('creative' as const, '2026-01-01', '2026-01-31');
 
@@ -126,13 +136,13 @@ describe('Analytics V2 Service', () => {
           rows: [
             { date: '2026-03-01T00:00:00Z', value: '2' },
           ],
-        })
-        .mockResolvedValueOnce({
-          rows: [
-            { date: '2026-03-01T00:00:00Z', value: '4' },
-            { date: '2026-03-03T00:00:00Z', value: '1' },
-          ],
         });
+      mockQueryPublic.mockResolvedValueOnce({
+        rows: [
+          { date: '2026-03-01T00:00:00Z', value: '4' },
+          { date: '2026-03-03T00:00:00Z', value: '1' },
+        ],
+      });
 
       const result = await getTrends('personal' as const, '2026-03-01', '2026-03-07', 'day');
 
@@ -146,8 +156,8 @@ describe('Analytics V2 Service', () => {
     it('should return weekly trends', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ date: '2026-02-24T00:00:00Z', value: '12' }] })
-        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
+      mockQueryPublic.mockResolvedValueOnce({ rows: [] });
 
       const result = await getTrends('work' as const, '2026-02-01', '2026-03-01', 'week');
 
@@ -160,8 +170,8 @@ describe('Analytics V2 Service', () => {
     it('should return monthly trends', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ date: '2026-01-01T00:00:00Z', value: '30' }] })
-        .mockResolvedValueOnce({ rows: [{ date: '2026-01-01T00:00:00Z', value: '15' }] })
-        .mockResolvedValueOnce({ rows: [{ date: '2026-01-01T00:00:00Z', value: '20' }] });
+        .mockResolvedValueOnce({ rows: [{ date: '2026-01-01T00:00:00Z', value: '15' }] });
+      mockQueryPublic.mockResolvedValueOnce({ rows: [{ date: '2026-01-01T00:00:00Z', value: '20' }] });
 
       const result = await getTrends('personal' as const, '2026-01-01', '2026-03-01', 'month');
 
@@ -172,6 +182,7 @@ describe('Analytics V2 Service', () => {
 
     it('should handle empty date range', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
+      mockQueryPublic.mockResolvedValue({ rows: [] });
 
       const result = await getTrends('personal' as const, '2026-03-01', '2026-03-01', 'day');
 
@@ -189,7 +200,8 @@ describe('Analytics V2 Service', () => {
     it('should return productivity metrics', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ total: '20', completed: '15', avg_duration_hours: '4.5' }] })
-        .mockResolvedValueOnce({ rows: [{ hour: '14', cnt: '25' }] })
+        .mockResolvedValueOnce({ rows: [{ hour: '14', cnt: '25' }] });
+      mockQueryPublic
         .mockResolvedValueOnce({ rows: [{ focus_minutes: '320' }] })
         .mockResolvedValueOnce({ rows: [{ avg_switches: '3.5' }] });
 
@@ -205,7 +217,8 @@ describe('Analytics V2 Service', () => {
     it('should handle no tasks', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ total: '0', completed: '0', avg_duration_hours: '0' }] })
-        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+      mockQueryPublic
         .mockResolvedValueOnce({ rows: [{ focus_minutes: '0' }] })
         .mockResolvedValueOnce({ rows: [{ avg_switches: '0' }] });
 
@@ -219,7 +232,8 @@ describe('Analytics V2 Service', () => {
     it('should handle 100% completion rate', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ total: '10', completed: '10', avg_duration_hours: '2.0' }] })
-        .mockResolvedValueOnce({ rows: [{ hour: '10', cnt: '8' }] })
+        .mockResolvedValueOnce({ rows: [{ hour: '10', cnt: '8' }] });
+      mockQueryPublic
         .mockResolvedValueOnce({ rows: [{ focus_minutes: '150' }] })
         .mockResolvedValueOnce({ rows: [{ avg_switches: '1' }] });
 
@@ -237,13 +251,15 @@ describe('Analytics V2 Service', () => {
   describe('getComparison', () => {
     it('should compare two periods', async () => {
       // getComparison runs two getOverview calls in parallel via Promise.all
-      // Each getOverview makes 8 queries (4 current + 4 previous period)
-      // Promise.all runs both periods concurrently, so mock consumption order is non-deterministic.
-      // Use identical data for all 16 mocks to avoid order-dependency issues.
+      // Each getOverview makes 4 queryContext + 4 queryPublic queries
+      // Use identical data for all mocks to avoid order-dependency issues.
       const dataRow = { rows: [{ total: '50', created: '20', completed: '12', in_progress: '8', messages: '200', avg_duration: '10', uploaded: '10' }] };
 
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 8; i++) {
         mockQueryContext.mockResolvedValueOnce(dataRow);
+      }
+      for (let i = 0; i < 8; i++) {
+        mockQueryPublic.mockResolvedValueOnce(dataRow);
       }
 
       const result = await getComparison(
@@ -259,27 +275,31 @@ describe('Analytics V2 Service', () => {
       expect(result.changes.tasks).toBe(0);
       expect(result.changes.chats).toBe(0);
       expect(result.changes.documents).toBe(0);
-      expect(mockQueryContext).toHaveBeenCalledTimes(16);
+      expect(mockQueryContext).toHaveBeenCalledTimes(8);
+      expect(mockQueryPublic).toHaveBeenCalledTimes(8);
     });
 
     it('should handle equal periods', async () => {
       const mockRow = { rows: [{ total: '10', created: '5', completed: '2', in_progress: '3', messages: '20', avg_duration: '5', uploaded: '3' }] };
       const mockPrevRow = { rows: [{ created: '5', completed: '2', total: '5', uploaded: '3' }] };
+      // queryContext: ideas + tasks (current + prev) x2 periods
       mockQueryContext
         .mockResolvedValueOnce(mockRow)
         .mockResolvedValueOnce(mockRow)
-        .mockResolvedValueOnce(mockRow)
-        .mockResolvedValueOnce(mockRow)
-        .mockResolvedValueOnce(mockPrevRow)
-        .mockResolvedValueOnce(mockPrevRow)
         .mockResolvedValueOnce(mockPrevRow)
         .mockResolvedValueOnce(mockPrevRow)
         .mockResolvedValueOnce(mockRow)
         .mockResolvedValueOnce(mockRow)
+        .mockResolvedValueOnce(mockPrevRow)
+        .mockResolvedValueOnce(mockPrevRow);
+      // queryPublic: chats + docs (current + prev) x2 periods
+      mockQueryPublic
         .mockResolvedValueOnce(mockRow)
         .mockResolvedValueOnce(mockRow)
         .mockResolvedValueOnce(mockPrevRow)
         .mockResolvedValueOnce(mockPrevRow)
+        .mockResolvedValueOnce(mockRow)
+        .mockResolvedValueOnce(mockRow)
         .mockResolvedValueOnce(mockPrevRow)
         .mockResolvedValueOnce(mockPrevRow);
 
@@ -301,6 +321,7 @@ describe('Analytics V2 Service', () => {
   describe('Edge Cases', () => {
     it('should handle no data at all', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
+      mockQueryPublic.mockResolvedValue({ rows: [] });
 
       const overview = await getOverview('creative' as const, '2026-01-01', '2026-01-31');
       expect(overview.ideas.total).toBe(0);

@@ -323,7 +323,7 @@ agentTeamsRouter.post(
       ]
     );
 
-    if (!ideaResult.rows[0]) {
+    if (!ideaResult.rows[0]?.id) {
       res.status(500).json({ success: false, error: 'Gedanke konnte nicht erstellt werden' });
       return;
     }

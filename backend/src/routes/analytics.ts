@@ -124,8 +124,8 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
     `),
   ]);
 
-  const total = totalStats.rows[0];
-  const recent = recentStats.rows[0];
+  const total = totalStats.rows[0] || { total: '0', active: '0', archived: '0', last_week: '0', last_month: '0' };
+  const recent = recentStats.rows[0] || { created: '0', updated: '0' };
 
   res.json({
     success: true,

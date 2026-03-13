@@ -469,8 +469,9 @@ analyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(a
       `, [intervalDays])
     ]);
 
-  const current = currentPeriod.rows[0];
-  const previous = previousPeriod.rows[0];
+  const defaultRow = { total: '0', high_priority: '0', tasks: '0', ideas: '0', active_days: '0' };
+  const current = currentPeriod.rows[0] || defaultRow;
+  const previous = previousPeriod.rows[0] || defaultRow;
 
   const calcChange = (curr: string, prev: string) => {
     const c = parseInt(curr || '0', 10);
