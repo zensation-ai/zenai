@@ -100,9 +100,6 @@ export async function runDailyLearning(
       context
     );
 
-    // 6b. Fokus-Themen-Aktivität analysieren (Phase 36 - TODO)
-    // analyzeFocusTopicActivity(todaysIdeas, context);
-
     // 7. Speichere Lern-Log
     await saveDailyLearningLog(
       context,

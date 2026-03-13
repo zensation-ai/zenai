@@ -678,7 +678,9 @@ export async function executeTeamTask(
         eventSource: 'agent_orchestrator',
         payload: { teamId, strategy, executionTimeMs: teamResult.executionTimeMs, agentCount: agentResults.length },
       })
-    ).catch(() => {});
+    ).catch(err => {
+      logger.warn('Failed to emit agent event', { error: err instanceof Error ? err.message : String(err), teamId });
+    });
 
     return teamResult;
   } finally {

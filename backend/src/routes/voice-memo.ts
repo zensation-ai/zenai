@@ -106,7 +106,7 @@ async function storeIdea(
     // Emit idea.created event for proactive engine
     import('../services/event-system').then(({ emitSystemEvent }) =>
       emitSystemEvent({ context, eventType: 'idea.created', eventSource: 'voice_memo', payload: { ideaId, title: structured.title } })
-    ).catch(() => {});
+    ).catch(err => { logger.warn('Failed to emit idea.created event', { error: err instanceof Error ? err.message : String(err) }); });
   } else {
     await queryContext(
       context,
@@ -138,7 +138,7 @@ async function storeIdea(
     // Emit idea.created event for proactive engine
     import('../services/event-system').then(({ emitSystemEvent }) =>
       emitSystemEvent({ context, eventType: 'idea.created', eventSource: 'voice_memo', payload: { ideaId, title: structured.title } })
-    ).catch(() => {});
+    ).catch(err => { logger.warn('Failed to emit idea.created event', { error: err instanceof Error ? err.message : String(err) }); });
   }
 }
 

@@ -256,9 +256,15 @@ export async function handleGenerateBusinessReport(
       }
 
       if (report.metrics) {
-        const metrics = typeof report.metrics === 'string'
-          ? JSON.parse(report.metrics)
-          : report.metrics;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let metrics: Record<string, any>;
+        try {
+          metrics = typeof report.metrics === 'string'
+            ? JSON.parse(report.metrics)
+            : report.metrics;
+        } catch {
+          metrics = {};
+        }
 
         parts.push('**Kennzahlen:**');
         // Metrics are stored nested: { stripe: { mrr }, ga4: { users }, ... }
@@ -273,9 +279,15 @@ export async function handleGenerateBusinessReport(
       }
 
       if (report.recommendations) {
-        const recs = typeof report.recommendations === 'string'
-          ? JSON.parse(report.recommendations)
-          : report.recommendations;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let recs: any[];
+        try {
+          recs = typeof report.recommendations === 'string'
+            ? JSON.parse(report.recommendations)
+            : report.recommendations;
+        } catch {
+          recs = [];
+        }
         if (Array.isArray(recs) && recs.length > 0) {
           parts.push('', '**Empfehlungen:**');
           for (const rec of recs) {
@@ -361,8 +373,16 @@ export async function handleComparePeriods(
 
     const current = result.rows[0];
     const previous = result.rows[1];
-    const currentMetrics = typeof current.metrics === 'string' ? JSON.parse(current.metrics) : current.metrics;
-    const previousMetrics = typeof previous.metrics === 'string' ? JSON.parse(previous.metrics) : previous.metrics;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let currentMetrics: Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let previousMetrics: Record<string, any>;
+    try {
+      currentMetrics = typeof current.metrics === 'string' ? JSON.parse(current.metrics) : (current.metrics ?? {});
+      previousMetrics = typeof previous.metrics === 'string' ? JSON.parse(previous.metrics) : (previous.metrics ?? {});
+    } catch {
+      return 'Metriken-Daten sind beschädigt und können nicht analysiert werden.';
+    }
 
     const parts: string[] = [
       `📊 **Periodenvergleich**`,

@@ -205,7 +205,7 @@ async function processEvent(
       context,
       `UPDATE proactive_rules SET last_triggered_at = NOW() WHERE id = $1`,
       [rule.id]
-    ).catch(() => {});
+    ).catch(err => { logger.warn('Failed to update rule last_triggered_at', { error: err instanceof Error ? err.message : String(err), ruleId: rule.id }); });
 
     // Mark event processed
     await markEventProcessed(

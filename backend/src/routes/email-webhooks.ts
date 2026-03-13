@@ -265,7 +265,9 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
   // Emit system event for proactive engine
   import('../services/event-system').then(({ emitSystemEvent }) =>
     emitSystemEvent({ context, eventType: 'email.received', eventSource: 'email_webhook', payload: { emailId: id, from: fromAddress, subject: data.subject } })
-  ).catch(() => {});
+  ).catch(err => {
+    logger.warn('Failed to emit email.received event', { error: err instanceof Error ? err.message : String(err), emailId: id });
+  });
 
   // Queue AI processing (fire-and-forget)
   processEmailWithAIAsync(context, id).catch(err => {

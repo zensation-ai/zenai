@@ -398,8 +398,10 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                         // Accumulate thinking deltas (backend now streams chunks)
                         setThinkingContent(prev => prev + data.thinking);
                       }
-                    } catch {
-                      // Skip malformed JSON
+                    } catch (parseErr) {
+                      if (parseErr instanceof Error && parseErr.message && !parseErr.message.includes('JSON')) {
+                        throw parseErr; // Re-throw non-JSON errors (e.g. server error messages)
+                      }
                     }
                     currentEventType = '';
                   }

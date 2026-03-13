@@ -164,7 +164,7 @@ export async function buildContext(
       rulesApplied.push(rule.name);
 
       // Record performance
-      recordPerformance(context, rule.id, totalTokens, Date.now() - startTime).catch(() => {});
+      recordPerformance(context, rule.id, totalTokens, Date.now() - startTime).catch(err => { logger.warn('Failed to record context rule performance', { error: err instanceof Error ? err.message : String(err), ruleId: rule.id }); });
     }
   } catch (error) {
     logger.error('Context building failed', error instanceof Error ? error : undefined);

@@ -256,7 +256,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
     // Emit idea.created event for proactive engine
     import('../services/event-system').then(({ emitSystemEvent }) =>
       emitSystemEvent({ context: context as AIContext, eventType: 'idea.created', eventSource: 'voice_memo_context', payload: { ideaId, title: structured.title } })
-    ).catch(() => {});
+    ).catch(err => { logger.warn('Failed to emit idea.created event', { error: err instanceof Error ? err.message : String(err) }); });
 
     // Track activity for evolution timeline + suggestions (non-blocking)
     trackActivity(context as AIContext, {

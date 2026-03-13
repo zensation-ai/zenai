@@ -180,7 +180,7 @@ emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), asy
   // Emit email.sent event for proactive engine
   import('../services/event-system').then(({ emitSystemEvent }) =>
     emitSystemEvent({ context, eventType: 'email.sent', eventSource: 'email', payload: { emailId: email.id, to: to_addresses, subject } })
-  ).catch(() => {});
+  ).catch(err => { logger.warn('Failed to emit email.sent event', { error: err instanceof Error ? err.message : String(err) }); });
 
   res.status(201).json({ success: true, data: email });
 }));
@@ -386,7 +386,7 @@ emailRouter.post('/:context/emails/:id/send', apiKeyAuth, requireScope('write'),
   // Emit email.sent event for proactive engine
   import('../services/event-system').then(({ emitSystemEvent }) =>
     emitSystemEvent({ context, eventType: 'email.sent', eventSource: 'email', payload: { emailId: id, subject: sent.subject } })
-  ).catch(() => {});
+  ).catch(err => { logger.warn('Failed to emit email.sent event', { error: err instanceof Error ? err.message : String(err) }); });
 
   res.json({ success: true, data: sent });
 }));

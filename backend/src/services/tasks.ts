@@ -131,7 +131,7 @@ export async function createTask(
   // Emit system event for proactive engine
   import('./event-system').then(({ emitSystemEvent }) =>
     emitSystemEvent({ context, eventType: 'task.created', eventSource: 'tasks', payload: { taskId: id, title: input.title, status, priority: input.priority || 'medium' } })
-  ).catch(() => {});
+  ).catch(err => { logger.warn('Failed to emit task.created event', { error: err instanceof Error ? err.message : String(err) }); });
 
   return mapRowToTask(result.rows[0]);
 }
@@ -281,7 +281,7 @@ export async function updateTask(
   if (updates.status === 'done') {
     import('./event-system').then(({ emitSystemEvent }) =>
       emitSystemEvent({ context, eventType: 'task.completed', eventSource: 'tasks', payload: { taskId: id, title: result.rows[0]?.title } })
-    ).catch(() => {});
+    ).catch(err => { logger.warn('Failed to emit task.completed event', { error: err instanceof Error ? err.message : String(err) }); });
   }
 
   return mapRowToTask(result.rows[0]);

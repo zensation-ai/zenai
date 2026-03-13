@@ -167,7 +167,7 @@ function msUntilNextTime(hour: number, minute: number, dayOfWeek?: number): numb
 function scheduleDailyDigest(): void {
   const ms = msUntilNextTime(8, 0);
   dailyDigestTimeout = setTimeout(() => {
-    emitDailyDigest().catch(() => {});
+    emitDailyDigest().catch(err => { logger.warn('Daily digest emission failed', { error: err instanceof Error ? err.message : String(err) }); });
     scheduleDailyDigest();
   }, ms);
 }
@@ -175,7 +175,7 @@ function scheduleDailyDigest(): void {
 function scheduleWeeklyReview(): void {
   const ms = msUntilNextTime(9, 0, 1); // Monday 09:00
   weeklyReviewTimeout = setTimeout(() => {
-    emitWeeklyReview().catch(() => {});
+    emitWeeklyReview().catch(err => { logger.warn('Weekly review emission failed', { error: err instanceof Error ? err.message : String(err) }); });
     scheduleWeeklyReview();
   }, ms);
 }

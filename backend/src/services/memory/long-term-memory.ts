@@ -1130,7 +1130,7 @@ Antworte als JSON:
     // Emit system event for proactive engine
     import('../event-system').then(({ emitSystemEvent }) =>
       emitSystemEvent({ context, eventType: 'memory.fact_learned', eventSource: 'long_term_memory', payload: { factType: fact.factType, content: fact.content?.substring(0, 200) } })
-    ).catch(() => {});
+    ).catch(err => { logger.warn('Failed to emit memory.fact_learned event', { error: err instanceof Error ? err.message : String(err) }); });
   }
 
   /**
