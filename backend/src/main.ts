@@ -8,7 +8,7 @@ import { voiceMemoRouter } from './routes/voice-memo';
 import { ideasRouter, ideasContextRouter } from './routes/ideas';
 import { healthRouter } from './routes/health';
 import { knowledgeGraphRouter } from './routes/knowledge-graph';
-import { meetingsRouter } from './routes/meetings';
+import { meetingsRouter, contextMeetingsRouter } from './routes/meetings';
 import { userProfileRouter, userProfileContextRouter } from './routes/user-profile';
 // Phase 4: Enterprise Integration Routes
 import { apiKeysRouter } from './routes/api-keys';
@@ -349,6 +349,7 @@ app.use('/api/ideas', ideasRouter);
 app.use('/api', ideasContextRouter);  // Context-aware ideas routes: /api/:context/ideas/*
 app.use('/api/knowledge-graph', knowledgeGraphRouter);
 app.use('/api/meetings', meetingsRouter);
+app.use('/api/:context/meetings', contextMeetingsRouter);  // Context-aware meetings: /api/:context/meetings/*
 app.use('/api/profile', userProfileRouter);
 app.use('/api', userProfileContextRouter);  // Context-aware profile routes: /api/:context/profile/*
 

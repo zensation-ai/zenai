@@ -1,11 +1,11 @@
 /**
- * MeetingProtocol - Phase 37
+ * MeetingProtocol - Phase 37 + Audio
  *
- * Live meeting protocol: voice recording, transcript, AI-structured notes.
- * Reuses VoiceInput component for audio capture.
+ * Live meeting protocol: voice recording with audio upload,
+ * transcript, AI-structured notes, audio playback.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { logError } from '../../utils/errors';
 import type { AIContext } from '../ContextSwitcher';
@@ -14,12 +14,20 @@ import './MeetingProtocol.css';
 interface MeetingNote {
   id: string;
   meeting_id: string;
+  structured_summary?: string;
+  raw_transcript?: string;
+  topics_discussed?: string[];
+  // Legacy field mapping
   summary?: string;
   decisions?: string[];
   action_items?: Array<{ task: string; assignee?: string; deadline?: string }>;
   follow_ups?: string[];
   sentiment?: string;
   key_points?: string[];
+  audio_storage_path?: string;
+  audio_duration_seconds?: number;
+  audio_size_bytes?: number;
+  audio_mime_type?: string;
   created_at: string;
 }
 
@@ -27,7 +35,19 @@ interface MeetingProtocolProps {
   meetingId: string;
   meetingTitle: string;
   context: AIContext;
-  eventId?: string; // If opened from calendar event
+  eventId?: string;
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: MeetingProtocolProps) {
@@ -38,6 +58,12 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
   const [error, setError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [uploadSize, setUploadSize] = useState<number | null>(null);
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioBlobRef = useRef<Blob | null>(null);
 
   // Fetch existing notes
   useEffect(() => {
@@ -58,6 +84,27 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
     fetchNotes();
   }, [meetingId, context]);
 
+  // Fetch audio playback URL if notes have audio
+  useEffect(() => {
+    const noteWithAudio = notes.find(n => n.audio_storage_path);
+    if (noteWithAudio && !audioUrl) {
+      axios.get(`/api/${context}/meetings/${meetingId}/audio-url`)
+        .then(res => {
+          if (res.data.success && res.data.url) {
+            setAudioUrl(res.data.url);
+          }
+        })
+        .catch(err => logError('MeetingProtocol:fetchAudioUrl', err));
+    }
+  }, [notes, meetingId, context, audioUrl]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -70,7 +117,13 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
 
       recorder.onstop = async () => {
         stream.getTracks().forEach(track => track.stop());
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+
         const blob = new Blob(chunks, { type: 'audio/webm' });
+        audioBlobRef.current = blob;
 
         // Transcribe via voice-memo endpoint with transcribeOnly
         const formData = new FormData();
@@ -93,6 +146,12 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
       recorder.start();
       setMediaRecorder(recorder);
       setIsRecording(true);
+      setRecordingSeconds(0);
+
+      // Start recording timer
+      timerRef.current = setInterval(() => {
+        setRecordingSeconds(prev => prev + 1);
+      }, 1000);
     } catch (err) {
       logError('MeetingProtocol:startRecording', err);
       setError('Mikrofon-Zugriff fehlgeschlagen. Bitte Berechtigung erteilen.');
@@ -115,20 +174,39 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
       let res;
       if (eventId) {
         // Process via calendar meeting-link endpoint
-        res = await axios.post(`/api/${context}/calendar/events/${eventId}/meeting/notes`, {
-          transcript: transcript.trim(),
-        });
+        const formData = new FormData();
+        formData.append('transcript', transcript.trim());
+        if (audioBlobRef.current) {
+          formData.append('audio', audioBlobRef.current, 'meeting-recording.webm');
+        }
+        res = await axios.post(
+          `/api/${context}/calendar/events/${eventId}/meeting/notes`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } },
+        );
       } else {
-        // Process directly via meetings endpoint (context as query param)
-        res = await axios.post(`/api/meetings/${meetingId}/notes`, {
-          transcript: transcript.trim(),
-          context,
-        });
+        // Process directly via meetings endpoint with audio
+        const formData = new FormData();
+        formData.append('transcript', transcript.trim());
+        formData.append('context', context);
+        if (audioBlobRef.current) {
+          formData.append('audio', audioBlobRef.current, 'meeting-recording.webm');
+        }
+        res = await axios.post(
+          `/api/meetings/${meetingId}/notes`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } },
+        );
       }
 
       if (res.data.success && res.data.notes) {
         setNotes(prev => [...prev, res.data.notes]);
         setTranscript('');
+        // Track upload size
+        if (audioBlobRef.current) {
+          setUploadSize(audioBlobRef.current.size);
+        }
+        audioBlobRef.current = null;
       }
     } catch (err) {
       logError('MeetingProtocol:processNotes', err);
@@ -140,11 +218,16 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
 
   const getSentimentEmoji = (sentiment?: string) => {
     switch (sentiment) {
-      case 'positive': return '😊';
-      case 'negative': return '😟';
-      case 'neutral': return '😐';
+      case 'positive': return '\uD83D\uDE0A';
+      case 'negative': return '\uD83D\uDE1F';
+      case 'neutral': return '\uD83D\uDE10';
       default: return '';
     }
+  };
+
+  /** Get the summary text, preferring structured_summary over legacy summary */
+  const getNoteSummary = (note: MeetingNote): string | undefined => {
+    return note.structured_summary || note.summary;
   };
 
   if (loading) {
@@ -154,7 +237,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
   return (
     <div className="meeting-protocol">
       <h3 className="meeting-protocol__title">
-        {'🎙️'} Protokoll: {meetingTitle}
+        {'\uD83C\uDF99\uFE0F'} Protokoll: {meetingTitle}
       </h3>
 
       {/* Recording controls */}
@@ -164,7 +247,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
             className="meeting-protocol__record-btn"
             onClick={startRecording}
           >
-            {'🎙️'} Aufnahme starten
+            {'\uD83C\uDF99\uFE0F'} Aufnahme starten
           </button>
         ) : (
           <button
@@ -176,9 +259,14 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
         )}
 
         {isRecording && (
-          <span className="meeting-protocol__recording-indicator">
-            Aufnahme läuft...
-          </span>
+          <>
+            <span className="meeting-protocol__recording-indicator">
+              Aufnahme l&auml;uft...
+            </span>
+            <span className="meeting-protocol__recording-timer">
+              {formatDuration(recordingSeconds)}
+            </span>
+          </>
         )}
       </div>
 
@@ -201,8 +289,40 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
         </button>
       </div>
 
+      {uploadSize !== null && (
+        <div className="meeting-protocol__upload-info">
+          Audio hochgeladen: {formatBytes(uploadSize)}
+        </div>
+      )}
+
       {error && (
         <div className="meeting-protocol__error">{error}</div>
+      )}
+
+      {/* Audio playback */}
+      {audioUrl && (
+        <div className="meeting-protocol__audio-player">
+          <h4>Audioaufnahme</h4>
+          <audio controls preload="metadata" src={audioUrl}>
+            Dein Browser unterst&uuml;tzt kein Audio-Playback.
+          </audio>
+          {notes.find(n => n.audio_duration_seconds || n.audio_size_bytes) && (() => {
+            const audioNote = notes.find(n => n.audio_duration_seconds || n.audio_size_bytes);
+            return (
+              <div className="meeting-protocol__audio-meta">
+                {audioNote?.audio_duration_seconds && (
+                  <span>Dauer: {formatDuration(audioNote.audio_duration_seconds)}</span>
+                )}
+                {audioNote?.audio_size_bytes && (
+                  <span>Gr&ouml;&szlig;e: {formatBytes(audioNote.audio_size_bytes)}</span>
+                )}
+                {audioNote?.audio_mime_type && (
+                  <span>Format: {audioNote.audio_mime_type}</span>
+                )}
+              </div>
+            );
+          })()}
+        </div>
       )}
 
       {/* Structured notes display */}
@@ -216,10 +336,28 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
                 </span>
               )}
 
-              {note.summary && (
+              {getNoteSummary(note) && (
                 <div className="meeting-protocol__section">
                   <h4>Zusammenfassung</h4>
-                  <p>{note.summary}</p>
+                  <p>{getNoteSummary(note)}</p>
+                </div>
+              )}
+
+              {note.raw_transcript && (
+                <div className="meeting-protocol__section">
+                  <h4>Rohtranskript</h4>
+                  <p>{note.raw_transcript}</p>
+                </div>
+              )}
+
+              {note.topics_discussed && note.topics_discussed.length > 0 && (
+                <div className="meeting-protocol__section">
+                  <h4>Besprochene Themen</h4>
+                  <ul>
+                    {note.topics_discussed.map((topic, i) => (
+                      <li key={i}>{topic}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
 

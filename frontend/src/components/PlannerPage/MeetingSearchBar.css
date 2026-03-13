@@ -1,0 +1,59 @@
+/* MeetingSearchBar */
+
+.meeting-search-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.meeting-search-bar__input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #ddd);
+  background: var(--surface, #fff);
+  color: var(--text, #222);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color var(--transition-fast, 0.15s);
+}
+
+.meeting-search-bar__input:focus {
+  border-color: var(--primary, #4A90D9);
+}
+
+.meeting-search-bar__select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #ddd);
+  background: var(--surface, #fff);
+  color: var(--text, #222);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.meeting-search-bar__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.meeting-search-bar__toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .meeting-search-bar {
+    flex-wrap: wrap;
+  }
+
+  .meeting-search-bar__input {
+    min-width: 100%;
+  }
+}
