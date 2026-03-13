@@ -88,10 +88,19 @@ export function FloatingAssistant({ context, currentPage, onNavigate, onContextC
 
   // Mobile: body scroll lock when panel is open
   useEffect(() => {
-    if (isOpen && window.innerWidth < 768) {
-      document.body.style.overflow = 'hidden';
+    if (isOpen) {
+      const checkMobile = () => {
+        if (window.innerWidth < 768) {
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.body.style.overflow = '';
+        }
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
       return () => {
         document.body.style.overflow = '';
+        window.removeEventListener('resize', checkMobile);
       };
     }
   }, [isOpen]);

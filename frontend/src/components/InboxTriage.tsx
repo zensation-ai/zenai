@@ -4,6 +4,7 @@ import { AIContext } from './ContextSwitcher';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { AI_PERSONALITY, getRandomReward, FLOW_STATE_MESSAGES, ANTICIPATORY_MESSAGES } from '../utils/aiPersonality';
 import { useNeuroFeedback } from './NeuroFeedback';
+import { logError } from '../utils/errors';
 import type { IdeaPriority } from '../types/idea';
 import { TriageCard } from './TriageCard';
 import { TriageActions } from './TriageActions';
@@ -209,7 +210,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error || err.response?.data?.message || 'Fehler beim Speichern der Aktion'
         : 'Ein unerwarteter Fehler ist aufgetreten';
-      console.error('Triage action failed:', { action, ideaId: currentIdea.id, error: err });
+      logError('InboxTriage:action', err);
       showToast(message, 'error');
     } finally {
       setIsAnimating(false);

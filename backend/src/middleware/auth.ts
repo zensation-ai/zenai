@@ -207,6 +207,8 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
     let result;
 
     // Check if key is UUID format (DEPRECATED - will be removed in future)
+    // NOTE: api_keys lives in the public schema (global, not context-isolated).
+    // Using pool.query() here is intentional — this table is shared across all contexts.
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apiKey);
 
     if (isUUID) {
@@ -526,6 +528,10 @@ async function ensureRateLimitsTable(): Promise<void> {
     return;
   }
 
+  // NOTE: Rate limits are stored in the 'personal' schema as a convention.
+  // Rate limiting operates at the API-key level (pre-context), so the schema
+  // choice is arbitrary. 'personal' is always available and serves as the
+  // shared storage location for global rate limit counters.
   try {
     await queryContext('personal', `
       CREATE TABLE IF NOT EXISTS rate_limits (

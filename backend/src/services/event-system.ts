@@ -109,7 +109,11 @@ export async function getUnprocessedEvents(
       [context, limit]
     );
     return result.rows.map(parseEvent);
-  } catch {
+  } catch (error) {
+    logger.warn('Failed to query unprocessed events', {
+      context,
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
     return [];
   }
 }
@@ -130,8 +134,12 @@ export async function markEventProcessed(
        WHERE id = $4 AND context = $5`,
       [decision, reason, processedBy, eventId, context]
     );
-  } catch {
-    // Non-critical
+  } catch (error) {
+    logger.warn('Failed to mark event as processed', {
+      eventId,
+      context,
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
   }
 }
 
@@ -170,7 +178,11 @@ export async function getEventHistory(
       events: result.rows.map(parseEvent),
       total: parseInt(countResult.rows[0]?.total as string, 10) || 0,
     };
-  } catch {
+  } catch (error) {
+    logger.warn('Failed to query event history', {
+      context,
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
     return { events: [], total: 0 };
   }
 }
@@ -201,7 +213,11 @@ export async function getEventStats(context: AIContext): Promise<{
       byType,
       byDecision,
     };
-  } catch {
+  } catch (error) {
+    logger.warn('Failed to query event stats', {
+      context,
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
     return { totalEvents: 0, unprocessed: 0, byType: {}, byDecision: {} };
   }
 }

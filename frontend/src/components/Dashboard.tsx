@@ -190,6 +190,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const hasFetched = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -200,6 +201,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
   const fetchData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
+    setFetchError(false);
     try {
       const res = await axios.get(`/api/${context}/analytics/dashboard-summary`, { signal }).catch(e => {
         if (axios.isCancel(e)) throw e;
@@ -232,9 +234,14 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         hasFetched.current = true;
         retryTimer.current = setTimeout(() => fetchData(signal), 1500);
       }
+
+      if (!res.data) {
+        setFetchError(true);
+      }
     } catch (err) {
       if (axios.isCancel(err)) return;
       logError('Dashboard:fetchData', err);
+      setFetchError(true);
     }
     setLoading(false);
   }, [context]);
@@ -319,7 +326,14 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         </section>
 
         {/* Stat tiles */}
-        {loading ? (
+        {fetchError && !loading ? (
+          <div className="bento-card bento-stat" style={{ gridColumn: 'span 4', textAlign: 'center', padding: '1.5rem' }}>
+            <p style={{ marginBottom: '0.75rem', opacity: 0.7 }}>Daten konnten nicht geladen werden.</p>
+            <button type="button" className="neuro-focus-ring" onClick={() => fetchData()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--glass-bg)' }}>
+              Erneut versuchen
+            </button>
+          </div>
+        ) : loading ? (
           <>
             <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
             <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>

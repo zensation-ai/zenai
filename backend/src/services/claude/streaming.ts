@@ -471,21 +471,22 @@ export async function streamToSSE(
     }
 
     // Send completion event with metadata
+    const usage = finalMessage.usage;
     sendSSE(res, {
       type: 'done',
       data: {
         content: responseContent,
         metadata: {
-          inputTokens: finalMessage.usage.input_tokens,
-          outputTokens: finalMessage.usage.output_tokens,
+          inputTokens: usage?.input_tokens ?? 0,
+          outputTokens: usage?.output_tokens ?? 0,
           stopReason: finalMessage.stop_reason || 'end_turn',
         },
       },
     });
 
     logger.info('SSE stream complete', {
-      inputTokens: finalMessage.usage.input_tokens,
-      outputTokens: finalMessage.usage.output_tokens,
+      inputTokens: usage?.input_tokens ?? 0,
+      outputTokens: usage?.output_tokens ?? 0,
       stopReason: finalMessage.stop_reason,
       hadThinking: thinkingContent.length > 0,
       compactionOccurred: compactionDetected,

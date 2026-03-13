@@ -64,7 +64,7 @@ function ChatSessionSidebarComponent({
       abortRef.current?.abort();
       if (confirmResetRef.current) clearTimeout(confirmResetRef.current);
     };
-  }, [fetchSessions, activeSessionId]);
+  }, [fetchSessions]);
 
   // Refresh when a new message is sent (session title/updatedAt may change)
   useEffect(() => {
@@ -119,11 +119,17 @@ function ChatSessionSidebarComponent({
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
   };
 
+  // Clear confirm-delete state when search changes to avoid stale references
   const filtered = search.trim()
     ? sessions.filter(s =>
         s.title?.toLowerCase().includes(search.toLowerCase())
       )
     : sessions;
+
+  // Reset confirm state if the target session is no longer visible
+  if (confirmDeleteId && !filtered.some(s => s.id === confirmDeleteId)) {
+    setConfirmDeleteId(null);
+  }
 
   // Group sessions by date category
   const grouped = groupByDate(filtered);

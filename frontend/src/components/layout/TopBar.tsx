@@ -103,10 +103,14 @@ export const TopBar = memo(function TopBar({
             <span
               className={`topbar-status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}
               title={apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}
+              role="status"
+              aria-label={apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}
             />
             <span
               className={`topbar-status-dot ${apiStatus?.ollama ? 'connected' : 'disconnected'}`}
               title={apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}
+              role="status"
+              aria-label={apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}
             />
           </div>
           <button

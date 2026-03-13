@@ -217,6 +217,7 @@ export function AppLayout({
         currentPage={currentPage}
         onNavigate={handleMobileNavigate}
         onOpenMore={handleOpenMobileSidebar}
+        emailUnreadCount={emailUnreadCount}
       />
 
       {/* Mobile Sidebar Drawer */}

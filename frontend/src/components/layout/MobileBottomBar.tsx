@@ -13,6 +13,8 @@ interface MobileBottomBarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
   onOpenMore: () => void;
+  emailUnreadCount?: number;
+  notificationCount?: number;
 }
 
 interface BottomTab {
@@ -35,6 +37,7 @@ export const MobileBottomBar = memo(function MobileBottomBar({
   currentPage,
   onNavigate,
   onOpenMore,
+  emailUnreadCount = 0,
 }: MobileBottomBarProps) {
   const handleClick = (tab: BottomTab) => {
     if (tab.isSpecial === 'more') {
@@ -69,6 +72,11 @@ export const MobileBottomBar = memo(function MobileBottomBar({
             ) : tab.icon}
           </span>
           <span className="bottom-tab-label">{tab.label}</span>
+          {tab.id === 'email' && emailUnreadCount > 0 && (
+            <span className="bottom-tab-badge" aria-label={`${emailUnreadCount} ungelesene E-Mails`}>
+              {emailUnreadCount > 99 ? '99+' : emailUnreadCount}
+            </span>
+          )}
           {isActive(tab) && <span className="bottom-tab-indicator" aria-hidden="true" />}
         </button>
       ))}

@@ -50,3 +50,4 @@ stats.html
 .vercel-token
 .vercel/
 .claude/
+.turbo/
