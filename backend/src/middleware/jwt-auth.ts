@@ -61,7 +61,8 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
 
   // If x-api-key header is present, always use API Key auth
   if (apiKeyHeader) {
-    return apiKeyAuth(req, res, next);
+    apiKeyAuth(req, res, next);
+    return;
   }
 
   // If no auth header at all, return 401
@@ -79,7 +80,8 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
   // Check if this looks like a JWT or an API key
   if (!isLikelyJwt(token)) {
     // Delegate to existing API Key auth
-    return apiKeyAuth(req, res, next);
+    apiKeyAuth(req, res, next);
+    return;
   }
 
   // Try JWT verification
