@@ -4,6 +4,7 @@ npm-debug.log*
 
 # Build output (built fresh in container)
 **/dist
+**/*.tsbuildinfo
 
 # Frontend (not needed for backend deployment)
 frontend
