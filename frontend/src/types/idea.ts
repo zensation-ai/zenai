@@ -103,6 +103,7 @@ export type Page =
   | 'knowledge-graph'
   | 'learning-tasks'
   | 'voice-chat'
-  | 'agent-teams';
+  | 'agent-teams'
+  | 'mcp-servers';
 
 export type { AIContext as Context } from '../components/ContextSwitcher';

@@ -178,7 +178,7 @@ export const NAV_FOOTER_ITEMS: NavItem[] = [
     icon: '⚙️',
     label: 'Einstellungen',
     description: 'Profil & App konfigurieren',
-    subPages: ['profile', 'automations', 'integrations', 'export', 'sync'],
+    subPages: ['profile', 'automations', 'integrations', 'mcp-servers', 'export', 'sync'],
   },
   {
     page: 'notifications',

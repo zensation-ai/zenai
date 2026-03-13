@@ -9,6 +9,7 @@
  * - Automationen: Workflows und AI-Vorschläge
  * - Governance: Genehmigungen, Audit-Trail, Richtlinien
  * - Integrationen: OAuth, API Keys, Webhooks
+ * - MCP Server: Externe MCP-Verbindungen verwalten
  * - Daten: Export + Sync kombiniert
  */
 
@@ -29,8 +30,9 @@ const IntegrationsPage = lazy(() => import('./IntegrationsPage').then(m => ({ de
 const DataManagement = lazy(() => import('./DataManagement').then(m => ({ default: m.DataManagement })));
 const MemoryGovernance = lazy(() => import('./MemoryGovernance').then(m => ({ default: m.MemoryGovernance })));
 const GovernanceDashboard = lazy(() => import('./GovernanceDashboard').then(m => ({ default: m.GovernanceDashboard })));
+const MCPConnectionsPage = lazy(() => import('./MCPConnectionsPage').then(m => ({ default: m.MCPConnectionsPage })));
 
-type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data';
+type SettingsTab = 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'mcp-servers' | 'data';
 
 interface SettingsDashboardProps {
   context: AIContext;
@@ -47,6 +49,7 @@ const TABS: readonly TabDef<SettingsTab>[] = [
   { id: 'automations', label: 'Automationen', icon: '⚡', description: 'Workflows und AI-Vorschläge' },
   { id: 'governance', label: 'Governance', icon: '🛡️', description: 'Genehmigungen, Audit-Trail, Richtlinien' },
   { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
+  { id: 'mcp-servers', label: 'MCP Server', icon: '🔌', description: 'Externe MCP-Verbindungen' },
   { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
 
@@ -295,6 +298,13 @@ export const SettingsDashboard = memo(({
         return (
           <Suspense fallback={<TabLoader />}>
             <IntegrationsPage onBack={() => handleTabChange('general')} embedded />
+          </Suspense>
+        );
+
+      case 'mcp-servers':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <MCPConnectionsPage context={context} />
           </Suspense>
         );
 

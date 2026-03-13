@@ -336,6 +336,10 @@ import { mcpRouter, mcpConnectionsRouter } from './routes/mcp';
 app.use('/api/mcp', mcpRouter);             // /api/mcp/tools, /api/mcp/resources, /api/mcp/status
 app.use('/api', mcpConnectionsRouter);       // /api/:context/mcp/connections/*, /api/:context/mcp/tools, /api/:context/mcp/resources
 
+// Phase 55: MCP Client + Connection Management V2
+import { mcpConnectionsV2Router } from './routes/mcp-connections';
+app.use('/api', mcpConnectionsV2Router);     // /api/:context/mcp/servers/*, /api/:context/mcp/tools/:toolId/execute
+
 // Phase 34: Business Manager - Must be before context-aware routes
 app.use('/api/business', businessRouter);
 

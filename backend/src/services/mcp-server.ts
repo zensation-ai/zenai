@@ -5,6 +5,11 @@
  * External AI clients (Claude Desktop, Cursor, etc.) can discover
  * and use ZenAI's tools via JSON-RPC 2.0 over HTTP.
  *
+ * Capabilities:
+ * - Tools: 10 curated tools (search, create, remember, recall, etc.)
+ * - Resources: zenai://ideas/recent, zenai://calendar/today, zenai://memory/facts, zenai://emails/unread
+ * - Prompts: summarize, translate, analyze-sentiment
+ *
  * Protocol: JSON-RPC 2.0
  * Transport: HTTP (Streamable HTTP, not SSE transport)
  * Auth: Bearer token (reuses existing API key system)
@@ -12,7 +17,7 @@
 
 import { logger } from '../utils/logger';
 import { toolRegistry, ToolExecutionContext } from './claude/tool-use';
-import { AIContext } from '../utils/database-context';
+import { AIContext, queryContext } from '../utils/database-context';
 
 // ===========================================
 // Types
@@ -40,6 +45,19 @@ interface MCPToolDefinition {
     properties: Record<string, { type: string; description: string }>;
     required?: string[];
   };
+}
+
+interface MCPResourceDefinition {
+  uri: string;
+  name: string;
+  description: string;
+  mimeType: string;
+}
+
+interface MCPPromptDefinition {
+  name: string;
+  description: string;
+  arguments?: Array<{ name: string; description?: string; required?: boolean }>;
 }
 
 // ===========================================
@@ -177,6 +195,196 @@ const EXPOSED_TOOLS: MCPToolDefinition[] = [
 const EXPOSED_TOOL_NAMES = new Set(EXPOSED_TOOLS.map(t => t.name));
 
 // ===========================================
+// Exposed Resources (Phase 55)
+// ===========================================
+
+const EXPOSED_RESOURCES: MCPResourceDefinition[] = [
+  {
+    uri: 'zenai://ideas/recent',
+    name: 'Recent Ideas',
+    description: 'Most recent ideas from the knowledge base',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'zenai://calendar/today',
+    name: 'Today Calendar',
+    description: 'Calendar events for today',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'zenai://memory/facts',
+    name: 'Learned Facts',
+    description: 'Facts stored in long-term memory',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'zenai://emails/unread',
+    name: 'Unread Emails',
+    description: 'Unread emails from the inbox',
+    mimeType: 'application/json',
+  },
+];
+
+// ===========================================
+// Exposed Prompts (Phase 55)
+// ===========================================
+
+const EXPOSED_PROMPTS: MCPPromptDefinition[] = [
+  {
+    name: 'summarize',
+    description: 'Summarize content concisely',
+    arguments: [
+      { name: 'content', description: 'The content to summarize', required: true },
+      { name: 'max_length', description: 'Maximum length in words' },
+    ],
+  },
+  {
+    name: 'translate',
+    description: 'Translate text to another language',
+    arguments: [
+      { name: 'text', description: 'The text to translate', required: true },
+      { name: 'target_lang', description: 'Target language (e.g., en, de, fr)', required: true },
+    ],
+  },
+  {
+    name: 'analyze-sentiment',
+    description: 'Analyze the sentiment of text',
+    arguments: [
+      { name: 'text', description: 'The text to analyze', required: true },
+    ],
+  },
+];
+
+// ===========================================
+// Resource Handlers (Phase 55)
+// ===========================================
+
+async function readResource(uri: string, context: AIContext): Promise<{ contents: Array<{ uri: string; mimeType: string; text: string }> }> {
+  try {
+    switch (uri) {
+      case 'zenai://ideas/recent': {
+        const result = await queryContext(context, `
+          SELECT id, title, type, category, priority, summary, created_at
+          FROM ideas ORDER BY created_at DESC LIMIT 10
+        `, []);
+        return {
+          contents: [{
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(result.rows, null, 2),
+          }],
+        };
+      }
+
+      case 'zenai://calendar/today': {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+        const result = await queryContext(context, `
+          SELECT id, title, start_time, end_time, location, description
+          FROM calendar_events
+          WHERE start_time >= $1 AND start_time < $2
+          ORDER BY start_time
+        `, [startOfDay, endOfDay]);
+        return {
+          contents: [{
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(result.rows, null, 2),
+          }],
+        };
+      }
+
+      case 'zenai://memory/facts': {
+        const result = await queryContext(context, `
+          SELECT id, content, fact_type, confidence, created_at
+          FROM learned_facts
+          WHERE confidence >= 0.5
+          ORDER BY created_at DESC LIMIT 20
+        `, []);
+        return {
+          contents: [{
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(result.rows, null, 2),
+          }],
+        };
+      }
+
+      case 'zenai://emails/unread': {
+        const result = await queryContext(context, `
+          SELECT id, subject, sender_email, received_at, ai_summary
+          FROM emails
+          WHERE status = 'unread'
+          ORDER BY received_at DESC LIMIT 10
+        `, []);
+        return {
+          contents: [{
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(result.rows, null, 2),
+          }],
+        };
+      }
+
+      default:
+        throw new Error(`Unknown resource: ${uri}`);
+    }
+  } catch (error) {
+    // Return empty result if table doesn't exist yet
+    logger.debug('MCP resource read failed (table may not exist)', {
+      uri,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      contents: [{
+        uri,
+        mimeType: 'application/json',
+        text: '[]',
+      }],
+    };
+  }
+}
+
+// ===========================================
+// Prompt Handlers (Phase 55)
+// ===========================================
+
+function getPromptMessages(name: string, args: Record<string, unknown>): Array<{ role: string; content: { type: string; text: string } }> {
+  switch (name) {
+    case 'summarize':
+      return [{
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `Summarize the following content${args.max_length ? ` in at most ${args.max_length} words` : ''}:\n\n${args.content}`,
+        },
+      }];
+
+    case 'translate':
+      return [{
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `Translate the following text to ${args.target_lang}:\n\n${args.text}`,
+        },
+      }];
+
+    case 'analyze-sentiment':
+      return [{
+        role: 'user',
+        content: {
+          type: 'text',
+          text: `Analyze the sentiment of the following text. Respond with: positive, negative, neutral, or mixed, along with a brief explanation.\n\n${args.text}`,
+        },
+      }];
+
+    default:
+      throw new Error(`Unknown prompt: ${name}`);
+  }
+}
+
+// ===========================================
 // JSON-RPC Handler
 // ===========================================
 
@@ -199,10 +407,12 @@ export async function handleMCPRequest(
             protocolVersion: '2024-11-05',
             capabilities: {
               tools: { listChanged: false },
+              resources: { subscribe: false, listChanged: false },
+              prompts: { listChanged: false },
             },
             serverInfo: {
               name: 'zenai',
-              version: '1.0.0',
+              version: '2.0.0',
             },
           },
         };
@@ -252,6 +462,79 @@ export async function handleMCPRequest(
             content: [{ type: 'text', text: result }],
           },
         };
+      }
+
+      // === Resources (Phase 55) ===
+
+      case 'resources/list': {
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            resources: EXPOSED_RESOURCES,
+          },
+        };
+      }
+
+      case 'resources/read': {
+        const uri = params?.uri as string;
+        if (!uri) {
+          return { jsonrpc: '2.0', id, error: { code: -32602, message: 'Missing resource URI' } };
+        }
+
+        const resourceResult = await readResource(uri, context);
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: resourceResult,
+        };
+      }
+
+      // === Prompts (Phase 55) ===
+
+      case 'prompts/list': {
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            prompts: EXPOSED_PROMPTS,
+          },
+        };
+      }
+
+      case 'prompts/get': {
+        const promptName = params?.name as string;
+        const promptArgs = (params?.arguments as Record<string, unknown>) || {};
+
+        if (!promptName) {
+          return { jsonrpc: '2.0', id, error: { code: -32602, message: 'Missing prompt name' } };
+        }
+
+        const prompt = EXPOSED_PROMPTS.find(p => p.name === promptName);
+        if (!prompt) {
+          return { jsonrpc: '2.0', id, error: { code: -32602, message: `Unknown prompt: ${promptName}` } };
+        }
+
+        try {
+          const messages = getPromptMessages(promptName, promptArgs);
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: {
+              description: prompt.description,
+              messages,
+            },
+          };
+        } catch (promptError) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32602,
+              message: promptError instanceof Error ? promptError.message : 'Prompt error',
+            },
+          };
+        }
       }
 
       case 'ping': {

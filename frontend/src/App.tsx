@@ -122,6 +122,7 @@ const PAGE_PATHS: Record<Page, string> = {
   'voice-chat': '/my-ai/voice-chat',
   'memory-insights': '/my-ai/memory-insights',
   'agent-teams': '/workshop/agent-teams',
+  'mcp-servers': '/settings/integrations/mcp',
 };
 
 const PATH_PAGES: Record<string, Page> = {

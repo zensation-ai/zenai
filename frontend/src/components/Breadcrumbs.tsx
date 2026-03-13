@@ -119,6 +119,11 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Werkstatt', page: 'workshop', icon: '🧪' },
     { label: 'Agenten', page: 'agent-teams', icon: '👥' },
   ],
+  'mcp-servers': [
+    ROOT,
+    { label: 'Einstellungen', page: 'settings', icon: '⚙️' },
+    { label: 'MCP Server', page: 'mcp-servers', icon: '🔌' },
+  ],
 
   // Auswerten: Insights
   'insights': [ROOT, { label: 'Insights', page: 'insights', icon: '📊' }],
