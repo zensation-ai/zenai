@@ -120,7 +120,7 @@ export async function loadCheckpoint(
       [executionId]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const r = result.rows[0];
     return {
@@ -227,7 +227,7 @@ export async function getExecutionStatus(
       [executionId]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const r = result.rows[0];
     return {
@@ -289,8 +289,8 @@ export function requiresApproval(toolName: string): boolean {
 // ===========================================
 
 function parseJSON<T>(value: unknown, fallback: T): T {
-  if (!value) return fallback;
-  if (typeof value === 'object') return value as T;
+  if (!value) {return fallback;}
+  if (typeof value === 'object') {return value as T;}
   if (typeof value === 'string') {
     try { return JSON.parse(value); } catch { return fallback; }
   }

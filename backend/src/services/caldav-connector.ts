@@ -479,6 +479,7 @@ export function parseICal(icalData: string): {
 
 function extractField(ical: string, field: string): string | null {
   // Match the field line including any continuation lines (folded lines start with space/tab)
+  // eslint-disable-next-line security/detect-non-literal-regexp -- field is hardcoded iCal field name, not user input
   const foldRegex = new RegExp(`^${field}[;:][^\\r\\n]*(?:\\r?\\n[ \\t][^\\r\\n]*)*`, 'm');
   const foldMatch = ical.match(foldRegex);
   if (!foldMatch) {return null;}

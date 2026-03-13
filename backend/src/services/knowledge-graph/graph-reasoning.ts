@@ -711,7 +711,7 @@ export async function createTemporalRelation(
   targetId: string,
   relationType: string,
   strength: number = 0.8,
-  changeReason?: string
+  _changeReason?: string
 ): Promise<string | null> {
   try {
     // Supersede existing active relation of same type
@@ -734,7 +734,7 @@ export async function createTemporalRelation(
     );
 
     const newId = newResult.rows[0]?.id;
-    if (!newId) return null;
+    if (!newId) {return null;}
 
     // Mark old relation as superseded
     if (existing.rows.length > 0) {
@@ -838,7 +838,7 @@ export async function versionFact(
       [factId, newContent, newConfidence, source, nextVersion, changeReason, prevId]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const r = result.rows[0];
     return {

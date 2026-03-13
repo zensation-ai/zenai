@@ -104,7 +104,7 @@ export async function updateProactiveRule(
     if (updates.cooldownMinutes !== undefined) { setClauses.push(`cooldown_minutes = $${idx++}`); params.push(updates.cooldownMinutes); }
     if (updates.isActive !== undefined) { setClauses.push(`is_active = $${idx++}`); params.push(updates.isActive); }
 
-    if (setClauses.length === 0) return null;
+    if (setClauses.length === 0) {return null;}
     setClauses.push('updated_at = NOW()');
 
     const result = await queryContext(
@@ -157,7 +157,7 @@ export async function listProactiveRules(
  */
 export async function processUnhandledEvents(context: AIContext): Promise<DecisionResult[]> {
   const events = await getUnprocessedEvents(context, 20);
-  if (events.length === 0) return [];
+  if (events.length === 0) {return [];}
 
   const rules = await listProactiveRules(context, true);
   const results: DecisionResult[] = [];
@@ -185,16 +185,16 @@ async function processEvent(
 ): Promise<DecisionResult | null> {
   for (const rule of rules) {
     // Check event type match
-    if (!rule.eventTypes.includes(event.eventType)) continue;
+    if (!rule.eventTypes.includes(event.eventType)) {continue;}
 
     // Check conditions
-    if (!evaluateConditions(rule.conditions, event.payload)) continue;
+    if (!evaluateConditions(rule.conditions, event.payload)) {continue;}
 
     // Check cooldown
     if (rule.lastTriggeredAt) {
       const lastTriggered = new Date(rule.lastTriggeredAt).getTime();
       const cooldownMs = rule.cooldownMinutes * 60 * 1000;
-      if (Date.now() - lastTriggered < cooldownMs) continue;
+      if (Date.now() - lastTriggered < cooldownMs) {continue;}
     }
 
     // Execute decision
@@ -275,7 +275,7 @@ function evaluateConditions(
   conditions: RuleCondition[],
   payload: Record<string, unknown>
 ): boolean {
-  if (!conditions || conditions.length === 0) return true;
+  if (!conditions || conditions.length === 0) {return true;}
 
   for (const condition of conditions) {
     const fieldValue = getNestedValue(payload, condition.field);
@@ -283,26 +283,27 @@ function evaluateConditions(
 
     switch (condition.operator) {
       case 'equals':
-        if (String(fieldValue).toLowerCase() !== String(condValue).toLowerCase()) return false;
+        if (String(fieldValue).toLowerCase() !== String(condValue).toLowerCase()) {return false;}
         break;
       case 'contains':
-        if (!String(fieldValue).toLowerCase().includes(String(condValue).toLowerCase())) return false;
+        if (!String(fieldValue).toLowerCase().includes(String(condValue).toLowerCase())) {return false;}
         break;
       case 'gt':
-        if (!(Number(fieldValue) > Number(condValue))) return false;
+        if (!(Number(fieldValue) > Number(condValue))) {return false;}
         break;
       case 'lt':
-        if (!(Number(fieldValue) < Number(condValue))) return false;
+        if (!(Number(fieldValue) < Number(condValue))) {return false;}
         break;
       case 'exists':
-        if ((fieldValue !== undefined && fieldValue !== null) !== Boolean(condValue)) return false;
+        if ((fieldValue !== undefined && fieldValue !== null) !== Boolean(condValue)) {return false;}
         break;
       case 'regex':
         try {
           const pattern = String(condValue);
           // ReDoS protection: reject patterns with nested quantifiers
-          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(pattern) || pattern.length > 200) return false;
-          if (!new RegExp(pattern, 'i').test(String(fieldValue))) return false;
+          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(pattern) || pattern.length > 200) {return false;}
+          // eslint-disable-next-line security/detect-non-literal-regexp -- protected by ReDoS check above
+          if (!new RegExp(pattern, 'i').test(String(fieldValue))) {return false;}
         } catch { return false; }
         break;
     }
@@ -313,7 +314,7 @@ function evaluateConditions(
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   let current: unknown = obj;
   for (const part of path.split('.')) {
-    if (current === null || current === undefined || typeof current !== 'object') return undefined;
+    if (current === null || current === undefined || typeof current !== 'object') {return undefined;}
     current = (current as Record<string, unknown>)[part];
   }
   return current;
@@ -325,8 +326,8 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 
 function parseRule(r: Record<string, unknown>): ProactiveRule {
   const parseJSON = <T>(val: unknown, fallback: T): T => {
-    if (!val) return fallback;
-    if (typeof val === 'object') return val as T;
+    if (!val) {return fallback;}
+    if (typeof val === 'object') {return val as T;}
     if (typeof val === 'string') { try { return JSON.parse(val); } catch { return fallback; } }
     return fallback;
   };

@@ -25,6 +25,11 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "typecheck": "turbo run typecheck"
   },
+  "pnpm": {
+    "overrides": {
+      "tar@<7.5.11": ">=7.5.11"
+    }
+  },
   "devDependencies": {
     "turbo": "^2.5.0"
   }

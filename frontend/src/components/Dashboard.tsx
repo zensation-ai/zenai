@@ -233,6 +233,8 @@ const DashboardComponent: React.FC<DashboardProps> = ({
       if (!res.data && !hasFetched.current) {
         hasFetched.current = true;
         retryTimer.current = setTimeout(() => fetchData(signal), 1500);
+      } else if (!res.data && hasFetched.current) {
+        setFetchError(true);
       }
 
       if (!res.data) {
@@ -365,8 +367,18 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           </>
         )}
 
+        {/* Error retry banner */}
+        {fetchError && !loading && (
+          <div className="bento-card bento-trend" style={{ textAlign: 'center', padding: '1.5rem' }}>
+            <p style={{ marginBottom: '0.75rem', opacity: 0.7 }}>Daten konnten nicht geladen werden.</p>
+            <button type="button" className="bento-cta" onClick={() => { hasFetched.current = false; setFetchError(false); abortRef.current?.abort(); const c = new AbortController(); abortRef.current = c; fetchData(c.signal); }}>
+              Erneut versuchen
+            </button>
+          </div>
+        )}
+
         {/* Trend sparkline (spans 2 cols) */}
-        {!loading && (
+        {!loading && !fetchError && (
           <div className="bento-card bento-trend">
             <div className="bento-trend-header">
               <span className="bento-trend-title">7-Tage-Trend</span>

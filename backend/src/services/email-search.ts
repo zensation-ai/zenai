@@ -106,6 +106,7 @@ export function parseNaturalLanguageQuery(input: string): EmailSearchQuery {
 
   // Extract "from" patterns (don't match date keywords like "von gestern")
   const dateKeywords = /^(heute|gestern|diese[rmn]?|letzte[rmn]?|nach|vor|seit|this|last)\b/i;
+  // eslint-disable-next-line security/detect-unsafe-regex -- bounded optional group with negative lookahead, no backtracking risk
   const fromMatch = remaining.match(/(?:von|from)\s+(\S+(?:\s+(?!heute|gestern|diese|letzte|diesen|letzten|nach|vor|seit)\S+)?)/i);
   if (fromMatch && !dateKeywords.test(fromMatch[1])) {
     query.from = fromMatch[1].replace(/["""]/g, '');
@@ -113,6 +114,7 @@ export function parseNaturalLanguageQuery(input: string): EmailSearchQuery {
   }
 
   // Extract "to" patterns
+  // eslint-disable-next-line security/detect-unsafe-regex -- bounded optional group, no backtracking risk
   const toMatch = remaining.match(/(?:an|to)\s+(\S+(?:\s+\S+)?)/i);
   if (toMatch) {
     query.to = toMatch[1].replace(/["""]/g, '');

@@ -148,6 +148,7 @@ export function extractCitationsFromResponse(
   const usedIndices = new Set<number>();
 
   let match: RegExpExecArray | null;
+  // eslint-disable-next-line security/detect-non-literal-regexp -- source is a known constant regex pattern
   const regex = new RegExp(CITATION_PATTERN.source, 'g');
 
   while ((match = regex.exec(response)) !== null) {

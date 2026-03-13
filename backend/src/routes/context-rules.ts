@@ -35,7 +35,7 @@ contextRulesRouter.get(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const domain = req.query.domain as ContextDomain | undefined;
     if (domain && !VALID_DOMAINS.includes(domain)) {
@@ -54,7 +54,7 @@ contextRulesRouter.get(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const ruleId = req.query.ruleId as string | undefined;
     const perf = await getRulePerformance(context, ruleId);
@@ -69,10 +69,10 @@ contextRulesRouter.post(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const { query } = req.body;
-    if (!query || typeof query !== 'string') throw new ValidationError('query is required');
+    if (!query || typeof query !== 'string') {throw new ValidationError('query is required');}
 
     const domain = classifyDomain(query);
     const result = await buildContext(query, context, { maxTokens: req.body.maxTokens || 4000 });
@@ -95,11 +95,11 @@ contextRulesRouter.get(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const rules = await listContextRules(context);
     const rule = rules.find(r => r.id === req.params.id);
-    if (!rule) throw new NotFoundError('Context rule not found');
+    if (!rule) {throw new NotFoundError('Context rule not found');}
 
     res.json({ success: true, data: rule });
   })
@@ -112,11 +112,11 @@ contextRulesRouter.post(
   requireScope('write'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const { name, description, domain, priority, conditions, dataSources, contextTemplate, tokenBudget, isActive } = req.body;
 
-    if (!name || typeof name !== 'string') throw new ValidationError('name is required');
+    if (!name || typeof name !== 'string') {throw new ValidationError('name is required');}
     if (!domain || !VALID_DOMAINS.includes(domain)) {
       throw new ValidationError(`domain must be one of: ${VALID_DOMAINS.join(', ')}`);
     }
@@ -137,7 +137,7 @@ contextRulesRouter.post(
       isActive: isActive !== false,
     });
 
-    if (!rule) throw new ValidationError('Failed to create context rule');
+    if (!rule) {throw new ValidationError('Failed to create context rule');}
     res.status(201).json({ success: true, data: rule });
   })
 );
@@ -150,14 +150,14 @@ contextRulesRouter.put(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     if (req.body.domain && !VALID_DOMAINS.includes(req.body.domain)) {
       throw new ValidationError(`domain must be one of: ${VALID_DOMAINS.join(', ')}`);
     }
 
     const rule = await updateContextRule(context, req.params.id, req.body);
-    if (!rule) throw new NotFoundError('Context rule not found');
+    if (!rule) {throw new NotFoundError('Context rule not found');}
 
     res.json({ success: true, data: rule });
   })
@@ -171,10 +171,10 @@ contextRulesRouter.delete(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const deleted = await deleteContextRule(context, req.params.id);
-    if (!deleted) throw new NotFoundError('Context rule not found');
+    if (!deleted) {throw new NotFoundError('Context rule not found');}
 
     res.json({ success: true, message: 'Context rule deleted' });
   })

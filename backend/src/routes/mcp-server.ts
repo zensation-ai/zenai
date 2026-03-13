@@ -15,7 +15,6 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { handleMCPRequest, getExposedTools } from '../services/mcp-server';
-import { logger } from '../utils/logger';
 
 export const mcpServerRouter = Router();
 

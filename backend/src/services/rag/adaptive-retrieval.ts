@@ -66,7 +66,8 @@ const QUESTION_INDICATORS = /^(was|wie|warum|wann|wo|wer|welche|can|how|what|why
 const KEYWORD_INDICATORS = /["']|#\w+|\b[A-Z]{2,}\b/;
 
 /** Named entity patterns (proper nouns, abbreviations, file extensions) */
-const ENTITY_PATTERNS = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b|\b\w+\.\w{2,4}\b|\b[A-Z]{2,}\b/;
+// eslint-disable-next-line security/detect-unsafe-regex -- bounded repetition {0,5}, no backtracking risk
+const ENTITY_PATTERNS = /\b[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,5}\b|\b\w+\.\w{2,4}\b|\b[A-Z]{2,}\b/;
 
 // ===========================================
 // Strategy Selection

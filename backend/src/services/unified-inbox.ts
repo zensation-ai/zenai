@@ -156,7 +156,7 @@ export async function getUnifiedInboxCounts(
     { type: 'briefing' as InboxItemType, sql: `SELECT COUNT(*) as cnt FROM proactive_briefings WHERE read_at IS NULL AND generated_at > NOW() - INTERVAL '24 hours'` },
   ];
 
-  const results = await Promise.allSettled(
+  await Promise.allSettled(
     queries.map(async ({ type, sql }) => {
       try {
         const result = await queryContext(context, sql);
@@ -169,7 +169,7 @@ export async function getUnifiedInboxCounts(
 
   // Ensure all types have a count
   for (const { type } of queries) {
-    if (counts[type] === undefined) counts[type] = 0;
+    if (counts[type] === undefined) {counts[type] = 0;}
   }
 
   const total = Object.values(counts).reduce((sum, c) => sum + c, 0);

@@ -10,7 +10,6 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
 import { toIntBounded } from '../utils/validation';
 import {
   requestApproval,
@@ -27,8 +26,6 @@ import {
   expireStaleActions,
   logAudit,
   ActionType,
-  ActionSource,
-  RiskLevel,
   GovernanceStatus,
 } from '../services/governance';
 
@@ -39,7 +36,7 @@ const sseClients = new Map<string, Set<Response>>();
 
 function notifySSEClients(context: string, data: Record<string, unknown>): void {
   const clients = sseClients.get(context);
-  if (!clients || clients.size === 0) return;
+  if (!clients || clients.size === 0) {return;}
   const payload = `data: ${JSON.stringify(data)}\n\n`;
   for (const client of clients) {
     try {
@@ -77,7 +74,8 @@ governanceRouter.get(
     if (!sseClients.has(context)) {
       sseClients.set(context, new Set());
     }
-    sseClients.get(context)!.add(res);
+    const clients = sseClients.get(context);
+    if (clients) { clients.add(res); }
 
     // Heartbeat every 30s
     const heartbeat = setInterval(() => {
@@ -101,7 +99,7 @@ governanceRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const limit = toIntBounded(req.query.limit as string, 1, 100, 50);
     const offset = toIntBounded(req.query.offset as string, 0, 10000, 0);
@@ -123,7 +121,7 @@ governanceRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const limit = toIntBounded(req.query.limit as string, 1, 100, 50);
     const offset = toIntBounded(req.query.offset as string, 0, 10000, 0);
@@ -146,10 +144,10 @@ governanceRouter.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const action = await getActionById(context as AIContext, id);
-    if (!action) throw new NotFoundError('Action not found');
+    if (!action) {throw new NotFoundError('Action not found');}
 
     res.json({ success: true, data: action });
   })
@@ -165,7 +163,7 @@ governanceRouter.post(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const { action_type, action_source, source_id, description, payload, risk_level } = req.body;
 
@@ -206,7 +204,7 @@ governanceRouter.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const approvedBy = req.body.approved_by || 'user';
     const action = await approveAction(context as AIContext, id, approvedBy);
@@ -228,10 +226,10 @@ governanceRouter.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const { rejected_by, reason } = req.body;
-    if (!reason) throw new ValidationError('reason is required');
+    if (!reason) {throw new ValidationError('reason is required');}
 
     const action = await rejectAction(context as AIContext, id, rejected_by || 'user', reason);
 
@@ -255,7 +253,7 @@ governanceRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const limit = toIntBounded(req.query.limit as string, 1, 100, 50);
     const offset = toIntBounded(req.query.offset as string, 0, 10000, 0);
@@ -282,7 +280,7 @@ governanceRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const activeOnly = req.query.active_only === 'true';
     const policies = await listPolicies(context as AIContext, activeOnly);
@@ -297,7 +295,7 @@ governanceRouter.post(
   requireScope('admin'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const { name, description, action_type, conditions, risk_level, auto_approve, notify_on_auto_approve } = req.body;
     if (!name || !action_type) {
@@ -331,7 +329,7 @@ governanceRouter.put(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const policy = await updatePolicy(context as AIContext, id, req.body);
 
@@ -346,10 +344,10 @@ governanceRouter.delete(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context, id } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const deleted = await deletePolicy(context as AIContext, id);
-    if (!deleted) throw new NotFoundError('Policy not found');
+    if (!deleted) {throw new NotFoundError('Policy not found');}
 
     res.json({ success: true, message: 'Policy deleted' });
   })
@@ -365,7 +363,7 @@ governanceRouter.post(
   requireScope('admin'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const count = await expireStaleActions(context as AIContext);
     res.json({ success: true, expired: count });

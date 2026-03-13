@@ -329,11 +329,17 @@ export const Sidebar = memo(function Sidebar({
           <span
             className={`sidebar-status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}
             title={apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}
-          />
+            role="status"
+          >
+            <span className="visually-hidden">{apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}</span>
+          </span>
           <span
             className={`sidebar-status-dot ${apiStatus?.ollama ? 'connected' : 'disconnected'}`}
             title={apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}
-          />
+            role="status"
+          >
+            <span className="visually-hidden">{apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}</span>
+          </span>
           {!collapsed && <span className="sidebar-status-text">
             {apiStatus?.database && apiStatus?.ollama ? 'Verbunden' : 'Teilweise verbunden'}
           </span>}

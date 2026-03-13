@@ -194,7 +194,8 @@ export function classifyTeamStrategy(task: string): TeamStrategy {
 
   // Code-heavy patterns
   const codePatterns = [
-    /schreib(e|t)? (mir )?(einen? |den |das )?code/,
+    // eslint-disable-next-line security/detect-unsafe-regex -- bounded optional groups, no backtracking risk
+    /schreib(?:e|t)? (?:mir )?(?:eine?n? |den |das )?code/,
     /implementier(e|en)/,
     /programmier(e|en)/,
     /code.*schreib/,

@@ -441,7 +441,7 @@ export async function searchMeetingsHybrid(
     const ftScore = 1 / (K + idx + 1);
     if (existing) {
       existing.score += ftScore;
-      if (r.snippet) existing.result.snippet = r.snippet;
+      if (r.snippet) {existing.result.snippet = r.snippet;}
     } else {
       scoreMap.set(key, { result: r, score: ftScore });
     }
@@ -590,17 +590,17 @@ function formatMeetingFromJoin(row: Record<string, unknown>): Meeting {
 }
 
 function extractSnippet(transcript: string | null, query: string): string | undefined {
-  if (!transcript) return undefined;
+  if (!transcript) {return undefined;}
   const lowerTranscript = transcript.toLowerCase();
   const lowerQuery = query.toLowerCase();
   const idx = lowerTranscript.indexOf(lowerQuery);
-  if (idx === -1) return transcript.substring(0, 150) + '...';
+  if (idx === -1) {return transcript.substring(0, 150) + '...';}
   const start = Math.max(0, idx - 60);
   const end = Math.min(transcript.length, idx + query.length + 60);
   let snippet = '';
-  if (start > 0) snippet += '...';
+  if (start > 0) {snippet += '...';}
   snippet += transcript.substring(start, end);
-  if (end < transcript.length) snippet += '...';
+  if (end < transcript.length) {snippet += '...';}
   return snippet;
 }
 

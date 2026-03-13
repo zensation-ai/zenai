@@ -155,7 +155,7 @@ export async function getEventHistory(
     const whereClause = hasEventType
       ? 'WHERE context = $1 AND event_type = $2'
       : 'WHERE context = $1';
-    const baseParams: (string | number)[] = hasEventType ? [context, options!.eventType!] : [context];
+    const baseParams: (string | number)[] = hasEventType ? [context, options?.eventType ?? ''] : [context];
     const nextIdx = baseParams.length + 1;
 
     const countResult = await queryContext(
@@ -202,10 +202,10 @@ export async function getEventStats(context: AIContext): Promise<{
     ]);
 
     const byType: Record<string, number> = {};
-    for (const r of typeResult.rows) byType[r.event_type as string] = parseInt(r.c as string, 10);
+    for (const r of typeResult.rows) {byType[r.event_type as string] = parseInt(r.c as string, 10);}
 
     const byDecision: Record<string, number> = {};
-    for (const r of decisionResult.rows) byDecision[r.decision as string] = parseInt(r.c as string, 10);
+    for (const r of decisionResult.rows) {byDecision[r.decision as string] = parseInt(r.c as string, 10);}
 
     return {
       totalEvents: parseInt(totalResult.rows[0]?.c as string, 10) || 0,

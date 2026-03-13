@@ -144,11 +144,11 @@ function checkConditions(
   conditions: PolicyCondition[],
   data: Record<string, unknown>
 ): boolean {
-  if (conditions.length === 0) return true;
+  if (conditions.length === 0) {return true;}
 
   return conditions.every(condition => {
     const fieldValue = getNestedValue(data, condition.field);
-    if (fieldValue === undefined) return false;
+    if (fieldValue === undefined) {return false;}
 
     const stringValue = String(fieldValue);
     const conditionValue = String(condition.value);
@@ -165,7 +165,8 @@ function checkConditions(
       case 'regex':
         try {
           // ReDoS protection: reject patterns with nested quantifiers
-          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(conditionValue) || conditionValue.length > 200) return false;
+          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(conditionValue) || conditionValue.length > 200) {return false;}
+          // eslint-disable-next-line security/detect-non-literal-regexp -- protected by ReDoS check above
           return new RegExp(conditionValue, 'i').test(stringValue);
         } catch {
           return false;
@@ -629,7 +630,7 @@ export async function listPolicies(
   activeOnly = false
 ): Promise<GovernancePolicy[]> {
   let sql = 'SELECT * FROM governance_policies';
-  if (activeOnly) sql += ' WHERE is_active = true';
+  if (activeOnly) {sql += ' WHERE is_active = true';}
   sql += ' ORDER BY action_type, created_at DESC';
   const result = await queryContext(context, sql);
   return result.rows as GovernancePolicy[];

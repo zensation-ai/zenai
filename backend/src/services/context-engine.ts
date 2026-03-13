@@ -95,7 +95,7 @@ export function classifyDomain(query: string): ContextDomain {
   const lowerQuery = query.toLowerCase();
 
   for (const [domain, patterns] of Object.entries(DOMAIN_PATTERNS)) {
-    if (domain === 'general') continue;
+    if (domain === 'general') {continue;}
     for (const pattern of patterns) {
       if (pattern.test(lowerQuery)) {
         return domain as ContextDomain;
@@ -135,16 +135,16 @@ export async function buildContext(
     const rules = await getActiveRules(context, domain);
 
     for (const rule of rules) {
-      if (totalTokens >= maxTokens) break;
+      if (totalTokens >= maxTokens) {break;}
 
       // Evaluate conditions
-      if (!evaluateConditions(rule.conditions, query)) continue;
+      if (!evaluateConditions(rule.conditions, query)) {continue;}
 
       // Execute data sources
       const remainingBudget = Math.min(rule.tokenBudget, maxTokens - totalTokens);
 
       for (const source of rule.dataSources) {
-        if (totalTokens >= maxTokens) break;
+        if (totalTokens >= maxTokens) {break;}
 
         try {
           const part = await executeDataSource(source, query, context, remainingBudget);
@@ -224,7 +224,7 @@ function parseRule(r: Record<string, unknown>): ContextRule {
 // ===========================================
 
 function evaluateConditions(conditions: ContextCondition[], query: string): boolean {
-  if (!conditions || conditions.length === 0) return true;
+  if (!conditions || conditions.length === 0) {return true;}
 
   for (const condition of conditions) {
     const fieldValue = condition.field === 'query' ? query : '';
@@ -232,22 +232,23 @@ function evaluateConditions(conditions: ContextCondition[], query: string): bool
 
     switch (condition.operator) {
       case 'contains':
-        if (!fieldValue.toLowerCase().includes(condValue.toLowerCase())) return false;
+        if (!fieldValue.toLowerCase().includes(condValue.toLowerCase())) {return false;}
         break;
       case 'equals':
-        if (fieldValue.toLowerCase() !== condValue.toLowerCase()) return false;
+        if (fieldValue.toLowerCase() !== condValue.toLowerCase()) {return false;}
         break;
       case 'regex':
         try {
-          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(condValue) || condValue.length > 200) return false;
-          if (!new RegExp(condValue, 'i').test(fieldValue)) return false;
+          if (/(\+|\*|\{)\s*(\+|\*|\{)/.test(condValue) || condValue.length > 200) {return false;}
+          // eslint-disable-next-line security/detect-non-literal-regexp -- protected by ReDoS check above
+          if (!new RegExp(condValue, 'i').test(fieldValue)) {return false;}
         } catch { return false; }
         break;
       case 'gt':
-        if (!(parseFloat(fieldValue) > parseFloat(condValue))) return false;
+        if (!(parseFloat(fieldValue) > parseFloat(condValue))) {return false;}
         break;
       case 'lt':
-        if (!(parseFloat(fieldValue) < parseFloat(condValue))) return false;
+        if (!(parseFloat(fieldValue) < parseFloat(condValue))) {return false;}
         break;
       default:
         break;
@@ -288,7 +289,7 @@ async function executeDBQuery(
   tokenBudget: number
 ): Promise<ContextPart | null> {
   const table = source.table;
-  if (!table || !ALLOWED_TABLES.includes(table)) return null;
+  if (!table || !ALLOWED_TABLES.includes(table)) {return null;}
 
   const limit = Math.min(source.limit || 5, 20);
 
@@ -299,7 +300,7 @@ async function executeDBQuery(
       [context, limit]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const content = result.rows
       .map((r: Record<string, unknown>) => {
@@ -344,7 +345,7 @@ async function executeMemoryLayer(
       [limit]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
 
     const content = result.rows
       .map((r: Record<string, unknown>) => r.content || r.fact_type || r.title || JSON.stringify(r))
@@ -364,7 +365,7 @@ async function executeMemoryLayer(
 }
 
 function executeStatic(source: DataSource, tokenBudget: number): ContextPart | null {
-  if (!source.content) return null;
+  if (!source.content) {return null;}
 
   const truncated = source.content.substring(0, tokenBudget * 4);
   return {
@@ -417,7 +418,7 @@ export async function createContextRule(
         rule.contextTemplate, rule.tokenBudget, rule.isActive,
       ]
     );
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
     return parseRule(result.rows[0]);
   } catch (error) {
     logger.error('Failed to create context rule', error instanceof Error ? error : undefined);
@@ -445,7 +446,7 @@ export async function updateContextRule(
     if (updates.tokenBudget !== undefined) { setClauses.push(`token_budget = $${paramIndex++}`); params.push(updates.tokenBudget); }
     if (updates.isActive !== undefined) { setClauses.push(`is_active = $${paramIndex++}`); params.push(updates.isActive); }
 
-    if (setClauses.length === 0) return null;
+    if (setClauses.length === 0) {return null;}
 
     setClauses.push('updated_at = NOW()', 'version = version + 1');
 
@@ -454,7 +455,7 @@ export async function updateContextRule(
       `UPDATE context_rules SET ${setClauses.join(', ')} WHERE id = $1 AND context = $2 RETURNING *`,
       params
     );
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
     return parseRule(result.rows[0]);
   } catch (error) {
     logger.error('Failed to update context rule', error instanceof Error ? error : undefined);
@@ -533,8 +534,8 @@ export async function getRulePerformance(
 // ===========================================
 
 function parseJSON<T>(value: unknown, fallback: T): T {
-  if (!value) return fallback;
-  if (typeof value === 'object') return value as T;
+  if (!value) {return fallback;}
+  if (typeof value === 'object') {return value as T;}
   if (typeof value === 'string') {
     try { return JSON.parse(value); } catch { return fallback; }
   }

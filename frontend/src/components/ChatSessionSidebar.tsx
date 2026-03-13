@@ -66,6 +66,11 @@ function ChatSessionSidebarComponent({
     };
   }, [fetchSessions]);
 
+  // Reset delete confirmation when context changes
+  useEffect(() => {
+    setConfirmDeleteId(null);
+  }, [context]);
+
   // Refresh when a new message is sent (session title/updatedAt may change)
   useEffect(() => {
     const handler = () => { fetchSessions(); };

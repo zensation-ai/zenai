@@ -51,14 +51,14 @@ async function checkToken(token: string): Promise<boolean> {
   if (redis) {
     try {
       const result = await redis.get(`${CSRF_REDIS_PREFIX}${token}`);
-      if (result) return true;
+      if (result) {return true;}
       // Also check memory fallback (token may have been created during Redis downtime)
     } catch {
       // Fall through to memory check
     }
   }
   const tokenData = memoryTokenStore.get(token);
-  if (!tokenData) return false;
+  if (!tokenData) {return false;}
   if (tokenData.expiresAt < Date.now()) {
     memoryTokenStore.delete(token);
     return false;

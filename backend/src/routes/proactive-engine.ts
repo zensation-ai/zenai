@@ -30,7 +30,7 @@ proactiveEngineRouter.get(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const eventType = req.query.eventType as string | undefined;
     const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 100);
@@ -48,7 +48,7 @@ proactiveEngineRouter.get(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const stats = await getEventStats(context);
     res.json({ success: true, data: stats });
@@ -62,7 +62,7 @@ proactiveEngineRouter.get(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const activeOnly = req.query.active === 'true';
     const rules = await listProactiveRules(context, activeOnly);
@@ -77,12 +77,12 @@ proactiveEngineRouter.post(
   requireScope('write'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const { name, description, eventTypes, conditions, decision, actionConfig,
             riskLevel, requiresApproval, priority, cooldownMinutes, isActive } = req.body;
 
-    if (!name || typeof name !== 'string') throw new ValidationError('name is required');
+    if (!name || typeof name !== 'string') {throw new ValidationError('name is required');}
     if (!eventTypes || !Array.isArray(eventTypes) || eventTypes.length === 0) {
       throw new ValidationError('eventTypes must be a non-empty array');
     }
@@ -104,7 +104,7 @@ proactiveEngineRouter.post(
       isActive: isActive !== false,
     });
 
-    if (!rule) throw new ValidationError('Failed to create proactive rule');
+    if (!rule) {throw new ValidationError('Failed to create proactive rule');}
     res.status(201).json({ success: true, data: rule });
   })
 );
@@ -117,14 +117,14 @@ proactiveEngineRouter.put(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     if (req.body.decision && !VALID_DECISIONS.includes(req.body.decision)) {
       throw new ValidationError(`decision must be one of: ${VALID_DECISIONS.join(', ')}`);
     }
 
     const rule = await updateProactiveRule(context, req.params.id, req.body);
-    if (!rule) throw new NotFoundError('Proactive rule not found');
+    if (!rule) {throw new NotFoundError('Proactive rule not found');}
 
     res.json({ success: true, data: rule });
   })
@@ -138,10 +138,10 @@ proactiveEngineRouter.delete(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const deleted = await deleteProactiveRule(context, req.params.id);
-    if (!deleted) throw new NotFoundError('Proactive rule not found');
+    if (!deleted) {throw new NotFoundError('Proactive rule not found');}
 
     res.json({ success: true, message: 'Proactive rule deleted' });
   })
@@ -154,7 +154,7 @@ proactiveEngineRouter.post(
   requireScope('write'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     const results = await processUnhandledEvents(context);
     res.json({ success: true, data: { processed: results.length, results } });
@@ -166,7 +166,7 @@ const sseClients = new Map<string, Set<Response>>();
 
 export function notifyProactiveClients(context: AIContext, event: Record<string, unknown>): void {
   const clients = sseClients.get(context);
-  if (!clients || clients.size === 0) return;
+  if (!clients || clients.size === 0) {return;}
   const data = JSON.stringify(event);
   for (const res of clients) {
     try { res.write(`data: ${data}\n\n`); } catch { clients.delete(res); }
@@ -189,8 +189,9 @@ proactiveEngineRouter.get(
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    if (!sseClients.has(context)) sseClients.set(context, new Set());
-    sseClients.get(context)!.add(res);
+    if (!sseClients.has(context)) {sseClients.set(context, new Set());}
+    const clients = sseClients.get(context);
+    if (clients) { clients.add(res); }
 
     res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
 
