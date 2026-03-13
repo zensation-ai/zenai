@@ -8,6 +8,8 @@ import { AIFeedback } from './AIFeedback';
 import { InlineLoader } from './SkeletonLoader';
 import { useNeuroFeedback } from './NeuroFeedback';
 import { ContextPickerDialog } from './ContextPickerDialog';
+import { useSwipeAction } from '../hooks/useSwipeAction';
+import { useAnnounce } from '../hooks/useAnnounce';
 import { getTypeIcon, getTypeLabel, IDEA_CATEGORIES, PRIORITIES } from '../constants/ideaTypes';
 import type { IdeaPriority } from '../types/idea';
 import { formatDate } from '../utils/dateUtils';
@@ -51,6 +53,17 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onTog
   const [showContextPicker, setShowContextPicker] = useState(false);
   const confirm = useConfirm();
   const { triggerSuccess } = useNeuroFeedback();
+  const announce = useAnnounce();
+
+  // Swipe gestures: swipe left to archive, swipe right to favorite
+  const { handlers: swipeHandlers, style: swipeStyle, pastThreshold, direction } = useSwipeAction({
+    onSwipeLeft: !isArchived && onArchive ? () => handleArchive({ stopPropagation: () => {} } as React.MouseEvent) : undefined,
+    onSwipeRight: !isArchived && onToggleFavorite ? () => {
+      onToggleFavorite(idea.id);
+      triggerSuccess('Favorit gesetzt');
+      announce(`${idea.title} als Favorit markiert`);
+    } : undefined,
+  });
 
   // Prüfe ob Karte neu ist (weniger als 5 Minuten alt)
   const isNew = idea.created_at ? new Date().getTime() - new Date(idea.created_at).getTime() < IS_NEW_THRESHOLD_MS : false;
@@ -71,6 +84,7 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onTog
       await axios.delete(`/api/${context}/ideas/${idea.id}`);
       onDelete?.(idea.id);
       showToast('Gedanke gelöscht', 'success');
+      announce('Gedanke gelöscht', 'assertive');
     } catch (error: unknown) {
       showToast(getErrorMessage(error, 'Löschen fehlgeschlagen'), 'error');
     } finally {
@@ -84,8 +98,8 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onTog
     try {
       await axios.put(`/api/${context}/ideas/${idea.id}/archive`);
       onArchive?.(idea.id);
-      // Neuro-optimiertes Feedback
       triggerSuccess('Archiviert!');
+      announce(`${idea.title} archiviert`);
     } catch (error: unknown) {
       showToast(getErrorMessage(error, 'Archivierung fehlgeschlagen'), 'error');
     } finally {
@@ -123,10 +137,12 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onTog
 
   return (
     <div
-      className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''} ${isNew ? 'is-new' : ''} ${isSelected ? 'selected' : ''}`}
+      className={`idea-card liquid-glass neuro-hover-lift neuro-press-effect ${isDeleting ? 'deleting' : ''} ${isNew ? 'is-new' : ''} ${isSelected ? 'selected' : ''} ${pastThreshold ? (direction < 0 ? 'swipe-archive' : 'swipe-favorite') : ''}`}
       data-type={idea.type}
       role="article"
       aria-label={`${getTypeLabel(idea.type)}: ${idea.title}`}
+      {...swipeHandlers}
+      style={swipeStyle}
     >
       {selectionMode && (
         <label className="idea-select-checkbox" htmlFor={`select-idea-${idea.id}`} onClick={(e) => e.stopPropagation()}>

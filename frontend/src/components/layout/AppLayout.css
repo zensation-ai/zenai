@@ -37,7 +37,18 @@
 .layout-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
+  /* Smooth scroll for internal anchors */
+  scroll-behavior: smooth;
+  /* Overscroll containment prevents pull-to-refresh conflict */
+  overscroll-behavior-y: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-content {
+    scroll-behavior: auto;
+  }
 }
 
 /* ============================================
@@ -77,7 +88,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 200;
+    z-index: var(--z-dropdown);
   }
 
   .mobile-chat-backdrop {
@@ -131,8 +142,8 @@
   }
 
   .mobile-chat-close {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -163,6 +174,9 @@
   .mobile-chat-sheet {
     background: var(--surface-solid, #1a3440);
   }
+}
+:root[data-theme="dark"] .mobile-chat-sheet {
+  background: var(--surface-solid, #1a3440);
 }
 
 /* ============================================

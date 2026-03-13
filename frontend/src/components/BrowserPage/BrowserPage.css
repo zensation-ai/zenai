@@ -225,6 +225,11 @@
   outline: none;
 }
 
+.browser-url-input:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-color, #ff6b2b);
+  border-radius: 4px;
+}
+
 .browser-url-input::placeholder {
   color: var(--text-secondary, #8b8d98);
   opacity: 0.7;
@@ -442,6 +447,12 @@
   color: var(--text-primary, #e8e8e8);
   font-size: 0.85rem;
   outline: none;
+}
+
+.browser-history-search-input:focus-visible,
+.browser-bookmarks-search-input:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-color, #ff6b2b);
+  border-radius: 4px;
 }
 
 .browser-history-search-input::placeholder,

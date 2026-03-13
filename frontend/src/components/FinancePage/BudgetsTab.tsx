@@ -6,6 +6,9 @@ import { useState, useCallback } from 'react';
 import type { Budget, BudgetPeriod } from './types';
 import { BUDGET_PERIOD_LABELS, DEFAULT_CATEGORIES } from './types';
 import { useEscapeKey } from '../../hooks/useClickOutside';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useAnnounce } from '../../hooks/useAnnounce';
+import { useConfirm } from '../ConfirmDialog';
 
 interface BudgetsTabProps {
   budgets: Budget[];
@@ -21,6 +24,8 @@ function formatCurrency(amount: number): string {
 export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
   const [showForm, setShowForm] = useState(false);
   useEscapeKey(() => setShowForm(false), showForm);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>({ isActive: showForm });
+  const announce = useAnnounce();
   const [formData, setFormData] = useState({
     name: '', category: '', amount_limit: '', period: 'monthly' as BudgetPeriod, alert_threshold: '80',
   });
@@ -34,14 +39,19 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
       period: formData.period,
       alert_threshold: parseFloat(formData.alert_threshold) / 100,
     });
+    announce('Budget erstellt');
     setShowForm(false);
     setFormData({ name: '', category: '', amount_limit: '', period: 'monthly', alert_threshold: '80' });
-  }, [formData, onCreate]);
+  }, [formData, onCreate, announce]);
+
+  const confirm = useConfirm();
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Budget löschen?')) return;
+    const confirmed = await confirm({ title: 'Löschen', message: 'Budget wirklich löschen?', confirmText: 'Löschen', variant: 'danger' });
+    if (!confirmed) return;
     await onDelete(id);
-  }, [onDelete]);
+    announce('Budget gelöscht', 'assertive');
+  }, [onDelete, confirm, announce]);
 
   return (
     <div className="budgets-tab">
@@ -91,7 +101,7 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
 
       {showForm && (
         <div className="contact-form-overlay" onClick={() => setShowForm(false)} role="presentation">
-          <div className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Budget">
+          <div ref={focusTrapRef} className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Budget">
             <div className="contact-form-header">
               <h2>Neues Budget</h2>
               <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
@@ -99,19 +109,22 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
             <div className="contact-form">
               <div className="form-row">
                 <div className="form-group">
-                  <label>Name *</label>
+                  <label htmlFor="budget-name">Name *</label>
                   <input
+                    id="budget-name"
                     type="text"
                     placeholder="z.B. Restaurant-Budget"
                     value={formData.name}
                     onChange={e => setFormData(d => ({ ...d, name: e.target.value }))}
+                    required
                   />
                 </div>
               </div>
               <div className="form-row two-col">
                 <div className="form-group">
-                  <label>Kategorie *</label>
+                  <label htmlFor="budget-category">Kategorie *</label>
                   <select
+                    id="budget-category"
                     value={formData.category}
                     onChange={e => setFormData(d => ({ ...d, category: e.target.value }))}
                   >
@@ -122,20 +135,23 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Limit *</label>
+                  <label htmlFor="budget-limit">Limit *</label>
                   <input
+                    id="budget-limit"
                     type="number"
                     step="0.01"
                     placeholder="z.B. 200"
                     value={formData.amount_limit}
                     onChange={e => setFormData(d => ({ ...d, amount_limit: e.target.value }))}
+                    required
                   />
                 </div>
               </div>
               <div className="form-row two-col">
                 <div className="form-group">
-                  <label>Zeitraum</label>
+                  <label htmlFor="budget-period">Zeitraum</label>
                   <select
+                    id="budget-period"
                     value={formData.period}
                     onChange={e => setFormData(d => ({ ...d, period: e.target.value as BudgetPeriod }))}
                   >
@@ -145,8 +161,9 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Warnung bei (%)</label>
+                  <label htmlFor="budget-threshold">Warnung bei (%)</label>
                   <input
+                    id="budget-threshold"
                     type="number"
                     min="1"
                     max="100"

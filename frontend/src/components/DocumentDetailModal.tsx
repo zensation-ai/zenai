@@ -15,6 +15,8 @@ import {
 } from '../types/document';
 import { getApiBaseUrl } from '../utils/apiConfig';
 import { logError } from '../utils/errors';
+import { useConfirm } from './ConfirmDialog';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import './DocumentDetailModal.css';
 
 import type { AIContext } from './ContextSwitcher';
@@ -40,6 +42,8 @@ export function DocumentDetailModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'content' | 'keywords'>('details');
+  const confirmDialog = useConfirm();
+  const focusTrapRef = useFocusTrap<HTMLDivElement>({ isActive: true });
 
   const API_URL = getApiBaseUrl();
 
@@ -114,7 +118,8 @@ export function DocumentDetailModal({
 
   // Delete document
   const handleDelete = useCallback(async () => {
-    if (!confirm('Dokument wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+    const confirmed = await confirmDialog({ title: 'Dokument löschen', message: 'Dokument wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.', confirmText: 'Löschen', variant: 'danger' });
+    if (!confirmed) {
       return;
     }
 
@@ -150,7 +155,7 @@ export function DocumentDetailModal({
 
   return (
     <div className="document-detail-overlay" onClick={onClose} role="presentation">
-      <div className="document-detail-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Dokument-Details">
+      <div ref={focusTrapRef} className="document-detail-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Dokument-Details">
         {/* Header */}
         <header className="detail-header">
           <div className="header-title">

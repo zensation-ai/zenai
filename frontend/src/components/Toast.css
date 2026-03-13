@@ -278,13 +278,21 @@
   background: #ff8c5a;
 }
 
-/* Mobile */
-@media (max-width: 480px) {
+/* Mobile — avoid overlap with MobileBottomBar (64px + safe-area) */
+@media (max-width: 768px) {
   .toast-container {
     left: 16px;
     right: 16px;
-    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    /* BottomBar height (64px) + gap (12px) + safe-area */
+    bottom: calc(var(--bottombar-height, 64px) + 12px + env(safe-area-inset-bottom, 0px));
     max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    left: 12px;
+    right: 12px;
   }
 
   .toast {

@@ -6,6 +6,9 @@ import { useState, useCallback } from 'react';
 import type { Transaction, FinancialAccount, TransactionType } from './types';
 import { TRANSACTION_TYPE_LABELS, DEFAULT_CATEGORIES } from './types';
 import { useEscapeKey } from '../../hooks/useClickOutside';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useAnnounce } from '../../hooks/useAnnounce';
+import { useConfirm } from '../ConfirmDialog';
 
 interface TransactionsTabProps {
   transactions: Transaction[];
@@ -29,6 +32,8 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
   const [filterType, setFilterType] = useState<TransactionType | ''>('');
   const [showForm, setShowForm] = useState(false);
   useEscapeKey(() => setShowForm(false), showForm);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>({ isActive: showForm });
+  const announce = useAnnounce();
   const [formData, setFormData] = useState({
     amount: '',
     transaction_type: 'expense' as TransactionType,
@@ -60,6 +65,7 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
       transaction_date: formData.transaction_date,
       account_id: formData.account_id || undefined,
     } as Partial<Transaction>);
+    announce('Transaktion erstellt');
     setShowForm(false);
     setFormData({
       amount: '', transaction_type: 'expense', category: '', payee: '',
@@ -67,10 +73,14 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
     });
   }, [formData, onCreate]);
 
+  const confirm = useConfirm();
+
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Transaktion löschen?')) return;
+    const confirmed = await confirm({ title: 'Löschen', message: 'Transaktion wirklich löschen?', confirmText: 'Löschen', variant: 'danger' });
+    if (!confirmed) return;
     await onDelete(id);
-  }, [onDelete]);
+    announce('Transaktion gelöscht', 'assertive');
+  }, [onDelete, confirm, announce]);
 
   return (
     <div className="transactions-tab">
@@ -82,6 +92,7 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
           placeholder="Suche nach Empfänger, Beschreibung..."
           value={search}
           onChange={e => handleSearch(e.target.value)}
+          aria-label="Transaktionen durchsuchen"
         />
         <div className="finance-filter-chips">
           <button
@@ -139,7 +150,7 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
       {/* Transaction Form Modal */}
       {showForm && (
         <div className="contact-form-overlay" onClick={() => setShowForm(false)} role="presentation">
-          <div className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neue Transaktion">
+          <div ref={focusTrapRef} className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neue Transaktion">
             <div className="contact-form-header">
               <h2>Neue Transaktion</h2>
               <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
@@ -147,18 +158,21 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
             <div className="contact-form">
               <div className="form-row two-col">
                 <div className="form-group">
-                  <label>Betrag *</label>
+                  <label htmlFor="tx-amount">Betrag *</label>
                   <input
+                    id="tx-amount"
                     type="number"
                     step="0.01"
                     placeholder="0,00"
                     value={formData.amount}
                     onChange={e => setFormData(d => ({ ...d, amount: e.target.value }))}
+                    required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Typ</label>
+                  <label htmlFor="tx-type">Typ</label>
                   <select
+                    id="tx-type"
                     value={formData.transaction_type}
                     onChange={e => setFormData(d => ({ ...d, transaction_type: e.target.value as TransactionType }))}
                   >
@@ -170,8 +184,9 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
               </div>
               <div className="form-row two-col">
                 <div className="form-group">
-                  <label>Empfänger</label>
+                  <label htmlFor="tx-payee">Empfänger</label>
                   <input
+                    id="tx-payee"
                     type="text"
                     placeholder="z.B. REWE, Amazon..."
                     value={formData.payee}
@@ -179,8 +194,9 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
                   />
                 </div>
                 <div className="form-group">
-                  <label>Kategorie</label>
+                  <label htmlFor="tx-category">Kategorie</label>
                   <select
+                    id="tx-category"
                     value={formData.category}
                     onChange={e => setFormData(d => ({ ...d, category: e.target.value }))}
                   >
@@ -193,16 +209,18 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
               </div>
               <div className="form-row two-col">
                 <div className="form-group">
-                  <label>Datum</label>
+                  <label htmlFor="tx-date">Datum</label>
                   <input
+                    id="tx-date"
                     type="date"
                     value={formData.transaction_date}
                     onChange={e => setFormData(d => ({ ...d, transaction_date: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Konto</label>
+                  <label htmlFor="tx-account">Konto</label>
                   <select
+                    id="tx-account"
                     value={formData.account_id}
                     onChange={e => setFormData(d => ({ ...d, account_id: e.target.value }))}
                   >

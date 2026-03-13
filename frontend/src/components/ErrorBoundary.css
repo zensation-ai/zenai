@@ -130,42 +130,25 @@
   box-shadow: 0 0 0 3px rgba(20, 50, 70, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Dark mode adjustments via CSS variables */
+/* Dark mode — system + manual toggle */
 @media (prefers-color-scheme: dark) {
-  .error-boundary-container {
-    background: linear-gradient(160deg, rgba(14, 28, 36, 0.98) 0%, rgba(10, 22, 30, 0.98) 100%);
-  }
-
-  .error-boundary-content {
-    background: rgba(22, 46, 56, 0.95);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .error-boundary-title {
-    color: #f1f5f9;
-  }
-
-  .error-boundary-message {
-    color: #94a3b8;
-  }
-
-  .error-boundary-details {
-    background: rgba(14, 28, 36, 0.8);
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-
-  .error-boundary-button.secondary {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #94a3b8;
-  }
-
-  .error-boundary-button.secondary:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #f1f5f9;
-  }
+  .error-boundary-container { background: linear-gradient(160deg, rgba(14, 28, 36, 0.98) 0%, rgba(10, 22, 30, 0.98) 100%); }
+  .error-boundary-content { background: rgba(22, 46, 56, 0.95); border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3); }
+  .error-boundary-title { color: #f1f5f9; }
+  .error-boundary-message { color: #94a3b8; }
+  .error-boundary-details { background: rgba(14, 28, 36, 0.8); border-color: rgba(255, 255, 255, 0.08); }
+  .error-boundary-button.secondary { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.1); color: #94a3b8; }
+  .error-boundary-button.secondary:hover { background: rgba(255, 255, 255, 0.12); color: #f1f5f9; }
 }
+
+/* Manual dark mode override */
+:root[data-theme="dark"] .error-boundary-container { background: linear-gradient(160deg, rgba(14, 28, 36, 0.98) 0%, rgba(10, 22, 30, 0.98) 100%); }
+:root[data-theme="dark"] .error-boundary-content { background: rgba(22, 46, 56, 0.95); border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3); }
+:root[data-theme="dark"] .error-boundary-title { color: #f1f5f9; }
+:root[data-theme="dark"] .error-boundary-message { color: #94a3b8; }
+:root[data-theme="dark"] .error-boundary-details { background: rgba(14, 28, 36, 0.8); border-color: rgba(255, 255, 255, 0.08); }
+:root[data-theme="dark"] .error-boundary-button.secondary { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.1); color: #94a3b8; }
+:root[data-theme="dark"] .error-boundary-button.secondary:hover { background: rgba(255, 255, 255, 0.12); color: #f1f5f9; }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

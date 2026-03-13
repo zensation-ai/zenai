@@ -238,10 +238,15 @@ const ToastItem = memo(function ToastItem({ toast }: { toast: Toast }) {
 export function ToastContainer() {
   const toastList = useToasts();
 
-  if (toastList.length === 0) return null;
-
+  // Always render the container so aria-live region is in DOM before announcements
   return (
-    <div className="toast-container" role="alert" aria-live="polite">
+    <div
+      className="toast-container"
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions"
+      aria-label="Benachrichtigungen"
+    >
       {toastList.map(toast => (
         <ToastItem key={toast.id} toast={toast} />
       ))}

@@ -6,6 +6,9 @@ import { useState, useCallback } from 'react';
 import type { FinancialGoal, GoalPriority } from './types';
 import { GOAL_PRIORITY_LABELS } from './types';
 import { useEscapeKey } from '../../hooks/useClickOutside';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useAnnounce } from '../../hooks/useAnnounce';
+import { useConfirm } from '../ConfirmDialog';
 
 interface GoalsTabProps {
   goals: FinancialGoal[];
@@ -21,6 +24,8 @@ function formatCurrency(amount: number): string {
 export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps) {
   const [showForm, setShowForm] = useState(false);
   useEscapeKey(() => setShowForm(false), showForm);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>({ isActive: showForm });
+  const announce = useAnnounce();
   const [formData, setFormData] = useState({
     name: '', target_amount: '', current_amount: '0', deadline: '', category: '', priority: 'medium' as GoalPriority,
   });
@@ -35,6 +40,7 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
       category: formData.category || undefined,
       priority: formData.priority,
     } as Partial<FinancialGoal>);
+    announce('Sparziel erstellt');
     setShowForm(false);
     setFormData({ name: '', target_amount: '', current_amount: '0', deadline: '', category: '', priority: 'medium' });
   }, [formData, onCreate]);
@@ -43,10 +49,14 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
     await onUpdate(goal.id, { is_completed: !goal.is_completed });
   }, [onUpdate]);
 
+  const confirm = useConfirm();
+
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Ziel löschen?')) return;
+    const confirmed = await confirm({ title: 'Löschen', message: 'Sparziel wirklich löschen?', confirmText: 'Löschen', variant: 'danger' });
+    if (!confirmed) return;
     await onDelete(id);
-  }, [onDelete]);
+    announce('Sparziel gelöscht', 'assertive');
+  }, [onDelete, confirm, announce]);
 
   const activeGoals = goals.filter(g => !g.is_completed);
   const completedGoals = goals.filter(g => g.is_completed);
@@ -122,7 +132,7 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
       {/* Form Modal */}
       {showForm && (
         <div className="contact-form-overlay" onClick={() => setShowForm(false)} role="presentation">
-          <div className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Sparziel">
+          <div ref={focusTrapRef} className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Sparziel">
             <div className="contact-form-header">
               <h2>Neues Sparziel</h2>
               <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
@@ -130,29 +140,34 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
             <div className="contact-form">
               <div className="form-row">
                 <div className="form-group">
-                  <label>Name *</label>
+                  <label htmlFor="goal-name">Name *</label>
                   <input
+                    id="goal-name"
                     type="text"
                     placeholder="z.B. Urlaub, Notgroschen..."
                     value={formData.name}
                     onChange={e => setFormData(d => ({ ...d, name: e.target.value }))}
+                    required
                   />
                 </div>
               </div>
               <div className="form-row two-col">
                 <div className="form-group">
-                  <label>Zielbetrag *</label>
+                  <label htmlFor="goal-target">Zielbetrag *</label>
                   <input
+                    id="goal-target"
                     type="number"
                     step="0.01"
                     placeholder="z.B. 5000"
                     value={formData.target_amount}
                     onChange={e => setFormData(d => ({ ...d, target_amount: e.target.value }))}
+                    required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Aktueller Stand</label>
+                  <label htmlFor="goal-current">Aktueller Stand</label>
                   <input
+                    id="goal-current"
                     type="number"
                     step="0.01"
                     placeholder="0"
@@ -163,16 +178,18 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
               </div>
               <div className="form-row two-col">
                 <div className="form-group">
-                  <label>Deadline</label>
+                  <label htmlFor="goal-deadline">Deadline</label>
                   <input
+                    id="goal-deadline"
                     type="date"
                     value={formData.deadline}
                     onChange={e => setFormData(d => ({ ...d, deadline: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Priorität</label>
+                  <label htmlFor="goal-priority">Priorität</label>
                   <select
+                    id="goal-priority"
                     value={formData.priority}
                     onChange={e => setFormData(d => ({ ...d, priority: e.target.value as GoalPriority }))}
                   >

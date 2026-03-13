@@ -47,7 +47,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     theme === 'system' ? getSystemTheme() : theme
   );
 
-  // Apply theme to document
+  // Apply theme to document via data-theme attribute + CSS classes
   useEffect(() => {
     const root = document.documentElement;
     const resolved = theme === 'system' ? getSystemTheme() : theme;
@@ -56,15 +56,19 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // Remove both classes first
     root.classList.remove('light-mode', 'dark-mode');
 
-    // Add the appropriate class
-    if (theme !== 'system') {
+    if (theme === 'system') {
+      // Let prefers-color-scheme handle it
+      root.removeAttribute('data-theme');
+    } else {
+      // Manual override via data-theme attribute (matches CSS selectors)
+      root.setAttribute('data-theme', resolved);
       root.classList.add(`${resolved}-mode`);
     }
 
-    // Update meta theme-color
+    // Update meta theme-color for mobile browser chrome
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', resolved === 'dark' ? '#0a1a24' : '#667eea');
+      metaThemeColor.setAttribute('content', resolved === 'dark' ? '#0a1a24' : '#dce5eb');
     }
   }, [theme]);
 

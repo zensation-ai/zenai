@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { useConfirm } from './ConfirmDialog';
 import { getContextLabel } from './ContextSwitcher';
 import { getApiBaseUrl } from '../utils/apiConfig';
 import './MediaGallery.css';
@@ -32,6 +33,7 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'image' | 'video'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const confirmDialog = useConfirm();
   const API_URL = getApiBaseUrl();
 
   useEffect(() => {
@@ -98,7 +100,8 @@ export function MediaGallery({ onBack, context }: MediaGalleryProps) {
   };
 
   const handleDelete = async (mediaId: string) => {
-    if (!confirm('Medium wirklich löschen?')) return;
+    const confirmed = await confirmDialog({ title: 'Löschen', message: 'Medium wirklich löschen?', confirmText: 'Löschen', variant: 'danger' });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/media/${mediaId}`);
       setMedia(prev => prev.filter(m => m.id !== mediaId));

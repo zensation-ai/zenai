@@ -322,43 +322,23 @@
   }
 }
 
-/* Dark mode support */
+/* Dark mode — system + manual toggle */
 @media (prefers-color-scheme: dark) {
-  .skeleton {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.08) 0%,
-      rgba(255, 255, 255, 0.16) 50%,
-      rgba(255, 255, 255, 0.08) 100%
-    );
-  }
-
-  .skeleton-card {
-    background: linear-gradient(
-      165deg,
-      rgba(26, 48, 58, 0.75) 0%,
-      rgba(22, 46, 56, 0.68) 50%,
-      rgba(26, 48, 58, 0.72) 100%
-    );
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .skeleton-card-footer {
-    border-top-color: rgba(255, 255, 255, 0.08);
-  }
-
-  .spinner-track {
-    stroke: rgba(255, 255, 255, 0.08);
-  }
-
-  .progress-message {
-    color: #f1f5f9;
-  }
-
-  .progress-sub {
-    color: #a8b8c8;
-  }
+  .skeleton { background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.08) 100%); }
+  .skeleton-card { background: linear-gradient(165deg, rgba(26, 48, 58, 0.75) 0%, rgba(22, 46, 56, 0.68) 50%, rgba(26, 48, 58, 0.72) 100%); border-color: rgba(255, 255, 255, 0.1); }
+  .skeleton-card-footer { border-top-color: rgba(255, 255, 255, 0.08); }
+  .spinner-track { stroke: rgba(255, 255, 255, 0.08); }
+  .progress-message { color: #f1f5f9; }
+  .progress-sub { color: #a8b8c8; }
 }
+
+/* Manual dark mode override */
+:root[data-theme="dark"] .skeleton { background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.08) 100%); }
+:root[data-theme="dark"] .skeleton-card { background: linear-gradient(165deg, rgba(26, 48, 58, 0.75) 0%, rgba(22, 46, 56, 0.68) 50%, rgba(26, 48, 58, 0.72) 100%); border-color: rgba(255, 255, 255, 0.1); }
+:root[data-theme="dark"] .skeleton-card-footer { border-top-color: rgba(255, 255, 255, 0.08); }
+:root[data-theme="dark"] .spinner-track { stroke: rgba(255, 255, 255, 0.08); }
+:root[data-theme="dark"] .progress-message { color: #f1f5f9; }
+:root[data-theme="dark"] .progress-sub { color: #a8b8c8; }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

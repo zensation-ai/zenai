@@ -106,6 +106,12 @@ export function AppLayout({
   }, []);
 
   const chatOverlayRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Scroll to top on page change
+  useEffect(() => {
+    mainContentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+  }, [currentPage]);
 
   // Escape key + body scroll lock for chat overlay
   useEffect(() => {
@@ -207,7 +213,7 @@ export function AppLayout({
           />
         </div>
 
-        <main className="layout-content" id="main-content" role="main">
+        <main className="layout-content" id="main-content" role="main" ref={mainContentRef}>
           {children}
         </main>
       </div>

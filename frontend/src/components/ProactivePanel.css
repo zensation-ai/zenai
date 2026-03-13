@@ -43,7 +43,12 @@
   color: var(--text-secondary, #a0a0a0);
   cursor: pointer;
   font-size: 1.25rem;
-  padding: 0.25rem;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
   border-radius: 4px;
 }
@@ -51,6 +56,11 @@
 .proactive-close:hover {
   background: rgba(255,255,255,0.05);
   color: var(--text-primary, #fff);
+}
+
+.proactive-close:focus-visible {
+  outline: 2px solid var(--accent-color, #8b5cf6);
+  outline-offset: 2px;
 }
 
 .proactive-body {
@@ -220,6 +230,12 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .proactive-panel {
+    max-height: calc(100vh - 80px - var(--bottombar-height, 64px));
+  }
 }
 
 @media (max-width: 480px) {

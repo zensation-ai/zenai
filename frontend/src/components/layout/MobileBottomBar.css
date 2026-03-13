@@ -35,9 +35,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
     flex: 1;
-    padding: 6px 4px;
+    padding: 8px 6px;
     background: none;
     border: none;
     color: rgba(255, 255, 255, 0.7);
@@ -45,7 +45,9 @@
     position: relative;
     transition: color 0.15s ease;
     -webkit-tap-highlight-color: transparent;
+    /* Apple HIG: min 44x44pt, Google Material: 48x48dp */
     min-height: 48px;
+    min-width: 48px;
   }
 
   .bottom-tab:hover {
@@ -69,10 +71,18 @@
 
   /* Tab Label */
   .bottom-tab-label {
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     white-space: nowrap;
+    text-transform: none;
+  }
+
+  /* Slightly larger labels on wider phones */
+  @media (min-width: 390px) {
+    .bottom-tab-label {
+      font-size: 0.7rem;
+    }
   }
 
   /* Active Indicator Dot */

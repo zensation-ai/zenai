@@ -296,11 +296,11 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   }, [ideasCount, streak, stats.todayCount]);
 
   return (
-    <div className={`bento-dashboard${isAIActive ? ' ai-active' : ''}`} data-context={context}>
+    <div className={`bento-dashboard${isAIActive ? ' ai-active' : ''}`} data-context={context} role="main" aria-label="Dashboard">
       <RisingBubbles variant="subtle" />
 
       {/* ===== BENTO GRID ===== */}
-      <div className="bento-grid">
+      <div className="bento-grid" aria-live="polite" aria-relevant="additions text">
 
         {/* Hero: Welcome */}
         <section className="bento-card bento-hero">

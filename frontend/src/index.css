@@ -93,22 +93,38 @@ textarea::placeholder {
   --text-light: var(--text-secondary);
   --text-muted-dark: var(--text-muted);
 
-  /* Z-Index Layer System */
+  /* Z-Index Layer System (unified scale)
+     Layer 0-9:     Background & Content
+     Layer 10-49:   Sticky elements & batch bars
+     Layer 50-99:   TopBar, Sidebar, Feature hints
+     Layer 100-199: Floating elements, Drawers
+     Layer 200-299: Dropdowns, Overlays
+     Layer 300-399: Context nudges, Proactive panels
+     Layer 400-499: Modals, Dialogs
+     Layer 500-599: Toast notifications
+     Layer 600-699: Command palette, Global search
+     Layer 700+:    Onboarding, Login, Skip link */
   --z-background: 0;
   --z-content: 1;
   --z-elevated: 2;
-  --z-sticky: 10;
-  --z-topbar: 80;
-  --z-sidebar: 90;
-  --z-header: 100;
-  --z-floating: 145;
-  --z-drawer: 210;
-  --z-dropdown: 900;
-  --z-modal: 1000;
-  --z-context-nudge: 1100;
-  --z-onboarding: 2000;
-  --z-login: 3000;
-  --z-global-search: 9999;
+  --z-batch-bar: 20;
+  --z-sticky: 30;
+  --z-topbar: 50;
+  --z-sidebar: 60;
+  --z-header: 70;
+  --z-feature-hint: 80;
+  --z-floating: 100;
+  --z-drawer: 150;
+  --z-dropdown: 200;
+  --z-overlay: 250;
+  --z-context-nudge: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-command-palette: 600;
+  --z-global-search: 650;
+  --z-onboarding: 700;
+  --z-login: 800;
+  --z-skip-link: 900;
 
   /* Richer Background - Less white, more warmth and petrol tones */
   --background: #dce5eb;
@@ -223,16 +239,7 @@ textarea::placeholder {
   --bottombar-bg: rgba(12, 28, 36, 0.95);
   --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Z-Index Scale */
-  --z-batch-bar: 50;
-  --z-dropdown: 100;
-  --z-sticky: 200;
-  --z-feature-hint: 500;
-  --z-overlay: 1000;
-  --z-modal: 2000;
-  --z-toast: 3000;
-  --z-command-palette: 4000;
-  --z-skip-link: 5000;
+  /* Z-Index Scale — see unified system above in :root */
 
   /* Layout Dimensions */
   --mobile-nav-height: 60px;
@@ -324,10 +331,11 @@ textarea::placeholder {
 
 /* ============================================
    DARK MODE SUPPORT
-   Respects user system preference
+   Supports both system preference AND manual toggle via data-theme.
+   Manual toggle (data-theme="dark") takes precedence.
    ============================================ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     /* Primary Accent - slightly adjusted for dark backgrounds */
     --primary: #ff7a4a;
     --primary-dark: #ff6b35;
@@ -492,6 +500,47 @@ textarea::placeholder {
   .loading::after {
     background: rgba(12, 30, 42, 0.6);
   }
+}
+
+/* Manual dark mode override via data-theme attribute (from useTheme hook) */
+:root[data-theme="dark"] {
+  --primary: #ff7a4a;
+  --primary-dark: #ff6b35;
+  --primary-light: #ff9a70;
+  --primary-lighter: #ffbb99;
+  --primary-glow: rgba(255, 122, 74, 0.4);
+  --success-light: rgba(16, 185, 129, 0.18);
+  --danger-light: rgba(239, 68, 68, 0.18);
+  --background: #0a1a24;
+  --background-gradient: linear-gradient(145deg, #0a1a24 0%, #10252e 20%, #142e38 40%, #183642 60%, #142e38 80%, #0a1a24 100%);
+  --surface: rgba(22, 50, 62, 0.82);
+  --surface-solid: #183642;
+  --surface-light: rgba(28, 60, 72, 0.68);
+  --surface-hover: rgba(32, 72, 85, 0.88);
+  --glass-bg: rgba(18, 46, 56, 0.85);
+  --glass-border: rgba(60, 150, 170, 0.18);
+  --glass-highlight: rgba(80, 180, 200, 0.06);
+  --glass-shadow: rgba(5, 20, 30, 0.45);
+  --text: #f5f9fc;
+  --text-muted: #dce8f0;
+  --text-secondary: #c0d4e0;
+  --text-placeholder: #b0c4d0;
+  --border: rgba(60, 150, 170, 0.18);
+  --border-light: rgba(60, 150, 170, 0.1);
+  --border-warm: rgba(255, 122, 74, 0.25);
+  --shadow-sm: 0 1px 3px rgba(5, 20, 30, 0.35), 0 1px 2px rgba(5, 20, 30, 0.25);
+  --shadow-md: 0 4px 16px rgba(5, 20, 30, 0.4), 0 2px 6px rgba(5, 20, 30, 0.3);
+  --shadow-lg: 0 12px 40px rgba(5, 20, 30, 0.5), 0 4px 12px rgba(5, 20, 30, 0.35);
+  --shadow-glow: 0 4px 24px rgba(255, 122, 74, 0.4);
+  --shadow-card: 0 2px 12px rgba(5, 20, 30, 0.35), 0 1px 3px rgba(5, 20, 30, 0.25), inset 0 1px 0 rgba(80, 180, 200, 0.04);
+  --card-bg: var(--glass-bg);
+  --hover-bg: rgba(32, 72, 85, 0.88);
+  --bg-secondary: rgba(40, 85, 105, 0.2);
+  --bg-tertiary: rgba(255, 122, 74, 0.12);
+  --text-primary: #f5f9fc;
+  --border-color: var(--border);
+  --dashboard-card-bg: rgba(22, 50, 62, 0.78);
+  color-scheme: dark;
 }
 
 body {

@@ -8,6 +8,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { Task, TaskStatus, Project } from './types';
 import { KANBAN_COLUMNS, PRIORITY_COLORS, PRIORITY_LABELS } from './types';
+import { useAnnounce } from '../../hooks/useAnnounce';
 import './KanbanBoard.css';
 
 interface KanbanBoardProps {
@@ -29,6 +30,7 @@ export function KanbanBoard({
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
   const dragCounter = useRef(0);
+  const announce = useAnnounce();
 
   const getColumnTasks = useCallback((status: TaskStatus) => {
     return tasks
@@ -90,8 +92,10 @@ export function KanbanBoard({
     const taskIds = [...columnTasks.map(t => t.id), taskId];
     await onReorder(targetStatus, taskIds);
 
+    const col = KANBAN_COLUMNS.find(c => c.status === targetStatus);
+    announce(`Aufgabe nach ${col?.label || targetStatus} verschoben`);
     setDraggedTaskId(null);
-  }, [tasks, draggedTaskId, getColumnTasks, onReorder]);
+  }, [tasks, draggedTaskId, getColumnTasks, onReorder, announce]);
 
   const getProjectInfo = useCallback((projectId?: string) => {
     if (!projectId) return null;
@@ -180,13 +184,15 @@ export function KanbanBoard({
                       onClick={() => onEditTask(task)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={e => e.key === 'Enter' && onEditTask(task)}
+                      onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onEditTask(task))}
                     >
                       {/* Priority indicator */}
                       <div
                         className="kanban-card__priority"
                         style={{ backgroundColor: PRIORITY_COLORS[task.priority] }}
                         title={PRIORITY_LABELS[task.priority]}
+                        aria-label={`Priorität: ${PRIORITY_LABELS[task.priority]}`}
+                        role="img"
                       />
 
                       <div className="kanban-card__body">

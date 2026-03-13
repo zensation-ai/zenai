@@ -194,6 +194,7 @@ export function ExportMenu({ context, ideasCount }: ExportMenuProps) {
         <div
           className="export-dropdown"
           role="dialog"
+          aria-modal="true"
           aria-labelledby="export-menu-title"
           onKeyDown={handleKeyDown}
         >

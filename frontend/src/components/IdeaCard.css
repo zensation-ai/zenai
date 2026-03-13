@@ -671,38 +671,33 @@
   }
 }
 
-/* Dark Mode Support (für zukünftige Implementierung) */
+/* Dark Mode Support — system preference + manual toggle */
 @media (prefers-color-scheme: dark) {
   .idea-card {
-    background: linear-gradient(
-      165deg,
-      rgba(30, 35, 42, 0.85) 0%,
-      rgba(35, 40, 48, 0.8) 40%,
-      rgba(30, 35, 42, 0.82) 100%
-    );
+    background: linear-gradient(165deg, rgba(30, 35, 42, 0.85) 0%, rgba(35, 40, 48, 0.8) 40%, rgba(30, 35, 42, 0.82) 100%);
     border-color: rgba(255, 255, 255, 0.1);
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.2),
-      0 1px 4px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
-
   .idea-card:hover {
     border-color: rgba(255, 107, 53, 0.25);
-    box-shadow:
-      0 16px 48px rgba(0, 0, 0, 0.3),
-      0 6px 16px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
-
-  .idea-title {
-    color: #f1f5f9;
-  }
-
-  .idea-summary {
-    color: #94a3b8;
-  }
+  .idea-title { color: #f1f5f9; }
+  .idea-summary { color: #94a3b8; }
 }
+
+/* Manual dark mode override (user toggled dark while system is light) */
+:root[data-theme="dark"] .idea-card {
+  background: linear-gradient(165deg, rgba(30, 35, 42, 0.85) 0%, rgba(35, 40, 48, 0.8) 40%, rgba(30, 35, 42, 0.82) 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+:root[data-theme="dark"] .idea-card:hover {
+  border-color: rgba(255, 107, 53, 0.25);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="dark"] .idea-title { color: #f1f5f9; }
+:root[data-theme="dark"] .idea-summary { color: #94a3b8; }
 
 /* ===========================================
    FAVORITE BUTTON (Phase 38)
@@ -789,4 +784,34 @@
 .idea-card:has(.idea-select-checkbox) {
   position: relative;
   padding-left: 2.5rem;
+}
+
+/* ============================================
+   SWIPE GESTURE INDICATORS (Mobile)
+   Inspired by Apple Mail swipe-to-archive/favorite
+   ============================================ */
+
+.idea-card.swipe-archive {
+  background: linear-gradient(
+    90deg,
+    rgba(107, 114, 128, 0.15) 0%,
+    transparent 30%
+  );
+  border-color: rgba(107, 114, 128, 0.3);
+}
+
+.idea-card.swipe-favorite {
+  background: linear-gradient(
+    -90deg,
+    rgba(245, 158, 11, 0.15) 0%,
+    transparent 30%
+  );
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idea-card.swipe-archive,
+  .idea-card.swipe-favorite {
+    transition: none !important;
+  }
 }

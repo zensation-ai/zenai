@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
+import { useConfirm } from './ConfirmDialog';
 import { getRandomReward } from '../utils/aiPersonality';
 import type { AIContext } from './ContextSwitcher';
 import { getContextLabel } from './ContextSwitcher';
@@ -88,6 +89,7 @@ export function NotificationsPage({ onBack, context, onNavigate }: Notifications
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'inbox' | 'overview' | 'preferences' | 'devices' | 'history'>('inbox');
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const confirmDialog = useConfirm();
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -187,7 +189,8 @@ export function NotificationsPage({ onBack, context, onNavigate }: Notifications
   };
 
   const handleRemoveDevice = async (deviceId: string) => {
-    if (!confirm('Gerät wirklich entfernen? Du erhältst dann keine Push-Benachrichtigungen mehr auf diesem Gerät.')) {
+    const confirmed = await confirmDialog({ title: 'Gerät entfernen', message: 'Gerät wirklich entfernen? Du erhältst dann keine Push-Benachrichtigungen mehr auf diesem Gerät.', confirmText: 'Entfernen', variant: 'warning' });
+    if (!confirmed) {
       return;
     }
 

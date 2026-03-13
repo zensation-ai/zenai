@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Task, TaskStatus, TaskPriority, Project } from './types';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import './TaskForm.css';
 
 interface TaskFormProps {
@@ -42,6 +43,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>({ isActive: true, initialFocusSelector: 'input[type="text"]' });
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -90,7 +92,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
 
   return (
     <div className="task-form-overlay" ref={overlayRef} onClick={handleOverlayClick}>
-      <div className="task-form" role="dialog" aria-label={isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}>
+      <div ref={focusTrapRef} className="task-form" role="dialog" aria-modal="true" aria-label={isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}>
         <div className="task-form__header">
           <h3>{isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}</h3>
           <button className="task-form__close" onClick={onClose} aria-label="Schließen">

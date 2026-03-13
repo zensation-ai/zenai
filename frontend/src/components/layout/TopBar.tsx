@@ -57,7 +57,7 @@ export const TopBar = memo(function TopBar({
               <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
-          <h1 className="topbar-title">{pageLabel}</h1>
+          <span className="topbar-title" role="heading" aria-level={1}>{pageLabel}</span>
           {pageDescription && (
             <span className="topbar-subtitle">{pageDescription}</span>
           )}

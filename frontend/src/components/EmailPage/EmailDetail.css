@@ -630,6 +630,11 @@
   font-family: inherit;
   box-sizing: border-box;
 }
+.ed-reply-textarea:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-color, #4a90d9);
+  border-radius: 4px;
+}
+
 .ed-reply-textarea::placeholder {
   color: var(--text-tertiary, rgba(255, 255, 255, 0.3));
 }

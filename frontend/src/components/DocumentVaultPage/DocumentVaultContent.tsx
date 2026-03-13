@@ -25,6 +25,7 @@ import '../DocumentVaultPage.css';
 import type { Folder } from '../../types/document';
 import type { ViewMode } from './types';
 import type { AIContext } from '../ContextSwitcher';
+import { useConfirm } from '../ConfirmDialog';
 
 interface DocumentVaultContentProps {
   context: AIContext;
@@ -32,6 +33,7 @@ interface DocumentVaultContentProps {
 
 export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
   const contentNavigate = useNavigate();
+  const confirmDialog = useConfirm();
   // State
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -259,7 +261,8 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
 
   // Handle document delete
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Dokument wirklich l\u00f6schen?')) { return; }
+    const confirmed = await confirmDialog({ title: 'Löschen', message: 'Dokument wirklich löschen?', confirmText: 'Löschen', variant: 'danger' });
+    if (!confirmed) { return; }
 
     try {
       const response = await axios.delete(`/api/${context}/documents/${id}`);
@@ -313,7 +316,8 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
   // Batch delete
   const handleBatchDelete = useCallback(async () => {
     if (selectedDocuments.size === 0) { return; }
-    if (!confirm(`${selectedDocuments.size} Dokument(e) wirklich l\u00f6schen?`)) { return; }
+    const confirmed = await confirmDialog({ title: 'Löschen', message: `${selectedDocuments.size} Dokument(e) wirklich löschen?`, confirmText: 'Löschen', variant: 'danger' });
+    if (!confirmed) { return; }
 
     try {
       const response = await axios.delete(`/api/${context}/documents/batch`, { data: { ids: Array.from(selectedDocuments) } });

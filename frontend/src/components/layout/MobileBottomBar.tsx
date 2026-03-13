@@ -7,6 +7,7 @@
 
 import { memo } from 'react';
 import type { Page } from '../../types';
+import { haptic } from '../../utils/haptics';
 import './MobileBottomBar.css';
 
 interface MobileBottomBarProps {
@@ -40,6 +41,7 @@ export const MobileBottomBar = memo(function MobileBottomBar({
   emailUnreadCount = 0,
 }: MobileBottomBarProps) {
   const handleClick = (tab: BottomTab) => {
+    haptic('selection');
     if (tab.isSpecial === 'more') {
       onOpenMore();
     } else if (tab.page) {
