@@ -177,6 +177,11 @@ emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), asy
 
   const email = await sendNewEmail(context, { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id });
 
+  // Emit email.sent event for proactive engine
+  import('../services/event-system').then(({ emitSystemEvent }) =>
+    emitSystemEvent({ context, eventType: 'email.sent', eventSource: 'email', payload: { emailId: email.id, to: to_addresses, subject } })
+  ).catch(() => {});
+
   res.status(201).json({ success: true, data: email });
 }));
 
@@ -377,6 +382,11 @@ emailRouter.post('/:context/emails/:id/send', apiKeyAuth, requireScope('write'),
 
   const sent = await sendEmailById(context, id);
   if (!sent) {throw new NotFoundError('Email');}
+
+  // Emit email.sent event for proactive engine
+  import('../services/event-system').then(({ emitSystemEvent }) =>
+    emitSystemEvent({ context, eventType: 'email.sent', eventSource: 'email', payload: { emailId: id, subject: sent.subject } })
+  ).catch(() => {});
 
   res.json({ success: true, data: sent });
 }));

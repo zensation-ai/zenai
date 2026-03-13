@@ -276,6 +276,14 @@ export async function updateTask(
   if (result.rows.length === 0) {return null;}
 
   logger.info('Task updated', { id, context, operation: 'updateTask' });
+
+  // Emit task.completed event for proactive engine
+  if (updates.status === 'done') {
+    import('./event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({ context, eventType: 'task.completed', eventSource: 'tasks', payload: { taskId: id, title: result.rows[0]?.title } })
+    ).catch(() => {});
+  }
+
   return mapRowToTask(result.rows[0]);
 }
 

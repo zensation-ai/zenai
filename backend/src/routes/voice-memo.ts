@@ -102,6 +102,11 @@ async function storeIdea(
         false, // is_archived - explicitly set to avoid NULL
       ]
     );
+
+    // Emit idea.created event for proactive engine
+    import('../services/event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({ context, eventType: 'idea.created', eventSource: 'voice_memo', payload: { ideaId, title: structured.title } })
+    ).catch(() => {});
   } else {
     await queryContext(
       context,
@@ -129,6 +134,11 @@ async function storeIdea(
         false, // is_archived - explicitly set to avoid NULL
       ]
     );
+
+    // Emit idea.created event for proactive engine
+    import('../services/event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({ context, eventType: 'idea.created', eventSource: 'voice_memo', payload: { ideaId, title: structured.title } })
+    ).catch(() => {});
   }
 }
 

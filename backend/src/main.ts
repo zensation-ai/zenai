@@ -94,6 +94,8 @@ import { logger, requestLogger } from './utils/logger';
 import { startMemoryScheduler, stopMemoryScheduler, workingMemory } from './services/memory';
 // Phase 39: IMAP Email Sync Scheduler
 import { startImapScheduler, stopImapScheduler } from './services/imap-sync';
+// Phase 55: Scheduled Event Producers
+import { startScheduledEventProducers, stopScheduledEventProducers } from './services/scheduled-event-producers';
 // Phase 31: AI Capabilities Enhancement
 import { registerAllToolHandlers } from './services/tool-handlers';
 
@@ -231,7 +233,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id', 'x-csrf-token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id', 'x-csrf-token', 'x-ai-context'],
   exposedHeaders: ['X-CSRF-Token', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
 }));
 
@@ -320,6 +322,10 @@ app.use('/api/agents', agentTeamsRouter);
 // Phase 42: Autonomous Agents - Context-aware: /api/:context/agents/*
 import { autonomousAgentsRouter } from './routes/autonomous-agents';
 app.use('/api', autonomousAgentsRouter);
+
+// Phase 55: MCP Server Exposure - ZenAI as MCP server for external AI clients
+import { mcpServerRouter } from './routes/mcp-server';
+app.use('/api', mcpServerRouter);            // /api/mcp-server (JSON-RPC), /api/mcp-server/.well-known/mcp.json, /api/mcp-server/tools
 
 // Phase 44: MCP HTTP Gateway - Must be before context-aware routes
 import { mcpRouter, mcpConnectionsRouter } from './routes/mcp';
@@ -536,6 +542,7 @@ process.once('SIGTERM', () => {
   stopMemoryScheduler();
   stopImapScheduler();
   stopCalDAVScheduler();
+  stopScheduledEventProducers();
   workingMemory.stopCleanupInterval();
 });
 process.once('SIGINT', () => {
@@ -543,6 +550,7 @@ process.once('SIGINT', () => {
   stopMemoryScheduler();
   stopImapScheduler();
   stopCalDAVScheduler();
+  stopScheduledEventProducers();
   workingMemory.stopCleanupInterval();
 });
 
@@ -843,6 +851,14 @@ async function startServer(): Promise<void> {
       logger.info('Active plugins loaded (deferred)', { operation: 'startup' });
     } catch (error) {
       logger.error('Plugin loading failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 55: Start Scheduled Event Producers
+    try {
+      startScheduledEventProducers();
+      logger.info('Scheduled event producers started (deferred)', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Scheduled event producers failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
     }
   });
   });

@@ -670,6 +670,16 @@ export async function executeTeamTask(
       executionTimeMs: teamResult.executionTimeMs,
     });
 
+    // Emit system event for proactive engine
+    import('./event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({
+        context: task.aiContext,
+        eventType: teamResult.success ? 'agent.completed' : 'agent.failed',
+        eventSource: 'agent_orchestrator',
+        payload: { teamId, strategy, executionTimeMs: teamResult.executionTimeMs, agentCount: agentResults.length },
+      })
+    ).catch(() => {});
+
     return teamResult;
   } finally {
     // Cleanup shared memory after execution
