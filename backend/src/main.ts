@@ -500,6 +500,10 @@ app.use('/api', ragAnalyticsRouter);  // /api/:context/rag/feedback, /api/:conte
 import { graphReasoningRouter } from './routes/graph-reasoning';
 app.use('/api', graphReasoningRouter);  // /api/:context/knowledge-graph/infer, /api/:context/knowledge-graph/communities, etc.
 
+// Phase 58: GraphRAG + Hybrid Retrieval
+import { graphragRouter } from './routes/graphrag';
+app.use('/api', graphragRouter);  // /api/:context/graphrag/extract, /api/:context/graphrag/retrieve, etc.
+
 // Phase 49: Advanced RAG v2
 import { ragV2Router } from './routes/rag-v2';
 app.use('/api', ragV2Router);  // /api/:context/rag/v2/retrieve, /api/:context/rag/v2/citations, etc.

@@ -18,6 +18,8 @@ import { hybridRerank, RerankedResult } from './cross-encoder-rerank';
 import { hydeService, shouldUseHyDE, HyDERetrievalResult } from './hyde-retrieval';
 import { recordRAGQueryAnalytics } from './rag-feedback';
 import { decomposeQuery } from './rag-query-decomposition';
+// Phase 58: GraphRAG Hybrid Retrieval
+import { hybridRetriever, HybridRetrievalResult } from './knowledge-graph/hybrid-retriever';
 
 // ===========================================
 // Types & Interfaces
@@ -41,6 +43,8 @@ export interface EnhancedRAGConfig {
   maxResults: number;
   /** Agentic RAG configuration */
   agenticConfig?: Partial<RAGAgentConfig>;
+  /** Phase 58: Enable GraphRAG hybrid retrieval */
+  enableGraphRAG: boolean;
 }
 
 /**
@@ -61,7 +65,7 @@ export interface EnhancedResult {
     agentic?: number;
   };
   /** Which methods contributed */
-  sources: ('semantic' | 'hyde' | 'cross_encoder' | 'agentic')[];
+  sources: ('semantic' | 'hyde' | 'cross_encoder' | 'agentic' | 'graphrag')[];
   /** Relevance explanation (from cross-encoder) */
   relevanceReason?: string;
 }
@@ -124,6 +128,7 @@ const DEFAULT_CONFIG: EnhancedRAGConfig = {
   crossEncodeTop: 10,
   minRelevance: 0.3,
   maxResults: 10,
+  enableGraphRAG: true,
 };
 
 // ===========================================
@@ -169,6 +174,7 @@ class EnhancedRAGService {
 
     let hydeResults: HyDERetrievalResult[] = [];
     let agenticResults: RetrievalResult[] = [];
+    let graphRAGResults: HybridRetrievalResult[] = [];
 
     // Step 1: Run retrieval methods (parallel when possible)
     const retrievalPromises: Promise<void>[] = [];
@@ -205,10 +211,25 @@ class EnhancedRAGService {
         })
     );
 
+    // Phase 58: GraphRAG hybrid retrieval (if enabled)
+    if (cfg.enableGraphRAG) {
+      retrievalPromises.push(
+        hybridRetriever.retrieve(query, context, { maxResults: cfg.maxResults })
+          .then(results => {
+            graphRAGResults = results;
+            methodsUsed.push('graphrag');
+          })
+          .catch(error => {
+            logger.warn('GraphRAG retrieval failed', { error });
+            graphRAGResults = [];
+          })
+      );
+    }
+
     await Promise.all(retrievalPromises);
 
     // Step 2: Merge results from all sources
-    const merged = this.mergeAllResults(hydeResults, agenticResults, cfg);
+    const merged = this.mergeAllResults(hydeResults, agenticResults, cfg, graphRAGResults);
 
     // Step 3: Cross-encoder re-ranking (if enabled and have results)
     let finalResults: EnhancedResult[];
@@ -347,7 +368,8 @@ class EnhancedRAGService {
   private mergeAllResults(
     hydeResults: HyDERetrievalResult[],
     agenticResults: RetrievalResult[],
-    _config: EnhancedRAGConfig
+    _config: EnhancedRAGConfig,
+    graphRAGResults: HybridRetrievalResult[] = []
   ): EnhancedResult[] {
     const merged = new Map<string, EnhancedResult>();
 
@@ -397,6 +419,30 @@ class EnhancedRAGService {
             agentic: result.score,
           },
           sources: ['agentic'],
+        });
+      }
+    }
+
+    // Phase 58: Add/merge GraphRAG results
+    const GRAPHRAG_WEIGHT = 0.5;
+    for (const result of graphRAGResults) {
+      const existing = merged.get(result.id);
+      if (existing) {
+        existing.score += result.score * GRAPHRAG_WEIGHT;
+        existing.score = Math.min(existing.score * 1.1, 1.0);
+        existing.sources.push('graphrag');
+      } else {
+        const { enrichedSummary, enrichedContent } = this.enrichWithContext(
+          result.title, result.content, result.content
+        );
+        merged.set(result.id, {
+          id: result.id,
+          title: result.title,
+          summary: enrichedSummary,
+          content: enrichedContent,
+          score: result.score * GRAPHRAG_WEIGHT,
+          scores: {},
+          sources: ['graphrag'],
         });
       }
     }
