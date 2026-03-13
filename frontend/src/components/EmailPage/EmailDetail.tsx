@@ -15,6 +15,7 @@ import {
   CATEGORY_LABELS, PRIORITY_LABELS,
   formatEmailDateTime, stringToColor, getInitials,
 } from './types';
+import { showToast } from '../Toast';
 import './EmailDetail.css';
 
 interface EmailDetailProps {
@@ -75,7 +76,7 @@ export function EmailDetail({
       const result = await onGetReplySuggestions();
       setSuggestions(result);
     } catch {
-      // AI service unavailable — fail silently
+      showToast('KI-Vorschläge konnten nicht geladen werden', 'warning');
     } finally {
       setLoadingSuggestions(false);
     }
@@ -86,7 +87,7 @@ export function EmailDetail({
     try {
       await onAIProcess();
     } catch {
-      // AI service unavailable — fail silently
+      showToast('KI-Analyse konnte nicht durchgeführt werden', 'warning');
     } finally {
       setAIProcessing(false);
     }
@@ -117,7 +118,7 @@ export function EmailDetail({
       const summary = await onGetThreadSummary();
       setThreadSummary(summary);
     } catch {
-      // AI service unavailable
+      showToast('Thread-Zusammenfassung nicht verfügbar', 'warning');
     } finally {
       setLoadingThreadSummary(false);
     }
@@ -292,7 +293,10 @@ export function EmailDetail({
             <div className="ed-attachment-grid" role="list">
               {(email.attachments ?? []).map((att, i) => (
                 <div key={i} className="ed-attachment" role="listitem">
-                  <span className="ed-attachment-icon" aria-hidden="true">
+                  <span className="ed-attachment-icon" role="img" aria-label={
+                    att.content_type?.startsWith('image/') ? 'Bild' :
+                    att.content_type?.includes('pdf') ? 'PDF-Dokument' : 'Datei'
+                  }>
                     {att.content_type?.startsWith('image/') ? '🖼' :
                      att.content_type?.includes('pdf') ? '📄' : '📁'}
                   </span>
@@ -322,13 +326,13 @@ export function EmailDetail({
         {hasThread && (
           <div className="ed-thread">
             <div className="ed-thread-section-header">
-              <button className="ed-thread-toggle" onClick={() => setShowThread(!showThread)}>
+              <button className="ed-thread-toggle neuro-focus-ring" onClick={() => setShowThread(!showThread)}>
                 <span className={`ed-thread-arrow ${showThread ? 'ed-thread-arrow--open' : ''}`}>▶</span>
                 Konversation ({thread.length} Nachrichten)
               </button>
               {onGetThreadSummary && (
                 <button
-                  className="ed-thread-summary-btn"
+                  className="ed-thread-summary-btn neuro-focus-ring"
                   onClick={handleGetThreadSummary}
                   disabled={loadingThreadSummary}
                   title="Thread zusammenfassen"
@@ -379,7 +383,7 @@ export function EmailDetail({
         {email.direction === 'inbound' && (
           <div className="ed-suggestions">
             {suggestions.length === 0 && !loadingSuggestions && (
-              <button className="ed-ai-trigger ed-ai-trigger--suggestions" onClick={handleGetSuggestions}>
+              <button className="ed-ai-trigger ed-ai-trigger--suggestions neuro-focus-ring" onClick={handleGetSuggestions}>
                 <span className="ed-ai-icon">💡</span> Antwort-Vorschlaege generieren
               </button>
             )}
@@ -395,7 +399,7 @@ export function EmailDetail({
                   {suggestions.map((s, i) => (
                     <button
                       key={i}
-                      className="ed-suggestion"
+                      className="ed-suggestion neuro-focus-ring"
                       onClick={() => handleSuggestionClick(s)}
                     >
                       <span className="ed-suggestion-tone">
@@ -416,7 +420,7 @@ export function EmailDetail({
         {email.direction === 'inbound' && (
           <div className="ed-inline-reply">
             {!showInlineReply ? (
-              <button className="ed-reply-trigger" onClick={openInlineReply}>
+              <button className="ed-reply-trigger neuro-focus-ring" onClick={openInlineReply}>
                 ↩ Schnellantwort schreiben...
               </button>
             ) : (
@@ -437,11 +441,11 @@ export function EmailDetail({
                 <div className="ed-reply-actions">
                   <span className="ed-reply-hint">Ctrl+Enter zum Senden</span>
                   <div className="ed-reply-buttons">
-                    <button className="ed-reply-cancel" onClick={() => { setShowInlineReply(false); setInlineReplyText(''); }}>
+                    <button className="ed-reply-cancel neuro-focus-ring" onClick={() => { setShowInlineReply(false); setInlineReplyText(''); }}>
                       Abbrechen
                     </button>
                     <button
-                      className="ed-reply-send"
+                      className="ed-reply-send neuro-focus-ring"
                       onClick={handleInlineReply}
                       disabled={sendingReply || !inlineReplyText.trim()}
                     >

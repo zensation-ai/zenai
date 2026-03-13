@@ -427,11 +427,18 @@ function AuthenticatedApp() {
       setAIOverlay({ visible: true, type: 'text', step: 3 });
       await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_STEP_DELAY_MS));
 
-      const newIdea = {
+      const newIdea: StructuredIdea = {
         id: creationData.ideaId,
-        ...creationData.structured,
+        title: creationData.structured?.title ?? textInput.slice(0, 60),
+        type: (creationData.structured?.type as StructuredIdea['type']) ?? 'idea',
+        category: (creationData.structured?.category as StructuredIdea['category']) ?? 'personal',
+        priority: (creationData.structured?.priority as StructuredIdea['priority']) ?? 'medium',
+        summary: creationData.structured?.summary ?? '',
+        next_steps: creationData.structured?.next_steps ?? [],
+        context_needed: creationData.structured?.context_needed ?? [],
+        keywords: creationData.structured?.keywords ?? [],
         created_at: new Date().toISOString(),
-      } as unknown as StructuredIdea;
+      };
 
       setIdeas(prev => [newIdea, ...prev]);
       lastSubmitTimeRef.current = Date.now();
@@ -479,7 +486,8 @@ function AuthenticatedApp() {
       // Merge keyword results (fast) + semantic results (deep), keyword first
       const keywordIdeas = parsed.keyword?.ideas ?? [];
       const semanticIdeas = parsed.semantic?.ideas ?? [];
-      const merged = [...keywordIdeas, ...semanticIdeas] as unknown as StructuredIdea[];
+      // Zod passthrough() adds index signature incompatible with StructuredIdea
+      const merged: StructuredIdea[] = [...keywordIdeas, ...semanticIdeas] as unknown as StructuredIdea[];
 
       setSearchResults(merged);
     } catch (progressiveErr) {

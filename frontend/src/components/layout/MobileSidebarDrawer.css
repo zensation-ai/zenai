@@ -7,7 +7,7 @@
 .msd-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 210;
+  z-index: var(--z-drawer);
   background: rgba(0, 0, 0, 0.5);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
@@ -29,7 +29,7 @@
   bottom: 0;
   width: 300px;
   max-width: min(300px, 85vw);
-  z-index: 211;
+  z-index: calc(var(--z-drawer) + 1);
   background: linear-gradient(
     180deg,
     rgba(12, 28, 36, 0.98) 0%,

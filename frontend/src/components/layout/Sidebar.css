@@ -13,7 +13,7 @@
   border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  z-index: 90;
+  z-index: var(--z-sidebar);
   transition: width var(--layout-transition);
   overflow: hidden;
   -webkit-backdrop-filter: blur(24px) saturate(180%);

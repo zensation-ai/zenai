@@ -161,7 +161,7 @@
 
 @media (prefers-color-scheme: dark) {
   .mobile-chat-sheet {
-    background: #1a3440;
+    background: var(--surface-solid, #1a3440);
   }
 }
 

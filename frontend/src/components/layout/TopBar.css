@@ -5,7 +5,7 @@
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 80;
+  z-index: var(--z-topbar);
   height: var(--topbar-height, 52px);
   padding: 0 1.5rem;
   background: linear-gradient(

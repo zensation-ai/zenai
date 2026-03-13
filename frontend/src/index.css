@@ -93,6 +93,23 @@ textarea::placeholder {
   --text-light: var(--text-secondary);
   --text-muted-dark: var(--text-muted);
 
+  /* Z-Index Layer System */
+  --z-background: 0;
+  --z-content: 1;
+  --z-elevated: 2;
+  --z-sticky: 10;
+  --z-topbar: 80;
+  --z-sidebar: 90;
+  --z-header: 100;
+  --z-floating: 145;
+  --z-drawer: 210;
+  --z-dropdown: 900;
+  --z-modal: 1000;
+  --z-context-nudge: 1100;
+  --z-onboarding: 2000;
+  --z-login: 3000;
+  --z-global-search: 9999;
+
   /* Richer Background - Less white, more warmth and petrol tones */
   --background: #dce5eb;
   --background-gradient: linear-gradient(

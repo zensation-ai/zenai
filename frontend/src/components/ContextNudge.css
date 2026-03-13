@@ -4,7 +4,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 1100;
+  z-index: var(--z-context-nudge);
   display: flex;
   align-items: center;
   gap: var(--spacing-md, 12px);

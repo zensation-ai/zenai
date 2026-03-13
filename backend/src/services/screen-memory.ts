@@ -99,27 +99,26 @@ export async function getCaptures(
     params.push(filters.date_to);
   }
 
-  const where = `WHERE ${conditions.join(' AND ')}`;
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
   const limit = filters.limit || 50;
   const offset = filters.offset || 0;
 
   // Count query uses only filter params; data query adds limit/offset
   const countParams = [...params];
-  params.push(limit, offset);
-  const limitParam = `$${params.length - 1}`;
-  const offsetParam = `$${params.length}`;
+  const countSql = `SELECT COUNT(*) as total FROM screen_captures ${whereClause}`;
+
+  params.push(limit);
+  const limitIdx = idx++;
+  params.push(offset);
+  const offsetIdx = idx++;
+
+  const dataSql = `SELECT * FROM screen_captures ${whereClause}
+       ORDER BY timestamp DESC
+       LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
 
   const [dataResult, countResult] = await Promise.all([
-    queryContext(context,
-      `SELECT * FROM screen_captures ${where}
-       ORDER BY timestamp DESC
-       LIMIT ${limitParam} OFFSET ${offsetParam}`,
-      params
-    ),
-    queryContext(context,
-      `SELECT COUNT(*) as total FROM screen_captures ${where}`,
-      countParams
-    ),
+    queryContext(context, dataSql, params),
+    queryContext(context, countSql, countParams),
   ]);
 
   return {
