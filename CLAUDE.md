@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 58
+## Current Phase: 60
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -197,6 +197,16 @@
 - Community Summarizer: `backend/src/services/knowledge-graph/community-summarizer.ts`
 - Hybrid Retriever: `backend/src/services/knowledge-graph/hybrid-retriever.ts`
 - Graph Indexer: `backend/src/services/knowledge-graph/graph-indexer.ts`
+- Procedural Memory: `backend/src/services/memory/procedural-memory.ts`
+- Memory BM25: `backend/src/services/memory/memory-bm25.ts`
+- Entity Resolver: `backend/src/services/memory/entity-resolver.ts`
+- Memory MCP Resources: `backend/src/services/memory/memory-mcp-resources.ts`
+- Memory Procedures Routes: `backend/src/routes/memory-procedures.ts`
+- A2A Server: `backend/src/services/a2a/a2a-server.ts`
+- Agent Card: `backend/src/services/a2a/agent-card.ts`
+- A2A Task Manager: `backend/src/services/a2a/task-manager.ts`
+- A2A Client: `backend/src/services/a2a/a2a-client.ts`
+- A2A Routes: `backend/src/routes/a2a.ts`
 - GraphRAG Routes: `backend/src/routes/graphrag.ts`
 
 ### Frontend
@@ -654,6 +664,37 @@ POST   /api/:context/graphrag/index                          - Trigger batch ind
 GET    /api/:context/graphrag/index/status                    - Get indexing status
 ```
 
+### Memory Procedures API (Phase 59)
+
+```
+GET    /api/:context/memory/procedures                       - List procedures (limit, outcome filter)
+GET    /api/:context/memory/procedures/:id                   - Get single procedure
+POST   /api/:context/memory/procedures                       - Record new procedure
+POST   /api/:context/memory/procedures/recall                - Recall similar procedures
+PUT    /api/:context/memory/procedures/:id/feedback           - Submit feedback/optimization
+DELETE /api/:context/memory/procedures/:id                   - Delete procedure
+GET    /api/:context/memory/bm25                             - BM25 full-text search
+GET    /api/:context/memory/hybrid-search                    - Hybrid BM25+semantic search (RRF)
+GET    /api/:context/memory/entity-links/:factId             - Get entity links for fact
+```
+
+### A2A Protocol API (Phase 60)
+
+```
+GET    /.well-known/agent.json                               - Agent Card discovery (no auth)
+POST   /api/a2a/tasks                                        - Create A2A task
+GET    /api/a2a/tasks/:id                                    - Get task status
+POST   /api/a2a/tasks/:id/messages                           - Send message to task
+DELETE /api/a2a/tasks/:id                                    - Cancel task
+GET    /api/a2a/tasks/:id/stream                             - SSE task progress
+GET    /api/:context/a2a/tasks                               - List tasks for context
+GET    /api/:context/a2a/external-agents                     - List external agents
+POST   /api/:context/a2a/external-agents                     - Register external agent
+DELETE /api/:context/a2a/external-agents/:id                 - Remove external agent
+POST   /api/:context/a2a/external-agents/:id/health          - Health check agent
+POST   /api/:context/a2a/external-agents/:id/send            - Send task to external agent
+```
+
 ## Environment Variables (Backend)
 
 ```bash
@@ -808,9 +849,9 @@ cd frontend && npm test
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 3386 | 24 | 0 |
+| **Backend** | 3541 | 24 | 0 |
 | **Frontend** | 572 | 0 | 0 |
-| **Gesamt** | 3958 | 24 | 0 |
+| **Gesamt** | 4113 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -906,6 +947,72 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-14: Phase 59+60 - Memory Excellence + A2A Protocol
+
+**Zwei parallele Phasen: Letta-Paradigm Memory System + Agent-to-Agent Communication.**
+
+**Phase 59: Memory Excellence (Letta-Paradigm)**
+
+| Feature | Details |
+|---------|---------|
+| **Procedural Memory** | "Wie mache ich X?" Speicher aus vergangenen Tool-Aktionen (Trigger, Steps, Tools, Outcome) |
+| **Semantic Recall** | Embedding-basierte Aehnlichkeitssuche fuer bewaehrte Vorgehensweisen |
+| **Feedback-Optimierung** | Success-Rate Tracking + Feedback-Score fuer Procedure-Ranking |
+| **BM25 Full-Text Search** | PostgreSQL ts_rank + to_tsvector parallel zu Semantic Search |
+| **Hybrid Search (RRF)** | Reciprocal Rank Fusion: BM25 + Semantic Ergebnisse kombiniert |
+| **Entity Resolver** | NER via GraphBuilder (Phase 58) + automatisches Fact-Entity Linking |
+| **Memory MCP Resources** | 3 neue Resources: zenai://memory/working, procedures, entities |
+| **LTM Integration** | Fire-and-forget Entity Resolution bei storeFact() |
+
+**Phase 60: A2A Protocol Foundation**
+
+| Feature | Details |
+|---------|---------|
+| **Agent Card** | Discovery unter /.well-known/agent.json mit 5 Skills |
+| **A2A Task Manager** | Task Lifecycle: submitted → working → completed/failed/canceled |
+| **A2A Server** | JSON-RPC 2.0 Handler (tasks/send, tasks/get, tasks/cancel, tasks/sendSubscribe) |
+| **A2A Client** | Externe A2A Agents discovern, Tasks delegieren, Health Monitoring |
+| **SSE Streaming** | Echtzeit-Task-Progress via Server-Sent Events |
+| **Agent Orchestrator Integration** | Skill-to-Strategy Mapping (research → research_only, code-review → research_code_review) |
+| **External Agent Registry** | DB-persistierte externe Agents mit Health-Check Polling |
+| **Dual Auth** | Bearer Token (JWT) + API Key fuer A2A Endpoints |
+
+**Neue Dateien Phase 59:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/memory/procedural-memory.ts` | ProceduralMemory (record/recall/optimize/list/delete) |
+| `backend/src/services/memory/memory-bm25.ts` | BM25 Full-Text Search + Hybrid Search (RRF) |
+| `backend/src/services/memory/entity-resolver.ts` | NER + Entity Linking via GraphBuilder |
+| `backend/src/services/memory/memory-mcp-resources.ts` | 3 MCP Memory Resources |
+| `backend/src/routes/memory-procedures.ts` | 10 REST Endpoints |
+| `backend/sql/migrations/phase59_memory.sql` | procedural_memories + memory_entity_links + search_vector (4 Schemas) |
+
+**Neue Dateien Phase 60:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/a2a/agent-card.ts` | Agent Card Generator (5 Skills) |
+| `backend/src/services/a2a/task-manager.ts` | A2A Task Lifecycle Manager |
+| `backend/src/services/a2a/a2a-server.ts` | JSON-RPC 2.0 A2A Server |
+| `backend/src/services/a2a/a2a-client.ts` | A2A Client fuer externe Agents |
+| `backend/src/routes/a2a.ts` | 12 A2A Endpoints + SSE |
+| `backend/sql/migrations/phase60_a2a.sql` | a2a_tasks + a2a_external_agents (4 Schemas) |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | 3 neue Router (a2aWellKnownRouter, a2aRouter, memoryProceduresRouter) + /.well-known Readiness-Gate |
+| `backend/src/services/mcp-server.ts` | 3 neue Memory Resources (working, procedures, entities) |
+| `backend/src/services/memory/long-term-memory.ts` | Fire-and-forget Entity Resolution in persistFact() |
+
+**DB-Migration:** Phase 59: 2 Tabellen + ALTER learned_facts x4 Schemas | Phase 60: 2 Tabellen x4 Schemas
+
+**Tests:** 155 neue Tests (Phase 59: 75, Phase 60: 80), Backend 3541 + Frontend 572 = 4113 bestanden, 24 uebersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-03-14: Phase 57+58 - Real-Time Voice + GraphRAG Hybrid Retrieval
 
