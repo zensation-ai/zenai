@@ -1539,7 +1539,7 @@ ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write
  */
 ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const sourceContext = validateContextParam(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   const { targetContext } = req.body;
 

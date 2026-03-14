@@ -114,7 +114,7 @@ smartSuggestionsRouter.get(
   apiKeyAuth,
   requireScope('read'),
   (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
       res.status(400).json({ error: 'Invalid context' });

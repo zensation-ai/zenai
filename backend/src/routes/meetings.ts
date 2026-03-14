@@ -64,7 +64,7 @@ meetingsRouter.post('/search', apiKeyAuth, deprecationNotice, validateBody(Meeti
   const startTime = Date.now();
   const { query, limit } = req.body;
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const results = await searchMeetings(query, limit, ctx);
 
@@ -84,7 +84,7 @@ meetingsRouter.post('/search', apiKeyAuth, deprecationNotice, validateBody(Meeti
 meetingsRouter.get('/action-items/all', apiKeyAuth, deprecationNotice, asyncHandler(async (req, res) => {
   const { completed, company_id } = req.query;
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const items = await getAllActionItems({
     completed: completed !== undefined ? completed === 'true' : undefined,
@@ -106,7 +106,7 @@ meetingsRouter.get('/action-items/all', apiKeyAuth, deprecationNotice, asyncHand
 meetingsRouter.post('/', apiKeyAuth, requireScope('write'), deprecationNotice, validateBody(CreateMeetingSchema), asyncHandler(async (req, res) => {
   const { title, date, company_id, duration_minutes, participants, location, meeting_type } = req.body;
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const meeting = await createMeeting({
     title,
@@ -129,7 +129,7 @@ meetingsRouter.post('/', apiKeyAuth, requireScope('write'), deprecationNotice, v
 meetingsRouter.get('/', apiKeyAuth, deprecationNotice, asyncHandler(async (req, res) => {
   const { company_id, status, from_date, to_date, limit, offset } = req.query;
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const result = await getMeetings({
     company_id: company_id as string,
@@ -163,7 +163,7 @@ meetingsRouter.get('/:id', apiKeyAuth, deprecationNotice, asyncHandler(async (re
     throw new ValidationError('Invalid meeting ID format');
   }
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const meeting = await getMeeting(req.params.id, ctx);
 
@@ -187,7 +187,7 @@ meetingsRouter.put('/:id/status', apiKeyAuth, requireScope('write'), deprecation
     throw new ValidationError('Invalid meeting ID format');
   }
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const { status } = req.body;
 
@@ -215,7 +215,7 @@ meetingsRouter.post('/:id/notes', apiKeyAuth, requireScope('write'), deprecation
     throw new ValidationError('Invalid meeting ID format');
   }
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const startTime = Date.now();
 
@@ -272,7 +272,7 @@ meetingsRouter.get('/:id/notes', apiKeyAuth, deprecationNotice, asyncHandler(asy
     throw new ValidationError('Invalid meeting ID format');
   }
   const ctx = getMeetingContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const notes = await getMeetingNotes(req.params.id, ctx);
 
@@ -321,7 +321,7 @@ function getRouteContext(req: Request): AIContext {
  */
 contextMeetingsRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getRouteContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const startTime = Date.now();
   const { query, mode, limit } = req.body;
 
@@ -361,7 +361,7 @@ contextMeetingsRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) 
  */
 contextMeetingsRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getRouteContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { company_id, status, from_date, to_date, has_audio, limit, offset } = req.query;
 
   const result = await getMeetings({
@@ -392,7 +392,7 @@ contextMeetingsRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 contextMeetingsRouter.post('/', apiKeyAuth, requireScope('write'), validateBody(CreateMeetingSchema), asyncHandler(async (req, res) => {
   const ctx = getRouteContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { title, date, company_id, duration_minutes, participants, location, meeting_type } = req.body;
 
   const meeting = await createMeeting({
@@ -409,7 +409,7 @@ contextMeetingsRouter.post('/', apiKeyAuth, requireScope('write'), validateBody(
  */
 contextMeetingsRouter.get('/:id', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getRouteContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const uuidResult = validateUUID(req.params.id, 'meeting id');
   if (!uuidResult.success) {
     throw new ValidationError('Invalid meeting ID format');
@@ -432,7 +432,7 @@ contextMeetingsRouter.get('/:id', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 contextMeetingsRouter.post('/:id/notes', apiKeyAuth, requireScope('write'), audioUpload.single('audio'), asyncHandler(async (req, res) => {
   const ctx = getRouteContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const uuidResult = validateUUID(req.params.id, 'meeting id');
   if (!uuidResult.success) {
     throw new ValidationError('Invalid meeting ID format');
@@ -507,7 +507,7 @@ contextMeetingsRouter.post('/:id/notes', apiKeyAuth, requireScope('write'), audi
  */
 contextMeetingsRouter.get('/:id/audio-url', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getRouteContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const uuidResult = validateUUID(req.params.id, 'meeting id');
   if (!uuidResult.success) {
     throw new ValidationError('Invalid meeting ID format');

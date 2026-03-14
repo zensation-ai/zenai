@@ -27,7 +27,7 @@ export const userProfileContextRouter = Router();
  */
 userProfileRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   const profileId = (req.query.profile_id as string) || 'default';
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const profile = await getUserProfile(profileId);
 
   res.json({ success: true, profile });
@@ -39,7 +39,7 @@ userProfileRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 userProfileRouter.post('/track', apiKeyAuth, asyncHandler(async (req, res) => {
   const { idea_id, meeting_id, interaction_type, metadata } = req.body;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (!interaction_type) {
     throw new ValidationError('interaction_type is required', { interaction_type: 'required' });
@@ -61,7 +61,7 @@ userProfileRouter.post('/track', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 userProfileRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, res) => {
   const profileId = (req.query.profile_id as string) || 'default';
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const recommendations = await getRecommendations(profileId);
 
   res.json({ success: true, recommendations });
@@ -73,7 +73,7 @@ userProfileRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, r
  */
 userProfileRouter.get('/personalized-ideas', apiKeyAuth, asyncHandler(async (req, res) => {
   const profileId = (req.query.profile_id as string) || 'default';
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const limit = parseInt(req.query.limit as string, 10) || 10;
 
   const ideas = await getPersonalizedIdeas(limit, profileId);
@@ -87,7 +87,7 @@ userProfileRouter.get('/personalized-ideas', apiKeyAuth, asyncHandler(async (req
  */
 userProfileRouter.post('/recalculate', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const profileId = (req.query.profile_id as string) || 'default';
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   await recalculateStats(profileId);
   await updateInterestEmbedding(profileId);
@@ -104,7 +104,7 @@ userProfileRouter.post('/recalculate', apiKeyAuth, requireScope('write'), asyncH
 userProfileRouter.put('/auto-priority', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const { enabled } = req.body;
   const profileId = (req.query.profile_id as string) || 'default';
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (typeof enabled !== 'boolean') {
     throw new ValidationError('enabled must be a boolean', { enabled: 'must be boolean' });
@@ -121,7 +121,7 @@ userProfileRouter.put('/auto-priority', apiKeyAuth, requireScope('write'), async
  */
 userProfileRouter.post('/suggest-priority', apiKeyAuth, asyncHandler(async (req, res) => {
   const { keywords } = req.body;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const profileId = (req.query.profile_id as string) || 'default';
 
   if (!keywords || !Array.isArray(keywords)) {
@@ -139,7 +139,7 @@ userProfileRouter.post('/suggest-priority', apiKeyAuth, asyncHandler(async (req,
  */
 userProfileRouter.get('/stats', apiKeyAuth, asyncHandler(async (req, res) => {
   const profileId = (req.query.profile_id as string) || 'default';
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const profile = await getUserProfile(profileId);
 
   // Get top categories
@@ -179,7 +179,7 @@ userProfileRouter.get('/stats', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 userProfileContextRouter.get('/:context/profile/stats', apiKeyAuth, asyncHandler(async (req, res) => {
   const { context } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -221,7 +221,7 @@ userProfileContextRouter.get('/:context/profile/stats', apiKeyAuth, asyncHandler
  */
 userProfileContextRouter.get('/:context/profile/recommendations', apiKeyAuth, asyncHandler(async (req, res) => {
   const { context } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -239,7 +239,7 @@ userProfileContextRouter.get('/:context/profile/recommendations', apiKeyAuth, as
  */
 userProfileContextRouter.post('/:context/profile/recalculate', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const { context } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -260,7 +260,7 @@ userProfileContextRouter.post('/:context/profile/recalculate', apiKeyAuth, requi
  */
 userProfileContextRouter.put('/:context/profile/auto-priority', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const { context } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { enabled } = req.body;
 
   if (!isValidContext(context)) {

@@ -174,8 +174,7 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
  * PUT /api/:context/ideas/:id/archive
  * Archive an idea
  */
-requireUUID('id'),
-router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
   if (!isValidContext(context)) {
@@ -202,8 +201,7 @@ router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), asy
  * PUT /api/:context/ideas/:id/restore
  * Restore an archived idea
  */
-requireUUID('id'),
-router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
   if (!isValidContext(context)) {
@@ -232,7 +230,6 @@ router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asy
  * GET /api/:context/ideas/search
  * Search ideas within a specific context
  */
-requireUUID('id'),
 router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { query: searchQuery, limit = 20 } = req.body;
@@ -339,8 +336,7 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
  * POST /api/:context/ideas/:id/triage
  * Record a triage action for an idea
  */
-requireUUID('id'),
-router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
   const { action } = req.body;
 
@@ -387,7 +383,6 @@ router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), asy
  * GET /api/:context/ai-activity
  * Get recent AI activity feed for dashboard
  */
-requireUUID('id'),
 router.get('/:context/ai-activity', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { limit = '10' } = req.query;

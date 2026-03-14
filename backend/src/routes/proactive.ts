@@ -214,7 +214,7 @@ router.get('/routines/active', apiKeyAuth, requireScope('read'), asyncHandler(as
  */
 router.patch('/routines/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');

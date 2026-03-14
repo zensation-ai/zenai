@@ -382,7 +382,7 @@ digestRouter.get('/:context/digest/latest', apiKeyAuth, asyncHandler(async (req:
  */
 digestRouter.get('/:context/digest/goals', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -430,7 +430,7 @@ digestRouter.get('/:context/digest/goals', apiKeyAuth, asyncHandler(async (req: 
  */
 digestRouter.put('/:context/digest/goals', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { dailyIdeasTarget, weeklyIdeasTarget, focusCategories, enabledInsights, digestTime } = req.body;
 
   if (!isValidContext(context)) {

@@ -31,6 +31,19 @@ jest.mock('uuid', () => ({
   v4: jest.fn(() => 'test-uuid-1234'),
 }));
 
+jest.mock('../../../middleware/auth', () => ({
+  apiKeyAuth: jest.fn((_req: any, _res: any, next: any) => {
+    _req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
+    next();
+  }),
+  requireScope: jest.fn(() => (_req: any, _res: any, next: any) => next()),
+}));
+
+jest.mock('../../../utils/user-context', () => ({
+  getUserId: jest.fn(() => '00000000-0000-0000-0000-000000000001'),
+  SYSTEM_USER_ID: '00000000-0000-0000-0000-000000000001',
+}));
+
 // ===========================================
 // Imports (after mocks)
 // ===========================================

@@ -260,7 +260,7 @@ router.get(
     const { context, id } = req.params;
     validateContext(context);
     validateDocumentId(id);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
 
     const limit = parseInt(req.query.limit as string, 10) || 5;
     const results = await documentRAGService.findSimilarDocuments(id, context, limit);
@@ -477,7 +477,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     const { documentId } = req.body;
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
 
     validateContext(context);
     validateDocumentId(documentId);

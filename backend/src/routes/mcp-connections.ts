@@ -59,7 +59,7 @@ mcpConnectionsV2Router.get(
   validateContext,
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const enabledOnly = req.query.enabled === 'true';
     const servers = await mcpServerRegistry.list(context, enabledOnly);
 
@@ -86,7 +86,7 @@ mcpConnectionsV2Router.post(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { name, transport, url, command, args, envVars, authType, authConfig, enabled } = req.body;
 
     if (!name || !transport) {
@@ -130,7 +130,7 @@ mcpConnectionsV2Router.put(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const server = await mcpServerRegistry.update(context, req.params.id, req.body);
 
     if (!server) {
@@ -151,7 +151,7 @@ mcpConnectionsV2Router.delete(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
 
     // Disconnect first
     await mcpClientManager.disconnect(req.params.id);
@@ -180,7 +180,7 @@ mcpConnectionsV2Router.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const server = await mcpServerRegistry.getById(context, req.params.id);
 
     if (!server) {
@@ -251,7 +251,7 @@ mcpConnectionsV2Router.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
 
     await mcpClientManager.disconnect(req.params.id);
     toolBridge.removeBridgedTools(req.params.id);
@@ -275,7 +275,7 @@ mcpConnectionsV2Router.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
 
     // Try live tools from connected client first
     const client = mcpClientManager.getClient(req.params.id);
@@ -302,7 +302,7 @@ mcpConnectionsV2Router.get(
   validateContext,
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const client = mcpClientManager.getClient(req.params.id);
     if (!client || !client.isConnected) {
       return res.json({ success: true, data: { resources: [], source: 'offline' } });
@@ -326,7 +326,7 @@ mcpConnectionsV2Router.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const healthy = await mcpClientManager.healthCheck(req.params.id);
     const status = mcpClientManager.getStatus(req.params.id);
 
@@ -362,7 +362,7 @@ mcpConnectionsV2Router.get(
   '/:context/mcp/discover',
   validateContext,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const query = req.query.q as string | undefined;
     const category = req.query.category as MCPServerCategory | undefined;
 
@@ -379,7 +379,7 @@ mcpConnectionsV2Router.get(
   '/:context/mcp/discover/:name/template',
   validateContext,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { name } = req.params;
 
     const template = mcpAutoConfigService.getSetupTemplate(name);
@@ -412,7 +412,7 @@ mcpConnectionsV2Router.post(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { toolId } = req.params;
     const { arguments: args } = req.body;
 

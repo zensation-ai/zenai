@@ -620,7 +620,7 @@ OUTPUT FORMAT:
  * Returns core ideas, action items, mentions, mood, and auto-links.
  */
 voiceMemoContextRouter.post('/:context/voice-memo/extract', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { context } = req.params;
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');

@@ -30,8 +30,7 @@ export const knowledgeGraphRouter = Router();
  * POST /api/knowledge-graph/analyze/:ideaId
  * Analyze and create relationships for an idea
  */
-requireUUID('ideaId'),
-knowledgeGraphRouter.post('/analyze/:ideaId', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+knowledgeGraphRouter.post('/analyze/:ideaId', apiKeyAuth, requireScope('write'), requireUUID('ideaId'), asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const { ideaId } = req.params;
 
@@ -51,8 +50,7 @@ knowledgeGraphRouter.post('/analyze/:ideaId', apiKeyAuth, requireScope('write'),
  * GET /api/knowledge-graph/relations/:ideaId
  * Get all relationships for an idea
  */
-requireUUID('ideaId'),
-knowledgeGraphRouter.get('/relations/:ideaId', apiKeyAuth, asyncHandler(async (req, res) => {
+knowledgeGraphRouter.get('/relations/:ideaId', apiKeyAuth, requireUUID('ideaId'), asyncHandler(async (req, res) => {
   const { ideaId } = req.params;
   const relationships = await getRelationships(ideaId);
 
@@ -68,8 +66,7 @@ knowledgeGraphRouter.get('/relations/:ideaId', apiKeyAuth, asyncHandler(async (r
  * GET /api/knowledge-graph/multi-hop/:ideaId
  * Multi-hop reasoning: find connected ideas through relationships
  */
-requireUUID('ideaId'),
-knowledgeGraphRouter.get('/multi-hop/:ideaId', apiKeyAuth, asyncHandler(async (req, res) => {
+knowledgeGraphRouter.get('/multi-hop/:ideaId', apiKeyAuth, requireUUID('ideaId'), asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const { ideaId } = req.params;
   const maxHops = toIntBounded(req.query.maxHops as string, 2, 1, 5);
@@ -90,8 +87,7 @@ knowledgeGraphRouter.get('/multi-hop/:ideaId', apiKeyAuth, asyncHandler(async (r
  * GET /api/knowledge-graph/suggestions/:ideaId
  * Get suggested connections for an idea
  */
-requireUUID('ideaId'),
-knowledgeGraphRouter.get('/suggestions/:ideaId', apiKeyAuth, asyncHandler(async (req, res) => {
+knowledgeGraphRouter.get('/suggestions/:ideaId', apiKeyAuth, requireUUID('ideaId'), asyncHandler(async (req, res) => {
   const { ideaId } = req.params;
   const suggestions = await getSuggestedConnections(ideaId);
 
@@ -107,7 +103,6 @@ knowledgeGraphRouter.get('/suggestions/:ideaId', apiKeyAuth, asyncHandler(async 
  * GET /api/knowledge-graph/stats
  * Get knowledge graph statistics
  */
-requireUUID('ideaId'),
 knowledgeGraphRouter.get('/stats', apiKeyAuth, asyncHandler(async (req, res) => {
   const stats = await getGraphStats();
 
@@ -147,8 +142,7 @@ knowledgeGraphRouter.get('/full', apiKeyAuth, asyncHandler(async (req, res) => {
  * GET /api/knowledge-graph/subgraph/:ideaId
  * Get subgraph around a specific idea
  */
-requireUUID('ideaId'),
-knowledgeGraphRouter.get('/subgraph/:ideaId', apiKeyAuth, asyncHandler(async (req, res) => {
+knowledgeGraphRouter.get('/subgraph/:ideaId', apiKeyAuth, requireUUID('ideaId'), asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const { ideaId } = req.params;
   const context = (req.query.context as string) || 'personal';
@@ -174,7 +168,6 @@ knowledgeGraphRouter.get('/subgraph/:ideaId', apiKeyAuth, asyncHandler(async (re
  * POST /api/knowledge-graph/discover
  * Discover relationships for all ideas in a context
  */
-requireUUID('ideaId'),
 knowledgeGraphRouter.post('/discover', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const { context = 'personal', force = false } = req.body;
 
@@ -318,8 +311,7 @@ knowledgeGraphRouter.post('/topics/merge', apiKeyAuth, requireScope('write'), as
  * POST /api/knowledge-graph/topics/assign/:ideaId
  * Assign an idea to its best matching topic
  */
-requireUUID('ideaId'),
-knowledgeGraphRouter.post('/topics/assign/:ideaId', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+knowledgeGraphRouter.post('/topics/assign/:ideaId', apiKeyAuth, requireScope('write'), requireUUID('ideaId'), asyncHandler(async (req, res) => {
   const { ideaId } = req.params;
   const { context = 'personal' } = req.body;
 

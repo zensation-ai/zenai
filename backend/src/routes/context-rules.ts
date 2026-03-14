@@ -35,7 +35,7 @@ contextRulesRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req, res) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -55,7 +55,7 @@ contextRulesRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req, res) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -71,7 +71,7 @@ contextRulesRouter.post(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req, res) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -98,7 +98,7 @@ contextRulesRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req, res) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -116,7 +116,7 @@ contextRulesRouter.post(
   apiKeyAuth,
   requireScope('write'),
   asyncHandler(async (req, res) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -155,7 +155,7 @@ contextRulesRouter.put(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req, res) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -177,7 +177,7 @@ contextRulesRouter.delete(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req, res) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 

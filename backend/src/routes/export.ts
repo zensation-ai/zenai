@@ -556,7 +556,7 @@ exportRouter.get('/ideas/json', apiKeyAuth, asyncHandler(async (req: Request, re
  */
 exportRouter.get('/incubator/markdown', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   // Get clusters with their thoughts
   const clustersResult = await queryContext(
@@ -620,7 +620,7 @@ exportRouter.get('/incubator/markdown', apiKeyAuth, asyncHandler(async (req: Req
  */
 exportRouter.get('/meetings/pdf', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const result = await queryContext(
     ctx,
@@ -694,7 +694,7 @@ exportRouter.get('/meetings/pdf', apiKeyAuth, asyncHandler(async (req: Request, 
  */
 exportRouter.get('/meetings/csv', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const result = await queryContext(
     ctx,
@@ -851,7 +851,7 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
   const format = (req.query.format as string) || 'json';
   const contentParam = (req.query.content as string) || 'ideas';
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const fromDate = req.query.from as string;
   const toDate = req.query.to as string;
 
@@ -1004,7 +1004,7 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
  * Get export history (recent exports)
  */
 exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
   const offset = parseInt(req.query.offset as string, 10) || 0;
 
@@ -1045,7 +1045,7 @@ exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: 
  * Record an export in history
  */
 exportRouter.post('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { export_type, filename, file_size, ideas_count, filters } = req.body;
 
   // Validate export_type

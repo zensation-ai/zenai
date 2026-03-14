@@ -44,7 +44,7 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const minStrength = parseFloat(req.body.minStrength) || 0.5;
     const maxResults = parseInt(req.body.maxResults, 10) || 20;
 
@@ -66,7 +66,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const contradictions = await detectContradictions(context);
     return res.json({ success: true, data: contradictions });
   })
@@ -85,7 +85,7 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const minSize = parseInt(req.body.minSize, 10) || 3;
     const minStrength = parseFloat(req.body.minStrength) || 0.4;
 
@@ -145,7 +145,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const limit = parseInt(req.query.limit as string, 10) || 20;
     const centrality = await calculateCentrality(context, { limit });
     return res.json({ success: true, data: centrality });
@@ -166,7 +166,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const maxSteps = parseInt(req.query.maxSteps as string, 10) || 8;
     const path = await generateLearningPath(context, req.params.ideaId, { maxSteps });
     return res.json({ success: true, data: path });
@@ -186,7 +186,7 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { sourceId, targetId, relationType, strength } = req.body;
     if (!sourceId || !targetId || !relationType) {
       return res.status(400).json({ success: false, error: 'sourceId, targetId, and relationType are required' });
@@ -210,7 +210,7 @@ router.put(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { sourceId, targetId, strength } = req.body;
     if (!sourceId || !targetId || typeof strength !== 'number') {
       return res.status(400).json({ success: false, error: 'sourceId, targetId, and strength are required' });
@@ -234,7 +234,7 @@ router.delete(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { sourceId, targetId } = req.body;
     if (!sourceId || !targetId) {
       return res.status(400).json({ success: false, error: 'sourceId and targetId are required' });
@@ -263,7 +263,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const from = req.query.from as string | undefined;
     const to = req.query.to as string | undefined;
 
@@ -285,7 +285,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const sourceId = req.query.sourceId as string;
     const targetId = req.query.targetId as string;
     if (!sourceId || !targetId) {
@@ -310,7 +310,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const contradictions = await detectTemporalContradictions(context);
     return res.json({ success: true, data: contradictions });
   })
@@ -330,7 +330,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const versions = await getFactVersionHistory(context, req.params.factId);
     return res.json({ success: true, data: versions });
   })

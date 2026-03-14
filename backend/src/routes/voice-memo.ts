@@ -424,7 +424,7 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
  * Only transcribe audio, don't structure or store
  */
 voiceMemoRouter.post('/transcribe', apiKeyAuth, upload.single('audio'), asyncHandler(async (req, res) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const startTime = Date.now();
 
   if (!req.file) {

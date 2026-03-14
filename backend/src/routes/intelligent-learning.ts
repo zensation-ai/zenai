@@ -97,7 +97,7 @@ function validateId(id: string, name: string = 'ID'): void {
  */
 router.get('/:context/focus', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { activeOnly } = req.query;
 
   const focusAreas = await getAllDomainFocus(context, activeOnly === 'true');
@@ -115,7 +115,7 @@ router.get('/:context/focus', apiKeyAuth, asyncHandler(async (req: Request, res:
  */
 router.post('/:context/focus', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { name, description, keywords, learning_goals, document_sources, api_connections, priority } = req.body;
 
   if (!name || name.trim().length === 0) {
@@ -159,7 +159,7 @@ router.post('/:context/focus', apiKeyAuth, requireScope('write'), asyncHandler(a
  */
 router.get('/:context/focus/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   validateId(id, 'Focus ID');
 
@@ -181,7 +181,7 @@ router.get('/:context/focus/:id', apiKeyAuth, asyncHandler(async (req: Request, 
  */
 router.put('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   validateId(id, 'Focus ID');
 
@@ -216,7 +216,7 @@ router.put('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandle
  */
 router.put('/:context/focus/:id/toggle', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   const { is_active } = req.body;
   validateId(id, 'Focus ID');
@@ -243,7 +243,7 @@ router.put('/:context/focus/:id/toggle', apiKeyAuth, requireScope('write'), asyn
  */
 router.delete('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   validateId(id, 'Focus ID');
 
@@ -265,7 +265,7 @@ router.delete('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHan
  */
 router.get('/:context/focus-stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const stats = await getDomainFocusStats(context);
 
@@ -282,7 +282,7 @@ router.get('/:context/focus-stats', apiKeyAuth, asyncHandler(async (req: Request
  */
 router.get('/:context/focus-context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const focusContext = await getActiveFocusContext(context);
 
@@ -299,7 +299,7 @@ router.get('/:context/focus-context', apiKeyAuth, asyncHandler(async (req: Reque
  */
 router.post('/:context/focus/presets', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   await createPresetFocusAreas(context);
 
@@ -319,7 +319,7 @@ router.post('/:context/focus/presets', apiKeyAuth, requireScope('write'), asyncH
  */
 router.post('/:context/feedback', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { response_type, original_response, rating, correction, feedback_text } = req.body;
 
   if (!response_type || response_type.trim().length === 0) {
@@ -357,7 +357,7 @@ router.post('/:context/feedback', apiKeyAuth, requireScope('write'), asyncHandle
  */
 router.post('/:context/feedback/thumbs-up', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { response_type, original_response } = req.body;
 
   if (!response_type || !original_response) {
@@ -379,7 +379,7 @@ router.post('/:context/feedback/thumbs-up', apiKeyAuth, requireScope('write'), a
  */
 router.post('/:context/feedback/thumbs-down', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { response_type, original_response, feedback_text } = req.body;
 
   if (!response_type || !original_response) {
@@ -401,7 +401,7 @@ router.post('/:context/feedback/thumbs-down', apiKeyAuth, requireScope('write'),
  */
 router.post('/:context/feedback/correction', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { response_type, original_response, correction } = req.body;
 
   if (!response_type || !original_response || !correction) {
@@ -428,7 +428,7 @@ router.post('/:context/feedback/correction', apiKeyAuth, requireScope('write'), 
  */
 router.get('/:context/feedback', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { response_type, min_rating, max_rating, only_corrections, limit, offset } = req.query;
 
   const feedbackList = await getFeedback(context, {
@@ -453,7 +453,7 @@ router.get('/:context/feedback', apiKeyAuth, asyncHandler(async (req: Request, r
  */
 router.get('/:context/feedback-stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const stats = await getFeedbackStats(context);
 
@@ -470,7 +470,7 @@ router.get('/:context/feedback-stats', apiKeyAuth, asyncHandler(async (req: Requ
  */
 router.get('/:context/feedback-insights', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const insights = await analyzeFeedbackPatterns(context);
 
@@ -491,7 +491,7 @@ router.get('/:context/feedback-insights', apiKeyAuth, asyncHandler(async (req: R
  */
 router.get('/:context/research', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { limit } = req.query;
 
   const research = await getPendingResearch(context, limit ? parseInt(limit as string, 10) : 10);
@@ -509,7 +509,7 @@ router.get('/:context/research', apiKeyAuth, asyncHandler(async (req: Request, r
  */
 router.get('/:context/research/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   validateId(id, 'Research ID');
 
@@ -531,7 +531,7 @@ router.get('/:context/research/:id', apiKeyAuth, asyncHandler(async (req: Reques
  */
 router.put('/:context/research/:id/viewed', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   validateId(id, 'Research ID');
 
@@ -553,7 +553,7 @@ router.put('/:context/research/:id/viewed', apiKeyAuth, requireScope('write'), a
  */
 router.put('/:context/research/:id/dismiss', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   validateId(id, 'Research ID');
 
@@ -575,7 +575,7 @@ router.put('/:context/research/:id/dismiss', apiKeyAuth, requireScope('write'), 
  */
 router.post('/:context/research/trigger', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { query, sources } = req.body;
 
   if (!query || query.trim().length === 0) {
@@ -603,7 +603,7 @@ router.post('/:context/research/trigger', apiKeyAuth, requireScope('write'), asy
  */
 router.post('/:context/research/process-idea', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { idea_id, text, idea_type } = req.body;
 
   if (!text || text.trim().length === 0) {
@@ -634,7 +634,7 @@ router.post('/:context/research/process-idea', apiKeyAuth, requireScope('write')
  */
 router.post('/:context/learning/run', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   logger.info('Manual daily learning triggered', { context });
 
@@ -653,7 +653,7 @@ router.post('/:context/learning/run', apiKeyAuth, requireScope('write'), asyncHa
  */
 router.get('/:context/learning/logs', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { limit } = req.query;
 
   const logs = await getDailyLearningLogs(context, limit ? parseInt(limit as string, 10) : 7);
@@ -671,7 +671,7 @@ router.get('/:context/learning/logs', apiKeyAuth, asyncHandler(async (req: Reque
  */
 router.get('/:context/suggestions', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { limit } = req.query;
 
   const suggestions = await getActiveSuggestions(context, limit ? parseInt(limit as string, 10) : 5);
@@ -689,7 +689,7 @@ router.get('/:context/suggestions', apiKeyAuth, asyncHandler(async (req: Request
  */
 router.put('/:context/suggestions/:id/respond', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { id } = req.params;
   const { response, feedback } = req.body;
   validateId(id, 'Suggestion ID');
@@ -712,7 +712,7 @@ router.put('/:context/suggestions/:id/respond', apiKeyAuth, requireScope('write'
  */
 router.get('/:context/suggestion-stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const stats = await getSuggestionStats(context);
 
@@ -733,7 +733,7 @@ router.get('/:context/suggestion-stats', apiKeyAuth, asyncHandler(async (req: Re
  */
 router.get('/:context/profile', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const profile = await getOrCreateProfile(context);
 
@@ -750,7 +750,7 @@ router.get('/:context/profile', apiKeyAuth, asyncHandler(async (req: Request, re
  */
 router.put('/:context/profile', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const updates = req.body;
 
   // Sanitize input
@@ -785,7 +785,7 @@ router.put('/:context/profile', apiKeyAuth, requireScope('write'), asyncHandler(
  */
 router.get('/:context/profile-stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const stats = await getProfileStats(context);
 
@@ -802,7 +802,7 @@ router.get('/:context/profile-stats', apiKeyAuth, asyncHandler(async (req: Reque
  */
 router.get('/:context/profile-context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const personalizedContext = await getPersonalizedContext(context);
 
@@ -819,7 +819,7 @@ router.get('/:context/profile-context', apiKeyAuth, asyncHandler(async (req: Req
  */
 router.post('/:context/profile/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { days_back } = req.body;
 
   logger.info('Profile analysis triggered', { context, daysBack: days_back });
@@ -843,7 +843,7 @@ router.post('/:context/profile/analyze', apiKeyAuth, requireScope('write'), asyn
  */
 router.get('/:context/learning/dashboard', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = validateContext(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   // Fetch all data in parallel
   const [

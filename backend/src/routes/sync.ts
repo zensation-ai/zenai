@@ -471,7 +471,7 @@ syncRouter.post('/:context/sync/trigger', apiKeyAuth, requireScope('write'), asy
  */
 syncRouter.delete('/devices/:deviceId', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { deviceId } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (!deviceId || deviceId.trim() === '') {
     throw new ValidationError('Device ID is required');

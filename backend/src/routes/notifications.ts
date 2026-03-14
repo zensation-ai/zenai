@@ -58,7 +58,7 @@ interface RegisterTokenRequest {
  */
 notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { token, platform, deviceId, deviceName } = req.body as RegisterTokenRequest;
 
   if (!token || !platform) {
@@ -118,7 +118,7 @@ notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(asy
  */
 notificationsRouter.delete('/notifications/unregister', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { token } = req.body;
 
   if (!token) {
@@ -156,7 +156,7 @@ interface NotificationPreferences {
  */
 notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const result = await queryContext(
     ctx,
@@ -199,7 +199,7 @@ notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(a
  */
 notificationsRouter.put('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const prefs = req.body as NotificationPreferences;
 
   // Upsert preferences
@@ -257,7 +257,7 @@ interface NotificationPayload {
  */
 notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const payload = req.body as NotificationPayload;
 
   if (!payload.type || !payload.title || !payload.body) {
@@ -313,7 +313,7 @@ notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'
  */
 notificationsRouter.get('/:context/notifications/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
