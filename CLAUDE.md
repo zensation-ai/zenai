@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 60
+## Current Phase: 62
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -208,6 +208,16 @@
 - A2A Client: `backend/src/services/a2a/a2a-client.ts`
 - A2A Routes: `backend/src/routes/a2a.ts`
 - GraphRAG Routes: `backend/src/routes/graphrag.ts`
+- Tracing Service: `backend/src/services/observability/tracing.ts`
+- Metrics Service: `backend/src/services/observability/metrics.ts`
+- Job Queue: `backend/src/services/queue/job-queue.ts`
+- Queue Workers: `backend/src/services/queue/workers.ts`
+- Tracing Middleware: `backend/src/middleware/tracing.ts`
+- Observability Routes: `backend/src/routes/observability.ts`
+- RBAC Middleware: `backend/src/middleware/rbac.ts`
+- Audit Logger: `backend/src/services/security/audit-logger.ts`
+- Advanced Rate Limiting: `backend/src/services/security/rate-limit-advanced.ts`
+- Security Routes: `backend/src/routes/security.ts`
 
 ### Frontend
 
@@ -248,6 +258,7 @@
 - Audio Visualizer: `frontend/src/components/VoiceChat/AudioVisualizer.tsx`
 - WebRTC Hook: `frontend/src/hooks/useWebRTC.ts`
 - Voice Activity Hook: `frontend/src/hooks/useVoiceActivity.ts`
+- PWA Hook: `frontend/src/hooks/usePWA.ts`
 
 ### Tests
 
@@ -695,6 +706,27 @@ POST   /api/:context/a2a/external-agents/:id/health          - Health check agen
 POST   /api/:context/a2a/external-agents/:id/send            - Send task to external agent
 ```
 
+### Observability API (Phase 61)
+
+```
+GET    /api/observability/metrics                               - Current metric snapshots
+GET    /api/observability/queue-stats                           - All queue statistics
+GET    /api/observability/queue-stats/:name                     - Single queue stats
+GET    /api/observability/health                                - Extended health (queues + tracing)
+POST   /api/observability/queue/:name/clean                     - Clean completed/failed jobs
+```
+
+### Security Admin API (Phase 62)
+
+```
+GET    /api/security/audit-log                                  - Query audit log (filters: event_type, user_id, severity, date range)
+GET    /api/security/audit-log/:id                              - Single audit entry
+GET    /api/security/alerts                                     - Recent critical security events
+GET    /api/security/rate-limits                                - Rate limit configuration
+PUT    /api/security/rate-limits/:tier                           - Update rate limit tier
+GET    /api/security/rate-limits/stats                           - Rate limit hit statistics
+```
+
 ## Environment Variables (Backend)
 
 ```bash
@@ -761,6 +793,15 @@ ELEVENLABS_VOICE_ID=...             # Default ElevenLabs Voice
 DEEPGRAM_API_KEY=...                # Optional: Alternative STT
 VOICE_STT_PROVIDER=whisper          # whisper | deepgram
 VOICE_TTS_PROVIDER=edge-tts         # elevenlabs | edge-tts
+
+# Optional - Observability (Phase 61)
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318  # OpenTelemetry Collector
+OTEL_SERVICE_NAME=zenai-backend     # Service name for traces
+ENABLE_TRACING=true                 # Enable OpenTelemetry tracing
+# Note: REDIS_URL already used for BullMQ job queues
+
+# Optional - Security (Phase 62)
+ENCRYPTION_KEY=...                  # AES-256 key for data-at-rest encryption (hex)
 ```
 
 ## Railway Environment Variables (Production)
@@ -845,13 +886,13 @@ cd backend && npm test -- --coverage
 cd frontend && npm test
 ```
 
-### Test-Status (2026-03-13)
+### Test-Status (2026-03-14)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 3541 | 24 | 0 |
+| **Backend** | 3678 | 24 | 0 |
 | **Frontend** | 572 | 0 | 0 |
-| **Gesamt** | 4113 | 24 | 0 |
+| **Gesamt** | 4250 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -947,6 +988,70 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-14: Phase 61+62 - Observability + Queue + Enterprise Security + PWA
+
+**Zwei parallele Phasen: Production-Grade Observability + Enterprise Security Foundation.**
+
+**Phase 61: Observability + Queue + Performance**
+
+| Feature | Details |
+|---------|---------|
+| **OpenTelemetry Tracing** | NodeSDK Setup, Console (Dev) / OTLP (Prod) Exporter, Auto-Instrumentation (HTTP, Express, PG) |
+| **Custom Business Metrics** | 8 Metriken: ai.tokens.total, ai.rag.latency, ai.agent.duration, ai.tool.calls, queue.jobs.*, memory.operations |
+| **BullMQ Job Queue** | 4 Queues (memory-consolidation, rag-indexing, email-processing, graph-indexing), Redis-basiert |
+| **Queue Workers** | 4 Worker-Definitionen mit konfigurierbarer Concurrency, Retry (3x exponential backoff) |
+| **Request Tracing Middleware** | Span pro Request, X-Trace-ID Header, Duration + Status Code Recording |
+| **Observability API** | 5 Endpoints: Metrics, Queue-Stats, Extended Health, Queue Cleanup |
+| **Graceful Degradation** | Alle Services no-op wenn OTel/Redis nicht verfuegbar |
+
+**Phase 62: Enterprise Security + PWA**
+
+| Feature | Details |
+|---------|---------|
+| **RBAC Middleware** | 3 Rollen (admin, editor, viewer), 7 Actions, `requireRole()` Factory |
+| **Security Audit Logger** | 10 Event-Typen, Schema-isoliert, Event System Integration fuer kritische Events |
+| **Advanced Rate Limiting** | Redis Sliding Window, 4 Tiers (default/auth/ai/upload), In-Memory Fallback |
+| **Security Admin API** | 6 Admin-only Endpoints (Audit Log, Alerts, Rate Limit Management) |
+| **Service Worker v3** | Offline Mutation Queue (IndexedDB), Background Sync Replay, SW Update Notifications |
+| **PWA Hook** | `usePWA`: Online/Offline-Status, Install Prompt, Pending Sync Count, SW Updates |
+
+**Neue Dateien Phase 61:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/observability/tracing.ts` | OpenTelemetry SDK Setup + Tracer Factory |
+| `backend/src/services/observability/metrics.ts` | 8 Custom Business Metrics + In-Memory Snapshots |
+| `backend/src/services/queue/job-queue.ts` | BullMQ Queue Service (Singleton, 4 Queues) |
+| `backend/src/services/queue/workers.ts` | 4 Queue Worker Processors |
+| `backend/src/middleware/tracing.ts` | Express Request Tracing Middleware |
+| `backend/src/routes/observability.ts` | 5 Observability API Endpoints |
+| `backend/sql/migrations/phase61_observability.sql` | job_history + metric_snapshots (4 Schemas) |
+
+**Neue Dateien Phase 62:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/middleware/rbac.ts` | RBAC Middleware (3 Rollen, Permission Matrix) |
+| `backend/src/services/security/audit-logger.ts` | Structured Security Audit Logger |
+| `backend/src/services/security/rate-limit-advanced.ts` | Redis Sliding Window Rate Limiter |
+| `backend/src/routes/security.ts` | 6 Security Admin Endpoints |
+| `backend/sql/migrations/phase62_security.sql` | security_audit_log + rate_limit_config + user_roles (4 Schemas) |
+| `frontend/src/hooks/usePWA.ts` | PWA React Hook |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | 2 neue Router (observabilityRouter, securityRouter) + Tracing Middleware + Queue Shutdown |
+| `backend/package.json` | 8 neue Dependencies (OpenTelemetry + BullMQ) |
+| `frontend/public/sw.js` | v2 → v3: Offline Mutation Queue, Background Sync, Update Notifications |
+
+**DB-Migration:** Phase 61: 2 Tabellen x4 Schemas | Phase 62: 3 Tabellen x4 Schemas
+
+**Tests:** 137 neue Tests (Phase 61: 74, Phase 62: 63), Backend 3678 + Frontend 572 = 4250 bestanden, 24 uebersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-03-14: Phase 59+60 - Memory Excellence + A2A Protocol
 

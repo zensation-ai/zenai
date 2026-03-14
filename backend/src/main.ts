@@ -98,6 +98,13 @@ import { startImapScheduler, stopImapScheduler } from './services/imap-sync';
 import { startScheduledEventProducers, stopScheduledEventProducers } from './services/scheduled-event-producers';
 // Phase 31: AI Capabilities Enhancement
 import { registerAllToolHandlers } from './services/tool-handlers';
+// Phase 61: Observability & Queue
+import { initTracing, shutdownTracing } from './services/observability/tracing';
+import { initMetrics } from './services/observability/metrics';
+import { tracingMiddleware } from './middleware/tracing';
+import { observabilityRouter } from './routes/observability';
+import { getQueueService } from './services/queue/job-queue';
+import { startWorkers, stopWorkers } from './services/queue/workers';
 
 dotenv.config();
 
@@ -239,6 +246,7 @@ app.use(cors({
 
 // Request tracking & compression
 app.use(requestIdMiddleware); // Phase 12: Request ID tracking
+app.use(tracingMiddleware); // Phase 61: OpenTelemetry request tracing
 app.use(requestLogger); // Phase 4 Review: HTTP request/response logging with timing
 // Phase 9: Tuned compression - skip small payloads, balanced level for CPU vs ratio
 app.use(compression({
@@ -308,6 +316,9 @@ app.use(csrfProtection);
 
 // Phase 12: API Documentation
 setupSwagger(app);
+
+// Phase 61: Observability - Metrics, Queue Stats, Health
+app.use('/api/observability', observabilityRouter);
 
 // Phase 56: Auth - Registration, Login, OAuth, MFA, Sessions
 import { authRouter } from './routes/auth';
@@ -552,6 +563,10 @@ app.use('/api', contextRulesRouter);  // /api/:context/context-rules CRUD, perfo
 import { proactiveEngineRouter } from './routes/proactive-engine';
 app.use('/api', proactiveEngineRouter);  // /api/:context/proactive-engine/events, rules, stats, process
 
+// Phase 62: Enterprise Security - Admin routes for audit logs & rate limits
+import { securityRouter } from './routes/security';
+app.use('/api/security', securityRouter);  // /api/security/audit-log, /api/security/alerts, /api/security/rate-limits
+
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 
 // Phase 28: AI Evolution Analytics - "KI-Lernkurve und Domain-Stärken"
@@ -572,6 +587,10 @@ process.once('SIGTERM', () => {
   stopCalDAVScheduler();
   stopScheduledEventProducers();
   workingMemory.stopCleanupInterval();
+  // Phase 61: Shutdown queue workers and tracing
+  stopWorkers().catch(() => {});
+  getQueueService().shutdown().catch(() => {});
+  shutdownTracing().catch(() => {});
 });
 process.once('SIGINT', () => {
   clearInterval(rateLimitCleanupInterval);
@@ -580,6 +599,10 @@ process.once('SIGINT', () => {
   stopCalDAVScheduler();
   stopScheduledEventProducers();
   workingMemory.stopCleanupInterval();
+  // Phase 61: Shutdown queue workers and tracing
+  stopWorkers().catch(() => {});
+  getQueueService().shutdown().catch(() => {});
+  shutdownTracing().catch(() => {});
 });
 
 // 404 Handler for undefined routes
@@ -688,6 +711,20 @@ function validateEnvironmentVariables(): void {
  * Ensures secrets are validated BEFORE server accepts requests
  */
 async function startServer(): Promise<void> {
+  // Phase 61: Initialize OpenTelemetry tracing early (before Express setup)
+  try {
+    const tracingEnabled = await initTracing();
+    if (tracingEnabled) {
+      await initMetrics();
+    }
+    logger.info('Observability initialized', { operation: 'startup', tracing: tracingEnabled });
+  } catch (error) {
+    logger.warn('Observability initialization failed (non-critical)', {
+      operation: 'startup',
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   // Phase Security Sprint 4: Initialize Secrets Manager BEFORE server starts
   // This prevents the server from accepting requests with invalid configuration
   try {
@@ -896,6 +933,20 @@ async function startServer(): Promise<void> {
       logger.info('Scheduled event producers started (deferred)', { operation: 'startup' });
     } catch (error) {
       logger.error('Scheduled event producers failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
+    // Phase 61: Initialize Queue Service and Workers
+    try {
+      const queueService = getQueueService();
+      const queueAvailable = await queueService.initialize();
+      if (queueAvailable) {
+        await startWorkers();
+        logger.info('Queue service and workers started (deferred)', { operation: 'startup' });
+      } else {
+        logger.info('Queue service not available (REDIS_URL not set)', { operation: 'startup' });
+      }
+    } catch (error) {
+      logger.error('Queue service failed to start (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
     }
   });
   });
