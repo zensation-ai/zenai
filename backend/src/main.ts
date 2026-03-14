@@ -447,6 +447,10 @@ app.use('/api/topics', topicEnhancementRouter);  // /api/topics/enhanced, /api/t
 import { voiceRouter } from './routes/voice';
 app.use('/api/voice', voiceRouter);  // /api/voice/speak, /api/voice/status, /api/voice/voices
 
+// Phase 57: Real-Time Voice Pipeline
+import { voiceRealtimeRouter } from './routes/voice-realtime';
+app.use('/api', voiceRealtimeRouter);  // /api/:context/voice/session/*, /api/:context/voice/tts, /api/:context/voice/voices, etc.
+
 // Phase 33 Sprint 4: Interactive Canvas Mode
 import { canvasRouter } from './routes/canvas';
 app.use('/api/canvas', canvasRouter);  // /api/canvas, /api/canvas/:id, /api/canvas/:id/versions
@@ -686,7 +690,16 @@ async function startServer(): Promise<void> {
   validateEnvironmentVariables();
 
   // Start server after secrets are validated
-  app.listen(PORT, async () => {
+  const server = app.listen(PORT, async () => {
+    // Phase 57: Initialize WebSocket for Voice Signaling
+    try {
+      const { voiceSignaling } = await import('./services/voice/webrtc-signaling');
+      voiceSignaling.initialize(server);
+      logger.info('Voice WebSocket server initialized', { operation: 'startup' });
+    } catch (error) {
+      logger.error('Voice WebSocket initialization failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+    }
+
     // Get secrets health status for startup display
     const secretsHealth = secretsManager.getHealthSummary();
   const secretsDbStatus = secretsManager.getDatabaseStatus();

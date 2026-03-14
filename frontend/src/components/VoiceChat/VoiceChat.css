@@ -1,0 +1,291 @@
+/* ============================================================
+ * Voice Chat Styles
+ * Phase 57: Real-Time Voice Pipeline
+ * ============================================================ */
+
+/* Container */
+.voice-chat-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-primary, #0f172a);
+  color: var(--text-primary, #e2e8f0);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.voice-chat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.voice-chat-embedded {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Header */
+.voice-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+}
+
+.voice-chat-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.voice-chat-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.voice-chat-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #e2e8f0);
+}
+
+/* Visualizer Area */
+.voice-chat-visualizer-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 250px;
+  padding: 20px;
+}
+
+.voice-chat-visualizer {
+  display: block;
+}
+
+.voice-chat-status {
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: color 0.3s;
+}
+
+.voice-chat-status-idle {
+  color: var(--text-tertiary, #64748b);
+}
+
+.voice-chat-status-connecting {
+  color: #94a3b8;
+  animation: voice-chat-pulse 1.5s infinite;
+}
+
+.voice-chat-status-listening {
+  color: #3b82f6;
+}
+
+.voice-chat-status-processing {
+  color: #eab308;
+  animation: voice-chat-pulse 1s infinite;
+}
+
+.voice-chat-status-speaking {
+  color: #22c55e;
+}
+
+/* Controls */
+.voice-chat-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.voice-chat-mic-button {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.voice-chat-mic-start {
+  background: #3b82f6;
+  color: white;
+}
+
+.voice-chat-mic-start:hover {
+  background: #2563eb;
+  transform: scale(1.05);
+}
+
+.voice-chat-mic-start:active {
+  transform: scale(0.95);
+}
+
+.voice-chat-mic-stop {
+  background: #ef4444;
+  color: white;
+}
+
+.voice-chat-mic-stop:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+.voice-chat-control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #e2e8f0);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.voice-chat-control-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.voice-chat-muted {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Error */
+.voice-chat-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin: 0 20px;
+  font-size: 14px;
+  text-align: center;
+  animation: voice-chat-fadeIn 0.3s;
+}
+
+/* Transcript Panel */
+.voice-chat-transcript {
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.voice-chat-transcript-entry {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  animation: voice-chat-fadeIn 0.3s;
+}
+
+.voice-chat-transcript-user {
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid #3b82f6;
+}
+
+.voice-chat-transcript-assistant {
+  background: rgba(34, 197, 94, 0.1);
+  border-left: 3px solid #22c55e;
+}
+
+.voice-chat-transcript-role {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary, #64748b);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.voice-chat-transcript-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Session Info */
+.voice-chat-session-info {
+  font-size: 11px;
+  color: var(--text-tertiary, #475569);
+  padding: 8px 20px;
+  text-align: center;
+}
+
+/* Animations */
+@keyframes voice-chat-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes voice-chat-fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dark mode adjustments (matches app theme) */
+@media (prefers-color-scheme: light) {
+  .voice-chat-container {
+    background: var(--bg-primary, #f8fafc);
+    color: var(--text-primary, #1e293b);
+  }
+
+  .voice-chat-close {
+    color: var(--text-secondary, #64748b);
+  }
+
+  .voice-chat-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary, #1e293b);
+  }
+
+  .voice-chat-control-btn {
+    border-color: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary, #1e293b);
+  }
+
+  .voice-chat-transcript {
+    border-top-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .voice-chat-visualizer-area {
+    min-height: 200px;
+  }
+
+  .voice-chat-mic-button {
+    width: 64px;
+    height: 64px;
+  }
+
+  .voice-chat-transcript {
+    max-height: 150px;
+  }
+}
