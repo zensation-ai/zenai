@@ -172,7 +172,7 @@ export async function updateExecutionStatus(
   context: AIContext,
   executionId: string,
   status: ExecutionStatus,
-  extra?: { pauseReason?: string; }
+  extra?: { pauseReason?: string; userId?: string }
 ): Promise<void> {
   const validStatuses: ExecutionStatus[] = ['running', 'completed', 'failed', 'paused', 'awaiting_approval', 'cancelled'];
   if (!validStatuses.includes(status)) {
@@ -198,7 +198,13 @@ export async function updateExecutionStatus(
       updates.push('pause_reason = NULL');
     }
 
-    const sql = `UPDATE agent_executions SET ${updates.join(', ')} WHERE id = $1`;
+    let userFilter = '';
+    if (extra?.userId) {
+      userFilter = ` AND user_id = $${paramIdx++}`;
+      params.push(extra.userId);
+    }
+
+    const sql = `UPDATE agent_executions SET ${updates.join(', ')} WHERE id = $1${userFilter}`;
 
     await queryContext(context, sql, params);
   } catch (error) {
@@ -211,7 +217,8 @@ export async function updateExecutionStatus(
  */
 export async function getExecutionStatus(
   context: AIContext,
-  executionId: string
+  executionId: string,
+  userId?: string
 ): Promise<{
   status: ExecutionStatus;
   checkpointStep: number;
@@ -220,11 +227,13 @@ export async function getExecutionStatus(
   pauseReason: string | null;
 } | null> {
   try {
+    const userFilter = userId ? ' AND user_id = $2' : '';
+    const params = userId ? [executionId, userId] : [executionId];
     const result = await queryContext(
       context,
       `SELECT status, checkpoint_step, resume_count, paused_at, pause_reason
-       FROM agent_executions WHERE id = $1`,
-      [executionId]
+       FROM agent_executions WHERE id = $1${userFilter}`,
+      params
     );
 
     if (result.rows.length === 0) {return null;}
@@ -248,7 +257,8 @@ export async function getExecutionStatus(
  */
 export async function listCheckpoints(
   context: AIContext,
-  executionId: string
+  executionId: string,
+  userId?: string
 ): Promise<Array<{
   id: string;
   stepIndex: number;
@@ -256,13 +266,17 @@ export async function listCheckpoints(
   createdAt: string;
 }>> {
   try {
+    const userFilter = userId
+      ? ' AND execution_id IN (SELECT id FROM agent_executions WHERE id = $1 AND user_id = $2)'
+      : '';
+    const params = userId ? [executionId, userId] : [executionId];
     const result = await queryContext(
       context,
       `SELECT id, step_index, agent_role, created_at
        FROM agent_checkpoints
-       WHERE execution_id = $1
+       WHERE execution_id = $1${userFilter}
        ORDER BY step_index ASC`,
-      [executionId]
+      params
     );
 
     return result.rows.map((r: Record<string, unknown>) => ({

@@ -176,8 +176,8 @@ router.get('/:context/context-v2/active', asyncHandler(async (req: Request, res:
   try {
     const factsResult = await queryContext(context, `
       SELECT COUNT(*) as cnt FROM learned_facts
-      WHERE confidence > 0.5
-    `, []);
+      WHERE confidence > 0.5 AND user_id = $1
+    `, [userId]);
     factsCount = parseInt(factsResult.rows[0]?.cnt || '0', 10);
   } catch {
     // Table may not exist
@@ -188,8 +188,8 @@ router.get('/:context/context-v2/active', asyncHandler(async (req: Request, res:
   try {
     const procResult = await queryContext(context, `
       SELECT COUNT(*) as cnt FROM procedural_memories
-      WHERE success_rate > 0.5
-    `, []);
+      WHERE success_rate > 0.5 AND user_id = $1
+    `, [userId]);
     proceduresCount = parseInt(procResult.rows[0]?.cnt || '0', 10);
   } catch {
     // Table may not exist

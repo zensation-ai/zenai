@@ -341,8 +341,8 @@ agentTeamsRouter.post(
     // Link execution to idea
     await queryContext(
       context as AIContext,
-      `UPDATE agent_executions SET saved_as_idea_id = $1 WHERE id = $2`,
-      [ideaId, req.params.id]
+      `UPDATE agent_executions SET saved_as_idea_id = $1 WHERE id = $2 AND user_id = $3`,
+      [ideaId, req.params.id, userId]
     );
 
     res.json({
@@ -569,14 +569,14 @@ agentTeamsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    getUserId(req); // auth check
+    const userId = getUserId(req);
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
 
-    // Verify existence
-    const exec = await getExecutionStatus(context as AIContext, req.params.id);
+    // Verify existence (scoped to user)
+    const exec = await getExecutionStatus(context as AIContext, req.params.id, userId);
     if (!exec) {
       res.status(404).json({ success: false, error: 'Execution not found' });
       return;
@@ -586,6 +586,7 @@ agentTeamsRouter.post(
 
     await updateExecutionStatus(context as AIContext, req.params.id, 'paused', {
       pauseReason: reason,
+      userId,
     });
 
     res.json({ success: true, message: 'Execution paused' });
@@ -602,20 +603,20 @@ agentTeamsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    getUserId(req); // auth check
+    const userId = getUserId(req);
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
 
-    // Verify existence
-    const exec = await getExecutionStatus(context as AIContext, req.params.id);
+    // Verify existence (scoped to user)
+    const exec = await getExecutionStatus(context as AIContext, req.params.id, userId);
     if (!exec) {
       res.status(404).json({ success: false, error: 'Execution not found' });
       return;
     }
 
-    await updateExecutionStatus(context as AIContext, req.params.id, 'cancelled');
+    await updateExecutionStatus(context as AIContext, req.params.id, 'cancelled', { userId });
 
     res.json({ success: true, message: 'Execution cancelled' });
   })
@@ -631,13 +632,13 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    getUserId(req); // auth check
+    const userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
 
-    const status = await getExecutionStatus(context as AIContext, req.params.id);
+    const status = await getExecutionStatus(context as AIContext, req.params.id, userId);
     if (!status) {
       res.status(404).json({ success: false, error: 'Execution not found' });
       return;
@@ -657,13 +658,13 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    getUserId(req); // auth check
+    const userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
 
-    const checkpoints = await listCheckpoints(context as AIContext, req.params.id);
+    const checkpoints = await listCheckpoints(context as AIContext, req.params.id, userId);
 
     res.json({ success: true, data: checkpoints });
   })
@@ -679,7 +680,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    getUserId(req); // auth check
+    const userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
