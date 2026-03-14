@@ -10,6 +10,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 import { query } from '../utils/database';
+import { SYSTEM_USER_ID } from '../utils/user-context';
 
 // ============================================================
 // Types
@@ -55,15 +56,17 @@ export async function createCanvasDocument(
   title: string,
   type: CanvasDocumentType = 'markdown',
   language?: string,
-  content: string = ''
+  content: string = '',
+  userId?: string
 ): Promise<CanvasDocument> {
   const id = uuidv4();
+  const uid = userId || SYSTEM_USER_ID;
 
   const result = await query(
-    `INSERT INTO canvas_documents (id, context, title, content, type, language)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO canvas_documents (id, context, title, content, type, language, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING id, context, title, content, type, language, chat_session_id, created_at, updated_at`,
-    [id, context, title, content, type, language || null]
+    [id, context, title, content, type, language || null, uid]
   );
 
   const row = result.rows[0];
@@ -81,12 +84,13 @@ export async function createCanvasDocument(
 /**
  * Get a canvas document by ID
  */
-export async function getCanvasDocument(id: string): Promise<CanvasDocument | null> {
+export async function getCanvasDocument(id: string, userId?: string): Promise<CanvasDocument | null> {
+  const uid = userId || SYSTEM_USER_ID;
   const result = await query(
     `SELECT id, context, title, content, type, language, chat_session_id, created_at, updated_at
      FROM canvas_documents
-     WHERE id = $1`,
-    [id]
+     WHERE id = $1 AND user_id = $2`,
+    [id, uid]
   );
 
   if (result.rows.length === 0) {return null;}
@@ -99,20 +103,22 @@ export async function getCanvasDocument(id: string): Promise<CanvasDocument | nu
 export async function listCanvasDocuments(
   context: string,
   limit: number = 50,
-  offset: number = 0
+  offset: number = 0,
+  userId?: string
 ): Promise<{ documents: CanvasDocument[]; total: number }> {
+  const uid = userId || SYSTEM_USER_ID;
   const [docsResult, countResult] = await Promise.all([
     query(
       `SELECT id, context, title, content, type, language, chat_session_id, created_at, updated_at
        FROM canvas_documents
-       WHERE context = $1
+       WHERE context = $1 AND user_id = $4
        ORDER BY updated_at DESC
        LIMIT $2 OFFSET $3`,
-      [context, limit, offset]
+      [context, limit, offset, uid]
     ),
     query(
-      `SELECT COUNT(*)::int as total FROM canvas_documents WHERE context = $1`,
-      [context]
+      `SELECT COUNT(*)::int as total FROM canvas_documents WHERE context = $1 AND user_id = $2`,
+      [context, uid]
     ),
   ]);
 
@@ -132,8 +138,10 @@ export async function updateCanvasDocument(
     content?: string;
     type?: CanvasDocumentType;
     language?: string;
-  }
+  },
+  userId?: string
 ): Promise<CanvasDocument | null> {
+  const uid = userId || SYSTEM_USER_ID;
   // Build dynamic UPDATE query
   const setClauses: string[] = [];
   const values: (string | number | boolean | Date | null | undefined)[] = [];
@@ -156,14 +164,16 @@ export async function updateCanvasDocument(
     values.push(updates.language);
   }
 
-  if (setClauses.length === 0) {return getCanvasDocument(id);}
+  if (setClauses.length === 0) {return getCanvasDocument(id, uid);}
 
   values.push(id);
+  paramIndex++;
+  values.push(uid);
 
   const result = await query(
     `UPDATE canvas_documents
      SET ${setClauses.join(', ')}
-     WHERE id = $${paramIndex}
+     WHERE id = $${paramIndex - 1} AND user_id = $${paramIndex}
      RETURNING id, context, title, content, type, language, chat_session_id, created_at, updated_at`,
     values
   );
@@ -187,10 +197,11 @@ export async function updateCanvasDocument(
 /**
  * Delete a canvas document (and cascade versions)
  */
-export async function deleteCanvasDocument(id: string): Promise<boolean> {
+export async function deleteCanvasDocument(id: string, userId?: string): Promise<boolean> {
+  const uid = userId || SYSTEM_USER_ID;
   const result = await query(
-    `DELETE FROM canvas_documents WHERE id = $1 RETURNING id`,
-    [id]
+    `DELETE FROM canvas_documents WHERE id = $1 AND user_id = $2 RETURNING id`,
+    [id, uid]
   );
 
   if (result.rows.length > 0) {
@@ -209,14 +220,16 @@ export async function deleteCanvasDocument(id: string): Promise<boolean> {
  */
 export async function linkChatSession(
   documentId: string,
-  chatSessionId: string
+  chatSessionId: string,
+  userId?: string
 ): Promise<boolean> {
+  const uid = userId || SYSTEM_USER_ID;
   const result = await query(
     `UPDATE canvas_documents
      SET chat_session_id = $1
-     WHERE id = $2
+     WHERE id = $2 AND user_id = $3
      RETURNING id`,
-    [chatSessionId, documentId]
+    [chatSessionId, documentId, uid]
   );
   return result.rows.length > 0;
 }
@@ -280,15 +293,18 @@ async function saveVersionIfNeeded(
  */
 export async function getVersionHistory(
   documentId: string,
-  limit: number = 20
+  limit: number = 20,
+  userId?: string
 ): Promise<CanvasVersion[]> {
+  const uid = userId || SYSTEM_USER_ID;
   const result = await query(
-    `SELECT id, document_id, content, source, created_at
-     FROM canvas_versions
-     WHERE document_id = $1
-     ORDER BY created_at DESC
+    `SELECT cv.id, cv.document_id, cv.content, cv.source, cv.created_at
+     FROM canvas_versions cv
+     JOIN canvas_documents cd ON cv.document_id = cd.id
+     WHERE cv.document_id = $1 AND cd.user_id = $3
+     ORDER BY cv.created_at DESC
      LIMIT $2`,
-    [documentId, limit]
+    [documentId, limit, uid]
   );
 
   return result.rows.map((row) => ({
@@ -305,13 +321,16 @@ export async function getVersionHistory(
  */
 export async function restoreVersion(
   documentId: string,
-  versionId: string
+  versionId: string,
+  userId?: string
 ): Promise<CanvasDocument | null> {
-  // Get the version content
+  const uid = userId || SYSTEM_USER_ID;
+  // Get the version content, verifying ownership via join
   const versionResult = await query(
-    `SELECT content FROM canvas_versions
-     WHERE id = $1 AND document_id = $2`,
-    [versionId, documentId]
+    `SELECT cv.content FROM canvas_versions cv
+     JOIN canvas_documents cd ON cv.document_id = cd.id
+     WHERE cv.id = $1 AND cv.document_id = $2 AND cd.user_id = $3`,
+    [versionId, documentId, uid]
   );
 
   if (versionResult.rows.length === 0) {return null;}
@@ -319,7 +338,7 @@ export async function restoreVersion(
   const content = versionResult.rows[0].content;
 
   // Update the document with the version content
-  return updateCanvasDocument(documentId, { content });
+  return updateCanvasDocument(documentId, { content }, uid);
 }
 
 // ============================================================

@@ -192,11 +192,18 @@ function parseJson<T>(value: unknown, fallback: T): T {
 
 export async function getEmails(
   context: AIContext,
-  filters?: EmailFilters
+  filters?: EmailFilters,
+  userId?: string
 ): Promise<{ emails: Email[]; total: number }> {
   const conditions: string[] = [];
   const params: (string | number | boolean)[] = [];
   let paramIdx = 1;
+
+  if (userId) {
+    conditions.push(`e.user_id = $${paramIdx}`);
+    params.push(userId);
+    paramIdx++;
+  }
 
   // Folder-based filtering (maps to status/direction combos)
   if (filters?.folder) {
@@ -313,7 +320,15 @@ export async function getEmails(
 // Get Single Email
 // ============================================================
 
-export async function getEmail(context: AIContext, id: string): Promise<Email | null> {
+export async function getEmail(context: AIContext, id: string, userId?: string): Promise<Email | null> {
+  const conditions = ['e.id = $1'];
+  const params: (string)[] = [id];
+
+  if (userId) {
+    conditions.push(`e.user_id = $2`);
+    params.push(userId);
+  }
+
   const result = await queryContext(context, `
     SELECT e.*,
       a.email_address as account_email,
@@ -321,8 +336,8 @@ export async function getEmail(context: AIContext, id: string): Promise<Email | 
       (SELECT COUNT(*) FROM emails t WHERE t.thread_id = e.thread_id) as thread_count
     FROM emails e
     LEFT JOIN email_accounts a ON e.account_id = a.id
-    WHERE e.id = $1
-  `, [id]);
+    WHERE ${conditions.join(' AND ')}
+  `, params);
 
   if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
@@ -332,17 +347,25 @@ export async function getEmail(context: AIContext, id: string): Promise<Email | 
 // Get Thread
 // ============================================================
 
-export async function getThread(context: AIContext, threadId: string): Promise<Email[]> {
+export async function getThread(context: AIContext, threadId: string, userId?: string): Promise<Email[]> {
+  const conditions = ['e.thread_id = $1'];
+  const params: (string)[] = [threadId];
+
+  if (userId) {
+    conditions.push(`e.user_id = $2`);
+    params.push(userId);
+  }
+
   const result = await queryContext(context, `
     SELECT e.*,
       a.email_address as account_email,
       a.display_name as account_display_name
     FROM emails e
     LEFT JOIN email_accounts a ON e.account_id = a.id
-    WHERE e.thread_id = $1
+    WHERE ${conditions.join(' AND ')}
     ORDER BY e.received_at ASC
     LIMIT 200
-  `, [threadId]);
+  `, params);
 
   return result.rows.map(mapRowToEmail);
 }
@@ -351,7 +374,7 @@ export async function getThread(context: AIContext, threadId: string): Promise<E
 // Create Draft
 // ============================================================
 
-export async function createDraft(context: AIContext, input: CreateEmailInput): Promise<Email> {
+export async function createDraft(context: AIContext, input: CreateEmailInput, userId?: string): Promise<Email> {
   const id = uuidv4();
   const now = new Date().toISOString();
 
@@ -360,13 +383,25 @@ export async function createDraft(context: AIContext, input: CreateEmailInput): 
   let fromName: string | null = null;
 
   if (input.account_id) {
-    const acct = await queryContext(context, `SELECT email_address, display_name FROM email_accounts WHERE id = $1`, [input.account_id]);
+    const acctConditions = ['id = $1'];
+    const acctParams: string[] = [input.account_id];
+    if (userId) {
+      acctConditions.push(`user_id = $2`);
+      acctParams.push(userId);
+    }
+    const acct = await queryContext(context, `SELECT email_address, display_name FROM email_accounts WHERE ${acctConditions.join(' AND ')}`, acctParams);
     if (acct.rows[0]) {
       fromAddress = acct.rows[0].email_address;
       fromName = acct.rows[0].display_name;
     }
   } else {
-    const defaultAcct = await queryContext(context, `SELECT email_address, display_name FROM email_accounts WHERE is_default = TRUE LIMIT 1`, []);
+    const defaultConditions = ['is_default = TRUE'];
+    const defaultParams: string[] = [];
+    if (userId) {
+      defaultConditions.push(`user_id = $1`);
+      defaultParams.push(userId);
+    }
+    const defaultAcct = await queryContext(context, `SELECT email_address, display_name FROM email_accounts WHERE ${defaultConditions.join(' AND ')} LIMIT 1`, defaultParams);
     if (defaultAcct.rows[0]) {
       fromAddress = defaultAcct.rows[0].email_address;
       fromName = defaultAcct.rows[0].display_name;
@@ -375,14 +410,14 @@ export async function createDraft(context: AIContext, input: CreateEmailInput): 
 
   const result = await queryContext(context, `
     INSERT INTO emails (
-      id, direction, status, from_address, from_name,
+      id, user_id, direction, status, from_address, from_name,
       to_addresses, cc_addresses, bcc_addresses,
       subject, body_html, body_text,
       account_id, reply_to_id, thread_id,
       labels, context, metadata,
       received_at, created_at, updated_at
     ) VALUES (
-      $1, 'outbound', 'draft', $2, $3,
+      $1, $17, 'outbound', 'draft', $2, $3,
       $4, $5, $6,
       $7, $8, $9,
       $10, $11, $12,
@@ -396,7 +431,7 @@ export async function createDraft(context: AIContext, input: CreateEmailInput): 
     input.subject || null, input.body_html || null, input.body_text || null,
     input.account_id || null, input.reply_to_id || null, input.reply_to_id || id,
     JSON.stringify(input.labels || []), context, JSON.stringify(input.metadata || {}),
-    now,
+    now, userId || null,
   ]);
 
   logger.info('Email draft created', { id, context, operation: 'createDraft' });
@@ -410,7 +445,8 @@ export async function createDraft(context: AIContext, input: CreateEmailInput): 
 export async function updateDraft(
   context: AIContext,
   id: string,
-  updates: Partial<CreateEmailInput>
+  updates: Partial<CreateEmailInput>,
+  userId?: string
 ): Promise<Email | null> {
   const setClauses: string[] = ['updated_at = NOW()'];
   const params: (string | null)[] = [id];
@@ -452,9 +488,12 @@ export async function updateDraft(
     paramIdx++;
   }
 
+  const userCondition = userId ? ` AND user_id = $${paramIdx}` : '';
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
     UPDATE emails SET ${setClauses.join(', ')}
-    WHERE id = $1 AND status = 'draft'
+    WHERE id = $1 AND status = 'draft'${userCondition}
     RETURNING *
   `, params);
 
@@ -466,20 +505,26 @@ export async function updateDraft(
 // Send Email (draft or new)
 // ============================================================
 
-export async function sendEmailById(context: AIContext, id: string): Promise<Email | null> {
+export async function sendEmailById(context: AIContext, id: string, userId?: string): Promise<Email | null> {
   if (!isResendConfigured()) {
     throw new Error('Resend is not configured — cannot send emails');
   }
 
   // Atomic status transition: draft → sending (prevents double-send race condition)
+  const lockConditions = ['id = $1', "status = 'draft'"];
+  const lockParams: string[] = [id];
+  if (userId) {
+    lockConditions.push(`user_id = $2`);
+    lockParams.push(userId);
+  }
   const lockResult = await queryContext(context, `
     UPDATE emails SET status = 'sending', updated_at = NOW()
-    WHERE id = $1 AND status = 'draft'
+    WHERE ${lockConditions.join(' AND ')}
     RETURNING *
-  `, [id]);
+  `, lockParams);
 
   if (lockResult.rows.length === 0) {
-    const existing = await getEmail(context, id);
+    const existing = await getEmail(context, id, userId);
     if (!existing) {return null;}
     throw new Error(`Cannot send email with status "${existing.status}"`);
   }
@@ -542,9 +587,9 @@ export async function sendEmailById(context: AIContext, id: string): Promise<Ema
   }
 }
 
-export async function sendNewEmail(context: AIContext, input: CreateEmailInput): Promise<Email> {
-  const draft = await createDraft(context, input);
-  const sent = await sendEmailById(context, draft.id);
+export async function sendNewEmail(context: AIContext, input: CreateEmailInput, userId?: string): Promise<Email> {
+  const draft = await createDraft(context, input, userId);
+  const sent = await sendEmailById(context, draft.id, userId);
   if (!sent) {throw new Error('Failed to send email — draft was created but send returned null');}
   return sent;
 }
@@ -557,9 +602,10 @@ export async function replyToEmail(
   context: AIContext,
   originalId: string,
   body: { html?: string; text?: string },
-  options?: { cc?: Array<{ email: string; name?: string }>; account_id?: string }
+  options?: { cc?: Array<{ email: string; name?: string }>; account_id?: string },
+  userId?: string
 ): Promise<Email> {
-  const original = await getEmail(context, originalId);
+  const original = await getEmail(context, originalId, userId);
   if (!original) {throw new NotFoundError('Original email');}
 
   const draft = await createDraft(context, {
@@ -570,7 +616,7 @@ export async function replyToEmail(
     body_text: body.text,
     account_id: options?.account_id || original.account_id || undefined,
     reply_to_id: originalId,
-  });
+  }, userId);
 
   // Link to same thread
   await queryContext(context, `
@@ -578,7 +624,7 @@ export async function replyToEmail(
     WHERE id = $1
   `, [draft.id, original.thread_id || originalId, original.message_id]);
 
-  return await sendEmailById(context, draft.id) || draft;
+  return await sendEmailById(context, draft.id, userId) || draft;
 }
 
 export async function forwardEmail(
@@ -586,9 +632,10 @@ export async function forwardEmail(
   originalId: string,
   to: Array<{ email: string; name?: string }>,
   body?: { html?: string; text?: string },
-  options?: { account_id?: string }
+  options?: { account_id?: string },
+  userId?: string
 ): Promise<Email> {
-  const original = await getEmail(context, originalId);
+  const original = await getEmail(context, originalId, userId);
   if (!original) {throw new NotFoundError('Original email');}
 
   // Build forwarded body
@@ -600,43 +647,55 @@ export async function forwardEmail(
     body_html: (body?.html || '') + fwdPrefix.replace(/\n/g, '<br>') + (original.body_html || ''),
     body_text: (body?.text || '') + fwdPrefix + (original.body_text || ''),
     account_id: options?.account_id || original.account_id || undefined,
-  });
+  }, userId);
 
-  return await sendEmailById(context, draft.id) || draft;
+  return await sendEmailById(context, draft.id, userId) || draft;
 }
 
 // ============================================================
 // Status Updates
 // ============================================================
 
-export async function updateEmailStatus(context: AIContext, id: string, status: EmailStatus): Promise<Email | null> {
+export async function updateEmailStatus(context: AIContext, id: string, status: EmailStatus, userId?: string): Promise<Email | null> {
+  const userCondition = userId ? ` AND user_id = $3` : '';
+  const params: (string)[] = [id, status];
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
     UPDATE emails SET status = $2, updated_at = NOW()
-    WHERE id = $1
+    WHERE id = $1${userCondition}
     RETURNING *
-  `, [id, status]);
+  `, params);
 
   if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
 }
 
-export async function markAsRead(context: AIContext, id: string): Promise<Email | null> {
+export async function markAsRead(context: AIContext, id: string, userId?: string): Promise<Email | null> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: (string)[] = [id];
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
     UPDATE emails SET status = 'read', updated_at = NOW()
-    WHERE id = $1 AND status = 'received'
+    WHERE id = $1 AND status = 'received'${userCondition}
     RETURNING *
-  `, [id]);
+  `, params);
 
   if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
 }
 
-export async function toggleStar(context: AIContext, id: string): Promise<Email | null> {
+export async function toggleStar(context: AIContext, id: string, userId?: string): Promise<Email | null> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: (string)[] = [id];
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
     UPDATE emails SET is_starred = NOT is_starred, updated_at = NOW()
-    WHERE id = $1
+    WHERE id = $1${userCondition}
     RETURNING *
-  `, [id]);
+  `, params);
 
   if (result.rows.length === 0) {return null;}
   return mapRowToEmail(result.rows[0]);
@@ -645,40 +704,48 @@ export async function toggleStar(context: AIContext, id: string): Promise<Email 
 export async function batchUpdateStatus(
   context: AIContext,
   ids: string[],
-  status: EmailStatus
+  status: EmailStatus,
+  userId?: string
 ): Promise<number> {
+  const userCondition = userId ? ` AND user_id = $3` : '';
+  const params: (string | string[])[] = [ids, status];
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
     UPDATE emails SET status = $2, updated_at = NOW()
-    WHERE id = ANY($1::uuid[])
-  `, [ids, status]);
+    WHERE id = ANY($1::uuid[])${userCondition}
+  `, params);
 
   return result.rowCount ?? 0;
 }
 
-export async function moveToTrash(context: AIContext, id: string): Promise<Email | null> {
-  return updateEmailStatus(context, id, 'trash');
+export async function moveToTrash(context: AIContext, id: string, userId?: string): Promise<Email | null> {
+  return updateEmailStatus(context, id, 'trash', userId);
 }
 
 // ============================================================
 // Stats
 // ============================================================
 
-export async function getEmailStats(context: AIContext): Promise<EmailStats> {
+export async function getEmailStats(context: AIContext, userId?: string): Promise<EmailStats> {
+  const userFilter = userId ? ` AND user_id = $1` : '';
+  const params: string[] = userId ? [userId] : [];
+
   // Single query with sub-selects to avoid 3 round-trips
   const result = await queryContext(context, `
     SELECT
-      (SELECT COUNT(*) FROM emails WHERE status != 'trash') as total,
-      (SELECT COUNT(*) FROM emails WHERE status = 'received') as unread,
-      (SELECT COUNT(*) FROM emails WHERE is_starred = TRUE AND status != 'trash') as starred,
+      (SELECT COUNT(*) FROM emails WHERE status != 'trash'${userFilter}) as total,
+      (SELECT COUNT(*) FROM emails WHERE status = 'received'${userFilter}) as unread,
+      (SELECT COUNT(*) FROM emails WHERE is_starred = TRUE AND status != 'trash'${userFilter}) as starred,
       COALESCE((
         SELECT jsonb_object_agg(ai_category, cnt)
-        FROM (SELECT ai_category, COUNT(*)::int as cnt FROM emails WHERE ai_category IS NOT NULL AND status NOT IN ('trash', 'draft') GROUP BY ai_category) sub
+        FROM (SELECT ai_category, COUNT(*)::int as cnt FROM emails WHERE ai_category IS NOT NULL AND status NOT IN ('trash', 'draft')${userFilter} GROUP BY ai_category) sub
       ), '{}'::jsonb) as by_category,
       COALESCE((
         SELECT jsonb_agg(jsonb_build_object('account_id', sub.account_id, 'email', COALESCE(sub.email, 'unknown'), 'count', sub.cnt))
-        FROM (SELECT e.account_id, a.email_address as email, COUNT(*)::int as cnt FROM emails e LEFT JOIN email_accounts a ON e.account_id = a.id WHERE e.account_id IS NOT NULL AND e.status NOT IN ('trash', 'draft') GROUP BY e.account_id, a.email_address) sub
+        FROM (SELECT e.account_id, a.email_address as email, COUNT(*)::int as cnt FROM emails e LEFT JOIN email_accounts a ON e.account_id = a.id WHERE e.account_id IS NOT NULL AND e.status NOT IN ('trash', 'draft')${userFilter ? ` AND e.user_id = $1` : ''} GROUP BY e.account_id, a.email_address) sub
       ), '[]'::jsonb) as by_account
-  `, []);
+  `, params);
 
   const row = result.rows[0] || {};
 
@@ -695,38 +762,45 @@ export async function getEmailStats(context: AIContext): Promise<EmailStats> {
 // Account Management
 // ============================================================
 
-export async function getAccounts(context: AIContext): Promise<EmailAccount[]> {
-  const result = await queryContext(context, `SELECT * FROM email_accounts ORDER BY is_default DESC, created_at ASC LIMIT 100`, []);
+export async function getAccounts(context: AIContext, userId?: string): Promise<EmailAccount[]> {
+  const userFilter = userId ? ` WHERE user_id = $1` : '';
+  const params: string[] = userId ? [userId] : [];
+  const result = await queryContext(context, `SELECT * FROM email_accounts${userFilter} ORDER BY is_default DESC, created_at ASC LIMIT 100`, params);
   return result.rows as EmailAccount[];
 }
 
-export async function getAccount(context: AIContext, id: string): Promise<EmailAccount | null> {
-  const result = await queryContext(context, `SELECT * FROM email_accounts WHERE id = $1`, [id]);
+export async function getAccount(context: AIContext, id: string, userId?: string): Promise<EmailAccount | null> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: string[] = [id];
+  if (userId) { params.push(userId); }
+  const result = await queryContext(context, `SELECT * FROM email_accounts WHERE id = $1${userCondition}`, params);
   return result.rows[0] as EmailAccount | null;
 }
 
 export async function createAccount(
   context: AIContext,
-  input: { email_address: string; display_name?: string; domain: string; is_default?: boolean; signature_html?: string; signature_text?: string }
+  input: { email_address: string; display_name?: string; domain: string; is_default?: boolean; signature_html?: string; signature_text?: string },
+  userId?: string
 ): Promise<EmailAccount> {
   const id = uuidv4();
   const isDefault = !!input.is_default;
 
   // CTE atomically unsets other defaults when setting this as default
+  const userUnsetFilter = userId ? ` AND user_id = $9` : '';
   const sql = isDefault
     ? `WITH unset_defaults AS (
-        UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE
+        UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE${userUnsetFilter}
       )
-      INSERT INTO email_accounts (id, email_address, display_name, domain, is_default, signature_html, signature_text, context)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO email_accounts (id, email_address, display_name, domain, is_default, signature_html, signature_text, context, user_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`
-    : `INSERT INTO email_accounts (id, email_address, display_name, domain, is_default, signature_html, signature_text, context)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    : `INSERT INTO email_accounts (id, email_address, display_name, domain, is_default, signature_html, signature_text, context, user_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`;
 
   const result = await queryContext(context, sql, [
     id, input.email_address, input.display_name || null, input.domain,
-    isDefault, input.signature_html || null, input.signature_text || null, context,
+    isDefault, input.signature_html || null, input.signature_text || null, context, userId || null,
   ]);
 
   logger.info('Email account created', { id, email: input.email_address, context, operation: 'createAccount' });
@@ -736,7 +810,8 @@ export async function createAccount(
 export async function updateAccount(
   context: AIContext,
   id: string,
-  updates: Partial<{ display_name: string; is_default: boolean; signature_html: string; signature_text: string }>
+  updates: Partial<{ display_name: string; is_default: boolean; signature_html: string; signature_text: string }>,
+  userId?: string
 ): Promise<EmailAccount | null> {
   const setClauses: string[] = ['updated_at = NOW()'];
   const params: (string | boolean | null)[] = [id];
@@ -764,20 +839,25 @@ export async function updateAccount(
   }
 
   // Use CTE to atomically unset other defaults when setting this as default
+  const userCondition = userId ? ` AND user_id = $${paramIdx}` : '';
+  if (userId) { params.push(userId); paramIdx++; }
   const sql = updates.is_default
     ? `WITH unset_defaults AS (
-        UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE AND id != $1
+        UPDATE email_accounts SET is_default = FALSE WHERE is_default = TRUE AND id != $1${userCondition}
       )
-      UPDATE email_accounts SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *`
-    : `UPDATE email_accounts SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *`;
+      UPDATE email_accounts SET ${setClauses.join(', ')} WHERE id = $1${userCondition} RETURNING *`
+    : `UPDATE email_accounts SET ${setClauses.join(', ')} WHERE id = $1${userCondition} RETURNING *`;
 
   const result = await queryContext(context, sql, params);
 
   return result.rows[0] as EmailAccount | null;
 }
 
-export async function deleteAccount(context: AIContext, id: string): Promise<void> {
-  await queryContext(context, `DELETE FROM email_accounts WHERE id = $1`, [id]);
+export async function deleteAccount(context: AIContext, id: string, userId?: string): Promise<void> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: string[] = [id];
+  if (userId) { params.push(userId); }
+  await queryContext(context, `DELETE FROM email_accounts WHERE id = $1${userCondition}`, params);
   logger.info('Email account deleted', { id, context, operation: 'deleteAccount' });
 }
 
@@ -796,7 +876,8 @@ export async function createImapAccount(
     imap_password_encrypted: string;
     imap_tls?: boolean;
     sync_folder?: string;
-  }
+  },
+  userId?: string
 ): Promise<EmailAccount> {
   const id = uuidv4();
 
@@ -804,18 +885,18 @@ export async function createImapAccount(
     INSERT INTO email_accounts (
       id, email_address, display_name, domain, is_default,
       context, imap_host, imap_port, imap_user, imap_password_encrypted,
-      imap_tls, imap_enabled, sync_folder
+      imap_tls, imap_enabled, sync_folder, user_id
     ) VALUES (
       $1, $2, $3, $4, FALSE,
       $5, $6, $7, $8, $9,
-      $10, TRUE, $11
+      $10, TRUE, $11, $12
     )
     RETURNING *
   `, [
     id, input.email_address, input.display_name || null, input.domain,
     context, input.imap_host, input.imap_port || 993, input.imap_user,
     input.imap_password_encrypted, input.imap_tls !== false,
-    input.sync_folder || 'INBOX',
+    input.sync_folder || 'INBOX', userId || null,
   ]);
 
   logger.info('IMAP email account created', { id, email: input.email_address, host: input.imap_host, context, operation: 'createImapAccount' });
@@ -826,21 +907,24 @@ export async function createImapAccount(
 // Labels
 // ============================================================
 
-export async function getLabels(context: AIContext): Promise<EmailLabel[]> {
-  const result = await queryContext(context, `SELECT * FROM email_labels ORDER BY sort_order ASC, name ASC LIMIT 200`, []);
+export async function getLabels(context: AIContext, userId?: string): Promise<EmailLabel[]> {
+  const userFilter = userId ? ` WHERE user_id = $1` : '';
+  const params: string[] = userId ? [userId] : [];
+  const result = await queryContext(context, `SELECT * FROM email_labels${userFilter} ORDER BY sort_order ASC, name ASC LIMIT 200`, params);
   return result.rows as EmailLabel[];
 }
 
 export async function createLabel(
   context: AIContext,
-  input: { name: string; color?: string; icon?: string }
+  input: { name: string; color?: string; icon?: string },
+  userId?: string
 ): Promise<EmailLabel> {
   const id = uuidv4();
   const result = await queryContext(context, `
-    INSERT INTO email_labels (id, name, color, icon, context)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO email_labels (id, name, color, icon, context, user_id)
+    VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING *
-  `, [id, input.name, input.color || '#4A90D9', input.icon || '🏷️', context]);
+  `, [id, input.name, input.color || '#4A90D9', input.icon || '🏷️', context, userId || null]);
 
   return result.rows[0] as EmailLabel;
 }
@@ -848,7 +932,8 @@ export async function createLabel(
 export async function updateLabel(
   context: AIContext,
   id: string,
-  updates: Partial<{ name: string; color: string; icon: string; sort_order: number }>
+  updates: Partial<{ name: string; color: string; icon: string; sort_order: number }>,
+  userId?: string
 ): Promise<EmailLabel | null> {
   const setClauses: string[] = [];
   const params: (string | number)[] = [id];
@@ -861,13 +946,19 @@ export async function updateLabel(
 
   if (setClauses.length === 0) {return null;}
 
+  const userCondition = userId ? ` AND user_id = $${paramIdx}` : '';
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
-    UPDATE email_labels SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *
+    UPDATE email_labels SET ${setClauses.join(', ')} WHERE id = $1${userCondition} RETURNING *
   `, params);
 
   return result.rows[0] as EmailLabel | null;
 }
 
-export async function deleteLabel(context: AIContext, id: string): Promise<void> {
-  await queryContext(context, `DELETE FROM email_labels WHERE id = $1`, [id]);
+export async function deleteLabel(context: AIContext, id: string, userId?: string): Promise<void> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: string[] = [id];
+  if (userId) { params.push(userId); }
+  await queryContext(context, `DELETE FROM email_labels WHERE id = $1${userCondition}`, params);
 }

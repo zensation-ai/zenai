@@ -90,7 +90,8 @@ export interface GanttTask extends Task {
 
 export async function createTask(
   context: AIContext,
-  input: CreateTaskInput
+  input: CreateTaskInput,
+  userId?: string
 ): Promise<Task> {
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -99,8 +100,8 @@ export async function createTask(
   // Get max sort_order for the status column
   const maxResult = await queryContext(context, `
     SELECT COALESCE(MAX(sort_order), -1) + 1 as next_order
-    FROM tasks WHERE status = $1
-  `, [status]);
+    FROM tasks WHERE status = $1${userId ? ' AND user_id = $2' : ''}
+  `, userId ? [status, userId] : [status]);
   const sortOrder = parseInt(maxResult.rows[0]?.next_order, 10) || 0;
 
   const result = await queryContext(context, `
@@ -109,13 +110,13 @@ export async function createTask(
       project_id, source_idea_id, calendar_event_id,
       due_date, start_date, assignee, estimated_hours,
       sort_order, context, labels, metadata,
-      created_at, updated_at
+      created_at, updated_at, user_id
     ) VALUES (
       $1, $2, $3, $4, $5,
       $6, $7, $8,
       $9, $10, $11, $12,
       $13, $14, $15, $16,
-      $17, $17
+      $17, $17, $18
     )
     RETURNING *
   `, [
@@ -123,7 +124,7 @@ export async function createTask(
     input.project_id || null, input.source_idea_id || null, input.calendar_event_id || null,
     input.due_date || null, input.start_date || null, input.assignee || null, input.estimated_hours || null,
     sortOrder, context, JSON.stringify(input.labels || []), JSON.stringify(input.metadata || {}),
-    now,
+    now, userId || '00000000-0000-0000-0000-000000000001',
   ]);
 
   logger.info('Task created', { id, title: input.title, status, context, operation: 'createTask' });
@@ -138,11 +139,18 @@ export async function createTask(
 
 export async function getTasks(
   context: AIContext,
-  filters?: TaskFilters
+  filters?: TaskFilters,
+  userId?: string
 ): Promise<Task[]> {
   const conditions: string[] = ["t.status != 'cancelled'"];
   const params: (string | number)[] = [];
   let paramIdx = 1;
+
+  if (userId) {
+    conditions.push(`t.user_id = $${paramIdx}`);
+    params.push(userId);
+    paramIdx++;
+  }
 
   if (filters?.project_id) {
     conditions.push(`t.project_id = $${paramIdx}`);
@@ -192,14 +200,15 @@ export async function getTasks(
 
 export async function getTask(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<Task | null> {
   const result = await queryContext(context, `
     SELECT t.*, p.name as project_name, p.color as project_color
     FROM tasks t
     LEFT JOIN projects p ON t.project_id = p.id
-    WHERE t.id = $1
-  `, [id]);
+    WHERE t.id = $1${userId ? ' AND t.user_id = $2' : ''}
+  `, userId ? [id, userId] : [id]);
 
   return result.rows.length > 0 ? mapRowToTask(result.rows[0]) : null;
 }
@@ -207,7 +216,8 @@ export async function getTask(
 export async function updateTask(
   context: AIContext,
   id: string,
-  updates: Partial<CreateTaskInput> & { actual_hours?: number; completed_at?: string }
+  updates: Partial<CreateTaskInput> & { actual_hours?: number; completed_at?: string },
+  userId?: string
 ): Promise<Task | null> {
   const setClauses: string[] = [];
   const params: (string | number | null)[] = [];
@@ -262,16 +272,27 @@ export async function updateTask(
 
   if (setClauses.length <= 1) {
     // No fields to update (only updated_at = NOW()) - return existing task unchanged
-    const existing = await queryContext(context, 'SELECT * FROM tasks WHERE id = $1', [id]);
+    const existing = await queryContext(context, `SELECT * FROM tasks WHERE id = $1${userId ? ' AND user_id = $2' : ''}`, userId ? [id, userId] : [id]);
     return existing.rows.length > 0 ? mapRowToTask(existing.rows[0]) : null;
+  }
+
+  const idParamIdx = paramIdx;
+  params.push(id);
+  paramIdx++;
+
+  let userClause = '';
+  if (userId) {
+    userClause = ` AND user_id = $${paramIdx}`;
+    params.push(userId);
+    paramIdx++;
   }
 
   const result = await queryContext(context, `
     UPDATE tasks
     SET ${setClauses.join(', ')}
-    WHERE id = $${paramIdx}
+    WHERE id = $${idParamIdx}${userClause}
     RETURNING *
-  `, [...params, id]);
+  `, params);
 
   if (result.rows.length === 0) {return null;}
 
@@ -289,14 +310,15 @@ export async function updateTask(
 
 export async function deleteTask(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<boolean> {
   const result = await queryContext(context, `
     UPDATE tasks
     SET status = 'cancelled', updated_at = NOW()
-    WHERE id = $1 AND status != 'cancelled'
+    WHERE id = $1 AND status != 'cancelled'${userId ? ' AND user_id = $2' : ''}
     RETURNING id
-  `, [id]);
+  `, userId ? [id, userId] : [id]);
 
   if (result.rows.length > 0) {
     logger.info('Task cancelled', { id, context, operation: 'deleteTask' });
@@ -312,7 +334,8 @@ export async function deleteTask(
 export async function reorderTasks(
   context: AIContext,
   status: TaskStatus,
-  taskIds: string[]
+  taskIds: string[],
+  userId?: string
 ): Promise<void> {
   if (taskIds.length === 0) {
     return;
@@ -328,8 +351,8 @@ export async function reorderTasks(
       SELECT u.id, (u.ord - 1) AS new_order
       FROM unnest($2::uuid[]) WITH ORDINALITY AS u(id, ord)
     ) AS batch
-    WHERE tasks.id = batch.id
-  `, [status, taskIds]);
+    WHERE tasks.id = batch.id${userId ? ' AND tasks.user_id = $3' : ''}
+  `, userId ? [status, taskIds, userId] : [status, taskIds]);
 
   logger.info('Tasks reordered', {
     status, count: taskIds.length, context, operation: 'reorderTasks'
@@ -344,7 +367,8 @@ export async function addDependency(
   context: AIContext,
   taskId: string,
   dependsOnId: string,
-  type: DependencyType = 'finish_to_start'
+  type: DependencyType = 'finish_to_start',
+  userId?: string
 ): Promise<TaskDependency> {
   // Circular dependency detection via recursive CTE
   const cycleCheck = await queryContext(context, `
@@ -378,7 +402,8 @@ export async function addDependency(
 
 export async function removeDependency(
   context: AIContext,
-  dependencyId: string
+  dependencyId: string,
+  _userId?: string
 ): Promise<boolean> {
   const result = await queryContext(context, `
     DELETE FROM task_dependencies WHERE id = $1 RETURNING id
@@ -389,7 +414,8 @@ export async function removeDependency(
 
 export async function getTaskDependencies(
   context: AIContext,
-  taskId: string
+  taskId: string,
+  _userId?: string
 ): Promise<{ incoming: TaskDependency[]; outgoing: TaskDependency[] }> {
   const [incomingResult, outgoingResult] = await Promise.all([
     queryContext(context, `
@@ -418,11 +444,18 @@ export async function getTaskDependencies(
 
 export async function getTasksForGantt(
   context: AIContext,
-  filters?: { project_id?: string }
+  filters?: { project_id?: string },
+  userId?: string
 ): Promise<GanttTask[]> {
   const conditions: string[] = ["t.status != 'cancelled'"];
   const params: (string | number)[] = [];
   let paramIdx = 1;
+
+  if (userId) {
+    conditions.push(`t.user_id = $${paramIdx}`);
+    params.push(userId);
+    paramIdx++;
+  }
 
   if (filters?.project_id) {
     conditions.push(`t.project_id = $${paramIdx}`);
@@ -476,12 +509,13 @@ export async function getTasksForGantt(
 export async function convertIdeaToTask(
   context: AIContext,
   ideaId: string,
-  projectId?: string
+  projectId?: string,
+  userId?: string
 ): Promise<Task> {
   // Read the idea
   const ideaResult = await queryContext(context, `
-    SELECT id, title, summary, priority FROM ideas WHERE id = $1
-  `, [ideaId]);
+    SELECT id, title, summary, priority FROM ideas WHERE id = $1${userId ? ' AND user_id = $2' : ''}
+  `, userId ? [ideaId, userId] : [ideaId]);
 
   if (ideaResult.rows.length === 0) {
     throw new Error('Idea not found');
@@ -500,7 +534,7 @@ export async function convertIdeaToTask(
     priority: mapIdeaPriority(idea.priority as string | null),
     source_idea_id: ideaId,
     project_id: projectId,
-  });
+  }, userId);
 }
 
 // ============================================================

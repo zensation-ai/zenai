@@ -6,6 +6,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { getUserId } from '../utils/user-context';
 import {
   addLooseThought,
   getLooseThoughts,
@@ -45,7 +46,8 @@ function validateClusterId(id: string): void {
  * Add a new loose thought to the incubator
  */
 router.post('/thought', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  const { text, source = 'text', tags = [], userId = 'default' } = req.body;
+  const { text, source = 'text', tags = [] } = req.body;
+  const userId = getUserId(req);
   const context = getContextFromRequest(req);
 
   if (!text || text.trim().length === 0) {
@@ -264,6 +266,7 @@ router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHand
  */
 router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const context = getContextFromRequest(req);
+  const userId = getUserId(req);
   const { getPool, isValidContext } = await import('../utils/database-context');
   if (!isValidContext(context)) {
     res.status(400).json({ success: false, error: 'Invalid context' });
@@ -286,14 +289,16 @@ router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req:
               embedding IS NOT NULL as has_embedding,
               CASE WHEN embedding IS NOT NULL THEN array_length(embedding::real[], 1) END as embedding_dims
        FROM loose_thoughts
-       WHERE user_id = 'default'
+       WHERE user_id = $1
        ORDER BY created_at DESC
-       LIMIT 10`
+       LIMIT 10`,
+      [userId]
     );
 
     // Get cluster count
     const clustersResult = await client.query(
-      `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = 'default'`
+      `SELECT COUNT(*) as count FROM thought_clusters WHERE user_id = $1`,
+      [userId]
     );
 
     res.json({

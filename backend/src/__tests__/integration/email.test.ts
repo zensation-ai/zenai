@@ -225,7 +225,7 @@ describe('Email API', () => {
       expect(getEmails).toHaveBeenCalledWith('work', expect.objectContaining({
         search: 'test',
         folder: 'inbox',
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('limits to max 200 results', async () => {
@@ -235,7 +235,7 @@ describe('Email API', () => {
 
       expect(getEmails).toHaveBeenCalledWith('work', expect.objectContaining({
         limit: 200,
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
   });
 
@@ -250,7 +250,7 @@ describe('Email API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(markAsRead).toHaveBeenCalledWith('work', MOCK_EMAIL.id);
+      expect(markAsRead).toHaveBeenCalledWith('work', MOCK_EMAIL.id, '00000000-0000-0000-0000-000000000001');
     });
 
     it('does not mark already-read email', async () => {

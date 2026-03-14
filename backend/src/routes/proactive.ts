@@ -13,6 +13,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { requireUUID } from '../middleware/validate-params';
+import { getUserId } from '../utils/user-context';
 import { toIntBounded, toFloatBounded } from '../utils/validation';
 import { logger } from '../utils/logger';
 import {
@@ -213,6 +214,7 @@ router.get('/routines/active', apiKeyAuth, requireScope('read'), asyncHandler(as
  */
 router.patch('/routines/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  const _userId = getUserId(req);
   const context = (req.body.context as string) || 'personal';
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');

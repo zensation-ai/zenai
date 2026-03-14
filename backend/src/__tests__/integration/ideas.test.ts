@@ -138,8 +138,8 @@ describe('Ideas API Integration Tests', () => {
 
       expect(mockQueryContext).toHaveBeenCalledWith(
         'personal',
-        expect.stringContaining('type = $1'),
-        expect.arrayContaining(['task'])
+        expect.stringContaining('type = $2'),
+        expect.arrayContaining(['00000000-0000-0000-0000-000000000001', 'task'])
       );
     });
 

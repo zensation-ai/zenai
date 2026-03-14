@@ -97,7 +97,7 @@ describe('Browser Routes', () => {
       expect(mockGetHistory).toHaveBeenCalledWith('work', expect.objectContaining({
         domain: 'example.com',
         limit: 10,
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid context', async () => {

@@ -17,6 +17,7 @@ import { multiTTSService } from '../services/voice/tts-service';
 import { sttService } from '../services/voice/stt-service';
 import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { getUserId } from '../utils/user-context';
 
 export const voiceRealtimeRouter = Router();
 
@@ -71,6 +72,7 @@ voiceRealtimeRouter.post(
   '/:context/voice/session/start',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     validateContext(context);
 
@@ -105,6 +107,7 @@ voiceRealtimeRouter.post(
   '/:context/voice/session/:id/end',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     validateContext(context);
 
@@ -125,6 +128,7 @@ voiceRealtimeRouter.get(
   '/:context/voice/session/:id/status',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     validateContext(context);
 
@@ -153,6 +157,7 @@ voiceRealtimeRouter.post(
   '/:context/voice/tts',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     validateContext(context);
 
@@ -183,6 +188,7 @@ voiceRealtimeRouter.get(
   '/:context/voice/voices',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     validateContext(context);
 
@@ -203,13 +209,14 @@ voiceRealtimeRouter.get(
   '/:context/voice/settings',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const { context } = req.params;
     validateContext(context);
 
     const result = await queryContext(
       context as 'personal' | 'work' | 'learning' | 'creative',
-      'SELECT * FROM voice_settings ORDER BY created_at DESC LIMIT 1',
-      []
+      'SELECT * FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [userId]
     );
 
     const settings = result.rows[0] || {
@@ -237,6 +244,7 @@ voiceRealtimeRouter.put(
   '/:context/voice/settings',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const { context } = req.params;
     validateContext(context);
 
@@ -248,10 +256,10 @@ voiceRealtimeRouter.put(
     const data = parseResult.data;
     const ctx = context as 'personal' | 'work' | 'learning' | 'creative';
 
-    // Check if settings exist
+    // Check if settings exist for this user
     const existing = await queryContext(ctx,
-      'SELECT id FROM voice_settings LIMIT 1',
-      []
+      'SELECT id FROM voice_settings WHERE user_id = $1 LIMIT 1',
+      [userId]
     );
 
     let result;
@@ -266,7 +274,7 @@ voiceRealtimeRouter.put(
             silence_threshold_ms = COALESCE($6, silence_threshold_ms),
             auto_send = COALESCE($7, auto_send),
             updated_at = NOW()
-        WHERE id = $8
+        WHERE id = $8 AND user_id = $9
         RETURNING *
       `, [
         data.stt_provider || null,
@@ -277,11 +285,12 @@ voiceRealtimeRouter.put(
         data.silence_threshold_ms ?? null,
         data.auto_send ?? null,
         existing.rows[0].id,
+        userId,
       ]);
     } else {
       result = await queryContext(ctx, `
-        INSERT INTO voice_settings (stt_provider, tts_provider, tts_voice, language, vad_sensitivity, silence_threshold_ms, auto_send)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO voice_settings (stt_provider, tts_provider, tts_voice, language, vad_sensitivity, silence_threshold_ms, auto_send, user_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
       `, [
         data.stt_provider || 'whisper',
@@ -291,6 +300,7 @@ voiceRealtimeRouter.put(
         data.vad_sensitivity ?? 0.5,
         data.silence_threshold_ms ?? 1500,
         data.auto_send ?? true,
+        userId,
       ]);
     }
 
@@ -309,6 +319,7 @@ voiceRealtimeRouter.get(
   '/:context/voice/providers',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     validateContext(context);
 

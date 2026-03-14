@@ -19,6 +19,10 @@ import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toInt } from '../utils/validation';
 
+// NOTE: This file uses pool.query() (public schema) instead of queryContext()
+// because integrations and OAuth tokens are system-level resources stored in the
+// public schema, not context-specific data. This is intentional.
+
 // ===========================================
 // Security: OAuth State Storage
 // ===========================================

@@ -106,7 +106,8 @@ export interface CalendarReminder {
  */
 export async function createCalendarEvent(
   context: AIContext,
-  input: CreateCalendarEventInput
+  input: CreateCalendarEventInput,
+  userId?: string
 ): Promise<CalendarEvent> {
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -137,13 +138,13 @@ export async function createCalendarEvent(
       location, participants, rrule, source_idea_id, source_voice_memo_id,
       travel_duration_minutes, travel_origin, travel_destination,
       status, color, context, reminder_minutes, notes, metadata,
-      ai_generated, ai_confidence, embedding, created_at, updated_at
+      ai_generated, ai_confidence, embedding, created_at, updated_at, user_id
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7,
       $8, $9, $10, $11, $12,
       $13, $14, $15,
       $16, $17, $18, $19, $20, $21,
-      $22, $23, $24, $25, $25
+      $22, $23, $24, $25, $25, $26
     )
     RETURNING *
   `, [
@@ -155,7 +156,7 @@ export async function createCalendarEvent(
     status, input.color || null, context, JSON.stringify(reminderMinutes),
     input.notes || null, JSON.stringify(metadata),
     aiGenerated, input.ai_confidence || null, embeddingStr,
-    now
+    now, userId || null,
   ]);
 
   const event = mapRowToEvent(result.rows[0]);
@@ -176,11 +177,18 @@ export async function createCalendarEvent(
  */
 export async function getCalendarEvents(
   context: AIContext,
-  filters: CalendarEventFilters
+  filters: CalendarEventFilters,
+  userId?: string
 ): Promise<CalendarEvent[]> {
   const conditions: string[] = ["status != 'cancelled'"];
   const params: (string | number)[] = [];
   let paramIdx = 1;
+
+  if (userId) {
+    conditions.push(`user_id = $${paramIdx}`);
+    params.push(userId);
+    paramIdx++;
+  }
 
   if (filters.start) {
     conditions.push(`start_time >= $${paramIdx}`);
@@ -244,11 +252,15 @@ export async function getCalendarEvents(
  */
 export async function getCalendarEvent(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<CalendarEvent | null> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: string[] = [id];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context, `
-    SELECT * FROM calendar_events WHERE id = $1
-  `, [id]);
+    SELECT * FROM calendar_events WHERE id = $1${userCondition}
+  `, params);
 
   return result.rows.length > 0 ? mapRowToEvent(result.rows[0]) : null;
 }
@@ -259,7 +271,8 @@ export async function getCalendarEvent(
 export async function updateCalendarEvent(
   context: AIContext,
   id: string,
-  updates: Partial<CreateCalendarEventInput>
+  updates: Partial<CreateCalendarEventInput>,
+  userId?: string
 ): Promise<CalendarEvent | null> {
   const setClauses: string[] = [];
   const params: (string | number | boolean | null)[] = [];
@@ -314,12 +327,16 @@ export async function updateCalendarEvent(
 
   setClauses.push(`updated_at = NOW()`);
 
+  const userCondition = userId ? ` AND user_id = $${paramIdx + 1}` : '';
+  const finalParams = [...params, id];
+  if (userId) { finalParams.push(userId); }
+
   const result = await queryContext(context, `
     UPDATE calendar_events
     SET ${setClauses.join(', ')}
-    WHERE id = $${paramIdx}
+    WHERE id = $${paramIdx}${userCondition}
     RETURNING *
-  `, [...params, id]);
+  `, finalParams);
 
   if (result.rows.length === 0) {
     return null;
@@ -341,14 +358,18 @@ export async function updateCalendarEvent(
  */
 export async function deleteCalendarEvent(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<boolean> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: string[] = [id];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context, `
     UPDATE calendar_events
     SET status = 'cancelled', updated_at = NOW()
-    WHERE id = $1 AND status != 'cancelled'
+    WHERE id = $1 AND status != 'cancelled'${userCondition}
     RETURNING id
-  `, [id]);
+  `, params);
 
   if (result.rows.length > 0) {
     // Mark reminders as sent so they won't fire
@@ -368,19 +389,24 @@ export async function deleteCalendarEvent(
 export async function getUpcomingEvents(
   context: AIContext,
   hours: number = 24,
-  limit: number = 10
+  limit: number = 10,
+  userId?: string
 ): Promise<CalendarEvent[]> {
   const now = new Date().toISOString();
   const end = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
   const safeLimit = Math.min(Math.max(1, limit), 50);
 
+  const userCondition = userId ? ` AND user_id = $4` : '';
+  const params: (string | number)[] = [now, end, safeLimit];
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
     SELECT * FROM calendar_events
     WHERE start_time >= $1 AND start_time <= $2
-      AND status != 'cancelled'
+      AND status != 'cancelled'${userCondition}
     ORDER BY start_time ASC
     LIMIT $3
-  `, [now, end, safeLimit]);
+  `, params);
 
   return result.rows.map(mapRowToEvent);
 }
@@ -391,20 +417,24 @@ export async function getUpcomingEvents(
 export async function searchCalendarEvents(
   context: AIContext,
   query: string,
-  limit: number = 10
+  limit: number = 10,
+  userId?: string
 ): Promise<CalendarEvent[]> {
   // Try embedding-based search first
   try {
     const embedding = await generateEmbedding(query);
     if (embedding && embedding.length > 0) {
       const embeddingStr = formatForPgVector(embedding);
+      const userCondition = userId ? ` AND user_id = $3` : '';
+      const searchParams: (string | number)[] = [embeddingStr, limit];
+      if (userId) { searchParams.push(userId); }
       const result = await queryContext(context, `
         SELECT *, 1 - (embedding <=> $1::vector) as similarity
         FROM calendar_events
-        WHERE embedding IS NOT NULL AND status != 'cancelled'
+        WHERE embedding IS NOT NULL AND status != 'cancelled'${userCondition}
         ORDER BY embedding <=> $1::vector
         LIMIT $2
-      `, [embeddingStr, limit]);
+      `, searchParams);
       return result.rows.map(mapRowToEvent);
     }
   } catch (err) {
@@ -412,13 +442,16 @@ export async function searchCalendarEvents(
   }
 
   // Fallback to text search
+  const userConditionFallback = userId ? ` AND user_id = $3` : '';
+  const fallbackParams: (string | number)[] = [`%${query}%`, limit];
+  if (userId) { fallbackParams.push(userId); }
   const result = await queryContext(context, `
     SELECT * FROM calendar_events
     WHERE status != 'cancelled'
-      AND (title ILIKE $1 OR description ILIKE $1 OR location ILIKE $1 OR notes ILIKE $1)
+      AND (title ILIKE $1 OR description ILIKE $1 OR location ILIKE $1 OR notes ILIKE $1)${userConditionFallback}
     ORDER BY start_time DESC
     LIMIT $2
-  `, [`%${query}%`, limit]);
+  `, fallbackParams);
 
   return result.rows.map(mapRowToEvent);
 }
@@ -595,14 +628,18 @@ function mapRowToEvent(row: Record<string, unknown>): CalendarEvent {
 export async function linkMeetingToEvent(
   context: AIContext,
   eventId: string,
-  meetingId: string
+  meetingId: string,
+  userId?: string
 ): Promise<CalendarEvent | null> {
+  const userCondition = userId ? ` AND user_id = $3` : '';
+  const params: string[] = [meetingId, eventId];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context, `
     UPDATE calendar_events
     SET meeting_id = $1, updated_at = NOW()
-    WHERE id = $2
+    WHERE id = $2${userCondition}
     RETURNING *
-  `, [meetingId, eventId]);
+  `, params);
 
   if (result.rows.length === 0) {
     return null;
@@ -619,11 +656,15 @@ export async function linkMeetingToEvent(
  */
 export async function getEventMeetingId(
   context: AIContext,
-  eventId: string
+  eventId: string,
+  userId?: string
 ): Promise<string | null> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: string[] = [eventId];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context, `
-    SELECT meeting_id FROM calendar_events WHERE id = $1
-  `, [eventId]);
+    SELECT meeting_id FROM calendar_events WHERE id = $1${userCondition}
+  `, params);
 
   return result.rows.length > 0 ? (result.rows[0].meeting_id as string | null) : null;
 }

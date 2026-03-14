@@ -16,6 +16,7 @@ import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { getUserId } from '../utils/user-context';
 
 const router = Router();
 
@@ -31,7 +32,8 @@ const router = Router();
  *       200:
  *         description: Scheduler status
  */
-router.get('/status', apiKeyAuth, asyncHandler(async (_req: Request, res: Response) => {
+router.get('/status', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const status = memoryScheduler.getStatus();
   const config = memoryScheduler.getConfig();
 
@@ -75,6 +77,7 @@ router.get('/status', apiKeyAuth, asyncHandler(async (_req: Request, res: Respon
  *         description: Consolidation results
  */
 router.post('/consolidate', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.body;
 
   // Validate context if provided
@@ -121,6 +124,7 @@ router.post('/consolidate', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
  *         description: Decay results
  */
 router.post('/decay', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.body;
 
   // Validate context if provided
@@ -164,6 +168,7 @@ router.post('/decay', apiKeyAuth, requireScope('admin'), asyncHandler(async (req
  *         description: Memory statistics
  */
 router.get('/stats/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -206,6 +211,7 @@ router.get('/stats/:context', apiKeyAuth, asyncHandler(async (req: Request, res:
  *         description: Stored facts
  */
 router.get('/facts/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -244,6 +250,7 @@ router.get('/facts/:context', apiKeyAuth, asyncHandler(async (req: Request, res:
  *         description: Stored patterns
  */
 router.get('/patterns/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -267,6 +274,7 @@ router.get('/patterns/:context', apiKeyAuth, asyncHandler(async (req: Request, r
  * Memory transparency: show what the AI has learned about the user
  */
 router.get('/transparency/:context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -344,6 +352,7 @@ router.get('/transparency/:context', apiKeyAuth, asyncHandler(async (req: Reques
  * Get memory privacy settings for a context
  */
 router.get('/privacy/:context', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -363,6 +372,7 @@ router.get('/privacy/:context', apiKeyAuth, requireScope('read'), asyncHandler(a
  * Update memory privacy settings
  */
 router.put('/privacy/:context', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -383,6 +393,7 @@ router.put('/privacy/:context', apiKeyAuth, requireScope('write'), asyncHandler(
  * Right to Erasure (Art. 17 DSGVO): Delete all memory data for a context
  */
 router.delete('/erase/:context', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -405,6 +416,7 @@ router.delete('/erase/:context', apiKeyAuth, requireScope('admin'), asyncHandler
  * Delete all data from a specific memory layer
  */
 router.delete('/erase/:context/:layer', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context, layer } = req.params;
 
   if (!isValidContext(context)) {
@@ -431,6 +443,7 @@ router.delete('/erase/:context/:layer', apiKeyAuth, requireScope('admin'), async
  */
 requireUUID('factId'),
 router.delete('/facts/:context/:factId', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context, factId } = req.params;
 
   if (!isValidContext(context)) {
@@ -452,6 +465,7 @@ router.delete('/facts/:context/:factId', apiKeyAuth, requireScope('write'), asyn
  */
 requireUUID('factId'),
 router.get('/export/:context', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -471,6 +485,7 @@ router.get('/export/:context', apiKeyAuth, requireScope('admin'), asyncHandler(a
  * Get memory audit trail
  */
 router.get('/audit/:context', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -499,6 +514,7 @@ router.get('/audit/:context', apiKeyAuth, requireScope('read'), asyncHandler(asy
  * Comprehensive memory overview for transparency
  */
 router.get('/overview/:context', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {

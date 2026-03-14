@@ -10,6 +10,7 @@ import { AIContext, isValidUUID, isValidContext } from '../utils/database-contex
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+import { getUserId } from '../utils/user-context';
 
 // Input validation helpers
 const MAX_TOPIC_LENGTH = 500;
@@ -52,6 +53,7 @@ const router = Router();
  */
 router.get('/:context/learning-tasks', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
   const { status, category, limit, offset } = req.query;
 
   if (!isValidContext(context)) {
@@ -101,6 +103,7 @@ router.get('/:context/learning-tasks', apiKeyAuth, asyncHandler(async (req: Requ
  */
 router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
   const { topic, description, category, priority, target_completion_date, generate_outline } = req.body;
 
   if (!isValidContext(context)) {
@@ -159,6 +162,7 @@ router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), async
  */
 router.get('/:context/learning-tasks/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -188,6 +192,7 @@ router.get('/:context/learning-tasks/:id', apiKeyAuth, asyncHandler(async (req: 
  */
 router.put('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
   const { topic, description, category, priority, status, target_completion_date, learning_outline, summary } = req.body;
 
   if (!isValidContext(context)) {
@@ -241,6 +246,7 @@ router.put('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), as
  */
 router.delete('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -266,6 +272,7 @@ router.delete('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'),
  */
 router.post('/:context/learning-tasks/:id/session', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
   const { session_type, duration_minutes, notes, key_learnings, questions, understanding_level } = req.body;
 
   if (!isValidContext(context)) {
@@ -334,6 +341,7 @@ router.post('/:context/learning-tasks/:id/session', apiKeyAuth, requireScope('wr
  */
 router.get('/:context/learning-tasks/:id/sessions', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
   const { limit } = req.query;
 
   if (!isValidContext(context)) {
@@ -369,6 +377,7 @@ router.get('/:context/learning-tasks/:id/sessions', apiKeyAuth, asyncHandler(asy
  */
 router.post('/:context/learning-tasks/:id/generate-outline', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -401,6 +410,7 @@ router.post('/:context/learning-tasks/:id/generate-outline', apiKeyAuth, require
  */
 router.get('/:context/learning-stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -421,6 +431,7 @@ router.get('/:context/learning-stats', apiKeyAuth, asyncHandler(async (req: Requ
  */
 router.get('/:context/learning-daily-summary', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -441,6 +452,7 @@ router.get('/:context/learning-daily-summary', apiKeyAuth, asyncHandler(async (r
  */
 router.get('/:context/learning-insights', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -460,6 +472,7 @@ router.get('/:context/learning-insights', apiKeyAuth, asyncHandler(async (req: R
  */
 router.post('/:context/learning-insights/:insightId/acknowledge', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, insightId } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -486,6 +499,7 @@ router.post('/:context/learning-insights/:insightId/acknowledge', apiKeyAuth, re
  * Get available learning categories
  */
 router.get('/:context/learning-categories', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   res.json({
     success: true,
     categories: LEARNING_CATEGORIES,
@@ -502,6 +516,7 @@ router.get('/:context/learning-categories', apiKeyAuth, asyncHandler(async (req:
  */
 router.get('/:context/learning-tasks/:id/challenge', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
   validateTaskId(id);
 
   const challenge = await generateChallenge(id, context as AIContext);
@@ -518,6 +533,7 @@ router.get('/:context/learning-tasks/:id/challenge', apiKeyAuth, asyncHandler(as
  */
 router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const _userId = getUserId(req);
   const { user_recall } = req.body;
   validateTaskId(id);
 
@@ -541,6 +557,7 @@ router.post('/:context/learning-tasks/:id/recall', apiKeyAuth, requireScope('wri
  */
 router.get('/:context/learning-tasks/review-schedule', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
   const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 50);
 
   const schedule = await getReviewSchedule(context as AIContext, limit);

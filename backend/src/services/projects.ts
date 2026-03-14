@@ -54,7 +54,8 @@ export interface ProjectFilters {
 
 export async function createProject(
   context: AIContext,
-  input: CreateProjectInput
+  input: CreateProjectInput,
+  userId?: string
 ): Promise<Project> {
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -62,8 +63,8 @@ export async function createProject(
   const result = await queryContext(context, `
     INSERT INTO projects (
       id, name, description, color, icon, status,
-      context, sort_order, metadata, created_at, updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+      context, sort_order, metadata, created_at, updated_at, user_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11)
     RETURNING *
   `, [
     id,
@@ -76,6 +77,7 @@ export async function createProject(
     input.sort_order ?? 0,
     JSON.stringify(input.metadata || {}),
     now,
+    userId || '00000000-0000-0000-0000-000000000001',
   ]);
 
   logger.info('Project created', { id, name: input.name, context, operation: 'createProject' });
@@ -84,11 +86,18 @@ export async function createProject(
 
 export async function getProjects(
   context: AIContext,
-  filters?: ProjectFilters
+  filters?: ProjectFilters,
+  userId?: string
 ): Promise<Project[]> {
   const conditions: string[] = ["p.status != 'archived'"];
   const params: (string | number)[] = [];
   let paramIdx = 1;
+
+  if (userId) {
+    conditions.push(`p.user_id = $${paramIdx}`);
+    params.push(userId);
+    paramIdx++;
+  }
 
   if (filters?.status) {
     conditions[0] = `p.status = $${paramIdx}`;
@@ -116,7 +125,8 @@ export async function getProjects(
 
 export async function getProject(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<Project | null> {
   const result = await queryContext(context, `
     SELECT p.*,
@@ -124,9 +134,9 @@ export async function getProject(
       COUNT(t.id) FILTER (WHERE t.status = 'done') as done_count
     FROM projects p
     LEFT JOIN tasks t ON t.project_id = p.id
-    WHERE p.id = $1
+    WHERE p.id = $1${userId ? ' AND p.user_id = $2' : ''}
     GROUP BY p.id
-  `, [id]);
+  `, userId ? [id, userId] : [id]);
 
   return result.rows.length > 0 ? mapRowToProject(result.rows[0]) : null;
 }
@@ -134,7 +144,8 @@ export async function getProject(
 export async function updateProject(
   context: AIContext,
   id: string,
-  updates: Partial<CreateProjectInput>
+  updates: Partial<CreateProjectInput>,
+  userId?: string
 ): Promise<Project | null> {
   const setClauses: string[] = [];
   const params: (string | number | null)[] = [];
@@ -167,12 +178,23 @@ export async function updateProject(
 
   setClauses.push('updated_at = NOW()');
 
+  const idParamIdx = paramIdx;
+  params.push(id);
+  paramIdx++;
+
+  let userClause = '';
+  if (userId) {
+    userClause = ` AND user_id = $${paramIdx}`;
+    params.push(userId);
+    paramIdx++;
+  }
+
   const result = await queryContext(context, `
     UPDATE projects
     SET ${setClauses.join(', ')}
-    WHERE id = $${paramIdx}
+    WHERE id = $${idParamIdx}${userClause}
     RETURNING *
-  `, [...params, id]);
+  `, params);
 
   if (result.rows.length === 0) {return null;}
 
@@ -182,14 +204,15 @@ export async function updateProject(
 
 export async function deleteProject(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<boolean> {
   const result = await queryContext(context, `
     UPDATE projects
     SET status = 'archived', updated_at = NOW()
-    WHERE id = $1 AND status != 'archived'
+    WHERE id = $1 AND status != 'archived'${userId ? ' AND user_id = $2' : ''}
     RETURNING id
-  `, [id]);
+  `, userId ? [id, userId] : [id]);
 
   if (result.rows.length > 0) {
     logger.info('Project archived', { id, context, operation: 'deleteProject' });

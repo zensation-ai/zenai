@@ -11,6 +11,7 @@ import { Router, Request, Response } from 'express';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { getUserId } from '../utils/user-context';
 import {
   getOverview,
   getTrends,
@@ -64,6 +65,7 @@ analyticsV2Router.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const ctx = validateContext(req);
+    const _userId = getUserId(req);
     const { from, to } = parseDateRange(req);
 
     const overview = await getOverview(ctx, from, to);
@@ -81,6 +83,7 @@ analyticsV2Router.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const ctx = validateContext(req);
+    const _userId = getUserId(req);
     const { from, to } = parseDateRange(req);
     const granularity = (req.query.granularity as string) || 'day';
 
@@ -103,6 +106,7 @@ analyticsV2Router.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const ctx = validateContext(req);
+    const _userId = getUserId(req);
     const { from, to } = parseDateRange(req);
 
     const insights = await getProductivityInsights(ctx, from, to);
@@ -120,6 +124,7 @@ analyticsV2Router.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const ctx = validateContext(req);
+    const _userId = getUserId(req);
 
     const p1From = req.query.p1_from as string;
     const p1To = req.query.p1_to as string;
@@ -154,6 +159,7 @@ analyticsV2Router.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     validateContext(req);
+    const _userId = getUserId(req);
     const { from, to } = parseDateRange(req);
 
     const stats = await getUsageStats(from, to);
@@ -171,6 +177,7 @@ analyticsV2Router.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     validateContext(req);
+    const _userId = getUserId(req);
     const { from, to } = parseDateRange(req);
 
     const daily = await getDailyUsage(from, to);
@@ -188,6 +195,7 @@ analyticsV2Router.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const ctx = validateContext(req);
+    const _userId = getUserId(req);
 
     const health = await getMemoryHealth(ctx);
 

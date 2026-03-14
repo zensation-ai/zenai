@@ -47,6 +47,7 @@ import {
   getConfidenceLevel,
 } from '../services/claude';
 import type { StructuredIdea } from '../types';
+import { getUserId } from '../utils/user-context';
 
 /**
  * Raw structured input from LLM before normalization
@@ -108,6 +109,7 @@ const upload = multer({
  * Optional 'persona' parameter to select a specific sub-persona
  */
 voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('write'), upload.single('audio'), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { context } = req.params;
 
   // Validate context
@@ -234,8 +236,8 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
       context as AIContext,
       `INSERT INTO ideas
        (id, title, type, category, priority, summary, raw_transcript, embedding,
-        next_steps, context_needed, keywords, context, is_archived, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())`,
+        next_steps, context_needed, keywords, context, is_archived, user_id, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())`,
       [
         ideaId,
         structured.title,
@@ -250,6 +252,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         JSON.stringify(structured.keywords || []),
         context,
         false, // is_archived - explicitly set to avoid NULL
+        userId,
       ]
     );
 
@@ -450,9 +453,10 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
         context as AIContext,
         `INSERT INTO loose_thoughts
          (id, user_id, raw_input, raw_text, source, user_tags, embedding, is_processed, created_at)
-         VALUES ($1, 'default', $2, $2, 'voice', '[]'::jsonb, $3, false, NOW())`,
+         VALUES ($1, $2, $3, $3, 'voice', '[]'::jsonb, $4, false, NOW())`,
         [
           thoughtId,
+          userId,
           transcript,
           embedding.length > 0 ? formatForPgVector(embedding) : null,
         ]
@@ -616,6 +620,7 @@ OUTPUT FORMAT:
  * Returns core ideas, action items, mentions, mood, and auto-links.
  */
 voiceMemoContextRouter.post('/:context/voice-memo/extract', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { context } = req.params;
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -646,6 +651,7 @@ voiceMemoContextRouter.post('/:context/voice-memo/extract', apiKeyAuth, requireS
  * Get statistics for a specific context
  */
 voiceMemoContextRouter.get('/:context/stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -653,9 +659,9 @@ voiceMemoContextRouter.get('/:context/stats', apiKeyAuth, asyncHandler(async (re
   }
 
   const [ideasCount, thoughtsCount, clustersCount] = await Promise.all([
-    queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM ideas'),
-    queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM loose_thoughts'),
-    queryContext(context as AIContext, "SELECT COUNT(*) as count FROM thought_clusters WHERE status = 'ready'"),
+    queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM ideas WHERE user_id = $1', [userId]),
+    queryContext(context as AIContext, 'SELECT COUNT(*) as count FROM loose_thoughts WHERE user_id = $1', [userId]),
+    queryContext(context as AIContext, "SELECT COUNT(*) as count FROM thought_clusters WHERE status = 'ready' AND user_id = $1", [userId]),
   ]);
 
   const persona = getSubPersona(context as AIContext);

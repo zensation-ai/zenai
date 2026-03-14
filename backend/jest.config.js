@@ -43,6 +43,6 @@ module.exports = {
   testTimeout: 30000,
   verbose: true,
   maxWorkers: 2,
-  forceExit: true,
+  forceExit: true, // TODO Phase 65: Investigate open handles (health check intervals, rate limit cleanup)
   workerIdleMemoryLimit: '256MB'
 };

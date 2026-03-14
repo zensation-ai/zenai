@@ -9,6 +9,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { AIContext } from '../utils/database-context';
 import { isValidUUID } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 import * as contactsService from '../services/contacts';
 
 const router = Router();
@@ -37,6 +38,7 @@ function validateContextParam(req: Request, res: Response): AIContext | null {
 router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   const search = req.query.search as string | undefined;
   const tag = req.query.tag as string | undefined;
@@ -58,7 +60,7 @@ router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response
     offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
   };
 
-  const result = await contactsService.getContacts(context, filters);
+  const result = await contactsService.getContacts(context, filters, userId);
   res.json({ success: true, data: result.contacts, total: result.total });
 }));
 
@@ -66,8 +68,9 @@ router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response
 router.get('/:context/contacts/stats', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
-  const stats = await contactsService.getContactStats(context);
+  const stats = await contactsService.getContactStats(context, userId);
   res.json({ success: true, data: stats });
 }));
 
@@ -75,10 +78,11 @@ router.get('/:context/contacts/stats', asyncHandler(async (req: Request, res: Re
 router.get('/:context/contacts/follow-ups', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
   const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-  const suggestions = await contactsService.getFollowUpSuggestions(context, days, limit);
+  const suggestions = await contactsService.getFollowUpSuggestions(context, days, limit, userId);
   res.json({ success: true, data: suggestions });
 }));
 
@@ -86,12 +90,13 @@ router.get('/:context/contacts/follow-ups', asyncHandler(async (req: Request, re
 router.get('/:context/contacts/:id', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
   }
 
-  const contact = await contactsService.getContact(context, req.params.id);
+  const contact = await contactsService.getContact(context, req.params.id, userId);
   if (!contact) {
     return res.status(404).json({ success: false, error: 'Contact not found' });
   }
@@ -102,13 +107,14 @@ router.get('/:context/contacts/:id', asyncHandler(async (req: Request, res: Resp
 router.post('/:context/contacts', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   const { display_name } = req.body;
   if (!display_name || typeof display_name !== 'string') {
     return res.status(400).json({ success: false, error: 'display_name is required' });
   }
 
-  const contact = await contactsService.createContact(context, req.body);
+  const contact = await contactsService.createContact(context, req.body, userId);
   res.status(201).json({ success: true, data: contact });
 }));
 
@@ -116,12 +122,13 @@ router.post('/:context/contacts', requireScope('write'), asyncHandler(async (req
 router.put('/:context/contacts/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
   }
 
-  const contact = await contactsService.updateContact(context, req.params.id, req.body);
+  const contact = await contactsService.updateContact(context, req.params.id, req.body, userId);
   if (!contact) {
     return res.status(404).json({ success: false, error: 'Contact not found' });
   }
@@ -132,12 +139,13 @@ router.put('/:context/contacts/:id', requireScope('write'), asyncHandler(async (
 router.delete('/:context/contacts/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
   }
 
-  const deleted = await contactsService.deleteContact(context, req.params.id);
+  const deleted = await contactsService.deleteContact(context, req.params.id, userId);
   if (!deleted) {
     return res.status(404).json({ success: false, error: 'Contact not found' });
   }
@@ -152,6 +160,7 @@ router.delete('/:context/contacts/:id', requireScope('write'), asyncHandler(asyn
 router.get('/:context/contacts/:id/timeline', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
@@ -159,7 +168,7 @@ router.get('/:context/contacts/:id/timeline', asyncHandler(async (req: Request, 
 
   const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
   const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
-  const result = await contactsService.getInteractions(context, req.params.id, limit, offset);
+  const result = await contactsService.getInteractions(context, req.params.id, limit, offset, userId);
   res.json({ success: true, data: result.interactions, total: result.total });
 }));
 
@@ -167,6 +176,7 @@ router.get('/:context/contacts/:id/timeline', asyncHandler(async (req: Request, 
 router.post('/:context/contacts/:id/interactions', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid contact ID' });
@@ -180,7 +190,7 @@ router.post('/:context/contacts/:id/interactions', requireScope('write'), asyncH
   const interaction = await contactsService.addInteraction(context, {
     ...req.body,
     contact_id: req.params.id,
-  });
+  }, userId);
   res.status(201).json({ success: true, data: interaction });
 }));
 
@@ -192,6 +202,7 @@ router.post('/:context/contacts/:id/interactions', requireScope('write'), asyncH
 router.get('/:context/organizations', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   const filters: contactsService.OrganizationFilters = {
     search: req.query.search as string | undefined,
@@ -200,7 +211,7 @@ router.get('/:context/organizations', asyncHandler(async (req: Request, res: Res
     offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
   };
 
-  const result = await contactsService.getOrganizations(context, filters);
+  const result = await contactsService.getOrganizations(context, filters, userId);
   res.json({ success: true, data: result.organizations, total: result.total });
 }));
 
@@ -208,12 +219,13 @@ router.get('/:context/organizations', asyncHandler(async (req: Request, res: Res
 router.get('/:context/organizations/:id', asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid organization ID' });
   }
 
-  const org = await contactsService.getOrganization(context, req.params.id);
+  const org = await contactsService.getOrganization(context, req.params.id, userId);
   if (!org) {
     return res.status(404).json({ success: false, error: 'Organization not found' });
   }
@@ -224,13 +236,14 @@ router.get('/:context/organizations/:id', asyncHandler(async (req: Request, res:
 router.post('/:context/organizations', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   const { name } = req.body;
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ success: false, error: 'name is required' });
   }
 
-  const org = await contactsService.createOrganization(context, req.body);
+  const org = await contactsService.createOrganization(context, req.body, userId);
   res.status(201).json({ success: true, data: org });
 }));
 
@@ -238,12 +251,13 @@ router.post('/:context/organizations', requireScope('write'), asyncHandler(async
 router.put('/:context/organizations/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid organization ID' });
   }
 
-  const org = await contactsService.updateOrganization(context, req.params.id, req.body);
+  const org = await contactsService.updateOrganization(context, req.params.id, req.body, userId);
   if (!org) {
     return res.status(404).json({ success: false, error: 'Organization not found' });
   }
@@ -254,12 +268,13 @@ router.put('/:context/organizations/:id', requireScope('write'), asyncHandler(as
 router.delete('/:context/organizations/:id', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
+  const userId = getUserId(req);
 
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ success: false, error: 'Invalid organization ID' });
   }
 
-  const deleted = await contactsService.deleteOrganization(context, req.params.id);
+  const deleted = await contactsService.deleteOrganization(context, req.params.id, userId);
   if (!deleted) {
     return res.status(404).json({ success: false, error: 'Organization not found' });
   }

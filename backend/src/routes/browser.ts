@@ -15,6 +15,7 @@ import { analyzePage } from '../services/page-analyzer';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateContextParam } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 
 export const browserRouter = Router();
 
@@ -28,6 +29,7 @@ export const browserRouter = Router();
  */
 browserRouter.get('/:context/browser/history', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { domain, category, search, from_date, to_date, limit, offset } = req.query;
 
   const result = await getHistory(context, {
@@ -38,7 +40,7 @@ browserRouter.get('/:context/browser/history', apiKeyAuth, asyncHandler(async (r
     to_date: to_date as string,
     limit: limit ? parseInt(limit as string, 10) : undefined,
     offset: offset ? parseInt(offset as string, 10) : undefined,
-  });
+  }, userId);
 
   res.json({ success: true, data: result.entries, total: result.total });
 }));
@@ -49,9 +51,10 @@ browserRouter.get('/:context/browser/history', apiKeyAuth, asyncHandler(async (r
  */
 browserRouter.get('/:context/browser/history/domains', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
 
-  const stats = await getDomainStats(context, limit);
+  const stats = await getDomainStats(context, limit, userId);
 
   res.json({ success: true, data: stats });
 }));
@@ -62,11 +65,12 @@ browserRouter.get('/:context/browser/history/domains', apiKeyAuth, asyncHandler(
  */
 browserRouter.get('/:context/browser/history/:id', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) { throw new ValidationError('Invalid history entry ID'); }
 
-  const entry = await getHistoryEntry(context, id);
+  const entry = await getHistoryEntry(context, id, userId);
   if (!entry) {
     throw new NotFoundError('History entry not found');
   }
@@ -80,6 +84,7 @@ browserRouter.get('/:context/browser/history/:id', apiKeyAuth, asyncHandler(asyn
  */
 browserRouter.post('/:context/browser/history', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { url, title, domain, duration_seconds, content_text, metadata } = req.body;
 
   if (!url || !domain) {
@@ -110,7 +115,7 @@ browserRouter.post('/:context/browser/history', apiKeyAuth, requireScope('write'
     keywords,
     category,
     metadata,
-  });
+  }, userId);
 
   res.status(201).json({ success: true, data: entry });
 }));
@@ -121,11 +126,12 @@ browserRouter.post('/:context/browser/history', apiKeyAuth, requireScope('write'
  */
 browserRouter.delete('/:context/browser/history/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) { throw new ValidationError('Invalid history entry ID'); }
 
-  const deleted = await deleteHistoryEntry(context, id);
+  const deleted = await deleteHistoryEntry(context, id, userId);
   if (!deleted) {
     throw new NotFoundError('History entry not found');
   }
@@ -139,9 +145,10 @@ browserRouter.delete('/:context/browser/history/:id', apiKeyAuth, requireScope('
  */
 browserRouter.delete('/:context/browser/history', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { before } = req.query;
 
-  const count = await clearHistory(context, before as string);
+  const count = await clearHistory(context, before as string, userId);
 
   res.json({ success: true, message: `${count} history entries deleted`, count });
 }));
@@ -156,6 +163,7 @@ browserRouter.delete('/:context/browser/history', apiKeyAuth, requireScope('writ
  */
 browserRouter.get('/:context/browser/bookmarks', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { folder, tag, search, limit, offset } = req.query;
 
   const result = await getBookmarks(context, {
@@ -164,7 +172,7 @@ browserRouter.get('/:context/browser/bookmarks', apiKeyAuth, asyncHandler(async 
     search: search as string,
     limit: limit ? parseInt(limit as string, 10) : undefined,
     offset: offset ? parseInt(offset as string, 10) : undefined,
-  });
+  }, userId);
 
   res.json({ success: true, data: result.bookmarks, total: result.total });
 }));
@@ -175,8 +183,9 @@ browserRouter.get('/:context/browser/bookmarks', apiKeyAuth, asyncHandler(async 
  */
 browserRouter.get('/:context/browser/bookmarks/folders', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
-  const folders = await getBookmarkFolders(context);
+  const folders = await getBookmarkFolders(context, userId);
 
   res.json({ success: true, data: folders });
 }));
@@ -187,11 +196,12 @@ browserRouter.get('/:context/browser/bookmarks/folders', apiKeyAuth, asyncHandle
  */
 browserRouter.get('/:context/browser/bookmarks/:id', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
-  const bookmark = await getBookmark(context, id);
+  const bookmark = await getBookmark(context, id, userId);
   if (!bookmark) {
     throw new NotFoundError('Bookmark not found');
   }
@@ -205,6 +215,7 @@ browserRouter.get('/:context/browser/bookmarks/:id', apiKeyAuth, asyncHandler(as
  */
 browserRouter.post('/:context/browser/bookmarks', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { url, title, description, folder, tags, ai_summary, favicon_url, metadata } = req.body;
 
   if (!url) {
@@ -213,7 +224,7 @@ browserRouter.post('/:context/browser/bookmarks', apiKeyAuth, requireScope('writ
 
   const bookmark = await createBookmark(context, {
     url, title, description, folder, tags, ai_summary, favicon_url, metadata,
-  });
+  }, userId);
 
   res.status(201).json({ success: true, data: bookmark });
 }));
@@ -224,11 +235,12 @@ browserRouter.post('/:context/browser/bookmarks', apiKeyAuth, requireScope('writ
  */
 browserRouter.put('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
-  const updated = await updateBookmark(context, id, req.body);
+  const updated = await updateBookmark(context, id, req.body, userId);
   if (!updated) {
     throw new NotFoundError('Bookmark not found');
   }
@@ -242,11 +254,12 @@ browserRouter.put('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope('w
  */
 browserRouter.delete('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) { throw new ValidationError('Invalid bookmark ID'); }
 
-  const deleted = await deleteBookmark(context, id);
+  const deleted = await deleteBookmark(context, id, userId);
   if (!deleted) {
     throw new NotFoundError('Bookmark not found');
   }

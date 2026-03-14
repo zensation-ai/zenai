@@ -144,7 +144,7 @@ describe('Tasks API Integration Tests', () => {
         project_id: UUID_2,
         limit: 50,
         offset: 10,
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should cap limit at 500', async () => {
@@ -152,7 +152,7 @@ describe('Tasks API Integration Tests', () => {
 
       await request(app).get('/api/work/tasks').query({ limit: '9999' });
 
-      expect(mockGetTasks).toHaveBeenCalledWith('work', expect.objectContaining({ limit: 500 }));
+      expect(mockGetTasks).toHaveBeenCalledWith('work', expect.objectContaining({ limit: 500 }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid context', async () => {
@@ -192,7 +192,7 @@ describe('Tasks API Integration Tests', () => {
 
       await request(app).get('/api/work/tasks/gantt').query({ project_id: UUID_2 });
 
-      expect(mockGetTasksForGantt).toHaveBeenCalledWith('work', { project_id: UUID_2 });
+      expect(mockGetTasksForGantt).toHaveBeenCalledWith('work', { project_id: UUID_2 }, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should call without filters when no project_id', async () => {
@@ -200,7 +200,7 @@ describe('Tasks API Integration Tests', () => {
 
       await request(app).get('/api/work/tasks/gantt');
 
-      expect(mockGetTasksForGantt).toHaveBeenCalledWith('work', undefined);
+      expect(mockGetTasksForGantt).toHaveBeenCalledWith('work', undefined, '00000000-0000-0000-0000-000000000001');
     });
   });
 
@@ -277,7 +277,7 @@ describe('Tasks API Integration Tests', () => {
 
       expect(mockCreateTask).toHaveBeenCalledWith('personal', expect.objectContaining({
         title: 'Write tests',
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should pass all optional fields', async () => {
@@ -306,7 +306,7 @@ describe('Tasks API Integration Tests', () => {
         priority: 'urgent',
         assignee: 'Alex',
         estimated_hours: 8,
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
   });
 
@@ -391,7 +391,7 @@ describe('Tasks API Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockReorderTasks).toHaveBeenCalledWith('work', 'todo', [UUID_1, UUID_2, UUID_3]);
+      expect(mockReorderTasks).toHaveBeenCalledWith('work', 'todo', [UUID_1, UUID_2, UUID_3], '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid status', async () => {
@@ -433,7 +433,7 @@ describe('Tasks API Integration Tests', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
-      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('work', UUID_2, undefined);
+      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('work', UUID_2, undefined, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should pass project_id to service', async () => {
@@ -443,7 +443,7 @@ describe('Tasks API Integration Tests', () => {
         .post(`/api/work/tasks/from-idea/${UUID_2}`)
         .send({ project_id: UUID_3 });
 
-      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('work', UUID_2, UUID_3);
+      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('work', UUID_2, UUID_3, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid idea UUID', async () => {
@@ -486,7 +486,7 @@ describe('Tasks API Integration Tests', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
-      expect(mockAddDependency).toHaveBeenCalledWith('work', UUID_1, UUID_2, 'finish_to_start');
+      expect(mockAddDependency).toHaveBeenCalledWith('work', UUID_1, UUID_2, 'finish_to_start', '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject missing depends_on_id', async () => {

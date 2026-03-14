@@ -8,6 +8,7 @@ import { getAgentIdentityService } from '../services/agents/agent-identity';
 import { getWorkflowStore } from '../services/agents/workflow-store';
 import { AgentGraph, GraphEdge, createResearchWriteReviewGraph, createCodeReviewGraph, createResearchCodeReviewGraph } from '../services/agents/agent-graph';
 import { AIContext } from '../utils/database-context';
+import { getUserId } from '../utils/user-context';
 
 const router = Router();
 
@@ -15,6 +16,7 @@ const router = Router();
 
 // GET /api/agent-identities - List all agent identities
 router.get('/agent-identities', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const service = getAgentIdentityService();
   const role = req.query.role as string | undefined;
   const enabled = req.query.enabled !== undefined ? req.query.enabled === 'true' : undefined;
@@ -24,6 +26,7 @@ router.get('/agent-identities', asyncHandler(async (req: Request, res: Response)
 
 // GET /api/agent-identities/:id - Get single identity
 router.get('/agent-identities/:id', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const service = getAgentIdentityService();
   const identity = await service.getIdentity(req.params.id);
   if (!identity) {
@@ -34,6 +37,7 @@ router.get('/agent-identities/:id', asyncHandler(async (req: Request, res: Respo
 
 // POST /api/agent-identities - Create identity
 router.post('/agent-identities', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const service = getAgentIdentityService();
   const identity = await service.createIdentity(req.body);
   res.status(201).json({ success: true, data: identity });
@@ -41,6 +45,7 @@ router.post('/agent-identities', asyncHandler(async (req: Request, res: Response
 
 // PUT /api/agent-identities/:id - Update identity
 router.put('/agent-identities/:id', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const service = getAgentIdentityService();
   const identity = await service.updateIdentity(req.params.id, req.body);
   if (!identity) {
@@ -51,6 +56,7 @@ router.put('/agent-identities/:id', asyncHandler(async (req: Request, res: Respo
 
 // DELETE /api/agent-identities/:id - Delete identity
 router.delete('/agent-identities/:id', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const service = getAgentIdentityService();
   const deleted = await service.deleteIdentity(req.params.id);
   if (!deleted) {
@@ -61,6 +67,7 @@ router.delete('/agent-identities/:id', asyncHandler(async (req: Request, res: Re
 
 // POST /api/agent-identities/:id/validate - Validate action
 router.post('/agent-identities/:id/validate', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const service = getAgentIdentityService();
   const result = await service.validateAction(req.params.id, req.body);
   res.json({ success: true, data: result });
@@ -69,7 +76,8 @@ router.post('/agent-identities/:id/validate', asyncHandler(async (req: Request, 
 // ===== Workflows =====
 
 // GET /api/agent-workflows - List workflows
-router.get('/agent-workflows', asyncHandler(async (_req: Request, res: Response) => {
+router.get('/agent-workflows', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const store = getWorkflowStore();
   const workflows = await store.listWorkflows();
   res.json({ success: true, data: workflows });
@@ -87,6 +95,7 @@ router.get('/agent-workflows/templates', asyncHandler(async (_req: Request, res:
 
 // GET /api/agent-workflows/:id - Get workflow
 router.get('/agent-workflows/:id', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const store = getWorkflowStore();
   const workflow = await store.getWorkflow(req.params.id);
   if (!workflow) {
@@ -97,6 +106,7 @@ router.get('/agent-workflows/:id', asyncHandler(async (req: Request, res: Respon
 
 // POST /api/agent-workflows - Save workflow
 router.post('/agent-workflows', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const store = getWorkflowStore();
   const workflow = await store.saveWorkflow(req.body);
   res.status(201).json({ success: true, data: workflow });
@@ -104,6 +114,7 @@ router.post('/agent-workflows', asyncHandler(async (req: Request, res: Response)
 
 // DELETE /api/agent-workflows/:id - Delete workflow
 router.delete('/agent-workflows/:id', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const store = getWorkflowStore();
   const deleted = await store.deleteWorkflow(req.params.id);
   if (!deleted) {
@@ -114,6 +125,7 @@ router.delete('/agent-workflows/:id', asyncHandler(async (req: Request, res: Res
 
 // POST /api/agent-workflows/:id/execute - Execute workflow
 router.post('/agent-workflows/:id/execute', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const store = getWorkflowStore();
   const workflow = await store.getWorkflow(req.params.id);
   if (!workflow) {
@@ -171,6 +183,7 @@ router.post('/agent-workflows/:id/execute', asyncHandler(async (req: Request, re
 
 // GET /api/agent-workflow-runs - List runs
 router.get('/agent-workflow-runs', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const store = getWorkflowStore();
   const runs = await store.listRuns({
     workflowId: req.query.workflowId as string | undefined,

@@ -108,7 +108,7 @@ describe('Projects API Integration Tests', () => {
         status: 'active',
         limit: 50,
         offset: 5,
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should cap limit at 500', async () => {
@@ -116,7 +116,7 @@ describe('Projects API Integration Tests', () => {
 
       await request(app).get('/api/work/projects').query({ limit: '9999' });
 
-      expect(mockGetProjects).toHaveBeenCalledWith('work', expect.objectContaining({ limit: 500 }));
+      expect(mockGetProjects).toHaveBeenCalledWith('work', expect.objectContaining({ limit: 500 }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid context', async () => {
@@ -205,7 +205,7 @@ describe('Projects API Integration Tests', () => {
 
       expect(mockCreateProject).toHaveBeenCalledWith('personal', expect.objectContaining({
         name: 'My Project',
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should pass all optional fields', async () => {
@@ -229,7 +229,7 @@ describe('Projects API Integration Tests', () => {
         icon: '🚀',
         status: 'on_hold',
         sort_order: 5,
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
   });
 

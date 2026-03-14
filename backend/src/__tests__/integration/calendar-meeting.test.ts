@@ -144,7 +144,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
         title: 'Sprint Review',
         duration_minutes: 60,
       }));
-      expect(mockLinkMeetingToEvent).toHaveBeenCalledWith('work', UUID_EVENT, UUID_MEETING);
+      expect(mockLinkMeetingToEvent).toHaveBeenCalledWith('work', UUID_EVENT, UUID_MEETING, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should return existing meeting if already linked', async () => {

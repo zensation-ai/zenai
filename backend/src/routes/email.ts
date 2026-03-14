@@ -21,6 +21,7 @@ import { encrypt } from '../utils/encryption';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateEmailAddresses, validateContextParam } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 import { logger } from '../utils/logger';
 import { parseNaturalLanguageQuery, searchEmails, getInboxSummary, EmailSearchQuery } from '../services/email-search';
 import { generateEmailDigest, formatDigestForChat } from '../services/email-digest';
@@ -36,7 +37,8 @@ const VALID_FOLDERS = ['inbox', 'sent', 'drafts', 'archived', 'trash', 'starred'
 
 emailRouter.get('/:context/emails/stats', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const stats = await getEmailStats(context);
+  const userId = getUserId(req);
+  const stats = await getEmailStats(context, userId);
 
   res.json({ success: true, data: stats });
 }));
@@ -47,7 +49,8 @@ emailRouter.get('/:context/emails/stats', apiKeyAuth, asyncHandler(async (req, r
 
 emailRouter.get('/:context/emails/accounts', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const accounts = await getAccounts(context);
+  const userId = getUserId(req);
+  const accounts = await getAccounts(context, userId);
 
   res.json({ success: true, data: accounts, count: accounts.length });
 }));
@@ -58,13 +61,14 @@ emailRouter.get('/:context/emails/accounts', apiKeyAuth, asyncHandler(async (req
 
 emailRouter.post('/:context/emails/accounts', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { email_address, display_name, domain, is_default, signature_html, signature_text } = req.body;
 
   if (!email_address || !domain) {
     throw new ValidationError('email_address and domain are required');
   }
 
-  const account = await createAccount(context, { email_address, display_name, domain, is_default, signature_html, signature_text });
+  const account = await createAccount(context, { email_address, display_name, domain, is_default, signature_html, signature_text }, userId);
 
   res.status(201).json({ success: true, data: account });
 }));
@@ -75,11 +79,12 @@ emailRouter.post('/:context/emails/accounts', apiKeyAuth, requireScope('write'),
 
 emailRouter.put('/:context/emails/accounts/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid account ID');}
 
-  const updated = await updateAccount(context, id, req.body);
+  const updated = await updateAccount(context, id, req.body, userId);
   if (!updated) {throw new NotFoundError('Email account');}
 
   res.json({ success: true, data: updated });
@@ -91,11 +96,12 @@ emailRouter.put('/:context/emails/accounts/:id', apiKeyAuth, requireScope('write
 
 emailRouter.delete('/:context/emails/accounts/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid account ID');}
 
-  await deleteAccount(context, id);
+  await deleteAccount(context, id, userId);
   res.json({ success: true, message: 'Account deleted' });
 }));
 
@@ -105,7 +111,8 @@ emailRouter.delete('/:context/emails/accounts/:id', apiKeyAuth, requireScope('wr
 
 emailRouter.get('/:context/emails/labels', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const labels = await getLabels(context);
+  const userId = getUserId(req);
+  const labels = await getLabels(context, userId);
 
   res.json({ success: true, data: labels, count: labels.length });
 }));
@@ -116,11 +123,12 @@ emailRouter.get('/:context/emails/labels', apiKeyAuth, asyncHandler(async (req, 
 
 emailRouter.post('/:context/emails/labels', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { name, color, icon } = req.body;
 
   if (!name) {throw new ValidationError('Label name is required');}
 
-  const label = await createLabel(context, { name, color, icon });
+  const label = await createLabel(context, { name, color, icon }, userId);
   res.status(201).json({ success: true, data: label });
 }));
 
@@ -130,11 +138,12 @@ emailRouter.post('/:context/emails/labels', apiKeyAuth, requireScope('write'), a
 
 emailRouter.put('/:context/emails/labels/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid label ID');}
 
-  const updated = await updateLabel(context, id, req.body);
+  const updated = await updateLabel(context, id, req.body, userId);
   if (!updated) {throw new NotFoundError('Label');}
 
   res.json({ success: true, data: updated });
@@ -146,11 +155,12 @@ emailRouter.put('/:context/emails/labels/:id', apiKeyAuth, requireScope('write')
 
 emailRouter.delete('/:context/emails/labels/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid label ID');}
 
-  await deleteLabel(context, id);
+  await deleteLabel(context, id, userId);
   res.json({ success: true, message: 'Label deleted' });
 }));
 
@@ -160,6 +170,7 @@ emailRouter.delete('/:context/emails/labels/:id', apiKeyAuth, requireScope('writ
 
 emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id } = req.body;
 
   if (!to_addresses || !Array.isArray(to_addresses) || to_addresses.length === 0) {
@@ -175,7 +186,7 @@ emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), asy
     throw new ValidationError((err as Error).message);
   }
 
-  const email = await sendNewEmail(context, { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id });
+  const email = await sendNewEmail(context, { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id }, userId);
 
   // Emit email.sent event for proactive engine
   import('../services/event-system').then(({ emitSystemEvent }) =>
@@ -191,6 +202,7 @@ emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), asy
 
 emailRouter.post('/:context/emails/batch', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { ids, status } = req.body;
 
   if (!Array.isArray(ids) || ids.length === 0) {
@@ -207,7 +219,7 @@ emailRouter.post('/:context/emails/batch', apiKeyAuth, requireScope('write'), as
     if (!isValidUUID(id)) {throw new ValidationError('All ids must be valid UUIDs');}
   }
 
-  const count = await batchUpdateStatus(context, ids, status);
+  const count = await batchUpdateStatus(context, ids, status, userId);
   res.json({ success: true, message: `${count} emails updated`, count });
 }));
 
@@ -217,6 +229,7 @@ emailRouter.post('/:context/emails/batch', apiKeyAuth, requireScope('write'), as
 
 emailRouter.get('/:context/emails', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
   const folder = req.query.folder as string | undefined;
   if (folder && !VALID_FOLDERS.includes(folder)) {
@@ -237,7 +250,7 @@ emailRouter.get('/:context/emails', apiKeyAuth, asyncHandler(async (req, res) =>
     offset: parseInt(req.query.offset as string, 10) || 0,
   };
 
-  const { emails, total } = await getEmails(context, filters);
+  const { emails, total } = await getEmails(context, filters, userId);
 
   res.json({ success: true, data: emails, total, count: emails.length });
 }));
@@ -248,16 +261,17 @@ emailRouter.get('/:context/emails', apiKeyAuth, asyncHandler(async (req, res) =>
 
 emailRouter.get('/:context/emails/:id', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  let email = await getEmail(context, id);
+  let email = await getEmail(context, id, userId);
   if (!email) {throw new NotFoundError('Email');}
 
   // Auto-mark as read
   if (email.status === 'received') {
-    const updated = await markAsRead(context, id);
+    const updated = await markAsRead(context, id, userId);
     if (updated) {email = updated;}
   }
 
@@ -270,14 +284,15 @@ emailRouter.get('/:context/emails/:id', apiKeyAuth, asyncHandler(async (req, res
 
 emailRouter.get('/:context/emails/:id/thread', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const email = await getEmail(context, id);
+  const email = await getEmail(context, id, userId);
   if (!email) {throw new NotFoundError('Email');}
 
-  const thread = await getThread(context, email.thread_id || id);
+  const thread = await getThread(context, email.thread_id || id, userId);
 
   res.json({ success: true, data: thread, count: thread.length });
 }));
@@ -289,11 +304,12 @@ emailRouter.get('/:context/emails/:id/thread', apiKeyAuth, asyncHandler(async (r
 
 emailRouter.get('/:context/emails/:id/attachments/:attachmentId', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id, attachmentId } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const email = await getEmail(context, id);
+  const email = await getEmail(context, id, userId);
   if (!email) {throw new NotFoundError('Email');}
 
   // Find attachment in email metadata
@@ -344,12 +360,13 @@ emailRouter.get('/:context/emails/:id/attachments/:attachmentId', apiKeyAuth, as
 
 emailRouter.post('/:context/emails', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id, reply_to_id, labels } = req.body;
 
   // Drafts can be saved without recipients (auto-save), but validate format if provided
   const recipients = Array.isArray(to_addresses) ? to_addresses : [];
 
-  const draft = await createDraft(context, { to_addresses: recipients, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id, reply_to_id, labels });
+  const draft = await createDraft(context, { to_addresses: recipients, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id, reply_to_id, labels }, userId);
 
   res.status(201).json({ success: true, data: draft });
 }));
@@ -360,11 +377,12 @@ emailRouter.post('/:context/emails', apiKeyAuth, requireScope('write'), asyncHan
 
 emailRouter.put('/:context/emails/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const updated = await updateDraft(context, id, req.body);
+  const updated = await updateDraft(context, id, req.body, userId);
   if (!updated) {throw new NotFoundError('Draft');}
 
   res.json({ success: true, data: updated });
@@ -376,11 +394,12 @@ emailRouter.put('/:context/emails/:id', apiKeyAuth, requireScope('write'), async
 
 emailRouter.post('/:context/emails/:id/send', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const sent = await sendEmailById(context, id);
+  const sent = await sendEmailById(context, id, userId);
   if (!sent) {throw new NotFoundError('Email');}
 
   // Emit email.sent event for proactive engine
@@ -397,6 +416,7 @@ emailRouter.post('/:context/emails/:id/send', apiKeyAuth, requireScope('write'),
 
 emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
@@ -407,7 +427,7 @@ emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write')
     validateEmailAddresses(cc, 'cc');
   }
 
-  const reply = await replyToEmail(context, id, { html: body_html, text: body_text }, { cc, account_id });
+  const reply = await replyToEmail(context, id, { html: body_html, text: body_text }, { cc, account_id }, userId);
 
   res.status(201).json({ success: true, data: reply });
 }));
@@ -418,6 +438,7 @@ emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write')
 
 emailRouter.post('/:context/emails/:id/forward', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
@@ -430,7 +451,7 @@ emailRouter.post('/:context/emails/:id/forward', apiKeyAuth, requireScope('write
 
   validateEmailAddresses(to_addresses, 'to_addresses');
 
-  const forwarded = await forwardEmail(context, id, to_addresses, { html: body_html, text: body_text }, { account_id });
+  const forwarded = await forwardEmail(context, id, to_addresses, { html: body_html, text: body_text }, { account_id }, userId);
 
   res.status(201).json({ success: true, data: forwarded });
 }));
@@ -441,6 +462,7 @@ emailRouter.post('/:context/emails/:id/forward', apiKeyAuth, requireScope('write
 
 emailRouter.patch('/:context/emails/:id/status', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
   const { status } = req.body;
 
@@ -449,7 +471,7 @@ emailRouter.patch('/:context/emails/:id/status', apiKeyAuth, requireScope('write
     throw new ValidationError(`status must be one of: ${VALID_STATUSES.join(', ')}`);
   }
 
-  const updated = await updateEmailStatus(context, id, status);
+  const updated = await updateEmailStatus(context, id, status, userId);
   if (!updated) {throw new NotFoundError('Email');}
 
   res.json({ success: true, data: updated });
@@ -461,11 +483,12 @@ emailRouter.patch('/:context/emails/:id/status', apiKeyAuth, requireScope('write
 
 emailRouter.patch('/:context/emails/:id/star', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const updated = await toggleStar(context, id);
+  const updated = await toggleStar(context, id, userId);
   if (!updated) {throw new NotFoundError('Email');}
 
   res.json({ success: true, data: updated });
@@ -477,11 +500,12 @@ emailRouter.patch('/:context/emails/:id/star', apiKeyAuth, requireScope('write')
 
 emailRouter.delete('/:context/emails/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const trashed = await moveToTrash(context, id);
+  const trashed = await moveToTrash(context, id, userId);
   if (!trashed) {throw new NotFoundError('Email');}
 
   res.json({ success: true, data: trashed, message: 'Email moved to trash' });
@@ -493,17 +517,18 @@ emailRouter.delete('/:context/emails/:id', apiKeyAuth, requireScope('write'), as
 
 emailRouter.post('/:context/emails/:id/ai/process', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const email = await getEmail(context, id);
+  const email = await getEmail(context, id, userId);
   if (!email) {throw new NotFoundError('Email');}
 
   try {
     const { processEmailWithAI } = await import('../services/email-ai');
     await processEmailWithAI(context, id);
-    const updated = await getEmail(context, id);
+    const updated = await getEmail(context, id, userId);
     res.json({ success: true, data: updated });
   } catch (err) {
     logger.error('AI processing failed', err instanceof Error ? err : undefined, { emailId: id, operation: 'processEmailWithAI' });
@@ -513,11 +538,12 @@ emailRouter.post('/:context/emails/:id/ai/process', apiKeyAuth, requireScope('wr
 
 emailRouter.get('/:context/emails/:id/ai/reply-suggestions', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const email = await getEmail(context, id);
+  const email = await getEmail(context, id, userId);
   if (!email) {throw new NotFoundError('Email');}
 
   // Return cached suggestions if available
@@ -537,11 +563,12 @@ emailRouter.get('/:context/emails/:id/ai/reply-suggestions', apiKeyAuth, asyncHa
 
 emailRouter.get('/:context/emails/:id/thread/ai/summary', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid email ID');}
 
-  const email = await getEmail(context, id);
+  const email = await getEmail(context, id, userId);
   if (!email) {throw new NotFoundError('Email');}
 
   try {
@@ -613,6 +640,7 @@ emailRouter.post('/:context/emails/accounts/imap/test', apiKeyAuth, requireScope
 
 emailRouter.post('/:context/emails/accounts/imap', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { email_address, display_name, imap_host, imap_port, imap_user, imap_password, imap_tls, sync_folder } = req.body;
 
   if (!email_address || !imap_host || !imap_user || !imap_password) {
@@ -635,18 +663,19 @@ emailRouter.post('/:context/emails/accounts/imap', apiKeyAuth, requireScope('wri
     imap_password_encrypted: encryptedPassword,
     imap_tls: imap_tls !== false,
     sync_folder: sync_folder || 'INBOX',
-  });
+  }, userId);
 
   res.status(201).json({ success: true, data: account });
 }));
 
 emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {throw new ValidationError('Invalid account ID');}
 
-  const account = await getAccount(context, id);
+  const account = await getAccount(context, id, userId);
   if (!account) {throw new NotFoundError('Account');}
 
   if (!account.imap_enabled || !account.imap_host) {
@@ -672,6 +701,7 @@ emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope(
  */
 emailRouter.post('/:context/emails/search', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const _userId = getUserId(req);
 
   const { query, text, from, to, after, before, category, priority, status, direction, starred, limit } = req.body;
 
@@ -697,6 +727,7 @@ emailRouter.post('/:context/emails/search', apiKeyAuth, requireScope('read'), as
  */
 emailRouter.get('/:context/emails/inbox-summary', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const _userId = getUserId(req);
   const summary = await getInboxSummary(context);
   res.json({ success: true, data: summary });
 }));
@@ -707,6 +738,7 @@ emailRouter.get('/:context/emails/inbox-summary', apiKeyAuth, requireScope('read
  */
 emailRouter.post('/:context/emails/digest', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const _userId = getUserId(req);
   const period = req.body.period === 'weekly' ? 'weekly' as const : 'daily' as const;
   const lookbackHours = req.body.lookback_hours ? Number(req.body.lookback_hours) : undefined;
 

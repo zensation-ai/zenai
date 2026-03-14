@@ -19,6 +19,7 @@ import { validateBody } from '../utils/schemas';
 import { CreateProjectSchema, UpdateProjectSchema } from '../utils/schemas';
 import { requireUUID } from '../middleware/validate-params';
 import { sendData, sendList, sendMessage, parsePagination } from '../utils/response';
+import { getUserId } from '../utils/user-context';
 
 export const projectsRouter = Router();
 
@@ -28,6 +29,7 @@ export const projectsRouter = Router();
 
 projectsRouter.get('/:context/projects', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { limit, offset } = parsePagination(req, { defaultLimit: 100, maxLimit: 500 });
 
   const filters = {
@@ -36,7 +38,7 @@ projectsRouter.get('/:context/projects', apiKeyAuth, asyncHandler(async (req, re
     offset,
   };
 
-  const projects = await getProjects(context, filters as Parameters<typeof getProjects>[1]);
+  const projects = await getProjects(context, filters as Parameters<typeof getProjects>[1], userId);
 
   sendList(res, projects);
 }));
@@ -47,8 +49,9 @@ projectsRouter.get('/:context/projects', apiKeyAuth, asyncHandler(async (req, re
 
 projectsRouter.get('/:context/projects/:id', apiKeyAuth, requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
-  const project = await getProject(context, req.params.id);
+  const project = await getProject(context, req.params.id, userId);
   if (!project) {
     throw new NotFoundError('Project');
   }
@@ -62,11 +65,12 @@ projectsRouter.get('/:context/projects/:id', apiKeyAuth, requireUUID('id'), asyn
 
 projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), validateBody(CreateProjectSchema), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { name, description, color, icon, status, sort_order, metadata } = req.body;
 
   const project = await createProject(context, {
     name, description, color, icon, status, sort_order, metadata,
-  });
+  }, userId);
 
   sendData(res, project, 201);
 }));
@@ -77,8 +81,9 @@ projectsRouter.post('/:context/projects', apiKeyAuth, requireScope('write'), val
 
 projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), requireUUID('id'), validateBody(UpdateProjectSchema), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
-  const project = await updateProject(context, req.params.id, req.body);
+  const project = await updateProject(context, req.params.id, req.body, userId);
   if (!project) {
     throw new NotFoundError('Project');
   }
@@ -92,8 +97,9 @@ projectsRouter.put('/:context/projects/:id', apiKeyAuth, requireScope('write'), 
 
 projectsRouter.delete('/:context/projects/:id', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
-  const deleted = await deleteProject(context, req.params.id);
+  const deleted = await deleteProject(context, req.params.id, userId);
   if (!deleted) {
     throw new NotFoundError('Project (already archived?)');
   }

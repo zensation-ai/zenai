@@ -8,11 +8,13 @@ import { queryContext } from '../utils/database-context';
 import { asyncHandler } from '../middleware/errorHandler';
 import { getSleepComputeEngine } from '../services/memory/sleep-compute';
 import { getContextEngineV2 } from '../services/context-engine-v2';
+import { getUserId } from '../utils/user-context';
 
 const router = Router();
 
 // GET /api/:context/sleep-compute/logs - Get sleep compute logs
 router.get('/:context/sleep-compute/logs', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -30,6 +32,7 @@ router.get('/:context/sleep-compute/logs', asyncHandler(async (req: Request, res
 
 // GET /api/:context/sleep-compute/stats - Get sleep compute statistics
 router.get('/:context/sleep-compute/stats', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -53,6 +56,7 @@ router.get('/:context/sleep-compute/stats', asyncHandler(async (req: Request, re
 
 // POST /api/:context/sleep-compute/trigger - Manually trigger sleep cycle
 router.post('/:context/sleep-compute/trigger', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -66,6 +70,7 @@ router.post('/:context/sleep-compute/trigger', asyncHandler(async (req: Request,
 
 // GET /api/:context/sleep-compute/idle-status - Check system idle status
 router.get('/:context/sleep-compute/idle-status', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -79,6 +84,7 @@ router.get('/:context/sleep-compute/idle-status', asyncHandler(async (req: Reque
 
 // POST /api/:context/context-v2/classify - Classify query domain
 router.post('/:context/context-v2/classify', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { query } = req.body;
   if (!query) {
     return res.status(400).json({ success: false, error: 'query is required' });
@@ -94,6 +100,7 @@ router.post('/:context/context-v2/classify', asyncHandler(async (req: Request, r
 
 // POST /api/:context/context-v2/assemble - Assemble context for query
 router.post('/:context/context-v2/assemble', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -112,6 +119,7 @@ router.post('/:context/context-v2/assemble', asyncHandler(async (req: Request, r
 
 // POST /api/:context/context-v2/cache/clean - Clean expired cache
 router.post('/:context/context-v2/cache/clean', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });

@@ -157,15 +157,16 @@ export interface CreateInteractionInput {
 
 export async function createContact(
   context: AIContext,
-  input: CreateContactInput
+  input: CreateContactInput,
+  userId?: string
 ): Promise<Contact> {
   const result = await queryContext(context, `
     INSERT INTO contacts (
       display_name, first_name, last_name, email, phone,
       organization_id, role, relationship_type, avatar_url, notes,
       tags, source, is_favorite, address, city, postal_code, country,
-      social_links, metadata
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      social_links, metadata, user_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
     RETURNING *
   `, [
     input.display_name,
@@ -187,6 +188,7 @@ export async function createContact(
     input.country || null,
     JSON.stringify(input.social_links || {}),
     JSON.stringify(input.metadata || {}),
+    userId || null,
   ]);
 
   logger.info('Contact created', { context, contactId: result.rows[0].id });
@@ -195,11 +197,17 @@ export async function createContact(
 
 export async function getContacts(
   context: AIContext,
-  filters: ContactFilters = {}
+  filters: ContactFilters = {},
+  userId?: string
 ): Promise<{ contacts: Contact[]; total: number }> {
   const conditions: string[] = [];
   const params: QueryParam[] = [];
   let paramIndex = 1;
+
+  if (userId) {
+    conditions.push(`c.user_id = $${paramIndex++}`);
+    params.push(userId);
+  }
 
   if (filters.search) {
     conditions.push(`(
@@ -259,21 +267,26 @@ export async function getContacts(
 
 export async function getContact(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<Contact | null> {
+  const userCondition = userId ? ` AND c.user_id = $2` : '';
+  const params: QueryParam[] = [id];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context, `
     SELECT c.*, o.name as organization_name
     FROM contacts c
     LEFT JOIN organizations o ON c.organization_id = o.id
-    WHERE c.id = $1
-  `, [id]);
+    WHERE c.id = $1${userCondition}
+  `, params);
   return result.rows[0] || null;
 }
 
 export async function updateContact(
   context: AIContext,
   id: string,
-  updates: Partial<CreateContactInput>
+  updates: Partial<CreateContactInput>,
+  userId?: string
 ): Promise<Contact | null> {
   const sets: string[] = [];
   const params: QueryParam[] = [];
@@ -315,26 +328,34 @@ export async function updateContact(
     params.push(JSON.stringify(updates.metadata));
   }
 
-  if (sets.length === 0) {return getContact(context, id);}
+  if (sets.length === 0) {return getContact(context, id, userId);}
 
   sets.push('updated_at = NOW()');
+  params.push(id);
+
+  const userCondition = userId ? ` AND user_id = $${paramIndex + 1}` : '';
+  if (userId) { params.push(userId); }
 
   const result = await queryContext(context, `
     UPDATE contacts SET ${sets.join(', ')}
-    WHERE id = $${paramIndex}
+    WHERE id = $${paramIndex}${userCondition}
     RETURNING *
-  `, [...params, id]);
+  `, params);
 
   return result.rows[0] || null;
 }
 
 export async function deleteContact(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<boolean> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: QueryParam[] = [id];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context,
-    'DELETE FROM contacts WHERE id = $1',
-    [id]
+    `DELETE FROM contacts WHERE id = $1${userCondition}`,
+    params
   );
   return (result.rowCount ?? 0) > 0;
 }
@@ -345,11 +366,12 @@ export async function deleteContact(
 
 export async function createOrganization(
   context: AIContext,
-  input: CreateOrganizationInput
+  input: CreateOrganizationInput,
+  userId?: string
 ): Promise<Organization> {
   const result = await queryContext(context, `
-    INSERT INTO organizations (name, industry, website, email, phone, address, city, postal_code, country, employee_count, notes, tags, metadata)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    INSERT INTO organizations (name, industry, website, email, phone, address, city, postal_code, country, employee_count, notes, tags, metadata, user_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
     RETURNING *
   `, [
     input.name,
@@ -365,6 +387,7 @@ export async function createOrganization(
     input.notes || null,
     input.tags || [],
     JSON.stringify(input.metadata || {}),
+    userId || null,
   ]);
 
   return result.rows[0];
@@ -372,11 +395,17 @@ export async function createOrganization(
 
 export async function getOrganizations(
   context: AIContext,
-  filters: OrganizationFilters = {}
+  filters: OrganizationFilters = {},
+  userId?: string
 ): Promise<{ organizations: Organization[]; total: number }> {
   const conditions: string[] = [];
   const params: QueryParam[] = [];
   let paramIndex = 1;
+
+  if (userId) {
+    conditions.push(`o.user_id = $${paramIndex++}`);
+    params.push(userId);
+  }
 
   if (filters.search) {
     conditions.push(`(o.name ILIKE $${paramIndex} OR o.industry ILIKE $${paramIndex})`);
@@ -417,13 +446,17 @@ export async function getOrganizations(
 
 export async function getOrganization(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<Organization | null> {
+  const userCondition = userId ? ` AND o.user_id = $2` : '';
+  const params: QueryParam[] = [id];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context, `
     SELECT o.*, (SELECT COUNT(*) FROM contacts c WHERE c.organization_id = o.id) as contact_count
     FROM organizations o
-    WHERE o.id = $1
-  `, [id]);
+    WHERE o.id = $1${userCondition}
+  `, params);
   if (!result.rows[0]) {return null;}
   return {
     ...result.rows[0],
@@ -434,7 +467,8 @@ export async function getOrganization(
 export async function updateOrganization(
   context: AIContext,
   id: string,
-  updates: Partial<CreateOrganizationInput>
+  updates: Partial<CreateOrganizationInput>,
+  userId?: string
 ): Promise<Organization | null> {
   const sets: string[] = [];
   const params: QueryParam[] = [];
@@ -467,26 +501,34 @@ export async function updateOrganization(
     params.push(JSON.stringify(updates.metadata));
   }
 
-  if (sets.length === 0) {return getOrganization(context, id);}
+  if (sets.length === 0) {return getOrganization(context, id, userId);}
 
   sets.push('updated_at = NOW()');
+  params.push(id);
+
+  const userCondition = userId ? ` AND user_id = $${paramIndex + 1}` : '';
+  if (userId) { params.push(userId); }
 
   const result = await queryContext(context, `
     UPDATE organizations SET ${sets.join(', ')}
-    WHERE id = $${paramIndex}
+    WHERE id = $${paramIndex}${userCondition}
     RETURNING *
-  `, [...params, id]);
+  `, params);
 
   return result.rows[0] || null;
 }
 
 export async function deleteOrganization(
   context: AIContext,
-  id: string
+  id: string,
+  userId?: string
 ): Promise<boolean> {
+  const userCondition = userId ? ` AND user_id = $2` : '';
+  const params: QueryParam[] = [id];
+  if (userId) { params.push(userId); }
   const result = await queryContext(context,
-    'DELETE FROM organizations WHERE id = $1',
-    [id]
+    `DELETE FROM organizations WHERE id = $1${userCondition}`,
+    params
   );
   return (result.rowCount ?? 0) > 0;
 }
@@ -497,11 +539,12 @@ export async function deleteOrganization(
 
 export async function addInteraction(
   context: AIContext,
-  input: CreateInteractionInput
+  input: CreateInteractionInput,
+  userId?: string
 ): Promise<ContactInteraction> {
   const result = await queryContext(context, `
-    INSERT INTO contact_interactions (contact_id, interaction_type, direction, subject, summary, source_id, source_type, interaction_at, metadata)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    INSERT INTO contact_interactions (contact_id, interaction_type, direction, subject, summary, source_id, source_type, interaction_at, metadata, user_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     RETURNING *
   `, [
     input.contact_id,
@@ -513,6 +556,7 @@ export async function addInteraction(
     input.source_type || null,
     input.interaction_at || new Date().toISOString(),
     JSON.stringify(input.metadata || {}),
+    userId || null,
   ]);
 
   // Update contact's last interaction
@@ -531,18 +575,24 @@ export async function getInteractions(
   context: AIContext,
   contactId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  userId?: string
 ): Promise<{ interactions: ContactInteraction[]; total: number }> {
+  const userCondition = userId ? ` AND user_id = $4` : '';
+  const dataParams: QueryParam[] = [contactId, limit, offset];
+  const countParams: QueryParam[] = [contactId];
+  if (userId) { dataParams.push(userId); countParams.push(userId); }
+
   const [dataResult, countResult] = await Promise.all([
     queryContext(context, `
       SELECT * FROM contact_interactions
-      WHERE contact_id = $1
+      WHERE contact_id = $1${userCondition}
       ORDER BY interaction_at DESC
       LIMIT $2 OFFSET $3
-    `, [contactId, limit, offset]),
+    `, dataParams),
     queryContext(context, `
-      SELECT COUNT(*) as total FROM contact_interactions WHERE contact_id = $1
-    `, [contactId]),
+      SELECT COUNT(*) as total FROM contact_interactions WHERE contact_id = $1${userId ? ` AND user_id = $2` : ''}
+    `, countParams),
   ]);
 
   return {
@@ -558,18 +608,23 @@ export async function getInteractions(
 export async function getFollowUpSuggestions(
   context: AIContext,
   daysThreshold = 30,
-  limit = 10
+  limit = 10,
+  userId?: string
 ): Promise<Contact[]> {
+  const userCondition = userId ? ` AND c.user_id = $3` : '';
+  const params: QueryParam[] = [daysThreshold, limit];
+  if (userId) { params.push(userId); }
+
   const result = await queryContext(context, `
     SELECT c.*, o.name as organization_name
     FROM contacts c
     LEFT JOIN organizations o ON c.organization_id = o.id
     WHERE c.last_interaction_at IS NOT NULL
       AND c.last_interaction_at < NOW() - INTERVAL '1 day' * $1
-      AND c.relationship_type IN ('colleague', 'friend', 'client', 'mentor', 'mentee')
+      AND c.relationship_type IN ('colleague', 'friend', 'client', 'mentor', 'mentee')${userCondition}
     ORDER BY c.last_interaction_at ASC
     LIMIT $2
-  `, [daysThreshold, limit]);
+  `, params);
 
   return result.rows;
 }
@@ -579,7 +634,8 @@ export async function getFollowUpSuggestions(
 // ============================================================
 
 export async function getContactStats(
-  context: AIContext
+  context: AIContext,
+  userId?: string
 ): Promise<{
   total_contacts: number;
   total_organizations: number;
@@ -587,20 +643,24 @@ export async function getContactStats(
   favorites: number;
   recent_interactions: number;
 }> {
+  const userFilter = userId ? ` WHERE user_id = $1` : '';
+  const userFilterAnd = userId ? ` AND user_id = $1` : '';
+  const params: QueryParam[] = userId ? [userId] : [];
+
   const [contactsResult, orgsResult, relResult, favResult, recentResult] = await Promise.all([
-    queryContext(context, 'SELECT COUNT(*) as total FROM contacts'),
-    queryContext(context, 'SELECT COUNT(*) as total FROM organizations'),
+    queryContext(context, `SELECT COUNT(*) as total FROM contacts${userFilter}`, params),
+    queryContext(context, `SELECT COUNT(*) as total FROM organizations${userFilter}`, params),
     queryContext(context, `
       SELECT relationship_type, COUNT(*) as count
-      FROM contacts
+      FROM contacts${userFilter}
       GROUP BY relationship_type
       ORDER BY count DESC
-    `),
-    queryContext(context, 'SELECT COUNT(*) as total FROM contacts WHERE is_favorite = TRUE'),
+    `, params),
+    queryContext(context, `SELECT COUNT(*) as total FROM contacts WHERE is_favorite = TRUE${userFilterAnd}`, params),
     queryContext(context, `
       SELECT COUNT(*) as total FROM contact_interactions
-      WHERE interaction_at >= NOW() - INTERVAL '7 days'
-    `),
+      WHERE interaction_at >= NOW() - INTERVAL '7 days'${userFilterAnd}
+    `, params),
   ]);
 
   return {

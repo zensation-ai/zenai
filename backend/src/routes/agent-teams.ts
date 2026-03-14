@@ -21,6 +21,7 @@ import {
 } from '../services/agent-orchestrator';
 import { trackActivity } from '../services/activity-tracker';
 import { toIntBounded } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 import {
   loadCheckpoint,
   listCheckpoints,
@@ -52,6 +53,8 @@ agentTeamsRouter.post(
       strategy?: string;
       skipReview?: boolean;
     };
+
+    const userId = getUserId(req);
 
     if (!task || typeof task !== 'string' || task.trim().length === 0) {
       res.status(400).json({
@@ -88,8 +91,8 @@ agentTeamsRouter.post(
     // Persist execution result (non-blocking)
     queryContext(
       aiContext,
-      `INSERT INTO agent_executions (team_id, task_description, strategy, final_output, agent_results, execution_time_ms, tokens, success, context, metadata)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO agent_executions (team_id, task_description, strategy, final_output, agent_results, execution_time_ms, tokens, success, context, metadata, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         result.teamId,
         task,
@@ -107,6 +110,7 @@ agentTeamsRouter.post(
         result.success,
         aiContext,
         JSON.stringify({ sharedMemoryEntries: result.memoryStats.totalEntries }),
+        userId,
       ]
     ).catch(err => {
       logger.debug('Agent execution persistence failed (non-critical)', {
@@ -192,6 +196,7 @@ agentTeamsRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -204,10 +209,10 @@ agentTeamsRouter.get(
       `SELECT id, team_id, task_description, strategy, final_output, agent_results,
               execution_time_ms, tokens, success, context, saved_as_idea_id, metadata, created_at
        FROM agent_executions
-       WHERE context = $1
+       WHERE context = $1 AND user_id = $2
        ORDER BY created_at DESC
-       LIMIT $2`,
-      [context, limit]
+       LIMIT $3`,
+      [context, userId, limit]
     );
 
     res.json({
@@ -240,6 +245,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -250,8 +256,8 @@ agentTeamsRouter.get(
       `SELECT id, team_id, task_description, strategy, final_output, agent_results,
               execution_time_ms, tokens, success, context, saved_as_idea_id, metadata, created_at
        FROM agent_executions
-       WHERE id = $1 AND context = $2`,
-      [req.params.id, context]
+       WHERE id = $1 AND context = $2 AND user_id = $3`,
+      [req.params.id, context, userId]
     );
 
     if (result.rows.length === 0) {
@@ -290,6 +296,7 @@ agentTeamsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -298,8 +305,8 @@ agentTeamsRouter.post(
     // Fetch execution
     const execResult = await queryContext(
       context as AIContext,
-      `SELECT id, task_description, final_output, strategy FROM agent_executions WHERE id = $1 AND context = $2`,
-      [req.params.id, context]
+      `SELECT id, task_description, final_output, strategy FROM agent_executions WHERE id = $1 AND context = $2 AND user_id = $3`,
+      [req.params.id, context, userId]
     );
 
     if (execResult.rows.length === 0) {
@@ -312,14 +319,15 @@ agentTeamsRouter.post(
     // Create idea
     const ideaResult = await queryContext(
       context as AIContext,
-      `INSERT INTO ideas (title, summary, type, category, context, raw_transcript, source)
-       VALUES ($1, $2, 'note', 'research', $3, $4, 'agent')
+      `INSERT INTO ideas (title, summary, type, category, context, raw_transcript, source, user_id)
+       VALUES ($1, $2, 'note', 'research', $3, $4, 'agent', $5)
        RETURNING id`,
       [
         `Agent: ${exec.task_description.substring(0, 100)}`,
         exec.final_output.substring(0, 500),
         context,
         exec.final_output,
+        userId,
       ]
     );
 
@@ -355,6 +363,7 @@ agentTeamsRouter.post(
   requireScope('write'),
   async (req: Request, res: Response) => {
     try {
+      const _userId = getUserId(req);
       const {
         task,
         context,
@@ -468,6 +477,7 @@ agentTeamsRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
@@ -487,10 +497,10 @@ agentTeamsRouter.get(
         strategy,
         COUNT(*) as strategy_count
        FROM agent_executions
-       WHERE context = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2
+       WHERE context = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2 AND user_id = $3
        GROUP BY strategy
        ORDER BY strategy_count DESC`,
-      [context, days]
+      [context, days, userId]
     );
 
     // Also get recent trends (last 7 days daily)
@@ -502,10 +512,10 @@ agentTeamsRouter.get(
         COUNT(*) FILTER (WHERE success = true) as successful,
         AVG(execution_time_ms) as avg_time
        FROM agent_executions
-       WHERE context = $1 AND created_at >= NOW() - INTERVAL '7 days'
+       WHERE context = $1 AND created_at >= NOW() - INTERVAL '7 days' AND user_id = $2
        GROUP BY DATE(created_at)
        ORDER BY date DESC`,
-      [context]
+      [context, userId]
     );
 
     const strategies = result.rows.map(row => ({
@@ -559,6 +569,7 @@ agentTeamsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
@@ -584,6 +595,7 @@ agentTeamsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
@@ -605,6 +617,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
@@ -630,6 +643,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
@@ -651,6 +665,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');

@@ -6,6 +6,7 @@
 
 import { queryContext, AIContext, QueryParam } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { SYSTEM_USER_ID } from '../utils/user-context';
 
 // ============================================================
 // Types
@@ -118,11 +119,12 @@ export interface FinancialOverview {
 
 export async function createAccount(
   context: AIContext,
-  input: Partial<FinancialAccount>
+  input: Partial<FinancialAccount>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<FinancialAccount> {
   const result = await queryContext(context,
-    `INSERT INTO financial_accounts (name, account_type, currency, balance, institution, metadata)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO financial_accounts (name, account_type, currency, balance, institution, metadata, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       input.name,
@@ -131,22 +133,24 @@ export async function createAccount(
       input.balance || 0,
       input.institution || null,
       JSON.stringify(input.metadata || {}),
+      userId,
     ]
   );
   return result.rows[0];
 }
 
-export async function getAccounts(context: AIContext): Promise<FinancialAccount[]> {
+export async function getAccounts(context: AIContext, userId: string = SYSTEM_USER_ID): Promise<FinancialAccount[]> {
   const result = await queryContext(context,
-    `SELECT * FROM financial_accounts ORDER BY is_active DESC, name ASC`
+    `SELECT * FROM financial_accounts WHERE user_id = $1 ORDER BY is_active DESC, name ASC`,
+    [userId]
   );
   return result.rows;
 }
 
-export async function getAccount(context: AIContext, id: string): Promise<FinancialAccount | null> {
+export async function getAccount(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<FinancialAccount | null> {
   const result = await queryContext(context,
-    `SELECT * FROM financial_accounts WHERE id = $1`,
-    [id]
+    `SELECT * FROM financial_accounts WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return result.rows[0] || null;
 }
@@ -154,7 +158,8 @@ export async function getAccount(context: AIContext, id: string): Promise<Financ
 export async function updateAccount(
   context: AIContext,
   id: string,
-  updates: Partial<FinancialAccount>
+  updates: Partial<FinancialAccount>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<FinancialAccount | null> {
   const fields: string[] = [];
   const params: QueryParam[] = [];
@@ -169,22 +174,24 @@ export async function updateAccount(
       idx++;
     }
   }
-  if (fields.length === 0) {return getAccount(context, id);}
+  if (fields.length === 0) {return getAccount(context, id, userId);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
+  const idIdx = idx++;
+  params.push(userId);
 
   const result = await queryContext(context,
-    `UPDATE financial_accounts SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    `UPDATE financial_accounts SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
   return result.rows[0] || null;
 }
 
-export async function deleteAccount(context: AIContext, id: string): Promise<boolean> {
+export async function deleteAccount(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
   const result = await queryContext(context,
-    `DELETE FROM financial_accounts WHERE id = $1`,
-    [id]
+    `DELETE FROM financial_accounts WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return (result.rowCount ?? 0) > 0;
 }
@@ -195,14 +202,15 @@ export async function deleteAccount(context: AIContext, id: string): Promise<boo
 
 export async function createTransaction(
   context: AIContext,
-  input: Partial<Transaction>
+  input: Partial<Transaction>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Transaction> {
   const result = await queryContext(context,
     `INSERT INTO transactions
        (account_id, amount, currency, transaction_type, category, subcategory,
         payee, description, transaction_date, is_recurring, recurring_id, tags,
-        receipt_url, ai_category, ai_category_confidence, metadata)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        receipt_url, ai_category, ai_category_confidence, metadata, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
      RETURNING *`,
     [
       input.account_id || null,
@@ -221,6 +229,7 @@ export async function createTransaction(
       input.ai_category || null,
       input.ai_category_confidence || null,
       JSON.stringify(input.metadata || {}),
+      userId,
     ]
   );
 
@@ -230,14 +239,14 @@ export async function createTransaction(
       ? Math.abs(input.amount)
       : -Math.abs(input.amount);
     await queryContext(context,
-      `UPDATE financial_accounts SET balance = balance + $1, updated_at = NOW() WHERE id = $2`,
-      [balanceChange, input.account_id]
+      `UPDATE financial_accounts SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
+      [balanceChange, input.account_id, userId]
     );
   }
 
   // Update budget spent if category matches
   if (input.category && input.transaction_type === 'expense') {
-    await updateBudgetSpent(context, input.category, Math.abs(input.amount ?? 0));
+    await updateBudgetSpent(context, input.category, Math.abs(input.amount ?? 0), userId);
   }
 
   return result.rows[0];
@@ -245,11 +254,12 @@ export async function createTransaction(
 
 export async function getTransactions(
   context: AIContext,
-  filters: TransactionFilters = {}
+  filters: TransactionFilters = {},
+  userId: string = SYSTEM_USER_ID
 ): Promise<{ transactions: Transaction[]; total: number }> {
-  const conditions: string[] = [];
-  const params: QueryParam[] = [];
-  let idx = 1;
+  const conditions: string[] = [`t.user_id = $1`];
+  const params: QueryParam[] = [userId];
+  let idx = 2;
 
   if (filters.account_id) {
     conditions.push(`t.account_id = $${idx++}`);
@@ -293,7 +303,7 @@ export async function getTransactions(
     params.push(filters.is_recurring);
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const where = `WHERE ${conditions.join(' AND ')}`;
   const limit = filters.limit || 50;
   const offset = filters.offset || 0;
 
@@ -325,13 +335,13 @@ export async function getTransactions(
   };
 }
 
-export async function getTransaction(context: AIContext, id: string): Promise<Transaction | null> {
+export async function getTransaction(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<Transaction | null> {
   const result = await queryContext(context,
     `SELECT t.*, fa.name as account_name
      FROM transactions t
      LEFT JOIN financial_accounts fa ON t.account_id = fa.id
-     WHERE t.id = $1`,
-    [id]
+     WHERE t.id = $1 AND t.user_id = $2`,
+    [id, userId]
   );
   return result.rows[0] || null;
 }
@@ -339,7 +349,8 @@ export async function getTransaction(context: AIContext, id: string): Promise<Tr
 export async function updateTransaction(
   context: AIContext,
   id: string,
-  updates: Partial<Transaction>
+  updates: Partial<Transaction>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Transaction | null> {
   const fields: string[] = [];
   const params: QueryParam[] = [];
@@ -358,26 +369,28 @@ export async function updateTransaction(
       idx++;
     }
   }
-  if (fields.length === 0) {return getTransaction(context, id);}
+  if (fields.length === 0) {return getTransaction(context, id, userId);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
+  const idIdx = idx++;
+  params.push(userId);
 
   const result = await queryContext(context,
-    `UPDATE transactions SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    `UPDATE transactions SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
   return result.rows[0] || null;
 }
 
-export async function deleteTransaction(context: AIContext, id: string): Promise<boolean> {
+export async function deleteTransaction(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
   // Get transaction to reverse balance
-  const tx = await getTransaction(context, id);
+  const tx = await getTransaction(context, id, userId);
   if (!tx) {return false;}
 
   const result = await queryContext(context,
-    `DELETE FROM transactions WHERE id = $1`,
-    [id]
+    `DELETE FROM transactions WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
 
   // Reverse account balance
@@ -386,8 +399,8 @@ export async function deleteTransaction(context: AIContext, id: string): Promise
       ? -Math.abs(tx.amount)
       : Math.abs(tx.amount);
     await queryContext(context,
-      `UPDATE financial_accounts SET balance = balance + $1, updated_at = NOW() WHERE id = $2`,
-      [reversal, tx.account_id]
+      `UPDATE financial_accounts SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
+      [reversal, tx.account_id, userId]
     );
   }
 
@@ -400,11 +413,12 @@ export async function deleteTransaction(context: AIContext, id: string): Promise
 
 export async function createBudget(
   context: AIContext,
-  input: Partial<Budget>
+  input: Partial<Budget>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Budget> {
   const result = await queryContext(context,
-    `INSERT INTO budgets (name, category, amount_limit, period, alert_threshold)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO budgets (name, category, amount_limit, period, alert_threshold, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
     [
       input.name,
@@ -412,23 +426,25 @@ export async function createBudget(
       input.amount_limit,
       input.period || 'monthly',
       input.alert_threshold ?? 0.80,
+      userId,
     ]
   );
   return enrichBudget(result.rows[0]);
 }
 
-export async function getBudgets(context: AIContext, activeOnly = true): Promise<Budget[]> {
-  const where = activeOnly ? 'WHERE is_active = TRUE' : '';
+export async function getBudgets(context: AIContext, activeOnly = true, userId: string = SYSTEM_USER_ID): Promise<Budget[]> {
+  const where = activeOnly ? 'WHERE is_active = TRUE AND user_id = $1' : 'WHERE user_id = $1';
   const result = await queryContext(context,
-    `SELECT * FROM budgets ${where} ORDER BY category ASC`
+    `SELECT * FROM budgets ${where} ORDER BY category ASC`,
+    [userId]
   );
   return result.rows.map(enrichBudget);
 }
 
-export async function getBudget(context: AIContext, id: string): Promise<Budget | null> {
+export async function getBudget(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<Budget | null> {
   const result = await queryContext(context,
-    `SELECT * FROM budgets WHERE id = $1`,
-    [id]
+    `SELECT * FROM budgets WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return result.rows[0] ? enrichBudget(result.rows[0]) : null;
 }
@@ -436,7 +452,8 @@ export async function getBudget(context: AIContext, id: string): Promise<Budget 
 export async function updateBudget(
   context: AIContext,
   id: string,
-  updates: Partial<Budget>
+  updates: Partial<Budget>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Budget | null> {
   const fields: string[] = [];
   const params: QueryParam[] = [];
@@ -450,32 +467,34 @@ export async function updateBudget(
       idx++;
     }
   }
-  if (fields.length === 0) {return getBudget(context, id);}
+  if (fields.length === 0) {return getBudget(context, id, userId);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
+  const idIdx = idx++;
+  params.push(userId);
 
   const result = await queryContext(context,
-    `UPDATE budgets SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    `UPDATE budgets SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
   return result.rows[0] ? enrichBudget(result.rows[0]) : null;
 }
 
-export async function deleteBudget(context: AIContext, id: string): Promise<boolean> {
+export async function deleteBudget(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
   const result = await queryContext(context,
-    `DELETE FROM budgets WHERE id = $1`,
-    [id]
+    `DELETE FROM budgets WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return (result.rowCount ?? 0) > 0;
 }
 
-async function updateBudgetSpent(context: AIContext, category: string, amount: number): Promise<void> {
+async function updateBudgetSpent(context: AIContext, category: string, amount: number, userId: string = SYSTEM_USER_ID): Promise<void> {
   try {
     await queryContext(context,
       `UPDATE budgets SET current_spent = current_spent + $1, updated_at = NOW()
-       WHERE category = $2 AND is_active = TRUE`,
-      [amount, category]
+       WHERE category = $2 AND is_active = TRUE AND user_id = $3`,
+      [amount, category, userId]
     );
   } catch {
     logger.warn(`Failed to update budget for category ${category}`);
@@ -500,11 +519,12 @@ function enrichBudget(budget: Budget): Budget {
 
 export async function createGoal(
   context: AIContext,
-  input: Partial<FinancialGoal>
+  input: Partial<FinancialGoal>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<FinancialGoal> {
   const result = await queryContext(context,
-    `INSERT INTO financial_goals (name, target_amount, current_amount, deadline, category, priority, metadata)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO financial_goals (name, target_amount, current_amount, deadline, category, priority, metadata, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
     [
       input.name,
@@ -514,23 +534,25 @@ export async function createGoal(
       input.category || null,
       input.priority || 'medium',
       JSON.stringify(input.metadata || {}),
+      userId,
     ]
   );
   return enrichGoal(result.rows[0]);
 }
 
-export async function getGoals(context: AIContext, activeOnly = true): Promise<FinancialGoal[]> {
-  const where = activeOnly ? 'WHERE is_completed = FALSE' : '';
+export async function getGoals(context: AIContext, activeOnly = true, userId: string = SYSTEM_USER_ID): Promise<FinancialGoal[]> {
+  const where = activeOnly ? 'WHERE is_completed = FALSE AND user_id = $1' : 'WHERE user_id = $1';
   const result = await queryContext(context,
-    `SELECT * FROM financial_goals ${where} ORDER BY deadline ASC NULLS LAST, priority DESC`
+    `SELECT * FROM financial_goals ${where} ORDER BY deadline ASC NULLS LAST, priority DESC`,
+    [userId]
   );
   return result.rows.map(enrichGoal);
 }
 
-export async function getGoal(context: AIContext, id: string): Promise<FinancialGoal | null> {
+export async function getGoal(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<FinancialGoal | null> {
   const result = await queryContext(context,
-    `SELECT * FROM financial_goals WHERE id = $1`,
-    [id]
+    `SELECT * FROM financial_goals WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return result.rows[0] ? enrichGoal(result.rows[0]) : null;
 }
@@ -538,7 +560,8 @@ export async function getGoal(context: AIContext, id: string): Promise<Financial
 export async function updateGoal(
   context: AIContext,
   id: string,
-  updates: Partial<FinancialGoal>
+  updates: Partial<FinancialGoal>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<FinancialGoal | null> {
   const fields: string[] = [];
   const params: QueryParam[] = [];
@@ -553,22 +576,24 @@ export async function updateGoal(
       idx++;
     }
   }
-  if (fields.length === 0) {return getGoal(context, id);}
+  if (fields.length === 0) {return getGoal(context, id, userId);}
 
   fields.push(`updated_at = NOW()`);
   params.push(id);
+  const idIdx = idx++;
+  params.push(userId);
 
   const result = await queryContext(context,
-    `UPDATE financial_goals SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    `UPDATE financial_goals SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
   return result.rows[0] ? enrichGoal(result.rows[0]) : null;
 }
 
-export async function deleteGoal(context: AIContext, id: string): Promise<boolean> {
+export async function deleteGoal(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
   const result = await queryContext(context,
-    `DELETE FROM financial_goals WHERE id = $1`,
-    [id]
+    `DELETE FROM financial_goals WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return (result.rowCount ?? 0) > 0;
 }
@@ -588,16 +613,17 @@ function enrichGoal(goal: FinancialGoal): FinancialGoal {
 // Overview & Analytics
 // ============================================================
 
-export async function getOverview(context: AIContext, months = 6): Promise<FinancialOverview> {
+export async function getOverview(context: AIContext, months = 6, userId: string = SYSTEM_USER_ID): Promise<FinancialOverview> {
   const [accounts, topCats, monthlyTrend, budgets, goals, incomeTotals, expenseTotals] = await Promise.all([
-    getAccounts(context),
+    getAccounts(context, userId),
     queryContext(context,
       `SELECT category, SUM(ABS(amount)) as total, COUNT(*) as count
        FROM transactions
        WHERE transaction_type = 'expense' AND category IS NOT NULL
          AND transaction_date >= (CURRENT_DATE - make_interval(months := $1))
+         AND user_id = $2
        GROUP BY category ORDER BY total DESC LIMIT 10`,
-      [months]
+      [months, userId]
     ),
     queryContext(context,
       `SELECT TO_CHAR(transaction_date, 'YYYY-MM') as month,
@@ -605,21 +631,26 @@ export async function getOverview(context: AIContext, months = 6): Promise<Finan
               SUM(CASE WHEN transaction_type = 'expense' THEN ABS(amount) ELSE 0 END) as expenses
        FROM transactions
        WHERE transaction_date >= (CURRENT_DATE - make_interval(months := $1))
+         AND user_id = $2
        GROUP BY TO_CHAR(transaction_date, 'YYYY-MM')
        ORDER BY month ASC`,
-      [months]
+      [months, userId]
     ),
-    getBudgets(context),
-    getGoals(context),
+    getBudgets(context, true, userId),
+    getGoals(context, true, userId),
     queryContext(context,
       `SELECT COALESCE(SUM(ABS(amount)), 0) as total FROM transactions
        WHERE transaction_type = 'income'
-         AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE)`
+         AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE)
+         AND user_id = $1`,
+      [userId]
     ),
     queryContext(context,
       `SELECT COALESCE(SUM(ABS(amount)), 0) as total FROM transactions
        WHERE transaction_type = 'expense'
-         AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE)`
+         AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE)
+         AND user_id = $1`,
+      [userId]
     ),
   ]);
 
@@ -653,11 +684,12 @@ export async function getOverview(context: AIContext, months = 6): Promise<Finan
 export async function getCategoryBreakdown(
   context: AIContext,
   dateFrom?: string,
-  dateTo?: string
+  dateTo?: string,
+  userId: string = SYSTEM_USER_ID
 ): Promise<{ category: string; total: number; count: number; percentage: number }[]> {
-  const conditions: string[] = [`transaction_type = 'expense'`];
-  const params: QueryParam[] = [];
-  let idx = 1;
+  const conditions: string[] = [`transaction_type = 'expense'`, `user_id = $1`];
+  const params: QueryParam[] = [userId];
+  let idx = 2;
 
   if (dateFrom) {
     conditions.push(`transaction_date >= $${idx++}`);

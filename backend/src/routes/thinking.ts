@@ -10,6 +10,7 @@ import { validateContextParam } from '../utils/validation';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { isValidContext } from '../utils/database-context';
+import { getUserId } from '../utils/user-context';
 import {
   recordThinkingFeedback,
   getThinkingStats,
@@ -35,6 +36,7 @@ router.post(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -67,6 +69,7 @@ router.get(
   '/:context/thinking/stats',
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -84,6 +87,7 @@ router.get(
   '/:context/thinking/strategies',
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -102,6 +106,7 @@ router.post(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -120,6 +125,7 @@ router.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
@@ -143,6 +149,7 @@ router.delete(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }

@@ -61,6 +61,7 @@ import { CHAT } from '../config/constants';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../services/memory';
 import { getUnifiedContext } from '../services/business-context';
 import { getPersonalFactsPromptSection } from '../services/personal-facts-bridge';
+import { getUserId } from '../utils/user-context';
 
 export const generalChatRouter = Router();
 
@@ -138,10 +139,11 @@ const visionUpload = multer({
  * Create a new chat session
  */
 generalChatRouter.post('/sessions', apiKeyAuth, requireScope('write'), validateBody(CreateChatSessionSchema), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { context, type } = req.body;
   const sessionType = type === 'assistant' ? 'assistant' as const : 'general' as const;
 
-  const session = await createSession(context, sessionType);
+  const session = await createSession(context, sessionType, userId);
 
   logger.info('Chat session created via API', { sessionId: session.id, context, sessionType });
 
@@ -160,6 +162,7 @@ generalChatRouter.post('/sessions', apiKeyAuth, requireScope('write'), validateB
  * List all chat sessions for a context
  */
 generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const context = (req.query.context as string) || 'personal';
   const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
 
@@ -170,7 +173,7 @@ generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request,
 
   const typeFilter = req.query.type as string | undefined;
   const sessionType = typeFilter === 'assistant' ? 'assistant' as const : undefined;
-  const sessions = await getSessions(context as 'personal' | 'work' | 'learning' | 'creative', limit, sessionType);
+  const sessions = await getSessions(context as 'personal' | 'work' | 'learning' | 'creative', limit, sessionType, userId);
 
   res.json({
     success: true,
@@ -188,6 +191,7 @@ generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(async (req: Request,
  * Get a specific session with all messages
  */
 generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { id } = req.params;
 
   // Validate UUID format
@@ -195,7 +199,7 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
     throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
   }
 
-  const session = await getSession(id);
+  const session = await getSession(id, userId);
 
   if (!session) {
     throw new NotFoundError('Chat session');
@@ -219,6 +223,7 @@ generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(async (req: Requ
  * - include_metadata: boolean - Include processing metadata in response
  */
 generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, requireScope('write'), validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { id } = req.params;
   const { message, include_metadata, thinking_mode } = req.body;
   const includeMetadata = req.query.include_metadata === 'true' || include_metadata === true;
@@ -234,7 +239,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, requireScope('write
   }
 
   // Check session exists and get context
-  const session = await getSession(id);
+  const session = await getSession(id, userId);
   if (!session) {
     throw new NotFoundError('Chat session');
   }
@@ -293,6 +298,7 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, requireScope('write
  * Delete a chat session and all its messages
  */
 generalChatRouter.delete('/sessions/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { id } = req.params;
 
   // Validate UUID format
@@ -300,7 +306,7 @@ generalChatRouter.delete('/sessions/:id', apiKeyAuth, requireScope('write'), asy
     throw new ValidationError('Invalid session ID format. Must be a valid UUID.');
   }
 
-  const deleted = await deleteSession(id);
+  const deleted = await deleteSession(id, userId);
 
   if (!deleted) {
     throw new NotFoundError('Chat session');
@@ -325,6 +331,7 @@ generalChatRouter.delete('/sessions/:id', apiKeyAuth, requireScope('write'), asy
  * - include_metadata: boolean - Include processing metadata in response
  */
 generalChatRouter.post('/quick', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { message, context = 'personal', include_metadata = false } = req.body;
   const includeMetadata = include_metadata === true;
 
@@ -348,7 +355,7 @@ generalChatRouter.post('/quick', apiKeyAuth, requireScope('write'), asyncHandler
   }
 
   // Create session
-  const session = await createSession(context);
+  const session = await createSession(context, undefined, userId);
 
   logger.info('Processing quick chat message', {
     sessionId: session.id,
@@ -397,6 +404,7 @@ generalChatRouter.post(
   requireScope('write'),
   visionUpload.array('images', 5),
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const { id } = req.params;
     const { message, task, include_metadata } = req.body;
     const includeMetadata = include_metadata === 'true' || include_metadata === true;
@@ -413,7 +421,7 @@ generalChatRouter.post(
     }
 
     // Check session exists and get context
-    const session = await getSession(id);
+    const session = await getSession(id, userId);
     if (!session) {
       throw new NotFoundError('Chat session');
     }
@@ -509,6 +517,7 @@ generalChatRouter.get('/thinking-modes', apiKeyAuth, asyncHandler(async (_req: R
 }));
 
 generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope('write'), validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { id } = req.params;
   const { message, thinking_mode, assistantMode } = req.body;
   const isAssistantMode = assistantMode === true;
@@ -525,7 +534,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
   }
 
   // Check session exists
-  const session = await getSession(id);
+  const session = await getSession(id, userId);
   if (!session) {
     throw new NotFoundError('Chat session');
   }
@@ -537,7 +546,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
   });
 
   // Store user message first (already trimmed by Zod schema)
-  await addMessage(id, 'user', message);
+  await addMessage(id, 'user', message, userId);
 
   // Update title if this is the first message (same as non-streaming sendMessage)
   await updateSessionTitle(id, message);
@@ -556,10 +565,10 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
   const historyResult = await query(`
     SELECT role, content
     FROM general_chat_messages
-    WHERE session_id = $1
+    WHERE session_id = $1 AND user_id = $2
     ORDER BY created_at ASC
-    LIMIT $2
-  `, [id, CHAT.MAX_HISTORY_MESSAGES]);
+    LIMIT $3
+  `, [id, userId, CHAT.MAX_HISTORY_MESSAGES]);
 
   // Build messages array
   const messages = historyResult.rows.map((row: { role: string; content: string }) => ({
@@ -834,7 +843,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
 
     // Store assistant response after stream completes
     if (fullResponse) {
-      await addMessage(id, 'assistant', fullResponse);
+      await addMessage(id, 'assistant', fullResponse, userId);
 
       // Add assistant interaction to short-term memory (non-blocking)
       try {
@@ -858,7 +867,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
       // Stream completed but returned no content - store a fallback assistant message
       // to prevent dangling user messages with no response in chat history
       logger.warn('Stream completed with no content - storing fallback message', { sessionId: id });
-      await addMessage(id, 'assistant', 'Es tut mir leid, ich konnte keine Antwort generieren. Bitte versuche es erneut.');
+      await addMessage(id, 'assistant', 'Es tut mir leid, ich konnte keine Antwort generieren. Bitte versuche es erneut.', userId);
     }
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
@@ -866,7 +875,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
     // Save partial assistant response if we collected any content before failure
     if (fullResponse.length > 0) {
       try {
-        await addMessage(id, 'assistant', fullResponse + '\n\n[Antwort unvollstaendig - Verbindung unterbrochen]');
+        await addMessage(id, 'assistant', fullResponse + '\n\n[Antwort unvollstaendig - Verbindung unterbrochen]', userId);
         logger.info('Saved partial assistant response after stream failure', {
           sessionId: id, partialLength: fullResponse.length,
         });

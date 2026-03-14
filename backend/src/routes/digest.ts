@@ -14,6 +14,7 @@ import { logger } from '../utils/logger';
 import { queryOllamaJSON } from '../utils/ollama';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { getUserId } from '../utils/user-context';
 
 export const digestRouter = Router();
 
@@ -65,6 +66,7 @@ interface DigestStats {
  */
 digestRouter.post('/:context/digest/generate/daily', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
   const { date } = req.body; // Optional: specific date (YYYY-MM-DD)
 
   if (!isValidContext(context)) {
@@ -82,8 +84,8 @@ digestRouter.post('/:context/digest/generate/daily', apiKeyAuth, requireScope('w
            ideas_count, top_categories, top_types, productivity_score,
            created_at
     FROM digests
-    WHERE type = 'daily' AND period_start = $1
-  `, [targetDate]);
+    WHERE type = 'daily' AND period_start = $1 AND user_id = $2
+  `, [targetDate, userId]);
 
   if (existingDigest.rows.length > 0) {
     return res.json({
@@ -97,9 +99,9 @@ digestRouter.post('/:context/digest/generate/daily', apiKeyAuth, requireScope('w
   const ideasResult = await queryContext(ctx, `
     SELECT id, title, type, category, priority, summary, created_at
     FROM ideas
-    WHERE DATE(created_at) = $1 AND is_archived = false
+    WHERE DATE(created_at) = $1 AND is_archived = false AND user_id = $2
     ORDER BY created_at DESC
-  `, [targetDate]);
+  `, [targetDate, userId]);
 
   const ideas = ideasResult.rows;
 
@@ -175,6 +177,7 @@ digestRouter.post('/:context/digest/generate/daily', apiKeyAuth, requireScope('w
  */
 digestRouter.post('/:context/digest/generate/weekly', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
   const { weekOffset = 0 } = req.body; // 0 = current week, -1 = last week
 
   if (!isValidContext(context)) {
@@ -199,8 +202,8 @@ digestRouter.post('/:context/digest/generate/weekly', apiKeyAuth, requireScope('
   // Check if digest already exists
   const existingDigest = await queryContext(ctx, `
     SELECT * FROM digests
-    WHERE type = 'weekly' AND period_start = $1 AND period_end = $2
-  `, [periodStart, periodEnd]);
+    WHERE type = 'weekly' AND period_start = $1 AND period_end = $2 AND user_id = $3
+  `, [periodStart, periodEnd, userId]);
 
   if (existingDigest.rows.length > 0) {
     return res.json({
@@ -215,9 +218,9 @@ digestRouter.post('/:context/digest/generate/weekly', apiKeyAuth, requireScope('
     SELECT id, title, type, category, priority, summary, created_at
     FROM ideas
     WHERE created_at >= $1 AND created_at < $2::date + INTERVAL '1 day'
-      AND is_archived = false
+      AND is_archived = false AND user_id = $3
     ORDER BY created_at DESC
-  `, [periodStart, periodEnd]);
+  `, [periodStart, periodEnd, userId]);
 
   const ideas = ideasResult.rows;
 
@@ -290,6 +293,7 @@ digestRouter.post('/:context/digest/generate/weekly', apiKeyAuth, requireScope('
  */
 digestRouter.get('/:context/digest/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
   const { type, limit = '10' } = req.query;
 
   if (!isValidContext(context)) {
@@ -300,9 +304,9 @@ digestRouter.get('/:context/digest/history', apiKeyAuth, asyncHandler(async (req
 
   let query = `
     SELECT * FROM digests
-    WHERE 1=1
+    WHERE user_id = $1
   `;
-  const historyParams: (string | number)[] = [];
+  const historyParams: (string | number)[] = [userId];
 
   if (type === 'daily' || type === 'weekly') {
     historyParams.push(type);
@@ -330,6 +334,7 @@ digestRouter.get('/:context/digest/history', apiKeyAuth, asyncHandler(async (req
  */
 digestRouter.get('/:context/digest/latest', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
   const { type } = req.query;
 
   if (!isValidContext(context)) {
@@ -340,9 +345,9 @@ digestRouter.get('/:context/digest/latest', apiKeyAuth, asyncHandler(async (req:
 
   let query = `
     SELECT * FROM digests
-    WHERE 1=1
+    WHERE user_id = $1
   `;
-  const latestParams: string[] = [];
+  const latestParams: string[] = [userId];
 
   if (type === 'daily' || type === 'weekly') {
     latestParams.push(type);
@@ -377,6 +382,7 @@ digestRouter.get('/:context/digest/latest', apiKeyAuth, asyncHandler(async (req:
  */
 digestRouter.get('/:context/digest/goals', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -424,6 +430,7 @@ digestRouter.get('/:context/digest/goals', apiKeyAuth, asyncHandler(async (req: 
  */
 digestRouter.put('/:context/digest/goals', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
   const { dailyIdeasTarget, weeklyIdeasTarget, focusCategories, enabledInsights, digestTime } = req.body;
 
   if (!isValidContext(context)) {

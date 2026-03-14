@@ -17,6 +17,7 @@ import {
   listProactiveRules,
   processUnhandledEvents,
 } from '../services/proactive-decision-engine';
+import { getUserId } from '../utils/user-context';
 
 export const proactiveEngineRouter = Router();
 
@@ -29,6 +30,7 @@ proactiveEngineRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req, res) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -47,6 +49,7 @@ proactiveEngineRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req, res) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -61,6 +64,7 @@ proactiveEngineRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req, res) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -76,6 +80,7 @@ proactiveEngineRouter.post(
   apiKeyAuth,
   requireScope('write'),
   asyncHandler(async (req, res) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -116,6 +121,7 @@ proactiveEngineRouter.put(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req, res) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -137,6 +143,7 @@ proactiveEngineRouter.delete(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req, res) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -153,6 +160,7 @@ proactiveEngineRouter.post(
   apiKeyAuth,
   requireScope('write'),
   asyncHandler(async (req, res) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -178,6 +186,7 @@ proactiveEngineRouter.get(
   apiKeyAuth,
   requireScope('read'),
   (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
       res.status(400).json({ error: 'Invalid context' });

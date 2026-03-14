@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { query } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { memoryCoordinator } from '../memory';
+import { SYSTEM_USER_ID } from '../../utils/user-context';
 
 // ===========================================
 // Types
@@ -121,26 +122,27 @@ export interface VisionMessageResult {
  * Create a new chat session
  * Initializes both database session and HiMeS memory layers
  */
-export async function createSession(context: 'personal' | 'work' | 'learning' | 'creative' = 'personal', sessionType: 'general' | 'assistant' = 'general'): Promise<ChatSession> {
+export async function createSession(context: 'personal' | 'work' | 'learning' | 'creative' = 'personal', sessionType: 'general' | 'assistant' = 'general', userId?: string): Promise<ChatSession> {
   const id = uuidv4();
+  const uid = userId || SYSTEM_USER_ID;
 
   let result;
   try {
     result = await query(`
-      INSERT INTO general_chat_sessions (id, context, session_type)
-      VALUES ($1, $2, $3)
+      INSERT INTO general_chat_sessions (id, context, session_type, user_id)
+      VALUES ($1, $2, $3, $4)
       RETURNING id, context, title, created_at, updated_at
-    `, [id, context, sessionType]);
+    `, [id, context, sessionType, uid]);
   } catch (err: unknown) {
     // Fallback if session_type column doesn't exist yet (migration not applied)
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes('session_type')) {
       logger.warn('session_type column missing, falling back to basic insert');
       result = await query(`
-        INSERT INTO general_chat_sessions (id, context)
-        VALUES ($1, $2)
+        INSERT INTO general_chat_sessions (id, context, user_id)
+        VALUES ($1, $2, $3)
         RETURNING id, context, title, created_at, updated_at
-      `, [id, context]);
+      `, [id, context, uid]);
     } else {
       throw err;
     }
@@ -171,13 +173,14 @@ export async function createSession(context: 'personal' | 'work' | 'learning' | 
 /**
  * Get a session by ID with all messages
  */
-export async function getSession(sessionId: string): Promise<ChatSessionWithMessages | null> {
+export async function getSession(sessionId: string, userId?: string): Promise<ChatSessionWithMessages | null> {
+  const uid = userId || SYSTEM_USER_ID;
   // Get session
   const sessionResult = await query(`
     SELECT id, context, title, created_at, updated_at
     FROM general_chat_sessions
-    WHERE id = $1
-  `, [sessionId]);
+    WHERE id = $1 AND user_id = $2
+  `, [sessionId, uid]);
 
   if (sessionResult.rows.length === 0) {
     return null;
@@ -217,18 +220,20 @@ export async function getSession(sessionId: string): Promise<ChatSessionWithMess
 export async function getSessions(
   context: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
   limit: number = 20,
-  sessionType?: 'general' | 'assistant'
+  sessionType?: 'general' | 'assistant',
+  userId?: string
 ): Promise<ChatSession[]> {
-  const params: (string | number)[] = [context, limit];
+  const uid = userId || SYSTEM_USER_ID;
+  const params: (string | number)[] = [context, limit, uid];
   let typeFilter = '';
   if (sessionType) {
-    typeFilter = 'AND (session_type = $3 OR session_type IS NULL)';
+    typeFilter = 'AND (session_type = $4 OR session_type IS NULL)';
     params.push(sessionType);
   }
   const result = await query(`
     SELECT id, context, title, created_at, updated_at
     FROM general_chat_sessions
-    WHERE context = $1 ${typeFilter}
+    WHERE context = $1 AND user_id = $3 ${typeFilter}
     ORDER BY updated_at DESC
     LIMIT $2
   `, params);
@@ -246,11 +251,12 @@ export async function getSessions(
  * Delete a session and all its messages
  * Ends the associated memory session and triggers consolidation
  */
-export async function deleteSession(sessionId: string): Promise<boolean> {
+export async function deleteSession(sessionId: string, userId?: string): Promise<boolean> {
+  const uid = userId || SYSTEM_USER_ID;
   // Get session context before deletion for memory consolidation
   const sessionResult = await query(`
-    SELECT context FROM general_chat_sessions WHERE id = $1
-  `, [sessionId]);
+    SELECT context FROM general_chat_sessions WHERE id = $1 AND user_id = $2
+  `, [sessionId, uid]);
 
   const rawContext = sessionResult.rows[0]?.context;
   const validContexts = ['personal', 'work', 'learning', 'creative'] as const;
@@ -259,9 +265,9 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
 
   const result = await query(`
     DELETE FROM general_chat_sessions
-    WHERE id = $1
+    WHERE id = $1 AND user_id = $2
     RETURNING id
-  `, [sessionId]);
+  `, [sessionId, uid]);
 
   if (result.rows.length > 0) {
     // End memory session and trigger consolidation (non-blocking)
@@ -284,15 +290,17 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
 export async function addMessage(
   sessionId: string,
   role: 'user' | 'assistant',
-  content: string
+  content: string,
+  userId?: string
 ): Promise<ChatMessage> {
   const id = uuidv4();
+  const uid = userId || SYSTEM_USER_ID;
 
   const result = await query(`
-    INSERT INTO general_chat_messages (id, session_id, role, content)
-    VALUES ($1, $2, $3, $4)
+    INSERT INTO general_chat_messages (id, session_id, role, content, user_id)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING id, session_id, role, content, created_at
-  `, [id, sessionId, role, content]);
+  `, [id, sessionId, role, content, uid]);
 
   // Update session's updated_at
   await query(`

@@ -21,6 +21,7 @@ import { createMeeting, getMeeting, getMeetingNotes, processMeetingNotes } from 
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateContextParam } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 import { logger } from '../utils/logger';
 import { createTask } from '../services/tasks';
 import type { EventType, EventStatus } from '../services/calendar';
@@ -34,13 +35,14 @@ export const calendarRouter = Router();
 
 calendarRouter.post('/:context/calendar/events/search', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { query, limit } = req.body;
 
   if (!query || typeof query !== 'string') {
     throw new ValidationError('Query string is required', { query: 'must be a non-empty string' });
   }
 
-  const results = await searchCalendarEvents(context, query, Math.min(limit || 10, 50));
+  const results = await searchCalendarEvents(context, query, Math.min(limit || 10, 50), userId);
 
   res.json({
     success: true,
@@ -56,10 +58,11 @@ calendarRouter.post('/:context/calendar/events/search', apiKeyAuth, asyncHandler
 
 calendarRouter.get('/:context/calendar/upcoming', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const hours = Math.min(parseInt(req.query.hours as string, 10) || 24, 168); // Max 7 days
   const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 50);
 
-  const events = await getUpcomingEvents(context, hours, limit);
+  const events = await getUpcomingEvents(context, hours, limit, userId);
 
   res.json({
     success: true,
@@ -75,6 +78,7 @@ calendarRouter.get('/:context/calendar/upcoming', apiKeyAuth, asyncHandler(async
 
 calendarRouter.get('/:context/calendar/events', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
   const filters = {
     start: req.query.start as string | undefined,
@@ -93,7 +97,7 @@ calendarRouter.get('/:context/calendar/events', apiKeyAuth, asyncHandler(async (
     throw new ValidationError('Invalid end date', { end: 'must be a valid ISO date string' });
   }
 
-  const events = await getCalendarEvents(context, filters);
+  const events = await getCalendarEvents(context, filters, userId);
 
   res.json({
     success: true,
@@ -109,13 +113,14 @@ calendarRouter.get('/:context/calendar/events', apiKeyAuth, asyncHandler(async (
 
 calendarRouter.get('/:context/calendar/events/:id', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
   }
 
-  const event = await getCalendarEvent(context, id);
+  const event = await getCalendarEvent(context, id, userId);
   if (!event) {
     throw new NotFoundError('Calendar event');
   }
@@ -133,6 +138,7 @@ calendarRouter.get('/:context/calendar/events/:id', apiKeyAuth, asyncHandler(asy
 
 calendarRouter.post('/:context/calendar/events', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const {
     title, description, event_type, start_time, end_time,
     all_day, location, participants, rrule,
@@ -171,7 +177,7 @@ calendarRouter.post('/:context/calendar/events', apiKeyAuth, requireScope('write
     metadata,
     ai_generated,
     ai_confidence,
-  });
+  }, userId);
 
   logger.info('Calendar event created via API', {
     id: event.id, title: event.title, context,
@@ -191,13 +197,14 @@ calendarRouter.post('/:context/calendar/events', apiKeyAuth, requireScope('write
 
 calendarRouter.put('/:context/calendar/events/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
   }
 
-  const event = await updateCalendarEvent(context, id, req.body);
+  const event = await updateCalendarEvent(context, id, req.body, userId);
   if (!event) {
     throw new NotFoundError('Calendar event');
   }
@@ -215,13 +222,14 @@ calendarRouter.put('/:context/calendar/events/:id', apiKeyAuth, requireScope('wr
 
 calendarRouter.delete('/:context/calendar/events/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
   }
 
-  const deleted = await deleteCalendarEvent(context, id);
+  const deleted = await deleteCalendarEvent(context, id, userId);
   if (!deleted) {
     throw new NotFoundError('Calendar event (already cancelled?)');
   }
@@ -242,6 +250,7 @@ calendarRouter.delete('/:context/calendar/events/:id', apiKeyAuth, requireScope(
  */
 calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -249,7 +258,7 @@ calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, r
   }
 
   // Get the calendar event
-  const event = await getCalendarEvent(context, id);
+  const event = await getCalendarEvent(context, id, userId);
   if (!event) {
     throw new NotFoundError('Calendar event');
   }
@@ -275,7 +284,7 @@ calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, r
   });
 
   // Link meeting to event
-  await linkMeetingToEvent(context, id, meeting.id);
+  await linkMeetingToEvent(context, id, meeting.id, userId);
 
   logger.info('Meeting created from calendar event', {
     eventId: id, meetingId: meeting.id, context, operation: 'startMeetingFromEvent'
@@ -293,13 +302,14 @@ calendarRouter.post('/:context/calendar/events/:id/start-meeting', apiKeyAuth, r
  */
 calendarRouter.get('/:context/calendar/events/:id/meeting', apiKeyAuth, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
   }
 
-  const meetingId = await getEventMeetingId(context, id);
+  const meetingId = await getEventMeetingId(context, id, userId);
   if (!meetingId) {
     return res.json({ success: true, data: null, message: 'No meeting linked to this event' });
   }
@@ -324,13 +334,14 @@ calendarRouter.get('/:context/calendar/events/:id/meeting', apiKeyAuth, asyncHan
  */
 calendarRouter.post('/:context/calendar/events/:id/meeting/notes', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid event ID', { id: 'must be a valid UUID' });
   }
 
-  const meetingId = await getEventMeetingId(context, id);
+  const meetingId = await getEventMeetingId(context, id, userId);
   if (!meetingId) {
     throw new NotFoundError('No meeting linked to this event. Start a meeting first.');
   }

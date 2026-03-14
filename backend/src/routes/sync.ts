@@ -12,6 +12,7 @@ import { queryContext, AIContext, isValidContext, isValidUUID } from '../utils/d
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { getUserId } from '../utils/user-context';
 
 export const syncRouter = Router();
 
@@ -61,6 +62,7 @@ interface SyncResult {
  */
 syncRouter.post('/:context/sync/swipe-actions', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
@@ -79,7 +81,7 @@ syncRouter.post('/:context/sync/swipe-actions', apiKeyAuth, requireScope('write'
   }
 
   const results = await Promise.allSettled(
-    actions.map((action, index) => processSwipeAction(context as AIContext, action, index))
+    actions.map((action, index) => processSwipeAction(context as AIContext, action, index, userId))
   );
 
   const processed = results.filter(r => r.status === 'fulfilled').length;
@@ -104,30 +106,30 @@ syncRouter.post('/:context/sync/swipe-actions', apiKeyAuth, requireScope('write'
   });
 }));
 
-async function processSwipeAction(context: AIContext, action: SwipeAction, index: number): Promise<void> {
+async function processSwipeAction(context: AIContext, action: SwipeAction, index: number, userId: string): Promise<void> {
   if (!isValidUUID(action.ideaId)) {
     throw new Error(`Invalid ideaId at index ${index}`);
   }
 
   switch (action.action) {
     case 'archive':
-      await queryContext(context, `UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1`, [action.ideaId]);
+      await queryContext(context, `UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 AND user_id = $2`, [action.ideaId, userId]);
       break;
 
     case 'delete':
-      await queryContext(context, `DELETE FROM ideas WHERE id = $1`, [action.ideaId]);
+      await queryContext(context, `DELETE FROM ideas WHERE id = $1 AND user_id = $2`, [action.ideaId, userId]);
       break;
 
     case 'priority_high':
-      await queryContext(context, `UPDATE ideas SET priority = 'high', updated_at = NOW() WHERE id = $1`, [action.ideaId]);
+      await queryContext(context, `UPDATE ideas SET priority = 'high', updated_at = NOW() WHERE id = $1 AND user_id = $2`, [action.ideaId, userId]);
       break;
 
     case 'priority_low':
-      await queryContext(context, `UPDATE ideas SET priority = 'low', updated_at = NOW() WHERE id = $1`, [action.ideaId]);
+      await queryContext(context, `UPDATE ideas SET priority = 'low', updated_at = NOW() WHERE id = $1 AND user_id = $2`, [action.ideaId, userId]);
       break;
 
     case 'favorite':
-      await queryContext(context, `UPDATE ideas SET is_favorite = NOT COALESCE(is_favorite, false), updated_at = NOW() WHERE id = $1`, [action.ideaId]);
+      await queryContext(context, `UPDATE ideas SET is_favorite = NOT COALESCE(is_favorite, false), updated_at = NOW() WHERE id = $1 AND user_id = $2`, [action.ideaId, userId]);
       break;
 
     default:
@@ -145,6 +147,7 @@ async function processSwipeAction(context: AIContext, action: SwipeAction, index
  */
 syncRouter.post('/:context/sync/batch', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
@@ -167,13 +170,13 @@ syncRouter.post('/:context/sync/batch', apiKeyAuth, requireScope('write'), async
 
   // Process voice memos
   if (voiceMemos.length > 0) {
-    results.voiceMemos = await processVoiceMemosBatch(context as AIContext, voiceMemos);
+    results.voiceMemos = await processVoiceMemosBatch(context as AIContext, voiceMemos, userId);
   }
 
   // Process swipe actions
   if (swipeActions.length > 0) {
     const swipeResults = await Promise.allSettled(
-      swipeActions.map((action, index) => processSwipeAction(context as AIContext, action, index))
+      swipeActions.map((action, index) => processSwipeAction(context as AIContext, action, index, userId))
     );
     results.swipeActions = {
       processed: swipeResults.filter(r => r.status === 'fulfilled').length,
@@ -205,21 +208,23 @@ syncRouter.post('/:context/sync/batch', apiKeyAuth, requireScope('write'), async
 
 async function processVoiceMemosBatch(
   context: AIContext,
-  memos: Array<{ clientId: string; text: string; timestamp: string }>
+  memos: Array<{ clientId: string; text: string; timestamp: string }>,
+  userId: string
 ): Promise<SyncResult> {
   const results = await Promise.allSettled(
     memos.map(async (memo) => {
       // Simple storage without AI processing (for offline sync)
       const result = await queryContext(
         context,
-        `INSERT INTO ideas (id, title, summary, raw_transcript, type, category, priority, context, is_archived, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $2, 'idea', 'personal', 'medium', $3, false, $4)
+        `INSERT INTO ideas (id, title, summary, raw_transcript, type, category, priority, context, is_archived, created_at, user_id)
+         VALUES (gen_random_uuid(), $1, $2, $2, 'idea', 'personal', 'medium', $3, false, $4, $5)
          RETURNING id`,
         [
           memo.text.substring(0, 100), // Title from first 100 chars
           memo.text,
           context,
-          memo.timestamp || new Date().toISOString()
+          memo.timestamp || new Date().toISOString(),
+          userId
         ]
       );
       return { clientId: memo.clientId, serverId: result.rows[0]?.id };
@@ -297,6 +302,7 @@ async function processTrainingFeedbackBatch(
  */
 syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
@@ -306,7 +312,8 @@ syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Req
   const [pendingCount, devicesResult] = await Promise.all([
     queryContext(
       context as AIContext,
-      `SELECT COUNT(*) as count FROM ideas WHERE updated_at > NOW() - INTERVAL '1 hour'`
+      `SELECT COUNT(*) as count FROM ideas WHERE updated_at > NOW() - INTERVAL '1 hour' AND user_id = $1`,
+      [userId]
     ),
     // Get registered devices from push_tokens
     queryContext(
@@ -356,6 +363,7 @@ syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Req
  */
 syncRouter.get('/:context/sync/pending', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
@@ -376,8 +384,10 @@ syncRouter.get('/:context/sync/pending', apiKeyAuth, asyncHandler(async (req: Re
        END as action
      FROM ideas
      WHERE updated_at > NOW() - INTERVAL '1 hour'
+       AND user_id = $1
      ORDER BY updated_at DESC
-     LIMIT 50`
+     LIMIT 50`,
+    [userId]
   );
 
   // Map to frontend PendingChange interface
@@ -415,6 +425,7 @@ syncRouter.get('/:context/sync/pending', apiKeyAuth, asyncHandler(async (req: Re
  */
 syncRouter.post('/:context/sync/trigger', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
@@ -425,8 +436,8 @@ syncRouter.post('/:context/sync/trigger', apiKeyAuth, requireScope('write'), asy
 
   // Get counts for sync summary
   const [ideasCount, archivedCount] = await Promise.all([
-    queryContext(context as AIContext, `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false`),
-    queryContext(context as AIContext, `SELECT COUNT(*) as total FROM ideas WHERE is_archived = true`),
+    queryContext(context as AIContext, `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1`, [userId]),
+    queryContext(context as AIContext, `SELECT COUNT(*) as total FROM ideas WHERE is_archived = true AND user_id = $1`, [userId]),
   ]);
 
   logger.info('Manual sync triggered', {
@@ -460,6 +471,7 @@ syncRouter.post('/:context/sync/trigger', apiKeyAuth, requireScope('write'), asy
  */
 syncRouter.delete('/devices/:deviceId', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { deviceId } = req.params;
+  const _userId = getUserId(req);
 
   if (!deviceId || deviceId.trim() === '') {
     throw new ValidationError('Device ID is required');

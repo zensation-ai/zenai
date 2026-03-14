@@ -12,6 +12,7 @@ import { isValidContext } from '../utils/database-context';
 import { proceduralMemory } from '../services/memory/procedural-memory';
 import { memoryBM25 } from '../services/memory/memory-bm25';
 import { entityResolver } from '../services/memory/entity-resolver';
+import { getUserId } from '../utils/user-context';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.get(
   '/:context/memory/procedures',
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -51,6 +53,7 @@ router.get(
   '/:context/memory/procedures/:id',
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -73,6 +76,7 @@ router.post(
   '/:context/memory/procedures',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -111,6 +115,7 @@ router.post(
   '/:context/memory/procedures/recall',
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -136,6 +141,7 @@ router.put(
   '/:context/memory/procedures/:id/feedback',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -167,6 +173,7 @@ router.delete(
   '/:context/memory/procedures/:id',
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -193,6 +200,7 @@ router.get(
   '/:context/memory/bm25',
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -218,6 +226,7 @@ router.get(
   '/:context/memory/hybrid-search',
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
@@ -247,6 +256,7 @@ router.get(
   '/:context/memory/entity-links/:factId',
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, factId } = req.params;
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');

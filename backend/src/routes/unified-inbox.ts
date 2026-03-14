@@ -11,6 +11,7 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { sendData, sendSuccess } from '../utils/response';
+import { getUserId } from '../utils/user-context';
 import { getUnifiedInbox, getUnifiedInboxCounts, InboxItemType } from '../services/unified-inbox';
 
 export const unifiedInboxRouter = Router();
@@ -34,6 +35,7 @@ unifiedInboxRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -70,6 +72,7 @@ unifiedInboxRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');

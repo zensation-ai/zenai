@@ -30,6 +30,7 @@ import {
   restoreVersion,
 } from '../services/canvas';
 import { logger } from '../utils/logger';
+import { getUserId } from '../utils/user-context';
 
 export const canvasRouter = Router();
 
@@ -78,8 +79,9 @@ canvasRouter.post(
     }
 
     const { context, title, type, language, content } = parseResult.data;
+    const userId = getUserId(req);
 
-    const document = await createCanvasDocument(context, title, type, language, content);
+    const document = await createCanvasDocument(context, title, type, language, content, userId);
 
     res.status(201).json({
       success: true,
@@ -99,12 +101,13 @@ canvasRouter.get(
     const context = (req.query.context as string) || 'personal';
     const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 100);
     const offset = parseInt(req.query.offset as string, 10) || 0;
+    const userId = getUserId(req);
 
     if (!['personal', 'work', 'learning', 'creative'].includes(context)) {
       throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
     }
 
-    const result = await listCanvasDocuments(context, limit, offset);
+    const result = await listCanvasDocuments(context, limit, offset, userId);
 
     res.json({
       success: true,
@@ -127,7 +130,8 @@ canvasRouter.get(
       throw new ValidationError('Invalid document ID format');
     }
 
-    const document = await getCanvasDocument(id);
+    const userId = getUserId(req);
+    const document = await getCanvasDocument(id, userId);
     if (!document) {
       throw new NotFoundError('Canvas document');
     }
@@ -166,7 +170,8 @@ canvasRouter.patch(
       throw new ValidationError('At least one field must be provided for update');
     }
 
-    const document = await updateCanvasDocument(id, updates);
+    const userId = getUserId(req);
+    const document = await updateCanvasDocument(id, updates, userId);
     if (!document) {
       throw new NotFoundError('Canvas document');
     }
@@ -193,7 +198,8 @@ canvasRouter.delete(
       throw new ValidationError('Invalid document ID format');
     }
 
-    const deleted = await deleteCanvasDocument(id);
+    const userId = getUserId(req);
+    const deleted = await deleteCanvasDocument(id, userId);
     if (!deleted) {
       throw new NotFoundError('Canvas document');
     }
@@ -225,7 +231,8 @@ canvasRouter.post(
       throw new ValidationError('Valid chatSessionId is required');
     }
 
-    const linked = await linkChatSession(id, chatSessionId);
+    const userId = getUserId(req);
+    const linked = await linkChatSession(id, chatSessionId, userId);
     if (!linked) {
       throw new NotFoundError('Canvas document');
     }
@@ -253,12 +260,13 @@ canvasRouter.get(
     }
 
     // Verify document exists
-    const document = await getCanvasDocument(id);
+    const userId = getUserId(req);
+    const document = await getCanvasDocument(id, userId);
     if (!document) {
       throw new NotFoundError('Canvas document');
     }
 
-    const versions = await getVersionHistory(id, limit);
+    const versions = await getVersionHistory(id, limit, userId);
 
     res.json({
       success: true,
@@ -282,7 +290,8 @@ canvasRouter.post(
       throw new ValidationError('Invalid ID format');
     }
 
-    const document = await restoreVersion(id, versionId);
+    const userId = getUserId(req);
+    const document = await restoreVersion(id, versionId, userId);
     if (!document) {
       throw new NotFoundError('Canvas document or version');
     }

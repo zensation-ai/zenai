@@ -178,14 +178,14 @@ describe('Screen Memory Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.deleted).toBe(5);
-      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('personal', 30);
+      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('personal', 30, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should cleanup with custom retention days', async () => {
       await request(app)
         .post('/api/personal/screen-memory/cleanup')
         .send({ retention_days: 7 });
-      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('personal', 7);
+      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('personal', 7, '00000000-0000-0000-0000-000000000001');
     });
   });
 });

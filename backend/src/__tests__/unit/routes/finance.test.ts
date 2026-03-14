@@ -136,7 +136,7 @@ describe('Finance Routes', () => {
     it('should accept months parameter', async () => {
       const res = await request(app).get('/api/personal/finance/overview?months=3');
       expect(res.status).toBe(200);
-      expect(mockGetOverview).toHaveBeenCalledWith('personal', 3);
+      expect(mockGetOverview).toHaveBeenCalledWith('personal', 3, '00000000-0000-0000-0000-000000000001');
     });
   });
 

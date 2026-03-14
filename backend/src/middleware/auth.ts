@@ -219,7 +219,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
       });
       // Lookup by key ID directly
       result = await pool.query(
-        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash, created_at
+        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash, user_id, created_at
          FROM api_keys
          WHERE id = $1`,
         [apiKey]
@@ -230,7 +230,7 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
       // Find key candidates by prefix
       result = await pool.query(
-        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash, created_at
+        `SELECT id, name, scopes, rate_limit, expires_at, is_active, key_hash, user_id, created_at
          FROM api_keys
          WHERE key_prefix = $1`,
         [prefix]
@@ -376,6 +376,13 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
       scopes: keyData.scopes || ['read'],
       rateLimit: keyData.rate_limit || 1000,
       expiryInfo,
+    };
+
+    // Phase 65: Set req.user for getUserId() compatibility
+    // If API key has a linked user_id, use it; otherwise fall back to system user
+    req.user = {
+      id: keyData.user_id || '00000000-0000-0000-0000-000000000001',
+      provider: 'api-key',
     };
 
     next();

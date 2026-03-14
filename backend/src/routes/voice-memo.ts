@@ -20,6 +20,7 @@ import { invalidateCacheForContext } from '../middleware/response-cache';
 // Phase 35: Smart Intent Detection
 import { detectIntents } from '../services/intent-detector';
 import { dispatchIntents } from '../services/intent-handlers';
+import { getUserId } from '../utils/user-context';
 
 export const voiceMemoRouter = Router();
 
@@ -62,7 +63,8 @@ async function storeIdea(
   structured: StructuredIdea,
   transcript: string,
   embedding: number[],
-  context: AIContext = 'personal'
+  context: AIContext = 'personal',
+  userId?: string
 ) {
   const embeddingInt8 = quantizeToInt8(embedding);
   const embeddingBinary = quantizeToBinary(embedding);
@@ -77,12 +79,12 @@ async function storeIdea(
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
         raw_transcript, embedding, embedding_int8, embedding_binary,
-        context, is_archived, created_at, updated_at
+        context, is_archived, user_id, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6,
         $7, $8, $9,
         $10, $11, $12, $13,
-        $14, $15, NOW(), NOW()
+        $14, $15, $16, NOW(), NOW()
       )`,
       [
         ideaId,
@@ -100,6 +102,7 @@ async function storeIdea(
         embeddingBinary,
         context,
         false, // is_archived - explicitly set to avoid NULL
+        userId,
       ]
     );
 
@@ -113,11 +116,11 @@ async function storeIdea(
       `INSERT INTO ideas (
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
-        raw_transcript, context, is_archived, created_at, updated_at
+        raw_transcript, context, is_archived, user_id, created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6,
         $7, $8, $9,
-        $10, $11, $12, NOW(), NOW()
+        $10, $11, $12, $13, NOW(), NOW()
       )`,
       [
         ideaId,
@@ -132,6 +135,7 @@ async function storeIdea(
         transcript,
         context,
         false, // is_archived - explicitly set to avoid NULL
+        userId,
       ]
     );
 
@@ -156,6 +160,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     next();
   });
 }, asyncHandler(async (req, res) => {
+  const userId = getUserId(req);
   const startTime = Date.now();
 
   let transcript: string;
@@ -212,7 +217,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
 
   // 3. Store in database
   const ideaId = uuidv4();
-  await storeIdea(ideaId, structured, transcript, embedding);
+  await storeIdea(ideaId, structured, transcript, embedding, 'personal', userId);
   const totalTime = Date.now() - startTime;
 
   // CRITICAL: Invalidate cache so new idea appears on refresh
@@ -298,6 +303,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
  * SECURITY Sprint 2: Added Zod validation for text input
  */
 voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(VoiceMemoTextSchema), asyncHandler(async (req, res) => {
+  const userId = getUserId(req);
   const startTime = Date.now();
 
   // SECURITY: text is now validated by Zod middleware (1-100000 chars, trimmed)
@@ -338,7 +344,7 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
   const keywords = structured.keywords || [];
   const suggestedPrio = await suggestPriority(keywords);
 
-  await storeIdea(ideaId, structured, text, embedding);
+  await storeIdea(ideaId, structured, text, embedding, 'personal', userId);
 
   // CRITICAL: Invalidate cache so new idea appears on refresh
   try {
@@ -418,6 +424,7 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
  * Only transcribe audio, don't structure or store
  */
 voiceMemoRouter.post('/transcribe', apiKeyAuth, upload.single('audio'), asyncHandler(async (req, res) => {
+  const _userId = getUserId(req);
   const startTime = Date.now();
 
   if (!req.file) {
@@ -441,7 +448,7 @@ voiceMemoRouter.post('/transcribe', apiKeyAuth, upload.single('audio'), asyncHan
  * Check if Whisper is available
  * SECURITY: Requires authentication to prevent service discovery
  */
-voiceMemoRouter.get('/whisper-status', apiKeyAuth, asyncHandler(async (req, res) => {
+voiceMemoRouter.get('/whisper-status', apiKeyAuth, asyncHandler(async (_req, res) => {
   const available = await checkWhisperAvailable();
   res.json({
     whisperAvailable: available,

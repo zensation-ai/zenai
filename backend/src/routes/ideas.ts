@@ -23,6 +23,7 @@ import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } fro
 import { trackActivity } from '../services/activity-tracker';
 import { moveIdea } from '../services/idea-move';
 import { invalidateCacheForContext } from '../middleware/response-cache';
+import { getUserId } from '../utils/user-context';
 
 // ===========================================
 // Type-safe row interfaces for aggregate queries
@@ -63,11 +64,12 @@ function validateUUID(req: Request, res: Response, next: NextFunction) {
  */
 ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-    queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'),
-    queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
-    queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
-    queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
+    queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1', [userId]),
+    queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY type', [userId]),
+    queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY category', [userId]),
+    queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY priority', [userId]),
   ]);
 
   res.json({
@@ -87,6 +89,7 @@ ideasRouter.get('/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
 
   // Validate pagination
   const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 20, min: 1, max: 50, fieldName: 'limit' });
@@ -100,9 +103,9 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
 
   // Build exclusion clause
   let excludeClause = '';
-  const params: (string | number)[] = [ctx, limit];
+  const params: (string | number)[] = [ctx, limit, userId];
   if (excludeIds.length > 0) {
-    excludeClause = ` AND i.id NOT IN (${excludeIds.map((_, idx) => `$${idx + 3}`).join(',')})`;
+    excludeClause = ` AND i.id NOT IN (${excludeIds.map((_, idx) => `$${idx + 4}`).join(',')})`;
     params.push(...excludeIds);
   }
 
@@ -118,6 +121,7 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
      WHERE i.context = $1
        AND i.is_archived = false
        AND th.id IS NULL
+       AND i.user_id = $3
        ${excludeClause}
      ORDER BY
        CASE i.priority
@@ -140,8 +144,9 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
        AND th.created_at > NOW() - INTERVAL '24 hours'
      WHERE i.context = $1
        AND i.is_archived = false
-       AND th.id IS NULL`,
-    [ctx]
+       AND th.id IS NULL
+       AND i.user_id = $2`,
+    [ctx, userId]
   );
 
   res.json({
@@ -159,6 +164,7 @@ ideasRouter.get('/triage', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const ideaId = req.params.id;
   const { action } = req.body;
 
@@ -169,7 +175,7 @@ ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID,
   }
 
   // Check if idea exists
-  const ideaCheck = await queryContext(ctx, 'SELECT id, title, priority FROM ideas WHERE id = $1', [ideaId]);
+  const ideaCheck = await queryContext(ctx, 'SELECT id, title, priority FROM ideas WHERE id = $1 AND user_id = $2', [ideaId, userId]);
   if (ideaCheck.rows.length === 0) {
     throw new NotFoundError('Idea');
   }
@@ -212,8 +218,8 @@ ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID,
 
     await queryContext(
       ctx,
-      `UPDATE ideas SET ${safeKeys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
-      [ideaId, ...safeKeys.map(k => updateData[k as keyof typeof updateData])]
+      `UPDATE ideas SET ${safeKeys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1 AND user_id = $${safeKeys.length + 2}`,
+      [ideaId, ...safeKeys.map(k => updateData[k as keyof typeof updateData]), userId]
     );
 
     // Learn from priority changes
@@ -228,8 +234,8 @@ ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID,
   // Record triage action in history
   await queryContext(
     ctx,
-    `INSERT INTO triage_history (idea_id, context, action) VALUES ($1, $2, $3)`,
-    [ideaId, ctx, action]
+    `INSERT INTO triage_history (idea_id, context, action, user_id) VALUES ($1, $2, $3, $4)`,
+    [ideaId, ctx, action, userId]
   );
 
   // Track interaction for learning
@@ -268,6 +274,7 @@ ideasRouter.post('/:id/triage', apiKeyAuth, requireScope('write'), validateUUID,
  */
 ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
 
   // Validate pagination
   const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
@@ -293,8 +300,8 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
   }
 
   let whereClause = '';
-  const params: (string | number | boolean)[] = [];
-  let paramIndex = 1;
+  const params: (string | number | boolean)[] = [userId];
+  let paramIndex = 2;
 
   if (typeResult.data) {
     whereClause += ` AND type = $${paramIndex++}`;
@@ -317,7 +324,7 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
-     WHERE is_archived = false ${whereClause}
+     WHERE is_archived = false AND user_id = $1 ${whereClause}
      ORDER BY created_at DESC
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     [...params, limit, offset]
@@ -325,7 +332,7 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
 
   const countResult = await queryContext(
     ctx,
-    `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false ${whereClause}`,
+    `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1 ${whereClause}`,
     params
   );
 
@@ -350,6 +357,7 @@ ideasRouter.get('/', apiKeyAuth, asyncHandler(async (req, res) => {
 ideasRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const ctx = getContext(req);
+  const userId = getUserId(req);
 
   // Validate limit
   const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 10, min: 1, max: 50, fieldName: 'limit' });
@@ -381,13 +389,14 @@ ideasRouter.get('/recommendations', apiKeyAuth, asyncHandler(async (req, res) =>
  */
 ideasRouter.get('/:id', apiKeyAuth, validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, raw_transcript,
             context, created_at, updated_at
-     FROM ideas WHERE id = $1`,
-    [req.params.id]
+     FROM ideas WHERE id = $1 AND user_id = $2`,
+    [req.params.id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -403,7 +412,7 @@ ideasRouter.get('/:id', apiKeyAuth, validateUUID, asyncHandler(async (req, res) 
   }).catch((err) => logger.debug('Background view tracking skipped', { error: err.message }));
 
   // Increment view count
-  queryContext(ctx, 'UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1', [req.params.id])
+  queryContext(ctx, 'UPDATE ideas SET viewed_count = viewed_count + 1 WHERE id = $1 AND user_id = $2', [req.params.id, userId])
     .catch((err) => logger.debug('Background view count update skipped', { error: err.message }));
 
   res.json({ success: true, idea: parseIdeaRow(row as IdeaDatabaseRow) });
@@ -417,6 +426,7 @@ ideasRouter.get('/:id', apiKeyAuth, validateUUID, asyncHandler(async (req, res) 
 ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const ctx = getContext(req);
+  const userId = getUserId(req);
 
   // Validate search query
   const queryResult = validateRequiredString(req.body.query, 'query', { minLength: 1, maxLength: 500 });
@@ -448,10 +458,10 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
       `SELECT id, title, type, category, priority, summary,
               next_steps, context_needed, keywords, context, created_at
        FROM ideas
-       WHERE title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1
+       WHERE (title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1) AND user_id = $3
        ORDER BY created_at DESC
        LIMIT $2`,
-      [`%${searchQuery}%`, limit]
+      [`%${searchQuery}%`, limit, userId]
     );
 
     return res.json({
@@ -497,6 +507,7 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
 ideasRouter.post('/search/progressive', apiKeyAuth, asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const ctx = getContext(req);
+  const userId = getUserId(req);
 
   const queryResult = validateRequiredString(req.body.query, 'query', { minLength: 1, maxLength: 500 });
   if (!queryResult.success) {
@@ -514,10 +525,10 @@ ideasRouter.post('/search/progressive', apiKeyAuth, asyncHandler(async (req, res
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, context, created_at
      FROM ideas
-     WHERE title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1
+     WHERE (title ILIKE $1 OR summary ILIKE $1 OR raw_transcript ILIKE $1) AND user_id = $3
      ORDER BY created_at DESC
      LIMIT $2`,
-    [`%${searchQuery}%`, limit]
+    [`%${searchQuery}%`, limit, userId]
   );
   const keywordTime = Date.now() - keywordStart;
 
@@ -577,6 +588,7 @@ ideasRouter.post('/search/progressive', apiKeyAuth, asyncHandler(async (req, res
 ideasRouter.get('/:id/similar', apiKeyAuth, validateUUID, asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const ideaId = req.params.id;
 
   // Validate limit
@@ -587,7 +599,7 @@ ideasRouter.get('/:id/similar', apiKeyAuth, validateUUID, asyncHandler(async (re
   const limit = limitResult.data ?? 5;
 
   // Check if idea exists
-  const ideaCheck = await queryContext(ctx, 'SELECT id FROM ideas WHERE id = $1', [ideaId]);
+  const ideaCheck = await queryContext(ctx, 'SELECT id FROM ideas WHERE id = $1 AND user_id = $2', [ideaId, userId]);
   if (ideaCheck.rows.length === 0) {
     throw new NotFoundError('Idea');
   }
@@ -618,13 +630,14 @@ ideasRouter.get('/:id/similar', apiKeyAuth, validateUUID, asyncHandler(async (re
  */
 ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const { title, type, category, priority, summary, next_steps, context_needed, keywords } = req.body;
 
   // Hole alte Werte um Korrekturen zu erkennen
   const oldIdea = await queryContext(
     ctx,
-    'SELECT type, category, priority FROM ideas WHERE id = $1',
-    [req.params.id]
+    'SELECT type, category, priority FROM ideas WHERE id = $1 AND user_id = $2',
+    [req.params.id, userId]
   );
 
   if (oldIdea.rows.length === 0) {
@@ -645,7 +658,7 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
       context_needed = COALESCE($8, context_needed),
       keywords = COALESCE($9, keywords),
       updated_at = NOW()
-     WHERE id = $1
+     WHERE id = $1 AND user_id = $10
      RETURNING *`,
     [
       req.params.id,
@@ -657,6 +670,7 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
       serializeArrayField(next_steps),
       serializeArrayField(context_needed),
       serializeArrayField(keywords),
+      userId,
     ]
   );
 
@@ -731,7 +745,8 @@ ideasRouter.put('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHa
  */
 ideasRouter.delete('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
-  const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 RETURNING id', [req.params.id]);
+  const userId = getUserId(req);
+  const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 AND user_id = $2 RETURNING id', [req.params.id, userId]);
 
   if (result.rows.length === 0) {
     throw new NotFoundError('Idea');
@@ -760,6 +775,7 @@ ideasRouter.delete('/:id', apiKeyAuth, requireScope('write'), validateUUID, asyn
  */
 ideasRouter.put('/:id/priority', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const { priority } = req.body;
 
   if (!priority || !['low', 'medium', 'high'].includes(priority)) {
@@ -769,8 +785,8 @@ ideasRouter.put('/:id/priority', apiKeyAuth, requireScope('write'), validateUUID
   // Hole alte Priorität für Korrektur-Lernen
   const oldResult = await queryContext(
     ctx,
-    'SELECT priority FROM ideas WHERE id = $1',
-    [req.params.id]
+    'SELECT priority FROM ideas WHERE id = $1 AND user_id = $2',
+    [req.params.id, userId]
   );
 
   if (oldResult.rows.length === 0) {
@@ -781,8 +797,8 @@ ideasRouter.put('/:id/priority', apiKeyAuth, requireScope('write'), validateUUID
 
   const result = await queryContext(
     ctx,
-    'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
-    [req.params.id, priority]
+    'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 AND user_id = $3 RETURNING id, title, priority',
+    [req.params.id, priority, userId]
   );
 
   // Lerne aus der Prioritäts-Korrektur (wenn geändert)
@@ -813,6 +829,7 @@ ideasRouter.put('/:id/priority', apiKeyAuth, requireScope('write'), validateUUID
  */
 ideasRouter.post('/:id/swipe', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const { action } = req.body;
   const ideaId = req.params.id;
 
@@ -825,8 +842,8 @@ ideasRouter.post('/:id/swipe', apiKeyAuth, requireScope('write'), validateUUID, 
     case 'priority':
       result = await queryContext(
         ctx,
-        'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 RETURNING id, title, priority',
-        [ideaId, 'high']
+        'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 AND user_id = $3 RETURNING id, title, priority',
+        [ideaId, 'high', userId]
       );
       trackInteraction({
         idea_id: ideaId,
@@ -838,8 +855,8 @@ ideasRouter.post('/:id/swipe', apiKeyAuth, requireScope('write'), validateUUID, 
     case 'archive':
       result = await queryContext(
         ctx,
-        'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id, title',
-        [ideaId]
+        'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING id, title',
+        [ideaId, userId]
       );
       trackInteraction({
         idea_id: ideaId,
@@ -854,8 +871,8 @@ ideasRouter.post('/:id/swipe', apiKeyAuth, requireScope('write'), validateUUID, 
       // Just track the interaction, no changes to the idea
       result = await queryContext(
         ctx,
-        'SELECT id, title FROM ideas WHERE id = $1',
-        [ideaId]
+        'SELECT id, title FROM ideas WHERE id = $1 AND user_id = $2',
+        [ideaId, userId]
       );
       trackInteraction({
         idea_id: ideaId,
@@ -878,6 +895,7 @@ ideasRouter.post('/:id/swipe', apiKeyAuth, requireScope('write'), validateUUID, 
  */
 ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
 
   // Validate pagination
   const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
@@ -891,15 +909,16 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
-     WHERE is_archived = true
+     WHERE is_archived = true AND user_id = $3
      ORDER BY updated_at DESC
      LIMIT $1 OFFSET $2`,
-    [pagination.limit, pagination.offset]
+    [pagination.limit, pagination.offset, userId]
   );
 
   const countResult = await queryContext(
     ctx,
-    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true'
+    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true AND user_id = $1',
+    [userId]
   );
 
   res.json({
@@ -920,10 +939,11 @@ ideasRouter.get('/archived/list', apiKeyAuth, asyncHandler(async (req, res) => {
  */
 ideasRouter.put('/:id/restore', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const result = await queryContext(
     ctx,
-    'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
-    [req.params.id]
+    'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true AND user_id = $2 RETURNING id, title',
+    [req.params.id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -950,10 +970,11 @@ ideasRouter.put('/:id/restore', apiKeyAuth, requireScope('write'), validateUUID,
  */
 ideasRouter.put('/:id/archive', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const result = await queryContext(
     ctx,
-    'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id',
-    [req.params.id]
+    'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING id',
+    [req.params.id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -984,6 +1005,7 @@ ideasRouter.put('/:id/archive', apiKeyAuth, requireScope('write'), validateUUID,
  */
 ideasRouter.post('/check-duplicates', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
   const { content, title, threshold = 0.85 } = req.body;
 
   if (!content && !title) {
@@ -1005,6 +1027,7 @@ ideasRouter.post('/check-duplicates', apiKeyAuth, asyncHandler(async (req, res) 
  */
 ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
   const primaryId = req.params.id;
   const { secondaryId } = req.body;
 
@@ -1047,6 +1070,7 @@ ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, 
  */
 ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
   const limitResult = parseIntSafe(req.query.limit?.toString(), { default: 20, min: 1, max: 50, fieldName: 'limit' });
   if (!limitResult.success) {
@@ -1057,9 +1081,9 @@ ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async 
   const excludeIds = req.query.exclude ? (req.query.exclude as string).split(',').filter(id => isValidUUID(id)) : [];
 
   let excludeClause = '';
-  const params: (string | number)[] = [ctx, limit];
+  const params: (string | number)[] = [ctx, limit, userId];
   if (excludeIds.length > 0) {
-    excludeClause = ` AND i.id NOT IN (${excludeIds.map((_, idx) => `$${idx + 3}`).join(',')})`;
+    excludeClause = ` AND i.id NOT IN (${excludeIds.map((_, idx) => `$${idx + 4}`).join(',')})`;
     params.push(...excludeIds);
   }
 
@@ -1074,6 +1098,7 @@ ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async 
      WHERE i.context = $1
        AND i.is_archived = false
        AND th.id IS NULL
+       AND i.user_id = $3
        ${excludeClause}
      ORDER BY
        CASE i.priority
@@ -1095,8 +1120,9 @@ ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async 
        AND th.created_at > NOW() - INTERVAL '24 hours'
      WHERE i.context = $1
        AND i.is_archived = false
-       AND th.id IS NULL`,
-    [ctx]
+       AND th.id IS NULL
+       AND i.user_id = $2`,
+    [ctx, userId]
   );
 
   res.json({
@@ -1113,6 +1139,7 @@ ideasContextRouter.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async 
  */
 ideasContextRouter.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const ideaId = req.params.id;
 
   if (!isValidUUID(ideaId)) {
@@ -1126,7 +1153,7 @@ ideasContextRouter.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('
     throw new ValidationError(`Invalid triage action. Must be one of: ${validActions.join(', ')}`);
   }
 
-  const ideaCheck = await queryContext(ctx, 'SELECT id, title, priority FROM ideas WHERE id = $1', [ideaId]);
+  const ideaCheck = await queryContext(ctx, 'SELECT id, title, priority FROM ideas WHERE id = $1 AND user_id = $2', [ideaId, userId]);
   if (ideaCheck.rows.length === 0) {
     throw new NotFoundError('Idea');
   }
@@ -1165,8 +1192,8 @@ ideasContextRouter.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('
 
     await queryContext(
       ctx,
-      `UPDATE ideas SET ${safeKeys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
-      [ideaId, ...safeKeys.map(k => updateData[k as keyof typeof updateData])]
+      `UPDATE ideas SET ${safeKeys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1 AND user_id = $${safeKeys.length + 2}`,
+      [ideaId, ...safeKeys.map(k => updateData[k as keyof typeof updateData]), userId]
     );
 
     if (updateData.priority && oldPriority !== updateData.priority) {
@@ -1179,8 +1206,8 @@ ideasContextRouter.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('
 
   await queryContext(
     ctx,
-    `INSERT INTO triage_history (idea_id, context, action) VALUES ($1, $2, $3)`,
-    [ideaId, ctx, action]
+    `INSERT INTO triage_history (idea_id, context, action, user_id) VALUES ($1, $2, $3, $4)`,
+    [ideaId, ctx, action, userId]
   );
 
   trackInteraction({
@@ -1216,6 +1243,7 @@ ideasContextRouter.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('
  */
 ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
   try {
     const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
@@ -1225,11 +1253,11 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as this_week,
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as last_month,
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as today
-        FROM ideas WHERE is_archived = false
-      `),
-      queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY type'),
-      queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY category'),
-      queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false GROUP BY priority'),
+        FROM ideas WHERE is_archived = false AND user_id = $1
+      `, [userId]),
+      queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY type', [userId]),
+      queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY category', [userId]),
+      queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY priority', [userId]),
     ]);
 
     const totals = totalResult.rows[0];
@@ -1269,6 +1297,7 @@ ideasContextRouter.get('/:context/ideas/stats/summary', apiKeyAuth, asyncHandler
  */
 ideasContextRouter.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -1277,8 +1306,8 @@ ideasContextRouter.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('
 
   const result = await queryContext(
     ctx,
-    'UPDATE ideas SET is_archived = true, archived_at = NOW(), updated_at = NOW() WHERE id = $1 RETURNING id',
-    [id]
+    'UPDATE ideas SET is_archived = true, archived_at = NOW(), updated_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING id',
+    [id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -1306,6 +1335,7 @@ ideasContextRouter.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('
  */
 ideasContextRouter.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -1314,8 +1344,8 @@ ideasContextRouter.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('
 
   const result = await queryContext(
     ctx,
-    'UPDATE ideas SET is_archived = false, archived_at = NULL, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
-    [id]
+    'UPDATE ideas SET is_archived = false, archived_at = NULL, updated_at = NOW() WHERE id = $1 AND is_archived = true AND user_id = $2 RETURNING id, title',
+    [id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -1345,6 +1375,7 @@ ideasContextRouter.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('
  */
 ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
   const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
   if (!paginationResult.success) {
@@ -1368,8 +1399,8 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
   }
 
   let whereClause = '';
-  const params: (string | number | boolean)[] = [];
-  let paramIndex = 1;
+  const params: (string | number | boolean)[] = [userId];
+  let paramIndex = 2;
 
   if (typeResult.data) {
     whereClause += ` AND type = $${paramIndex++}`;
@@ -1392,7 +1423,7 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
-     WHERE is_archived = false ${whereClause}
+     WHERE is_archived = false AND user_id = $1 ${whereClause}
      ORDER BY created_at DESC
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     [...params, limit, offset]
@@ -1400,7 +1431,7 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
 
   const countResult = await queryContext(
     ctx,
-    `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false ${whereClause}`,
+    `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1 ${whereClause}`,
     params
   );
 
@@ -1422,6 +1453,7 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
  */
 ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
 
   const paginationResult = validatePagination(req.query as Record<string, unknown>, { maxLimit: 100, defaultLimit: 20 });
   if (!paginationResult.success) {
@@ -1434,15 +1466,16 @@ ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(asyn
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, context, is_favorite, created_at, updated_at
      FROM ideas
-     WHERE is_archived = true
+     WHERE is_archived = true AND user_id = $3
      ORDER BY updated_at DESC
      LIMIT $1 OFFSET $2`,
-    [pagination.limit, pagination.offset]
+    [pagination.limit, pagination.offset, userId]
   );
 
   const countResult = await queryContext(
     ctx,
-    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true'
+    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true AND user_id = $1',
+    [userId]
   );
 
   res.json({
@@ -1463,13 +1496,14 @@ ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(asyn
  */
 ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
     throw new ValidationError('Invalid idea ID format');
   }
 
-  const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 RETURNING id', [id]);
+  const result = await queryContext(ctx, 'DELETE FROM ideas WHERE id = $1 AND user_id = $2 RETURNING id', [id, userId]);
 
   if (result.rows.length === 0) {
     throw new NotFoundError('Idea');
@@ -1496,6 +1530,7 @@ ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write
  */
 ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const sourceContext = validateContextParam(req.params.context);
+  const _userId = getUserId(req);
   const { id } = req.params;
   const { targetContext } = req.body;
 
@@ -1557,6 +1592,7 @@ ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('wr
  */
 ideasContextRouter.put('/:context/ideas/:id/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -1565,8 +1601,8 @@ ideasContextRouter.put('/:context/ideas/:id/favorite', apiKeyAuth, requireScope(
 
   const result = await queryContext(
     ctx,
-    'UPDATE ideas SET is_favorite = NOT COALESCE(is_favorite, false), updated_at = NOW() WHERE id = $1 RETURNING id, is_favorite',
-    [id]
+    'UPDATE ideas SET is_favorite = NOT COALESCE(is_favorite, false), updated_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING id, is_favorite',
+    [id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -1607,12 +1643,13 @@ function validateBatchIds(ids: unknown): string[] {
  */
 ideasContextRouter.post('/:context/ideas/batch/archive', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const ids = validateBatchIds(req.body.ids);
 
   const result = await queryContext(
     ctx,
-    `UPDATE ideas SET is_archived = true, archived_at = NOW(), updated_at = NOW() WHERE id = ANY($1::uuid[]) AND is_archived = false RETURNING id`,
-    [ids]
+    `UPDATE ideas SET is_archived = true, archived_at = NOW(), updated_at = NOW() WHERE id = ANY($1::uuid[]) AND is_archived = false AND user_id = $2 RETURNING id`,
+    [ids, userId]
   );
 
   res.json({
@@ -1627,12 +1664,13 @@ ideasContextRouter.post('/:context/ideas/batch/archive', apiKeyAuth, requireScop
  */
 ideasContextRouter.post('/:context/ideas/batch/delete', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const ids = validateBatchIds(req.body.ids);
 
   const result = await queryContext(
     ctx,
-    'DELETE FROM ideas WHERE id = ANY($1::uuid[]) RETURNING id',
-    [ids]
+    'DELETE FROM ideas WHERE id = ANY($1::uuid[]) AND user_id = $2 RETURNING id',
+    [ids, userId]
   );
 
   res.json({
@@ -1647,13 +1685,14 @@ ideasContextRouter.post('/:context/ideas/batch/delete', apiKeyAuth, requireScope
  */
 ideasContextRouter.post('/:context/ideas/batch/favorite', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   const ctx = validateContextParam(req.params.context);
+  const userId = getUserId(req);
   const ids = validateBatchIds(req.body.ids);
   const isFavorite = req.body.isFavorite !== false; // default true
 
   const result = await queryContext(
     ctx,
-    'UPDATE ideas SET is_favorite = $2, updated_at = NOW() WHERE id = ANY($1::uuid[]) RETURNING id',
-    [ids, isFavorite]
+    'UPDATE ideas SET is_favorite = $2, updated_at = NOW() WHERE id = ANY($1::uuid[]) AND user_id = $3 RETURNING id',
+    [ids, isFavorite, userId]
   );
 
   res.json({

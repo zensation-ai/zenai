@@ -123,7 +123,7 @@ describe('Calendar Routes', () => {
       expect(res.body.data.title).toBe('Test Event');
       expect(mockCreateEvent).toHaveBeenCalledWith('personal', expect.objectContaining({
         title: 'Test Event',
-      }));
+      }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject missing title', async () => {
@@ -297,7 +297,7 @@ describe('Calendar Routes', () => {
         .query({ hours: 48 });
 
       expect(res.status).toBe(200);
-      expect(mockGetUpcoming).toHaveBeenCalledWith('personal', 48, 10);
+      expect(mockGetUpcoming).toHaveBeenCalledWith('personal', 48, 10, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should cap hours at 168', async () => {
@@ -307,7 +307,7 @@ describe('Calendar Routes', () => {
         .get('/api/personal/calendar/upcoming')
         .query({ hours: 500 });
 
-      expect(mockGetUpcoming).toHaveBeenCalledWith('personal', 168, 10);
+      expect(mockGetUpcoming).toHaveBeenCalledWith('personal', 168, 10, '00000000-0000-0000-0000-000000000001');
     });
   });
 

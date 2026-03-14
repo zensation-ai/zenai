@@ -18,6 +18,7 @@ import { documentService, Document, DocumentFilters } from '../services/document
 import { documentProcessingService } from '../services/document-processing';
 import { documentRAGService } from '../services/document-rag';
 import { AIContext, isValidUUID, isValidContext } from '../utils/database-context';
+import { getUserId } from '../utils/user-context';
 
 // ===========================================
 // Validation Helpers
@@ -130,6 +131,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     validateContext(context);
+    const userId = getUserId(req);
 
     const files = req.files as Express.Multer.File[];
     if (!files || files.length === 0) {
@@ -148,7 +150,7 @@ router.post(
           folderPath: folderPath || '/inbox',
           tags: parsedTags,
           processImmediately: processImmediately !== 'false',
-        });
+        }, userId);
         documents.push(doc);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -178,6 +180,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     validateContext(context);
+    const userId = getUserId(req);
 
     const filters: DocumentFilters = {
       search: req.query.search as string,
@@ -194,7 +197,7 @@ router.get(
       sortOrder: req.query.sortOrder as DocumentFilters['sortOrder'],
     };
 
-    const result = await documentService.listDocuments(context, filters);
+    const result = await documentService.listDocuments(context, filters, userId);
 
     res.json({
       success: true,
@@ -226,6 +229,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     validateContext(context);
+    const userId = getUserId(req);
 
     const { query, limit, includeChunks } = req.body;
 
@@ -236,7 +240,7 @@ router.post(
     const results = await documentService.searchDocuments(query, context, {
       limit: limit || 20,
       includeChunks: includeChunks !== false,
-    });
+    }, userId);
 
     res.json({
       success: true,
@@ -256,6 +260,7 @@ router.get(
     const { context, id } = req.params;
     validateContext(context);
     validateDocumentId(id);
+    const _userId = getUserId(req);
 
     const limit = parseInt(req.query.limit as string, 10) || 5;
     const results = await documentRAGService.findSimilarDocuments(id, context, limit);
@@ -276,12 +281,13 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     validateContext(context);
+    const userId = getUserId(req);
 
     const result = await documentService.listDocuments(context, {
       topicId: undefined,
       processingStatus: 'completed',
       limit: 50,
-    });
+    }, userId);
 
     // Filter to only those without topics
     const orphans = result.data.filter(doc => !doc.primaryTopicId);
@@ -307,11 +313,12 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     validateDocumentId(id);
+    const userId = getUserId(req);
 
     // Search all contexts
     let doc: Document | null = null;
     for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
-      doc = await documentService.getDocument(id, ctx);
+      doc = await documentService.getDocument(id, ctx, userId);
       if (doc) {
         break;
       }
@@ -344,12 +351,13 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     validateDocumentId(id);
+    const userId = getUserId(req);
 
     // Search all contexts
     let doc: Document | null = null;
     let context: AIContext = 'personal';
     for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
-      doc = await documentService.getDocument(id, ctx);
+      doc = await documentService.getDocument(id, ctx, userId);
       if (doc) { context = ctx; break; }
     }
 
@@ -357,7 +365,7 @@ router.post(
       throw new NotFoundError('Document');
     }
 
-    const result = await documentService.reprocessDocument(id, context);
+    const result = await documentService.reprocessDocument(id, context, userId);
 
     res.json({
       success: result?.success || false,
@@ -379,6 +387,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { folderPath, context } = req.body;
+    const userId = getUserId(req);
 
     validateDocumentId(id);
     validateContext(context);
@@ -387,7 +396,7 @@ router.post(
       throw new ValidationError('folderPath is required');
     }
 
-    const success = await documentService.moveToFolder(id, folderPath, context);
+    const success = await documentService.moveToFolder(id, folderPath, context, userId);
     if (!success) {
       throw new NotFoundError('Document');
     }
@@ -408,6 +417,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { tags, context } = req.body;
+    const userId = getUserId(req);
 
     validateDocumentId(id);
     validateContext(context);
@@ -416,7 +426,7 @@ router.post(
       throw new ValidationError('tags array is required');
     }
 
-    const success = await documentService.addTags(id, tags, context);
+    const success = await documentService.addTags(id, tags, context, userId);
     if (!success) {
       throw new NotFoundError('Document');
     }
@@ -437,6 +447,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { ideaId, context } = req.body;
+    const userId = getUserId(req);
 
     validateDocumentId(id);
     validateContext(context);
@@ -445,7 +456,7 @@ router.post(
       throw new ValidationError('Valid ideaId is required');
     }
 
-    const success = await documentService.linkToIdea(id, ideaId, context);
+    const success = await documentService.linkToIdea(id, ideaId, context, userId);
     if (!success) {
       throw new NotFoundError('Document');
     }
@@ -466,6 +477,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     const { documentId } = req.body;
+    const _userId = getUserId(req);
 
     validateContext(context);
     validateDocumentId(documentId);
@@ -496,8 +508,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     validateContext(context);
+    const userId = getUserId(req);
 
-    const folders = await documentService.getFolders(context);
+    const folders = await documentService.getFolders(context, userId);
 
     res.json({
       success: true,
@@ -515,6 +528,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     const { name, parentPath, color, icon } = req.body;
+    const userId = getUserId(req);
 
     validateContext(context);
 
@@ -525,7 +539,7 @@ router.post(
     const folder = await documentService.createFolder(context, name, parentPath || '/', {
       color,
       icon,
-    });
+    }, userId);
 
     res.status(201).json({
       success: true,
@@ -543,10 +557,11 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     const folderPath = '/' + req.params[0]; // Capture the wildcard path
+    const userId = getUserId(req);
 
     validateContext(context);
 
-    const deleted = await documentService.deleteFolder(folderPath, context);
+    const deleted = await documentService.deleteFolder(folderPath, context, userId);
     if (!deleted) {
       throw new NotFoundError('Folder');
     }
@@ -572,6 +587,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     validateDocumentId(id);
+    const userId = getUserId(req);
 
     // Use context query param to scope search, or fall back to all contexts
     const contextParam = req.query.context as string | undefined;
@@ -581,7 +597,7 @@ router.get(
 
     let doc: Document | null = null;
     for (const ctx of contexts) {
-      doc = await documentService.getDocument(id, ctx);
+      doc = await documentService.getDocument(id, ctx, userId);
       if (doc) {
         break;
       }
@@ -624,6 +640,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     validateDocumentId(id);
+    const userId = getUserId(req);
 
     // Use context query param to scope search, or fall back to all contexts
     const contextParam = req.query.context as string | undefined;
@@ -633,7 +650,7 @@ router.get(
 
     let doc: Document | null = null;
     for (const ctx of contexts) {
-      doc = await documentService.getDocument(id, ctx);
+      doc = await documentService.getDocument(id, ctx, userId);
       if (doc) {
         break;
       }
@@ -686,6 +703,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     const { ids } = req.body;
+    const userId = getUserId(req);
 
     validateContext(context);
 
@@ -698,7 +716,7 @@ router.post(
     for (const id of ids.slice(0, 20)) { // Limit to 20 per batch
       try {
         validateDocumentId(id);
-        const doc = await documentService.getDocument(id, context);
+        const doc = await documentService.getDocument(id, context, userId);
 
         if (doc) {
           await documentProcessingService.processDocument(id, doc.filePath, doc.mimeType, context);
@@ -733,6 +751,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     const { ids, folderPath } = req.body;
+    const userId = getUserId(req);
 
     validateContext(context);
 
@@ -746,7 +765,7 @@ router.post(
 
     let successCount = 0;
     for (const id of ids) {
-      const success = await documentService.moveToFolder(id, folderPath, context);
+      const success = await documentService.moveToFolder(id, folderPath, context, userId);
       if (success) {successCount++;}
     }
 
@@ -769,6 +788,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     const { ids } = req.body;
+    const userId = getUserId(req);
 
     validateContext(context);
 
@@ -778,7 +798,7 @@ router.delete(
 
     let deletedCount = 0;
     for (const id of ids) {
-      const deleted = await documentService.deleteDocument(id, context);
+      const deleted = await documentService.deleteDocument(id, context, userId);
       if (deleted) {deletedCount++;}
     }
 
@@ -805,8 +825,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
     validateContext(context);
+    const userId = getUserId(req);
 
-    const stats = await documentService.getStats(context);
+    const stats = await documentService.getStats(context, userId);
 
     res.json({
       success: true,
@@ -830,8 +851,9 @@ router.get(
     const { context, id } = req.params;
     validateContext(context);
     validateDocumentId(id);
+    const userId = getUserId(req);
 
-    const document = await documentService.getDocument(id, context);
+    const document = await documentService.getDocument(id, context, userId);
     if (!document) {
       throw new NotFoundError('Document');
     }
@@ -853,6 +875,7 @@ router.put(
     const { context, id } = req.params;
     validateContext(context);
     validateDocumentId(id);
+    const userId = getUserId(req);
 
     const { title, tags, folderPath, isFavorite, isArchived } = req.body;
 
@@ -862,7 +885,7 @@ router.put(
       folderPath,
       isFavorite,
       isArchived,
-    });
+    }, userId);
 
     if (!document) {
       throw new NotFoundError('Document');
@@ -885,8 +908,9 @@ router.delete(
     const { context, id } = req.params;
     validateContext(context);
     validateDocumentId(id);
+    const userId = getUserId(req);
 
-    const deleted = await documentService.deleteDocument(id, context);
+    const deleted = await documentService.deleteDocument(id, context, userId);
     if (!deleted) {
       throw new NotFoundError('Document');
     }

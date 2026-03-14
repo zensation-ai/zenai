@@ -28,6 +28,7 @@ import { mcpClientManager, MCPServerConfig } from '../services/mcp/mcp-client';
 import { MCPToolBridge, createToolBridge } from '../services/mcp/mcp-tool-bridge';
 import { validateTransportConfig, MCPTransportType } from '../services/mcp/mcp-transport';
 import { logger } from '../utils/logger';
+import { getUserId } from '../utils/user-context';
 
 export const mcpConnectionsV2Router = Router();
 mcpConnectionsV2Router.use(apiKeyAuth);
@@ -56,6 +57,7 @@ mcpConnectionsV2Router.get(
   validateContext,
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     const enabledOnly = req.query.enabled === 'true';
     const servers = await mcpServerRegistry.list(context, enabledOnly);
 
@@ -82,6 +84,7 @@ mcpConnectionsV2Router.post(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     const { name, transport, url, command, args, envVars, authType, authConfig, enabled } = req.body;
 
     if (!name || !transport) {
@@ -125,6 +128,7 @@ mcpConnectionsV2Router.put(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     const server = await mcpServerRegistry.update(context, req.params.id, req.body);
 
     if (!server) {
@@ -145,6 +149,7 @@ mcpConnectionsV2Router.delete(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
 
     // Disconnect first
     await mcpClientManager.disconnect(req.params.id);
@@ -173,6 +178,7 @@ mcpConnectionsV2Router.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     const server = await mcpServerRegistry.getById(context, req.params.id);
 
     if (!server) {
@@ -243,6 +249,7 @@ mcpConnectionsV2Router.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
 
     await mcpClientManager.disconnect(req.params.id);
     toolBridge.removeBridgedTools(req.params.id);
@@ -266,6 +273,7 @@ mcpConnectionsV2Router.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
 
     // Try live tools from connected client first
     const client = mcpClientManager.getClient(req.params.id);
@@ -292,6 +300,7 @@ mcpConnectionsV2Router.get(
   validateContext,
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const client = mcpClientManager.getClient(req.params.id);
     if (!client || !client.isConnected) {
       return res.json({ success: true, data: { resources: [], source: 'offline' } });
@@ -315,6 +324,7 @@ mcpConnectionsV2Router.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     const healthy = await mcpClientManager.healthCheck(req.params.id);
     const status = mcpClientManager.getStatus(req.params.id);
 
@@ -352,6 +362,7 @@ mcpConnectionsV2Router.post(
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
+    const _userId = getUserId(req);
     const { toolId } = req.params;
     const { arguments: args } = req.body;
 

@@ -16,6 +16,7 @@ import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toInt } from '../utils/validation';
 import { getRecentAIActivities, getUnreadActivityCount } from '../services/ai-activity-logger';
 import { logger } from '../utils/logger';
+import { getUserId } from '../utils/user-context';
 
 export const analyticsRouter = Router();
 
@@ -48,6 +49,7 @@ interface _EngagementStats {
  */
 analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -73,7 +75,8 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
         COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as last_week,
         COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as last_month
       FROM ideas
-    `),
+      WHERE user_id = $1
+    `, [userId]),
 
     // Recent activity (last 24h)
     queryContext(ctx, `
@@ -81,36 +84,37 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
         COUNT(*) as created,
         COUNT(*) FILTER (WHERE updated_at != created_at) as updated
       FROM ideas
-      WHERE created_at > NOW() - INTERVAL '24 hours'
-         OR updated_at > NOW() - INTERVAL '24 hours'
-    `),
+      WHERE user_id = $1
+        AND (created_at > NOW() - INTERVAL '24 hours'
+         OR updated_at > NOW() - INTERVAL '24 hours')
+    `, [userId]),
 
     // Category distribution
     queryContext(ctx, `
       SELECT category, COUNT(*) as count
       FROM ideas
-      WHERE is_archived = false
+      WHERE is_archived = false AND user_id = $1
       GROUP BY category
       ORDER BY count DESC
-    `),
+    `, [userId]),
 
     // Type distribution
     queryContext(ctx, `
       SELECT type, COUNT(*) as count
       FROM ideas
-      WHERE is_archived = false
+      WHERE is_archived = false AND user_id = $1
       GROUP BY type
       ORDER BY count DESC
-    `),
+    `, [userId]),
 
     // Priority distribution
     queryContext(ctx, `
       SELECT priority, COUNT(*) as count
       FROM ideas
-      WHERE is_archived = false
+      WHERE is_archived = false AND user_id = $1
       GROUP BY priority
       ORDER BY count DESC
-    `),
+    `, [userId]),
 
     // Daily trend (last 14 days)
     queryContext(ctx, `
@@ -118,10 +122,10 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
         DATE(created_at) as date,
         COUNT(*) as count
       FROM ideas
-      WHERE created_at > NOW() - INTERVAL '14 days'
+      WHERE created_at > NOW() - INTERVAL '14 days' AND user_id = $1
       GROUP BY DATE(created_at)
       ORDER BY date DESC
-    `),
+    `, [userId]),
   ]);
 
   const total = totalStats.rows[0] || { total: '0', active: '0', archived: '0', last_week: '0', last_month: '0' };
@@ -165,6 +169,7 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
 analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { period = 'week' } = req.query;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -189,10 +194,10 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
       EXTRACT(HOUR FROM created_at) as hour,
       COUNT(*) as count
     FROM ideas
-    WHERE created_at > NOW() - MAKE_INTERVAL(days => $1)
+    WHERE created_at > NOW() - MAKE_INTERVAL(days => $1) AND user_id = $2
     GROUP BY hour
     ORDER BY hour
-  `, [intervalDays]);
+  `, [intervalDays, userId]);
 
   // Day of week breakdown (parameterized query)
   const dowResult = await queryContext(ctx, `
@@ -200,10 +205,10 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
       EXTRACT(DOW FROM created_at) as dow,
       COUNT(*) as count
     FROM ideas
-    WHERE created_at > NOW() - MAKE_INTERVAL(days => $1)
+    WHERE created_at > NOW() - MAKE_INTERVAL(days => $1) AND user_id = $2
     GROUP BY dow
     ORDER BY dow
-  `, [intervalDays]);
+  `, [intervalDays, userId]);
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -234,6 +239,7 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
  */
 analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -247,15 +253,15 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
       SELECT
         COUNT(*)::float / GREATEST(1, COUNT(DISTINCT DATE(created_at))) as avg_per_day
       FROM ideas
-      WHERE created_at > NOW() - INTERVAL '30 days'
-    `),
+      WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
+    `, [userId]),
 
     // Current streak (consecutive days with at least 1 idea)
     queryContext(ctx, `
       WITH daily AS (
         SELECT DISTINCT DATE(created_at) as date
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '90 days'
+        WHERE created_at > NOW() - INTERVAL '90 days' AND user_id = $1
         ORDER BY date DESC
       ),
       streak AS (
@@ -266,7 +272,7 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
       SELECT COUNT(*) as streak_days
       FROM streak
       WHERE grp = (SELECT grp FROM streak ORDER BY date DESC LIMIT 1)
-    `),
+    `, [userId]),
 
     // Processing stats (voice memo -> structured idea)
     queryContext(ctx, `
@@ -275,8 +281,8 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
         AVG(EXTRACT(EPOCH FROM (updated_at - created_at))) as avg_processing_time_sec
       FROM ideas
       WHERE created_at > NOW() - INTERVAL '30 days'
-        AND type != 'note'
-    `),
+        AND type != 'note' AND user_id = $1
+    `, [userId]),
   ]);
 
   res.json({
@@ -357,6 +363,7 @@ function generateInsights(
  */
 analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -383,14 +390,15 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
         COUNT(*) FILTER (WHERE is_archived = false AND created_at > NOW() - INTERVAL '24 hours') as today,
         COUNT(*) FILTER (WHERE is_archived = false AND priority = 'high') as high_priority
       FROM ideas
-    `), emptyResult),
+      WHERE user_id = $1
+    `, [userId]), emptyResult),
 
     // Streak: consecutive days with at least 1 idea
     safeQuery(queryContext(ctx, `
       WITH daily AS (
         SELECT DISTINCT DATE(created_at) as date
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '90 days'
+        WHERE created_at > NOW() - INTERVAL '90 days' AND user_id = $1
         ORDER BY date DESC
       ),
       streak AS (
@@ -401,7 +409,7 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
       SELECT COUNT(*) as streak_days
       FROM streak
       WHERE grp = (SELECT grp FROM streak ORDER BY date DESC LIMIT 1)
-    `), emptyResult),
+    `, [userId]), emptyResult),
 
     // 7-day trend (count per day)
     safeQuery(queryContext(ctx, `
@@ -410,19 +418,19 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
         COUNT(*) as count
       FROM ideas
       WHERE created_at > NOW() - INTERVAL '7 days'
-        AND is_archived = false
+        AND is_archived = false AND user_id = $1
       GROUP BY DATE(created_at)
       ORDER BY date ASC
-    `), emptyResult),
+    `, [userId]), emptyResult),
 
     // Recent 6 ideas
     safeQuery(queryContext(ctx, `
       SELECT id, title, type, priority, created_at
       FROM ideas
-      WHERE is_archived = false
+      WHERE is_archived = false AND user_id = $1
       ORDER BY created_at DESC
       LIMIT 6
-    `), emptyResult),
+    `, [userId]), emptyResult),
 
     // Recent 5 AI activities
     getRecentAIActivities(ctx, 5),

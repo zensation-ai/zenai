@@ -11,6 +11,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { toIntBounded } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 import {
   requestApproval,
   approveAction,
@@ -55,6 +56,7 @@ governanceRouter.get(
   '/:context/governance/stream',
   apiKeyAuth,
   (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
       res.status(400).json({ success: false, error: 'Invalid context' });
@@ -98,6 +100,7 @@ governanceRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -120,6 +123,7 @@ governanceRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -143,6 +147,7 @@ governanceRouter.get(
   apiKeyAuth,
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -162,6 +167,7 @@ governanceRouter.post(
   apiKeyAuth,
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -203,6 +209,7 @@ governanceRouter.post(
   requireScope('admin'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -225,6 +232,7 @@ governanceRouter.post(
   requireScope('admin'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -252,6 +260,7 @@ governanceRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -279,6 +288,7 @@ governanceRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -294,6 +304,7 @@ governanceRouter.post(
   apiKeyAuth,
   requireScope('admin'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -328,6 +339,7 @@ governanceRouter.put(
   requireScope('admin'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -343,6 +355,7 @@ governanceRouter.delete(
   requireScope('admin'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
@@ -362,6 +375,7 @@ governanceRouter.post(
   apiKeyAuth,
   requireScope('admin'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 

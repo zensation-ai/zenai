@@ -10,6 +10,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { AIContext } from '../utils/database-context';
 import { isValidUUID, validateContextParam } from '../utils/validation';
 import { sendData, sendList, sendMessage, sendNotFound, sendValidationError, parsePagination } from '../utils/response';
+import { getUserId } from '../utils/user-context';
 import * as screenMemoryService from '../services/screen-memory';
 
 const router = Router();
@@ -25,6 +26,7 @@ function getContext(req: Request): AIContext {
 // ============================================================
 
 router.get('/:context/screen-memory', asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const { limit, offset } = parsePagination(req, { defaultLimit: 50 });
   const filters: screenMemoryService.ScreenMemoryFilters = {
     search: req.query.search as string | undefined,
@@ -34,12 +36,13 @@ router.get('/:context/screen-memory', asyncHandler(async (req: Request, res: Res
     limit,
     offset,
   };
-  const result = await screenMemoryService.getCaptures(getContext(req), filters);
+  const result = await screenMemoryService.getCaptures(getContext(req), filters, userId);
   sendList(res, result.captures, result.total);
 }));
 
 router.get('/:context/screen-memory/stats', asyncHandler(async (req: Request, res: Response) => {
-  const stats = await screenMemoryService.getStats(getContext(req));
+  const userId = getUserId(req);
+  const stats = await screenMemoryService.getStats(getContext(req), userId);
   sendData(res, stats);
 }));
 
@@ -48,7 +51,8 @@ router.get('/:context/screen-memory/:id', asyncHandler(async (req: Request, res:
     sendValidationError(res, 'Invalid ID format');
     return;
   }
-  const capture = await screenMemoryService.getCapture(getContext(req), req.params.id);
+  const userId = getUserId(req);
+  const capture = await screenMemoryService.getCapture(getContext(req), req.params.id, userId);
   if (!capture) {
     sendNotFound(res, 'Capture');
     return;
@@ -57,7 +61,8 @@ router.get('/:context/screen-memory/:id', asyncHandler(async (req: Request, res:
 }));
 
 router.post('/:context/screen-memory', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  const capture = await screenMemoryService.storeCapture(getContext(req), req.body);
+  const userId = getUserId(req);
+  const capture = await screenMemoryService.storeCapture(getContext(req), req.body, userId);
   sendData(res, capture, 201);
 }));
 
@@ -66,7 +71,8 @@ router.delete('/:context/screen-memory/:id', requireScope('write'), asyncHandler
     sendValidationError(res, 'Invalid ID format');
     return;
   }
-  const deleted = await screenMemoryService.deleteCapture(getContext(req), req.params.id);
+  const userId = getUserId(req);
+  const deleted = await screenMemoryService.deleteCapture(getContext(req), req.params.id, userId);
   if (!deleted) {
     sendNotFound(res, 'Capture');
     return;
@@ -75,9 +81,10 @@ router.delete('/:context/screen-memory/:id', requireScope('write'), asyncHandler
 }));
 
 router.post('/:context/screen-memory/cleanup', requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
   const parsed = parseInt(req.body.retention_days);
   const retentionDays = Number.isNaN(parsed) ? 30 : Math.max(1, Math.min(365, parsed));
-  const deleted = await screenMemoryService.cleanupOldCaptures(getContext(req), retentionDays);
+  const deleted = await screenMemoryService.cleanupOldCaptures(getContext(req), retentionDays, userId);
   sendMessage(res, `Cleaned up ${deleted} old captures`, { deleted });
 }));
 

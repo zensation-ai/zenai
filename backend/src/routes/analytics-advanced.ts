@@ -13,6 +13,7 @@ import { queryContext, AIContext, isValidContext } from '../utils/database-conte
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { analyticsRouter } from './analytics';
+import { getUserId } from '../utils/user-context';
 
 // ===========================================
 // Productivity Dashboard
@@ -24,6 +25,7 @@ import { analyticsRouter } from './analytics';
  */
 analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -50,8 +52,8 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as this_month,
           COUNT(*) FILTER (WHERE priority = 'high' AND is_archived = false) as high_priority
         FROM ideas
-        WHERE is_archived = false
-      `),
+        WHERE is_archived = false AND user_id = $1
+      `, [userId]),
 
       // Weekly trend (last 8 weeks)
       queryContext(ctx, `
@@ -59,10 +61,10 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
           DATE_TRUNC('week', created_at) as week,
           COUNT(*) as count
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '8 weeks'
+        WHERE created_at > NOW() - INTERVAL '8 weeks' AND user_id = $1
         GROUP BY week
         ORDER BY week
-      `),
+      `, [userId]),
 
       // Monthly trend (last 6 months)
       queryContext(ctx, `
@@ -70,10 +72,10 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
           DATE_TRUNC('month', created_at) as month,
           COUNT(*) as count
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '6 months'
+        WHERE created_at > NOW() - INTERVAL '6 months' AND user_id = $1
         GROUP BY month
         ORDER BY month
-      `),
+      `, [userId]),
 
       // Category trend over time
       queryContext(ctx, `
@@ -82,10 +84,10 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
           category,
           COUNT(*) as count
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '4 weeks'
+        WHERE created_at > NOW() - INTERVAL '4 weeks' AND user_id = $1
         GROUP BY week, category
         ORDER BY week, count DESC
-      `),
+      `, [userId]),
 
       // Goal progress
       queryContext(ctx, `
@@ -95,11 +97,11 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
         ),
         today_count AS (
           SELECT COUNT(*) as cnt FROM ideas
-          WHERE DATE(created_at) = CURRENT_DATE AND is_archived = false
+          WHERE DATE(created_at) = CURRENT_DATE AND is_archived = false AND user_id = $1
         ),
         week_count AS (
           SELECT COUNT(*) as cnt FROM ideas
-          WHERE created_at > DATE_TRUNC('week', NOW()) AND is_archived = false
+          WHERE created_at > DATE_TRUNC('week', NOW()) AND is_archived = false AND user_id = $1
         )
         SELECT
           g.daily_ideas_target,
@@ -109,14 +111,14 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
         FROM goals g
         CROSS JOIN today_count t
         CROSS JOIN week_count w
-      `),
+      `, [userId]),
 
       // Streak calculation
       queryContext(ctx, `
         WITH daily AS (
           SELECT DISTINCT DATE(created_at) as date
           FROM ideas
-          WHERE created_at > NOW() - INTERVAL '90 days'
+          WHERE created_at > NOW() - INTERVAL '90 days' AND user_id = $1
           ORDER BY date DESC
         ),
         numbered AS (
@@ -138,7 +140,7 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
         FROM streaks
         WHERE end_date = (SELECT MAX(date) FROM daily)
         LIMIT 1
-      `),
+      `, [userId]),
 
       // Hourly activity pattern
       queryContext(ctx, `
@@ -146,20 +148,20 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
           EXTRACT(HOUR FROM created_at) as hour,
           COUNT(*) as count
         FROM ideas
-        WHERE created_at > NOW() - INTERVAL '30 days'
+        WHERE created_at > NOW() - INTERVAL '30 days' AND user_id = $1
         GROUP BY hour
         ORDER BY hour
-      `),
+      `, [userId]),
 
       // Recent highlights
       queryContext(ctx, `
         SELECT id, title, type, category, priority, created_at
         FROM ideas
-        WHERE is_archived = false
+        WHERE is_archived = false AND user_id = $1
           AND (priority = 'high' OR type = 'insight')
         ORDER BY created_at DESC
         LIMIT 5
-      `)
+      `, [userId])
     ]);
 
   const summaryRow = summary.rows[0];
@@ -227,6 +229,7 @@ analyticsRouter.get('/:context/analytics/dashboard', apiKeyAuth, asyncHandler(as
  */
 analyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -241,21 +244,24 @@ analyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncH
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '7 days'
           AND is_archived = false
-      `),
+          AND user_id = $1
+      `, [userId]),
 
       // Consistency (days active this week)
       queryContext(ctx, `
         SELECT COUNT(DISTINCT DATE(created_at)) as active_days
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '7 days'
-      `),
+          AND user_id = $1
+      `, [userId]),
 
       // Variety (unique categories this week)
       queryContext(ctx, `
         SELECT COUNT(DISTINCT category) as categories
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '7 days'
-      `),
+          AND user_id = $1
+      `, [userId]),
 
       // Quality (high priority + insights ratio)
       queryContext(ctx, `
@@ -264,7 +270,8 @@ analyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncH
           COUNT(*) as total
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '7 days'
-      `)
+          AND user_id = $1
+      `, [userId])
     ]);
 
   const weeklyCount = parseInt(weeklyStats.rows[0]?.count || '0', 10);
@@ -330,6 +337,7 @@ analyticsRouter.get('/:context/analytics/productivity-score', apiKeyAuth, asyncH
  */
 analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -345,10 +353,11 @@ analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(asy
           COUNT(*) as count
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '30 days'
+          AND user_id = $1
         GROUP BY hour
         ORDER BY count DESC
         LIMIT 3
-      `),
+      `, [userId]),
 
       // Peak days
       queryContext(ctx, `
@@ -357,10 +366,11 @@ analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(asy
           COUNT(*) as count
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '30 days'
+          AND user_id = $1
         GROUP BY dow
         ORDER BY count DESC
         LIMIT 3
-      `),
+      `, [userId]),
 
       // Category preferences
       queryContext(ctx, `
@@ -370,9 +380,10 @@ analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(asy
           ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as percentage
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '30 days'
+          AND user_id = $1
         GROUP BY category
         ORDER BY count DESC
-      `),
+      `, [userId]),
 
       // Type preferences
       queryContext(ctx, `
@@ -382,9 +393,10 @@ analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(asy
           ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) as percentage
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '30 days'
+          AND user_id = $1
         GROUP BY type
         ORDER BY count DESC
-      `)
+      `, [userId])
     ]);
 
   const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
@@ -431,6 +443,7 @@ analyticsRouter.get('/:context/analytics/patterns', apiKeyAuth, asyncHandler(asy
 analyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { period = 'week' } = req.query;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -454,7 +467,8 @@ analyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(a
         FROM ideas
         WHERE created_at > NOW() - INTERVAL '1 day' * $1
           AND is_archived = false
-      `, [intervalDays]),
+          AND user_id = $2
+      `, [intervalDays, userId]),
       queryContext(ctx, `
         SELECT
           COUNT(*) as total,
@@ -466,7 +480,8 @@ analyticsRouter.get('/:context/analytics/comparison', apiKeyAuth, asyncHandler(a
         WHERE created_at > NOW() - INTERVAL '1 day' * $1 * 2
           AND created_at <= NOW() - INTERVAL '1 day' * $1
           AND is_archived = false
-      `, [intervalDays])
+          AND user_id = $2
+      `, [intervalDays, userId])
     ]);
 
   const defaultRow = { total: '0', high_priority: '0', tasks: '0', ideas: '0', active_days: '0' };

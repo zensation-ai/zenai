@@ -7,6 +7,7 @@
 
 import { queryContext, AIContext, QueryParam } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { SYSTEM_USER_ID } from '../utils/user-context';
 
 // ============================================================
 // Types
@@ -119,7 +120,8 @@ export function isSensitiveDomain(domain: string): boolean {
  */
 export async function addHistoryEntry(
   context: AIContext,
-  input: CreateHistoryInput
+  input: CreateHistoryInput,
+  userId: string = SYSTEM_USER_ID
 ): Promise<BrowsingHistoryEntry> {
   // Privacy filter
   if (isSensitiveDomain(input.domain)) {
@@ -143,8 +145,8 @@ export async function addHistoryEntry(
   }
 
   const result = await queryContext(context, `
-    INSERT INTO browsing_history (url, title, domain, duration_seconds, content_summary, content_text, keywords, category, metadata)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    INSERT INTO browsing_history (url, title, domain, duration_seconds, content_summary, content_text, keywords, category, metadata, user_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     RETURNING *
   `, [
     input.url,
@@ -156,6 +158,7 @@ export async function addHistoryEntry(
     input.keywords || [],
     input.category || null,
     JSON.stringify(input.metadata || {}),
+    userId,
   ]);
 
   return result.rows[0];
@@ -166,11 +169,12 @@ export async function addHistoryEntry(
  */
 export async function getHistory(
   context: AIContext,
-  filters: BrowsingHistoryFilters = {}
+  filters: BrowsingHistoryFilters = {},
+  userId: string = SYSTEM_USER_ID
 ): Promise<{ entries: BrowsingHistoryEntry[]; total: number }> {
-  const conditions: string[] = [];
-  const params: QueryParam[] = [];
-  let paramIndex = 1;
+  const conditions: string[] = [`user_id = $1`];
+  const params: QueryParam[] = [userId];
+  let paramIndex = 2;
 
   if (filters.domain) {
     conditions.push(`domain = $${paramIndex++}`);
@@ -198,7 +202,7 @@ export async function getHistory(
     params.push(filters.to_date);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
   const limit = Math.min(filters.limit || 50, 200);
   const offset = filters.offset || 0;
 
@@ -225,11 +229,12 @@ export async function getHistory(
  */
 export async function getHistoryEntry(
   context: AIContext,
-  id: string
+  id: string,
+  userId: string = SYSTEM_USER_ID
 ): Promise<BrowsingHistoryEntry | null> {
   const result = await queryContext(context,
-    'SELECT * FROM browsing_history WHERE id = $1',
-    [id]
+    'SELECT * FROM browsing_history WHERE id = $1 AND user_id = $2',
+    [id, userId]
   );
   return result.rows[0] || null;
 }
@@ -239,11 +244,12 @@ export async function getHistoryEntry(
  */
 export async function deleteHistoryEntry(
   context: AIContext,
-  id: string
+  id: string,
+  userId: string = SYSTEM_USER_ID
 ): Promise<boolean> {
   const result = await queryContext(context,
-    'DELETE FROM browsing_history WHERE id = $1',
-    [id]
+    'DELETE FROM browsing_history WHERE id = $1 AND user_id = $2',
+    [id, userId]
   );
   return (result.rowCount ?? 0) > 0;
 }
@@ -253,13 +259,14 @@ export async function deleteHistoryEntry(
  */
 export async function clearHistory(
   context: AIContext,
-  before?: string
+  before?: string,
+  userId: string = SYSTEM_USER_ID
 ): Promise<number> {
-  let query = 'DELETE FROM browsing_history';
-  const params: QueryParam[] = [];
+  let query = 'DELETE FROM browsing_history WHERE user_id = $1';
+  const params: QueryParam[] = [userId];
 
   if (before) {
-    query += ' WHERE visit_time <= $1';
+    query += ' AND visit_time <= $2';
     params.push(before);
   }
 
@@ -272,7 +279,8 @@ export async function clearHistory(
  */
 export async function getDomainStats(
   context: AIContext,
-  limit = 20
+  limit = 20,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Array<{ domain: string; visit_count: number; total_duration: number; last_visit: string }>> {
   const result = await queryContext(context, `
     SELECT
@@ -281,10 +289,11 @@ export async function getDomainStats(
       COALESCE(SUM(duration_seconds), 0) as total_duration,
       MAX(visit_time) as last_visit
     FROM browsing_history
+    WHERE user_id = $1
     GROUP BY domain
     ORDER BY visit_count DESC
-    LIMIT $1
-  `, [limit]);
+    LIMIT $2
+  `, [userId, limit]);
 
   return result.rows.map(row => ({
     domain: row.domain,
@@ -303,12 +312,13 @@ export async function getDomainStats(
  */
 export async function createBookmark(
   context: AIContext,
-  input: CreateBookmarkInput
+  input: CreateBookmarkInput,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Bookmark> {
   const result = await queryContext(context, `
-    INSERT INTO bookmarks (url, title, description, folder, tags, ai_summary, favicon_url, metadata)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    ON CONFLICT (url) DO UPDATE SET
+    INSERT INTO bookmarks (url, title, description, folder, tags, ai_summary, favicon_url, metadata, user_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    ON CONFLICT (url, user_id) DO UPDATE SET
       title = COALESCE(EXCLUDED.title, bookmarks.title),
       description = COALESCE(EXCLUDED.description, bookmarks.description),
       folder = COALESCE(EXCLUDED.folder, bookmarks.folder),
@@ -325,6 +335,7 @@ export async function createBookmark(
     input.ai_summary || null,
     input.favicon_url || null,
     JSON.stringify(input.metadata || {}),
+    userId,
   ]);
 
   return result.rows[0];
@@ -335,11 +346,12 @@ export async function createBookmark(
  */
 export async function getBookmarks(
   context: AIContext,
-  filters: BookmarkFilters = {}
+  filters: BookmarkFilters = {},
+  userId: string = SYSTEM_USER_ID
 ): Promise<{ bookmarks: Bookmark[]; total: number }> {
-  const conditions: string[] = [];
-  const params: QueryParam[] = [];
-  let paramIndex = 1;
+  const conditions: string[] = [`user_id = $1`];
+  const params: QueryParam[] = [userId];
+  let paramIndex = 2;
 
   if (filters.folder) {
     conditions.push(`folder = $${paramIndex++}`);
@@ -357,7 +369,7 @@ export async function getBookmarks(
     paramIndex++;
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
   const limit = Math.min(filters.limit || 50, 200);
   const offset = filters.offset || 0;
 
@@ -384,11 +396,12 @@ export async function getBookmarks(
  */
 export async function getBookmark(
   context: AIContext,
-  id: string
+  id: string,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Bookmark | null> {
   const result = await queryContext(context,
-    'SELECT * FROM bookmarks WHERE id = $1',
-    [id]
+    'SELECT * FROM bookmarks WHERE id = $1 AND user_id = $2',
+    [id, userId]
   );
   return result.rows[0] || null;
 }
@@ -399,7 +412,8 @@ export async function getBookmark(
 export async function updateBookmark(
   context: AIContext,
   id: string,
-  updates: Partial<CreateBookmarkInput>
+  updates: Partial<CreateBookmarkInput>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Bookmark | null> {
   const sets: string[] = [];
   const params: QueryParam[] = [];
@@ -430,15 +444,15 @@ export async function updateBookmark(
     params.push(updates.favicon_url);
   }
 
-  if (sets.length === 0) {return getBookmark(context, id);}
+  if (sets.length === 0) {return getBookmark(context, id, userId);}
 
   sets.push('updated_at = NOW()');
 
   const result = await queryContext(context, `
     UPDATE bookmarks SET ${sets.join(', ')}
-    WHERE id = $${paramIndex}
+    WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}
     RETURNING *
-  `, [...params, id]);
+  `, [...params, id, userId]);
 
   return result.rows[0] || null;
 }
@@ -448,11 +462,12 @@ export async function updateBookmark(
  */
 export async function deleteBookmark(
   context: AIContext,
-  id: string
+  id: string,
+  userId: string = SYSTEM_USER_ID
 ): Promise<boolean> {
   const result = await queryContext(context,
-    'DELETE FROM bookmarks WHERE id = $1',
-    [id]
+    'DELETE FROM bookmarks WHERE id = $1 AND user_id = $2',
+    [id, userId]
   );
   return (result.rowCount ?? 0) > 0;
 }
@@ -461,14 +476,16 @@ export async function deleteBookmark(
  * Get all bookmark folders
  */
 export async function getBookmarkFolders(
-  context: AIContext
+  context: AIContext,
+  userId: string = SYSTEM_USER_ID
 ): Promise<Array<{ folder: string; count: number }>> {
   const result = await queryContext(context, `
     SELECT folder, COUNT(*) as count
     FROM bookmarks
+    WHERE user_id = $1
     GROUP BY folder
     ORDER BY folder
-  `);
+  `, [userId]);
 
   return result.rows.map(row => ({
     folder: row.folder,

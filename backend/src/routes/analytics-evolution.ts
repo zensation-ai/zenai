@@ -11,6 +11,7 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { toIntBounded } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 import {
   getEvolutionDashboard,
   createDailySnapshot,
@@ -40,6 +41,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -63,6 +65,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -98,6 +101,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
@@ -124,6 +128,7 @@ evolutionRouter.post(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -151,6 +156,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
     // SECURITY FIX: Use bounded integer parsing for both limit and offset
     const limit = toIntBounded(req.query.limit as string, 50, 1, 200);
     const offset = toIntBounded(req.query.offset as string, 0, 0, 100000); // Reasonable max offset
@@ -185,6 +191,7 @@ evolutionRouter.post(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
     const { event_type, title, description, impact_score, metadata, icon, color } = req.body;
 
     if (!isValidContext(context)) {
@@ -233,6 +240,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
     const weeks = Math.min(parseInt(req.query.weeks as string, 10) || 12, 52);
 
     if (!isValidContext(context)) {
@@ -270,6 +278,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -298,6 +307,7 @@ evolutionRouter.post(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context, type } = req.params;
+    const _userId = getUserId(req);
     const { current_value } = req.body;
 
     if (!isValidContext(context)) {
@@ -346,6 +356,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -412,6 +423,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -482,6 +494,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
@@ -510,6 +523,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -537,6 +551,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
@@ -565,6 +580,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -589,6 +605,7 @@ evolutionRouter.get(
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
+    const _userId = getUserId(req);
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {

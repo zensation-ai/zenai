@@ -12,6 +12,7 @@ import {
   parseJSON,
   IdeaRow,
 } from '../utils/export-helpers';
+import { getUserId } from '../utils/user-context';
 
 export const exportRouter = Router();
 
@@ -52,6 +53,7 @@ function validateFilterParam(value: string | undefined, allowlist: string[], par
 
 exportRouter.get('/ideas/pdf', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const includeArchived = req.query.includeArchived === 'true';
 
   // Validate filter parameters against allowlist
@@ -60,23 +62,24 @@ exportRouter.get('/ideas/pdf', apiKeyAuth, asyncHandler(async (req: Request, res
   const priority = validateFilterParam(req.query.priority as string, VALID_PRIORITIES, 'priority');
 
   // Build query
-  let whereClause = includeArchived ? '' : 'WHERE is_archived = false';
-  const params: (string | number)[] = [];
-  let paramIndex = 1;
+  let whereClause = 'WHERE user_id = $1';
+  const params: (string | number)[] = [userId];
+  let paramIndex = 2;
+
+  if (!includeArchived) {
+    whereClause += ' AND is_archived = false';
+  }
 
   if (type) {
-    whereClause += whereClause ? ' AND' : ' WHERE';
-    whereClause += ` type = $${paramIndex++}`;
+    whereClause += ` AND type = $${paramIndex++}`;
     params.push(type);
   }
   if (category) {
-    whereClause += whereClause ? ' AND' : ' WHERE';
-    whereClause += ` category = $${paramIndex++}`;
+    whereClause += ` AND category = $${paramIndex++}`;
     params.push(category);
   }
   if (priority) {
-    whereClause += whereClause ? ' AND' : ' WHERE';
-    whereClause += ` priority = $${paramIndex++}`;
+    whereClause += ` AND priority = $${paramIndex++}`;
     params.push(priority);
   }
 
@@ -184,6 +187,7 @@ exportRouter.get('/ideas/pdf', apiKeyAuth, asyncHandler(async (req: Request, res
  */
 exportRouter.get('/ideas/:id/pdf', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -193,8 +197,8 @@ exportRouter.get('/ideas/:id/pdf', apiKeyAuth, asyncHandler(async (req: Request,
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, created_at, updated_at
-     FROM ideas WHERE id = $1`,
-    [id]
+     FROM ideas WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -296,15 +300,17 @@ exportRouter.get('/ideas/:id/pdf', apiKeyAuth, asyncHandler(async (req: Request,
  */
 exportRouter.get('/ideas/markdown', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const includeArchived = req.query.includeArchived === 'true';
 
-  const whereClause = includeArchived ? '' : 'WHERE is_archived = false';
+  const whereClause = includeArchived ? 'WHERE user_id = $1' : 'WHERE is_archived = false AND user_id = $1';
 
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, created_at
      FROM ideas ${whereClause}
-     ORDER BY priority DESC, created_at DESC`
+     ORDER BY priority DESC, created_at DESC`,
+    [userId]
   );
 
   let markdown = `# Personal AI Brain - Ideas Export\n\n`;
@@ -373,6 +379,7 @@ exportRouter.get('/ideas/markdown', apiKeyAuth, asyncHandler(async (req: Request
  */
 exportRouter.get('/ideas/:id/markdown', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const { id } = req.params;
 
   if (!isValidUUID(id)) {
@@ -382,8 +389,8 @@ exportRouter.get('/ideas/:id/markdown', apiKeyAuth, asyncHandler(async (req: Req
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, created_at, updated_at
-     FROM ideas WHERE id = $1`,
-    [id]
+     FROM ideas WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -449,15 +456,17 @@ exportRouter.get('/ideas/:id/markdown', apiKeyAuth, asyncHandler(async (req: Req
  */
 exportRouter.get('/ideas/csv', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const includeArchived = req.query.includeArchived === 'true';
 
-  const whereClause = includeArchived ? '' : 'WHERE is_archived = false';
+  const whereClause = includeArchived ? 'WHERE user_id = $1' : 'WHERE is_archived = false AND user_id = $1';
 
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, created_at, updated_at, is_archived
      FROM ideas ${whereClause}
-     ORDER BY created_at DESC`
+     ORDER BY created_at DESC`,
+    [userId]
   );
 
   // CSV Header
@@ -506,15 +515,17 @@ exportRouter.get('/ideas/csv', apiKeyAuth, asyncHandler(async (req: Request, res
  */
 exportRouter.get('/ideas/json', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
   const includeArchived = req.query.includeArchived === 'true';
 
-  const whereClause = includeArchived ? '' : 'WHERE is_archived = false';
+  const whereClause = includeArchived ? 'WHERE user_id = $1' : 'WHERE is_archived = false AND user_id = $1';
 
   const result = await queryContext(
     ctx,
     `SELECT id, title, type, category, priority, summary, next_steps, context_needed, keywords, raw_transcript, created_at, updated_at, is_archived
      FROM ideas ${whereClause}
-     ORDER BY created_at DESC`
+     ORDER BY created_at DESC`,
+    [userId]
   );
 
   const exportData = {
@@ -545,6 +556,7 @@ exportRouter.get('/ideas/json', apiKeyAuth, asyncHandler(async (req: Request, re
  */
 exportRouter.get('/incubator/markdown', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
 
   // Get clusters with their thoughts
   const clustersResult = await queryContext(
@@ -608,6 +620,7 @@ exportRouter.get('/incubator/markdown', apiKeyAuth, asyncHandler(async (req: Req
  */
 exportRouter.get('/meetings/pdf', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
 
   const result = await queryContext(
     ctx,
@@ -681,6 +694,7 @@ exportRouter.get('/meetings/pdf', apiKeyAuth, asyncHandler(async (req: Request, 
  */
 exportRouter.get('/meetings/csv', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
 
   const result = await queryContext(
     ctx,
@@ -730,6 +744,7 @@ exportRouter.get('/meetings/csv', apiKeyAuth, asyncHandler(async (req: Request, 
  */
 exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const userId = getUserId(req);
 
   // Safety limit to prevent memory exhaustion (adjust as needed)
   const MAX_BACKUP_ROWS = 10000;
@@ -742,9 +757,9 @@ exportRouter.get('/backup', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
              keywords, raw_transcript, context, created_at, updated_at, is_archived,
              viewed_count, company_id, primary_topic_id
       FROM ideas
-      WHERE context = $1
+      WHERE context = $1 AND user_id = $3
       ORDER BY created_at DESC
-      LIMIT $2`, [ctx, MAX_BACKUP_ROWS]),
+      LIMIT $2`, [ctx, MAX_BACKUP_ROWS, userId]),
     queryContext(ctx, `
       SELECT id, company_id, title, date, duration_minutes, participants, location,
              meeting_type, status, context, created_at, updated_at
@@ -836,6 +851,7 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
   const format = (req.query.format as string) || 'json';
   const contentParam = (req.query.content as string) || 'ideas';
   const ctx = getContext(req);
+  const _userId = getUserId(req);
   const fromDate = req.query.from as string;
   const toDate = req.query.to as string;
 
@@ -988,6 +1004,7 @@ exportRouter.get('/data', apiKeyAuth, asyncHandler(async (req: Request, res: Res
  * Get export history (recent exports)
  */
 exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
   const offset = parseInt(req.query.offset as string, 10) || 0;
 
@@ -1028,6 +1045,7 @@ exportRouter.get('/history', apiKeyAuth, asyncHandler(async (req: Request, res: 
  * Record an export in history
  */
 exportRouter.post('/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
   const { export_type, filename, file_size, ideas_count, filters } = req.body;
 
   // Validate export_type

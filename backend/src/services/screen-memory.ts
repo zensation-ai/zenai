@@ -8,6 +8,7 @@
 
 import { queryContext, AIContext, QueryParam } from '../utils/database-context';
 import { logger } from '../utils/logger';
+import { SYSTEM_USER_ID } from '../utils/user-context';
 
 // ============================================================
 // Types
@@ -50,13 +51,14 @@ export interface ScreenMemoryStats {
 
 export async function storeCapture(
   context: AIContext,
-  input: Partial<ScreenCapture>
+  input: Partial<ScreenCapture>,
+  userId: string = SYSTEM_USER_ID
 ): Promise<ScreenCapture> {
   const result = await queryContext(context,
     `INSERT INTO screen_captures
        (timestamp, app_name, window_title, url, ocr_text, screenshot_path,
-        duration_seconds, is_sensitive, metadata)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        duration_seconds, is_sensitive, metadata, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING *`,
     [
       input.timestamp || new Date().toISOString(),
@@ -68,6 +70,7 @@ export async function storeCapture(
       input.duration_seconds || 0,
       input.is_sensitive || false,
       JSON.stringify(input.metadata || {}),
+      userId,
     ]
   );
   return result.rows[0];
@@ -75,11 +78,12 @@ export async function storeCapture(
 
 export async function getCaptures(
   context: AIContext,
-  filters: ScreenMemoryFilters = {}
+  filters: ScreenMemoryFilters = {},
+  userId: string = SYSTEM_USER_ID
 ): Promise<{ captures: ScreenCapture[]; total: number }> {
-  const conditions: string[] = ['is_sensitive = FALSE'];
-  const params: QueryParam[] = [];
-  let idx = 1;
+  const conditions: string[] = ['is_sensitive = FALSE', 'user_id = $1'];
+  const params: QueryParam[] = [userId];
+  let idx = 2;
 
   if (filters.search) {
     conditions.push(`(ocr_text ILIKE $${idx} OR window_title ILIKE $${idx} OR app_name ILIKE $${idx} OR url ILIKE $${idx})`);
@@ -127,18 +131,18 @@ export async function getCaptures(
   };
 }
 
-export async function getCapture(context: AIContext, id: string): Promise<ScreenCapture | null> {
+export async function getCapture(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<ScreenCapture | null> {
   const result = await queryContext(context,
-    `SELECT * FROM screen_captures WHERE id = $1`,
-    [id]
+    `SELECT * FROM screen_captures WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return result.rows[0] || null;
 }
 
-export async function deleteCapture(context: AIContext, id: string): Promise<boolean> {
+export async function deleteCapture(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
   const result = await queryContext(context,
-    `DELETE FROM screen_captures WHERE id = $1`,
-    [id]
+    `DELETE FROM screen_captures WHERE id = $1 AND user_id = $2`,
+    [id, userId]
   );
   return (result.rowCount ?? 0) > 0;
 }
@@ -147,24 +151,28 @@ export async function deleteCapture(context: AIContext, id: string): Promise<boo
 // Analytics
 // ============================================================
 
-export async function getStats(context: AIContext): Promise<ScreenMemoryStats> {
+export async function getStats(context: AIContext, userId: string = SYSTEM_USER_ID): Promise<ScreenMemoryStats> {
   const [totalResult, appsResult, todayResult, topAppsResult] = await Promise.all([
     queryContext(context,
       `SELECT COUNT(*) as total, COALESCE(SUM(duration_seconds), 0) as total_duration
-       FROM screen_captures WHERE is_sensitive = FALSE`
+       FROM screen_captures WHERE is_sensitive = FALSE AND user_id = $1`,
+      [userId]
     ),
     queryContext(context,
-      `SELECT COUNT(DISTINCT app_name) as total FROM screen_captures WHERE app_name IS NOT NULL`
+      `SELECT COUNT(DISTINCT app_name) as total FROM screen_captures WHERE app_name IS NOT NULL AND user_id = $1`,
+      [userId]
     ),
     queryContext(context,
       `SELECT COUNT(*) as total FROM screen_captures
-       WHERE timestamp >= CURRENT_DATE AND is_sensitive = FALSE`
+       WHERE timestamp >= CURRENT_DATE AND is_sensitive = FALSE AND user_id = $1`,
+      [userId]
     ),
     queryContext(context,
       `SELECT app_name, COUNT(*) as count, COALESCE(SUM(duration_seconds), 0) as seconds
        FROM screen_captures
-       WHERE app_name IS NOT NULL AND is_sensitive = FALSE
-       GROUP BY app_name ORDER BY count DESC LIMIT 10`
+       WHERE app_name IS NOT NULL AND is_sensitive = FALSE AND user_id = $1
+       GROUP BY app_name ORDER BY count DESC LIMIT 10`,
+      [userId]
     ),
   ]);
 
@@ -185,12 +193,12 @@ export async function getStats(context: AIContext): Promise<ScreenMemoryStats> {
 // Cleanup
 // ============================================================
 
-export async function cleanupOldCaptures(context: AIContext, retentionDays = 30): Promise<number> {
+export async function cleanupOldCaptures(context: AIContext, retentionDays = 30, userId: string = SYSTEM_USER_ID): Promise<number> {
   const result = await queryContext(context,
     `DELETE FROM screen_captures
-     WHERE timestamp < NOW() - make_interval(days := $1)
+     WHERE timestamp < NOW() - make_interval(days := $1) AND user_id = $2
      RETURNING id`,
-    [retentionDays]
+    [retentionDays, userId]
   );
   const count = result.rowCount ?? 0;
   if (count > 0) {

@@ -14,6 +14,7 @@ import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { getUserId } from '../utils/user-context';
 import {
   registerDeviceToken,
   unregisterDeviceToken,
@@ -57,6 +58,7 @@ interface RegisterTokenRequest {
  */
 notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
   const { token, platform, deviceId, deviceName } = req.body as RegisterTokenRequest;
 
   if (!token || !platform) {
@@ -116,6 +118,7 @@ notificationsRouter.post('/notifications/register', apiKeyAuth, asyncHandler(asy
  */
 notificationsRouter.delete('/notifications/unregister', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
   const { token } = req.body;
 
   if (!token) {
@@ -153,6 +156,7 @@ interface NotificationPreferences {
  */
 notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
 
   const result = await queryContext(
     ctx,
@@ -195,6 +199,7 @@ notificationsRouter.get('/notifications/preferences', apiKeyAuth, asyncHandler(a
  */
 notificationsRouter.put('/notifications/preferences', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
   const prefs = req.body as NotificationPreferences;
 
   // Upsert preferences
@@ -252,6 +257,7 @@ interface NotificationPayload {
  */
 notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const ctx = getContext(req);
+  const _userId = getUserId(req);
   const payload = req.body as NotificationPayload;
 
   if (!payload.type || !payload.title || !payload.body) {
@@ -307,6 +313,7 @@ notificationsRouter.post('/notifications/send', apiKeyAuth, requireScope('admin'
  */
 notificationsRouter.get('/:context/notifications/history', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
+  const _userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');

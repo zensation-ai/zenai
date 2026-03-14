@@ -19,6 +19,7 @@ import { queryContext, AIContext } from '../utils/database-context';
 import { documentProcessingService, ProcessingResult } from './document-processing';
 import { generateEmbedding } from './ai';
 import { cosineSimilarity as _cosineSimilarity } from '../utils/embedding';
+import { SYSTEM_USER_ID } from '../utils/user-context';
 
 // ===========================================
 // Types
@@ -144,9 +145,11 @@ export class DocumentService {
   async uploadDocument(
     file: Express.Multer.File,
     context: AIContext,
-    options?: UploadOptions
+    options?: UploadOptions,
+    userId?: string
   ): Promise<Document> {
     await this.ensureUploadDir();
+    const uid = userId || SYSTEM_USER_ID;
 
     // Generate unique filename
     const uniqueId = crypto.randomUUID();
@@ -158,7 +161,7 @@ export class DocumentService {
     const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
 
     // Check for duplicate
-    const existingDoc = await this.findByHash(fileHash, context);
+    const existingDoc = await this.findByHash(fileHash, context, uid);
     if (existingDoc) {
       logger.info('Duplicate document detected', { fileHash, existingId: existingDoc.id });
       return existingDoc;
@@ -173,8 +176,8 @@ export class DocumentService {
       `INSERT INTO documents (
         filename, original_filename, file_path, storage_provider,
         file_hash, mime_type, file_size, context, folder_path, tags,
-        source_url, processing_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
+        source_url, processing_status, user_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', $12)
       RETURNING *`,
       [
         filename,
@@ -188,6 +191,7 @@ export class DocumentService {
         options?.folderPath || CONFIG.defaultFolderPath,
         options?.tags || [],
         options?.sourceUrl,
+        uid,
       ]
     );
 
@@ -256,11 +260,12 @@ export class DocumentService {
   /**
    * Get a single document by ID
    */
-  async getDocument(id: string, context: AIContext): Promise<Document | null> {
+  async getDocument(id: string, context: AIContext, userId?: string): Promise<Document | null> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
-      `SELECT ${DocumentService.DOCUMENT_COLUMNS} FROM documents WHERE id = $1 AND context = $2`,
-      [id, context]
+      `SELECT ${DocumentService.DOCUMENT_COLUMNS} FROM documents WHERE id = $1 AND context = $2 AND user_id = $3`,
+      [id, context, uid]
     );
 
     if (result.rows.length === 0) {
@@ -270,8 +275,8 @@ export class DocumentService {
     // Update view count
     await queryContext(
       context,
-      `UPDATE documents SET view_count = view_count + 1, last_viewed_at = NOW() WHERE id = $1`,
-      [id]
+      `UPDATE documents SET view_count = view_count + 1, last_viewed_at = NOW() WHERE id = $1 AND user_id = $2`,
+      [id, uid]
     );
 
     // Log access
@@ -285,14 +290,16 @@ export class DocumentService {
    */
   async listDocuments(
     context: AIContext,
-    filters?: DocumentFilters
+    filters?: DocumentFilters,
+    userId?: string
   ): Promise<PaginatedResult<Document>> {
+    const uid = userId || SYSTEM_USER_ID;
     const limit = Math.min(filters?.limit || 50, 100);
     const offset = filters?.offset || 0;
 
-    let whereClause = `WHERE context = $1 AND is_archived = $2`;
-    const params: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [context, filters?.isArchived || false];
-    let paramIndex = 3;
+    let whereClause = `WHERE context = $1 AND is_archived = $2 AND user_id = $3`;
+    const params: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [context, filters?.isArchived || false, uid];
+    let paramIndex = 4;
 
     if (filters?.folderPath) {
       whereClause += ` AND folder_path = $${paramIndex}`;
@@ -382,15 +389,17 @@ export class DocumentService {
   async searchDocuments(
     query: string,
     context: AIContext,
-    options?: { limit?: number; includeChunks?: boolean }
+    options?: { limit?: number; includeChunks?: boolean },
+    userId?: string
   ): Promise<DocumentSearchResult[]> {
+    const uid = userId || SYSTEM_USER_ID;
     const limit = options?.limit || CONFIG.searchResultLimit;
 
     // Generate query embedding
     const queryEmbedding = await generateEmbedding(query);
     if (!queryEmbedding || queryEmbedding.length === 0) {
       // Fallback to text search
-      return this.textSearchDocuments(query, context, limit);
+      return this.textSearchDocuments(query, context, limit, uid);
     }
 
     const embeddingStr = `[${queryEmbedding.join(',')}]`;
@@ -405,10 +414,11 @@ export class DocumentService {
       WHERE context = $2
         AND embedding IS NOT NULL
         AND is_archived = FALSE
+        AND user_id = $5
         AND 1 - (embedding <=> $1::vector) >= $3
       ORDER BY embedding <=> $1::vector
       LIMIT $4`,
-      [embeddingStr, context, CONFIG.minSearchSimilarity, limit]
+      [embeddingStr, context, CONFIG.minSearchSimilarity, limit, uid]
     );
 
     const results: DocumentSearchResult[] = docResults.rows.map(row => ({
@@ -433,10 +443,11 @@ export class DocumentService {
         WHERE d.context = $2
           AND c.embedding IS NOT NULL
           AND d.is_archived = FALSE
+          AND d.user_id = $5
           AND 1 - (c.embedding <=> $1::vector) >= $3
         ORDER BY c.embedding <=> $1::vector
         LIMIT $4`,
-        [embeddingStr, context, CONFIG.minSearchSimilarity + 0.1, limit]
+        [embeddingStr, context, CONFIG.minSearchSimilarity + 0.1, limit, uid]
       );
 
       // Merge chunk results with document results
@@ -474,8 +485,10 @@ export class DocumentService {
   private async textSearchDocuments(
     query: string,
     context: AIContext,
-    limit: number
+    limit: number,
+    userId?: string
   ): Promise<DocumentSearchResult[]> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
       `SELECT
@@ -485,11 +498,12 @@ export class DocumentService {
       FROM documents
       WHERE context = $2
         AND is_archived = FALSE
+        AND user_id = $4
         AND to_tsvector('german', COALESCE(title, '') || ' ' || COALESCE(summary, '') || ' ' || COALESCE(full_text, ''))
             @@ plainto_tsquery('german', $1)
       ORDER BY rank DESC
       LIMIT $3`,
-      [query, context, limit]
+      [query, context, limit, uid]
     );
 
     return result.rows.map(row => ({
@@ -508,11 +522,13 @@ export class DocumentService {
   async updateDocument(
     id: string,
     context: AIContext,
-    updates: Partial<Pick<Document, 'title' | 'tags' | 'folderPath' | 'isFavorite' | 'isArchived'>>
+    updates: Partial<Pick<Document, 'title' | 'tags' | 'folderPath' | 'isFavorite' | 'isArchived'>>,
+    userId?: string
   ): Promise<Document | null> {
+    const uid = userId || SYSTEM_USER_ID;
     const setClauses: string[] = [];
-    const params: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [id, context];
-    let paramIndex = 3;
+    const params: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [id, context, uid];
+    let paramIndex = 4;
 
     if (updates.title !== undefined) {
       setClauses.push(`title = $${paramIndex}`);
@@ -545,14 +561,14 @@ export class DocumentService {
     }
 
     if (setClauses.length === 0) {
-      return this.getDocument(id, context);
+      return this.getDocument(id, context, uid);
     }
 
     setClauses.push('updated_at = NOW()');
 
     const result = await queryContext(
       context,
-      `UPDATE documents SET ${setClauses.join(', ')} WHERE id = $1 AND context = $2 RETURNING *`,
+      `UPDATE documents SET ${setClauses.join(', ')} WHERE id = $1 AND context = $2 AND user_id = $3 RETURNING *`,
       params
     );
 
@@ -566,8 +582,9 @@ export class DocumentService {
   /**
    * Delete a document
    */
-  async deleteDocument(id: string, context: AIContext): Promise<boolean> {
-    const doc = await this.getDocument(id, context);
+  async deleteDocument(id: string, context: AIContext, userId?: string): Promise<boolean> {
+    const uid = userId || SYSTEM_USER_ID;
+    const doc = await this.getDocument(id, context, uid);
     if (!doc) {
       return false;
     }
@@ -582,8 +599,8 @@ export class DocumentService {
     // Delete database record (cascades to chunks and memberships)
     await queryContext(
       context,
-      `DELETE FROM documents WHERE id = $1 AND context = $2`,
-      [id, context]
+      `DELETE FROM documents WHERE id = $1 AND context = $2 AND user_id = $3`,
+      [id, context, uid]
     );
 
     logger.info('Document deleted', { id });
@@ -593,11 +610,12 @@ export class DocumentService {
   /**
    * Move document to folder
    */
-  async moveToFolder(id: string, folderPath: string, context: AIContext): Promise<boolean> {
+  async moveToFolder(id: string, folderPath: string, context: AIContext, userId?: string): Promise<boolean> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
-      `UPDATE documents SET folder_path = $2, updated_at = NOW() WHERE id = $1 AND context = $3`,
-      [id, folderPath, context]
+      `UPDATE documents SET folder_path = $2, updated_at = NOW() WHERE id = $1 AND context = $3 AND user_id = $4`,
+      [id, folderPath, context, uid]
     );
     return (result.rowCount ?? 0) > 0;
   }
@@ -605,11 +623,12 @@ export class DocumentService {
   /**
    * Add tags to document
    */
-  async addTags(id: string, tags: string[], context: AIContext): Promise<boolean> {
+  async addTags(id: string, tags: string[], context: AIContext, userId?: string): Promise<boolean> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
-      `UPDATE documents SET tags = array_cat(tags, $2), updated_at = NOW() WHERE id = $1 AND context = $3`,
-      [id, tags, context]
+      `UPDATE documents SET tags = array_cat(tags, $2), updated_at = NOW() WHERE id = $1 AND context = $3 AND user_id = $4`,
+      [id, tags, context, uid]
     );
     return (result.rowCount ?? 0) > 0;
   }
@@ -617,11 +636,12 @@ export class DocumentService {
   /**
    * Remove tags from document
    */
-  async removeTags(id: string, tags: string[], context: AIContext): Promise<boolean> {
+  async removeTags(id: string, tags: string[], context: AIContext, userId?: string): Promise<boolean> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
-      `UPDATE documents SET tags = array_remove_all(tags, $2), updated_at = NOW() WHERE id = $1 AND context = $3`,
-      [id, tags, context]
+      `UPDATE documents SET tags = array_remove_all(tags, $2), updated_at = NOW() WHERE id = $1 AND context = $3 AND user_id = $4`,
+      [id, tags, context, uid]
     );
     return (result.rowCount ?? 0) > 0;
   }
@@ -629,11 +649,12 @@ export class DocumentService {
   /**
    * Link document to an idea
    */
-  async linkToIdea(documentId: string, ideaId: string, context: AIContext): Promise<boolean> {
+  async linkToIdea(documentId: string, ideaId: string, context: AIContext, userId?: string): Promise<boolean> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
-      `UPDATE documents SET linked_idea_id = $2, updated_at = NOW() WHERE id = $1 AND context = $3`,
-      [documentId, ideaId, context]
+      `UPDATE documents SET linked_idea_id = $2, updated_at = NOW() WHERE id = $1 AND context = $3 AND user_id = $4`,
+      [documentId, ideaId, context, uid]
     );
     return (result.rowCount ?? 0) > 0;
   }
@@ -701,11 +722,12 @@ export class DocumentService {
   /**
    * Get folder structure
    */
-  async getFolders(context: AIContext): Promise<FolderInfo[]> {
+  async getFolders(context: AIContext, userId?: string): Promise<FolderInfo[]> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
-      `SELECT id, path, name, parent_path, color, icon, document_count FROM document_folders WHERE context = $1 ORDER BY path`,
-      [context]
+      `SELECT id, path, name, parent_path, color, icon, document_count FROM document_folders WHERE context = $1 AND user_id = $2 ORDER BY path`,
+      [context, uid]
     );
 
     return result.rows.map(row => ({
@@ -726,16 +748,18 @@ export class DocumentService {
     context: AIContext,
     name: string,
     parentPath: string = '/',
-    options?: { color?: string; icon?: string }
+    options?: { color?: string; icon?: string },
+    userId?: string
   ): Promise<FolderInfo> {
+    const uid = userId || SYSTEM_USER_ID;
     const folderPath = parentPath === '/' ? `/${name}` : `${parentPath}/${name}`;
 
     const result = await queryContext(
       context,
-      `INSERT INTO document_folders (context, path, name, parent_path, color, icon)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO document_folders (context, path, name, parent_path, color, icon, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [context, folderPath, name, parentPath, options?.color, options?.icon]
+      [context, folderPath, name, parentPath, options?.color, options?.icon, uid]
     );
 
     const row = result.rows[0];
@@ -756,12 +780,13 @@ export class DocumentService {
   /**
    * Delete a folder (moves documents to parent)
    */
-  async deleteFolder(path: string, context: AIContext): Promise<boolean> {
+  async deleteFolder(path: string, context: AIContext, userId?: string): Promise<boolean> {
+    const uid = userId || SYSTEM_USER_ID;
     // Get folder info
     const folderResult = await queryContext(
       context,
-      `SELECT parent_path FROM document_folders WHERE path = $1 AND context = $2`,
-      [path, context]
+      `SELECT parent_path FROM document_folders WHERE path = $1 AND context = $2 AND user_id = $3`,
+      [path, context, uid]
     );
 
     if (folderResult.rows.length === 0) {
@@ -774,15 +799,15 @@ export class DocumentService {
     await queryContext(
       context,
       `UPDATE documents SET folder_path = $1, updated_at = NOW()
-       WHERE folder_path = $2 AND context = $3`,
-      [parentPath, path, context]
+       WHERE folder_path = $2 AND context = $3 AND user_id = $4`,
+      [parentPath, path, context, uid]
     );
 
     // Delete folder
     await queryContext(
       context,
-      `DELETE FROM document_folders WHERE path = $1 AND context = $2`,
-      [path, context]
+      `DELETE FROM document_folders WHERE path = $1 AND context = $2 AND user_id = $3`,
+      [path, context, uid]
     );
 
     return true;
@@ -791,11 +816,12 @@ export class DocumentService {
   /**
    * Find document by file hash
    */
-  private async findByHash(hash: string, context: AIContext): Promise<Document | null> {
+  private async findByHash(hash: string, context: AIContext, userId?: string): Promise<Document | null> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
-      `SELECT ${DocumentService.DOCUMENT_COLUMNS} FROM documents WHERE file_hash = $1 AND context = $2`,
-      [hash, context]
+      `SELECT ${DocumentService.DOCUMENT_COLUMNS} FROM documents WHERE file_hash = $1 AND context = $2 AND user_id = $3`,
+      [hash, context, uid]
     );
 
     if (result.rows.length === 0) {
@@ -875,8 +901,8 @@ export class DocumentService {
   /**
    * Trigger reprocessing of a document
    */
-  async reprocessDocument(id: string, context: AIContext): Promise<ProcessingResult | null> {
-    const doc = await this.getDocument(id, context);
+  async reprocessDocument(id: string, context: AIContext, userId?: string): Promise<ProcessingResult | null> {
+    const doc = await this.getDocument(id, context, userId);
     if (!doc) {
       return null;
     }
@@ -887,7 +913,7 @@ export class DocumentService {
   /**
    * Get document processing statistics
    */
-  async getStats(context: AIContext): Promise<{
+  async getStats(context: AIContext, userId?: string): Promise<{
     total: number;
     pending: number;
     processing: number;
@@ -896,6 +922,7 @@ export class DocumentService {
     totalSize: number;
     byMimeType: Record<string, number>;
   }> {
+    const uid = userId || SYSTEM_USER_ID;
     const result = await queryContext(
       context,
       `SELECT
@@ -906,17 +933,17 @@ export class DocumentService {
         COUNT(*) FILTER (WHERE processing_status = 'failed') as failed,
         COALESCE(SUM(file_size), 0) as total_size
       FROM documents
-      WHERE context = $1`,
-      [context]
+      WHERE context = $1 AND user_id = $2`,
+      [context, uid]
     );
 
     const mimeResult = await queryContext(
       context,
       `SELECT mime_type, COUNT(*) as count
        FROM documents
-       WHERE context = $1
+       WHERE context = $1 AND user_id = $2
        GROUP BY mime_type`,
-      [context]
+      [context, uid]
     );
 
     const byMimeType: Record<string, number> = {};

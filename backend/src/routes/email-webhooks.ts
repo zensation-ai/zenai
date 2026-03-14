@@ -8,6 +8,7 @@
 import { Router, Request, Response } from 'express';
 import { verifyWebhook, isResendConfigured, isWebhookConfigured, getInboundEmail, ResendWebhookEvent } from '../services/resend';
 import { queryPublic, queryContext, AIContext } from '../utils/database-context';
+import { SYSTEM_USER_ID } from '../utils/user-context';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -52,6 +53,9 @@ function extractNameAndAddress(from: string): { name: string | null; address: st
 // POST /api/webhooks/resend
 // ============================================================
 
+// NOTE: Intentionally NOT using asyncHandler here. Webhook endpoints must always
+// return 200 to prevent the provider (Resend) from retrying. The manual try-catch
+// ensures we respond with 200 regardless of processing outcome.
 emailWebhooksRouter.post('/resend', async (req: Request, res: Response) => {
   try {
     // Check if Resend is configured
@@ -224,13 +228,13 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
   // Insert the email
   await queryContext(context, `
     INSERT INTO emails (
-      id, resend_email_id, account_id, direction, status,
+      id, user_id, resend_email_id, account_id, direction, status,
       from_address, from_name, to_addresses, cc_addresses, bcc_addresses,
       subject, body_html, body_text,
       thread_id, message_id, in_reply_to, has_attachments, attachments,
       context, received_at, created_at, updated_at
     ) VALUES (
-      $1, $2, $3, 'inbound', 'received',
+      $1, $18, $2, $3, 'inbound', 'received',
       $4, $5, $6, $7, '[]'::jsonb,
       $8, $9, $10,
       $11, $12, $13, $14, $15,
@@ -244,6 +248,7 @@ async function processInboundEmail(event: ResendWebhookEvent, context: AIContext
     threadId, data.message_id || null, inReplyTo || null,
     hasAttachments, JSON.stringify(attachments),
     context, data.created_at || new Date().toISOString(),
+    SYSTEM_USER_ID,
   ]);
 
   // Mark webhook as processed

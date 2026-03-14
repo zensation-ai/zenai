@@ -12,6 +12,7 @@ import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { toIntBounded } from '../utils/validation';
+import { getUserId } from '../utils/user-context';
 import {
   registerAutomation,
   updateAutomation,
@@ -45,6 +46,7 @@ automationsRouter.get(
   '/:context/automations/stats',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
 
     if (!isValidContext(context)) {
@@ -72,6 +74,7 @@ automationsRouter.get(
   '/:context/automations/suggestions',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     // SECURITY FIX: Use bounded integer parsing to prevent DoS via large limits
     const limit = toIntBounded(req.query.limit as string, 10, 1, 50);
@@ -102,6 +105,7 @@ automationsRouter.post(
   apiKeyAuth,
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
 
     if (!isValidContext(context)) {
@@ -129,6 +133,7 @@ automationsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
@@ -159,6 +164,7 @@ automationsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
@@ -186,6 +192,7 @@ automationsRouter.get(
   '/:context/automations',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     const { active_only, trigger_type } = req.query;
 
@@ -215,6 +222,7 @@ automationsRouter.get(
   apiKeyAuth,
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
@@ -243,6 +251,7 @@ automationsRouter.post(
   apiKeyAuth,
   requireScope('write'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context } = req.params;
     const { name, description, trigger, conditions, actions, is_active } = req.body;
 
@@ -317,6 +326,7 @@ automationsRouter.put(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     const { name, description, trigger, conditions, actions, is_active } = req.body;
 
@@ -376,6 +386,7 @@ automationsRouter.delete(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
@@ -409,6 +420,7 @@ automationsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     const { trigger_data } = req.body;
 
@@ -438,6 +450,7 @@ automationsRouter.get(
   apiKeyAuth,
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
     // SECURITY FIX: Use bounded integer parsing to prevent DoS via large limits
     const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
@@ -474,6 +487,7 @@ automationsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
     const { context, id } = req.params;
 
     if (!isValidContext(context)) {
