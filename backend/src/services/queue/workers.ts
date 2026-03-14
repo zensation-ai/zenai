@@ -92,12 +92,30 @@ async function processGraphIndexing(data: Record<string, unknown>): Promise<Reco
   return { status: 'completed', context };
 }
 
+/**
+ * Process a sleep compute job (Phase 63).
+ */
+async function processSleepCompute(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  try {
+    const { processSleepJob } = await import('./workers/sleep-worker');
+    const result = await processSleepJob(data);
+    return { status: 'completed', ...result };
+  } catch (error) {
+    logger.debug('Sleep compute processor not available', {
+      operation: 'worker',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { status: 'skipped' };
+  }
+}
+
 // Worker processor map
 const processors: Record<string, (data: Record<string, unknown>) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
   'rag-indexing': processRagIndexing,
   'email-processing': processEmailProcessing,
   'graph-indexing': processGraphIndexing,
+  'sleep-compute': processSleepCompute,
 };
 
 /**
@@ -125,6 +143,7 @@ export async function startWorkers(): Promise<boolean> {
       'rag-indexing': 2,
       'email-processing': 2,
       'graph-indexing': 1,
+      'sleep-compute': 1,
     };
 
     for (const [queueName, processor] of Object.entries(processors)) {

@@ -338,6 +338,10 @@ app.use('/api/documents', documentAnalysisRouter);
 import { agentTeamsRouter } from './routes/agent-teams';
 app.use('/api/agents', agentTeamsRouter);
 
+// Phase 64: Agent Identity + Workflow Graph
+import { agentIdentityRouter } from './routes/agent-identity';
+app.use('/api', agentIdentityRouter);  // /api/agent-identities/*, /api/agent-workflows/*, /api/agent-workflow-runs
+
 // Phase 42: Autonomous Agents - Context-aware: /api/:context/agents/*
 import { autonomousAgentsRouter } from './routes/autonomous-agents';
 app.use('/api', autonomousAgentsRouter);
@@ -566,6 +570,10 @@ app.use('/api', proactiveEngineRouter);  // /api/:context/proactive-engine/event
 // Phase 62: Enterprise Security - Admin routes for audit logs & rate limits
 import { securityRouter } from './routes/security';
 app.use('/api/security', securityRouter);  // /api/security/audit-log, /api/security/alerts, /api/security/rate-limits
+
+// Phase 63: Sleep Compute + Context Engine V2
+import { sleepComputeRouter } from './routes/sleep-compute';
+app.use('/api', sleepComputeRouter);  // /api/:context/sleep-compute/*, /api/:context/context-v2/*
 
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 
@@ -941,6 +949,16 @@ async function startServer(): Promise<void> {
       const queueAvailable = await queueService.initialize();
       if (queueAvailable) {
         await startWorkers();
+        // Phase 63: Schedule sleep compute jobs
+        try {
+          const { scheduleSleepJobs } = await import('./services/queue/workers/sleep-worker');
+          await scheduleSleepJobs();
+        } catch (sleepErr) {
+          logger.debug('Sleep job scheduling skipped', {
+            operation: 'startup',
+            error: sleepErr instanceof Error ? sleepErr.message : String(sleepErr),
+          });
+        }
         logger.info('Queue service and workers started (deferred)', { operation: 'startup' });
       } else {
         logger.info('Queue service not available (REDIS_URL not set)', { operation: 'startup' });

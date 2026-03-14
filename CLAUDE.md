@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 62
+## Current Phase: 64
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -218,6 +218,14 @@
 - Audit Logger: `backend/src/services/security/audit-logger.ts`
 - Advanced Rate Limiting: `backend/src/services/security/rate-limit-advanced.ts`
 - Security Routes: `backend/src/routes/security.ts`
+- Sleep Compute Engine: `backend/src/services/memory/sleep-compute.ts`
+- Context Engine V2: `backend/src/services/context-engine-v2.ts`
+- Sleep Worker: `backend/src/services/queue/workers/sleep-worker.ts`
+- Sleep Compute Routes: `backend/src/routes/sleep-compute.ts`
+- Agent Identity Service: `backend/src/services/agents/agent-identity.ts`
+- Agent Graph (LangGraph): `backend/src/services/agents/agent-graph.ts`
+- Workflow Store: `backend/src/services/agents/workflow-store.ts`
+- Agent Identity Routes: `backend/src/routes/agent-identity.ts`
 
 ### Frontend
 
@@ -727,6 +735,36 @@ PUT    /api/security/rate-limits/:tier                           - Update rate l
 GET    /api/security/rate-limits/stats                           - Rate limit hit statistics
 ```
 
+### Sleep Compute API (Phase 63)
+
+```
+GET    /api/:context/sleep-compute/logs                          - Sleep compute logs
+GET    /api/:context/sleep-compute/stats                         - Sleep compute statistics (7 days)
+POST   /api/:context/sleep-compute/trigger                       - Manually trigger sleep cycle
+GET    /api/:context/sleep-compute/idle-status                   - Check system idle status
+POST   /api/:context/context-v2/classify                         - Classify query domain + complexity
+POST   /api/:context/context-v2/assemble                         - Assemble minimum viable context
+POST   /api/:context/context-v2/cache/clean                      - Clean expired context cache
+```
+
+### Agent Identity + Workflow API (Phase 64)
+
+```
+GET    /api/agent-identities                                     - List agent identities (filter: role, enabled)
+GET    /api/agent-identities/:id                                 - Get single agent identity
+POST   /api/agent-identities                                     - Create agent identity
+PUT    /api/agent-identities/:id                                 - Update agent identity
+DELETE /api/agent-identities/:id                                 - Delete agent identity
+POST   /api/agent-identities/:id/validate                        - Validate action against permissions
+GET    /api/agent-workflows                                      - List saved workflows
+GET    /api/agent-workflows/templates                             - Get pre-built workflow templates
+GET    /api/agent-workflows/:id                                  - Get single workflow
+POST   /api/agent-workflows                                      - Save workflow definition
+DELETE /api/agent-workflows/:id                                  - Delete workflow
+POST   /api/agent-workflows/:id/execute                          - Execute workflow graph
+GET    /api/agent-workflow-runs                                   - List workflow execution runs
+```
+
 ## Environment Variables (Backend)
 
 ```bash
@@ -890,9 +928,9 @@ cd frontend && npm test
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 3678 | 24 | 0 |
+| **Backend** | 3793 | 24 | 0 |
 | **Frontend** | 572 | 0 | 0 |
-| **Gesamt** | 4250 | 24 | 0 |
+| **Gesamt** | 4365 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -988,6 +1026,72 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-14: Phase 63+64 - Sleep-Time Compute + Agent Identity + LangGraph
+
+**Zwei parallele Phasen: Background Memory Processing + Graph-basierte Agent Workflows.**
+
+**Phase 63: Sleep-Time Compute + Advanced Context Engineering**
+
+| Feature | Details |
+|---------|---------|
+| **Sleep Compute Engine** | 5-Stufen Background Processing: Episodic Consolidation, Contradiction Detection, Working Memory Pre-Loading, Procedural Optimization, Entity Graph Maintenance |
+| **Episodic Consolidation** | Jaccard-Similarity Grouping, Pattern-Extraktion als Long-Term Facts |
+| **Contradiction Resolution** | pg_trgm similarity-basiert, neuere Fakten gewinnen, aeltere werden downgraded |
+| **Working Memory Pre-Loading** | Time/Day Pattern-basiertes Caching haeufig abgefragter Fakten |
+| **Context Engine V2** | Keyword-scored Domain Classification, Complexity Estimation, Multi-Model Routing |
+| **Minimum Viable Context** | Token-Budget-basierte Context Assembly mit Caching (1h TTL) |
+| **Sleep Worker** | BullMQ Worker fuer scheduled Sleep Cycles, Cache Cleanup |
+| **Sleep Compute API** | 7 Endpoints: Logs, Stats, Manual Trigger, Idle Status, Domain Classification, Context Assembly, Cache Cleanup |
+
+**Phase 64: Agent Identity + LangGraph-Style State Machine**
+
+| Feature | Details |
+|---------|---------|
+| **Agent Identity Service** | CRUD fuer Agent Identities mit Persona (Ton, Expertise, Stil, Sprache) |
+| **Permission System** | Wildcard Pattern Matching (tools.*, data.emails), Rate Limiting via Action Logs |
+| **Trust Levels** | low/medium/high, Low Trust + High Impact = Requires Approval |
+| **Persona Prompt Builder** | Automatische System-Prompt-Generierung aus Persona-Konfiguration |
+| **Agent Graph** | LangGraph-inspirierte Workflow-Engine mit 4 Node-Typen (agent, tool, condition, human_review) |
+| **Conditional Routing** | State-basierte Entscheidungen, Loop Detection mit Max Iterations |
+| **Workflow Pause/Resume** | human_review Nodes pausieren Workflow fuer manuelle Freigabe |
+| **Workflow Store** | DB-Persistenz fuer Workflow-Definitionen + Execution History + Stats |
+| **Pre-built Templates** | 3 Templates: research-write-review, code-review, research-code-review |
+| **Agent Workflow API** | 13 Endpoints: Identity CRUD + Validate, Workflow CRUD + Execute + Templates, Runs |
+
+**Neue Dateien Phase 63:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/memory/sleep-compute.ts` | Sleep-Time Compute Engine (5 Stufen) |
+| `backend/src/services/context-engine-v2.ts` | Advanced Context Engine V2 |
+| `backend/src/services/queue/workers/sleep-worker.ts` | BullMQ Sleep Worker + Job Scheduling |
+| `backend/src/routes/sleep-compute.ts` | 7 Sleep Compute + Context V2 Endpoints |
+| `backend/sql/migrations/phase63_sleep_compute.sql` | sleep_compute_logs + context_cache (4 Schemas) |
+
+**Neue Dateien Phase 64:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/agents/agent-identity.ts` | Agent Identity Service (CRUD, Permissions, Trust) |
+| `backend/src/services/agents/agent-graph.ts` | LangGraph-Style Agent Graph Engine |
+| `backend/src/services/agents/workflow-store.ts` | Workflow Persistence + Run History |
+| `backend/src/routes/agent-identity.ts` | 13 Agent Identity + Workflow Endpoints |
+| `backend/sql/migrations/phase64_agent_identity.sql` | agent_identities + agent_workflows + agent_workflow_runs + agent_action_logs (public Schema) |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | 2 neue Router (sleepComputeRouter, agentIdentityRouter) + Sleep Job Scheduling |
+| `backend/src/services/queue/job-queue.ts` | 'sleep-compute' Queue hinzugefuegt (4 → 5 Queues) |
+| `backend/src/services/queue/workers.ts` | Sleep Compute Worker Processor + Concurrency Config |
+
+**DB-Migration:** Phase 63: 2 Tabellen x4 Schemas | Phase 64: 4 Tabellen in public Schema
+
+**Tests:** 115 neue Tests (Phase 63: 47, Phase 64: 68), Backend 3793 + Frontend 572 = 4365 bestanden, 24 uebersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-03-14: Phase 61+62 - Observability + Queue + Enterprise Security + PWA
 
