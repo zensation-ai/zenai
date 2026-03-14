@@ -152,13 +152,17 @@ describe('MCP Server V2 (Phase 55)', () => {
       expect(response.error).toBeUndefined();
       const result = response.result as any;
       expect(result.resources).toBeInstanceOf(Array);
-      expect(result.resources.length).toBe(4);
+      expect(result.resources.length).toBe(7); // 4 original + 3 Phase 59 memory resources
 
       const uris = result.resources.map((r: any) => r.uri);
       expect(uris).toContain('zenai://ideas/recent');
       expect(uris).toContain('zenai://calendar/today');
       expect(uris).toContain('zenai://memory/facts');
       expect(uris).toContain('zenai://emails/unread');
+      // Phase 59: Memory Excellence resources
+      expect(uris).toContain('zenai://memory/working');
+      expect(uris).toContain('zenai://memory/procedures');
+      expect(uris).toContain('zenai://memory/entities');
     });
   });
 

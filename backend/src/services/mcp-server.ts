@@ -18,6 +18,8 @@
 import { logger } from '../utils/logger';
 import { toolRegistry, ToolExecutionContext } from './claude/tool-use';
 import { AIContext, queryContext } from '../utils/database-context';
+// Phase 59: Memory MCP Resources
+import { getMemoryMCPResources, readMemoryResource } from './memory/memory-mcp-resources';
 
 // ===========================================
 // Types
@@ -223,6 +225,8 @@ const EXPOSED_RESOURCES: MCPResourceDefinition[] = [
     description: 'Unread emails from the inbox',
     mimeType: 'application/json',
   },
+  // Phase 59: Memory Excellence resources
+  ...getMemoryMCPResources(),
 ];
 
 // ===========================================
@@ -325,6 +329,17 @@ async function readResource(uri: string, context: AIContext): Promise<{ contents
             text: JSON.stringify(result.rows, null, 2),
           }],
         };
+      }
+
+      // Phase 59: Memory Excellence resources
+      case 'zenai://memory/working':
+      case 'zenai://memory/procedures':
+      case 'zenai://memory/entities': {
+        const memResult = await readMemoryResource(uri, context);
+        if (memResult) {
+          return memResult;
+        }
+        throw new Error(`Unknown resource: ${uri}`);
       }
 
       default:

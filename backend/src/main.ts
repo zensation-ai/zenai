@@ -528,6 +528,10 @@ app.use('/api', i18nRouter);
 import { memoryInsightsRouter } from './routes/memory-insights';
 app.use('/api', memoryInsightsRouter);  // /api/:context/memory/insights/timeline, /api/:context/memory/insights/conflicts, etc.
 
+// Phase 59: Memory Excellence - Procedural Memory & BM25
+import { memoryProceduresRouter } from './routes/memory-procedures';
+app.use('/api', memoryProceduresRouter);  // /api/:context/memory/procedures/*, /api/:context/memory/bm25, /api/:context/memory/hybrid-search, /api/:context/memory/entity-links/*
+
 // Phase 54: Governance & Audit Trail
 import { governanceRouter } from './routes/governance';
 app.use('/api', governanceRouter);  // /api/:context/governance/pending, /api/:context/governance/audit, etc.
