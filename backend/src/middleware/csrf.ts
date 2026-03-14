@@ -232,6 +232,15 @@ export async function csrfProtection(req: Request, res: Response, next: NextFunc
     return next();
   }
 
+  // Skip CSRF for auth endpoints (login/register are unauthenticated by definition)
+  if (req.path.startsWith('/api/auth/')) {
+    logger.debug('CSRF skipped for auth endpoint', {
+      operation: 'csrfProtection',
+      path: req.path,
+    });
+    return next();
+  }
+
   // Skip CSRF for webhook endpoints (they use signatures)
   if (req.path.startsWith('/api/webhooks/')) {
     logger.debug('CSRF skipped for webhook endpoint', {
