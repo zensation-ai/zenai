@@ -1,0 +1,212 @@
+/* ContextIndicator - Ambient Context Widget */
+
+.ctx-indicator-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Trigger Button */
+.ctx-indicator-trigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--dark-text-muted, rgba(255, 255, 255, 0.5));
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  height: 28px;
+}
+
+.ctx-indicator-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--dark-text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.ctx-indicator-trigger.active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: rgba(139, 92, 246, 0.9);
+}
+
+.ctx-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.7);
+  box-shadow: 0 0 4px rgba(139, 92, 246, 0.3);
+  flex-shrink: 0;
+}
+
+.ctx-indicator-label {
+  line-height: 1;
+}
+
+/* Popover */
+.ctx-indicator-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: rgba(16, 32, 42, 0.92);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  z-index: var(--z-dropdown, 100);
+  animation: ctxPopoverIn 0.15s ease;
+  overflow: hidden;
+}
+
+@keyframes ctxPopoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ctx-indicator-popover-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ctx-indicator-popover-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Stats Grid */
+.ctx-indicator-popover-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ctx-indicator-popover-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.65rem 0.5rem;
+  background: rgba(16, 32, 42, 0.6);
+}
+
+.ctx-indicator-popover-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.2;
+}
+
+.ctx-indicator-popover-stat-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+  text-align: center;
+}
+
+/* Events Section */
+.ctx-indicator-popover-events {
+  padding: 0.5rem 0.75rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ctx-indicator-popover-section-title {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.4rem;
+}
+
+.ctx-indicator-popover-event {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+}
+
+.ctx-indicator-popover-event-time {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(139, 92, 246, 0.8);
+  flex-shrink: 0;
+  min-width: 40px;
+}
+
+.ctx-indicator-popover-event-title {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ctx-indicator-wrapper {
+    display: none;
+  }
+}
+
+/* Light Mode */
+:root.light-mode .ctx-indicator-popover {
+  background: rgba(240, 245, 250, 0.95);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .ctx-indicator-popover-title {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+:root.light-mode .ctx-indicator-popover-stat {
+  background: rgba(240, 245, 250, 0.7);
+}
+
+:root.light-mode .ctx-indicator-popover-stat-value {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+:root.light-mode .ctx-indicator-popover-stat-label {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:root.light-mode .ctx-indicator-popover-event-title {
+  color: rgba(0, 0, 0, 0.75);
+}
+
+:root.light-mode .ctx-indicator-popover-grid {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:root.light-mode .ctx-indicator-popover-events {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .ctx-indicator-popover-header {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+:root.light-mode .ctx-indicator-popover-section-title {
+  color: rgba(0, 0, 0, 0.4);
+}

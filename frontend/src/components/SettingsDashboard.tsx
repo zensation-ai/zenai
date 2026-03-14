@@ -1,5 +1,5 @@
 /**
- * SettingsDashboard - Einstellungen (10 Tabs)
+ * SettingsDashboard - Einstellungen (11 Tabs)
  *
  * Tabs:
  * - Profil: Benutzerprofil und Business-Profil
@@ -11,6 +11,7 @@
  * - Governance: Genehmigungen, Audit-Trail, Richtlinien
  * - Integrationen: OAuth, API Keys, Webhooks
  * - MCP Server: Externe MCP-Verbindungen verwalten
+ * - Extensions: Plugin/Erweiterungs-Marketplace
  * - Daten: Export + Sync kombiniert
  */
 
@@ -33,8 +34,9 @@ const DataManagement = lazy(() => import('./DataManagement').then(m => ({ defaul
 const MemoryGovernance = lazy(() => import('./MemoryGovernance').then(m => ({ default: m.MemoryGovernance })));
 const GovernanceDashboard = lazy(() => import('./GovernanceDashboard').then(m => ({ default: m.GovernanceDashboard })));
 const MCPConnectionsPage = lazy(() => import('./MCPConnectionsPage').then(m => ({ default: m.MCPConnectionsPage })));
+const ExtensionMarketplace = lazy(() => import('./ExtensionMarketplace/ExtensionMarketplace').then(m => ({ default: m.ExtensionMarketplace })));
 
-type SettingsTab = 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'mcp-servers' | 'data';
+type SettingsTab = 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'mcp-servers' | 'extensions' | 'data';
 
 interface SettingsDashboardProps {
   context: AIContext;
@@ -53,6 +55,7 @@ const TABS: readonly TabDef<SettingsTab>[] = [
   { id: 'governance', label: 'Governance', icon: '🛡️', description: 'Genehmigungen, Audit-Trail, Richtlinien' },
   { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
   { id: 'mcp-servers', label: 'MCP Server', icon: '🔌', description: 'Externe MCP-Verbindungen' },
+  { id: 'extensions', label: 'Extensions', icon: '🧩', description: 'Erweiterungen und Plugins' },
   { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
 
@@ -783,6 +786,13 @@ export const SettingsDashboard = memo(({
         return (
           <Suspense fallback={<TabLoader />}>
             <MCPConnectionsPage context={context} />
+          </Suspense>
+        );
+
+      case 'extensions':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <ExtensionMarketplace />
           </Suspense>
         );
 

@@ -15,8 +15,9 @@ const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard/AnalyticsDash
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
 const GraphRAGPanel = lazy(() => import('./GraphRAGPanel').then(m => ({ default: m.GraphRAGPanel })));
+const SleepInsights = lazy(() => import('./InsightsDashboard/SleepInsights').then(m => ({ default: m.SleepInsights })));
 
-type InsightsTab = 'analytics' | 'digest' | 'connections' | 'graphrag';
+type InsightsTab = 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep';
 
 interface InsightsDashboardProps {
   context: AIContext;
@@ -30,6 +31,7 @@ const TABS: TabDef<InsightsTab>[] = [
   { id: 'digest', label: 'Zusammenfassung', icon: '📊', description: 'Tägliche und wöchentliche Digests' },
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
   { id: 'graphrag', label: 'GraphRAG', icon: '🔬', description: 'Entitaeten, Communities und Hybrid-Retrieval' },
+  { id: 'sleep', label: 'KI-Nacht', icon: '🌙', description: 'Naechtliche Erkenntnisse und Memory-Konsolidierung' },
 ];
 
 const TabLoader = () => (
@@ -46,7 +48,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 }) => {
   const { activeTab, handleTabChange } = useTabNavigation<InsightsTab>({
     initialTab,
-    validTabs: ['analytics', 'digest', 'connections', 'graphrag'],
+    validTabs: ['analytics', 'digest', 'connections', 'graphrag', 'sleep'],
     defaultTab: 'analytics',
     basePath: '/insights',
   });
@@ -86,6 +88,14 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content hub-tab-fullwidth">
               <GraphRAGPanel context={context} />
+            </div>
+          </Suspense>
+        );
+      case 'sleep':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="hub-tab-content hub-tab-fullwidth">
+              <SleepInsights context={context} />
             </div>
           </Suspense>
         );

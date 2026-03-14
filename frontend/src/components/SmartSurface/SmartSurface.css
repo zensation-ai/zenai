@@ -1,0 +1,71 @@
+/* ============================================
+   SmartSurface - Suggestion Bar (Phase 69.1)
+   ============================================ */
+
+.ds-smart-surface {
+  padding: 8px 16px;
+  overflow: hidden;
+  animation: ds-surface-slide-in 0.3s ease forwards;
+}
+
+.ds-smart-surface-inner {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ds-smart-surface-inner::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ds-smart-surface-inner::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+}
+
+.ds-smart-surface-item {
+  animation: ds-suggestion-enter 0.35s ease forwards;
+  opacity: 0;
+}
+
+/* ─── Slide In/Out Animation ──────────────── */
+
+@keyframes ds-surface-slide-in {
+  from {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    max-height: 120px;
+    opacity: 1;
+  }
+}
+
+/* ─── Mobile ──────────────────────────────── */
+
+@media (max-width: 768px) {
+  .ds-smart-surface {
+    padding: 6px 12px;
+  }
+
+  .ds-smart-surface-inner {
+    gap: 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .ds-smart-surface-item {
+    scroll-snap-align: start;
+  }
+}
+
+/* ─── Dark Mode ───────────────────────────── */
+
+[data-theme="dark"] .ds-smart-surface-inner::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}

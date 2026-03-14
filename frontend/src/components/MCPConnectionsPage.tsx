@@ -1,16 +1,20 @@
 /**
- * MCPConnectionsPage - MCP Server Connections Management (Phase 55)
+ * MCPConnectionsPage - MCP Ecosystem Hub (Phase 55 + Phase 71)
  *
  * Settings tab for managing external MCP server connections.
  * Features:
+ * - Tab navigation: Servers | Marketplace
  * - Add/edit/remove MCP server configurations
  * - Connect/disconnect to servers
  * - View discovered tools and resources
  * - Health status monitoring
+ * - Browse and install community MCP servers (Phase 71)
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import type { AIContext } from './ContextSwitcher';
+import { ToolMarketplace } from './ToolMarketplace';
+import { ServerSetupWizard } from './ServerSetupWizard';
 import './MCPConnectionsPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -56,6 +60,7 @@ interface MCPResource {
 }
 
 type TransportType = 'streamable-http' | 'stdio' | 'sse';
+type MCPTab = 'servers' | 'marketplace';
 
 interface ServerFormData {
   name: string;
@@ -111,6 +116,7 @@ interface MCPConnectionsPageProps {
 }
 
 export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
+  const [activeTab, setActiveTab] = useState<MCPTab>('servers');
   const [servers, setServers] = useState<MCPServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +128,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
   const [serverTools, setServerTools] = useState<Record<string, MCPTool[]>>({});
   const [serverResources, setServerResources] = useState<Record<string, MCPResource[]>>({});
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [wizardServerName, setWizardServerName] = useState<string | null>(null);
 
   // Load servers
   const loadServers = useCallback(async () => {
@@ -293,6 +300,21 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
     }
   };
 
+  // Marketplace install handler
+  const handleMarketplaceInstall = (serverName: string) => {
+    setWizardServerName(serverName);
+  };
+
+  const handleWizardComplete = () => {
+    setWizardServerName(null);
+    setActiveTab('servers');
+    loadServers();
+  };
+
+  const handleWizardCancel = () => {
+    setWizardServerName(null);
+  };
+
   // Status helpers
   const getStatusBadge = (server: MCPServer) => {
     if (server.connected || server.liveHealthy) {
@@ -317,277 +339,335 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
   // Render
   // ===========================================
 
+  // Show wizard overlay
+  if (wizardServerName) {
+    return (
+      <div className="mcp-connections-page">
+        <ServerSetupWizard
+          context={context}
+          serverName={wizardServerName}
+          onComplete={handleWizardComplete}
+          onCancel={handleWizardCancel}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="mcp-connections-page">
       <div className="mcp-header">
         <div className="mcp-header-text">
-          <h3>MCP Server Verbindungen</h3>
+          <h3>MCP Ecosystem Hub</h3>
           <p className="mcp-subtitle">
             Externe MCP-Server verbinden, um deren Tools und Ressourcen in ZenAI zu nutzen.
           </p>
         </div>
-        <button className="mcp-btn mcp-btn--primary" onClick={openAddForm}>
-          + Server hinzufuegen
+        {activeTab === 'servers' && (
+          <button className="mcp-btn mcp-btn--primary" onClick={openAddForm}>
+            + Server hinzufuegen
+          </button>
+        )}
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="mcp-tabs">
+        <button
+          className={`mcp-tab ${activeTab === 'servers' ? 'mcp-tab--active' : ''}`}
+          onClick={() => setActiveTab('servers')}
+        >
+          Server ({servers.length})
+        </button>
+        <button
+          className={`mcp-tab ${activeTab === 'marketplace' ? 'mcp-tab--active' : ''}`}
+          onClick={() => setActiveTab('marketplace')}
+        >
+          Marketplace
         </button>
       </div>
 
-      {error && (
-        <div className="mcp-error" role="alert">
-          <span>{error}</span>
-          <button className="mcp-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schliessen">
-            x
-          </button>
-        </div>
+      {/* Marketplace Tab */}
+      {activeTab === 'marketplace' && (
+        <ToolMarketplace
+          context={context}
+          installedServers={servers.map(s => ({
+            id: s.id,
+            name: s.name,
+            connected: s.connected,
+            liveHealthy: s.liveHealthy,
+          }))}
+          onInstall={handleMarketplaceInstall}
+        />
       )}
 
-      {/* Add/Edit Form */}
-      {showForm && (
-        <div className="mcp-form-card">
-          <h4>{editId ? 'Server bearbeiten' : 'Neuen MCP Server hinzufuegen'}</h4>
-
-          <div className="mcp-form-grid">
-            <div className="mcp-form-group">
-              <label htmlFor="mcp-name">Name</label>
-              <input
-                id="mcp-name"
-                type="text"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="z.B. GitHub MCP, Notion MCP"
-                className="mcp-input"
-              />
+      {/* Servers Tab */}
+      {activeTab === 'servers' && (
+        <>
+          {error && (
+            <div className="mcp-error" role="alert">
+              <span>{error}</span>
+              <button className="mcp-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schliessen">
+                x
+              </button>
             </div>
+          )}
 
-            <div className="mcp-form-group">
-              <label htmlFor="mcp-transport">Transport</label>
-              <select
-                id="mcp-transport"
-                value={form.transport}
-                onChange={e => setForm(f => ({ ...f, transport: e.target.value as TransportType }))}
-                className="mcp-input"
-              >
-                <option value="streamable-http">Streamable HTTP</option>
-                <option value="sse">SSE (Server-Sent Events)</option>
-                <option value="stdio">Stdio (lokaler Prozess)</option>
-              </select>
-            </div>
+          {/* Add/Edit Form */}
+          {showForm && (
+            <div className="mcp-form-card">
+              <h4>{editId ? 'Server bearbeiten' : 'Neuen MCP Server hinzufuegen'}</h4>
 
-            {(form.transport === 'streamable-http' || form.transport === 'sse') && (
-              <div className="mcp-form-group mcp-form-group--wide">
-                <label htmlFor="mcp-url">Server URL</label>
-                <input
-                  id="mcp-url"
-                  type="url"
-                  value={form.url}
-                  onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-                  placeholder="https://mcp-server.example.com"
-                  className="mcp-input"
-                />
-              </div>
-            )}
-
-            {form.transport === 'stdio' && (
-              <>
+              <div className="mcp-form-grid">
                 <div className="mcp-form-group">
-                  <label htmlFor="mcp-command">Befehl</label>
+                  <label htmlFor="mcp-name">Name</label>
                   <input
-                    id="mcp-command"
+                    id="mcp-name"
                     type="text"
-                    value={form.command}
-                    onChange={e => setForm(f => ({ ...f, command: e.target.value }))}
-                    placeholder="npx, node, python"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="z.B. GitHub MCP, Notion MCP"
                     className="mcp-input"
                   />
                 </div>
+
                 <div className="mcp-form-group">
-                  <label htmlFor="mcp-args">Argumente</label>
-                  <input
-                    id="mcp-args"
-                    type="text"
-                    value={form.args}
-                    onChange={e => setForm(f => ({ ...f, args: e.target.value }))}
-                    placeholder="--port 3001 --verbose"
+                  <label htmlFor="mcp-transport">Transport</label>
+                  <select
+                    id="mcp-transport"
+                    value={form.transport}
+                    onChange={e => setForm(f => ({ ...f, transport: e.target.value as TransportType }))}
                     className="mcp-input"
-                  />
+                  >
+                    <option value="streamable-http">Streamable HTTP</option>
+                    <option value="sse">SSE (Server-Sent Events)</option>
+                    <option value="stdio">Stdio (lokaler Prozess)</option>
+                  </select>
                 </div>
-              </>
-            )}
 
-            <div className="mcp-form-group">
-              <label htmlFor="mcp-auth">Authentifizierung</label>
-              <select
-                id="mcp-auth"
-                value={form.authType}
-                onChange={e => setForm(f => ({ ...f, authType: e.target.value }))}
-                className="mcp-input"
+                {(form.transport === 'streamable-http' || form.transport === 'sse') && (
+                  <div className="mcp-form-group mcp-form-group--wide">
+                    <label htmlFor="mcp-url">Server URL</label>
+                    <input
+                      id="mcp-url"
+                      type="url"
+                      value={form.url}
+                      onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
+                      placeholder="https://mcp-server.example.com"
+                      className="mcp-input"
+                    />
+                  </div>
+                )}
+
+                {form.transport === 'stdio' && (
+                  <>
+                    <div className="mcp-form-group">
+                      <label htmlFor="mcp-command">Befehl</label>
+                      <input
+                        id="mcp-command"
+                        type="text"
+                        value={form.command}
+                        onChange={e => setForm(f => ({ ...f, command: e.target.value }))}
+                        placeholder="npx, node, python"
+                        className="mcp-input"
+                      />
+                    </div>
+                    <div className="mcp-form-group">
+                      <label htmlFor="mcp-args">Argumente</label>
+                      <input
+                        id="mcp-args"
+                        type="text"
+                        value={form.args}
+                        onChange={e => setForm(f => ({ ...f, args: e.target.value }))}
+                        placeholder="--port 3001 --verbose"
+                        className="mcp-input"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="mcp-form-group">
+                  <label htmlFor="mcp-auth">Authentifizierung</label>
+                  <select
+                    id="mcp-auth"
+                    value={form.authType}
+                    onChange={e => setForm(f => ({ ...f, authType: e.target.value }))}
+                    className="mcp-input"
+                  >
+                    <option value="none">Keine</option>
+                    <option value="bearer">Bearer Token</option>
+                    <option value="api-key">API Key</option>
+                  </select>
+                </div>
+
+                {form.authType !== 'none' && (
+                  <div className="mcp-form-group">
+                    <label htmlFor="mcp-token">Token / API Key</label>
+                    <input
+                      id="mcp-token"
+                      type="password"
+                      value={form.authToken}
+                      onChange={e => setForm(f => ({ ...f, authToken: e.target.value }))}
+                      placeholder="sk-..."
+                      className="mcp-input"
+                    />
+                  </div>
+                )}
+
+                <div className="mcp-form-group mcp-form-group--checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={form.enabled}
+                      onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
+                    />
+                    Aktiviert
+                  </label>
+                </div>
+              </div>
+
+              <div className="mcp-form-actions">
+                <button className="mcp-btn mcp-btn--secondary" onClick={closeForm} disabled={submitting}>
+                  Abbrechen
+                </button>
+                <button
+                  className="mcp-btn mcp-btn--primary"
+                  onClick={handleSubmit}
+                  disabled={submitting || !form.name.trim()}
+                >
+                  {submitting ? 'Speichern...' : editId ? 'Aktualisieren' : 'Hinzufuegen'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Server List */}
+          {loading ? (
+            <div className="mcp-loading">Lade Server...</div>
+          ) : servers.length === 0 ? (
+            <div className="mcp-empty">
+              <div className="mcp-empty-icon">MCP</div>
+              <h4>Keine MCP Server konfiguriert</h4>
+              <p>Fuege einen externen MCP Server hinzu oder besuche den Marketplace.</p>
+              <button
+                className="mcp-btn mcp-btn--primary"
+                style={{ marginTop: '0.75rem' }}
+                onClick={() => setActiveTab('marketplace')}
               >
-                <option value="none">Keine</option>
-                <option value="bearer">Bearer Token</option>
-                <option value="api-key">API Key</option>
-              </select>
+                Marketplace oeffnen
+              </button>
             </div>
-
-            {form.authType !== 'none' && (
-              <div className="mcp-form-group">
-                <label htmlFor="mcp-token">Token / API Key</label>
-                <input
-                  id="mcp-token"
-                  type="password"
-                  value={form.authToken}
-                  onChange={e => setForm(f => ({ ...f, authToken: e.target.value }))}
-                  placeholder="sk-..."
-                  className="mcp-input"
-                />
-              </div>
-            )}
-
-            <div className="mcp-form-group mcp-form-group--checkbox">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={form.enabled}
-                  onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
-                />
-                Aktiviert
-              </label>
-            </div>
-          </div>
-
-          <div className="mcp-form-actions">
-            <button className="mcp-btn mcp-btn--secondary" onClick={closeForm} disabled={submitting}>
-              Abbrechen
-            </button>
-            <button
-              className="mcp-btn mcp-btn--primary"
-              onClick={handleSubmit}
-              disabled={submitting || !form.name.trim()}
-            >
-              {submitting ? 'Speichern...' : editId ? 'Aktualisieren' : 'Hinzufuegen'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Server List */}
-      {loading ? (
-        <div className="mcp-loading">Lade Server...</div>
-      ) : servers.length === 0 ? (
-        <div className="mcp-empty">
-          <div className="mcp-empty-icon">🔌</div>
-          <h4>Keine MCP Server konfiguriert</h4>
-          <p>Fuege einen externen MCP Server hinzu, um dessen Tools in ZenAI zu nutzen.</p>
-        </div>
-      ) : (
-        <div className="mcp-server-list">
-          {servers.map(server => (
-            <div key={server.id} className={`mcp-server-card ${expandedServer === server.id ? 'mcp-server-card--expanded' : ''}`}>
-              <div className="mcp-server-header" onClick={() => toggleExpand(server.id)}>
-                <div className="mcp-server-info">
-                  <div className="mcp-server-name">
-                    {server.name}
-                    {getStatusBadge(server)}
-                    <span className="mcp-transport-badge">{getTransportLabel(server.transport)}</span>
+          ) : (
+            <div className="mcp-server-list">
+              {servers.map(server => (
+                <div key={server.id} className={`mcp-server-card ${expandedServer === server.id ? 'mcp-server-card--expanded' : ''}`}>
+                  <div className="mcp-server-header" onClick={() => toggleExpand(server.id)}>
+                    <div className="mcp-server-info">
+                      <div className="mcp-server-name">
+                        {server.name}
+                        {getStatusBadge(server)}
+                        <span className="mcp-transport-badge">{getTransportLabel(server.transport)}</span>
+                      </div>
+                      <div className="mcp-server-meta">
+                        {server.url && <span className="mcp-meta-item">{server.url}</span>}
+                        {server.command && <span className="mcp-meta-item">{server.command} {server.args.join(' ')}</span>}
+                        {server.toolCount > 0 && <span className="mcp-meta-item">{server.toolCount} Tools</span>}
+                        {server.resourceCount > 0 && <span className="mcp-meta-item">{server.resourceCount} Ressourcen</span>}
+                      </div>
+                      {server.errorMessage && (
+                        <div className="mcp-server-error">{server.errorMessage}</div>
+                      )}
+                    </div>
+                    <div className="mcp-server-actions" onClick={e => e.stopPropagation()}>
+                      {server.connected ? (
+                        <button
+                          className="mcp-btn mcp-btn--small mcp-btn--warning"
+                          onClick={() => disconnectServer(server.id)}
+                          disabled={actionLoading[server.id]}
+                          title="Trennen"
+                        >
+                          Trennen
+                        </button>
+                      ) : (
+                        <button
+                          className="mcp-btn mcp-btn--small mcp-btn--success"
+                          onClick={() => connectServer(server.id)}
+                          disabled={actionLoading[server.id]}
+                          title="Verbinden"
+                        >
+                          Verbinden
+                        </button>
+                      )}
+                      <button
+                        className="mcp-btn mcp-btn--small"
+                        onClick={() => healthCheck(server.id)}
+                        disabled={actionLoading[server.id]}
+                        title="Health Check"
+                      >
+                        Pruefen
+                      </button>
+                      <button
+                        className="mcp-btn mcp-btn--small"
+                        onClick={() => openEditForm(server)}
+                        title="Bearbeiten"
+                      >
+                        Bearbeiten
+                      </button>
+                      <button
+                        className="mcp-btn mcp-btn--small mcp-btn--danger"
+                        onClick={() => deleteServer(server.id)}
+                        disabled={actionLoading[server.id]}
+                        title="Entfernen"
+                      >
+                        Entfernen
+                      </button>
+                    </div>
                   </div>
-                  <div className="mcp-server-meta">
-                    {server.url && <span className="mcp-meta-item">{server.url}</span>}
-                    {server.command && <span className="mcp-meta-item">{server.command} {server.args.join(' ')}</span>}
-                    {server.toolCount > 0 && <span className="mcp-meta-item">{server.toolCount} Tools</span>}
-                    {server.resourceCount > 0 && <span className="mcp-meta-item">{server.resourceCount} Ressourcen</span>}
-                  </div>
-                  {server.errorMessage && (
-                    <div className="mcp-server-error">{server.errorMessage}</div>
+
+                  {/* Expanded: Tools & Resources */}
+                  {expandedServer === server.id && (
+                    <div className="mcp-server-details">
+                      <div className="mcp-details-section">
+                        <h5>Tools ({serverTools[server.id]?.length || 0})</h5>
+                        {(serverTools[server.id] || []).length === 0 ? (
+                          <p className="mcp-details-empty">Keine Tools verfuegbar</p>
+                        ) : (
+                          <div className="mcp-tools-grid">
+                            {(serverTools[server.id] || []).map(tool => (
+                              <div key={tool.name} className="mcp-tool-card">
+                                <div className="mcp-tool-name">{tool.name}</div>
+                                {tool.description && (
+                                  <div className="mcp-tool-desc">{tool.description}</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mcp-details-section">
+                        <h5>Ressourcen ({serverResources[server.id]?.length || 0})</h5>
+                        {(serverResources[server.id] || []).length === 0 ? (
+                          <p className="mcp-details-empty">Keine Ressourcen verfuegbar</p>
+                        ) : (
+                          <div className="mcp-resources-list">
+                            {(serverResources[server.id] || []).map(resource => (
+                              <div key={resource.uri} className="mcp-resource-item">
+                                <span className="mcp-resource-name">{resource.name}</span>
+                                <span className="mcp-resource-uri">{resource.uri}</span>
+                                {resource.description && (
+                                  <span className="mcp-resource-desc">{resource.description}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-                <div className="mcp-server-actions" onClick={e => e.stopPropagation()}>
-                  {server.connected ? (
-                    <button
-                      className="mcp-btn mcp-btn--small mcp-btn--warning"
-                      onClick={() => disconnectServer(server.id)}
-                      disabled={actionLoading[server.id]}
-                      title="Trennen"
-                    >
-                      Trennen
-                    </button>
-                  ) : (
-                    <button
-                      className="mcp-btn mcp-btn--small mcp-btn--success"
-                      onClick={() => connectServer(server.id)}
-                      disabled={actionLoading[server.id]}
-                      title="Verbinden"
-                    >
-                      Verbinden
-                    </button>
-                  )}
-                  <button
-                    className="mcp-btn mcp-btn--small"
-                    onClick={() => healthCheck(server.id)}
-                    disabled={actionLoading[server.id]}
-                    title="Health Check"
-                  >
-                    Pruefen
-                  </button>
-                  <button
-                    className="mcp-btn mcp-btn--small"
-                    onClick={() => openEditForm(server)}
-                    title="Bearbeiten"
-                  >
-                    Bearbeiten
-                  </button>
-                  <button
-                    className="mcp-btn mcp-btn--small mcp-btn--danger"
-                    onClick={() => deleteServer(server.id)}
-                    disabled={actionLoading[server.id]}
-                    title="Entfernen"
-                  >
-                    Entfernen
-                  </button>
-                </div>
-              </div>
-
-              {/* Expanded: Tools & Resources */}
-              {expandedServer === server.id && (
-                <div className="mcp-server-details">
-                  <div className="mcp-details-section">
-                    <h5>Tools ({serverTools[server.id]?.length || 0})</h5>
-                    {(serverTools[server.id] || []).length === 0 ? (
-                      <p className="mcp-details-empty">Keine Tools verfuegbar</p>
-                    ) : (
-                      <div className="mcp-tools-grid">
-                        {(serverTools[server.id] || []).map(tool => (
-                          <div key={tool.name} className="mcp-tool-card">
-                            <div className="mcp-tool-name">{tool.name}</div>
-                            {tool.description && (
-                              <div className="mcp-tool-desc">{tool.description}</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mcp-details-section">
-                    <h5>Ressourcen ({serverResources[server.id]?.length || 0})</h5>
-                    {(serverResources[server.id] || []).length === 0 ? (
-                      <p className="mcp-details-empty">Keine Ressourcen verfuegbar</p>
-                    ) : (
-                      <div className="mcp-resources-list">
-                        {(serverResources[server.id] || []).map(resource => (
-                          <div key={resource.uri} className="mcp-resource-item">
-                            <span className="mcp-resource-name">{resource.name}</span>
-                            <span className="mcp-resource-uri">{resource.uri}</span>
-                            {resource.description && (
-                              <span className="mcp-resource-desc">{resource.description}</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -720,7 +720,7 @@ function AuthenticatedApp() {
                   navigateToPage('ideas');
                 }
               }}
-              initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag'}
+              initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep'}
             />
           </Suspense>
         );

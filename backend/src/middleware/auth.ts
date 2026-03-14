@@ -14,6 +14,7 @@ import { pool } from '../utils/database';
 import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { checkKeyExpiry, KeyExpiryInfo } from '../services/api-key-security';
+import { setCurrentUserId } from '../utils/request-context';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -380,10 +381,14 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
     // Phase 65: Set req.user for getUserId() compatibility
     // If API key has a linked user_id, use it; otherwise fall back to system user
+    const effectiveUserId = keyData.user_id || '00000000-0000-0000-0000-000000000001';
     req.user = {
-      id: keyData.user_id || '00000000-0000-0000-0000-000000000001',
+      id: effectiveUserId,
       provider: 'api-key',
     };
+
+    // Phase 66: Store userId in AsyncLocalStorage for RLS
+    setCurrentUserId(effectiveUserId);
 
     next();
   } catch (error) {

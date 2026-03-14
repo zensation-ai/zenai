@@ -82,6 +82,143 @@ router.get('/:context/sleep-compute/idle-status', asyncHandler(async (req: Reque
   res.json({ success: true, data: { idle: isIdle } });
 }));
 
+// GET /api/:context/sleep-compute/discoveries - Get sleep cycle discoveries (last 7 cycles)
+router.get('/:context/sleep-compute/discoveries', asyncHandler(async (req: Request, res: Response) => {
+  const _userId = getUserId(req);
+  const context = req.params.context as AIContext;
+  if (!isValidContext(context)) {
+    return res.status(400).json({ success: false, error: 'Invalid context' });
+  }
+
+  // Summary of last 7 cycles
+  const summaryResult = await queryContext(context, `
+    SELECT
+      COUNT(*) as cycle_count,
+      COALESCE(SUM(processed_items), 0) as total_consolidations,
+      COALESCE(SUM(insights_generated), 0) as total_discoveries,
+      COALESCE(SUM(memory_updates), 0) as total_optimizations,
+      COALESCE(SUM(contradictions_resolved), 0) as total_contradictions,
+      COALESCE(AVG(duration_ms)::integer, 0) as avg_duration_ms
+    FROM (
+      SELECT * FROM sleep_compute_logs
+      ORDER BY created_at DESC
+      LIMIT 7
+    ) recent
+  `, []);
+
+  // Individual cycle items
+  const cyclesResult = await queryContext(context, `
+    SELECT id, cycle_type, processed_items, insights_generated,
+           contradictions_resolved, memory_updates, duration_ms, created_at
+    FROM sleep_compute_logs
+    ORDER BY created_at DESC
+    LIMIT 7
+  `, []);
+
+  // Recent learned facts from sleep compute (discoveries)
+  const discoveriesResult = await queryContext(context, `
+    SELECT id, fact_type as type, content as description, confidence, created_at
+    FROM learned_facts
+    WHERE source = 'sleep_compute'
+    ORDER BY created_at DESC
+    LIMIT 20
+  `, []);
+
+  // Recent contradictions (facts with fast_decay that were downgraded)
+  const contradictionsResult = await queryContext(context, `
+    SELECT id, content, confidence, decay_class, updated_at
+    FROM learned_facts
+    WHERE decay_class = 'fast_decay' AND confidence < 0.5
+    ORDER BY updated_at DESC
+    LIMIT 10
+  `, []);
+
+  res.json({
+    success: true,
+    data: {
+      summary: summaryResult.rows[0] || {},
+      cycles: cyclesResult.rows,
+      discoveries: discoveriesResult.rows,
+      contradictions: contradictionsResult.rows,
+    },
+  });
+}));
+
+// GET /api/:context/context-v2/active - Get current active context summary
+router.get('/:context/context-v2/active', asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
+  const context = req.params.context as AIContext;
+  if (!isValidContext(context)) {
+    return res.status(400).json({ success: false, error: 'Invalid context' });
+  }
+
+  // Working memory item count
+  let workingMemoryCount = 0;
+  try {
+    const wmResult = await queryContext(context, `
+      SELECT COUNT(*) as cnt FROM working_memory
+      WHERE user_id = $1
+    `, [userId]);
+    workingMemoryCount = parseInt(wmResult.rows[0]?.cnt || '0', 10);
+  } catch {
+    // Table may not exist
+  }
+
+  // Long-term facts count
+  let factsCount = 0;
+  try {
+    const factsResult = await queryContext(context, `
+      SELECT COUNT(*) as cnt FROM learned_facts
+      WHERE confidence > 0.5
+    `, []);
+    factsCount = parseInt(factsResult.rows[0]?.cnt || '0', 10);
+  } catch {
+    // Table may not exist
+  }
+
+  // Relevant procedures count
+  let proceduresCount = 0;
+  try {
+    const procResult = await queryContext(context, `
+      SELECT COUNT(*) as cnt FROM procedural_memories
+      WHERE success_rate > 0.5
+    `, []);
+    proceduresCount = parseInt(procResult.rows[0]?.cnt || '0', 10);
+  } catch {
+    // Table may not exist
+  }
+
+  // Upcoming events (next 2 hours)
+  let upcomingEventsCount = 0;
+  let upcomingEvents: Array<Record<string, unknown>> = [];
+  try {
+    const eventsResult = await queryContext(context, `
+      SELECT id, title, start_time, end_time
+      FROM calendar_events
+      WHERE start_time BETWEEN NOW() AND NOW() + INTERVAL '2 hours'
+        AND user_id = $1
+      ORDER BY start_time ASC
+      LIMIT 5
+    `, [userId]);
+    upcomingEventsCount = eventsResult.rows.length;
+    upcomingEvents = eventsResult.rows;
+  } catch {
+    // Table may not exist
+  }
+
+  res.json({
+    success: true,
+    data: {
+      context,
+      workingMemoryCount,
+      factsCount,
+      proceduresCount,
+      upcomingEventsCount,
+      upcomingEvents,
+    },
+  });
+}));
+
 // POST /api/:context/context-v2/classify - Classify query domain
 router.post('/:context/context-v2/classify', asyncHandler(async (req: Request, res: Response) => {
   const _userId = getUserId(req);

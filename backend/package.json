@@ -35,6 +35,8 @@
   "author": "Alexander Bering <alex@zensation.ai> (https://zensation.ai)",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@google-analytics/data": "^5.2.1",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.52.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.56.0",
@@ -42,14 +44,14 @@
     "@opentelemetry/sdk-metrics": "^1.29.0",
     "@opentelemetry/sdk-node": "^0.56.0",
     "@opentelemetry/sdk-trace-node": "^1.29.0",
-    "@anthropic-ai/sdk": "^0.71.2",
-    "@google-analytics/data": "^5.2.1",
+    "@sentry/node": "^10.43.0",
     "@supabase/supabase-js": "^2.90.1",
     "@types/mailparser": "^3.4.6",
     "@types/pdfkit": "^0.17.4",
     "@zenai/shared": "workspace:*",
     "axios": "^1.6.5",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.25.0",
     "cheerio": "^1.2.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
@@ -82,7 +84,6 @@
     "tsdav": "^2.1.8",
     "uuid": "^9.0.1",
     "ws": "^8.19.0",
-    "bullmq": "^5.25.0",
     "zod": "^4.3.5"
   },
   "overrides": {

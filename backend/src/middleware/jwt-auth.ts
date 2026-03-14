@@ -12,6 +12,7 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, type AccessTokenPayload } from '../services/auth/jwt-service';
 import { apiKeyAuth } from './auth';
 import { logger } from '../utils/logger';
+import { setCurrentUserId } from '../utils/request-context';
 
 // ===========================================
 // Extend Express Request type for JWT users
@@ -110,6 +111,9 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
       rateLimit: 1000,
     };
 
+    // Phase 66: Store userId in AsyncLocalStorage for RLS
+    setCurrentUserId(payload.sub);
+
     next();
   } catch (error) {
     const jwtError = error as { code?: string; message?: string };
@@ -169,6 +173,8 @@ export async function optionalJwtAuth(req: Request, res: Response, next: NextFun
       scopes: ['read', 'write', 'admin'],
       rateLimit: 1000,
     };
+    // Phase 66: Store userId in AsyncLocalStorage for RLS
+    setCurrentUserId(payload.sub);
   } catch {
     // Silent failure for optional auth
     logger.debug('Optional JWT auth failed', { operation: 'optionalJwtAuth' });
@@ -206,6 +212,8 @@ export function requireJwt(req: Request, res: Response, next: NextFunction): voi
       id: payload.sub,
       provider: 'jwt',
     };
+    // Phase 66: Store userId in AsyncLocalStorage for RLS
+    setCurrentUserId(payload.sub);
     next();
   } catch (error) {
     const jwtError = error as { code?: string; message?: string };

@@ -20,6 +20,12 @@ import { recordRAGQueryAnalytics } from './rag-feedback';
 import { decomposeQuery } from './rag-query-decomposition';
 // Phase 58: GraphRAG Hybrid Retrieval
 import { hybridRetriever, HybridRetrievalResult } from './knowledge-graph/hybrid-retriever';
+// Phase 67.1: RAG Result Caching
+import { ragResultCache } from './rag-cache';
+// Phase 70: A-RAG Autonomous Retrieval Strategy
+import { planRetrieval } from './arag/strategy-agent';
+import { executeRetrievalPlan } from './arag/iterative-retriever';
+import type { RetrievalInterface, ARAGExecutionMetadata } from './arag/retrieval-interfaces';
 
 // ===========================================
 // Types & Interfaces
@@ -45,6 +51,10 @@ export interface EnhancedRAGConfig {
   agenticConfig?: Partial<RAGAgentConfig>;
   /** Phase 58: Enable GraphRAG hybrid retrieval */
   enableGraphRAG: boolean;
+  /** Phase 67.1: Skip cache lookup and force fresh retrieval */
+  skipCache?: boolean;
+  /** Phase 70: Enable A-RAG autonomous retrieval strategy (default true) */
+  enableARAG: boolean;
 }
 
 /**
@@ -65,7 +75,7 @@ export interface EnhancedResult {
     agentic?: number;
   };
   /** Which methods contributed */
-  sources: ('semantic' | 'hyde' | 'cross_encoder' | 'agentic' | 'graphrag')[];
+  sources: ('semantic' | 'hyde' | 'cross_encoder' | 'agentic' | 'graphrag' | 'arag')[];
   /** Relevance explanation (from cross-encoder) */
   relevanceReason?: string;
 }
@@ -85,6 +95,10 @@ export interface EnhancedRAGResult {
     hyde?: number;
     agentic?: number;
     crossEncoder?: number;
+    /** Phase 67.1: Whether this result came from cache */
+    cacheHit?: boolean;
+    /** Phase 70: A-RAG execution metadata */
+    arag?: ARAGExecutionMetadata;
   };
   /** Debug information */
   debug?: {
@@ -129,6 +143,7 @@ const DEFAULT_CONFIG: EnhancedRAGConfig = {
   minRelevance: 0.3,
   maxResults: 10,
   enableGraphRAG: true,
+  enableARAG: true,
 };
 
 // ===========================================
@@ -152,8 +167,43 @@ class EnhancedRAGService {
   ): Promise<EnhancedRAGResult> {
     const cfg = { ...this.config, ...config };
     const startTime = Date.now();
+
+    // Phase 67.1: Check cache before retrieval
+    if (!cfg.skipCache) {
+      try {
+        const cached = await ragResultCache.get(query, context);
+        if (cached) {
+          cached.timing = { ...cached.timing, total: Date.now() - startTime, cacheHit: true };
+          return cached;
+        }
+      } catch {
+        // Cache failure is non-critical, proceed with retrieval
+      }
+    }
+
     const methodsUsed: string[] = [];
     const timing: EnhancedRAGResult['timing'] = { total: 0 };
+
+    // Phase 70: A-RAG autonomous retrieval (replaces fixed pipeline when enabled)
+    if (cfg.enableARAG) {
+      try {
+        const aragResult = await this.retrieveWithARAG(query, context, cfg, startTime);
+        if (aragResult) {
+          // Phase 67.1: Cache the A-RAG result (async, non-blocking)
+          if (!cfg.skipCache) {
+            ragResultCache.set(query, context, aragResult).catch(() => {/* non-critical */});
+          }
+          return aragResult;
+        }
+        // If A-RAG returned null, fall through to fixed pipeline
+        logger.info('A-RAG returned no results, falling back to fixed pipeline');
+      } catch (error) {
+        logger.warn('A-RAG failed, falling back to fixed pipeline', {
+          error: error instanceof Error ? error.message : 'Unknown',
+        });
+        // Fall through to fixed pipeline
+      }
+    }
 
     // Phase 47: Query decomposition for complex queries
     const decomposition = decomposeQuery(query);
@@ -296,17 +346,24 @@ class EnhancedRAGService {
       reformulationCount: 0,
     }).catch(() => {/* non-critical */});
 
-    return {
+    const result: EnhancedRAGResult = {
       results: finalResults,
       confidence,
       methodsUsed,
-      timing,
+      timing: { ...timing, cacheHit: false },
       debug: {
         hydeUsed: useHyDE,
         hydeReason: useHyDE ? 'Query matches HyDE patterns' : 'Direct search preferred',
         queryDecomposition: decomposition?.isComplex ? decomposition : undefined,
       },
     };
+
+    // Phase 67.1: Cache the result (async, non-blocking)
+    if (!cfg.skipCache) {
+      ragResultCache.set(query, context, result).catch(() => {/* non-critical */});
+    }
+
+    return result;
   }
 
   /**
@@ -525,6 +582,132 @@ class EnhancedRAGService {
    */
   getConfig(): EnhancedRAGConfig {
     return { ...this.config };
+  }
+
+  // ===========================================
+  // Phase 70: A-RAG Autonomous Retrieval
+  // ===========================================
+
+  /**
+   * Execute retrieval using the A-RAG autonomous strategy.
+   * Returns null if A-RAG produces no usable results.
+   */
+  private async retrieveWithARAG(
+    query: string,
+    context: AIContext,
+    cfg: EnhancedRAGConfig,
+    startTime: number
+  ): Promise<EnhancedRAGResult | null> {
+    // Determine available interfaces based on config
+    const availableInterfaces: RetrievalInterface[] = ['keyword', 'semantic', 'chunk_read'];
+    if (cfg.enableGraphRAG) {
+      availableInterfaces.push('graph', 'community');
+    }
+
+    // Step 1: Strategy agent creates a retrieval plan
+    const plan = await planRetrieval(query, context, availableInterfaces);
+
+    logger.info('A-RAG plan created', {
+      queryType: plan.queryType,
+      steps: plan.steps.map(s => s.interface),
+      reasoning: plan.reasoning,
+    });
+
+    // Step 2: Execute the plan iteratively
+    const { result: aragResult, metadata } = await executeRetrievalPlan(plan, context, query);
+
+    // If no results, return null to fall back
+    if (aragResult.results.length === 0) {
+      return null;
+    }
+
+    // Step 3: Convert A-RAG results to EnhancedResult format
+    const enhancedResults: EnhancedResult[] = aragResult.results
+      .filter(r => r.score >= cfg.minRelevance)
+      .slice(0, cfg.maxResults)
+      .map(r => {
+        const { enrichedSummary } = this.enrichWithContext(r.title || '', r.content);
+        return {
+          id: r.id,
+          title: r.title || '',
+          summary: enrichedSummary,
+          content: r.content,
+          score: r.score,
+          scores: {},
+          sources: ['arag' as const],
+        };
+      });
+
+    if (enhancedResults.length === 0) {
+      return null;
+    }
+
+    // Step 4: Optional cross-encoder re-ranking on A-RAG results
+    let finalResults = enhancedResults;
+    let crossEncoderTime: number | undefined;
+
+    if (cfg.enableCrossEncoder && enhancedResults.length > 1) {
+      const crossStart = Date.now();
+      try {
+        const reranked = await hybridRerank(
+          query,
+          enhancedResults.map(r => ({
+            id: r.id,
+            title: r.title,
+            summary: r.summary,
+            content: r.content,
+            score: r.score,
+            strategy: 'hybrid' as const,
+          })),
+          { crossEncodeTop: cfg.crossEncodeTop, minRelevance: cfg.minRelevance }
+        );
+        finalResults = this.applyReranking(enhancedResults, reranked);
+        crossEncoderTime = Date.now() - crossStart;
+      } catch {
+        // Cross-encoder failure is non-critical for A-RAG
+      }
+    }
+
+    const confidence = aragResult.confidence;
+    const totalTime = Date.now() - startTime;
+    const methodsUsed = ['arag', ...metadata.interfacesUsed];
+    if (crossEncoderTime !== undefined) {
+      methodsUsed.push('cross_encoder');
+    }
+
+    // Record analytics (async, non-blocking)
+    recordRAGQueryAnalytics(context, {
+      queryText: query,
+      queryType: metadata.queryType,
+      strategiesUsed: methodsUsed,
+      strategySelected: 'arag',
+      resultCount: finalResults.length,
+      topScore: finalResults.length > 0 ? finalResults[0].score : undefined,
+      avgScore: finalResults.length > 0
+        ? finalResults.reduce((sum, r) => sum + r.score, 0) / finalResults.length
+        : undefined,
+      confidence,
+      responseTimeMs: totalTime,
+      hydeUsed: false,
+      crossEncoderUsed: crossEncoderTime !== undefined,
+      reformulationCount: metadata.iterations - 1,
+    }).catch(() => {/* non-critical */});
+
+    return {
+      results: finalResults,
+      confidence,
+      methodsUsed,
+      timing: {
+        total: totalTime,
+        crossEncoder: crossEncoderTime,
+        cacheHit: false,
+        arag: metadata,
+      },
+      debug: {
+        hydeUsed: false,
+        hydeReason: 'A-RAG autonomous retrieval used instead of HyDE',
+      },
+    };
   }
 }
 

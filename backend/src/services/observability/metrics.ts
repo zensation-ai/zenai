@@ -30,6 +30,9 @@ let queueJobCounter: OtelInstrument = null;
 let queueJobDurationHistogram: OtelInstrument = null;
 let queueJobsActiveGauge: OtelInstrument = null;
 let memoryOpsCounter: OtelInstrument = null;
+let dbPoolActiveGauge: OtelInstrument = null;
+let dbPoolWaitingGauge: OtelInstrument = null;
+let dbPoolErrorCounter: OtelInstrument = null;
 
 let metricsInitialized = false;
 
@@ -88,6 +91,18 @@ export async function initMetrics(): Promise<boolean> {
 
     memoryOpsCounter = meter.createCounter('memory.operations', {
       description: 'Memory layer operations',
+    });
+
+    dbPoolActiveGauge = meter.createUpDownCounter('db.pool.active', {
+      description: 'Active database pool connections',
+    });
+
+    dbPoolWaitingGauge = meter.createUpDownCounter('db.pool.waiting', {
+      description: 'Queries waiting for a database connection',
+    });
+
+    dbPoolErrorCounter = meter.createCounter('db.pool.errors', {
+      description: 'Database pool errors',
     });
 
     metricsInitialized = true;
@@ -194,6 +209,31 @@ export function recordMemoryOp(layer: string, operation: string): void {
   const labels = { layer, operation };
   addInstrument(memoryOpsCounter, 1, labels);
   addSnapshot('memory.operations', 'counter', 1, labels);
+}
+
+/**
+ * Record a database pool event.
+ * Phase 67.3: Tracks pool acquire/release/error/waiting events.
+ */
+export function recordPoolMetric(event: 'acquire' | 'release' | 'error' | 'waiting'): void {
+  const labels = { event };
+
+  switch (event) {
+    case 'acquire':
+      addInstrument(dbPoolActiveGauge, 1, labels);
+      break;
+    case 'release':
+      addInstrument(dbPoolActiveGauge, -1, labels);
+      break;
+    case 'error':
+      addInstrument(dbPoolErrorCounter, 1, labels);
+      break;
+    case 'waiting':
+      addInstrument(dbPoolWaitingGauge, 1, labels);
+      break;
+  }
+
+  addSnapshot(`db.pool.${event === 'acquire' || event === 'release' ? 'active' : event === 'error' ? 'errors' : 'waiting'}`, event === 'error' ? 'counter' : 'gauge', event === 'release' ? -1 : 1, labels);
 }
 
 /**

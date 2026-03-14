@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
+import { captureException as sentryCaptureException } from '../services/observability/sentry';
 
 // ============================================
 // Error Codes (Phase 9)
@@ -146,6 +147,8 @@ export function errorHandler(
     logger.error(`${err.code}: ${err.message}`, err.isOperational ? undefined : err, context);
   } else {
     logger.error('UNEXPECTED_ERROR', err, context);
+    // Phase 66: Report unexpected errors to Sentry
+    sentryCaptureException(err, context);
   }
 
   // Handle known errors

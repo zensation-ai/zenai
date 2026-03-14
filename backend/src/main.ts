@@ -103,6 +103,9 @@ import { initTracing, shutdownTracing } from './services/observability/tracing';
 import { initMetrics } from './services/observability/metrics';
 import { tracingMiddleware } from './middleware/tracing';
 import { observabilityRouter } from './routes/observability';
+// Phase 73: AI Observability - Langfuse-style Trace Dashboard
+import { aiTracesRouter } from './routes/ai-traces';
+import { initAITracing, shutdownAITracing } from './services/observability/ai-trace';
 import { getQueueService } from './services/queue/job-queue';
 import { startWorkers, stopWorkers } from './services/queue/workers';
 
@@ -244,6 +247,10 @@ app.use(cors({
   exposedHeaders: ['X-CSRF-Token', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
 }));
 
+// Phase 66: Per-request context for RLS (must be before all route handlers)
+import { requestContextMiddleware } from './utils/request-context';
+app.use(requestContextMiddleware);
+
 // Request tracking & compression
 app.use(requestIdMiddleware); // Phase 12: Request ID tracking
 app.use(tracingMiddleware); // Phase 61: OpenTelemetry request tracing
@@ -319,6 +326,8 @@ setupSwagger(app);
 
 // Phase 61: Observability - Metrics, Queue Stats, Health
 app.use('/api/observability', observabilityRouter);
+// Phase 73: AI Observability - Langfuse-style Trace Dashboard
+app.use('/api/observability', aiTracesRouter);
 
 // Phase 56: Auth - Registration, Login, OAuth, MFA, Sessions
 import { authRouter } from './routes/auth';
@@ -571,9 +580,17 @@ app.use('/api', proactiveEngineRouter);  // /api/:context/proactive-engine/event
 import { securityRouter } from './routes/security';
 app.use('/api/security', securityRouter);  // /api/security/audit-log, /api/security/alerts, /api/security/rate-limits
 
+// Phase 75: Extension/Plugin System
+import { extensionsRouter } from './routes/extensions';
+app.use('/api/extensions', extensionsRouter);  // /api/extensions, /api/extensions/installed, /api/extensions/:id/install|uninstall|enable|disable|execute
+
 // Phase 63: Sleep Compute + Context Engine V2
 import { sleepComputeRouter } from './routes/sleep-compute';
 app.use('/api', sleepComputeRouter);  // /api/:context/sleep-compute/*, /api/:context/context-v2/*
+
+// Phase 69.1: Smart Suggestion Surface
+import { smartSuggestionsRouter } from './routes/smart-suggestions';
+app.use('/api', smartSuggestionsRouter);  // /api/:context/suggestions, /api/:context/suggestions/:id/dismiss|snooze|accept, /api/:context/suggestions/stream
 
 // Note: Code Execution routes moved to top of file to avoid context-aware route conflicts
 
@@ -599,6 +616,7 @@ process.once('SIGTERM', () => {
   stopWorkers().catch(() => {});
   getQueueService().shutdown().catch(() => {});
   shutdownTracing().catch(() => {});
+  shutdownAITracing().catch(() => {});
 });
 process.once('SIGINT', () => {
   clearInterval(rateLimitCleanupInterval);
@@ -611,6 +629,7 @@ process.once('SIGINT', () => {
   stopWorkers().catch(() => {});
   getQueueService().shutdown().catch(() => {});
   shutdownTracing().catch(() => {});
+  shutdownAITracing().catch(() => {});
 });
 
 // 404 Handler for undefined routes
@@ -626,6 +645,13 @@ app.use((req, res) => {
 
 // Error handling - Use centralized error handler
 app.use(errorHandler);
+
+// Phase 66: Sentry error handler (must be after Express error handler)
+import('./services/observability/sentry').then(({ Sentry, isSentryInitialized }) => {
+  if (isSentryInitialized()) {
+    Sentry.setupExpressErrorHandler(app);
+  }
+}).catch(() => { /* Sentry not available */ });
 
 // Setup graceful shutdown for database connections
 setupGracefulShutdown();
@@ -719,6 +745,18 @@ function validateEnvironmentVariables(): void {
  * Ensures secrets are validated BEFORE server accepts requests
  */
 async function startServer(): Promise<void> {
+  // Phase 66: Initialize Sentry FIRST (before everything else)
+  try {
+    const { initSentry } = await import('./services/observability/sentry');
+    const sentryAvailable = initSentry();
+    logger.info('Sentry initialized', { operation: 'startup', available: sentryAvailable });
+  } catch (error) {
+    logger.warn('Sentry initialization failed (non-critical)', {
+      operation: 'startup',
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   // Phase 61: Initialize OpenTelemetry tracing early (before Express setup)
   try {
     const tracingEnabled = await initTracing();
@@ -741,6 +779,18 @@ async function startServer(): Promise<void> {
   } catch (error) {
     logger.error('FATAL: SecretsManager initialization failed', error instanceof Error ? error : undefined);
     process.exit(1);
+  }
+
+  // Phase 66: Initialize field-level encryption
+  try {
+    const { initEncryption } = await import('./services/security/field-encryption');
+    const encryptionAvailable = initEncryption();
+    logger.info('Field encryption initialized', { operation: 'startup', available: encryptionAvailable });
+  } catch (error) {
+    logger.warn('Field encryption initialization failed (non-critical)', {
+      operation: 'startup',
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   // Additional environment validation (2026-01-30)
@@ -797,6 +847,17 @@ async function startServer(): Promise<void> {
     process.exit(1);
   } else {
     logger.warn(`Database connections failed: ${failedContexts.join(', ')}`, { dbStatus, failedContexts, operation: 'startup' });
+  }
+
+  // Phase 73: Initialize AI tracing (Langfuse-style) after DB is ready
+  try {
+    const { queryPublic: qp } = await import('./utils/database-context');
+    initAITracing(qp);
+  } catch (error) {
+    logger.warn('AI tracing initialization failed (non-critical)', {
+      operation: 'startup',
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   // Open readiness gate - server can now handle requests

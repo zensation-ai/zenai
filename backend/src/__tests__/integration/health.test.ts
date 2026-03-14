@@ -15,10 +15,14 @@ jest.mock('../../utils/database-context', () => ({
   testConnections: jest.fn(),
   queryContext: jest.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
   getPoolStats: jest.fn().mockReturnValue({
-    personal: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 100, avgQueryTime: 5 },
-    work: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 50, avgQueryTime: 6 },
-    learning: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 30, avgQueryTime: 5 },
-    creative: { poolSize: 5, idleCount: 3, waitingCount: 0, queryCount: 20, avgQueryTime: 5 },
+    contexts: {
+      personal: { queries: 100, errors: 0, slowQueries: 0 },
+      work: { queries: 50, errors: 0, slowQueries: 0 },
+      learning: { queries: 30, errors: 0, slowQueries: 0 },
+      creative: { queries: 20, errors: 0, slowQueries: 0 },
+    },
+    pool: { totalCount: 5, idleCount: 3, activeCount: 2, waitingCount: 0, maxSize: 8 },
+    events: { connects: 10, acquires: 200, removes: 0, errors: 0 },
   }),
   getHealthCheckStatus: jest.fn().mockReturnValue({ lastCheck: new Date().toISOString(), status: 'ok' }),
 }));

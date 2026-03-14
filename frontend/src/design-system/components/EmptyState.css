@@ -1,0 +1,37 @@
+/* Design System: EmptyState */
+
+.ds-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.ds-empty-state__icon {
+  font-size: 48px;
+  color: var(--text-secondary, #3a4d5a);
+  opacity: 0.5;
+  margin-bottom: 4px;
+}
+
+.ds-empty-state__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #0f1f2a);
+}
+
+.ds-empty-state__description {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary, #3a4d5a);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.ds-empty-state__action {
+  margin-top: 8px;
+}

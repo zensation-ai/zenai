@@ -14,6 +14,9 @@ import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { queryClaudeJSON } from '../claude';
 import { generateEmbedding } from '../ai';
+import { calculateRetention, updateStability } from './ebbinghaus-decay';
+import { calculateContextSimilarity, captureEncodingContext, deserializeContext, serializeContext, type EncodingContext } from './context-enrichment';
+import { tagEmotion, computeEmotionalWeight } from './emotional-tagger';
 
 // ===========================================
 // Utility Functions
@@ -931,6 +934,9 @@ Antworte als JSON:
       const queryLower = query.toLowerCase();
 
       // Find relevant facts with composite importance scoring
+      // Phase 72: Capture current context for context-dependent retrieval boost
+      const currentContext = captureEncodingContext();
+
       const scoredFacts = memory.facts
         .map(fact => {
           // Text match check
@@ -941,7 +947,18 @@ Antworte als JSON:
           if (!isRelevant) {return null;}
 
           // Composite importance score (Phase 42)
-          const compositeScore = this.computeCompositeImportance(fact);
+          let compositeScore = this.computeCompositeImportance(fact);
+
+          // Phase 72: Apply context-dependent retrieval boost (max 30%)
+          const factWithCtx = fact as PersonalizationFact & { encodingContext?: unknown };
+          if (factWithCtx.encodingContext) {
+            const encodingCtx = deserializeContext(factWithCtx.encodingContext);
+            if (encodingCtx) {
+              const ctxSim = calculateContextSimilarity(encodingCtx, currentContext);
+              compositeScore *= ctxSim.boost;
+            }
+          }
+
           return { fact, compositeScore };
         })
         .filter((entry): entry is { fact: PersonalizationFact; compositeScore: number } => entry !== null)
@@ -968,6 +985,11 @@ Antworte als JSON:
         ).catch(err => logger.debug('Failed to persist retrieval tracking', {
           error: err instanceof Error ? err.message : String(err),
         }));
+
+        // Phase 72: Update stability on successful retrieval (SM-2 algorithm, fire-and-forget)
+        for (const { fact } of topFacts) {
+          this.updateFactStability(context, fact.id, true).catch(() => {});
+        }
       }
 
       const relevantFacts = scoredFacts.map(s => s.fact);
@@ -1252,15 +1274,16 @@ Antworte als JSON:
   /**
    * Apply importance-weighted decay to facts (monthly cron job)
    *
-   * Different fact types decay at different rates:
-   * - goal: near-permanent (0.9995/day) ~2% loss per year
-   * - preference: very slow (0.999/day) ~3% loss per month
-   * - knowledge: slow (0.998/day) ~6% loss per month
-   * - behavior: moderate (0.995/day) ~15% loss per month
-   * - context: fast (0.990/day) ~26% loss per month
+   * Phase 72: Uses Ebbinghaus exponential decay curve R = e^(-t/S)
+   * with SM-2 stability tracking, replacing the linear decay model.
+   *
+   * Stability modifiers:
+   * - Decay class (permanent/slow/normal/fast) maps to base stability
+   * - Emotional memories get up to 3x longer half-life
+   * - Explicit facts from user decay 50% slower
+   * - High-occurrence and frequently retrieved facts decay slower
    *
    * Facts with confidence below MIN_FACT_PRUNE_CONFIDENCE are pruned.
-   * Explicit facts (from user) decay 50% slower than inferred ones.
    */
   async applyFactDecay(context: AIContext): Promise<{ decayed: number; pruned: number }> {
     await this.initialize(context);
@@ -1288,6 +1311,20 @@ Antworte als JSON:
         baseDecayRate = CONFIG.FACT_DECAY_RATES[fact.factType] || 0.995;
       }
 
+      // Phase 72: Ebbinghaus exponential decay with stability tracking
+      // Use fact's stability if available, otherwise derive from decay rate
+      const factWithStability = fact as PersonalizationFact & { stability?: number; emotionalScore?: number };
+      const stability = factWithStability.stability || this.decayRateToStability(baseDecayRate);
+
+      // Compute emotional decay multiplier (emotional memories decay up to 3x slower)
+      const emotionalMultiplier = factWithStability.emotionalScore
+        ? 1.0 + (factWithStability.emotionalScore * 2.0)
+        : 1.0;
+
+      // Calculate Ebbinghaus retention
+      const lastAccess = fact.lastRetrieved || fact.lastConfirmed;
+      const retentionResult = calculateRetention(lastAccess, stability, emotionalMultiplier);
+
       // Explicit facts from user decay 50% slower
       const sourceMultiplier = fact.source === 'explicit' ? 0.5 : 1.0;
 
@@ -1299,9 +1336,14 @@ Antworte als JSON:
         ? 1.0 / (1.0 + Math.log(1 + fact.retrievalCount) * 0.5)
         : 1.0;
 
-      // Effective decay: base^(days * sourceMultiplier * occurrenceDampening * usageDampening)
-      const effectiveDays = daysSinceConfirmed * sourceMultiplier * occurrenceDampening * usageDampening;
-      const decayFactor = Math.pow(baseDecayRate, effectiveDays);
+      // Phase 72: Use Ebbinghaus retention as the decay factor
+      // Dampening factors reduce the effective time elapsed (slower decay)
+      const dampeningFactor = sourceMultiplier * occurrenceDampening * usageDampening;
+      // Blend Ebbinghaus retention with legacy decay for backward compatibility
+      const ebbinghausRetention = retentionResult.retention;
+      const legacyDecayFactor = Math.pow(baseDecayRate, daysSinceConfirmed * dampeningFactor);
+      // Use the more generous of the two (weighted towards Ebbinghaus)
+      const decayFactor = ebbinghausRetention * 0.7 + legacyDecayFactor * 0.3;
 
       fact.confidence = fact.confidence * decayFactor;
       decayed++;
@@ -1363,6 +1405,110 @@ Antworte als JSON:
 
     logger.info('Long-term fact decay applied', { context, decayed, pruned });
     return { decayed, pruned };
+  }
+
+  // ===========================================
+  // Phase 72: Neuroscience Memory Helpers
+  // ===========================================
+
+  /**
+   * Convert a legacy per-day decay rate to an Ebbinghaus stability value.
+   * Stability S such that e^(-1/S) ~= decayRate (retention after 1 day).
+   * From: decayRate = e^(-1/S) => S = -1 / ln(decayRate)
+   */
+  private decayRateToStability(decayRate: number): number {
+    if (decayRate >= 1.0) return 365; // permanent
+    if (decayRate <= 0) return 0.1;
+    return Math.max(0.1, Math.min(365, -1.0 / Math.log(decayRate)));
+  }
+
+  /**
+   * Update stability for a fact after successful retrieval (SM-2 algorithm).
+   * Called when a fact is retrieved and used in conversation.
+   */
+  async updateFactStability(context: AIContext, factId: string, success: boolean): Promise<void> {
+    try {
+      // Get current stability
+      const result = await queryContext(
+        context,
+        `SELECT stability FROM learned_facts WHERE id = $1`,
+        [factId]
+      );
+      if (result.rows.length === 0) return;
+
+      const currentStability = parseFloat(result.rows[0].stability) || 1.0;
+      const newStability = updateStability(currentStability, success);
+
+      await queryContext(
+        context,
+        `UPDATE learned_facts SET stability = $1 WHERE id = $2`,
+        [newStability, factId]
+      );
+    } catch (error) {
+      logger.debug('Failed to update fact stability', { factId, error });
+    }
+  }
+
+  /**
+   * Tag a fact with emotional metadata from its content.
+   * Should be called during fact creation/consolidation.
+   */
+  async tagFactWithEmotion(context: AIContext, factId: string, content: string): Promise<void> {
+    try {
+      const emotionalTag = tagEmotion(content);
+      const weight = computeEmotionalWeight(emotionalTag);
+
+      await queryContext(
+        context,
+        `UPDATE learned_facts
+         SET emotional_score = $1, arousal = $2, valence = $3,
+             stability = GREATEST(stability, $4)
+         WHERE id = $5`,
+        [
+          weight.consolidationWeight,
+          emotionalTag.arousal,
+          emotionalTag.valence,
+          weight.decayMultiplier, // Use emotional multiplier as minimum stability boost
+          factId,
+        ]
+      );
+    } catch (error) {
+      logger.debug('Failed to tag fact with emotion', { factId, error });
+    }
+  }
+
+  /**
+   * Store encoding context for a fact.
+   * Called during fact creation to capture the encoding environment.
+   */
+  async storeEncodingContext(context: AIContext, factId: string, taskType?: string): Promise<void> {
+    try {
+      const encodingCtx = captureEncodingContext(taskType);
+      await queryContext(
+        context,
+        `UPDATE learned_facts SET encoding_context = $1 WHERE id = $2`,
+        [JSON.stringify(serializeContext(encodingCtx)), factId]
+      );
+    } catch (error) {
+      logger.debug('Failed to store encoding context', { factId, error });
+    }
+  }
+
+  /**
+   * Apply context-dependent retrieval boost to a set of facts.
+   * Memories encoded in a similar context get up to 30% retrieval boost.
+   */
+  applyContextBoost(
+    facts: Array<{ encodingContext?: EncodingContext | null; score: number }>
+  ): void {
+    const currentCtx = captureEncodingContext();
+
+    for (const item of facts) {
+      if (item.encodingContext) {
+        const similarity = calculateContextSimilarity(item.encodingContext, currentCtx);
+        item.score *= similarity.boost;
+      }
+    }
   }
 }
 

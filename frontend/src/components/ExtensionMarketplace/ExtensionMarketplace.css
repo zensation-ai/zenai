@@ -1,0 +1,193 @@
+/* Phase 75: Extension Marketplace Styles */
+
+.extension-marketplace {
+  padding: 0;
+}
+
+/* Controls */
+.extension-marketplace-controls {
+  margin-bottom: 1.25rem;
+}
+
+.extension-marketplace-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 0.2rem;
+  margin-bottom: 1rem;
+}
+
+.extension-tab {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.extension-tab:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.extension-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
+
+.extension-tab-count {
+  font-size: 0.65rem;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  padding: 0.1rem 0.35rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Filters */
+.extension-marketplace-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.extension-search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.extension-search:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.extension-search::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.extension-category-filters {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.extension-filter-chip {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.extension-filter-chip:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.extension-filter-chip.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+/* Grid */
+.extension-marketplace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+/* Loading */
+.extension-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.extension-card-skeleton {
+  height: 180px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  animation: extension-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes extension-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Empty State */
+.extension-marketplace-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.extension-empty-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.extension-marketplace-empty p {
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+/* Error */
+.extension-marketplace-error {
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  .extension-marketplace-tabs {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .extension-tab {
+    color: rgba(0, 0, 0, 0.45);
+  }
+  .extension-tab.active {
+    background: rgba(0, 0, 0, 0.06);
+    color: inherit;
+  }
+  .extension-search {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  .extension-search::placeholder {
+    color: rgba(0, 0, 0, 0.35);
+  }
+  .extension-filter-chip {
+    border-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.45);
+  }
+  .extension-marketplace-empty {
+    color: rgba(0, 0, 0, 0.4);
+  }
+}

@@ -1,0 +1,82 @@
+/* Design System: Input */
+
+.ds-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.ds-input__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #0f1f2a);
+}
+
+.ds-input__container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ds-input__field {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary, #0f1f2a);
+  background: var(--surface, rgba(240, 245, 248, 0.8));
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.15));
+  border-radius: var(--radius-sm, 8px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.ds-input__field::placeholder {
+  color: var(--text-placeholder, #1a2a38);
+  opacity: 0.5;
+}
+
+.ds-input__field:focus {
+  border-color: var(--primary, #ff6b35);
+  box-shadow: 0 0 0 3px var(--primary-glow, rgba(255, 107, 53, 0.15));
+}
+
+textarea.ds-input__field {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* With icon */
+.ds-input-wrapper--has-icon .ds-input__field {
+  padding-left: 40px;
+}
+
+.ds-input__icon {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary, #3a4d5a);
+  pointer-events: none;
+  font-size: 16px;
+}
+
+/* Error state */
+.ds-input-wrapper--error .ds-input__field {
+  border-color: var(--danger, #ef4444);
+}
+
+.ds-input-wrapper--error .ds-input__field:focus {
+  box-shadow: 0 0 0 3px var(--danger-glow, rgba(239, 68, 68, 0.15));
+}
+
+.ds-input__error {
+  font-size: 13px;
+  color: var(--danger, #ef4444);
+}
+
+.ds-input__helper {
+  font-size: 13px;
+  color: var(--text-secondary, #3a4d5a);
+}

@@ -1,0 +1,282 @@
+/* Phase 75: Extension Card Styles */
+
+.extension-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.extension-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.extension-card.installed {
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.extension-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.extension-card-icon {
+  font-size: 1.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.extension-card-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.extension-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.extension-card-author {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.extension-card-type-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.extension-card-description {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+  margin: 0 0 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.extension-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.extension-card-version {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: monospace;
+}
+
+.extension-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Buttons */
+.extension-card-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.extension-card-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.extension-card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.extension-card-btn.install {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.extension-card-btn.install:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+.extension-card-btn.uninstall {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: rgba(239, 68, 68, 0.8);
+  font-size: 0.7rem;
+}
+
+.extension-card-btn.uninstall:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.extension-card-btn.confirm {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.extension-card-btn.confirm:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.25);
+}
+
+.extension-card-btn.cancel {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Toggle Switch */
+.extension-card-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.extension-card-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.extension-card-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  transition: background 0.2s ease;
+}
+
+.extension-card-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.extension-card-toggle input:checked + .extension-card-toggle-slider {
+  background: rgba(34, 197, 94, 0.5);
+}
+
+.extension-card-toggle input:checked + .extension-card-toggle-slider::before {
+  transform: translateX(16px);
+  background: #22c55e;
+}
+
+/* Permission Dialog */
+.extension-permission-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 1rem;
+}
+
+.extension-permission-dialog {
+  width: 100%;
+}
+
+.extension-permission-dialog h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.extension-permission-subtitle {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 0.75rem;
+}
+
+.extension-permission-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+}
+
+.extension-permission-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  padding: 0.25rem 0;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.extension-permission-check {
+  color: #22c55e;
+  font-size: 0.7rem;
+}
+
+.extension-permission-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  .extension-card {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+  .extension-card:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
+  }
+  .extension-card-author {
+    color: rgba(0, 0, 0, 0.45);
+  }
+  .extension-card-description {
+    color: rgba(0, 0, 0, 0.55);
+  }
+  .extension-card-version {
+    color: rgba(0, 0, 0, 0.35);
+  }
+}

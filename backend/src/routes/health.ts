@@ -253,23 +253,25 @@ healthRouter.get('/detailed', asyncHandler(async (req, res) => {
         personal: {
           status: dbHealth.personal ? 'connected' : 'disconnected',
           latencyMs: personalLatency.latencyMs,
-          pool: poolStats.personal,
+          pool: poolStats.contexts.personal,
         },
         work: {
           status: dbHealth.work ? 'connected' : 'disconnected',
           latencyMs: workLatency.latencyMs,
-          pool: poolStats.work,
+          pool: poolStats.contexts.work,
         },
         learning: {
           status: dbHealth.learning ? 'connected' : 'disconnected',
           latencyMs: learningLatency.latencyMs,
-          pool: poolStats.learning,
+          pool: poolStats.contexts.learning,
         },
         creative: {
           status: dbHealth.creative ? 'connected' : 'disconnected',
           latencyMs: creativeLatency.latencyMs,
-          pool: poolStats.creative,
+          pool: poolStats.contexts.creative,
         },
+        sharedPool: poolStats.pool,
+        poolEvents: poolStats.events,
         healthCheck: dbHealthCheckStatus,
       },
       ai: {

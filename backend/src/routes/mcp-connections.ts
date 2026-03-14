@@ -27,6 +27,8 @@ import { mcpServerRegistry } from '../services/mcp/mcp-registry';
 import { mcpClientManager, MCPServerConfig } from '../services/mcp/mcp-client';
 import { MCPToolBridge, createToolBridge } from '../services/mcp/mcp-tool-bridge';
 import { validateTransportConfig, MCPTransportType } from '../services/mcp/mcp-transport';
+import { mcpDiscoveryService, MCPServerCategory } from '../services/mcp/mcp-discovery';
+import { mcpAutoConfigService } from '../services/mcp/mcp-auto-config';
 import { logger } from '../utils/logger';
 import { getUserId } from '../utils/user-context';
 
@@ -344,6 +346,54 @@ mcpConnectionsV2Router.get(
       data: {
         healthy,
         status: status || { connected: false, healthy: false },
+      },
+    });
+  })
+);
+
+// ===========================================
+// Discovery & Marketplace (Phase 71)
+// ===========================================
+
+/**
+ * GET /api/:context/mcp/discover - Browse/search available MCP servers
+ */
+mcpConnectionsV2Router.get(
+  '/:context/mcp/discover',
+  validateContext,
+  asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
+    const query = req.query.q as string | undefined;
+    const category = req.query.category as MCPServerCategory | undefined;
+
+    const result = mcpDiscoveryService.discoverServers(query, category);
+
+    res.json({ success: true, data: result });
+  })
+);
+
+/**
+ * GET /api/:context/mcp/discover/:name/template - Get setup template for a server
+ */
+mcpConnectionsV2Router.get(
+  '/:context/mcp/discover/:name/template',
+  validateContext,
+  asyncHandler(async (req: Request, res: Response) => {
+    const _userId = getUserId(req);
+    const { name } = req.params;
+
+    const template = mcpAutoConfigService.getSetupTemplate(name);
+    if (!template) {
+      return res.status(404).json({ success: false, error: `No template found for server: ${name}` });
+    }
+
+    const catalogEntry = mcpDiscoveryService.getByName(name);
+
+    res.json({
+      success: true,
+      data: {
+        template,
+        server: catalogEntry,
       },
     });
   })

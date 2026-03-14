@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 65
+## Current Phase: 75
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -216,8 +216,13 @@
 - Observability Routes: `backend/src/routes/observability.ts`
 - RBAC Middleware: `backend/src/middleware/rbac.ts`
 - Audit Logger: `backend/src/services/security/audit-logger.ts`
+- Field Encryption: `backend/src/services/security/field-encryption.ts`
 - Advanced Rate Limiting: `backend/src/services/security/rate-limit-advanced.ts`
 - Security Routes: `backend/src/routes/security.ts`
+- Request Context (AsyncLocalStorage): `backend/src/utils/request-context.ts`
+- Sentry Backend: `backend/src/services/observability/sentry.ts`
+- Sentry Frontend: `frontend/src/services/sentry.ts`
+- RAG Cache: `backend/src/services/rag-cache.ts`
 - Sleep Compute Engine: `backend/src/services/memory/sleep-compute.ts`
 - Context Engine V2: `backend/src/services/context-engine-v2.ts`
 - Sleep Worker: `backend/src/services/queue/workers/sleep-worker.ts`
@@ -226,6 +231,21 @@
 - Agent Graph (LangGraph): `backend/src/services/agents/agent-graph.ts`
 - Workflow Store: `backend/src/services/agents/workflow-store.ts`
 - Agent Identity Routes: `backend/src/routes/agent-identity.ts`
+- RAG Cache: `backend/src/services/rag-cache.ts`
+- A-RAG Strategy Agent: `backend/src/services/arag/strategy-agent.ts`
+- A-RAG Iterative Retriever: `backend/src/services/arag/iterative-retriever.ts`
+- MCP Discovery: `backend/src/services/mcp/mcp-discovery.ts`
+- MCP Auto-Config: `backend/src/services/mcp/mcp-auto-config.ts`
+- Emotional Tagger: `backend/src/services/memory/emotional-tagger.ts`
+- Ebbinghaus Decay: `backend/src/services/memory/ebbinghaus-decay.ts`
+- AI Trace Service: `backend/src/services/observability/ai-trace.ts`
+- AI Traces Routes: `backend/src/routes/ai-traces.ts`
+- Sentry (Backend): `backend/src/services/observability/sentry.ts`
+- Smart Suggestions: `backend/src/services/smart-suggestions.ts`
+- Smart Suggestions Routes: `backend/src/routes/smart-suggestions.ts`
+- Extension Registry: `backend/src/services/extensions/extension-registry.ts`
+- Extension Sandbox: `backend/src/services/extensions/extension-sandbox.ts`
+- Extensions Routes: `backend/src/routes/extensions.ts`
 
 ### Frontend
 
@@ -267,6 +287,18 @@
 - WebRTC Hook: `frontend/src/hooks/useWebRTC.ts`
 - Voice Activity Hook: `frontend/src/hooks/useVoiceActivity.ts`
 - PWA Hook: `frontend/src/hooks/usePWA.ts`
+- Design System: `frontend/src/design-system/` (Tokens, 10 Components)
+- Smart Surface: `frontend/src/components/SmartSurface/SmartSurface.tsx`
+- Sleep Insights: `frontend/src/components/InsightsDashboard/SleepInsights.tsx`
+- Context Indicator: `frontend/src/components/layout/ContextIndicator.tsx`
+- Tool Marketplace: `frontend/src/components/ToolMarketplace.tsx`
+- Server Setup Wizard: `frontend/src/components/ServerSetupWizard.tsx`
+- Extension Marketplace: `frontend/src/components/ExtensionMarketplace/ExtensionMarketplace.tsx`
+- Sentry (Frontend): `frontend/src/services/sentry.ts`
+- Local Inference: `frontend/src/services/local-inference.ts`
+- Offline Chat: `frontend/src/services/offline-chat.ts`
+- Local Inference Hook: `frontend/src/hooks/useLocalInference.ts`
+- Smart Suggestions Hook: `frontend/src/hooks/useSmartSuggestions.ts`
 
 ### Tests
 
@@ -840,6 +872,11 @@ ENABLE_TRACING=true                 # Enable OpenTelemetry tracing
 
 # Optional - Security (Phase 62)
 ENCRYPTION_KEY=...                  # AES-256 key for data-at-rest encryption (hex)
+
+# Optional - Sentry Error Tracking (Phase 66)
+SENTRY_DSN=...                      # Sentry DSN for backend error tracking
+SENTRY_ENABLED=true                 # Enable in non-production (production auto-enabled)
+# Frontend: VITE_SENTRY_DSN in frontend/.env
 ```
 
 ## Railway Environment Variables (Production)
@@ -928,9 +965,9 @@ cd frontend && npm test
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 3824 | 24 | 0 |
+| **Backend** | 4139 | 24 | 0 |
 | **Frontend** | 572 | 0 | 0 |
-| **Gesamt** | 4396 | 24 | 0 |
+| **Gesamt** | 4711 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1026,6 +1063,302 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-14: Phase 74+75 - Edge/Local Inference + Plugin/Extension System
+
+**Zwei parallele Phasen: Offline-faehige KI + Nutzer-erweiterbare Plattform.**
+
+**Phase 74: Edge/Local Inference Layer**
+
+| Feature | Details |
+|---------|---------|
+| **HeuristicProvider** | Pure-JS Intent Classification (12 Kategorien) + Sentiment + Keyword Extraction |
+| **LocalInferenceProvider** | Pluggable Interface fuer zukuenftige WebLLM/ONNX Integration |
+| **WebGPU Detection** | `isWebGPUAvailable()` fuer Feature-Detection |
+| **Offline Chat** | IndexedDB Message Queue, Auto-Sync bei Reconnect |
+| **Offline Banner** | Visueller Hinweis im Chat bei Offline-Modus |
+| **Graceful Fallback** | Online: Cloud API, Offline: Local Heuristic Response |
+
+**Phase 75: Plugin/Extension System**
+
+| Feature | Details |
+|---------|---------|
+| **Extension Registry** | 5 Built-in Extensions (Pomodoro, Markdown Export, Daily Digest, Code Snippets, Meeting Templates) |
+| **Extension Sandbox** | Permission Check, Rate Limiting (100/h), Timeout (30s) |
+| **Permission System** | 6 Permissions: storage, network, ai, ui, data_read, data_write |
+| **Extension Lifecycle** | Install → Enable → Execute → Disable → Uninstall |
+| **Extension Marketplace UI** | Card Grid mit Kategorie-Filter, Install/Uninstall, Permission Display |
+| **Settings Integration** | Neuer "Extensions" Tab in Einstellungen |
+
+**Neue Dateien Phase 74:**
+
+| Datei | Zweck |
+|-------|-------|
+| `frontend/src/services/local-inference.ts` | HeuristicProvider + LocalInferenceProvider Interface |
+| `frontend/src/hooks/useLocalInference.ts` | Auto-Init Hook mit Graceful Fallback |
+| `frontend/src/services/offline-chat.ts` | IndexedDB Queue + Auto-Sync |
+
+**Neue Dateien Phase 75:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/extensions/extension-registry.ts` | 5 Built-in Extensions Catalog |
+| `backend/src/services/extensions/extension-sandbox.ts` | Sandboxed Execution + Permissions |
+| `backend/src/routes/extensions.ts` | 8 REST Endpoints |
+| `backend/sql/migrations/phase75_extensions.sql` | extensions + installed_extensions + extension_executions |
+| `frontend/src/components/ExtensionMarketplace/ExtensionMarketplace.tsx` | Marketplace UI |
+| `frontend/src/components/ExtensionMarketplace/ExtensionCard.tsx` | Extension Card Component |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `frontend/src/components/GeneralChat/GeneralChat.tsx` | Offline Banner + Local Response Path |
+| `frontend/src/components/SettingsDashboard.tsx` | Extensions Tab hinzugefuegt |
+| `backend/src/main.ts` | extensionsRouter registriert |
+
+**Tests:** Backend 4139 + Frontend 572 = 4711 bestanden, 24 uebersprungen, 0 fehlgeschlagen
+
+---
+
+### 2026-03-14: Phase 72+73 - Neuroscience Memory 2.0 + AI Observability
+
+**Neurowissenschaftlich korrekte Memory + Langfuse-Style AI Tracing.**
+
+**Phase 72: Neuroscience Memory 2.0**
+
+| Feature | Details |
+|---------|---------|
+| **Emotional Tagging** | Heuristic Sentiment/Arousal/Valence/Significance via Keyword-Lexikon (DE+EN) |
+| **Consolidation Weight** | `arousal * 0.4 + significance * 0.6`, emotional Fakten 3x laengere Decay-Halbwertszeit |
+| **Ebbinghaus Decay** | `R = e^(-t/S)` statt linearem Decay, SM-2 Stability-Updates |
+| **Spaced Repetition** | Kandidaten-Identifikation fuer Pre-Loading in Sleep Compute |
+| **Context-Dependent Retrieval** | Encoding Specificity: timeOfDay + dayOfWeek + taskType → max 30% Retrieval-Boost |
+
+**Phase 73: AI Observability**
+
+| Feature | Details |
+|---------|---------|
+| **AI Trace Service** | Langfuse-Style Traces mit Spans + Generations, In-Memory Buffer, Fire-and-Forget DB |
+| **Cost Estimation** | Claude Modell-basierte Kostenberechnung (Opus/Sonnet/Haiku) |
+| **Dashboard API** | 3 Endpoints: Traces auflisten, Einzeltrace mit Spans, Stats pro Tag/Modell |
+| **Lifecycle** | initAITracing/shutdownAITracing mit graceful Flush |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/memory/emotional-tagger.ts` | Heuristic Emotion Tagging |
+| `backend/src/services/memory/ebbinghaus-decay.ts` | Exponential Decay + SM-2 |
+| `backend/src/services/memory/context-enrichment.ts` | Context-Dependent Retrieval |
+| `backend/src/services/observability/ai-trace.ts` | Langfuse-Style AI Tracing |
+| `backend/src/routes/ai-traces.ts` | AI Trace Dashboard API |
+| `backend/sql/migrations/phase72_emotional_memory.sql` | 5 neue Spalten auf learned_facts x4 Schemas |
+| `backend/sql/migrations/phase73_ai_traces.sql` | ai_traces + ai_spans in public |
+
+**Tests:** 81 neue Tests (57 neuroscience + 24 ai-trace), Backend 4100 bestanden
+
+---
+
+### 2026-03-14: Phase 71 - MCP Ecosystem Hub
+
+**Community MCP Server Discovery + Tool Marketplace UI.**
+
+| Feature | Details |
+|---------|---------|
+| **Server Discovery** | Built-in Katalog von 8 MCP Servern (Slack, GitHub, Google Drive, Linear, Notion, Calendar, Figma, HubSpot) |
+| **Auto-Config** | Setup-Templates mit Transport-Config, Required Credentials, Validierung |
+| **Discovery API** | GET discover (search/filter) + GET template Endpoints |
+| **Tool Marketplace** | Card-Grid mit Status-Badges, Kategorie-Filter, Popularity-Scores |
+| **Setup Wizard** | 3-Step Wizard: Info → Credentials → Connect |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/mcp/mcp-discovery.ts` | Server-Katalog + Search/Filter |
+| `backend/src/services/mcp/mcp-auto-config.ts` | Auto-Config Templates + Credential Validation |
+| `frontend/src/components/ToolMarketplace.tsx` | Marketplace Grid View |
+| `frontend/src/components/ServerSetupWizard.tsx` | 3-Step Setup Wizard |
+
+**Tests:** 37 neue MCP Discovery Tests
+
+---
+
+### 2026-03-14: Phase 70 - A-RAG (Autonome Retrieval-Strategie)
+
+**RAG 2.0: Agent-gesteuerte Retrieval-Strategie statt fester Pipeline.**
+
+| Feature | Details |
+|---------|---------|
+| **Strategy Agent** | Claude-basierter Meta-Agent, Query-Klassifikation (5 Typen), < 500 Token Prompt |
+| **5 Retrieval Interfaces** | keyword, semantic, chunk_read, graph, community |
+| **Heuristic Evaluator** | 7 Scoring-Faktoren (count, avg/top score, variance, diversity, length, term coverage) |
+| **Iterative Retrieval** | Parallel/Sequential Steps, Early Exit bei >0.9, Revision bei <0.6, Max 3 Iterationen |
+| **Fallback** | Automatischer Fallback auf feste Pipeline (HyDE + Agentic + GraphRAG) bei A-RAG-Fehler |
+| **Analytics** | A-RAG vs Fixed Pipeline Tracking, Step-Timings, Strategy Performance |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/arag/retrieval-interfaces.ts` | Core Types + 5 Interfaces |
+| `backend/src/services/arag/strategy-agent.ts` | Claude Meta-Agent + Query Classifier |
+| `backend/src/services/arag/strategy-evaluator.ts` | Heuristic Self-Evaluator |
+| `backend/src/services/arag/iterative-retriever.ts` | Plan Executor mit 5 Interface-Implementierungen |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/services/enhanced-rag.ts` | enableARAG Config, A-RAG Path vor Fixed Pipeline, Fallback |
+
+**Tests:** 37 neue A-RAG Tests, Backend 3982 + Frontend 572 = 4554 bestanden
+
+---
+
+### 2026-03-14: Phase 69 - Proaktive Intelligence UX
+
+**KI-Intelligenz sichtbar machen: Smart Suggestions, Sleep Insights, Context Indicator.**
+
+| Feature | Details |
+|---------|---------|
+| **Smart Suggestion Surface** | Max 3 Suggestion-Karten (Glassmorphism) am oberen Seitenrand, 8 Suggestion-Typen |
+| **Suggestion Actions** | Dismiss (24h Cooldown), Snooze (1h/4h/Morgen), Accept (Navigation) |
+| **SSE Stream** | Echtzeit-Suggestion-Updates via Server-Sent Events |
+| **Sleep Insights** | "KI-Nacht" Tab in Insights: Timeline der letzten 7 Schlaf-Zyklen, Discovery Cards |
+| **Contradiction Alerts** | Erkannte Widersprueche mit Aufloesen/Ignorieren-Aktionen |
+| **Context Indicator** | TopBar-Widget: geladene Facts, Prozeduren, anstehende Events |
+| **Context Popover** | Glassmorphism-Detail-Panel mit Working Memory + LTM + Procedures + Events |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/smart-suggestions.ts` | Suggestion CRUD + Dedup + Cooldown |
+| `backend/src/routes/smart-suggestions.ts` | 5 Endpoints + SSE Stream |
+| `backend/sql/migrations/phase69_smart_suggestions.sql` | smart_suggestions Tabelle x4 Schemas |
+| `frontend/src/hooks/useSmartSuggestions.ts` | Fetch + optimistic mutations + SSE |
+| `frontend/src/components/SmartSurface/SmartSurface.tsx` | Suggestion Container |
+| `frontend/src/components/SmartSurface/SuggestionCard.tsx` | Einzelne Suggestion-Karte |
+| `frontend/src/components/InsightsDashboard/SleepInsights.tsx` | Sleep Compute Insights |
+| `frontend/src/components/layout/ContextIndicator.tsx` | Ambient Context Widget |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | smartSuggestionsRouter registriert |
+| `backend/src/routes/sleep-compute.ts` | discoveries + context-v2/active Endpoints |
+| `frontend/src/components/layout/AppLayout.tsx` | SmartSurface + ContextIndicator integriert |
+| `frontend/src/components/InsightsDashboard.tsx` | "KI-Nacht" als 5. Tab |
+| `frontend/src/App.tsx` | InsightsTab Type fuer sleep |
+
+**Tests:** 3945 Backend + 572 Frontend = 4517 bestanden
+
+---
+
+### 2026-03-14: Phase 68 - Design-System Formalisierung
+
+**Formalisiertes Design-System mit TypeScript Tokens + 10 Core-Komponenten.**
+
+| Feature | Details |
+|---------|---------|
+| **Design Tokens** | TypeScript Single Source of Truth fuer alle 150+ CSS vars (colors, spacing, typography, shadows, animations) |
+| **Color System** | Brand, semantic, surface (light/dark), glass, text, border, gradients, neuro colors |
+| **Typography** | Font families, sizes (2xs-6xl), weights (100-800), line heights, letter spacing |
+| **Shadows** | Light + dark mode shadow sets, glow effects, glass2026 shadow |
+| **Animations** | 4 easing curves, 5 duration presets, 8 transition presets, keyframe names |
+| **10 Core Components** | Button, Input, Card, Badge, Modal, Tabs, Toast, Skeleton, EmptyState, Avatar |
+| **Accessibility** | ARIA attributes, focus-visible, keyboard navigation (arrow keys in Tabs), focus trap (Modal) |
+| **Namespace** | All CSS classes prefixed with `ds-` to avoid conflicts |
+
+**Neue Dateien (28):**
+
+| Verzeichnis | Dateien |
+|-------------|---------|
+| `frontend/src/design-system/` | tokens.ts, colors.ts, spacing.ts, typography.ts, shadows.ts, animations.ts, index.ts |
+| `frontend/src/design-system/components/` | Button.tsx/css, Input.tsx/css, Card.tsx/css, Badge.tsx/css, Modal.tsx/css, Tabs.tsx/css, Toast.tsx/css, Skeleton.tsx/css, EmptyState.tsx/css, Avatar.tsx/css, index.ts |
+
+**Tests:** Frontend 572 bestanden, TypeScript 0 Fehler
+
+---
+
+### 2026-03-14: Phase 67 - Performance & Caching
+
+**RAG Result Caching, Database Indexes, Connection Pool Monitoring.**
+
+| Feature | Details |
+|---------|---------|
+| **RAG Two-Layer Cache** | Redis (distributed, 1h TTL) + semantic cache (in-memory, 0.92 threshold) with query normalization |
+| **Cache Stats** | Hit/miss tracking, redis vs semantic hit breakdown, computed hit rate |
+| **Cache Invalidation** | Context-based invalidation, tag-based semantic cache clearing |
+| **Performance Indexes** | 14 indexes per schema (56 total) for chat, email, memory, knowledge graph, ideas, tasks, contacts |
+| **Pool Monitoring** | Event listeners (connect/acquire/remove/error), active/idle/waiting counters |
+| **Pool Metrics** | 3 new OTel metrics: db.pool.active, db.pool.waiting, db.pool.errors |
+| **Health Endpoint** | Pool stats + event counters + per-context query metrics in observability health |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/rag-cache.ts` | Two-layer RAG cache (Redis + semantic) with stats |
+| `backend/sql/migrations/phase67_performance_indexes.sql` | 56 performance indexes across 4 schemas |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/services/enhanced-rag.ts` | Cache check before retrieval, cache write after, skipCache option |
+| `backend/src/utils/database-context.ts` | Pool event listeners, getPoolStats() with PoolStatsResult, waiting detection |
+| `backend/src/services/observability/metrics.ts` | 3 new pool metrics + recordPoolMetric() |
+| `backend/src/routes/observability.ts` | Database section in health endpoint |
+| `backend/src/routes/health.ts` | Updated for new PoolStatsResult shape |
+
+**Tests:** 28 neue Tests (17 rag-cache + 11 pool-monitoring), Backend 3930 + Frontend 572 = 4502 bestanden
+
+---
+
+### 2026-03-14: Phase 66 - Security Hardening (RLS + Encryption + Sentry)
+
+**Defense-in-Depth Security: Row-Level Security, Field-Level Encryption, Error Tracking.**
+
+| Feature | Details |
+|---------|---------|
+| **AsyncLocalStorage Request Context** | Per-request userId propagation without function signature changes |
+| **RLS Integration** | `queryContext()` sets `app.current_user_id` via `set_config()` for PostgreSQL RLS policies |
+| **AES-256-GCM Field Encryption** | Versioned prefix (`enc:v1:`), graceful degradation, backward-compatible decrypt |
+| **MFA Secret Encryption** | TOTP secrets encrypted at rest, decrypted on verification |
+| **Sentry Backend** | Error tracking with Express integration, performance monitoring, filtered operational errors |
+| **Sentry Frontend** | Browser error tracking, session replay, React ErrorBoundary integration |
+| **Error Handler Integration** | Unexpected (non-operational) errors auto-reported to Sentry |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/utils/request-context.ts` | AsyncLocalStorage middleware + userId getter/setter |
+| `backend/src/services/security/field-encryption.ts` | AES-256-GCM encrypt/decrypt with versioned format |
+| `backend/src/services/observability/sentry.ts` | Sentry SDK init, captureException, setUser, flush |
+| `frontend/src/services/sentry.ts` | Frontend Sentry with replay + browser tracing |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | requestContextMiddleware, Sentry init + error handler, encryption init |
+| `backend/src/middleware/jwt-auth.ts` | setCurrentUserId() in jwtAuth, optionalJwtAuth, requireJwt |
+| `backend/src/middleware/auth.ts` | setCurrentUserId() in apiKeyAuth |
+| `backend/src/middleware/errorHandler.ts` | Sentry captureException for unexpected errors |
+| `backend/src/utils/database-context.ts` | set_config('app.current_user_id') in queryContext() |
+| `backend/src/services/auth/user-service.ts` | MFA secret encryption in setMfaSecret() |
+| `backend/src/routes/auth.ts` | decrypt() MFA secret before TOTP verification |
+| `frontend/src/main.tsx` | initSentry() before app render |
+| `frontend/src/components/ErrorBoundary.tsx` | captureException() in componentDidCatch |
+
+**Tests:** 78 neue Tests (28 request-context + 41 field-encryption + 9 sentry)
+
+---
 
 ### 2026-03-14: Phase 65 - Multi-User Data Isolation
 

@@ -19,6 +19,8 @@ import { FloatingAssistant } from '../FloatingAssistant/FloatingAssistant';
 import { useFeatureHint } from '../../hooks/useFeatureHint';
 import { FeatureHintCard } from '../FeatureHintCard';
 import { ProactivePanel, ProactiveBellButton } from '../ProactivePanel';
+import { SmartSurface } from '../SmartSurface/SmartSurface';
+import { ContextIndicator } from './ContextIndicator';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -196,6 +198,7 @@ export function AppLayout({
             onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
           />
           <div className="topbar-proactive-wrapper">
+            <ContextIndicator context={context} />
             <ProactiveBellButton context={context} onClick={() => setProactivePanelOpen(prev => !prev)} />
           </div>
         </div>
@@ -205,6 +208,8 @@ export function AppLayout({
           isOpen={proactivePanelOpen}
           onClose={() => setProactivePanelOpen(false)}
         />
+
+        <SmartSurface context={context} />
 
         <div className="layout-breadcrumbs">
           <Breadcrumbs

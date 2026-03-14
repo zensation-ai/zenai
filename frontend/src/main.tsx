@@ -13,6 +13,11 @@ import { logError } from './utils/errors';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { installResilienceInterceptors } from './utils/apiResilience';
 import { initWebVitals } from './utils/webVitals';
+// Phase 66: Sentry Error Tracking
+import { initSentry } from './services/sentry';
+
+// Phase 66: Initialize Sentry early (before any other code)
+initSentry();
 
 // API configuration from environment
 const ENV_API_KEY = import.meta.env.VITE_API_KEY;

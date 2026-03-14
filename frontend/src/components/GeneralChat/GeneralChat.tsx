@@ -14,6 +14,7 @@ import { safeLocalStorage } from '../../utils/storage';
 import { ArtifactButton } from '../ArtifactButton';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { extractArtifacts, type Artifact } from '../../types/artifacts';
+import { isOffline, queueMessage, generateOfflineResponse, syncPendingMessages } from '../../services/offline-chat';
 import '../GeneralChat.css';
 
 import { ChatMessageList } from './ChatMessageList';
@@ -45,6 +46,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const [thinkingMode, setThinkingMode] = useState<'assist' | 'challenge' | 'coach' | 'synthesize'>('assist');
   // Voice chat overlay state
   const [voiceChatOpen, setVoiceChatOpen] = useState(false);
+  // Offline detection state (Phase 74)
+  const [offline, setOffline] = useState(() => isOffline());
   // Artifacts state
   const [artifacts, setArtifacts] = useState<Map<string, Artifact[]>>(new Map());
   const [activeArtifact, setActiveArtifact] = useState<{ artifact: Artifact; messageId: string; index: number } | null>(null);
@@ -130,6 +133,27 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       window.removeEventListener('zenai-chat-quick-action', handler);
     };
   }, [assistantMode, fullPage]);
+
+  // Offline detection + auto-sync on reconnect (Phase 74)
+  useEffect(() => {
+    const handleOnline = () => {
+      setOffline(false);
+      // Auto-sync any queued messages
+      syncPendingMessages().then(count => {
+        if (count > 0) {
+          showToast(`${count} Nachricht(en) synchronisiert`, 'success');
+        }
+      });
+    };
+    const handleOffline = () => setOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const loadLastSession = async (signal?: AbortSignal) => {
     try {
@@ -252,6 +276,23 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         createdAt: new Date().toISOString(),
       };
       setMessages(prev => [...prev, tempUserMessage]);
+
+      // Phase 74: Offline mode - queue message and generate local response
+      if (offline) {
+        await queueMessage(messageContent, context, currentSessionId);
+        const offlineReply = await generateOfflineResponse(messageContent);
+        const offlineAssistantMessage: ChatMessage = {
+          id: `offline-assistant-${Date.now()}`,
+          sessionId: currentSessionId,
+          role: 'assistant',
+          content: offlineReply.content,
+          createdAt: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, offlineAssistantMessage]);
+        setSending(false);
+        inputRef.current?.focus();
+        return;
+      }
 
       if (imagesToSend.length > 0) {
         // Use vision endpoint with FormData (no streaming for vision)
@@ -752,6 +793,14 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
   return (
     <div className={`general-chat liquid-glass ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`}>
+      {/* Offline Banner (Phase 74) */}
+      {offline && (
+        <div className="chat-offline-banner" role="alert">
+          <span className="chat-offline-icon" aria-hidden="true">&#9888;</span>
+          Offline-Modus: eingeschraenkte KI-Antworten
+        </div>
+      )}
+
       {/* Messages Area */}
       <ChatMessageList
         messages={messages}

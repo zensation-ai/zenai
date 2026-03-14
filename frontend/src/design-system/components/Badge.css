@@ -1,0 +1,75 @@
+/* Design System: Badge */
+
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-full, 9999px);
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Sizes */
+.ds-badge--sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.ds-badge--md {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+/* Dot indicator */
+.ds-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Colors */
+.ds-badge--success {
+  background: var(--success-light, rgba(16, 185, 129, 0.12));
+  color: var(--success, #10b981);
+}
+
+.ds-badge--warning {
+  background: var(--warning-glow, rgba(245, 158, 11, 0.15));
+  color: #b45309;
+}
+
+.ds-badge--danger {
+  background: var(--danger-light, rgba(239, 68, 68, 0.12));
+  color: var(--danger, #ef4444);
+}
+
+.ds-badge--info {
+  background: var(--info-glow, rgba(59, 130, 246, 0.15));
+  color: var(--info, #3b82f6);
+}
+
+.ds-badge--neutral {
+  background: var(--bg-secondary, rgba(20, 60, 80, 0.08));
+  color: var(--text-secondary, #3a4d5a);
+}
+
+/* Variant: context - slightly more padding, bolder */
+.ds-badge--context {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Variant: priority - uppercase */
+.ds-badge--priority {
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Dark mode: adjust warning text for contrast */
+[data-theme="dark"] .ds-badge--warning {
+  color: #fbbf24;
+}

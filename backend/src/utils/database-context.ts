@@ -10,6 +10,7 @@
 import { Pool, QueryResult } from 'pg';
 import dotenv from 'dotenv';
 import { logger } from './logger';
+import { getCurrentUserId } from './request-context';
 
 // Re-export isValidUUID from centralized validation module for backward compatibility
 export { isValidUUID } from './validation';
@@ -193,8 +194,49 @@ const poolStats: Record<AIContext, { queries: number; errors: number; slowQuerie
   creative: { queries: 0, errors: 0, slowQueries: 0 },
 };
 
+// Phase 67.3: Lazy import to avoid circular dependency (database-context loads before metrics)
+let _recordPoolMetric: ((event: 'acquire' | 'release' | 'error' | 'waiting') => void) | null = null;
+function emitPoolMetric(event: 'acquire' | 'release' | 'error' | 'waiting'): void {
+  if (!_recordPoolMetric) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const metrics = require('../services/observability/metrics');
+      _recordPoolMetric = metrics.recordPoolMetric;
+    } catch {
+      // Metrics module not available yet — skip silently
+      return;
+    }
+  }
+  _recordPoolMetric?.(event);
+}
+
+// Phase 67.3: Connection pool event counters
+const poolEventCounters = {
+  connects: 0,
+  acquires: 0,
+  removes: 0,
+  errors: 0,
+};
+
+// Phase 67.3: Pool event listeners for monitoring
+sharedPool.on('connect', () => {
+  poolEventCounters.connects++;
+});
+
+sharedPool.on('acquire', () => {
+  poolEventCounters.acquires++;
+  emitPoolMetric('acquire');
+});
+
+sharedPool.on('remove', () => {
+  poolEventCounters.removes++;
+  emitPoolMetric('release');
+});
+
 // Log pool errors with detailed PostgreSQL diagnostics (register once for shared pool)
 sharedPool.on('error', (err) => {
+  poolEventCounters.errors++;
+  emitPoolMetric('error');
   const pgError = err as { code?: string; detail?: string; hint?: string; severity?: string; constraint?: string };
   logger.error('Pool error [shared]', err, {
     operation: 'poolError',
@@ -250,6 +292,9 @@ export async function queryContext(
   // Pool exhaustion warning: alert when waiting queue exceeds 50% of max pool size
   const waitingCount = pool.waitingCount;
   const maxPool = POOL_CONFIG.max;
+  if (waitingCount > 0) {
+    emitPoolMetric('waiting');
+  }
   if (waitingCount > maxPool * 0.5) {
     logger.warn(`Pool near exhaustion [${effectiveContext}]`, {
       context: effectiveContext,
@@ -269,6 +314,15 @@ export async function queryContext(
     try {
       // Set search_path via static lookup — no string interpolation
       await client.query(SEARCH_PATH_SQL[effectiveContext]);
+
+      // Phase 66: Set app.current_user_id for RLS policies
+      // Reads from AsyncLocalStorage (set by auth middleware per-request).
+      // When set, RLS policies enforce user_id = current_user_id.
+      // When NOT set (background jobs, startup), COALESCE in policy falls back to permissive.
+      const currentUserId = getCurrentUserId();
+      if (currentUserId) {
+        await client.query(`SELECT set_config('app.current_user_id', $1, true)`, [currentUserId]);
+      }
 
       // Execute query in correct schema
       const result = await client.query(text, params);
@@ -474,31 +528,50 @@ export async function testConnections(): Promise<Record<AIContext, boolean>> {
   return results;
 }
 
-/**
- * Get pool statistics for monitoring
- * Note: All contexts share the same pool, so pool metrics are identical
- */
-export function getPoolStats(): Record<AIContext, {
-  queries: number;
-  errors: number;
-  slowQueries: number;
-  poolSize: number;
-  idleCount: number;
-  waitingCount: number;
-}> {
-  const stats = {} as Record<AIContext, { queries: number; errors: number; slowQueries: number; poolSize: number; idleCount: number; waitingCount: number }>;
-  const sharedPoolMetrics = {
-    poolSize: sharedPool.totalCount,
-    idleCount: sharedPool.idleCount,
-    waitingCount: sharedPool.waitingCount,
+/** Pool statistics shape returned by getPoolStats() */
+export interface PoolStatsResult {
+  contexts: Record<AIContext, {
+    queries: number;
+    errors: number;
+    slowQueries: number;
+  }>;
+  pool: {
+    totalCount: number;
+    idleCount: number;
+    activeCount: number;
+    waitingCount: number;
+    maxSize: number;
   };
+  events: {
+    connects: number;
+    acquires: number;
+    removes: number;
+    errors: number;
+  };
+}
+
+/**
+ * Get pool statistics for monitoring.
+ * Phase 67.3: Returns structured pool metrics with event counters.
+ * Note: All contexts share the same pool, so pool-level metrics are reported once.
+ */
+export function getPoolStats(): PoolStatsResult {
+  const contexts = {} as Record<AIContext, { queries: number; errors: number; slowQueries: number }>;
   for (const ctx of VALID_CONTEXTS) {
-    stats[ctx] = {
-      ...poolStats[ctx],
-      ...sharedPoolMetrics, // All contexts share the same pool
-    };
+    contexts[ctx] = { ...poolStats[ctx] };
   }
-  return stats;
+
+  return {
+    contexts,
+    pool: {
+      totalCount: sharedPool.totalCount,
+      idleCount: sharedPool.idleCount,
+      activeCount: sharedPool.totalCount - sharedPool.idleCount,
+      waitingCount: sharedPool.waitingCount,
+      maxSize: POOL_CONFIG.max,
+    },
+    events: { ...poolEventCounters },
+  };
 }
 
 // Periodic connection health check interval reference
