@@ -250,10 +250,14 @@ app.use(compression({
 // Phase 9: Cache-Control headers & ETag support for GET responses
 app.use(cacheControlMiddleware);
 
+// Phase 60: A2A Protocol - Agent Card discovery (no auth, must be before auth middleware)
+import { a2aWellKnownRouter } from './routes/a2a';
+app.use(a2aWellKnownRouter);  // /.well-known/agent.json (no auth)
+
 // Readiness gate: return 503 until DB connections are confirmed
 // Health endpoints are always allowed (for container probes)
 app.use((req, res, next) => {
-  if (serverReady || req.path.startsWith('/api/health') || req.path.startsWith('/api-docs')) {
+  if (serverReady || req.path.startsWith('/api/health') || req.path.startsWith('/api-docs') || req.path.startsWith('/.well-known')) {
     return next();
   }
   return res.status(503).json({
@@ -507,6 +511,10 @@ app.use('/api', graphReasoningRouter);  // /api/:context/knowledge-graph/infer, 
 // Phase 58: GraphRAG + Hybrid Retrieval
 import { graphragRouter } from './routes/graphrag';
 app.use('/api', graphragRouter);  // /api/:context/graphrag/extract, /api/:context/graphrag/retrieve, etc.
+
+// Phase 60: A2A Protocol - Agent-to-Agent Communication
+import { a2aRouter } from './routes/a2a';
+app.use('/api', a2aRouter);  // /api/a2a/tasks CRUD, /api/:context/a2a/tasks, /api/:context/a2a/external-agents
 
 // Phase 49: Advanced RAG v2
 import { ragV2Router } from './routes/rag-v2';
