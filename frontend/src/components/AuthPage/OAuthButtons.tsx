@@ -1,9 +1,10 @@
 /**
  * Phase 56: OAuth SSO Buttons Component
- * Renders sign-in buttons for configured OAuth providers (Google, Microsoft, GitHub).
+ * Renders sign-in buttons only for configured OAuth providers (Google, Microsoft, GitHub).
+ * Fetches available providers from backend on mount.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface OAuthButtonsProps {
   /** API URL base */
@@ -54,6 +55,26 @@ const PROVIDER_CONFIG: Record<string, { label: string; color: string }> = {
 export function OAuthButtons({ apiUrl, actionLabel }: OAuthButtonsProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [availableProviders, setAvailableProviders] = useState<string[]>([]);
+
+  // Fetch available providers on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`${apiUrl}/api/auth/providers`);
+        if (response.ok) {
+          const data = await response.json();
+          if (!cancelled && Array.isArray(data.data)) {
+            setAvailableProviders(data.data);
+          }
+        }
+      } catch {
+        // Silently fail - OAuth buttons simply won't show
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiUrl]);
 
   const handleOAuthClick = useCallback(async (provider: string) => {
     setLoading(provider);
@@ -80,6 +101,11 @@ export function OAuthButtons({ apiUrl, actionLabel }: OAuthButtonsProps) {
     }
   }, [apiUrl]);
 
+  // Don't render anything if no providers are available
+  if (availableProviders.length === 0) {
+    return null;
+  }
+
   return (
     <div className="oauth-buttons">
       {error && (
@@ -87,23 +113,28 @@ export function OAuthButtons({ apiUrl, actionLabel }: OAuthButtonsProps) {
           {error}
         </div>
       )}
-      {Object.entries(PROVIDER_CONFIG).map(([provider, config]) => (
-        <button
-          key={provider}
-          type="button"
-          className="oauth-button"
-          onClick={() => handleOAuthClick(provider)}
-          disabled={loading !== null}
-          style={{ '--provider-color': config.color } as React.CSSProperties}
-        >
-          <span className="oauth-icon">{PROVIDER_ICONS[provider]}</span>
-          <span className="oauth-label">
-            {loading === provider
-              ? 'Laden...'
-              : `${actionLabel} mit ${config.label}`}
-          </span>
-        </button>
-      ))}
+      {availableProviders
+        .filter((provider) => PROVIDER_CONFIG[provider])
+        .map((provider) => {
+          const config = PROVIDER_CONFIG[provider];
+          return (
+            <button
+              key={provider}
+              type="button"
+              className="oauth-button"
+              onClick={() => handleOAuthClick(provider)}
+              disabled={loading !== null}
+              style={{ '--provider-color': config.color } as React.CSSProperties}
+            >
+              <span className="oauth-icon">{PROVIDER_ICONS[provider]}</span>
+              <span className="oauth-label">
+                {loading === provider
+                  ? 'Laden...'
+                  : `${actionLabel} mit ${config.label}`}
+              </span>
+            </button>
+          );
+        })}
     </div>
   );
 }

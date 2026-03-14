@@ -13,6 +13,7 @@ import * as userService from '../services/auth/user-service';
 import * as jwtService from '../services/auth/jwt-service';
 import { oauthManager } from '../services/auth/oauth-providers';
 import { sessionStore } from '../services/auth/session-store';
+import { decrypt } from '../services/security/field-encryption';
 
 export const authRouter = Router();
 
@@ -98,7 +99,7 @@ authRouter.post('/login', asyncHandler(async (req: Request, res: Response) => {
 
       const isValid = authenticator.verify({
         token: mfa_code,
-        secret: user.mfa_secret,
+        secret: decrypt(user.mfa_secret),
       });
 
       if (!isValid) {
@@ -255,6 +256,17 @@ authRouter.put('/me', requireJwt, asyncHandler(async (req: Request, res: Respons
 // ===========================================
 // OAuth
 // ===========================================
+
+/**
+ * GET /api/auth/providers
+ * List available (configured) OAuth providers.
+ */
+authRouter.get('/providers', asyncHandler(async (_req: Request, res: Response) => {
+  return res.json({
+    success: true,
+    data: oauthManager.getAvailableProviders(),
+  });
+}));
 
 /**
  * GET /api/auth/providers/:provider
