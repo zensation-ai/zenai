@@ -341,7 +341,7 @@ export const Sidebar = memo(function Sidebar({
             <span className="visually-hidden">{apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}</span>
           </span>
           {!collapsed && <span className="sidebar-status-text">
-            {apiStatus?.database && apiStatus?.ollama ? 'Verbunden' : 'Teilweise verbunden'}
+            {apiStatus?.database ? 'Verbunden' : 'Nicht verbunden'}
           </span>}
         </div>
 

@@ -73,16 +73,33 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-// Refresh CSRF token on 403 CSRF errors
+// Handle 401 (expired JWT) and 403 (CSRF) errors with automatic retry
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const config = error.config;
+
+    // 401: If JWT was used but expired, clear it and retry with API key
+    if (error.response?.status === 401 && !config._retryWithApiKey) {
+      const jwtToken = safeLocalStorage('get', 'zenai_access_token');
+      const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
+
+      if (jwtToken && apiKey) {
+        // JWT was sent but rejected — clear expired token and retry with API key
+        safeLocalStorage('remove', 'zenai_access_token');
+        safeLocalStorage('remove', 'zenai_refresh_token');
+        config._retryWithApiKey = true;
+        config.headers.Authorization = `Bearer ${apiKey}`;
+        return axios(config);
+      }
+    }
+
+    // 403 CSRF: Refresh CSRF token and retry
     if (error.response?.status === 403 && error.response?.data?.error === 'CSRF_TOKEN_INVALID') {
       await fetchCsrfToken();
-      // Retry the original request with the new token
       if (csrfToken) {
-        error.config.headers['X-CSRF-Token'] = csrfToken;
-        return axios(error.config);
+        config.headers['X-CSRF-Token'] = csrfToken;
+        return axios(config);
       }
     }
     return Promise.reject(error);
