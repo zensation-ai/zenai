@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 64
+## Current Phase: 65
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -928,9 +928,9 @@ cd frontend && npm test
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 3793 | 24 | 0 |
+| **Backend** | 3824 | 24 | 0 |
 | **Frontend** | 572 | 0 | 0 |
-| **Gesamt** | 4365 | 24 | 0 |
+| **Gesamt** | 4396 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1026,6 +1026,52 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-14: Phase 65 - Multi-User Data Isolation
+
+**Vollstaendige Multi-User-Datenisolierung mit Application-Level Filtering bei 100% Backward-Kompatibilitaet.**
+
+**Architektur-Entscheidung:** Application-Level Filtering via `getUserId(req)` + `AND user_id = $N` auf jeder Query. API-Key-Auth faellt auf `SYSTEM_USER_ID` zurueck → bestehende Daten bleiben erreichbar.
+
+| Feature | Details |
+|---------|---------|
+| **User Context Utility** | `getUserId(req)` extrahiert User-ID aus JWT, API-Key oder Fallback auf SYSTEM_USER_ID |
+| **SYSTEM_USER_ID** | `00000000-0000-0000-0000-000000000001` als Fallback fuer API-Key-Auth |
+| **Database Migration** | `user_id UUID` Spalte auf 36+ Tabellen in 4 Schemas (personal, work, learning, creative) |
+| **VARCHAR→UUID Conversion** | 13 bestehende user_id-Spalten von VARCHAR auf UUID migriert |
+| **Composite Indexes** | Optimierte Indexes auf ideas, tasks, emails, chat_sessions, contacts |
+| **Route Migration** | 46 Route-Dateien mit `getUserId(req)` + `AND user_id = $N` auf allen Queries |
+| **Service Migration** | 11 Service-Dateien mit userId-Parameter auf allen Funktionen |
+| **RLS Policies** | Defense-in-Depth SQL vorbereitet (phase65_rls_policies.sql) |
+| **Dual Auth** | JWT Bearer + API Key backward-kompatibel, SYSTEM_USER_ID als API-Key Fallback |
+| **CORS Update** | ALLOWED_ORIGINS um zensation.ai + zensation.app erweitert |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/utils/user-context.ts` | getUserId() + SYSTEM_USER_ID (Central User Extraction) |
+| `backend/sql/migrations/phase65_multiuser_core.sql` | user_id Spalten + Indexes + VARCHAR→UUID Migration |
+| `backend/sql/migrations/phase65_rls_policies.sql` | RLS Policies (Defense-in-Depth, noch nicht aktiviert) |
+| `backend/src/__tests__/integration/multi-user-isolation.test.ts` | Multi-User Isolation Tests |
+| `backend/src/__tests__/integration/api-key-backward-compat.test.ts` | API-Key Backward-Kompatibilitaet Tests |
+
+**Geaenderte Dateien (68):**
+
+| Bereich | Dateien | Aenderung |
+|---------|---------|-----------|
+| Routes | 46 Dateien | getUserId(req) + AND user_id = $N auf allen Queries |
+| Services | 11 Dateien | userId Parameter auf allen Funktionen |
+| Tests | 9 Dateien | Mock-Updates fuer user_id |
+| Auth | `middleware/auth.ts` | SYSTEM_USER_ID Fallback fuer API-Key |
+| Config | `jest.config.js` | forceExit entfernt |
+| Docs | `routes/integrations.ts` | Kommentar: pool.query() korrekt fuer public Schema |
+
+**DB-Migration:** 36+ Tabellen x4 Schemas (user_id UUID + Indexes + VARCHAR→UUID)
+
+**Tests:** 31 neue Tests (Multi-User Isolation + API-Key Backward Compat), Backend 3824 + Frontend 572 = 4396 bestanden, 24 uebersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-03-14: Phase 63+64 - Sleep-Time Compute + Agent Identity + LangGraph
 
