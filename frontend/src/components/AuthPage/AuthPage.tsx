@@ -7,6 +7,7 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { OAuthButtons } from './OAuthButtons';
 import { AI_PERSONALITY, AI_AVATAR } from '../../utils/aiPersonality';
+import './AuthPage.css';
 
 type AuthMode = 'login' | 'register' | 'reset';
 
