@@ -79,15 +79,12 @@ axios.interceptors.response.use(
   async (error) => {
     const config = error.config;
 
-    // 401: If JWT was used but expired, clear it and retry with API key
+    // 401: If JWT was used but expired, retry with API key (don't clear JWT — AuthContext handles refresh)
     if (error.response?.status === 401 && !config._retryWithApiKey) {
-      const jwtToken = safeLocalStorage('get', 'zenai_access_token');
       const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
+      const isAuthEndpoint = config.url?.includes('/api/auth/');
 
-      if (jwtToken && apiKey) {
-        // JWT was sent but rejected — clear expired token and retry with API key
-        safeLocalStorage('remove', 'zenai_access_token');
-        safeLocalStorage('remove', 'zenai_refresh_token');
+      if (apiKey && !isAuthEndpoint) {
         config._retryWithApiKey = true;
         config.headers.Authorization = `Bearer ${apiKey}`;
         return axios(config);

@@ -241,7 +241,9 @@ function App() {
     );
   }
 
-  if (!session) {
+  // Allow access with API key even without JWT session (backward compat)
+  const hasApiKey = !!(import.meta.env.VITE_API_KEY);
+  if (!session && !hasApiKey) {
     return <AuthPage />;
   }
 
