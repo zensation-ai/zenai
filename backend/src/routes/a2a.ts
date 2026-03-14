@@ -11,23 +11,12 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
+import { asyncHandler } from '../middleware/errorHandler';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { generateAgentCard, isValidSkill } from '../services/a2a/agent-card';
 import { a2aTaskManager } from '../services/a2a/task-manager';
 import { a2aClient } from '../services/a2a/a2a-client';
-
-// ===========================================
-// Helper: asyncHandler wrapper
-// ===========================================
-
-type AsyncHandler = (req: Request, res: Response) => Promise<void>;
-
-function asyncHandler(fn: AsyncHandler) {
-  return (req: Request, res: Response, next: (err?: unknown) => void) => {
-    fn(req, res).catch(next);
-  };
-}
 
 // ===========================================
 // Well-Known Router (no auth)

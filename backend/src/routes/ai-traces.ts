@@ -8,6 +8,7 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { queryPublic } from '../utils/database-context';
+import { getUserId } from '../utils/user-context';
 
 export const aiTracesRouter = Router();
 
@@ -22,11 +23,12 @@ aiTracesRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const days = Math.min(parseInt(req.query.days as string) || 7, 90);
     const since = new Date();
     since.setDate(since.getDate() - days);
 
-    // Daily aggregates
+    // Daily aggregates (scoped to user)
     const dailyResult = await queryPublic(
       `SELECT
         DATE(start_time) AS day,
@@ -35,38 +37,40 @@ aiTracesRouter.get(
         SUM(total_cost) AS total_cost,
         AVG(EXTRACT(EPOCH FROM (end_time - start_time)) * 1000)::INTEGER AS avg_duration_ms
       FROM ai_traces
-      WHERE start_time >= $1 AND end_time IS NOT NULL
+      WHERE start_time >= $1 AND end_time IS NOT NULL AND user_id = $2
       GROUP BY DATE(start_time)
       ORDER BY day DESC`,
-      [since.toISOString()],
+      [since.toISOString(), userId],
     );
 
-    // Per-model aggregates from generation spans
+    // Per-model aggregates from generation spans (scoped via trace user_id)
     const modelResult = await queryPublic(
       `SELECT
-        COALESCE(metadata->>'model', 'unknown') AS model,
+        COALESCE(s.metadata->>'model', 'unknown') AS model,
         COUNT(*) AS generation_count,
-        SUM(input_tokens) AS total_input_tokens,
-        SUM(output_tokens) AS total_output_tokens,
-        SUM(cost) AS total_cost
-      FROM ai_spans
-      WHERE type = 'generation' AND start_time >= $1
-      GROUP BY COALESCE(metadata->>'model', 'unknown')
+        SUM(s.input_tokens) AS total_input_tokens,
+        SUM(s.output_tokens) AS total_output_tokens,
+        SUM(s.cost) AS total_cost
+      FROM ai_spans s
+      JOIN ai_traces t ON s.trace_id = t.id
+      WHERE s.type = 'generation' AND s.start_time >= $1 AND t.user_id = $2
+      GROUP BY COALESCE(s.metadata->>'model', 'unknown')
       ORDER BY total_cost DESC`,
-      [since.toISOString()],
+      [since.toISOString(), userId],
     );
 
-    // Per-type span breakdown
+    // Per-type span breakdown (scoped via trace user_id)
     const typeResult = await queryPublic(
       `SELECT
-        type,
+        s.type,
         COUNT(*) AS span_count,
-        AVG(EXTRACT(EPOCH FROM (end_time - start_time)) * 1000)::INTEGER AS avg_duration_ms
-      FROM ai_spans
-      WHERE start_time >= $1 AND end_time IS NOT NULL
-      GROUP BY type
+        AVG(EXTRACT(EPOCH FROM (s.end_time - s.start_time)) * 1000)::INTEGER AS avg_duration_ms
+      FROM ai_spans s
+      JOIN ai_traces t ON s.trace_id = t.id
+      WHERE s.start_time >= $1 AND s.end_time IS NOT NULL AND t.user_id = $2
+      GROUP BY s.type
       ORDER BY span_count DESC`,
-      [since.toISOString()],
+      [since.toISOString(), userId],
     );
 
     res.json({
@@ -91,19 +95,16 @@ aiTracesRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const authUserId = getUserId(req);
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = parseInt(req.query.offset as string) || 0;
-    const userId = req.query.userId as string | undefined;
     const name = req.query.name as string | undefined;
 
-    const conditions: string[] = [];
-    const params: (string | number)[] = [];
-    let paramIdx = 1;
+    // Always scope to authenticated user
+    const conditions: string[] = [`user_id = $1`];
+    const params: (string | number)[] = [authUserId];
+    let paramIdx = 2;
 
-    if (userId) {
-      conditions.push(`user_id = $${paramIdx++}`);
-      params.push(userId);
-    }
     if (name) {
       conditions.push(`name ILIKE $${paramIdx++}`);
       params.push(`%${name}%`);
@@ -148,11 +149,12 @@ aiTracesRouter.get(
   apiKeyAuth,
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
     const { id } = req.params;
 
     const traceResult = await queryPublic(
-      `SELECT * FROM ai_traces WHERE id = $1`,
-      [id],
+      `SELECT * FROM ai_traces WHERE id = $1 AND user_id = $2`,
+      [id, userId],
     );
 
     if (traceResult.rows.length === 0) {

@@ -204,7 +204,13 @@ proactiveEngineRouter.get(
 
     res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
 
+    // Heartbeat to keep connection alive through load balancers
+    const heartbeat = setInterval(() => {
+      try { res.write(':heartbeat\n\n'); } catch { clearInterval(heartbeat); }
+    }, 25000);
+
     req.on('close', () => {
+      clearInterval(heartbeat);
       sseClients.get(context)?.delete(res);
     });
   }
