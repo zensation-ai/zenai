@@ -117,7 +117,7 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
     next();
   } catch (error) {
     const jwtError = error as { code?: string; message?: string };
-    const statusCode = jwtError.code === 'TOKEN_EXPIRED' ? 401 : 401;
+    const statusCode = jwtError.code === 'TOKEN_EXPIRED' ? 401 : 403;
 
     res.status(statusCode).json({
       success: false,

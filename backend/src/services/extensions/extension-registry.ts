@@ -312,22 +312,17 @@ class ExtensionRegistry {
 
     const { pool } = await import('../../utils/database-context');
 
-    // Check if already installed
-    const existing = await pool.query(
-      'SELECT id FROM public.user_extensions WHERE user_id = $1 AND extension_id = $2',
-      [userId, extensionId]
-    );
-    if (existing.rows.length > 0) {
-      throw new Error(`Extension already installed: ${extensionId}`);
-    }
-
     const id = uuidv4();
     const result = await pool.query(
       `INSERT INTO public.user_extensions (id, user_id, extension_id, enabled, permissions_granted)
        VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id, extension_id) DO NOTHING
        RETURNING *`,
       [id, userId, extensionId, true, JSON.stringify(permissions)]
     );
+    if (result.rows.length === 0) {
+      throw new Error(`Extension already installed: ${extensionId}`);
+    }
 
     logger.info('Extension installed', {
       operation: 'installExtension',

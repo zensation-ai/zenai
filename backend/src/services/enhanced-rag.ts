@@ -490,7 +490,7 @@ class EnhancedRAGService {
         existing.sources.push('graphrag');
       } else {
         const { enrichedSummary, enrichedContent } = this.enrichWithContext(
-          result.title, result.content, result.content
+          result.title, result.content?.substring(0, 200) || '', result.content
         );
         merged.set(result.id, {
           id: result.id,

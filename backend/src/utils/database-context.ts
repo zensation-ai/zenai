@@ -430,38 +430,21 @@ export async function closeAllPools(): Promise<void> {
  * Call this in main.ts to ensure connections are closed on exit
  */
 export function setupGracefulShutdown(): void {
-  const shutdown = async (signal: string) => {
-    logger.info(`Received ${signal}. Starting graceful shutdown...`, { signal, operation: 'shutdown' });
+  // Note: Signal handlers (SIGTERM/SIGINT) are registered in main.ts
+  // to coordinate shutdown of all subsystems (workers, schedulers, DB pools).
+  // This function only registers crash handlers for uncaught exceptions.
 
-    try {
-      // Stop health checks first
-      stopConnectionHealthCheck();
-      await closeAllPools();
-      logger.info('Graceful shutdown complete', { operation: 'shutdown' });
-      process.exit(0);
-    } catch (error) {
-      logger.error('Error during shutdown', error instanceof Error ? error : undefined, { operation: 'shutdown' });
-      process.exit(1);
-    }
-  };
-
-  // Handle different termination signals
-  process.once('SIGTERM', () => shutdown('SIGTERM'));
-  process.once('SIGINT', () => shutdown('SIGINT'));
-
-  // Handle uncaught exceptions gracefully
-  process.on('uncaughtException', async (error) => {
+  process.once('uncaughtException', async (error) => {
     logger.error('Uncaught Exception', error, { operation: 'uncaughtException' });
     await closeAllPools().catch((cleanupErr) => { logger.warn('Pool cleanup failed during uncaughtException', { error: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) }); });
     process.exit(1);
   });
 
-  process.on('unhandledRejection', async (reason) => {
+  process.once('unhandledRejection', async (reason) => {
     logger.error('Unhandled Rejection - initiating shutdown', reason instanceof Error ? reason : undefined, {
       reason: String(reason),
       operation: 'unhandledRejection',
     });
-    // Critical: Don't leave server in broken state
     await closeAllPools().catch((cleanupErr) => { logger.warn('Pool cleanup failed during unhandledRejection', { error: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) }); });
     process.exit(1);
   });

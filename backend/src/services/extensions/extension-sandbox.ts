@@ -61,14 +61,29 @@ function checkRateLimit(extensionId: string, userId: string): boolean {
 }
 
 // Periodic cleanup of stale rate limit entries
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap.entries()) {
-    if (now - entry.windowStart > 120_000) {
-      rateLimitMap.delete(key);
+let rateLimitCleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+function startRateLimitCleanup(): void {
+  if (rateLimitCleanupInterval) return;
+  rateLimitCleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitMap.entries()) {
+      if (now - entry.windowStart > 120_000) {
+        rateLimitMap.delete(key);
+      }
     }
+  }, 60_000);
+  rateLimitCleanupInterval.unref();
+}
+
+export function stopRateLimitCleanup(): void {
+  if (rateLimitCleanupInterval) {
+    clearInterval(rateLimitCleanupInterval);
+    rateLimitCleanupInterval = null;
   }
-}, 60_000);
+}
+
+startRateLimitCleanup();
 
 // ===========================================
 // Permission Checking
@@ -259,4 +274,5 @@ export function getExtensionSandbox(): ExtensionSandbox {
 export function resetExtensionSandbox(): void {
   instance = null;
   rateLimitMap.clear();
+  stopRateLimitCleanup();
 }

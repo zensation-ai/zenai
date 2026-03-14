@@ -370,6 +370,16 @@ export async function addDependency(
   type: DependencyType = 'finish_to_start',
   userId?: string
 ): Promise<TaskDependency> {
+  // Verify both tasks belong to the requesting user
+  if (userId) {
+    const ownerCheck = await queryContext(context, `
+      SELECT id FROM tasks WHERE id IN ($1, $2) AND user_id = $3
+    `, [taskId, dependsOnId, userId]);
+    if (ownerCheck.rows.length < 2) {
+      throw new Error('One or both tasks not found or not owned by user');
+    }
+  }
+
   // Circular dependency detection via recursive CTE
   const cycleCheck = await queryContext(context, `
     WITH RECURSIVE dep_chain AS (
@@ -394,7 +404,7 @@ export async function addDependency(
   `, [id, taskId, dependsOnId, type]);
 
   logger.info('Task dependency added', {
-    taskId, dependsOnId, type, context, operation: 'addDependency'
+    taskId, dependsOnId, type, context, userId, operation: 'addDependency'
   });
 
   return mapRowToDependency(result.rows[0]);

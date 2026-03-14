@@ -211,9 +211,7 @@ describe('ExtensionRegistry', () => {
 
   describe('installExtension', () => {
     it('should install an extension', async () => {
-      // Check existing
-      mockPoolQuery.mockResolvedValueOnce({ rows: [] });
-      // Insert
+      // INSERT ... ON CONFLICT DO NOTHING RETURNING * - returns the row if inserted
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{
           id: 'test-uuid-1234',
@@ -241,9 +239,8 @@ describe('ExtensionRegistry', () => {
     });
 
     it('should reject if already installed', async () => {
-      mockPoolQuery.mockResolvedValueOnce({
-        rows: [{ id: 'existing' }],
-      });
+      // ON CONFLICT DO NOTHING returns empty rows when already installed
+      mockPoolQuery.mockResolvedValueOnce({ rows: [] });
 
       const registry = getExtensionRegistry();
 
@@ -501,7 +498,6 @@ describe('Extension Routes', () => {
   describe('POST /api/extensions/:id/install', () => {
     it('should install extension with permissions', async () => {
       mockPoolQuery
-        .mockResolvedValueOnce({ rows: [] }) // check existing
         .mockResolvedValueOnce({
           rows: [{
             id: 'test-uuid-1234',
@@ -531,7 +527,8 @@ describe('Extension Routes', () => {
     });
 
     it('should return 409 if already installed', async () => {
-      mockPoolQuery.mockResolvedValueOnce({ rows: [{ id: 'existing' }] });
+      // ON CONFLICT DO NOTHING returns empty rows when already installed
+      mockPoolQuery.mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
         .post('/api/extensions/ext-pomodoro-timer/install')

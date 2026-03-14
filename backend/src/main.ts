@@ -23,7 +23,7 @@ import { securityHeaders } from './middleware/security-headers';
 // Phase 5: Thought Incubator
 import incubatorRouter from './routes/incubator';
 // Phase 6: Dual-Database Context System
-import { testConnections, setupGracefulShutdown, startConnectionHealthCheck, validateRequiredExtensions, ensurePerformanceIndexes, ensureSchemas } from './utils/database-context';
+import { testConnections, setupGracefulShutdown, startConnectionHealthCheck, stopConnectionHealthCheck, closeAllPools, validateRequiredExtensions, ensurePerformanceIndexes, ensureSchemas } from './utils/database-context';
 import { voiceMemoContextRouter } from './routes/voice-memo-context';
 import { contextsRouter } from './routes/contexts';
 // Phase 7: Media & Stories
@@ -605,7 +605,8 @@ const rateLimitCleanupInterval = setInterval(() => {
 }, 60 * 60 * 1000);
 
 // Clear interval on shutdown (setupGracefulShutdown handles DB cleanup)
-process.once('SIGTERM', () => {
+const gracefulShutdown = async (signal: string) => {
+  logger.info(`Received ${signal}. Starting graceful shutdown...`);
   clearInterval(rateLimitCleanupInterval);
   stopMemoryScheduler();
   stopImapScheduler();
@@ -613,24 +614,18 @@ process.once('SIGTERM', () => {
   stopScheduledEventProducers();
   workingMemory.stopCleanupInterval();
   // Phase 61: Shutdown queue workers and tracing
-  stopWorkers().catch(() => {});
-  getQueueService().shutdown().catch(() => {});
-  shutdownTracing().catch(() => {});
-  shutdownAITracing().catch(() => {});
-});
-process.once('SIGINT', () => {
-  clearInterval(rateLimitCleanupInterval);
-  stopMemoryScheduler();
-  stopImapScheduler();
-  stopCalDAVScheduler();
-  stopScheduledEventProducers();
-  workingMemory.stopCleanupInterval();
-  // Phase 61: Shutdown queue workers and tracing
-  stopWorkers().catch(() => {});
-  getQueueService().shutdown().catch(() => {});
-  shutdownTracing().catch(() => {});
-  shutdownAITracing().catch(() => {});
-});
+  await stopWorkers().catch(() => {});
+  await getQueueService().shutdown().catch(() => {});
+  await shutdownTracing().catch(() => {});
+  await shutdownAITracing().catch(() => {});
+  // Close database connections last
+  stopConnectionHealthCheck();
+  await closeAllPools().catch(() => {});
+  logger.info('Graceful shutdown complete');
+  process.exit(0);
+};
+process.once('SIGTERM', () => { gracefulShutdown('SIGTERM'); });
+process.once('SIGINT', () => { gracefulShutdown('SIGINT'); });
 
 // 404 Handler for undefined routes
 app.use((req, res) => {
@@ -643,15 +638,17 @@ app.use((req, res) => {
   });
 });
 
-// Error handling - Use centralized error handler
-app.use(errorHandler);
-
-// Phase 66: Sentry error handler (must be after Express error handler)
-import('./services/observability/sentry').then(({ Sentry, isSentryInitialized }) => {
+// Phase 66: Sentry error handler (must be BEFORE app error handler to capture route errors)
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { Sentry, isSentryInitialized } = require('./services/observability/sentry');
   if (isSentryInitialized()) {
     Sentry.setupExpressErrorHandler(app);
   }
-}).catch(() => { /* Sentry not available */ });
+} catch { /* Sentry not available */ }
+
+// Error handling - Use centralized error handler (after Sentry so Sentry captures first)
+app.use(errorHandler);
 
 // Setup graceful shutdown for database connections
 setupGracefulShutdown();
