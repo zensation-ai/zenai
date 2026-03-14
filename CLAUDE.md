@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 56
+## Current Phase: 58
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -186,6 +186,18 @@
 - JWT Service: `backend/src/services/auth/jwt-service.ts`
 - OAuth Providers: `backend/src/services/auth/oauth-providers.ts`
 - Session Store: `backend/src/services/auth/session-store.ts`
+- Voice Pipeline: `backend/src/services/voice/voice-pipeline.ts`
+- STT Service: `backend/src/services/voice/stt-service.ts`
+- TTS Service: `backend/src/services/voice/tts-service.ts`
+- Voice Signaling: `backend/src/services/voice/webrtc-signaling.ts`
+- Turn-Taking Engine: `backend/src/services/voice/turn-taking.ts`
+- Audio Processor: `backend/src/services/voice/audio-processor.ts`
+- Voice Realtime Routes: `backend/src/routes/voice-realtime.ts`
+- Graph Builder: `backend/src/services/knowledge-graph/graph-builder.ts`
+- Community Summarizer: `backend/src/services/knowledge-graph/community-summarizer.ts`
+- Hybrid Retriever: `backend/src/services/knowledge-graph/hybrid-retriever.ts`
+- Graph Indexer: `backend/src/services/knowledge-graph/graph-indexer.ts`
+- GraphRAG Routes: `backend/src/routes/graphrag.ts`
 
 ### Frontend
 
@@ -222,6 +234,10 @@
 - Auth Page: `frontend/src/components/AuthPage/AuthPage.tsx`
 - OAuth Buttons: `frontend/src/components/AuthPage/OAuthButtons.tsx`
 - Auth Context: `frontend/src/contexts/AuthContext.tsx`
+- Voice Chat: `frontend/src/components/VoiceChat/VoiceChat.tsx`
+- Audio Visualizer: `frontend/src/components/VoiceChat/AudioVisualizer.tsx`
+- WebRTC Hook: `frontend/src/hooks/useWebRTC.ts`
+- Voice Activity Hook: `frontend/src/hooks/useVoiceActivity.ts`
 
 ### Tests
 
@@ -610,6 +626,34 @@ GET    /api/auth/oauth/:provider                            - OAuth redirect (Go
 GET    /api/auth/oauth/:provider/callback                   - OAuth callback
 ```
 
+### Voice Realtime API (Phase 57)
+
+```
+POST   /api/:context/voice/session/start                    - Start voice session
+POST   /api/:context/voice/session/:id/end                  - End voice session
+GET    /api/:context/voice/session/:id/status                - Session status
+POST   /api/:context/voice/tts                               - One-shot TTS
+GET    /api/:context/voice/voices                            - Available TTS voices
+GET    /api/:context/voice/settings                          - Get voice settings
+PUT    /api/:context/voice/settings                          - Update voice settings
+GET    /api/:context/voice/providers                         - Available STT/TTS providers
+WS     /ws/voice                                             - WebSocket for voice streaming
+```
+
+### GraphRAG API (Phase 58)
+
+```
+POST   /api/:context/graphrag/extract                        - Extract entities from text
+GET    /api/:context/graphrag/entities                        - List entities (type, search, limit)
+GET    /api/:context/graphrag/entities/:id                    - Get entity with relations
+DELETE /api/:context/graphrag/entities/:id                    - Delete entity
+POST   /api/:context/graphrag/retrieve                       - Hybrid retrieval (4 strategies)
+GET    /api/:context/graphrag/communities                     - Get community summaries
+POST   /api/:context/graphrag/communities/refresh             - Refresh community summaries
+POST   /api/:context/graphrag/index                          - Trigger batch indexing
+GET    /api/:context/graphrag/index/status                    - Get indexing status
+```
+
 ## Environment Variables (Backend)
 
 ```bash
@@ -669,6 +713,13 @@ GSC_SITE_URL=https://zensation.ai        # Verified GSC site
 RESEND_API_KEY=re_...                    # Resend API Key
 RESEND_WEBHOOK_SECRET=whsec_...          # Svix Webhook Signing Secret
 RESEND_DEFAULT_FROM=noreply@zensation.ai # Default sender address
+
+# Optional - Voice Pipeline (Phase 57)
+ELEVENLABS_API_KEY=...              # Optional: Premium TTS
+ELEVENLABS_VOICE_ID=...             # Default ElevenLabs Voice
+DEEPGRAM_API_KEY=...                # Optional: Alternative STT
+VOICE_STT_PROVIDER=whisper          # whisper | deepgram
+VOICE_TTS_PROVIDER=edge-tts         # elevenlabs | edge-tts
 ```
 
 ## Railway Environment Variables (Production)
@@ -757,9 +808,9 @@ cd frontend && npm test
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 3121 | 24 | 0 |
+| **Backend** | 3386 | 24 | 0 |
 | **Frontend** | 572 | 0 | 0 |
-| **Gesamt** | 3693 | 24 | 0 |
+| **Gesamt** | 3958 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -855,6 +906,82 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-14: Phase 57+58 - Real-Time Voice + GraphRAG Hybrid Retrieval
+
+**Zwei parallele Phasen: Voice Pipeline + Knowledge Graph RAG.**
+
+**Phase 57: Real-Time Voice (WebSocket + STT + TTS Pipeline)**
+
+| Feature | Details |
+|---------|---------|
+| **Cascading Pipeline** | STT → Claude LLM → TTS (nicht Speech-to-Speech) |
+| **Multi-Provider STT** | Whisper (OpenAI) + Deepgram (optional) mit Fallback |
+| **Multi-Provider TTS** | ElevenLabs (premium) → Edge-TTS (kostenlos) mit Fallback |
+| **WebSocket Signaling** | `/ws/voice` fuer Echtzeit-Audio-Streaming (base64 JSON) |
+| **Turn-Taking Engine** | Energy-basierte VAD mit konfigurierbarem Silence-Threshold |
+| **Sentence-Level TTS** | Streaming TTS pro Satz (nicht auf volle Antwort warten) |
+| **Audio Processor** | Sentence-Splitting, WAV-Header, Duration-Berechnung |
+| **Voice Sessions** | DB-persistierte Sessions mit Chat-Session-Verknuepfung |
+| **Frontend VoiceChat** | Full UI: Mic-Button, Canvas-Visualizer, Transcript-Panel |
+| **Audio Visualizer** | Canvas-basierter Circular-Visualizer mit Farbstatus |
+| **WebRTC Hook** | WebSocket-Management, Auto-Reconnect, Base64-Audio |
+| **VAD Hook** | Web Audio API AnalyserNode fuer Echtzeit-Volume |
+
+**Phase 58: GraphRAG + Hybrid Retrieval**
+
+| Feature | Details |
+|---------|---------|
+| **Graph Builder** | Entity/Relation Extraction via Claude API aus Text |
+| **Entity Types** | person, organization, concept, technology, location, event, product |
+| **Entity Resolution** | Embedding-basierte Deduplizierung (Cosine > 0.92) |
+| **Community Summarizer** | Label Propagation → hierarchische Claude-Summaries |
+| **Hybrid Retriever** | 4 parallele Strategien: Vector + Graph + Community + BM25 |
+| **Cross-Encoder Rerank** | Merge → Deduplicate → Rerank aller Ergebnisse |
+| **Graph Indexer** | Background Batch-Indexing von Ideas zu Knowledge Graph |
+| **Enhanced RAG Integration** | GraphRAG als dritte Retrieval-Quelle neben HyDE + Agentic |
+| **GraphRAG API** | 9 Endpoints: Extract, Entities CRUD, Retrieve, Communities, Index |
+
+**Neue Dateien Phase 57:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/voice/voice-pipeline.ts` | Cascading Pipeline Orchestrator |
+| `backend/src/services/voice/stt-service.ts` | Multi-Provider STT (Whisper/Deepgram) |
+| `backend/src/services/voice/tts-service.ts` | Multi-Provider TTS (ElevenLabs/Edge-TTS) |
+| `backend/src/services/voice/webrtc-signaling.ts` | WebSocket Voice Signaling Server |
+| `backend/src/services/voice/turn-taking.ts` | Energy-basierte VAD Engine |
+| `backend/src/services/voice/audio-processor.ts` | Audio Chunking + Format Conversion |
+| `backend/src/routes/voice-realtime.ts` | 8 Voice REST Endpoints |
+| `frontend/src/components/VoiceChat/VoiceChat.tsx` | Full Voice Chat UI |
+| `frontend/src/components/VoiceChat/AudioVisualizer.tsx` | Canvas Waveform Visualizer |
+| `frontend/src/hooks/useWebRTC.ts` | WebSocket Client Hook |
+| `frontend/src/hooks/useVoiceActivity.ts` | VAD Hook (Web Audio API) |
+| `backend/sql/migrations/phase57_voice.sql` | voice_sessions + voice_settings (4 Schemas) |
+
+**Neue Dateien Phase 58:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/knowledge-graph/graph-builder.ts` | Entity/Relation Extraction via Claude |
+| `backend/src/services/knowledge-graph/community-summarizer.ts` | Community Detection + Summaries |
+| `backend/src/services/knowledge-graph/hybrid-retriever.ts` | 4-Strategy Hybrid Retrieval |
+| `backend/src/services/knowledge-graph/graph-indexer.ts` | Background Graph Indexing |
+| `backend/src/routes/graphrag.ts` | GraphRAG API (9 Endpoints) |
+| `backend/sql/migrations/phase58_graphrag.sql` | knowledge_entities + entity_relations + graph_communities (4 Schemas) |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/main.ts` | 2 neue Router registriert (voiceRealtimeRouter, graphragRouter) + WebSocket-Init |
+| `backend/src/services/enhanced-rag.ts` | GraphRAG als dritte Retrieval-Quelle, enableGraphRAG Config |
+
+**DB-Migration:** Phase 57: 2 Tabellen (voice_sessions, voice_settings) x4 Schemas | Phase 58: 3 Tabellen (knowledge_entities, entity_relations, graph_communities) x4 Schemas mit vector-Indexes
+
+**Tests:** 142 neue Tests (Phase 57: 81, Phase 58: 61), Backend 3386 + Frontend 572 = 3958 bestanden, 24 uebersprungen, 0 fehlgeschlagen
+
+---
 
 ### 2026-03-13: Phase 55+56 - MCP SDK Upgrade + OAuth/JWT Multi-User
 
