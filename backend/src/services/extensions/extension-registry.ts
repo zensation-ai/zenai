@@ -236,7 +236,7 @@ class ExtensionRegistry {
     }
 
     // Fetch user installations
-    let userInstalls: Map<string, UserExtension> = new Map();
+    const userInstalls: Map<string, UserExtension> = new Map();
     try {
       const { pool } = await import('../../utils/database-context');
       const installResult = await pool.query(
