@@ -174,6 +174,12 @@ export const NAV_SECTIONS: NavSection[] = [
  */
 export const NAV_FOOTER_ITEMS: NavItem[] = [
   {
+    page: 'system-admin',
+    icon: '🖥️',
+    label: 'System',
+    description: 'Queues, Sicherheit & Sleep Compute',
+  },
+  {
     page: 'settings',
     icon: '⚙️',
     label: 'Einstellungen',

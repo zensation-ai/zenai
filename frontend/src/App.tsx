@@ -62,6 +62,7 @@ const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default
 const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
 const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const MemoryInsightsPage = lazy(() => import('./components/MemoryInsightsPage/MemoryInsightsPage').then(m => ({ default: m.MemoryInsightsPage })));
+const SystemAdminPage = lazy(() => import('./components/SystemAdminPage').then(m => ({ default: m.SystemAdminPage })));
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
 
 const PageLoader = () => (
@@ -123,6 +124,9 @@ const PAGE_PATHS: Record<Page, string> = {
   'memory-insights': '/my-ai/memory-insights',
   'agent-teams': '/workshop/agent-teams',
   'mcp-servers': '/settings/integrations/mcp',
+  'system-admin': '/admin',
+  'graphrag': '/insights/graphrag',
+  'procedural-memory': '/my-ai/procedures',
 };
 
 const PATH_PAGES: Record<string, Page> = {
@@ -161,6 +165,7 @@ const PATH_PAGES: Record<string, Page> = {
   '/personalization': 'my-ai',
   '/voice-chat': 'my-ai',
   '/agent-teams': 'workshop',
+  '/admin': 'system-admin',
 };
 
 function useUrlNavigation() {
@@ -189,6 +194,7 @@ function useUrlNavigation() {
     if (fullPath.startsWith('/settings/')) return 'settings';
     if (fullPath.startsWith('/learning/')) return 'learning';
     if (fullPath.startsWith('/screen-memory/')) return 'screen-memory';
+    if (fullPath.startsWith('/admin/')) return 'system-admin';
     // Legacy: /ai-workshop/* → workshop
     if (fullPath.startsWith('/ai-workshop/')) return 'workshop';
 
@@ -207,7 +213,7 @@ function useUrlNavigation() {
     let path = PAGE_PATHS[page] || '/';
 
     if (options?.tab) {
-      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning', 'contacts', 'finance', 'screen-memory', 'memory-insights'];
+      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning', 'contacts', 'finance', 'screen-memory', 'memory-insights', 'system-admin'];
       if (tabPages.includes(page)) {
         path = `${PAGE_PATHS[page]}/${options.tab}`;
       }
@@ -714,7 +720,7 @@ function AuthenticatedApp() {
                   navigateToPage('ideas');
                 }
               }}
-              initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections'}
+              initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag'}
             />
           </Suspense>
         );
@@ -757,7 +763,18 @@ function AuthenticatedApp() {
             <MyAIPage
               context={context}
               onBack={() => navigateToPage('home')}
-              initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'voice-chat'}
+              initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'voice-chat'}
+            />
+          </Suspense>
+        );
+
+      case 'system-admin':
+        return (
+          <Suspense fallback={<PageLoader />}>
+            <SystemAdminPage
+              context={context}
+              onBack={() => navigateToPage('home')}
+              initialTab={(tabParam || 'overview') as 'overview' | 'queues' | 'security' | 'sleep'}
             />
           </Suspense>
         );

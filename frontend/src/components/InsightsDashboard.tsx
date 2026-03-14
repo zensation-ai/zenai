@@ -14,8 +14,9 @@ import './InsightsDashboard.css';
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboardV2 })));
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
+const GraphRAGPanel = lazy(() => import('./GraphRAGPanel').then(m => ({ default: m.GraphRAGPanel })));
 
-type InsightsTab = 'analytics' | 'digest' | 'connections';
+type InsightsTab = 'analytics' | 'digest' | 'connections' | 'graphrag';
 
 interface InsightsDashboardProps {
   context: AIContext;
@@ -28,6 +29,7 @@ const TABS: TabDef<InsightsTab>[] = [
   { id: 'analytics', label: 'Statistiken', icon: '📈', description: 'Analysen, Trends und Produktivität' },
   { id: 'digest', label: 'Zusammenfassung', icon: '📊', description: 'Tägliche und wöchentliche Digests' },
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
+  { id: 'graphrag', label: 'GraphRAG', icon: '🔬', description: 'Entitaeten, Communities und Hybrid-Retrieval' },
 ];
 
 const TabLoader = () => (
@@ -44,7 +46,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 }) => {
   const { activeTab, handleTabChange } = useTabNavigation<InsightsTab>({
     initialTab,
-    validTabs: ['analytics', 'digest', 'connections'],
+    validTabs: ['analytics', 'digest', 'connections', 'graphrag'],
     defaultTab: 'analytics',
     basePath: '/insights',
   });
@@ -76,6 +78,14 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
                 onBack={() => handleTabChange('analytics')}
                 onSelectIdea={onSelectIdea ? (id: string) => onSelectIdea(id) : undefined}
               />
+            </div>
+          </Suspense>
+        );
+      case 'graphrag':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="hub-tab-content hub-tab-fullwidth">
+              <GraphRAGPanel context={context} />
             </div>
           </Suspense>
         );

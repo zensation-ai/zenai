@@ -104,6 +104,11 @@ export type Page =
   | 'learning-tasks'
   | 'voice-chat'
   | 'agent-teams'
-  | 'mcp-servers';
+  | 'mcp-servers'
+  // System Admin (Phase 61-63)
+  | 'system-admin'
+  // Sub-tabs
+  | 'graphrag'
+  | 'procedural-memory';
 
 export type { AIContext as Context } from '../components/ContextSwitcher';

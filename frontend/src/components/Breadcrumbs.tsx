@@ -248,6 +248,23 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
 
   // Legacy/Misc
   'stories': [ROOT, { label: 'Stories', page: 'stories', icon: '📖' }],
+
+  // System Admin
+  'system-admin': [ROOT, { label: 'System', page: 'system-admin', icon: '🖥️' }],
+
+  // GraphRAG (sub-tab of Insights)
+  'graphrag': [
+    ROOT,
+    { label: 'Insights', page: 'insights', icon: '📊' },
+    { label: 'GraphRAG', page: 'graphrag', icon: '🔬' },
+  ],
+
+  // Procedural Memory (sub-tab of Meine KI)
+  'procedural-memory': [
+    ROOT,
+    { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
+    { label: 'Prozeduren', page: 'procedural-memory', icon: '📋' },
+  ],
 };
 
 /**
