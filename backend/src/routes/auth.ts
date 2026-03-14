@@ -454,7 +454,7 @@ authRouter.post('/mfa/verify', requireJwt, asyncHandler(async (req: Request, res
 
   const isValid = authenticator.verify({
     token: code,
-    secret: user.mfa_secret,
+    secret: decrypt(user.mfa_secret),
   });
 
   if (!isValid) {
@@ -505,7 +505,14 @@ authRouter.get('/sessions', requireJwt, asyncHandler(async (req: Request, res: R
  * Revoke a specific session.
  */
 authRouter.delete('/sessions/:id', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.jwtUser!.id;
   const { id } = req.params;
+
+  // Verify session belongs to current user
+  const session = await sessionStore.findById(id);
+  if (!session || session.user_id !== userId) {
+    return res.status(404).json({ success: false, error: 'Session not found' });
+  }
 
   await sessionStore.revokeSession(id);
 

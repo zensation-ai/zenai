@@ -363,7 +363,7 @@ agentTeamsRouter.post(
   requireScope('write'),
   async (req: Request, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      getUserId(req); // auth check
       const {
         task,
         context,
@@ -569,10 +569,17 @@ agentTeamsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
+    }
+
+    // Verify existence
+    const exec = await getExecutionStatus(context as AIContext, req.params.id);
+    if (!exec) {
+      res.status(404).json({ success: false, error: 'Execution not found' });
+      return;
     }
 
     const reason = req.body.reason || 'User requested pause';
@@ -595,10 +602,17 @@ agentTeamsRouter.post(
   requireScope('write'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = (req.body.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
+    }
+
+    // Verify existence
+    const exec = await getExecutionStatus(context as AIContext, req.params.id);
+    if (!exec) {
+      res.status(404).json({ success: false, error: 'Execution not found' });
+      return;
     }
 
     await updateExecutionStatus(context as AIContext, req.params.id, 'cancelled');
@@ -617,7 +631,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
@@ -643,7 +657,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
@@ -665,7 +679,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const context = (req.query.context as string) || 'personal';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');

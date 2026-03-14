@@ -72,7 +72,7 @@ voiceRealtimeRouter.post(
   '/:context/voice/session/start',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { context } = req.params;
     validateContext(context);
 
@@ -107,7 +107,7 @@ voiceRealtimeRouter.post(
   '/:context/voice/session/:id/end',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { context, id } = req.params;
     validateContext(context);
 
@@ -128,7 +128,7 @@ voiceRealtimeRouter.get(
   '/:context/voice/session/:id/status',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { context, id } = req.params;
     validateContext(context);
 
@@ -157,7 +157,7 @@ voiceRealtimeRouter.post(
   '/:context/voice/tts',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { context } = req.params;
     validateContext(context);
 
@@ -188,7 +188,7 @@ voiceRealtimeRouter.get(
   '/:context/voice/voices',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { context } = req.params;
     validateContext(context);
 
@@ -319,7 +319,7 @@ voiceRealtimeRouter.get(
   '/:context/voice/providers',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { context } = req.params;
     validateContext(context);
 

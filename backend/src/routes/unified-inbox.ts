@@ -35,7 +35,7 @@ unifiedInboxRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const _userId = getUserId(req);
+    getUserId(req); // auth check - userId passed to DB via request context
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -72,7 +72,7 @@ unifiedInboxRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const { context } = req.params;
-    const _userId = getUserId(req);
+    getUserId(req); // auth check - userId passed to DB via request context
 
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');

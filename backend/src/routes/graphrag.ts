@@ -34,7 +34,7 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { text, sourceId } = req.body;
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
       throw new ValidationError('text is required and must be a non-empty string.');
@@ -122,7 +122,7 @@ router.get(
       return res.status(404).json({ success: false, error: 'Entity not found' });
     }
 
-    // Fetch relations
+    // Fetch relations (scoped to user's entities)
     const relationsResult = await queryContext(
       context,
       `SELECT er.id, er.relation_type, er.description, er.strength,
@@ -131,9 +131,10 @@ router.get(
               ke.name as related_entity_name, ke.type as related_entity_type
        FROM entity_relations er
        JOIN knowledge_entities ke ON ke.id = CASE WHEN er.source_entity_id = $1 THEN er.target_entity_id ELSE er.source_entity_id END
-       WHERE er.source_entity_id = $1 OR er.target_entity_id = $1
+         AND ke.user_id = $2
+       WHERE (er.source_entity_id = $1 OR er.target_entity_id = $1)
        ORDER BY er.strength DESC`,
-      [entityId]
+      [entityId, userId]
     );
 
     return res.json({
@@ -189,7 +190,7 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const { query, options } = req.body;
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       throw new ValidationError('query is required and must be a non-empty string.');
@@ -214,7 +215,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const summaries = await communitySummarizer.getCommunitySummaries(context);
 
     return res.json({ success: true, data: summaries });
@@ -234,7 +235,7 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const maxAgeHours = parseInt(req.body.maxAgeHours, 10) || 24;
     const refreshed = await communitySummarizer.refreshStaleCommunitySummaries(context, maxAgeHours);
 
@@ -255,7 +256,7 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const limit = parseInt(req.body.limit, 10) || 50;
     const sinceHours = req.body.sinceHours ? parseInt(req.body.sinceHours, 10) : undefined;
 
@@ -278,7 +279,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const _userId = getUserId(req);
+    getUserId(req); // auth check
     const status = await graphIndexer.getIndexingStatus(context);
 
     return res.json({

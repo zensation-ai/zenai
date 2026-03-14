@@ -6,15 +6,19 @@ import { Router, Request, Response } from 'express';
 import { AIContext, isValidContext } from '../utils/database-context';
 import { queryContext } from '../utils/database-context';
 import { asyncHandler } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
 import { getSleepComputeEngine } from '../services/memory/sleep-compute';
 import { getContextEngineV2 } from '../services/context-engine-v2';
 import { getUserId } from '../utils/user-context';
 
 const router = Router();
 
+// All sleep-compute routes require authentication
+router.use(apiKeyAuth);
+
 // GET /api/:context/sleep-compute/logs - Get sleep compute logs
 router.get('/:context/sleep-compute/logs', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  const userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -23,16 +27,17 @@ router.get('/:context/sleep-compute/logs', asyncHandler(async (req: Request, res
   const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
   const result = await queryContext(context, `
     SELECT * FROM sleep_compute_logs
+    WHERE user_id = $1
     ORDER BY created_at DESC
-    LIMIT $1
-  `, [limit]);
+    LIMIT $2
+  `, [userId, limit]);
 
   res.json({ success: true, data: result.rows });
 }));
 
 // GET /api/:context/sleep-compute/stats - Get sleep compute statistics
 router.get('/:context/sleep-compute/stats', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  const userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -48,15 +53,15 @@ router.get('/:context/sleep-compute/stats', asyncHandler(async (req: Request, re
       AVG(duration_ms)::integer as avg_duration_ms,
       MAX(created_at) as last_cycle
     FROM sleep_compute_logs
-    WHERE created_at > NOW() - INTERVAL '7 days'
-  `, []);
+    WHERE created_at > NOW() - INTERVAL '7 days' AND user_id = $1
+  `, [userId]);
 
   res.json({ success: true, data: result.rows[0] || {} });
 }));
 
 // POST /api/:context/sleep-compute/trigger - Manually trigger sleep cycle
 router.post('/:context/sleep-compute/trigger', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -70,7 +75,7 @@ router.post('/:context/sleep-compute/trigger', asyncHandler(async (req: Request,
 
 // GET /api/:context/sleep-compute/idle-status - Check system idle status
 router.get('/:context/sleep-compute/idle-status', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -84,7 +89,7 @@ router.get('/:context/sleep-compute/idle-status', asyncHandler(async (req: Reque
 
 // GET /api/:context/sleep-compute/discoveries - Get sleep cycle discoveries (last 7 cycles)
 router.get('/:context/sleep-compute/discoveries', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  const userId = getUserId(req);
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -101,37 +106,39 @@ router.get('/:context/sleep-compute/discoveries', asyncHandler(async (req: Reque
       COALESCE(AVG(duration_ms)::integer, 0) as avg_duration_ms
     FROM (
       SELECT * FROM sleep_compute_logs
+      WHERE user_id = $1
       ORDER BY created_at DESC
       LIMIT 7
     ) recent
-  `, []);
+  `, [userId]);
 
   // Individual cycle items
   const cyclesResult = await queryContext(context, `
     SELECT id, cycle_type, processed_items, insights_generated,
            contradictions_resolved, memory_updates, duration_ms, created_at
     FROM sleep_compute_logs
+    WHERE user_id = $1
     ORDER BY created_at DESC
     LIMIT 7
-  `, []);
+  `, [userId]);
 
   // Recent learned facts from sleep compute (discoveries)
   const discoveriesResult = await queryContext(context, `
     SELECT id, fact_type as type, content as description, confidence, created_at
     FROM learned_facts
-    WHERE source = 'sleep_compute'
+    WHERE source = 'sleep_compute' AND user_id = $1
     ORDER BY created_at DESC
     LIMIT 20
-  `, []);
+  `, [userId]);
 
   // Recent contradictions (facts with fast_decay that were downgraded)
   const contradictionsResult = await queryContext(context, `
     SELECT id, content, confidence, decay_class, updated_at
     FROM learned_facts
-    WHERE decay_class = 'fast_decay' AND confidence < 0.5
+    WHERE decay_class = 'fast_decay' AND confidence < 0.5 AND user_id = $1
     ORDER BY updated_at DESC
     LIMIT 10
-  `, []);
+  `, [userId]);
 
   res.json({
     success: true,
@@ -221,7 +228,7 @@ router.get('/:context/context-v2/active', asyncHandler(async (req: Request, res:
 
 // POST /api/:context/context-v2/classify - Classify query domain
 router.post('/:context/context-v2/classify', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const { query } = req.body;
   if (!query) {
     return res.status(400).json({ success: false, error: 'query is required' });
@@ -237,7 +244,7 @@ router.post('/:context/context-v2/classify', asyncHandler(async (req: Request, r
 
 // POST /api/:context/context-v2/assemble - Assemble context for query
 router.post('/:context/context-v2/assemble', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });
@@ -256,7 +263,7 @@ router.post('/:context/context-v2/assemble', asyncHandler(async (req: Request, r
 
 // POST /api/:context/context-v2/cache/clean - Clean expired cache
 router.post('/:context/context-v2/cache/clean', asyncHandler(async (req: Request, res: Response) => {
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {
     return res.status(400).json({ success: false, error: 'Invalid context' });

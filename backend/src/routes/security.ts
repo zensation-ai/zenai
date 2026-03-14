@@ -175,8 +175,8 @@ router.put(
     }
 
     const update: Record<string, unknown> = {};
-    if (maxRequests) update.maxRequests = parseInt(maxRequests, 10);
-    if (windowSeconds) update.windowSeconds = parseInt(windowSeconds, 10);
+    if (maxRequests !== undefined && maxRequests !== null) update.maxRequests = parseInt(maxRequests, 10);
+    if (windowSeconds !== undefined && windowSeconds !== null) update.windowSeconds = parseInt(windowSeconds, 10);
     if (blockSeconds !== undefined) update.blockSeconds = parseInt(blockSeconds, 10);
 
     const updated = updateTierConfig(tier, update);

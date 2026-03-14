@@ -701,7 +701,7 @@ emailRouter.post('/:context/emails/accounts/:id/sync', apiKeyAuth, requireScope(
  */
 emailRouter.post('/:context/emails/search', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
 
   const { query, text, from, to, after, before, category, priority, status, direction, starred, limit } = req.body;
 
@@ -727,7 +727,7 @@ emailRouter.post('/:context/emails/search', apiKeyAuth, requireScope('read'), as
  */
 emailRouter.get('/:context/emails/inbox-summary', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const summary = await getInboxSummary(context);
   res.json({ success: true, data: summary });
 }));
@@ -738,7 +738,7 @@ emailRouter.get('/:context/emails/inbox-summary', apiKeyAuth, requireScope('read
  */
 emailRouter.post('/:context/emails/digest', apiKeyAuth, requireScope('read'), asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
-  const _userId = getUserId(req);
+  getUserId(req); // auth check
   const period = req.body.period === 'weekly' ? 'weekly' as const : 'daily' as const;
   const lookbackHours = req.body.lookback_hours ? Number(req.body.lookback_hours) : undefined;
 

@@ -66,6 +66,17 @@ class SessionStore {
   }
 
   /**
+   * Find a session by ID.
+   */
+  async findById(sessionId: string): Promise<SessionRecord | null> {
+    const result = await pool.query(
+      'SELECT * FROM public.user_sessions WHERE id = $1',
+      [sessionId]
+    );
+    return result.rows.length > 0 ? (result.rows[0] as SessionRecord) : null;
+  }
+
+  /**
    * Revoke a session by marking it as revoked.
    */
   async revokeSession(sessionId: string): Promise<void> {
