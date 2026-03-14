@@ -75,7 +75,7 @@ router.post('/thought', apiKeyAuth, requireScope('write'), asyncHandler(async (r
  * Get all loose thoughts
  */
 router.get('/thoughts', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.query.userId as string) || 'default';
+  const userId = getUserId(req);
   const limit = parseInt(req.query.limit as string, 10) || 50;
   const includeProcessed = req.query.includeProcessed !== 'false';
   const context = getContextFromRequest(req);
@@ -95,7 +95,7 @@ router.get('/thoughts', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
  * Get all clusters with their thoughts
  */
 router.get('/clusters', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.query.userId as string) || 'default';
+  const userId = getUserId(req);
   const includeThoughts = req.query.includeThoughts !== 'false';
   const context = getContextFromRequest(req);
 
@@ -114,7 +114,7 @@ router.get('/clusters', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
  * Get clusters that are ready for presentation
  */
 router.get('/clusters/ready', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.query.userId as string) || 'default';
+  const userId = getUserId(req);
   const context = getContextFromRequest(req);
 
   const clusters = await getReadyClusters(userId, context);
@@ -211,7 +211,7 @@ router.post('/clusters/:id/presented', apiKeyAuth, requireScope('write'), asyncH
  * Run batch analysis on unprocessed thoughts
  */
 router.post('/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.body.userId as string) || 'default';
+  const userId = getUserId(req);
   const context = getContextFromRequest(req);
 
   const result = await runBatchAnalysis(userId, context);
@@ -228,7 +228,7 @@ router.post('/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (r
  * Get incubator statistics
  */
 router.get('/stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.query.userId as string) || 'default';
+  const userId = getUserId(req);
   const context = getContextFromRequest(req);
 
   const stats = await getIncubatorStats(userId, context);
@@ -246,7 +246,7 @@ router.get('/stats', apiKeyAuth, asyncHandler(async (req: Request, res: Response
  * Useful after deploying new embedding providers
  */
 router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.body.userId as string) || 'default';
+  const userId = getUserId(req);
   const context = getContextFromRequest(req);
 
   const result = await backfillEmbeddings(userId, context);
@@ -326,7 +326,7 @@ router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req:
  * Get learning status and insights
  */
 router.get('/learning', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.query.userId as string) || 'default';
+  const userId = getUserId(req);
 
   const [profile, recommendations, insights] = await Promise.all([
     getUserProfile(userId),
@@ -366,7 +366,7 @@ router.get('/learning', apiKeyAuth, asyncHandler(async (req: Request, res: Respo
  * Get personalized context for LLM prompts
  */
 router.get('/context', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.query.userId as string) || 'default';
+  const userId = getUserId(req);
 
   const context = await getPersonalizedPromptContext(userId);
 

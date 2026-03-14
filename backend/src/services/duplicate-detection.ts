@@ -55,7 +55,8 @@ export async function findDuplicates(
   context: AIContext,
   content: string,
   threshold: number = DEFAULT_THRESHOLD,
-  excludeId?: string
+  excludeId?: string,
+  userId?: string
 ): Promise<DuplicateCheckResult> {
   try {
     // Generate embedding for the new content
@@ -68,13 +69,18 @@ export async function findDuplicates(
 
     const pgvectorEmbedding = formatForPgVector(embedding);
 
-    // Build query with optional exclusion
-    let excludeClause = '';
+    // Build query with optional exclusion and user isolation
+    let extraClauses = '';
     const params: (string | number)[] = [pgvectorEmbedding, threshold, MAX_DUPLICATES];
 
     if (excludeId) {
-      excludeClause = 'AND id != $4';
       params.push(excludeId);
+      extraClauses += ` AND id != $${params.length}`;
+    }
+
+    if (userId) {
+      params.push(userId);
+      extraClauses += ` AND user_id = $${params.length}`;
     }
 
     // Find similar ideas using cosine similarity
@@ -92,7 +98,7 @@ export async function findDuplicates(
        WHERE is_archived = false
          AND embedding IS NOT NULL
          AND 1 - (embedding <=> $1) > $2
-         ${excludeClause}
+         ${extraClauses}
        ORDER BY similarity DESC
        LIMIT $3`,
       params

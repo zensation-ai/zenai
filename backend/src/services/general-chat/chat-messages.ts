@@ -100,7 +100,8 @@ export async function generateEnhancedResponse(
     reasoning: modeResult.reasoning,
   });
 
-  // Get conversation history
+  // Get conversation history (session_id scope is sufficient since session ownership
+  // is verified at route level, but we add user_id for defense-in-depth)
   const messagesResult = await query(`
     SELECT role, content, created_at
     FROM general_chat_messages

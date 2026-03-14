@@ -725,6 +725,10 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
   // Setup SSE and stream response
   setupSSEHeaders(res);
 
+  // Track client disconnect to avoid wasted work after browser closes
+  let clientDisconnected = false;
+  req.on('close', () => { clientDisconnected = true; });
+
   // Use a PassThrough approach: intercept SSE events using a content collector
   // instead of monkey-patching res.write (which was fragile and error-prone)
   let fullResponse = '';
@@ -841,8 +845,14 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
       } catch { /* ignore flush errors */ }
     }
 
-    // Store assistant response after stream completes
-    if (fullResponse) {
+    // Store assistant response after stream completes (skip if client disconnected)
+    if (clientDisconnected) {
+      logger.info('Client disconnected during stream, skipping post-stream operations', { sessionId: id });
+      // Still save partial response if we have content
+      if (fullResponse) {
+        try { await addMessage(id, 'assistant', fullResponse, userId); } catch { /* best-effort */ }
+      }
+    } else if (fullResponse) {
       await addMessage(id, 'assistant', fullResponse, userId);
 
       // Add assistant interaction to short-term memory (non-blocking)

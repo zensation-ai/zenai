@@ -446,8 +446,6 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                     }
                     currentEventType = '';
                   }
-                  // Reset event type after processing data line
-                  currentEventType = '';
                 }
               }
             } catch (readerErr) {
@@ -546,6 +544,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     setIsStreaming(false);
     setStreamingContent('');
     setThinkingContent('');
+    // Remove orphaned temp messages (user message that was never confirmed by backend)
+    setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
     if (streamingRafRef.current) {
       cancelAnimationFrame(streamingRafRef.current);
       streamingRafRef.current = null;

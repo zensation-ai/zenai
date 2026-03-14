@@ -466,7 +466,7 @@ ideasRouter.post('/search', apiKeyAuth, asyncHandler(async (req, res) => {
 
     return res.json({
       success: true,
-      ideas: textResult.rows,
+      ideas: parseIdeaRows(textResult.rows as IdeaDatabaseRow[]),
       searchType: 'text-fallback',
       processingTime: Date.now() - startTime,
     });
@@ -1005,7 +1005,7 @@ ideasRouter.put('/:id/archive', apiKeyAuth, requireScope('write'), validateUUID,
  */
 ideasRouter.post('/check-duplicates', apiKeyAuth, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  const userId = getUserId(req);
   const { content, title, threshold = 0.85 } = req.body;
 
   if (!content && !title) {
@@ -1013,7 +1013,7 @@ ideasRouter.post('/check-duplicates', apiKeyAuth, asyncHandler(async (req, res) 
   }
 
   const textToCheck = content || title;
-  const result = await findDuplicates(ctx, textToCheck, threshold);
+  const result = await findDuplicates(ctx, textToCheck, threshold, undefined, userId);
 
   res.json({
     success: true,
@@ -1027,7 +1027,7 @@ ideasRouter.post('/check-duplicates', apiKeyAuth, asyncHandler(async (req, res) 
  */
 ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, asyncHandler(async (req, res) => {
   const ctx = getContext(req);
-  const _userId = getUserId(req);
+  const userId = getUserId(req);
   const primaryId = req.params.id;
   const { secondaryId } = req.body;
 
@@ -1037,6 +1037,15 @@ ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, 
 
   if (primaryId === secondaryId) {
     throw new ValidationError('Cannot merge idea with itself');
+  }
+
+  // Verify both ideas belong to the user
+  const ownerCheck = await queryContext(ctx,
+    `SELECT id FROM ideas WHERE id IN ($1, $2) AND user_id = $3`,
+    [primaryId, secondaryId, userId]
+  );
+  if (ownerCheck.rows.length < 2) {
+    throw new ValidationError('One or both ideas not found');
   }
 
   const result = await mergeIdeas(ctx, primaryId, secondaryId);
@@ -1049,8 +1058,8 @@ ideasRouter.post('/:id/merge', apiKeyAuth, requireScope('write'), validateUUID, 
   const updated = await queryContext(
     ctx,
     `SELECT id, title, content, type, category, priority, summary, keywords, next_steps, created_at, updated_at
-     FROM ideas WHERE id = $1`,
-    [primaryId]
+     FROM ideas WHERE id = $1 AND user_id = $2`,
+    [primaryId, userId]
   );
 
   res.json({
