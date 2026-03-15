@@ -213,8 +213,16 @@ function ChatSessionSidebarComponent({
 
       <div className="chat-sidebar-list" role="list">
         {loading ? (
-          <div className="chat-sidebar-loading">
-            <div className="loading-spinner" aria-label="Lade Konversationen" />
+          <div className="chat-sidebar-loading" role="status" aria-busy="true" aria-label="Lade Konversationen">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="chat-sidebar-skeleton" aria-hidden="true">
+                <div className="skeleton skeleton-icon" />
+                <div className="chat-sidebar-skeleton-text">
+                  <div className="skeleton skeleton-title" style={{ width: `${70 + i * 5}%` }} />
+                  <div className="skeleton skeleton-line" style={{ width: `${50 + i * 8}%` }} />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="chat-sidebar-empty">

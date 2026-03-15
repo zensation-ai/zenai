@@ -150,6 +150,73 @@
 :root[data-theme="dark"] .error-boundary-button.secondary { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.1); color: #94a3b8; }
 :root[data-theme="dark"] .error-boundary-button.secondary:hover { background: rgba(255, 255, 255, 0.12); color: #f1f5f9; }
 
+/* Page-level error fallback (inline in content area, not full-screen) */
+.page-error-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.page-error-content {
+  text-align: center;
+  max-width: 420px;
+  padding: 2.5rem;
+  background: var(--glass-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: errorBoundarySlideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-error-content .page-error-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.page-error-content h2 {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.page-error-content p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.page-error-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.page-error-actions .neuro-button {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.page-error-actions .neuro-button.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.page-error-actions .neuro-button.secondary:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .error-boundary-content,

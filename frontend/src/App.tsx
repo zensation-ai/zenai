@@ -921,7 +921,36 @@ function AuthenticatedApp() {
           </ErrorBoundary>
         )}
       >
-        {renderPage()}
+        <ErrorBoundary
+          key={currentPage}
+          fallback={
+            <div className="page-error-fallback" role="alert">
+              <div className="page-error-content">
+                <span className="page-error-icon" aria-hidden="true">⚠️</span>
+                <h2>Diese Seite konnte nicht geladen werden</h2>
+                <p>Ein unerwarteter Fehler ist aufgetreten. Deine Daten sind sicher.</p>
+                <div className="page-error-actions">
+                  <button
+                    type="button"
+                    className="neuro-button neuro-focus-ring"
+                    onClick={() => navigateToPage('home')}
+                  >
+                    Zum Dashboard
+                  </button>
+                  <button
+                    type="button"
+                    className="neuro-button secondary neuro-focus-ring"
+                    onClick={() => window.location.reload()}
+                  >
+                    Seite neu laden
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          {renderPage()}
+        </ErrorBoundary>
       </AppLayout>
 
       <ToastContainer />

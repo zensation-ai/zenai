@@ -2,10 +2,22 @@
  * ContactsPage - Kontaktverwaltung
  *
  * Tabs: Alle Kontakte, Favoriten, Organisationen
+ *
+ * Migrated to React Query for caching + deduplication (Phase 4.1c).
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { useContactsData } from './useContactsData';
+import {
+  useContactsQuery,
+  useContactStatsQuery,
+  useContactFollowUpsQuery,
+  useOrganizationsQuery,
+  useCreateContactMutation,
+  useUpdateContactMutation,
+  useDeleteContactMutation,
+  useCreateOrganizationMutation,
+  useDeleteOrganizationMutation,
+} from '../../hooks/queries/useContacts';
 import { ContactList } from './ContactList';
 import { OrganizationList } from './OrganizationList';
 import { useEscapeKey } from '../../hooks/useClickOutside';
@@ -38,25 +50,48 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
     basePath: '/contacts',
     rootTab: 'all',
   });
+
+  // Filter state — drives the contacts query reactively
+  const [contactFilters, setContactFilters] = useState<Record<string, unknown>>({});
+  const [orgSearch, setOrgSearch] = useState<string | undefined>(undefined);
+
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [showOrgForm, setShowOrgForm] = useState(false);
   useEscapeKey(() => setShowOrgForm(false), showOrgForm);
   const [orgName, setOrgName] = useState('');
   const [orgIndustry, setOrgIndustry] = useState('');
-  const {
-    contacts, organizations, stats, followUps,
-    totalContacts, totalOrganizations, loading,
-    fetchContacts, fetchOrganizations,
-    createContact, updateContact, deleteContact,
-    createOrganization, deleteOrganization,
-  } = useContactsData({ context });
 
-  // Tab change with data fetch for favorites
+  // React Query hooks — replaces useContactsData
+  const contactsQuery = useContactsQuery(context, contactFilters);
+  const orgsQuery = useOrganizationsQuery(context, orgSearch ? { search: orgSearch } : undefined);
+  const statsQuery = useContactStatsQuery(context);
+  const followUpsQuery = useContactFollowUpsQuery(context);
+
+  const createContactMutation = useCreateContactMutation(context);
+  const updateContactMutation = useUpdateContactMutation(context);
+  const deleteContactMutation = useDeleteContactMutation(context);
+  const createOrgMutation = useCreateOrganizationMutation(context);
+  const deleteOrgMutation = useDeleteOrganizationMutation(context);
+
+  // Derived data
+  const contacts = (contactsQuery.data ?? []) as Contact[];
+  const organizations = (orgsQuery.data ?? []) as Organization[];
+  const stats = statsQuery.data as { total_contacts?: number; total_organizations?: number; favorites?: number } | null;
+  const followUps = (followUpsQuery.data ?? []) as Contact[];
+  const loading = contactsQuery.isLoading || orgsQuery.isLoading;
+  const totalContacts = stats?.total_contacts ?? contacts.length;
+  const totalOrganizations = stats?.total_organizations ?? organizations.length;
+
+  // Tab change with filter for favorites
   const handleTabChange = useCallback((tab: ContactTab) => {
     rawTabChange(tab);
-    if (tab === 'favorites') fetchContacts({ is_favorite: true });
-  }, [rawTabChange, fetchContacts]);
+    if (tab === 'favorites') {
+      setContactFilters({ is_favorite: true });
+    } else if (tab === 'all') {
+      setContactFilters({});
+    }
+  }, [rawTabChange]);
 
   // Tabs with dynamic badge
   const tabsWithBadge = useMemo(() =>
@@ -68,12 +103,12 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
 
   // Contact handlers
   const handleSearchContacts = useCallback((query: string) => {
-    fetchContacts({ search: query || undefined });
-  }, [fetchContacts]);
+    setContactFilters(query ? { search: query } : {});
+  }, []);
 
   const handleFilterRelationship = useCallback((type: string | undefined) => {
-    fetchContacts({ relationship_type: type });
-  }, [fetchContacts]);
+    setContactFilters(prev => type ? { ...prev, relationship_type: type } : {});
+  }, []);
 
   const handleSelectContact = useCallback((contact: Contact) => {
     setEditingContact(contact);
@@ -81,29 +116,39 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
   }, []);
 
   const handleToggleFavorite = useCallback(async (id: string, isFavorite: boolean) => {
-    await updateContact(id, { is_favorite: isFavorite } as Partial<Contact>);
-  }, [updateContact]);
+    await updateContactMutation.mutateAsync({ id, is_favorite: isFavorite });
+  }, [updateContactMutation]);
 
   const handleSubmitContact = useCallback(async (data: Partial<Contact>) => {
     if (editingContact) {
-      await updateContact(editingContact.id, data);
+      await updateContactMutation.mutateAsync({ id: editingContact.id, ...data });
     } else {
-      await createContact(data);
+      await createContactMutation.mutateAsync(data as Record<string, unknown>);
     }
     setShowForm(false);
     setEditingContact(null);
-  }, [editingContact, updateContact, createContact]);
+  }, [editingContact, updateContactMutation, createContactMutation]);
+
+  const handleDeleteContact = useCallback(async (id: string) => {
+    await deleteContactMutation.mutateAsync(id);
+    return true;
+  }, [deleteContactMutation]);
 
   const handleSubmitOrg = useCallback(async () => {
     if (!orgName.trim()) return;
-    await createOrganization({
+    await createOrgMutation.mutateAsync({
       name: orgName.trim(),
       industry: orgIndustry.trim() || undefined,
-    } as Partial<Organization>);
+    });
     setShowOrgForm(false);
     setOrgName('');
     setOrgIndustry('');
-  }, [orgName, orgIndustry, createOrganization]);
+  }, [orgName, orgIndustry, createOrgMutation]);
+
+  const handleDeleteOrg = useCallback(async (id: string) => {
+    await deleteOrgMutation.mutateAsync(id);
+    return true;
+  }, [deleteOrgMutation]);
 
   const headerActions = (
     <>
@@ -164,11 +209,11 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
               total={totalOrganizations}
               loading={loading}
               onSelect={(org) => {
-                fetchContacts({ organization_id: org.id });
+                setContactFilters({ organization_id: org.id });
                 handleTabChange('all');
               }}
-              onSearch={(q: string) => fetchOrganizations(q || undefined)}
-              onDelete={deleteOrganization}
+              onSearch={(q: string) => setOrgSearch(q || undefined)}
+              onDelete={handleDeleteOrg}
             />
           ) : (
             <ContactList
@@ -179,7 +224,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
               onSearch={handleSearchContacts}
               onFilterRelationship={handleFilterRelationship}
               onToggleFavorite={handleToggleFavorite}
-              onDelete={deleteContact}
+              onDelete={handleDeleteContact}
             />
           )}
         </div>

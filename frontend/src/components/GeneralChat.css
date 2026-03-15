@@ -633,12 +633,13 @@
   }
 
   .general-chat.full-page .chat-messages {
-    min-height: 200px;
+    min-height: 40vh;
+    max-height: calc(100dvh - 200px);
   }
 
   .chat-messages {
     min-height: 150px;
-    max-height: 280px;
+    max-height: 50vh;
     padding: 0.75rem;
   }
 

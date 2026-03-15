@@ -3,15 +3,24 @@
  *
  * Central planning hub with tabs: Kalender, Aufgaben (Kanban), Projekte (Gantt), Meetings.
  * Uses shared HubPage layout for consistent UI.
+ *
+ * Migrated to React Query for caching + deduplication (Phase 4.1d).
  */
 
 import { useState, useMemo, lazy, Suspense, useCallback } from 'react';
-import type { PlannerTab, Task } from './types';
-import { useTasksData } from './useTasksData';
-import { useProjectsData } from './useProjectsData';
+import type { PlannerTab, Task, Project } from './types';
+import {
+  useTasksQuery,
+  useProjectsQuery,
+  useCreateTaskMutation,
+  useUpdateTaskMutation,
+  useReorderTasksMutation,
+  useCreateProjectMutation,
+} from '../../hooks/queries/useTasks';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { HubPage, type TabDef } from '../HubPage';
 import { SkeletonLoader } from '../SkeletonLoader';
+import type { AIContext } from '../ContextSwitcher';
 
 const CalendarPage = lazy(() =>
   import('../CalendarPage/CalendarPage').then(m => ({ default: m.CalendarPage }))
@@ -33,7 +42,7 @@ const TaskForm = lazy(() =>
 );
 
 interface PlannerPageProps {
-  context: 'personal' | 'work' | 'learning' | 'creative';
+  context: AIContext;
   initialTab?: PlannerTab;
   onBack: () => void;
 }
@@ -58,15 +67,21 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
 
-  const {
-    tasks, loading: tasksLoading,
-    createTask, updateTask, reorderTasks,
-  } = useTasksData(context, projectFilter ? { project_id: projectFilter } : undefined);
+  // React Query hooks — replaces useTasksData + useProjectsData
+  const taskFilters = projectFilter ? { project_id: projectFilter } : undefined;
+  const tasksQuery = useTasksQuery(context, taskFilters);
+  const projectsQuery = useProjectsQuery(context);
 
-  const {
-    projects, loading: projectsLoading,
-    createProject,
-  } = useProjectsData(context);
+  const createTaskMutation = useCreateTaskMutation(context);
+  const updateTaskMutation = useUpdateTaskMutation(context);
+  const reorderTasksMutation = useReorderTasksMutation(context);
+  const createProjectMutation = useCreateProjectMutation(context);
+
+  // Derived data
+  const tasks = (tasksQuery.data ?? []) as Task[];
+  const projects = (projectsQuery.data ?? []) as Project[];
+  const tasksLoading = tasksQuery.isLoading;
+  const projectsLoading = projectsQuery.isLoading;
 
   const openTaskCount = useMemo(
     () => tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').length,
@@ -93,18 +108,26 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
 
   const handleTaskFormSubmit = useCallback(async (data: Partial<Task>) => {
     if (editingTask) {
-      await updateTask(editingTask.id, data);
+      await updateTaskMutation.mutateAsync({ id: editingTask.id, ...data } as { id: string } & Record<string, unknown>);
     } else {
-      await createTask(data);
+      await createTaskMutation.mutateAsync(data as Record<string, unknown>);
     }
     setShowTaskForm(false);
     setEditingTask(null);
-  }, [editingTask, updateTask, createTask]);
+  }, [editingTask, updateTaskMutation, createTaskMutation]);
 
   const handleTaskFormClose = useCallback(() => {
     setShowTaskForm(false);
     setEditingTask(null);
   }, []);
+
+  const handleReorder = useCallback(async (status: string, taskIds: string[]) => {
+    await reorderTasksMutation.mutateAsync({ status, taskIds });
+  }, [reorderTasksMutation]);
+
+  const handleCreateProject = useCallback(async (data: Partial<Project>) => {
+    return await createProjectMutation.mutateAsync(data as Record<string, unknown>);
+  }, [createProjectMutation]);
 
   return (
     <>
@@ -131,7 +154,7 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
               onProjectFilterChange={setProjectFilter}
               onCreateTask={handleCreateTask}
               onEditTask={handleEditTask}
-              onReorder={reorderTasks}
+              onReorder={handleReorder}
             />
           )}
           {activeTab === 'projects' && (
@@ -141,7 +164,7 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
               loading={tasksLoading || projectsLoading}
               context={context}
               onEditTask={handleEditTask}
-              onCreateProject={createProject}
+              onCreateProject={handleCreateProject}
             />
           )}
           {activeTab === 'meetings' && (

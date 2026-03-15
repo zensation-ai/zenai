@@ -32,29 +32,14 @@ vi.mock('../PlannerPage/TaskForm', () => ({
   TaskForm: () => <div data-testid="task-form">TaskForm</div>,
 }));
 
-// Mock the data hooks
-vi.mock('../PlannerPage/useTasksData', () => ({
-  useTasksData: () => ({
-    tasks: [],
-    loading: false,
-    error: null,
-    refetch: vi.fn(),
-    createTask: vi.fn(),
-    updateTask: vi.fn(),
-    reorderTasks: vi.fn(),
-  }),
-}));
-
-vi.mock('../PlannerPage/useProjectsData', () => ({
-  useProjectsData: () => ({
-    projects: [],
-    loading: false,
-    error: null,
-    refetch: vi.fn(),
-    createProject: vi.fn(),
-    updateProject: vi.fn(),
-    deleteProject: vi.fn(),
-  }),
+// Mock React Query hooks used by PlannerPage
+vi.mock('../../hooks/queries/useTasks', () => ({
+  useTasksQuery: () => ({ data: [], isLoading: false, isError: false }),
+  useProjectsQuery: () => ({ data: [], isLoading: false, isError: false }),
+  useCreateTaskMutation: () => ({ mutateAsync: vi.fn() }),
+  useUpdateTaskMutation: () => ({ mutateAsync: vi.fn() }),
+  useReorderTasksMutation: () => ({ mutateAsync: vi.fn() }),
+  useCreateProjectMutation: () => ({ mutateAsync: vi.fn() }),
 }));
 
 // Mock useTabNavigation to control active tab

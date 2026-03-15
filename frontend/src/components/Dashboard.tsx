@@ -3,19 +3,27 @@
  *
  * Personal AI OS landing page with widget-style bento layout.
  * Sections span different grid areas for a modern "desktop" feel.
+ *
+ * Migrated to React Query for automatic caching, deduplication,
+ * and background refetching (Phase 4.1b).
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
-import axios from 'axios';
+import { useMemo, memo } from 'react';
 import type { Page, ApiStatus } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import { AIBrain } from './AIBrain';
 import { RisingBubbles } from './RisingBubbles';
 import { SkeletonLoader } from './SkeletonLoader';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
-import { logError } from '../utils/errors';
 import { ProactiveDigest } from './ProactiveDigest';
 import { ProactiveBriefingWidget } from './ProactiveBriefing/ProactiveBriefingWidget';
+import {
+  useDashboardSummaryQuery,
+  useAIPulseQuery,
+  useUpcomingEventsQuery,
+  useMarkActivityReadMutation,
+} from '../hooks/queries/useDashboard';
+import type { TrendPoint } from '../hooks/queries/useDashboard';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -24,35 +32,6 @@ interface DashboardProps {
   isAIActive: boolean;
   ideasCount: number;
   apiStatus: ApiStatus | null;
-}
-
-interface DashboardStats {
-  total: number;
-  highPriority: number;
-  thisWeek: number;
-  todayCount: number;
-}
-
-interface TrendPoint {
-  date: string;
-  count: number;
-}
-
-interface RecentIdea {
-  id: string;
-  title: string;
-  type: string;
-  priority: string;
-  created_at: string;
-}
-
-interface ActivityItem {
-  id: string;
-  activityType: string;
-  message: string;
-  ideaId: string | null;
-  isRead: boolean;
-  createdAt: string;
 }
 
 const CONTEXT_LABELS: Record<AIContext, { icon: string; label: string }> = {
@@ -90,22 +69,6 @@ const QUICK_NAV: QuickNavItem[] = [
   { icon: '✉️', label: 'Email', page: 'email', accent: 'var(--accent-email, #ec4899)' },
   { icon: '🧠', label: 'Meine KI', page: 'my-ai', accent: 'var(--accent-ai, #a855f7)' },
 ];
-
-interface AISystemPulse {
-  memoryFacts: number;
-  procedures: number;
-  sleepCycles: number;
-  ragQueries: number;
-}
-
-interface UpcomingEvent {
-  id: string;
-  title: string;
-  event_type: string;
-  start_time: string;
-  location?: string;
-  ai_generated: boolean;
-}
 
 const EVENT_ICONS: Record<string, string> = {
   appointment: '📅', reminder: '⏰', deadline: '⚠️',
@@ -182,6 +145,22 @@ const Sparkline = memo<{ data: TrendPoint[] }>(({ data }) => {
 });
 Sparkline.displayName = 'Sparkline';
 
+/** Format relative time (e.g. "vor 5 Min.") */
+function formatTime(dateString: string): string {
+  if (!dateString) return '';
+  const time = new Date(dateString).getTime();
+  if (isNaN(time)) return '';
+  const diff = Date.now() - time;
+  if (diff < 0) return 'gerade eben';
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'gerade eben';
+  if (mins < 60) return `vor ${mins} Min.`;
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 24) return `vor ${hours} Std.`;
+  const days = Math.floor(diff / 86400000);
+  return days === 1 ? 'vor 1 Tag' : `vor ${days} Tagen`;
+}
+
 const DashboardComponent: React.FC<DashboardProps> = ({
   context,
   onNavigate,
@@ -189,137 +168,29 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   ideasCount,
   apiStatus,
 }) => {
-  const [stats, setStats] = useState<DashboardStats>({ total: 0, highPriority: 0, thisWeek: 0, todayCount: 0 });
-  const [streak, setStreak] = useState(0);
-  const [trend, setTrend] = useState<TrendPoint[]>([]);
-  const [recentIdeas, setRecentIdeas] = useState<RecentIdea[]>([]);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
-  const [aiPulse, setAiPulse] = useState<AISystemPulse>({ memoryFacts: 0, procedures: 0, sleepCycles: 0, ragQueries: 0 });
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
-  const hasFetched = useRef(false);
-  const abortRef = useRef<AbortController | null>(null);
-  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // React Query hooks — replaces 7+ useState + fetchData callback + useEffect
+  const summaryEnabled = !!apiStatus;
+  const summary = useDashboardSummaryQuery(context, summaryEnabled);
+  const aiPulse = useAIPulseQuery(context, summaryEnabled);
+  const events = useUpcomingEventsQuery(context, summaryEnabled);
+  const markReadMutation = useMarkActivityReadMutation(context);
+
+  // Derived state from queries
+  const stats = summary.data?.stats ?? { total: 0, highPriority: 0, thisWeek: 0, todayCount: 0 };
+  const streak = summary.data?.streak ?? 0;
+  const trend = summary.data?.trend ?? [];
+  const recentIdeas = summary.data?.recentIdeas ?? [];
+  const activity = summary.data?.activities ?? [];
+  const unreadCount = summary.data?.unreadCount ?? 0;
+  const upcomingEvents = events.data ?? [];
+  const aiPulseData = aiPulse.data ?? { memoryFacts: 0, procedures: 0, sleepCycles: 0, ragQueries: 0 };
+
+  const loading = summary.isLoading;
+  const fetchError = summary.isError;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const greeting = useMemo(() => getTimeBasedGreeting(), [context]);
   const contextInfo = CONTEXT_LABELS[context];
-
-  const fetchData = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    setFetchError(false);
-    try {
-      const res = await axios.get(`/api/${context}/analytics/dashboard-summary`, { signal }).catch(e => {
-        if (axios.isCancel(e)) throw e;
-        logError('Dashboard:summary', e);
-        return { data: null };
-      });
-
-      if (signal?.aborted) return;
-
-      if (res.data) {
-        const d = res.data;
-        setStats({
-          total: d.stats?.total || 0,
-          highPriority: d.stats?.highPriority || 0,
-          thisWeek: d.stats?.thisWeek || 0,
-          todayCount: d.stats?.todayCount || 0,
-        });
-        setStreak(d.streak || 0);
-        setTrend(d.trend || []);
-        setRecentIdeas((d.recentIdeas || []).slice(0, 5));
-        setActivity((d.activities || []).slice(0, 5));
-        setUnreadCount(d.unreadCount || 0);
-      }
-
-      axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 4 }, signal })
-        .then(r => { if (!signal?.aborted && r.data?.success) setUpcomingEvents(r.data.data || []); })
-        .catch(() => {});
-
-      // Fetch AI system pulse data (non-blocking)
-      Promise.all([
-        axios.get(`/api/${context}/thinking/stats`, { signal }).catch(() => ({ data: null })),
-        axios.get(`/api/${context}/sleep-compute/stats`, { signal }).catch(() => ({ data: null })),
-        axios.get(`/api/${context}/rag/analytics`, { signal }).catch(() => ({ data: null })),
-        axios.get(`/api/${context}/memory/procedures`, { signal, params: { limit: 1 } }).catch(() => ({ data: null })),
-      ]).then(([thinkingRes, sleepRes, ragRes, procRes]) => {
-        if (signal?.aborted) return;
-        setAiPulse({
-          memoryFacts: thinkingRes.data?.data?.totalChains || 0,
-          procedures: Array.isArray(procRes.data?.data) ? procRes.data.data.length : 0,
-          sleepCycles: sleepRes.data?.data?.totalCycles || 0,
-          ragQueries: ragRes.data?.data?.totalQueries || 0,
-        });
-      }).catch(() => {});
-
-      if (!res.data && !hasFetched.current) {
-        hasFetched.current = true;
-        retryTimer.current = setTimeout(() => fetchData(signal), 1500);
-      } else if (!res.data && hasFetched.current) {
-        setFetchError(true);
-      }
-
-      if (!res.data) {
-        setFetchError(true);
-      }
-    } catch (err) {
-      if (axios.isCancel(err)) return;
-      logError('Dashboard:fetchData', err);
-      setFetchError(true);
-    }
-    setLoading(false);
-  }, [context]);
-
-  const handleMarkAllRead = useCallback(async () => {
-    try {
-      await axios.post(`/api/${context}/ai-activity/mark-read`);
-      setUnreadCount(0);
-      setActivity(prev => prev.map(a => ({ ...a, isRead: true })));
-    } catch (err) {
-      logError('Dashboard:markRead', err);
-    }
-  }, [context]);
-
-  useEffect(() => {
-    if (apiStatus) {
-      abortRef.current?.abort();
-      if (retryTimer.current) clearTimeout(retryTimer.current);
-      const controller = new AbortController();
-      abortRef.current = controller;
-      hasFetched.current = false;
-      fetchData(controller.signal);
-      return () => {
-        controller.abort();
-        if (retryTimer.current) clearTimeout(retryTimer.current);
-      };
-    } else {
-      // Timeout: if apiStatus never resolves, show error state after 10s
-      const timeout = setTimeout(() => {
-        if (!hasFetched.current) {
-          setLoading(false);
-          setFetchError(true);
-        }
-      }, 10_000);
-      return () => clearTimeout(timeout);
-    }
-  }, [apiStatus, fetchData]);
-
-  const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    const time = new Date(dateString).getTime();
-    if (isNaN(time)) return '';
-    const diff = Date.now() - time;
-    if (diff < 0) return 'gerade eben';
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'gerade eben';
-    if (mins < 60) return `vor ${mins} Min.`;
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 24) return `vor ${hours} Std.`;
-    const days = Math.floor(diff / 86400000);
-    return days === 1 ? 'vor 1 Tag' : `vor ${days} Tagen`;
-  };
 
   const welcomeSubtext = useMemo(() => {
     if (ideasCount === 0) return 'Bereit fuer deinen ersten Gedanken?';
@@ -364,7 +235,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         {fetchError && !loading ? (
           <div className="bento-card bento-stat" style={{ gridColumn: 'span 4', textAlign: 'center', padding: '1.5rem' }}>
             <p style={{ marginBottom: '0.75rem', opacity: 0.7 }}>Daten konnten nicht geladen werden.</p>
-            <button type="button" className="neuro-focus-ring" onClick={() => fetchData()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--glass-bg)' }}>
+            <button type="button" className="neuro-focus-ring" onClick={() => summary.refetch()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--glass-bg)' }}>
               Erneut versuchen
             </button>
           </div>
@@ -422,19 +293,19 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           </button>
           <div className="bento-ai-pulse">
             <button type="button" className="bento-pulse-item" onClick={() => onNavigate('my-ai')} title="Gelernte Denkmuster">
-              <span className="bento-pulse-value">{aiPulse.memoryFacts}</span>
+              <span className="bento-pulse-value">{aiPulseData.memoryFacts}</span>
               <span className="bento-pulse-label">Denkmuster</span>
             </button>
             <button type="button" className="bento-pulse-item" onClick={() => onNavigate('my-ai')} title="Gelernte Prozeduren">
-              <span className="bento-pulse-value">{aiPulse.procedures}</span>
+              <span className="bento-pulse-value">{aiPulseData.procedures}</span>
               <span className="bento-pulse-label">Prozeduren</span>
             </button>
             <button type="button" className="bento-pulse-item" onClick={() => onNavigate('insights')} title="Schlaf-Zyklen der KI">
-              <span className="bento-pulse-value">{aiPulse.sleepCycles}</span>
+              <span className="bento-pulse-value">{aiPulseData.sleepCycles}</span>
               <span className="bento-pulse-label">Schlaf-Zyklen</span>
             </button>
             <button type="button" className="bento-pulse-item" onClick={() => onNavigate('insights')} title="RAG-Anfragen">
-              <span className="bento-pulse-value">{aiPulse.ragQueries}</span>
+              <span className="bento-pulse-value">{aiPulseData.ragQueries}</span>
               <span className="bento-pulse-label">RAG-Suchen</span>
             </button>
           </div>
@@ -551,7 +422,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
             </h3>
             <div className="bento-card-actions">
               {unreadCount > 0 && (
-                <button type="button" className="bento-link-muted" onClick={handleMarkAllRead}>
+                <button type="button" className="bento-link-muted" onClick={() => markReadMutation.mutate()}>
                   Gelesen
                 </button>
               )}
