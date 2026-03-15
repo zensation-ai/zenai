@@ -14,6 +14,63 @@ import {
 } from '../../utils/aiPersonality';
 import type { ChatMessage } from './types';
 
+/** Tool name → German-friendly label + icon for inline display */
+const TOOL_LABELS: Record<string, { label: string; icon: string }> = {
+  search_ideas: { label: 'Durchsuche Gedanken', icon: '🔍' },
+  create_idea: { label: 'Erstelle Gedanken', icon: '💡' },
+  update_idea: { label: 'Aktualisiere Gedanken', icon: '✏️' },
+  archive_idea: { label: 'Archiviere Gedanken', icon: '📦' },
+  delete_idea: { label: 'Loesche Gedanken', icon: '🗑️' },
+  get_related_ideas: { label: 'Suche Verbindungen', icon: '🔗' },
+  calculate: { label: 'Berechne', icon: '🧮' },
+  remember: { label: 'Merke mir das', icon: '🧠' },
+  recall: { label: 'Erinnere mich', icon: '📚' },
+  memory_introspect: { label: 'Pruefe Gedaechtnis', icon: '🔬' },
+  memory_update: { label: 'Aktualisiere Erinnerung', icon: '📝' },
+  memory_delete: { label: 'Loesche Erinnerung', icon: '🗑️' },
+  memory_update_profile: { label: 'Aktualisiere Profil', icon: '👤' },
+  web_search: { label: 'Durchsuche das Web', icon: '🌐' },
+  fetch_url: { label: 'Lade Webseite', icon: '📄' },
+  github_search: { label: 'Durchsuche GitHub', icon: '🐙' },
+  github_create_issue: { label: 'Erstelle GitHub Issue', icon: '📋' },
+  github_repo_info: { label: 'Lade Repository-Info', icon: '📊' },
+  github_list_issues: { label: 'Liste GitHub Issues', icon: '📋' },
+  github_pr_summary: { label: 'Lade PR-Zusammenfassung', icon: '🔀' },
+  analyze_project: { label: 'Analysiere Projekt', icon: '🏗️' },
+  get_project_summary: { label: 'Lade Projektuebersicht', icon: '📋' },
+  list_project_files: { label: 'Liste Projektdateien', icon: '📂' },
+  execute_code: { label: 'Fuehre Code aus', icon: '⚡' },
+  analyze_document: { label: 'Analysiere Dokument', icon: '📑' },
+  search_documents: { label: 'Durchsuche Dokumente', icon: '🔍' },
+  synthesize_knowledge: { label: 'Synthetisiere Wissen', icon: '🧪' },
+  create_meeting: { label: 'Erstelle Termin', icon: '📅' },
+  navigate_to: { label: 'Navigiere', icon: '🧭' },
+  app_help: { label: 'Suche Hilfe', icon: '❓' },
+  get_revenue_metrics: { label: 'Lade Umsatzdaten', icon: '💰' },
+  get_traffic_analytics: { label: 'Lade Traffic-Daten', icon: '📈' },
+  get_seo_performance: { label: 'Pruefe SEO', icon: '🎯' },
+  get_system_health: { label: 'Pruefe Systemstatus', icon: '🏥' },
+  generate_business_report: { label: 'Erstelle Bericht', icon: '📊' },
+  identify_anomalies: { label: 'Suche Anomalien', icon: '⚠️' },
+  compare_periods: { label: 'Vergleiche Zeitraeume', icon: '📉' },
+  create_calendar_event: { label: 'Erstelle Kalender-Eintrag', icon: '📅' },
+  list_calendar_events: { label: 'Lade Kalender', icon: '🗓️' },
+  draft_email: { label: 'Schreibe E-Mail-Entwurf', icon: '✉️' },
+  estimate_travel: { label: 'Berechne Reisezeit', icon: '🚗' },
+  get_directions: { label: 'Berechne Route', icon: '🗺️' },
+  get_opening_hours: { label: 'Pruefe Oeffnungszeiten', icon: '🕐' },
+  find_nearby_places: { label: 'Suche in der Naehe', icon: '📍' },
+  optimize_day_route: { label: 'Optimiere Tagesroute', icon: '🛣️' },
+  ask_inbox: { label: 'Durchsuche Posteingang', icon: '📬' },
+  inbox_summary: { label: 'Lade Postfach-Uebersicht', icon: '📧' },
+  mcp_call_tool: { label: 'Rufe externes Tool', icon: '🔌' },
+  mcp_list_tools: { label: 'Liste verfuegbare Tools', icon: '🧰' },
+};
+
+function getToolLabel(name: string): { label: string; icon: string } {
+  return TOOL_LABELS[name] || { label: name.replace(/_/g, ' '), icon: '🔧' };
+}
+
 /** Phase-based AI processing stages shown while waiting for stream */
 const AI_PHASES = [
   { label: 'Kontext laden...', icon: '🧠', delay: 0 },
@@ -52,6 +109,8 @@ interface ChatMessageListProps {
   streamingContent: string;
   thinkingContent: string;
   sending: boolean;
+  activeToolName: string | null;
+  toolResults: Array<{ name: string; result: string }>;
   renderContent: (content: string, messageId?: string) => React.ReactNode;
   messagesEndRef: RefObject<HTMLDivElement>;
   onStopGenerating?: () => void;
@@ -73,6 +132,8 @@ export function ChatMessageList({
   streamingContent,
   thinkingContent,
   sending,
+  activeToolName,
+  toolResults,
   renderContent,
   messagesEndRef,
   onStopGenerating,
@@ -139,6 +200,31 @@ export function ChatMessageList({
                   <div className="chat-thinking-block" aria-label="KI denkt nach">
                     <span className="thinking-label">Denke nach...</span>
                     <span className="thinking-preview">{thinkingContent.length > 100 ? `${thinkingContent.slice(0, 100)}...` : thinkingContent}</span>
+                  </div>
+                )}
+                {/* Tool activity: completed tools + active tool */}
+                {(toolResults.length > 0 || activeToolName) && (
+                  <div className="chat-tool-activity" aria-label="KI nutzt Werkzeuge">
+                    {toolResults.map((tr, i) => {
+                      const tl = getToolLabel(tr.name);
+                      return (
+                        <span key={i} className="chat-tool-pill chat-tool-pill--done" aria-label={`${tl.label} abgeschlossen`}>
+                          <span className="chat-tool-icon" aria-hidden="true">{tl.icon}</span>
+                          {tl.label}
+                          <span className="chat-tool-check" aria-hidden="true">&#10003;</span>
+                        </span>
+                      );
+                    })}
+                    {activeToolName && (() => {
+                      const tl = getToolLabel(activeToolName);
+                      return (
+                        <span className="chat-tool-pill chat-tool-pill--active" aria-label={`${tl.label} laeuft`}>
+                          <span className="chat-tool-icon" aria-hidden="true">{tl.icon}</span>
+                          {tl.label}
+                          <span className="chat-tool-spinner" aria-hidden="true" />
+                        </span>
+                      );
+                    })()}
                   </div>
                 )}
                 <div className="chat-message-text">

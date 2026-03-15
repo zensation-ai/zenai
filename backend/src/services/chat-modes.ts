@@ -193,6 +193,43 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
   { pattern: /erkläre?\s+(mir\s+)?(die|das|den)/i, tools: ['app_help'], weight: 0.8 },
   { pattern: /hilfe\s+(zu|bei|mit|für)/i, tools: ['app_help'], weight: 0.9 },
   { pattern: /was\s+ist\s+(die|der|das)\s+\w+(seite|bereich|feature)/i, tools: ['app_help'], weight: 0.85 },
+
+  // Web search patterns (DE + EN)
+  { pattern: /such(e|en?)?\s+(im\s+)?(internet|web|netz|online)\s+(nach)?/i, tools: ['web_search'], weight: 0.95 },
+  { pattern: /googl(e|en?)\s+(mal\s+)?/i, tools: ['web_search'], weight: 0.95 },
+  { pattern: /recherchier(e|en?)?\s+(online|im\s+netz)/i, tools: ['web_search'], weight: 0.95 },
+  { pattern: /was\s+sagt\s+(das\s+)?(internet|web|netz)\s+(zu|über)/i, tools: ['web_search'], weight: 0.9 },
+  { pattern: /search\s+(the\s+)?(web|internet|online)\s+for/i, tools: ['web_search'], weight: 0.95 },
+  { pattern: /look\s+up\s+/i, tools: ['web_search'], weight: 0.85 },
+
+  // URL fetch patterns
+  { pattern: /öffne\s+(die\s+)?(url|seite|webseite|website|link)/i, tools: ['fetch_url'], weight: 0.95 },
+  { pattern: /was\s+steht\s+auf\s+(der\s+)?(seite|webseite|url)/i, tools: ['fetch_url'], weight: 0.9 },
+  { pattern: /lies\s+(die\s+)?(seite|webseite|url|website)/i, tools: ['fetch_url'], weight: 0.9 },
+  { pattern: /https?:\/\/\S+/i, tools: ['fetch_url'], weight: 0.85 },
+
+  // Maps / directions patterns
+  { pattern: /route\s+(von|nach|zu|zwischen)/i, tools: ['get_directions'], weight: 0.95 },
+  { pattern: /navigation\s+(nach|zu|zum|zur)/i, tools: ['get_directions'], weight: 0.95 },
+  { pattern: /wie\s+komme?\s+ich\s+(nach|zu|zum|zur)/i, tools: ['get_directions'], weight: 0.95 },
+  { pattern: /wann\s+(hat|öffnet|schließt|macht)\s+.{2,30}\s+(auf|zu|geöffnet)/i, tools: ['get_opening_hours'], weight: 0.95 },
+  { pattern: /öffnungszeiten\s+(von|für|des|der)/i, tools: ['get_opening_hours'], weight: 0.95 },
+  { pattern: /gibt\s+es\s+(in\s+der\s+nähe|hier\s+in\s+der\s+nähe|nearby)\s+(ein|eine)/i, tools: ['find_nearby_places'], weight: 0.95 },
+  { pattern: /wo\s+(ist|sind)\s+(der|die|das)\s+nächste/i, tools: ['find_nearby_places'], weight: 0.9 },
+  { pattern: /restaurants?\s+(in\s+der\s+nähe|nearby|um\s+die\s+ecke)/i, tools: ['find_nearby_places'], weight: 0.9 },
+
+  // GitHub patterns (EN)
+  { pattern: /search\s+github\s+for/i, tools: ['github_search'], weight: 0.95 },
+  { pattern: /create\s+(a\s+)?(github\s+)?issue/i, tools: ['github_create_issue'], weight: 0.95 },
+  { pattern: /github\s+repo(sitory)?\s+info/i, tools: ['github_repo_info'], weight: 0.9 },
+
+  // English fallback patterns for core tools
+  { pattern: /remember\s+(that|this)/i, tools: ['remember'], weight: 0.95 },
+  { pattern: /do\s+you\s+remember/i, tools: ['recall'], weight: 0.9 },
+  { pattern: /search\s+(my\s+)?(ideas|notes|thoughts)/i, tools: ['search_ideas'], weight: 0.9 },
+  { pattern: /create\s+(a\s+)?(new\s+)?(idea|note|thought)/i, tools: ['create_idea'], weight: 0.9 },
+  { pattern: /run\s+(this\s+)?code/i, tools: ['execute_code'], weight: 0.9 },
+  { pattern: /what('s|\s+is)\s+(in\s+)?my\s+(inbox|email|mail)/i, tools: ['ask_inbox'], weight: 0.9 },
 ];
 
 /**

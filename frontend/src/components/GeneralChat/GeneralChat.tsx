@@ -48,6 +48,9 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const [voiceChatOpen, setVoiceChatOpen] = useState(false);
   // Offline detection state (Phase 74)
   const [offline, setOffline] = useState(() => isOffline());
+  // Tool activity tracking (Phase 76 — Tool-Use Visualization)
+  const [activeToolName, setActiveToolName] = useState<string | null>(null);
+  const [toolResults, setToolResults] = useState<Array<{ name: string; result: string }>>([]);
   // Artifacts state
   const [artifacts, setArtifacts] = useState<Map<string, Artifact[]>>(new Map());
   const [activeArtifact, setActiveArtifact] = useState<{ artifact: Artifact; messageId: string; index: number } | null>(null);
@@ -345,6 +348,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         setIsStreaming(true);
         setStreamingContent('');
         setThinkingContent('');
+        setActiveToolName(null);
+        setToolResults([]);
 
         // Create a new AbortController for this streaming request (separate from session-load ref)
         const streamAbortController = new AbortController();
@@ -423,20 +428,27 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                         continue;
                       }
 
-                      // Handle tool use events - dispatch navigation actions to the app
-                      if (currentEventType === 'tool_use_end' && data.tool) {
-                        try {
-                          const toolResult = JSON.parse(data.tool.result || '{}');
-                          if (toolResult.action === 'navigate' && toolResult.page) {
-                            window.dispatchEvent(new CustomEvent('zenai-assistant-navigate', {
-                              detail: { action: 'navigate', page: toolResult.page },
-                            }));
-                          }
-                        } catch { /* tool result not JSON, skip */ }
+                      // Handle tool use events — show activity + dispatch navigation
+                      if (currentEventType === 'tool_use_start' && data.tool) {
+                        setActiveToolName(data.tool.name || null);
                         currentEventType = '';
                         continue;
                       }
-                      if (currentEventType === 'tool_use_start') {
+                      if (currentEventType === 'tool_use_end' && data.tool) {
+                        setActiveToolName(null);
+                        const toolName = data.tool.name || 'unknown';
+                        const toolResult = data.tool.result || '';
+                        // Track tool result for inline display (keep last 5)
+                        setToolResults(prev => [...prev.slice(-4), { name: toolName, result: toolResult }]);
+                        // Handle navigation actions
+                        try {
+                          const parsed = JSON.parse(toolResult);
+                          if (parsed.action === 'navigate' && parsed.page) {
+                            window.dispatchEvent(new CustomEvent('zenai-assistant-navigate', {
+                              detail: { action: 'navigate', page: parsed.page },
+                            }));
+                          }
+                        } catch { /* not JSON or no navigation */ }
                         currentEventType = '';
                         continue;
                       }
@@ -905,6 +917,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         streamingContent={streamingContent}
         thinkingContent={thinkingContent}
         sending={sending}
+        activeToolName={activeToolName}
+        toolResults={toolResults}
         renderContent={renderContent}
         messagesEndRef={messagesEndRef}
         onStopGenerating={handleStopGenerating}

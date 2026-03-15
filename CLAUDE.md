@@ -30,14 +30,15 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 75
+## Current Phase: 76
 
 ### Phase 31 Features (AI State-of-the-Art)
 
 **Chat Modes & Tool Use:**
 
 - Intelligent mode detection (tool_assisted, agent, rag_enhanced, conversation)
-- 17 integrated tools (see Tools section below)
+- 49 integrated tools across 13 categories (see Tools section below)
+- Tool-use visualization: inline activity pills during streaming (Phase 76)
 
 **RAG Pipeline:**
 
@@ -111,6 +112,24 @@
 - Syntax-Highlighting mit Prism
 - Copy/Download Funktionalität
 - Große Code-Blöcke (>15 Zeilen) als Artifacts
+
+### AI Tools (49 registered)
+
+| Category | Tools |
+|----------|-------|
+| **Core Ideas** | `search_ideas`, `create_idea`, `update_idea`, `archive_idea`, `delete_idea`, `get_related_ideas` |
+| **Memory** | `remember`, `recall`, `memory_introspect`, `memory_update`, `memory_delete`, `memory_update_profile` |
+| **Web** | `web_search` (Brave/DDG), `fetch_url` |
+| **GitHub** | `github_search`, `github_create_issue`, `github_repo_info`, `github_list_issues`, `github_pr_summary` |
+| **Project Context** | `analyze_project`, `get_project_summary`, `list_project_files` |
+| **Code Execution** | `execute_code` (Python/Node.js/Bash) |
+| **Documents** | `analyze_document`, `search_documents`, `synthesize_knowledge` |
+| **Assistant** | `create_meeting`, `navigate_to`, `app_help`, `calculate` |
+| **Business** | `get_revenue_metrics`, `get_traffic_analytics`, `get_seo_performance`, `get_system_health`, `generate_business_report`, `identify_anomalies`, `compare_periods` |
+| **Calendar/Email** | `create_calendar_event`, `list_calendar_events`, `draft_email`, `estimate_travel` |
+| **Maps** | `get_directions`, `get_opening_hours`, `find_nearby_places`, `optimize_day_route` |
+| **Email Intelligence** | `ask_inbox`, `inbox_summary` |
+| **MCP Ecosystem** | `mcp_call_tool`, `mcp_list_tools` |
 
 ## Key Files
 
@@ -1063,6 +1082,28 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-15: Phase 76 - Foundation Excellence (Tool Visualization + Documentation)
+
+**Sichtbare KI-Tool-Nutzung + Dokumentations-Aktualisierung.**
+
+| Feature | Details |
+|---------|---------|
+| **Tool-Use Visualization** | Inline-Aktivitaets-Pills waehrend SSE-Streaming: aktives Tool mit Spinner, abgeschlossene Tools mit Haekchen |
+| **49 Tool Labels** | Deutsche Tool-Beschreibungen + Icons fuer alle 49 registrierten Tools |
+| **CLAUDE.md Update** | Tool-Dokumentation von 17 auf 49 korrigiert, Tool-Tabelle nach Kategorien |
+| **SSE Event Handling** | tool_use_start/tool_use_end Events werden nicht mehr verworfen, sondern als UI-Feedback angezeigt |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `frontend/src/components/GeneralChat/GeneralChat.tsx` | Tool-State (activeToolName, toolResults), SSE-Handler aktualisiert |
+| `frontend/src/components/GeneralChat/ChatMessageList.tsx` | TOOL_LABELS Map (49 Eintraege), Tool-Activity UI im Streaming-Block |
+| `frontend/src/components/GeneralChat.css` | Tool-Pill Styles (done/active, Spinner, Pulse-Animation, Dark Mode) |
+| `CLAUDE.md` | Phase 76, 49-Tool-Tabelle, Changelog |
+
+---
 
 ### 2026-03-14: Phase 74+75 - Edge/Local Inference + Plugin/Extension System
 

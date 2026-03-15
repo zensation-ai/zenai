@@ -15,6 +15,9 @@ import { installResilienceInterceptors } from './utils/apiResilience';
 import { initWebVitals } from './utils/webVitals';
 // Phase 66: Sentry Error Tracking
 import { initSentry } from './services/sentry';
+// Phase 76: React Query
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/query-client';
 
 // Phase 66: Initialize Sentry early (before any other code)
 initSentry();
@@ -169,15 +172,17 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <ThemeProvider>
-            <ConfirmProvider>
-              <App />
-            </ConfirmProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <ThemeProvider>
+              <ConfirmProvider>
+                <App />
+              </ConfirmProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

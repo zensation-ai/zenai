@@ -786,20 +786,21 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
 
   res.write = interceptWrite;
 
-  // === Tool Definitions (Pass to streaming for assistant + tool_assisted modes) ===
-  const shouldUseTools = isAssistantMode || modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent';
-  const toolDefinitions = shouldUseTools ? toolRegistry.getDefinitions() as unknown as Anthropic.Tool[] : undefined;
+  // === Tool Definitions ===
+  // Always provide tools so the AI can proactively use memory (remember/recall),
+  // even in 'conversation' or 'rag_enhanced' modes. The Letta pattern requires
+  // tools to be always available — the LLM decides when to use them.
+  const shouldUseTools = true;
+  const toolDefinitions = toolRegistry.getDefinitions() as unknown as Anthropic.Tool[];
   const toolExecContext: ToolExecutionContext = {
     aiContext: contextType,
     sessionId: id,
   };
 
   // Tool executor that uses the registry with request-scoped context
-  const toolExecutor = shouldUseTools
-    ? async (name: string, input: Record<string, unknown>) => {
-        return toolRegistry.execute(name, input, toolExecContext);
-      }
-    : undefined;
+  const toolExecutor = async (name: string, input: Record<string, unknown>) => {
+    return toolRegistry.execute(name, input, toolExecContext);
+  };
 
   try {
     // Stream the response with adaptive thinking + compaction + tools

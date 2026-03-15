@@ -1190,6 +1190,100 @@
   color: rgba(255, 255, 255, 0.75);
 }
 
+/* ============================================================
+ * Tool Activity Pills (Phase 76 — Tool-Use Visualization)
+ * Shows which tools the AI is using during streaming
+ * ============================================================ */
+
+.chat-tool-activity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.chat-tool-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.chat-tool-pill--done {
+  background: color-mix(in srgb, var(--ctx-accent, var(--primary)) 8%, transparent);
+  color: var(--text-muted);
+  border: 1px solid color-mix(in srgb, var(--ctx-accent, var(--primary)) 15%, transparent);
+  opacity: 0.7;
+}
+
+.chat-tool-pill--active {
+  background: color-mix(in srgb, var(--ctx-accent, var(--primary)) 15%, transparent);
+  color: var(--ctx-accent, var(--primary));
+  border: 1px solid color-mix(in srgb, var(--ctx-accent, var(--primary)) 30%, transparent);
+  animation: chat-tool-pulse 1.5s ease-in-out infinite;
+}
+
+.chat-tool-icon {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.chat-tool-check {
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.chat-tool-spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid color-mix(in srgb, var(--ctx-accent, var(--primary)) 30%, transparent);
+  border-top-color: var(--ctx-accent, var(--primary));
+  border-radius: 50%;
+  animation: chat-tool-spin 0.7s linear infinite;
+}
+
+@keyframes chat-tool-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes chat-tool-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Dark mode */
+:root.dark-mode .chat-tool-pill--done,
+.dark-mode .chat-tool-pill--done {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+:root.dark-mode .chat-tool-pill--active,
+.dark-mode .chat-tool-pill--active {
+  background: color-mix(in srgb, var(--ctx-accent, var(--primary)) 20%, transparent);
+  border-color: color-mix(in srgb, var(--ctx-accent, var(--primary)) 40%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .chat-tool-pill--done {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .chat-tool-pill--active {
+    background: color-mix(in srgb, var(--ctx-accent, var(--primary)) 20%, transparent);
+    border-color: color-mix(in srgb, var(--ctx-accent, var(--primary)) 40%, transparent);
+  }
+}
+
 :root.dark-mode .streaming-cursor,
 .dark-mode .streaming-cursor {
   color: var(--primary-light, #ff9a70);
