@@ -1,0 +1,419 @@
+/* ObservabilityPanel - System-Ueberwachung Styles */
+
+.obs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+}
+
+/* Header */
+.obs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.obs-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0 0 0.15rem;
+}
+
+.obs-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #a0a0a0);
+  margin: 0;
+}
+
+.obs-refresh-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.obs-refresh-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #fff);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.obs-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.obs-refresh-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-top-color: rgba(139, 92, 246, 0.8);
+  border-radius: 50%;
+  animation: obsSpin 0.8s linear infinite;
+}
+
+@keyframes obsSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error */
+.obs-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.85rem;
+}
+
+.obs-retry-btn {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  background: transparent;
+  color: #ef4444;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.obs-retry-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* Empty */
+.obs-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 0.85rem;
+}
+
+/* Section */
+.obs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.obs-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+}
+
+/* ─── Health Grid ─────────────────────────────────────── */
+
+.obs-health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.65rem;
+}
+
+.obs-health-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.2s;
+}
+
+.obs-health-card:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.obs-health-status {
+  border-left: 3px solid var(--border-color);
+}
+
+.obs-health-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.obs-health-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.obs-health-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.obs-health-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #a0a0a0);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 500;
+}
+
+.obs-health-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.obs-health-detail {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.obs-warn {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+/* ─── Queue Grid ──────────────────────────────────────── */
+
+.obs-queue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.obs-queue-card {
+  padding: 1rem;
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.2s;
+}
+
+.obs-queue-card:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.obs-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.obs-queue-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.obs-queue-active-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.15);
+  color: rgba(59, 130, 246, 0.9);
+  animation: obsPulse 2s ease-in-out infinite;
+}
+
+@keyframes obsPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.obs-queue-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.obs-queue-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.obs-queue-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.obs-queue-stat-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.obs-color-waiting { color: #f59e0b; }
+.obs-color-active { color: #3b82f6; }
+.obs-color-completed { color: #22c55e; }
+.obs-color-failed { color: #ef4444; }
+
+/* Queue progress bar */
+.obs-queue-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.obs-queue-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+}
+
+.obs-queue-bar-success {
+  height: 100%;
+  background: rgba(34, 197, 94, 0.6);
+  transition: width 0.3s ease;
+}
+
+.obs-queue-bar-fail {
+  height: 100%;
+  background: rgba(239, 68, 68, 0.6);
+  transition: width 0.3s ease;
+}
+
+.obs-queue-bar-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary, #a0a0a0);
+  white-space: nowrap;
+  min-width: 65px;
+  text-align: right;
+}
+
+/* ─── Metrics Grid ────────────────────────────────────── */
+
+.obs-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.65rem;
+}
+
+.obs-metric-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.2s;
+}
+
+.obs-metric-card:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.obs-metric-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.obs-metric-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.obs-metric-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  line-height: 1.2;
+}
+
+.obs-metric-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #a0a0a0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.obs-metric-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+}
+
+.obs-metric-tag {
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary, #a0a0a0);
+}
+
+/* ─── Responsive ──────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .obs-health-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .obs-queue-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .obs-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .obs-health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .obs-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .obs-queue-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

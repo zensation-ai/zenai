@@ -1,5 +1,5 @@
 /**
- * SettingsDashboard - Einstellungen (11 Tabs)
+ * SettingsDashboard - Einstellungen (15 Tabs)
  *
  * Tabs:
  * - Profil: Benutzerprofil und Business-Profil
@@ -8,10 +8,14 @@
  * - KI: Modell-Präferenzen, Antwort-Stil, Tool-Einstellungen
  * - Datenschutz: Daten-Kontrolle, Löschen, Export-Hinweis
  * - Automationen: Workflows und AI-Vorschläge
+ * - Proaktiv-Regeln: Proaktive Event-Regeln verwalten
  * - Governance: Genehmigungen, Audit-Trail, Richtlinien
+ * - Kontext-Regeln: Programmatic Context Engineering Rules
+ * - Sicherheit: Audit-Log und Rate Limits
  * - Integrationen: OAuth, API Keys, Webhooks
  * - MCP Server: Externe MCP-Verbindungen verwalten
  * - Extensions: Plugin/Erweiterungs-Marketplace
+ * - System: Observability, Health, Queues und Metriken
  * - Daten: Export + Sync kombiniert
  */
 
@@ -35,8 +39,12 @@ const MemoryGovernance = lazy(() => import('./MemoryGovernance').then(m => ({ de
 const GovernanceDashboard = lazy(() => import('./GovernanceDashboard').then(m => ({ default: m.GovernanceDashboard })));
 const MCPConnectionsPage = lazy(() => import('./MCPConnectionsPage').then(m => ({ default: m.MCPConnectionsPage })));
 const ExtensionMarketplace = lazy(() => import('./ExtensionMarketplace/ExtensionMarketplace').then(m => ({ default: m.ExtensionMarketplace })));
+const ContextRulesPanel = lazy(() => import('./ContextRulesPanel').then(m => ({ default: m.ContextRulesPanel })));
+const ProactiveRulesPanel = lazy(() => import('./ProactiveRulesPanel').then(m => ({ default: m.ProactiveRulesPanel })));
+const SecurityAuditPanel = lazy(() => import('./SecurityAuditPanel').then(m => ({ default: m.SecurityAuditPanel })));
+const ObservabilityPanel = lazy(() => import('./ObservabilityPanel').then(m => ({ default: m.ObservabilityPanel })));
 
-type SettingsTab = 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'mcp-servers' | 'extensions' | 'data';
+type SettingsTab = 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'system' | 'data';
 
 interface SettingsDashboardProps {
   context: AIContext;
@@ -52,10 +60,14 @@ const TABS: readonly TabDef<SettingsTab>[] = [
   { id: 'ai', label: 'KI', icon: '🧠', description: 'KI-Modell und Antwort-Stil' },
   { id: 'privacy', label: 'Datenschutz', icon: '🔒', description: 'Daten-Kontrolle und Privatsphäre' },
   { id: 'automations', label: 'Automationen', icon: '⚡', description: 'Workflows und AI-Vorschläge' },
+  { id: 'proactive-rules', label: 'Proaktiv-Regeln', icon: '🎯', description: 'Proaktive Event-Regeln verwalten' },
   { id: 'governance', label: 'Governance', icon: '🛡️', description: 'Genehmigungen, Audit-Trail, Richtlinien' },
+  { id: 'context-rules', label: 'Kontext-Regeln', icon: '🧭', description: 'Domain-basierte Kontext-Steuerung' },
+  { id: 'security', label: 'Sicherheit', icon: '🛡️', description: 'Audit-Log und Rate Limits' },
   { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
   { id: 'mcp-servers', label: 'MCP Server', icon: '🔌', description: 'Externe MCP-Verbindungen' },
   { id: 'extensions', label: 'Extensions', icon: '🧩', description: 'Erweiterungen und Plugins' },
+  { id: 'system', label: 'System', icon: '📡', description: 'Health, Queues und Metriken' },
   { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
 
@@ -768,10 +780,31 @@ export const SettingsDashboard = memo(({
           </Suspense>
         );
 
+      case 'proactive-rules':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <ProactiveRulesPanel context={context} />
+          </Suspense>
+        );
+
       case 'governance':
         return (
           <Suspense fallback={<TabLoader />}>
             <GovernanceDashboard context={context} />
+          </Suspense>
+        );
+
+      case 'context-rules':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <ContextRulesPanel context={context} />
+          </Suspense>
+        );
+
+      case 'security':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <SecurityAuditPanel />
           </Suspense>
         );
 
@@ -793,6 +826,13 @@ export const SettingsDashboard = memo(({
         return (
           <Suspense fallback={<TabLoader />}>
             <ExtensionMarketplace />
+          </Suspense>
+        );
+
+      case 'system':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <ObservabilityPanel />
           </Suspense>
         );
 

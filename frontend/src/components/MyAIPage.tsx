@@ -13,6 +13,7 @@ import { useTabNavigation } from '../hooks/useTabNavigation';
 const PersonalizationChat = lazy(() => import('./PersonalizationChat').then(m => ({ default: m.PersonalizationChat })));
 const MemoryTransparency = lazy(() => import('./MemoryTransparency').then(m => ({ default: m.MemoryTransparency })));
 const VoiceChat = lazy(() => import('./VoiceChat/VoiceChat').then(m => ({ default: m.VoiceChat })));
+const VoiceSettings = lazy(() => import('./VoiceChat/VoiceSettings').then(m => ({ default: m.VoiceSettings })));
 const ProceduralMemoryPanel = lazy(() => import('./ProceduralMemoryPanel').then(m => ({ default: m.ProceduralMemoryPanel })));
 
 type MyAITab = 'personalize' | 'memory' | 'procedures' | 'voice-chat';
@@ -79,6 +80,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
         return (
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content">
+              <VoiceSettings context={context} />
               <VoiceChat
                 context={context}
                 onClose={() => handleTabChange('personalize')}

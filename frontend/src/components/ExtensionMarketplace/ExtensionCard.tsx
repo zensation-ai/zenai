@@ -107,7 +107,7 @@ export function ExtensionCard({
   const [showPermissions, setShowPermissions] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const icon = ICON_MAP[extension.manifest.icon] || '\uD83E\uDDE9';
+  const icon = ICON_MAP[extension.manifest?.icon] || '\uD83E\uDDE9';
 
   const handleInstall = async () => {
     setShowPermissions(true);
@@ -165,7 +165,7 @@ export function ExtensionCard({
         </span>
       </div>
 
-      <p className="extension-card-description">{extension.manifest.description}</p>
+      <p className="extension-card-description">{extension.manifest?.description || ''}</p>
 
       <div className="extension-card-footer">
         <span className="extension-card-version">v{extension.version}</span>

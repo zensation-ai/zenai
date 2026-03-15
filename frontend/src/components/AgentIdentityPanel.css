@@ -1,0 +1,763 @@
+/**
+ * AgentIdentityPanel Styles
+ * Dark glassmorphism design for Agent Identity Management
+ */
+
+/* ─── Identity Grid ───────────────────────────────────────────────────────── */
+
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 1rem;
+}
+
+/* ─── Identity Card ───────────────────────────────────────────────────────── */
+
+.identity-card {
+  position: relative;
+  padding: 1.25rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.03);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+  cursor: default;
+}
+
+.identity-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.identity-card.disabled {
+  opacity: 0.55;
+}
+
+.identity-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* ─── Avatar ──────────────────────────────────────────────────────────────── */
+
+.identity-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.identity-avatar.role-researcher {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.08));
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.15);
+}
+
+.identity-avatar.role-writer {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.08));
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.15);
+}
+
+.identity-avatar.role-reviewer {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.08));
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.15);
+}
+
+.identity-avatar.role-coder {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.08));
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.15);
+}
+
+.identity-avatar.role-custom {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(236, 72, 153, 0.08));
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.15);
+}
+
+/* ─── Card Info ───────────────────────────────────────────────────────────── */
+
+.identity-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.identity-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.identity-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.identity-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.identity-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.identity-trust-badge .trust-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.identity-status-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.identity-status-dot.active {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.identity-status-dot.inactive {
+  background: #6b7280;
+}
+
+/* ─── Card Details ────────────────────────────────────────────────────────── */
+
+.identity-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.identity-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.identity-detail-label {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.identity-detail-value {
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* ─── Expertise Tags ──────────────────────────────────────────────────────── */
+
+.identity-expertise-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.expertise-tag {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Card Actions ────────────────────────────────────────────────────────── */
+
+.identity-card-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.identity-action-btn {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.identity-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.identity-action-btn.delete-btn {
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.identity-action-btn.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* ─── Modal Overlay ───────────────────────────────────────────────────────── */
+
+.identity-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: identityFadeIn 0.2s ease;
+}
+
+@keyframes identityFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.identity-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-primary, #0f0f0f);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  animation: identitySlideUp 0.25s ease;
+}
+
+@keyframes identitySlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.identity-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.identity-modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.identity-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.identity-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.identity-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.identity-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* ─── Form Fields ─────────────────────────────────────────────────────────── */
+
+.identity-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.identity-form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.identity-form-input,
+.identity-form-select,
+.identity-form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.identity-form-input:focus,
+.identity-form-select:focus,
+.identity-form-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.identity-form-select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.identity-form-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.identity-form-textarea {
+  min-height: 70px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.identity-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ─── Trust Level Selector ────────────────────────────────────────────────── */
+
+.trust-level-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.trust-level-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0.6rem 0.5rem;
+  border-radius: 10px;
+  border: 2px solid var(--glass-border);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  color: var(--text-primary);
+}
+
+.trust-level-option:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.trust-level-option.selected {
+  border-color: var(--trust-color);
+  background: color-mix(in srgb, var(--trust-color) 10%, transparent);
+}
+
+.trust-level-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.trust-level-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ─── Permissions Checklist ───────────────────────────────────────────────── */
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.permission-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.permission-item.checked {
+  border-color: rgba(249, 115, 22, 0.25);
+  background: rgba(249, 115, 22, 0.06);
+}
+
+.permission-item input[type="checkbox"] {
+  accent-color: var(--accent-primary, #f97316);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.permission-label {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.permission-desc {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+/* ─── Expertise Tags Input ────────────────────────────────────────────────── */
+
+.expertise-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.04);
+  min-height: 42px;
+  align-items: center;
+  transition: border-color 0.2s;
+}
+
+.expertise-input-container:focus-within {
+  border-color: var(--accent-primary, #f97316);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.expertise-tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.expertise-tag-remove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.expertise-tag-remove:hover {
+  opacity: 1;
+}
+
+.expertise-tag-input {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  min-width: 100px;
+  flex: 1;
+}
+
+.expertise-tag-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ─── Enable Toggle ───────────────────────────────────────────────────────── */
+
+.identity-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.identity-toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.identity-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: background 0.25s;
+  padding: 0;
+}
+
+.identity-toggle.on {
+  background: var(--accent-primary, #f97316);
+}
+
+.identity-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.identity-toggle.on .identity-toggle-knob {
+  transform: translateX(20px);
+}
+
+/* ─── Empty State ─────────────────────────────────────────────────────────── */
+
+.identity-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.identity-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.identity-empty-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0 0 1rem 0;
+}
+
+.identity-empty-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--accent-primary, #f97316);
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--accent-primary, #f97316);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.identity-empty-btn:hover {
+  background: rgba(249, 115, 22, 0.2);
+}
+
+/* ─── Section Header ──────────────────────────────────────────────────────── */
+
+.identity-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.identity-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.identity-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--accent-primary, #f97316);
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--accent-primary, #f97316);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.identity-create-btn:hover {
+  background: rgba(249, 115, 22, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ─── Delete Confirmation ─────────────────────────────────────────────────── */
+
+.identity-delete-confirm {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.identity-delete-confirm p {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.identity-delete-confirm strong {
+  color: #ef4444;
+}
+
+.identity-delete-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ─── Modal Buttons ───────────────────────────────────────────────────────── */
+
+.identity-btn-cancel {
+  padding: 0.55rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.identity-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.identity-btn-save {
+  padding: 0.55rem 1.5rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent-primary, #f97316);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.identity-btn-save:hover:not(:disabled) {
+  background: var(--accent-hover, #ea580c);
+  transform: translateY(-1px);
+}
+
+.identity-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.identity-btn-delete {
+  padding: 0.55rem 1.25rem;
+  border-radius: 10px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.identity-btn-delete:hover {
+  background: #dc2626;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .identity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .permissions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trust-level-selector {
+    flex-direction: column;
+  }
+
+  .identity-modal {
+    max-height: 85vh;
+  }
+}

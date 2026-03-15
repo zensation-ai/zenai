@@ -1,0 +1,313 @@
+/* ============================================================
+ * Voice Settings Panel Styles
+ * Collapsible settings for voice chat configuration
+ * ============================================================ */
+
+.voice-settings {
+  width: 100%;
+  padding: 0 20px;
+}
+
+/* Toggle Button */
+.voice-settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voice-settings-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary, #e2e8f0);
+}
+
+.voice-settings-toggle span {
+  flex: 1;
+  text-align: left;
+}
+
+.voice-settings-chevron {
+  transition: transform 0.2s;
+}
+
+.voice-settings-chevron-open {
+  transform: rotate(180deg);
+}
+
+/* Panel */
+.voice-settings-panel {
+  margin-top: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  animation: voice-settings-slideDown 0.2s ease-out;
+}
+
+@keyframes voice-settings-slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.voice-settings-loading {
+  text-align: center;
+  color: var(--text-tertiary, #64748b);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+/* Field */
+.voice-settings-field {
+  margin-bottom: 16px;
+}
+
+.voice-settings-field:last-of-type {
+  margin-bottom: 12px;
+}
+
+.voice-settings-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.voice-settings-value {
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--text-tertiary, #64748b);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Select */
+.voice-settings-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--text-primary, #e2e8f0);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+.voice-settings-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.voice-settings-select option {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* Slider */
+.voice-settings-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.voice-settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.voice-settings-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+.voice-settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+.voice-settings-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-tertiary, #475569);
+  margin-top: 4px;
+}
+
+/* Toggle Switch */
+.voice-settings-toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+.voice-settings-toggle-field .voice-settings-label {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.voice-settings-toggle-btn {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.voice-settings-toggle-on {
+  background: #3b82f6;
+}
+
+.voice-settings-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.voice-settings-toggle-on .voice-settings-toggle-knob {
+  transform: translateX(18px);
+}
+
+/* Save Button */
+.voice-settings-save {
+  width: 100%;
+  padding: 8px 16px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  margin-top: 4px;
+}
+
+.voice-settings-save:hover {
+  background: #2563eb;
+}
+
+.voice-settings-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Feedback */
+.voice-settings-error {
+  font-size: 12px;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.voice-settings-saved {
+  font-size: 12px;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.12);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  text-align: center;
+  animation: voice-settings-fadeIn 0.3s;
+}
+
+@keyframes voice-settings-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  .voice-settings-toggle {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-secondary, #64748b);
+  }
+
+  .voice-settings-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: var(--text-primary, #1e293b);
+  }
+
+  .voice-settings-panel {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+
+  .voice-settings-select {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: var(--text-primary, #1e293b);
+  }
+
+  .voice-settings-select option {
+    background: white;
+    color: #1e293b;
+  }
+
+  .voice-settings-slider {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .voice-settings-toggle-btn {
+    background: rgba(0, 0, 0, 0.15);
+  }
+}

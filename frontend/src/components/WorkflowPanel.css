@@ -1,0 +1,614 @@
+/**
+ * WorkflowPanel Styles
+ * Dark glassmorphism, CSS-based graph visualization
+ */
+
+/* ─── Root ─────────────────────────────────────────────────────────────────── */
+
+.wfp-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ─── Header / Toggle ──────────────────────────────────────────────────────── */
+
+.wfp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wfp-view-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+
+.wfp-toggle-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #888);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.wfp-toggle-btn:hover {
+  color: var(--text-primary, #eee);
+}
+
+.wfp-toggle-btn--active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #eee);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Loading / Empty ──────────────────────────────────────────────────────── */
+
+.wfp-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 2rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #888);
+}
+
+.wfp-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-secondary, #888);
+  font-size: 0.9rem;
+}
+
+.wfp-empty p {
+  margin: 0 0 0.75rem;
+}
+
+/* ─── Workflow List ────────────────────────────────────────────────────────── */
+
+.wfp-workflow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wfp-workflow-item {
+  border-radius: 14px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.03);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.wfp-workflow-item:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.wfp-workflow-item--selected {
+  border-color: var(--accent-primary, #f97316);
+  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.15);
+}
+
+.wfp-workflow-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #eee);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.wfp-workflow-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wfp-workflow-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wfp-workflow-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #888);
+}
+
+.wfp-workflow-badges {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.wfp-chevron {
+  font-size: 0.65rem;
+  color: var(--text-secondary, #888);
+  flex-shrink: 0;
+}
+
+/* ─── Node Badges ──────────────────────────────────────────────────────────── */
+
+.wfp-node-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+}
+
+.wfp-node-badge.wfg-node--agent {
+  background: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.wfp-node-badge.wfg-node--tool {
+  background: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.wfp-node-badge.wfg-node--condition {
+  background: rgba(234, 179, 8, 0.3);
+  color: #facc15;
+}
+
+.wfp-node-badge.wfg-node--human-review {
+  background: rgba(249, 115, 22, 0.3);
+  color: #fb923c;
+}
+
+.wfp-node-badge--more {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary, #888);
+  font-size: 0.65rem;
+}
+
+/* ─── Workflow Detail (expanded) ───────────────────────────────────────────── */
+
+.wfp-workflow-detail {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+}
+
+.wfp-workflow-desc {
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #aaa);
+  line-height: 1.5;
+}
+
+.wfp-workflow-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 1rem;
+}
+
+/* ─── Execution Result ─────────────────────────────────────────────────────── */
+
+.wfp-exec-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+.wfp-exec-result h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4ade80;
+}
+
+.wfp-exec-result-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.82rem;
+  color: var(--text-primary, #eee);
+  line-height: 1.6;
+  font-family: inherit;
+}
+
+/* ─── Buttons ──────────────────────────────────────────────────────────────── */
+
+.wfp-btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wfp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wfp-btn--primary {
+  background: var(--accent-primary, #f97316);
+  color: white;
+}
+
+.wfp-btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover, #ea580c);
+  transform: translateY(-1px);
+}
+
+.wfp-btn--secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #eee);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+.wfp-btn--secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.wfp-btn--danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+.wfp-btn--danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+/* ─── Templates Grid ───────────────────────────────────────────────────────── */
+
+.wfp-templates-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wfp-template-card {
+  padding: 1.125rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  background: rgba(255, 255, 255, 0.03);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  transition: border-color 0.2s;
+}
+
+.wfp-template-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.wfp-template-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.wfp-template-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary, #eee);
+}
+
+.wfp-template-count {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #888);
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wfp-template-desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #aaa);
+  line-height: 1.45;
+}
+
+.wfp-template-nodes {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.wfp-template-save-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* ─── Runs Section ─────────────────────────────────────────────────────────── */
+
+.wfp-runs-section {
+  margin-top: 0.5rem;
+}
+
+.wfp-runs-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary, #eee);
+}
+
+.wfp-runs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wfp-run-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.6rem 0.875rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  font-size: 0.82rem;
+}
+
+.wfp-run-status {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.wfp-run--running {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+.wfp-run--completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.wfp-run--failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.wfp-run--paused {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.wfp-run--cancelled {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+.wfp-run-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary, #eee);
+}
+
+.wfp-run-date {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary, #888);
+}
+
+.wfp-run-error {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #f87171;
+  cursor: help;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* Graph Visualization                                                       */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.wfg-container {
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+}
+
+.wfg-canvas {
+  position: relative;
+}
+
+.wfg-empty {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #888);
+}
+
+/* ─── SVG Edges ────────────────────────────────────────────────────────────── */
+
+.wfg-edges-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.wfg-edge-path {
+  fill: none;
+  stroke: var(--text-secondary, rgba(255, 255, 255, 0.2));
+  stroke-width: 1.5;
+  stroke-dasharray: none;
+}
+
+.wfg-edge-label {
+  font-size: 9px;
+  fill: var(--text-secondary, #888);
+  font-weight: 500;
+}
+
+/* ─── Graph Nodes ──────────────────────────────────────────────────────────── */
+
+.wfg-node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+  cursor: default;
+  overflow: hidden;
+}
+
+.wfg-node:hover {
+  transform: scale(1.04);
+  z-index: 2;
+}
+
+/* Node type colors */
+.wfg-node--agent {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.08);
+}
+
+.wfg-node--agent:hover {
+  border-color: rgba(59, 130, 246, 0.7);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+}
+
+.wfg-node--tool {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.08);
+}
+
+.wfg-node--tool:hover {
+  border-color: rgba(34, 197, 94, 0.7);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+}
+
+.wfg-node--condition {
+  border-color: rgba(234, 179, 8, 0.4);
+  background: rgba(234, 179, 8, 0.08);
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.08);
+  border-radius: 6px;
+  transform: rotate(0deg);
+}
+
+.wfg-node--condition:hover {
+  border-color: rgba(234, 179, 8, 0.7);
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.15);
+}
+
+/* Diamond shape via clip-path for condition nodes */
+.wfg-node--diamond {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  border-radius: 0;
+  border: none;
+  background: rgba(234, 179, 8, 0.15);
+}
+
+.wfg-node--diamond:hover {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.wfg-node--diamond .wfg-node-type {
+  display: none;
+}
+
+.wfg-node--human-review {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.08);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.08);
+}
+
+.wfg-node--human-review:hover {
+  border-color: rgba(249, 115, 22, 0.7);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.15);
+}
+
+/* Node content */
+.wfg-node-icon {
+  font-size: 0.85rem;
+  font-weight: 800;
+  opacity: 0.7;
+}
+
+.wfg-node--agent .wfg-node-icon { color: #60a5fa; }
+.wfg-node--tool .wfg-node-icon { color: #4ade80; }
+.wfg-node--condition .wfg-node-icon { color: #facc15; }
+.wfg-node--human-review .wfg-node-icon { color: #fb923c; }
+
+.wfg-node-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-primary, #eee);
+  text-align: center;
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wfg-node-type {
+  font-size: 0.58rem;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .wfp-view-toggle {
+    width: 100%;
+  }
+
+  .wfp-toggle-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .wfg-container {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    border-radius: 8px;
+  }
+}

@@ -6,7 +6,7 @@
  * and an installed section with enable/disable toggles.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExtensionCard, type ExtensionData } from './ExtensionCard';
 import './ExtensionMarketplace.css';
@@ -26,6 +26,55 @@ const CATEGORY_FILTERS: { value: string; label: string }[] = [
   { value: 'agent', label: 'Agenten' },
 ];
 
+/**
+ * Normalize an extension from the API response.
+ * Ensures manifest is always an object and permissions is always an array,
+ * even if the backend returns them in an unexpected format.
+ */
+function normalizeExtension(raw: Record<string, unknown>): ExtensionData {
+  const ext = raw as Partial<ExtensionData>;
+  const manifest = (typeof ext.manifest === 'object' && ext.manifest != null)
+    ? ext.manifest
+    : {
+        name: ext.name || '',
+        description: '',
+        version: ext.version || '1.0.0',
+        author: ext.author || 'Unknown',
+        type: ext.type || 'tool',
+        category: ext.category || 'productivity',
+        icon: '',
+        permissions: [],
+        entry_point: '',
+      };
+
+  let permissions = ext.permissions;
+  if (typeof permissions === 'string') {
+    try { permissions = JSON.parse(permissions); } catch { permissions = []; }
+  }
+  if (!Array.isArray(permissions)) permissions = [];
+
+  let permissionsGranted = ext.permissions_granted;
+  if (typeof permissionsGranted === 'string') {
+    try { permissionsGranted = JSON.parse(permissionsGranted); } catch { permissionsGranted = []; }
+  }
+  if (permissionsGranted != null && !Array.isArray(permissionsGranted)) permissionsGranted = [];
+
+  return {
+    id: ext.id || '',
+    name: ext.name || manifest.name || '',
+    version: ext.version || manifest.version || '1.0.0',
+    type: (ext.type || manifest.type || 'tool') as ExtensionData['type'],
+    manifest: manifest as ExtensionData['manifest'],
+    author: ext.author || manifest.author || 'Unknown',
+    category: ext.category || manifest.category || 'productivity',
+    permissions: permissions as string[],
+    installed: !!ext.installed,
+    enabled: !!ext.enabled,
+    installed_at: ext.installed_at as string | undefined,
+    permissions_granted: permissionsGranted as string[] | undefined,
+  };
+}
+
 // ===========================================
 // Component
 // ===========================================
@@ -40,6 +89,7 @@ export function ExtensionMarketplace() {
   const [viewMode, setViewMode] = useState<ViewMode>('browse');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const authHeaders = useCallback((): HeadersInit => {
     const token = getAccessToken();
@@ -58,13 +108,14 @@ export function ExtensionMarketplace() {
   // Data Fetching
   // ===========================================
 
-  const fetchExtensions = useCallback(async () => {
+  const fetchExtensions = useCallback(async (search?: string) => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
       if (typeFilter !== 'all') params.set('type', typeFilter);
-      if (searchQuery) params.set('search', searchQuery);
+      const q = search ?? searchQuery;
+      if (q) params.set('search', q);
 
       const endpoint = viewMode === 'installed'
         ? `${apiUrl}/api/extensions/installed`
@@ -73,8 +124,9 @@ export function ExtensionMarketplace() {
       const res = await fetch(endpoint, { headers: authHeaders() });
       if (!res.ok) throw new Error('Fehler beim Laden der Erweiterungen');
 
-      const data = await res.json();
-      setExtensions(data.data || []);
+      const json = await res.json();
+      const rawData: Record<string, unknown>[] = json.data || [];
+      setExtensions(rawData.map(normalizeExtension));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unbekannter Fehler');
     } finally {
@@ -82,9 +134,19 @@ export function ExtensionMarketplace() {
     }
   }, [apiUrl, authHeaders, viewMode, typeFilter, searchQuery]);
 
+  // Fetch on mount and when viewMode/typeFilter changes
   useEffect(() => {
     fetchExtensions();
-  }, [fetchExtensions]);
+  }, [viewMode, typeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounce search queries (300ms)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchExtensions(searchQuery);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ===========================================
   // Actions

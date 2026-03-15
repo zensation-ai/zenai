@@ -16,8 +16,10 @@ const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ defa
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
 const GraphRAGPanel = lazy(() => import('./GraphRAGPanel').then(m => ({ default: m.GraphRAGPanel })));
 const SleepInsights = lazy(() => import('./InsightsDashboard/SleepInsights').then(m => ({ default: m.SleepInsights })));
+const AITracesPanel = lazy(() => import('./InsightsDashboard/AITracesPanel').then(m => ({ default: m.AITracesPanel })));
+const TemporalKGPanel = lazy(() => import('./InsightsDashboard/TemporalKGPanel').then(m => ({ default: m.TemporalKGPanel })));
 
-type InsightsTab = 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep';
+type InsightsTab = 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep' | 'ai-traces';
 
 interface InsightsDashboardProps {
   context: AIContext;
@@ -32,6 +34,7 @@ const TABS: TabDef<InsightsTab>[] = [
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
   { id: 'graphrag', label: 'GraphRAG', icon: '🔬', description: 'Entitaeten, Communities und Hybrid-Retrieval' },
   { id: 'sleep', label: 'KI-Nacht', icon: '🌙', description: 'Naechtliche Erkenntnisse und Memory-Konsolidierung' },
+  { id: 'ai-traces', label: 'KI-Traces', icon: '🔍', description: 'KI-Aufrufe, Kosten und Performance-Metriken' },
 ];
 
 const TabLoader = () => (
@@ -48,7 +51,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 }) => {
   const { activeTab, handleTabChange } = useTabNavigation<InsightsTab>({
     initialTab,
-    validTabs: ['analytics', 'digest', 'connections', 'graphrag', 'sleep'],
+    validTabs: ['analytics', 'digest', 'connections', 'graphrag', 'sleep', 'ai-traces'],
     defaultTab: 'analytics',
     basePath: '/insights',
   });
@@ -80,6 +83,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
                 onBack={() => handleTabChange('analytics')}
                 onSelectIdea={onSelectIdea ? (id: string) => onSelectIdea(id) : undefined}
               />
+              <TemporalKGPanel context={context} />
             </div>
           </Suspense>
         );
@@ -96,6 +100,14 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content hub-tab-fullwidth">
               <SleepInsights context={context} />
+            </div>
+          </Suspense>
+        );
+      case 'ai-traces':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="hub-tab-content hub-tab-fullwidth">
+              <AITracesPanel context={context} />
             </div>
           </Suspense>
         );
