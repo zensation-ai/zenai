@@ -291,7 +291,7 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.06),
@@ -339,7 +339,7 @@
     #ff8f5a 100%
   );
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transition: width var(--transition-base) ease;
 }
 
 .progress-glow {
@@ -352,7 +352,7 @@
   filter: blur(8px);
   opacity: 0.6;
   transform: translate(-50%, -50%);
-  transition: left 0.3s ease;
+  transition: left var(--transition-base) ease;
 }
 
 /* ===========================================
@@ -417,7 +417,7 @@
 .streak-count {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #f59e0b;
+  color: var(--warning);
   letter-spacing: -0.02em;
 }
 
@@ -470,7 +470,7 @@
 .insight-prefix {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #3b82f6;
+  color: var(--info);
   white-space: nowrap;
 }
 

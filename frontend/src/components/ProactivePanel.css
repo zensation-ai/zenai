@@ -15,7 +15,7 @@
   max-height: calc(100vh - 80px);
   background: var(--bg-secondary, #1a1a2e);
   border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   display: flex;
   flex-direction: column;
@@ -78,7 +78,7 @@
 }
 
 .proactive-error {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .proactive-empty {
@@ -107,7 +107,7 @@
   display: flex;
   gap: 0.75rem;
   padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
 
@@ -157,7 +157,7 @@
 
 .proactive-decision-notify {
   background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
+  color: var(--info);
 }
 
 .proactive-decision-prepare_context {
@@ -168,7 +168,7 @@
 .proactive-decision-take_action,
 .proactive-decision-trigger_agent {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .proactive-decision-ignored {
@@ -218,14 +218,14 @@
   top: 0;
   right: 0;
   transform: translate(25%, -25%);
-  background: #ef4444;
+  background: var(--danger);
   color: #fff;
   font-size: 0.6rem;
   font-weight: 700;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;

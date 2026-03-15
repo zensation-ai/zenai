@@ -92,7 +92,7 @@
   margin-bottom: 24px;
   padding: 16px;
   background: var(--surface-light);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .meta-item {
@@ -158,7 +158,7 @@
 .topics-list li {
   padding: 8px 12px;
   background: var(--surface-light);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 8px;
 }
 
@@ -168,13 +168,13 @@
   gap: 8px;
   padding: 10px 12px;
   background: rgba(34, 197, 94, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 8px;
-  border-left: 3px solid #22c55e;
+  border-left: 3px solid var(--success);
 }
 
 .decision-icon {
-  color: #22c55e;
+  color: var(--success);
   font-weight: bold;
 }
 
@@ -187,7 +187,7 @@
 .action-item {
   padding: 12px;
   background: var(--surface-light);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .action-item-header {
@@ -217,16 +217,16 @@
 .follow-ups-list li {
   padding: 10px 12px;
   background: rgba(59, 130, 246, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 8px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--info);
 }
 
 .transcript-section blockquote {
   margin: 0;
   padding: 16px;
   background: var(--surface-light);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border-left: 3px solid var(--border);
   font-style: italic;
   color: var(--text-muted);
@@ -250,7 +250,7 @@
   border: 1px solid var(--danger);
   color: var(--danger);
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 16px;
   font-size: 0.9rem;
 }
@@ -264,7 +264,7 @@
 .notes-textarea {
   width: 100%;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -287,12 +287,12 @@
 
 .record-button {
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .record-button:hover {
@@ -318,7 +318,7 @@
 
 .process-button {
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--primary);
   color: white;
@@ -326,7 +326,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   margin-left: auto;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .process-button:hover:not(:disabled) {

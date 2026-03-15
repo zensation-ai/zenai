@@ -11,7 +11,7 @@
 .meeting-search-bar__input {
   flex: 1;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-color, #ddd);
   background: var(--surface, #fff);
   color: var(--text, #222);
@@ -26,7 +26,7 @@
 
 .meeting-search-bar__select {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-color, #ddd);
   background: var(--surface, #fff);
   color: var(--text, #222);

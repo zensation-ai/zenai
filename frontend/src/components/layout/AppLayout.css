@@ -151,7 +151,7 @@
     justify-content: center;
     background: var(--bg-secondary, rgba(20, 60, 80, 0.08));
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s ease;

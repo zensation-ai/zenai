@@ -61,7 +61,7 @@
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.5);
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity var(--transition-base) ease, transform var(--transition-base) ease;
   pointer-events: none;
 }
 
@@ -166,7 +166,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   flex-shrink: 0;
 }
 
@@ -230,7 +230,7 @@
   padding: 6px 12px;
   border-radius: var(--radius-sm, 8px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   flex-shrink: 0;
   white-space: nowrap;
 }

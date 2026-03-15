@@ -21,7 +21,7 @@
   cursor: pointer;
   border-radius: 6px;
   font-size: 0.875rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .governance-nav-btn:hover {
@@ -55,7 +55,7 @@
   border: 1px solid var(--border-color, rgba(255,255,255,0.08));
   border-radius: 10px;
   padding: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .governance-card:hover {
@@ -117,7 +117,7 @@
 .governance-status-rejected,
 .governance-status-failed {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .governance-status-expired {
@@ -147,7 +147,7 @@
 }
 
 .governance-rejection {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .governance-actions {
@@ -163,7 +163,7 @@
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .governance-btn:disabled {
@@ -187,7 +187,7 @@
 
 .governance-btn-reject {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .governance-btn-reject:hover:not(:disabled) {
@@ -260,8 +260,8 @@
   padding: 0.75rem 1rem;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
-  color: #ef4444;
+  border-radius: var(--radius-sm);
+  color: var(--danger);
   font-size: 0.875rem;
 }
 
@@ -293,7 +293,7 @@
   padding-top: 0.75rem;
   border-top: 1px solid rgba(239, 68, 68, 0.15);
   font-size: 0.85rem;
-  color: #ef4444;
+  color: var(--danger);
 }
 
 /* Pagination */
@@ -317,7 +317,7 @@
   display: flex;
   gap: 0.25rem;
   background: rgba(255,255,255,0.03);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 3px;
   margin-bottom: 1rem;
 }
@@ -331,7 +331,7 @@
   cursor: pointer;
   border-radius: 6px;
   font-size: 0.8rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .governance-toggle-btn:focus-visible {

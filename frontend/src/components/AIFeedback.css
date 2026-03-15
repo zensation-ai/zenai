@@ -32,12 +32,12 @@
 
 .feedback-btn {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border, #e5e7eb);
   background: var(--bg-secondary, #f9fafb);
   cursor: pointer;
   font-size: 0.875rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -76,7 +76,7 @@
   margin-top: 1rem;
   padding: 1rem;
   background: var(--bg-secondary, #f9fafb);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .correction-form label {

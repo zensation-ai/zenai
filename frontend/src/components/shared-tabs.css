@@ -35,7 +35,7 @@
   z-index: 2;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--transition-base) ease;
 }
 
 .hub-tabs-wrapper::before {
@@ -81,7 +81,7 @@
   background: transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   white-space: nowrap;
   color: var(--dark-text-secondary);
   font-size: 0.875rem;
@@ -197,7 +197,7 @@
   color: var(--dark-text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   text-align: center;
 }
 

@@ -126,7 +126,7 @@
   gap: 0.25rem;
   padding: 0.6rem;
   border: 1px solid var(--border-color, #e0e0e0);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-primary, #fff);
   cursor: pointer;
   text-align: left;
@@ -186,7 +186,7 @@
   left: 1rem;
   right: 340px;
   background: var(--bg-primary, #fff);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   z-index: 10;

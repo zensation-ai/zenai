@@ -167,7 +167,7 @@
 .idea-type {
   font-size: 1.25rem;
   flex-shrink: 0;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--transition-base) cubic-bezier(0.34, 1.56, 0.64, 1);
   display: inline-block;
 }
 
@@ -425,7 +425,7 @@
   border: 1px solid rgba(255, 107, 53, 0.15);
   border-radius: 20px;
   color: var(--primary-dark);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background var(--transition-base) ease, border-color var(--transition-base) ease;
   cursor: default; /* Korrigiert: Nicht mehr irreführend klickbar */
   position: relative;
 }
@@ -457,7 +457,7 @@
 /* AI Feedback in card footer */
 .idea-footer .ai-feedback.compact {
   opacity: 0.6;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-base);
 }
 
 .idea-card:hover .idea-footer .ai-feedback.compact {
@@ -716,13 +716,13 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease, color 0.2s ease;
+  transition: background var(--transition-base) ease, transform 0.15s ease, color var(--transition-base) ease;
   opacity: 0.5;
 }
 
 .favorite-button.is-favorite {
   opacity: 1;
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .idea-card:hover .favorite-button {
@@ -731,7 +731,7 @@
 
 .idea-card .favorite-button:hover {
   background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  color: var(--warning);
   opacity: 1;
   transform: scale(1.1);
 }

@@ -63,7 +63,7 @@
   margin-bottom: 24px;
   padding: 4px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
 
@@ -72,12 +72,12 @@
   padding: 12px 16px;
   border: none;
   background: transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-muted);
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .tab-btn:hover { color: var(--text); background: var(--surface-light); }
@@ -92,7 +92,7 @@
 
 .export-section {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid var(--border);
 }
@@ -118,9 +118,9 @@
   padding: 16px 12px;
   border: 2px solid var(--border);
   background: var(--surface-light);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .format-option:hover {
@@ -152,7 +152,7 @@
   background: var(--surface-light);
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   position: relative;
 }
 
@@ -161,7 +161,7 @@
 }
 
 .content-option.active {
-  border-color: #22c55e;
+  border-color: var(--success);
   background: rgba(34, 197, 94, 0.1);
 }
 
@@ -171,7 +171,7 @@
 .check-mark {
   position: absolute;
   right: 12px;
-  color: #22c55e;
+  color: var(--success);
   font-weight: 700;
 }
 
@@ -195,7 +195,7 @@
 
 .date-input input {
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   color: var(--text);
@@ -214,12 +214,12 @@
   justify-content: center;
   gap: 10px;
   padding: 16px 24px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: none;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .export-btn.primary {
@@ -253,7 +253,7 @@
   gap: 16px;
   padding: 16px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
 
@@ -281,10 +281,10 @@
   padding: 10px;
   border: 1px solid var(--border);
   background: var(--surface-light);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 1.25rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .download-btn:hover {
@@ -301,7 +301,7 @@
 
 .backup-card {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 32px;
   border: 1px solid var(--border);
   text-align: center;
@@ -349,7 +349,7 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .backup-btn:hover:not(:disabled) {
@@ -363,7 +363,7 @@
 
 .backup-info {
   background: rgba(59, 130, 246, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px 20px;
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
@@ -371,7 +371,7 @@
 .backup-info h4 {
   margin: 0 0 8px 0;
   font-size: 0.9rem;
-  color: #3b82f6;
+  color: var(--info);
 }
 
 .backup-info p {
@@ -398,13 +398,13 @@
 /* Back Button */
 .back-button {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-light);
   color: var(--text);
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .back-button:hover {

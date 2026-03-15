@@ -67,7 +67,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   -webkit-app-region: no-drag;
   flex-shrink: 0;
 }
@@ -91,7 +91,7 @@
 
 .back-arrow {
   font-size: 1rem;
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-base) ease;
 }
 
 .page-back-button:hover .back-arrow {

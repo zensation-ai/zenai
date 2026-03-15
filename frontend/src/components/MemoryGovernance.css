@@ -23,7 +23,7 @@
   color: rgba(255, 255, 255, 0.5);
   padding: 8px 14px;
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border-left: 3px solid var(--primary, #ff6b35);
 }
 
@@ -63,7 +63,7 @@
   padding: 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   transition: border-color 0.15s ease;
 }
 
@@ -106,7 +106,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 6px;
-  color: #ef4444;
+  color: var(--danger);
   font-size: 0.72rem;
   font-weight: 500;
   cursor: pointer;
@@ -179,8 +179,8 @@
   position: absolute;
   inset: 0;
   background: rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  transition: background 0.2s ease;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-base) ease;
 }
 
 .memgov-toggle-slider::before {
@@ -192,7 +192,7 @@
   height: 18px;
   background: rgba(255, 255, 255, 0.7);
   border-radius: 50%;
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-base) ease;
 }
 
 .memgov-toggle input:checked + .memgov-toggle-slider {
@@ -213,7 +213,7 @@
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.82rem;
   font-family: inherit;
@@ -244,7 +244,7 @@
   padding: 14px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .memgov-gdpr-card.danger {
@@ -282,7 +282,7 @@
   padding: 7px 16px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.78rem;
   font-weight: 500;
@@ -310,7 +310,7 @@
 .memgov-gdpr-btn.danger {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .memgov-gdpr-btn.danger:hover {
@@ -360,7 +360,7 @@
   gap: 10px;
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.76rem;
 }
 
@@ -415,7 +415,7 @@
   padding: 24px;
   background: rgba(20, 38, 50, 0.98);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
@@ -473,7 +473,7 @@
 .memgov-confirm-delete {
   background: rgba(239, 68, 68, 0.2);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .memgov-confirm-delete:hover {

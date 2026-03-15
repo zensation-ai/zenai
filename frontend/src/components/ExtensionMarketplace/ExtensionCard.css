@@ -3,9 +3,9 @@
 .extension-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1.25rem;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   position: relative;
 }
 
@@ -144,7 +144,7 @@
 .extension-card-btn.confirm {
   background: rgba(34, 197, 94, 0.15);
   border-color: rgba(34, 197, 94, 0.3);
-  color: #22c55e;
+  color: var(--success);
 }
 
 .extension-card-btn.confirm:hover:not(:disabled) {
@@ -178,7 +178,7 @@
   bottom: 0;
   background: rgba(255, 255, 255, 0.12);
   border-radius: 20px;
-  transition: background 0.2s ease;
+  transition: background var(--transition-base) ease;
 }
 
 .extension-card-toggle-slider::before {
@@ -190,7 +190,7 @@
   bottom: 2px;
   background: rgba(255, 255, 255, 0.7);
   border-radius: 50%;
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-base) ease;
 }
 
 .extension-card-toggle input:checked + .extension-card-toggle-slider {
@@ -199,7 +199,7 @@
 
 .extension-card-toggle input:checked + .extension-card-toggle-slider::before {
   transform: translateX(16px);
-  background: #22c55e;
+  background: var(--success);
 }
 
 /* Permission Dialog */
@@ -210,7 +210,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.85);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -250,7 +250,7 @@
 }
 
 .extension-permission-check {
-  color: #22c55e;
+  color: var(--success);
   font-size: 0.7rem;
 }
 

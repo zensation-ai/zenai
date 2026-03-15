@@ -17,12 +17,12 @@
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary, #94a3b8);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .voice-settings-toggle:hover {
@@ -37,7 +37,7 @@
 }
 
 .voice-settings-chevron {
-  transition: transform 0.2s;
+  transition: transform var(--transition-base);
 }
 
 .voice-settings-chevron-open {
@@ -122,7 +122,7 @@
 
 .voice-settings-select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--info);
 }
 
 .voice-settings-select option {
@@ -148,7 +148,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--info);
   border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -163,7 +163,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--info);
   border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
 }
@@ -197,13 +197,13 @@
   border: none;
   background: rgba(255, 255, 255, 0.15);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
   padding: 0;
   flex-shrink: 0;
 }
 
 .voice-settings-toggle-on {
-  background: #3b82f6;
+  background: var(--info);
 }
 
 .voice-settings-toggle-knob {
@@ -214,7 +214,7 @@
   height: 18px;
   border-radius: 50%;
   background: var(--surface);
-  transition: transform 0.2s;
+  transition: transform var(--transition-base);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
@@ -226,7 +226,7 @@
 .voice-settings-save {
   width: 100%;
   padding: 8px 16px;
-  background: #3b82f6;
+  background: var(--info);
   border: none;
   border-radius: 6px;
   color: white;

@@ -25,7 +25,7 @@
   padding: 0.75rem 1rem;
   background: var(--neuro-focus, #1a3a4a);
   color: white;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   line-height: 1.4;
   opacity: 0;
@@ -355,7 +355,7 @@
 
 .skeleton-item {
   background: rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   position: relative;
   overflow: hidden;
 }
@@ -418,7 +418,7 @@
   padding: 1rem 1.5rem;
   background: var(--glass-2026-bg, rgba(255, 255, 255, 0.9));
   backdrop-filter: blur(24px);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   opacity: 0;
   transform: translateY(10px) scale(0.95);
@@ -877,7 +877,7 @@
   text-align: center;
   padding: 1.5rem;
   background: var(--glass-2026-bg, rgba(255, 255, 255, 0.9));
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(239, 68, 68, 0.2);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }

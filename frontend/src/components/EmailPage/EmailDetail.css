@@ -263,7 +263,7 @@
   color: #4A90D9;
   font-size: 0.8rem;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -351,7 +351,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   min-width: 160px;
@@ -469,7 +469,7 @@
 
 .ed-thread-arrow {
   font-size: 0.6rem;
-  transition: transform 0.2s;
+  transition: transform var(--transition-base);
 }
 .ed-thread-arrow--open { transform: rotate(90deg); }
 

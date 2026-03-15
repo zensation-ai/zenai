@@ -43,7 +43,10 @@ export const ideasContextRouter = Router();
  */
 function getContext(req: Request): AIContext {
   const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
-  return isValidContext(context) ? context : 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError(`Invalid context: ${context}. Must be one of: personal, work, learning, creative`);
+  }
+  return context;
 }
 
 /**

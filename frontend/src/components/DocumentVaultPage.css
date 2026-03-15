@@ -548,7 +548,7 @@
   border-right: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
   padding: 1rem;
   transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 101;
   overflow-y: auto;
 }

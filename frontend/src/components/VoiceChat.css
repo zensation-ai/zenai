@@ -5,7 +5,7 @@
   flex-direction: column;
   height: 100%;
   background: rgba(15, 15, 25, 0.95);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
@@ -105,7 +105,7 @@
 .voice-chat-error {
   padding: 8px 16px;
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--danger);
   font-size: 13px;
   text-align: center;
   border-top: 1px solid rgba(239, 68, 68, 0.2);
@@ -157,7 +157,7 @@
   gap: 6px;
   padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -176,7 +176,7 @@
 
 .voice-chat-button-stop {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 

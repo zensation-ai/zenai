@@ -4,8 +4,8 @@
  */
 
 .agent-teams-page {
-  --color-success: #22c55e;
-  --color-error: #ef4444;
+  --color-success: var(--success);
+  --color-error: var(--danger);
   min-height: 0;
   background: var(--bg-primary);
   padding: 2rem;
@@ -45,7 +45,7 @@
 .agent-teams-section {
   margin-bottom: 1.5rem;
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
 }
 
 .agent-teams-section h3 {
@@ -61,7 +61,7 @@
   width: 100%;
   min-height: 100px;
   padding: 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
   background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
   color: var(--text-primary);
@@ -69,7 +69,7 @@
   font-size: 0.95rem;
   line-height: 1.5;
   resize: vertical;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .agent-task-input:focus {
@@ -91,13 +91,13 @@
 
 .classify-btn {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border);
   background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
   color: var(--text-primary);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--transition-base), border-color var(--transition-base);
 }
 
 .classify-btn:hover:not(:disabled) {
@@ -132,11 +132,11 @@
   align-items: center;
   gap: 6px;
   padding: 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 2px solid var(--glass-border);
   background: var(--bg-secondary, rgba(255, 255, 255, 0.03));
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  transition: border-color var(--transition-base), background var(--transition-base), transform 0.15s;
   text-align: center;
 }
 
@@ -192,14 +192,14 @@
   width: 100%;
   padding: 1rem;
   margin-bottom: 2rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: none;
   background: var(--accent-primary, #f97316);
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  transition: background var(--transition-base), transform 0.15s;
 }
 
 .execute-btn:hover:not(:disabled) {
@@ -227,14 +227,14 @@
   width: 100%;
   padding: 0.75rem;
   margin-bottom: 2rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
   background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
   color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--transition-base), border-color var(--transition-base);
 }
 
 .new-task-btn:hover {
@@ -248,7 +248,7 @@
   align-items: flex-start;
   gap: 12px;
   padding: 1rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   margin-bottom: 1.5rem;
   border-left: 3px solid var(--color-error);
 }
@@ -275,7 +275,7 @@
   flex-wrap: wrap;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   margin-bottom: 1.5rem;
 }
 
@@ -310,7 +310,7 @@
 
 .agent-card {
   padding: 1rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border-left: 3px solid transparent;
 }
 
@@ -377,7 +377,7 @@
 /* Final Output */
 .final-output {
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   margin-bottom: 2rem;
 }
 
@@ -415,7 +415,7 @@
 }
 
 .history-card {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -487,7 +487,7 @@
   max-height: 300px;
   overflow-y: auto;
   padding: 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-secondary, rgba(255, 255, 255, 0.03));
 }
 
@@ -499,13 +499,13 @@
 
 .save-idea-btn {
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border);
   background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
   color: var(--text-primary);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--transition-base), border-color var(--transition-base);
 }
 
 .save-idea-btn:hover:not(:disabled) {
@@ -520,7 +520,7 @@
 
 .saved-badge {
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   background: rgba(34, 197, 94, 0.1);
   color: var(--color-success);
@@ -529,12 +529,12 @@
 /* Analytics Toggle */
 .analytics-toggle-btn {
   padding: 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border);
   background: transparent;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
   -webkit-app-region: no-drag;
 }
 
@@ -546,7 +546,7 @@
 .agent-analytics {
   margin-bottom: 1.5rem;
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
 }
 
 .agent-analytics h3 {
@@ -622,13 +622,13 @@
 
 .templates-toggle {
   padding: 0.4rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border);
   background: transparent;
   color: var(--text-primary);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .templates-toggle:hover {
@@ -656,7 +656,7 @@
   background: var(--bg-secondary, rgba(255, 255, 255, 0.03));
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--transition-base), background var(--transition-base);
 }
 
 .template-card:hover {
@@ -705,7 +705,7 @@
   font-size: 0.75rem;
   cursor: pointer;
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-base);
 }
 
 .clear-template:hover {
@@ -715,7 +715,7 @@
 /* Streaming Progress */
 .streaming-progress {
   padding: 1.25rem;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   margin-bottom: 1.5rem;
 }
 
@@ -873,10 +873,10 @@
 .history-pause-reason {
   padding: 0.5rem 0.75rem;
   background: rgba(245, 158, 11, 0.1);
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--warning);
   border-radius: 4px;
   font-size: 0.8rem;
-  color: #f59e0b;
+  color: var(--warning);
   margin-bottom: 0.75rem;
 }
 
@@ -893,12 +893,12 @@
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .agent-control-btn.pause-btn {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .agent-control-btn.pause-btn:hover {
@@ -907,7 +907,7 @@
 
 .agent-control-btn.cancel-btn {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .agent-control-btn.cancel-btn:hover {

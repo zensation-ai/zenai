@@ -10,14 +10,14 @@
   padding: 12px 14px;
   min-width: 260px;
   max-width: 340px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border-left: 3px solid var(--suggestion-accent, #6366f1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--transition-base) ease, box-shadow var(--transition-base) ease;
   flex-shrink: 0;
 }
 
@@ -153,7 +153,7 @@
   padding: 4px 0;
   min-width: 120px;
   background: var(--surface);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   z-index: 100;

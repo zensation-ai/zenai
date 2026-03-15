@@ -10,7 +10,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
@@ -46,7 +46,7 @@ export const a2aRouter = Router();
  * POST /api/a2a/tasks
  * Create a new A2A task
  */
-a2aRouter.post('/a2a/tasks', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.post('/a2a/tasks', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { skill_id, message, metadata, caller_agent_url, caller_agent_name, external_task_id } = req.body;
 
   if (!skill_id || !message) {
@@ -84,7 +84,7 @@ a2aRouter.post('/a2a/tasks', apiKeyAuth, asyncHandler(async (req: Request, res: 
  * GET /api/a2a/tasks/:id
  * Get task status
  */
-a2aRouter.get('/a2a/tasks/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.get('/a2a/tasks/:id', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const task = await a2aTaskManager.getTask('personal', req.params.id);
 
   if (!task) {
@@ -108,7 +108,7 @@ a2aRouter.get('/a2a/tasks/:id', apiKeyAuth, asyncHandler(async (req: Request, re
  * POST /api/a2a/tasks/:id/messages
  * Send a follow-up message to a task
  */
-a2aRouter.post('/a2a/tasks/:id/messages', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.post('/a2a/tasks/:id/messages', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { message } = req.body;
 
   if (!message) {
@@ -134,7 +134,7 @@ a2aRouter.post('/a2a/tasks/:id/messages', apiKeyAuth, asyncHandler(async (req: R
  * DELETE /api/a2a/tasks/:id
  * Cancel a task
  */
-a2aRouter.delete('/a2a/tasks/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.delete('/a2a/tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   // Try all contexts to find the task
   for (const ctx of ['personal', 'work', 'learning', 'creative'] as AIContext[]) {
     try {
@@ -153,7 +153,7 @@ a2aRouter.delete('/a2a/tasks/:id', apiKeyAuth, asyncHandler(async (req: Request,
  * GET /api/a2a/tasks/:id/stream
  * SSE stream for task progress
  */
-a2aRouter.get('/a2a/tasks/:id/stream', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.get('/a2a/tasks/:id/stream', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const taskId = req.params.id;
 
   // Set SSE headers
@@ -234,7 +234,7 @@ a2aRouter.get('/a2a/tasks/:id/stream', apiKeyAuth, asyncHandler(async (req: Requ
  * GET /api/:context/a2a/tasks
  * List tasks for a specific context
  */
-a2aRouter.get('/:context/a2a/tasks', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.get('/:context/a2a/tasks', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -258,7 +258,7 @@ a2aRouter.get('/:context/a2a/tasks', apiKeyAuth, asyncHandler(async (req: Reques
  * GET /api/:context/a2a/external-agents
  * List external agents
  */
-a2aRouter.get('/:context/a2a/external-agents', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.get('/:context/a2a/external-agents', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -274,7 +274,7 @@ a2aRouter.get('/:context/a2a/external-agents', apiKeyAuth, asyncHandler(async (r
  * POST /api/:context/a2a/external-agents
  * Register an external agent
  */
-a2aRouter.post('/:context/a2a/external-agents', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.post('/:context/a2a/external-agents', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
 
   if (!isValidContext(context)) {
@@ -304,7 +304,7 @@ a2aRouter.post('/:context/a2a/external-agents', apiKeyAuth, asyncHandler(async (
  * DELETE /api/:context/a2a/external-agents/:id
  * Remove an external agent
  */
-a2aRouter.delete('/:context/a2a/external-agents/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.delete('/:context/a2a/external-agents/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
   if (!isValidContext(context)) {
@@ -320,7 +320,7 @@ a2aRouter.delete('/:context/a2a/external-agents/:id', apiKeyAuth, asyncHandler(a
  * POST /api/:context/a2a/external-agents/:id/health
  * Health check an external agent
  */
-a2aRouter.post('/:context/a2a/external-agents/:id/health', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.post('/:context/a2a/external-agents/:id/health', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
   if (!isValidContext(context)) {
@@ -336,7 +336,7 @@ a2aRouter.post('/:context/a2a/external-agents/:id/health', apiKeyAuth, asyncHand
  * POST /api/:context/a2a/external-agents/:id/send
  * Send a task to an external agent
  */
-a2aRouter.post('/:context/a2a/external-agents/:id/send', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+a2aRouter.post('/:context/a2a/external-agents/:id/send', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
 
   if (!isValidContext(context)) {

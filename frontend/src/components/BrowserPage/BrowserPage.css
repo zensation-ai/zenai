@@ -197,8 +197,8 @@
   align-items: center;
   background: var(--bg-primary, #0f1117);
   border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
 }
 
 .browser-url-wrapper:focus-within {
@@ -357,9 +357,9 @@
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--border-color, rgba(255,255,255,0.08));
   color: var(--text-primary, #e8e8e8);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   min-width: 90px;
 }
 
@@ -504,9 +504,9 @@
   color: var(--text-primary, #e8e8e8);
 }
 
-.browser-history-btn.danger { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+.browser-history-btn.danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
 .browser-history-btn.danger:hover { background: rgba(239, 68, 68, 0.1); }
-.browser-history-confirm-text { font-size: 0.8rem; color: #ef4444; }
+.browser-history-confirm-text { font-size: 0.8rem; color: var(--danger); }
 
 .browser-history-layout,
 .browser-bookmarks-layout {
@@ -620,7 +620,7 @@
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
 
@@ -730,7 +730,7 @@
 .browser-bookmarks-item-delete:hover {
   opacity: 1 !important;
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .browser-history-more {

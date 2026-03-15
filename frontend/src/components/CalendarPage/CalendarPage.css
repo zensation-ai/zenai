@@ -82,7 +82,7 @@
   gap: 0.3rem;
   padding: 0.35rem 0.65rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
   color: var(--text-secondary);
   cursor: pointer;
@@ -575,7 +575,7 @@
 
 .calendar-form {
   background: var(--bg-primary);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   width: 100%;
   max-width: 500px;
   max-height: 90vh;

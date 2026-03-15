@@ -17,7 +17,7 @@
   backdrop-filter: blur(20px) saturate(200%);
   -webkit-backdrop-filter: blur(20px) saturate(200%);
   border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 8px 32px rgba(20, 50, 70, 0.12),
     0 4px 16px rgba(20, 50, 70, 0.06);
@@ -89,7 +89,7 @@
 
 .idea-batch-action.favorite:hover {
   background: #fff8e1;
-  border-color: #f59e0b;
+  border-color: var(--warning);
 }
 
 .idea-batch-action.archive:hover {
@@ -99,8 +99,8 @@
 
 .idea-batch-action.delete:hover {
   background: #fce4ec;
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 /* Responsive */

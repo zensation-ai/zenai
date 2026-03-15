@@ -14,7 +14,7 @@
 .imap-setup-modal {
   background: var(--bg-primary, #0c1e28);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   width: 90%;
   max-width: 520px;
   max-height: 85vh;
@@ -122,7 +122,7 @@
   background: rgba(255, 107, 53, 0.15);
   color: #ff6b35;
   border: 1px solid rgba(255, 107, 53, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -182,7 +182,7 @@
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary, #e8edf2);
   font-size: 14px;
   outline: none;
@@ -247,7 +247,7 @@
   padding: 10px 14px;
   background: rgba(255, 107, 107, 0.1);
   border: 1px solid rgba(255, 107, 107, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #ff6b6b;
   font-size: 13px;
   margin-bottom: 16px;
@@ -257,7 +257,7 @@
   padding: 10px 14px;
   background: rgba(74, 222, 128, 0.1);
   border: 1px solid rgba(74, 222, 128, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #4ade80;
   font-size: 13px;
   margin-bottom: 16px;

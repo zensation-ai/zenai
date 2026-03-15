@@ -59,7 +59,7 @@
   margin-bottom: 24px;
   padding: 4px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
 
@@ -68,12 +68,12 @@
   padding: 12px 16px;
   border: none;
   background: transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-muted);
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,7 +97,7 @@
   margin-bottom: 24px;
   padding: 16px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
 
@@ -121,9 +121,9 @@
   color: var(--text);
 }
 
-.stat-item.accepted .stat-value { color: #22c55e; }
-.stat-item.dismissed .stat-value { color: #ef4444; }
-.stat-item.rate .stat-value { color: #3b82f6; }
+.stat-item.accepted .stat-value { color: var(--success); }
+.stat-item.dismissed .stat-value { color: var(--danger); }
+.stat-item.rate .stat-value { color: var(--info); }
 
 /* Suggestions Content */
 .suggestions-content {
@@ -140,10 +140,10 @@
 
 .suggestion-card {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid var(--border);
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .suggestion-card:hover {
@@ -181,8 +181,8 @@
 .confidence-badge {
   padding: 4px 10px;
   background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
-  border-radius: 12px;
+  color: var(--info);
+  border-radius: var(--radius-md);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -208,22 +208,22 @@
 .action-btn {
   flex: 1;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-light);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .action-btn.accept {
-  color: #22c55e;
+  color: var(--success);
 }
 
 .action-btn.accept:hover {
   background: rgba(34, 197, 94, 0.1);
-  border-color: #22c55e;
+  border-color: var(--success);
 }
 
 .action-btn.dismiss {
@@ -232,8 +232,8 @@
 
 .action-btn.dismiss:hover {
   background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 /* Routines Content */
@@ -253,9 +253,9 @@
   gap: 16px;
   padding: 20px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .routine-card.disabled {
@@ -314,7 +314,7 @@
   bottom: 0;
   background-color: var(--surface-light);
   border: 1px solid var(--border);
-  transition: 0.3s;
+  transition: var(--transition-base);
   border-radius: 26px;
 }
 
@@ -326,7 +326,7 @@
   left: 2px;
   bottom: 2px;
   background-color: var(--surface);
-  transition: 0.3s;
+  transition: var(--transition-base);
   border-radius: 50%;
 }
 
@@ -348,7 +348,7 @@
 
 .settings-section {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid var(--border);
 }
@@ -406,7 +406,7 @@
   background: var(--surface-light);
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .frequency-option:hover {
@@ -440,7 +440,7 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .save-btn:hover {
@@ -490,13 +490,13 @@
 /* Back Button */
 .back-button {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-light);
   color: var(--text);
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .back-button:hover {

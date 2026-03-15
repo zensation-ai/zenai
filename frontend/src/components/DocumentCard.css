@@ -8,7 +8,7 @@
   position: relative;
   background: var(--glass-2026-bg, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--neuro-border, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
   transition: all var(--neuro-timing-natural, 0.28s) ease;

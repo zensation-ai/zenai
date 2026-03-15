@@ -22,7 +22,7 @@
   flex: 1;
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.8rem;
@@ -65,7 +65,7 @@
   padding: 0.5rem 0.75rem;
   font-size: 0.82rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
   outline: none;
@@ -126,7 +126,7 @@
   height: 180px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   animation: extension-pulse 1.5s ease-in-out infinite;
 }
 
@@ -158,8 +158,8 @@
   padding: 0.75rem 1rem;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
-  color: #ef4444;
+  border-radius: var(--radius-sm);
+  color: var(--danger);
   font-size: 0.8rem;
   margin-bottom: 1rem;
 }

@@ -70,7 +70,7 @@
   border-radius: 10px;
   padding: 1rem;
   text-align: center;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .sleep-stat-card:hover {
@@ -121,7 +121,7 @@
   padding: 0.75rem 1rem;
   background: rgba(239, 68, 68, 0.06);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .sleep-contradiction-content {
@@ -140,7 +140,7 @@
   height: 22px;
   border-radius: 50%;
   background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--danger);
   font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -210,7 +210,7 @@
   border: 1px solid var(--border-color, rgba(255,255,255,0.08));
   border-radius: 10px;
   padding: 0.75rem 1rem;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .sleep-discovery-card:hover {

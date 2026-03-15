@@ -2,11 +2,11 @@
 
 .cal-briefing {
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--bg-elevated);
   margin-bottom: 1rem;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
 }
 
 /* Header Bar */
@@ -136,7 +136,7 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem 0.65rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   line-height: 1.4;
 }
@@ -216,7 +216,7 @@
   flex-direction: column;
   align-items: center;
   padding: 0.4rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-secondary);
 }
 
@@ -305,7 +305,7 @@
   align-items: flex-start;
   gap: 0.35rem;
   padding: 0.45rem 0.65rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(107, 142, 123, 0.08);
   border: 1px solid rgba(107, 142, 123, 0.12);
   color: #6B8E7B;

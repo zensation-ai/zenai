@@ -22,6 +22,7 @@ jest.mock('../../../../middleware/auth', () => ({
     _req.apiKey = { id: 'test-key', name: 'test', scopes: ['read', 'write', 'admin'], rateLimit: 1000 };
     next();
   }),
+  requireScope: jest.fn(() => (_req: any, _res: any, next: any) => next()),
   rateLimiter: jest.fn((_req: any, _res: any, next: any) => next()),
 }));
 

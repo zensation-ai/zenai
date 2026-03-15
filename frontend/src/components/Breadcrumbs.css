@@ -36,7 +36,7 @@
   font-size: inherit;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   text-decoration: none;
 }
 

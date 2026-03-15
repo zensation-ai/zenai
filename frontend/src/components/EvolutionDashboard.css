@@ -30,7 +30,7 @@
   margin-bottom: 32px;
   padding: 32px 80px;
   background: linear-gradient(135deg, var(--surface) 0%, var(--bg-primary) 100%);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
 }
 
@@ -68,7 +68,7 @@
 }
 
 .ring-progress.accuracy {
-  stroke: #22c55e;
+  stroke: var(--success);
 }
 
 .stat-ring .stat-value {
@@ -97,11 +97,11 @@
 }
 
 .stat-trend.positive {
-  color: #22c55e;
+  color: var(--success);
 }
 
 .stat-trend.negative {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .hero-stat.streak {
@@ -111,7 +111,7 @@
 .streak-value {
   font-size: 3rem;
   font-weight: 800;
-  color: #f59e0b;
+  color: var(--warning);
   line-height: 1;
 }
 
@@ -129,11 +129,11 @@
   padding: 10px 20px;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.95rem;
   color: var(--text-muted);
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .tab:hover {
@@ -153,7 +153,7 @@
 /* Cards */
 .card {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   border: 1px solid var(--border);
   margin-bottom: 16px;
@@ -227,7 +227,7 @@
   gap: 4px;
   padding: 16px;
   background: var(--bg-primary);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .impact-icon {
@@ -258,7 +258,7 @@
   gap: 12px;
   padding: 12px;
   background: var(--bg-primary);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .milestone-icon {
@@ -288,7 +288,7 @@
   height: 100%;
   background: linear-gradient(90deg, var(--primary), #60a5fa);
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transition: width var(--transition-base) ease;
 }
 
 .progress-text {
@@ -388,12 +388,12 @@
 
 /* Timeline colors */
 .timeline-item.gold .timeline-marker {
-  border-color: #f59e0b;
+  border-color: var(--warning);
   background: rgba(245, 158, 11, 0.1);
 }
 
 .timeline-item.green .timeline-marker {
-  border-color: #22c55e;
+  border-color: var(--success);
   background: rgba(34, 197, 94, 0.1);
 }
 
@@ -431,11 +431,11 @@
 }
 
 .trend-value.positive {
-  color: #22c55e;
+  color: var(--success);
 }
 
 .trend-value.negative {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .label {
@@ -458,7 +458,7 @@
   border-radius: 2px 2px 0 0;
   min-height: 4px;
   position: relative;
-  transition: height 0.3s ease;
+  transition: height var(--transition-base) ease;
 }
 
 .chart-bar:hover {
@@ -519,7 +519,7 @@
   gap: 8px;
   padding: 16px;
   background: var(--bg-primary);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   text-align: center;
 }
 
@@ -609,7 +609,7 @@
 .error-banner {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--danger);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px 16px;
   margin: 0 80px 20px 80px;
   display: flex;

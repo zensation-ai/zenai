@@ -23,7 +23,7 @@
   border-radius: var(--radius-xl, 20px);
   border: 1px solid rgba(255, 255, 255, 0.7);
   margin-bottom: 1.25rem;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: all var(--transition-base) cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow:
     0 4px 20px rgba(20, 50, 70, 0.06),
     0 1px 3px rgba(20, 50, 70, 0.03),
@@ -157,25 +157,25 @@
 }
 
 .category-pill[data-category="business"] {
-  --pill-accent: #22c55e;
+  --pill-accent: var(--success);
   background: rgba(34, 197, 94, 0.1);
   border-color: rgba(34, 197, 94, 0.2);
 }
 
 .category-pill[data-category="business"]:hover {
   background: rgba(34, 197, 94, 0.15);
-  border-color: #22c55e;
+  border-color: var(--success);
 }
 
 .category-pill[data-category="technical"] {
-  --pill-accent: #3b82f6;
+  --pill-accent: var(--info);
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.2);
 }
 
 .category-pill[data-category="technical"]:hover {
   background: rgba(59, 130, 246, 0.15);
-  border-color: #3b82f6;
+  border-color: var(--info);
 }
 
 .category-pill[data-category="personal"] {
@@ -190,14 +190,14 @@
 }
 
 .category-pill[data-category="learning"] {
-  --pill-accent: #f59e0b;
+  --pill-accent: var(--warning);
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(245, 158, 11, 0.2);
 }
 
 .category-pill[data-category="learning"]:hover {
   background: rgba(245, 158, 11, 0.15);
-  border-color: #f59e0b;
+  border-color: var(--warning);
 }
 
 /* Responsive Anpassungen */

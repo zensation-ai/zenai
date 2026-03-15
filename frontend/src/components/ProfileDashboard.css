@@ -61,12 +61,12 @@
 
 .recalculate-btn {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .recalculate-btn:hover:not(:disabled) {
@@ -88,7 +88,7 @@
 
 .stat-card {
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   border: 1px solid var(--border);
   display: flex;
@@ -153,7 +153,7 @@
 
 .chart-card {
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   border: 1px solid var(--border);
 }
@@ -229,7 +229,7 @@
   gap: 10px;
   padding: 20px;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
 }
 
@@ -241,7 +241,7 @@
   background: var(--surface-light);
   border-radius: 20px;
   color: var(--text);
-  transition: transform 0.2s;
+  transition: transform var(--transition-base);
 }
 
 .topic-tag:hover {
@@ -296,7 +296,7 @@
   justify-content: space-between;
   align-items: center;
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px 20px;
   border: 1px solid var(--border);
 }
@@ -320,7 +320,7 @@
   color: var(--text-muted);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .toggle-btn.active {
@@ -378,7 +378,7 @@
   padding: 12px 16px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--danger);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 20px;
   color: var(--danger);
 }
@@ -394,7 +394,7 @@
 /* Business Profile Section */
 .business-profile-section {
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   border: 1px solid var(--border);
   margin-bottom: 32px;
@@ -414,12 +414,12 @@
 
 .edit-profile-btn {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-light);
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .edit-profile-btn:hover {
@@ -456,12 +456,12 @@
 .form-group input,
 .form-group textarea {
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   color: var(--text);
   font-size: 0.95rem;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .form-group input:focus,
@@ -484,14 +484,14 @@
 
 .save-btn {
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--primary);
   color: white;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .save-btn:hover:not(:disabled) {
@@ -538,7 +538,7 @@
   padding: 4px 12px;
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   font-size: 0.85rem;
   color: #60a5fa;
 }

@@ -36,7 +36,10 @@ function getMeetingContext(req: Request): AIContext {
     (req.body?.context as string) ||
     (req.headers['x-ai-context'] as string) ||
     'work';
-  return isValidContext(ctx) ? ctx : 'work';
+  if (!isValidContext(ctx)) {
+    throw new ValidationError(`Invalid context: ${ctx}. Must be one of: personal, work, learning, creative`);
+  }
+  return ctx;
 }
 
 /**

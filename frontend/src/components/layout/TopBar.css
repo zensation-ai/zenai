@@ -153,7 +153,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  transition: background 0.3s ease;
+  transition: background var(--transition-base) ease;
 }
 
 .topbar-status-dot.connected {
@@ -211,7 +211,7 @@
 }
 
 .topbar-refresh svg {
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-base) ease;
 }
 
 .topbar-refresh:active svg {

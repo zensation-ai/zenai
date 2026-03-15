@@ -17,12 +17,12 @@
 .identity-card {
   position: relative;
   padding: 1.25rem;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border);
   background: rgba(255, 255, 255, 0.03);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
   backdrop-filter: blur(12px) saturate(160%);
-  transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+  transition: border-color 0.25s, transform var(--transition-base), box-shadow 0.25s;
   cursor: default;
 }
 
@@ -145,7 +145,7 @@
 }
 
 .identity-status-dot.active {
-  background: #22c55e;
+  background: var(--success);
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
 }
 
@@ -209,13 +209,13 @@
 .identity-action-btn {
   flex: 1;
   padding: 0.4rem 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--glass-border);
   background: transparent;
   color: var(--text-primary);
   font-size: 0.78rem;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--transition-base), border-color var(--transition-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -229,7 +229,7 @@
 
 .identity-action-btn.delete-btn {
   border-color: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .identity-action-btn.delete-btn:hover {
@@ -295,7 +295,7 @@
 .identity-modal-close {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -304,7 +304,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .identity-modal-close:hover {
@@ -354,7 +354,7 @@
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.9rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .identity-form-input:focus,
@@ -409,7 +409,7 @@
   border: 2px solid var(--glass-border);
   background: transparent;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--transition-base), background var(--transition-base);
   color: var(--text-primary);
 }
 
@@ -446,7 +446,7 @@
   align-items: center;
   gap: 8px;
   padding: 0.45rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
@@ -492,7 +492,7 @@
   background: rgba(255, 255, 255, 0.04);
   min-height: 42px;
   align-items: center;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .expertise-input-container:focus-within {
@@ -560,7 +560,7 @@
   position: relative;
   width: 44px;
   height: 24px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: none;
   background: rgba(255, 255, 255, 0.12);
   cursor: pointer;
@@ -616,7 +616,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .identity-empty-btn:hover {
@@ -651,7 +651,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  transition: background var(--transition-base), transform 0.15s;
 }
 
 .identity-create-btn:hover {
@@ -673,7 +673,7 @@
 }
 
 .identity-delete-confirm strong {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .identity-delete-actions {
@@ -692,7 +692,7 @@
   color: var(--text-primary);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .identity-btn-cancel:hover {
@@ -708,7 +708,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  transition: background var(--transition-base), transform 0.15s;
 }
 
 .identity-btn-save:hover:not(:disabled) {
@@ -726,12 +726,12 @@
   padding: 0.55rem 1.25rem;
   border-radius: 10px;
   border: none;
-  background: #ef4444;
+  background: var(--danger);
   color: #fff;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .identity-btn-delete:hover {

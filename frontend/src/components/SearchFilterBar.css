@@ -38,7 +38,7 @@
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-xl, 20px);
   padding: 0 1.25rem;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: all var(--transition-base) cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow:
     0 4px 16px rgba(20, 50, 70, 0.05),
     0 1px 3px rgba(20, 50, 70, 0.03),
@@ -173,7 +173,7 @@
 
 .sfb-favorites-toggle.active {
   background: linear-gradient(135deg, #fff8e1, #fff3c4);
-  border-color: #f59e0b;
+  border-color: var(--warning);
   box-shadow:
     0 4px 16px rgba(245, 158, 11, 0.2),
     0 2px 6px rgba(245, 158, 11, 0.1);
@@ -392,15 +392,15 @@
   border-color: var(--category-color, var(--primary));
 }
 
-.sfb-pill-category[data-category="business"] { --category-color: #22c55e; }
-.sfb-pill-category[data-category="technical"] { --category-color: #3b82f6; }
+.sfb-pill-category[data-category="business"] { --category-color: var(--success); }
+.sfb-pill-category[data-category="technical"] { --category-color: var(--info); }
 .sfb-pill-category[data-category="personal"] { --category-color: #a855f7; }
-.sfb-pill-category[data-category="learning"] { --category-color: #f59e0b; }
+.sfb-pill-category[data-category="learning"] { --category-color: var(--warning); }
 
 /* Priorität-Pills */
-.sfb-pill-priority[data-priority="high"].active { background: #ef4444; border-color: #ef4444; }
-.sfb-pill-priority[data-priority="medium"].active { background: #f59e0b; border-color: #f59e0b; }
-.sfb-pill-priority[data-priority="low"].active { background: #22c55e; border-color: #22c55e; }
+.sfb-pill-priority[data-priority="high"].active { background: var(--danger); border-color: var(--danger); }
+.sfb-pill-priority[data-priority="medium"].active { background: var(--warning); border-color: var(--warning); }
+.sfb-pill-priority[data-priority="low"].active { background: var(--success); border-color: var(--success); }
 
 /* Alle Filter zurücksetzen */
 .sfb-clear-all {

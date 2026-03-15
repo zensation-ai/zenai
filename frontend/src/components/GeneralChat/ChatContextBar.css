@@ -32,7 +32,7 @@
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   white-space: nowrap;
   flex: 1;
@@ -110,7 +110,7 @@
   padding: 5px 8px;
   min-height: 32px;
   flex: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .chat-context-bar--compact .chat-context-tile-icon {

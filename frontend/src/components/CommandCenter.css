@@ -26,7 +26,7 @@
   background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
   pointer-events: none;
   opacity: 0.5;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-base) ease;
 }
 
 .command-center.focused::before {
@@ -109,7 +109,7 @@
 .command-char-count {
   font-size: 0.8rem;
   color: var(--text-secondary);  /* Dunkler für bessere Lesbarkeit */
-  transition: color 0.2s ease;
+  transition: color var(--transition-base) ease;
 }
 
 .command-char-count.warning {
@@ -143,7 +143,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
 }
 
 .command-action-btn:hover:not(:disabled) {
@@ -164,7 +164,7 @@
 /* Record Button */
 .command-action-btn.record.recording {
   background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
+  border-color: var(--danger);
   color: #dc2626;
   animation: recordingPulse 1.5s ease-in-out infinite;
 }
@@ -277,7 +277,7 @@
   height: 10px;
   border-radius: 50%;
   background: var(--border);
-  transition: all 0.3s ease;
+  transition: all var(--transition-base) ease;
   flex-shrink: 0;
 }
 
@@ -299,7 +299,7 @@
   width: 16px;
   height: 2px;
   background: var(--border);
-  transition: background 0.3s ease;
+  transition: background var(--transition-base) ease;
 }
 
 .ai-step-connector.completed {

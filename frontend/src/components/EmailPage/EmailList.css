@@ -31,7 +31,7 @@
   width: 100%;
   padding: 8px 12px 8px 32px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary, #e0e8ef);
   font-size: 0.82rem;
@@ -472,7 +472,7 @@
   .el-search { padding: 6px 8px; }
   .el-search-input { font-size: 16px; padding: 10px 12px 10px 32px; }
   .el-row { padding: 10px 8px; min-height: 52px; }
-  .el-avatar { width: 32px; height: 32px; font-size: 0.7rem; border-radius: 8px; }
+  .el-avatar { width: 32px; height: 32px; font-size: 0.7rem; border-radius: var(--radius-sm); }
   .el-sender { max-width: 140px; }
   .el-badges { display: none; }
   /* Touch devices: show only star button inline, hide archive/delete (use swipe) */

@@ -60,11 +60,11 @@
   border: 1px solid rgba(139, 92, 246, 0.3);
   background: rgba(139, 92, 246, 0.12);
   color: #a78bfa;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .pr-add-btn:hover {
@@ -117,9 +117,9 @@
   text-align: center;
   padding: 1rem;
   font-size: 0.85rem;
-  color: #ef4444;
+  color: var(--danger);
   background: rgba(239, 68, 68, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
@@ -129,7 +129,7 @@
   border: 1px solid var(--border-color, rgba(255,255,255,0.08));
   border-radius: 10px;
   padding: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .pr-card:hover {
@@ -203,7 +203,7 @@
 
 .pr-icon-btn-danger:hover {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 /* Badge Row */
@@ -234,7 +234,7 @@
 
 .pr-badge-priority {
   background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .pr-badge-cooldown {
@@ -383,11 +383,11 @@
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.06);
   color: inherit;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
   font-family: inherit;
 }
 
@@ -409,12 +409,12 @@ textarea.pr-input {
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.06);
   color: inherit;
   outline: none;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -449,7 +449,7 @@ textarea.pr-input {
   gap: 0.25rem;
   padding: 0.6rem 0.5rem;
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary, #a0a0a0);
   cursor: pointer;
@@ -519,11 +519,11 @@ textarea.pr-input {
 /* Buttons */
 .pr-btn {
   padding: 0.45rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   border: 1px solid transparent;
 }
 
@@ -566,7 +566,7 @@ textarea.pr-input {
   padding: 0.5rem 0.75rem;
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-top: 0.5rem;
 }
 

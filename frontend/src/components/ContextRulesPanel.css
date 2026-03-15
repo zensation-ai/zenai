@@ -27,7 +27,7 @@
   display: flex;
   gap: 0.25rem;
   background: rgba(255,255,255,0.03);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 3px;
   margin-bottom: 1rem;
 }
@@ -41,7 +41,7 @@
   cursor: pointer;
   border-radius: 6px;
   font-size: 0.8rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .ctx-rules-toggle-btn:focus-visible {
@@ -68,7 +68,7 @@
   border: 1px solid var(--border-color, rgba(255,255,255,0.08));
   border-radius: 10px;
   padding: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .ctx-rules-card:hover {
@@ -108,8 +108,8 @@
   letter-spacing: 0.5px;
 }
 
-.ctx-rules-domain-finance { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-.ctx-rules-domain-email   { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.ctx-rules-domain-finance { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+.ctx-rules-domain-email   { background: rgba(59, 130, 246, 0.15); color: var(--info); }
 .ctx-rules-domain-code    { background: rgba(249, 115, 22, 0.15); color: #f97316; }
 .ctx-rules-domain-learning { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
 .ctx-rules-domain-general { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
@@ -139,7 +139,7 @@
 
 .ctx-rules-active-badge.inactive {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .ctx-rules-card-desc {
@@ -175,7 +175,7 @@
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .ctx-rules-btn:disabled {
@@ -199,7 +199,7 @@
 
 .ctx-rules-btn-edit {
   background: rgba(59, 130, 246, 0.12);
-  color: #3b82f6;
+  color: var(--info);
 }
 
 .ctx-rules-btn-edit:hover:not(:disabled) {
@@ -217,7 +217,7 @@
 
 .ctx-rules-btn-delete {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .ctx-rules-btn-delete:hover:not(:disabled) {
@@ -235,7 +235,7 @@
 
 .ctx-rules-btn-save {
   background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--success);
 }
 
 .ctx-rules-btn-save:hover:not(:disabled) {
@@ -277,8 +277,8 @@
   padding: 0.75rem 1rem;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
-  color: #ef4444;
+  border-radius: var(--radius-sm);
+  color: var(--danger);
   font-size: 0.875rem;
 }
 
@@ -411,7 +411,7 @@
 .ctx-rules-ds-remove {
   background: none;
   border: none;
-  color: #ef4444;
+  color: var(--danger);
   cursor: pointer;
   font-size: 1rem;
   padding: 0.2rem;
@@ -431,7 +431,7 @@
   font-size: 0.8rem;
   padding: 0.35rem;
   border-radius: 6px;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .ctx-rules-ds-add:hover {
@@ -449,7 +449,7 @@
   padding-top: 0.75rem;
   border-top: 1px solid rgba(239, 68, 68, 0.15);
   font-size: 0.85rem;
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .ctx-rules-confirm-actions {

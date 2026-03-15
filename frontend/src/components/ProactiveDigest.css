@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color var(--transition-base) ease, box-shadow var(--transition-base) ease;
 }
 
 .digest-card.unread {
@@ -123,7 +123,7 @@
   padding: 5px 12px;
   background: rgba(255, 107, 53, 0.1);
   border: 1px solid rgba(255, 107, 53, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--primary, #ff6b35);
   font-size: 0.78rem;
   font-weight: 500;

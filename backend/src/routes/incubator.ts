@@ -31,7 +31,10 @@ const router = Router();
 // Helper to extract and validate context from request
 function getContextFromRequest(req: Request): AIContext {
   const context = (req.query.context as string) || (req.body?.context as string) || 'personal';
-  return isValidContext(context) ? context : 'personal';
+  if (!isValidContext(context)) {
+    throw new ValidationError(`Invalid context: ${context}. Must be one of: personal, work, learning, creative`);
+  }
+  return context;
 }
 
 // Helper to validate cluster ID

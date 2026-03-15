@@ -42,12 +42,12 @@
 
 .back-button {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .back-button:hover {
@@ -62,14 +62,14 @@
 
 .new-meeting-btn {
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--primary);
   color: white;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .new-meeting-btn:hover {
@@ -88,13 +88,13 @@
 
 .meetings-filters button {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   cursor: pointer;
   font-size: 0.85rem;
   color: var(--text-muted);
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .meetings-filters button:hover {
@@ -180,7 +180,7 @@
 
 .new-meeting-modal {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 28px;
   max-width: 500px;
   width: 100%;
@@ -224,7 +224,7 @@
 .form-group select {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -246,7 +246,7 @@
 .create-btn {
   width: 100%;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--primary);
   color: white;
@@ -254,7 +254,7 @@
   font-size: 1rem;
   font-weight: 500;
   margin-top: 8px;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .create-btn:hover {
@@ -268,7 +268,7 @@
   padding: 12px 16px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--danger);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 20px;
   color: var(--danger);
 }

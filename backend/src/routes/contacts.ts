@@ -35,7 +35,7 @@ function validateContextParam(req: Request, res: Response): AIContext | null {
 // ============================================================
 
 // GET /api/:context/contacts
-router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/contacts', requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
   const userId = getUserId(req);
@@ -65,7 +65,7 @@ router.get('/:context/contacts', asyncHandler(async (req: Request, res: Response
 }));
 
 // GET /api/:context/contacts/stats
-router.get('/:context/contacts/stats', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/contacts/stats', requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
   const userId = getUserId(req);
@@ -75,7 +75,7 @@ router.get('/:context/contacts/stats', asyncHandler(async (req: Request, res: Re
 }));
 
 // GET /api/:context/contacts/follow-ups
-router.get('/:context/contacts/follow-ups', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/contacts/follow-ups', requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
   const userId = getUserId(req);
@@ -87,7 +87,7 @@ router.get('/:context/contacts/follow-ups', asyncHandler(async (req: Request, re
 }));
 
 // GET /api/:context/contacts/:id
-router.get('/:context/contacts/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/contacts/:id', requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
   const userId = getUserId(req);
@@ -157,7 +157,7 @@ router.delete('/:context/contacts/:id', requireScope('write'), asyncHandler(asyn
 // ============================================================
 
 // GET /api/:context/contacts/:id/timeline
-router.get('/:context/contacts/:id/timeline', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/contacts/:id/timeline', requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
   const userId = getUserId(req);
@@ -199,7 +199,7 @@ router.post('/:context/contacts/:id/interactions', requireScope('write'), asyncH
 // ============================================================
 
 // GET /api/:context/organizations
-router.get('/:context/organizations', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/organizations', requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
   const userId = getUserId(req);
@@ -216,7 +216,7 @@ router.get('/:context/organizations', asyncHandler(async (req: Request, res: Res
 }));
 
 // GET /api/:context/organizations/:id
-router.get('/:context/organizations/:id', asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/organizations/:id', requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
   const context = validateContextParam(req, res);
   if (!context) { return; }
   const userId = getUserId(req);

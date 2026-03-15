@@ -177,7 +177,7 @@
   transform-origin: center;
   animation: brainBreathing 4s ease-in-out infinite;
   /* Smooth transition when switching between idle and active */
-  transition: filter 0.5s ease, transform 0.3s ease;
+  transition: filter 0.5s ease, transform var(--transition-base) ease;
   will-change: transform, filter;
 }
 
@@ -190,7 +190,7 @@
 
 /* Brain hemispheres */
 .brain-hemisphere {
-  transition: all 0.3s ease;
+  transition: all var(--transition-base) ease;
 }
 
 .ai-brain-container.active .brain-hemisphere {
@@ -222,7 +222,7 @@
 /* Neural nodes */
 .neural-node {
   opacity: 0.5;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-base) ease;
 }
 
 .ai-brain-container.active .neural-node {
@@ -599,7 +599,7 @@
   color: white;
   font-size: 0.65rem;
   font-weight: 600;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   animation: easterEggPop 2s ease forwards;
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(255, 140, 0, 0.4);

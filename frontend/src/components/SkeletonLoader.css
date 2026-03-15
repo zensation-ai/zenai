@@ -157,7 +157,7 @@
 
 .spinner-progress {
   stroke: var(--primary);
-  transition: stroke-dasharray 0.3s ease;
+  transition: stroke-dasharray var(--transition-base) ease;
   animation: spin 1.4s linear infinite;
   transform-origin: center;
 }
@@ -204,7 +204,7 @@
   gap: 0.5rem;
   font-size: 0.8rem;
   color: var(--text-secondary);
-  transition: all 0.3s ease;
+  transition: all var(--transition-base) ease;
 }
 
 .progress-step.completed {

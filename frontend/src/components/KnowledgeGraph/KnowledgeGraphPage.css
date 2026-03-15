@@ -64,10 +64,10 @@
   border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
   color: var(--text, #f0f4f8);
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .back-button:hover {
@@ -130,13 +130,13 @@
   color: var(--text, #f0f4f8);
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .action-button:hover:not(:disabled) {
@@ -171,7 +171,7 @@
   text-align: left;
   color: var(--text, #f0f4f8);
   font-size: 13px;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .topic-chip:hover {
@@ -197,7 +197,7 @@
 .topic-count {
   background: var(--surface, rgba(15, 31, 46, 0.8));
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 11px;
   color: var(--text-muted, #8ba3b8);
 }
@@ -214,10 +214,10 @@
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .generate-button:hover:not(:disabled) {
@@ -276,13 +276,13 @@
 .graph-main .react-flow__minimap {
   background: var(--surface, rgba(15, 31, 46, 0.8));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .graph-main .react-flow__controls {
   background: var(--surface, rgba(15, 31, 46, 0.8));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: none;
 }
 
@@ -306,10 +306,10 @@
   border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   color: var(--text, #f0f4f8);
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 13px;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .graph-panel button:hover {
@@ -325,7 +325,7 @@
   width: 280px;
   background: var(--surface, rgba(15, 31, 46, 0.95));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 100;
   overflow: hidden;
@@ -412,11 +412,11 @@
   color: white;
   border: none;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .view-idea-button:hover {
@@ -445,7 +445,7 @@
 /* React Flow Node Styles Override */
 .react-flow__node {
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .react-flow__node:hover {

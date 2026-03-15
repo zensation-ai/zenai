@@ -46,7 +46,7 @@
   min-width: 200px;
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border-color, #30363d);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
   color: var(--text-primary, #e6edf3);
   font-size: 0.85rem;
@@ -63,7 +63,7 @@
 .finance-filter-chip {
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border-color, #30363d);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 6px 14px;
   min-height: 36px;
   display: inline-flex;
@@ -124,7 +124,7 @@
 .overview-card {
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border-color, #30363d);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -168,7 +168,7 @@
   align-items: center;
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border-color, #30363d);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px 16px;
 }
 .account-info {
@@ -221,7 +221,7 @@
   height: 100%;
   background: var(--accent-color, #7c3aed);
   border-radius: 4px;
-  transition: width 0.3s ease;
+  transition: width var(--transition-base) ease;
 }
 .category-amount {
   width: 80px;
@@ -264,7 +264,7 @@
   gap: 8px;
   background: rgba(248, 81, 73, 0.08);
   border: 1px solid rgba(248, 81, 73, 0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
   font-size: 0.85rem;
   color: #f85149;
@@ -283,7 +283,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
 .transaction-item:hover {
@@ -349,7 +349,7 @@
 .budget-card {
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border-color, #30363d);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px;
 }
 .budget-card.warning {
@@ -387,7 +387,7 @@
   height: 100%;
   background: var(--accent-color, #7c3aed);
   border-radius: 4px;
-  transition: width 0.3s ease;
+  transition: width var(--transition-base) ease;
 }
 .budget-bar-fill.warning { background: #d29922; }
 .budget-bar-fill.over { background: #f85149; }
@@ -415,7 +415,7 @@
 .goal-card {
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border-color, #30363d);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 16px;
 }
 .goal-card.completed {

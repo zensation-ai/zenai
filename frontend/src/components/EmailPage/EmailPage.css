@@ -58,7 +58,7 @@
   align-items: center;
   gap: 5px;
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -129,7 +129,7 @@
   background: var(--primary, #ff6b35);
   color: #fff;
   padding: 1px 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   min-width: 16px;
   text-align: center;
 }
@@ -152,7 +152,7 @@
   gap: 4px;
   padding: 4px 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--text-secondary, #8899aa);
   font-size: 0.72rem;

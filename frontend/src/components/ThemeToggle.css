@@ -13,7 +13,7 @@
   color: var(--text);
   cursor: pointer;
   font-size: 0.875rem;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   backdrop-filter: blur(8px);
 }
 

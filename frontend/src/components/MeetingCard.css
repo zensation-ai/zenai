@@ -2,7 +2,7 @@
 
 .meeting-card {
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   border: 1px solid var(--border);
   cursor: pointer;
@@ -67,7 +67,7 @@
 .meeting-status {
   font-size: 0.7rem;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: white;
   font-weight: 600;
   white-space: nowrap;
@@ -116,7 +116,7 @@
   margin-bottom: 12px;
   padding: 8px 12px;
   background: var(--surface-light);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .meeting-footer {
@@ -132,7 +132,7 @@
   color: var(--text-muted);
   background: var(--surface-light);
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .meeting-company {

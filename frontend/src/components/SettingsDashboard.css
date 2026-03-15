@@ -50,7 +50,7 @@
   );
   backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.06),
@@ -158,7 +158,7 @@
 
 .settings-group {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
@@ -213,9 +213,9 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.06);
   color: var(--neuro-text-primary, #fff);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   white-space: nowrap;
 }
 
@@ -251,9 +251,9 @@
   background: rgba(255, 255, 255, 0.03);
   color: var(--neuro-text-primary, #fff);
   font-size: 0.85rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
 }
 
 .settings-quick-link:hover {
@@ -277,9 +277,9 @@
   background-repeat: no-repeat;
   background-position: right 0.6rem center;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color var(--transition-base) ease, background var(--transition-base) ease;
   min-width: 140px;
 }
 
@@ -325,7 +325,7 @@
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  transition: 0.3s;
+  transition: var(--transition-base);
   border-radius: 26px;
 }
 
@@ -337,7 +337,7 @@
   left: 2px;
   bottom: 2px;
   background-color: var(--surface);
-  transition: 0.3s;
+  transition: var(--transition-base);
   border-radius: 50%;
 }
 

@@ -52,7 +52,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .afm-close-btn:hover {
@@ -89,7 +89,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
+  transition: all var(--transition-base);
   flex-shrink: 0;
 }
 
@@ -114,7 +114,7 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   font-weight: 500;
-  transition: color 0.2s;
+  transition: color var(--transition-base);
 }
 
 .afm-step-label.active {
@@ -127,7 +127,7 @@
   height: 2px;
   background: var(--border, rgba(20, 50, 70, 0.15));
   margin: 0 8px;
-  transition: background 0.3s;
+  transition: background var(--transition-base);
 }
 
 .afm-step-line.complete {
@@ -160,7 +160,7 @@
   border: 2px solid transparent;
   text-align: left;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .afm-template-card:hover {
@@ -261,7 +261,7 @@
   background: var(--border, rgba(20, 50, 70, 0.2));
   cursor: pointer;
   position: relative;
-  transition: background 0.3s;
+  transition: background var(--transition-base);
   padding: 0;
 }
 
@@ -277,7 +277,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--surface);
-  transition: transform 0.3s;
+  transition: transform var(--transition-base);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -294,11 +294,11 @@
 
 .afm-trigger-card {
   padding: 14px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 2px solid transparent;
   cursor: pointer;
   text-align: center;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -340,11 +340,11 @@
 
 .afm-preset-btn {
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border, rgba(20, 50, 70, 0.15));
   font-size: 0.82rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   color: var(--text);
   background: transparent;
 }
@@ -411,7 +411,7 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
-  transition: background 0.2s;
+  transition: background var(--transition-base);
 }
 
 .afm-remove-btn:hover {
@@ -420,7 +420,7 @@
 
 .afm-add-action-btn {
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 2px dashed var(--border, rgba(20, 50, 70, 0.15));
   background: transparent;
   color: var(--primary, #ff6b35);
@@ -428,7 +428,7 @@
   font-weight: 600;
   cursor: pointer;
   text-align: center;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .afm-add-action-btn:hover {
@@ -454,7 +454,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .afm-btn-secondary:hover {

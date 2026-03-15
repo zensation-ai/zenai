@@ -39,11 +39,11 @@
 .bento-card {
   background: var(--surface-warm, var(--surface, rgba(255, 255, 255, 0.85)));
   border: 1px solid var(--glass-border, rgba(255, 200, 170, 0.2));
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 18px;
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color var(--transition-base) ease, box-shadow var(--transition-base) ease;
   animation: bentoCardIn 0.4s ease both;
 }
 
@@ -165,12 +165,12 @@
   padding: 10px 20px;
   background: linear-gradient(135deg, var(--primary, #ff6b35) 0%, var(--primary-light, #ff8c5a) 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: white;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   white-space: nowrap;
 }
 
@@ -206,7 +206,7 @@
   border-color: var(--primary-glow, rgba(255, 180, 140, 0.35));
   box-shadow: 0 4px 16px rgba(255, 107, 53, 0.1);
   transform: translateY(-2px);
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
 }
 
 .bento-stat:active {
@@ -408,7 +408,7 @@
   border-radius: 50%;
   background: var(--text-muted, #999);
   flex-shrink: 0;
-  transition: background 0.3s ease;
+  transition: background var(--transition-base) ease;
 }
 
 .bento-ai-dot.active {
@@ -471,11 +471,11 @@
   padding: 14px 8px;
   background: transparent;
   border: 1px solid var(--glass-border, rgba(255, 200, 170, 0.15));
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   color: inherit;
   font: inherit;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
 }
 
 .bento-nav-item:hover {
@@ -498,7 +498,7 @@
 .bento-nav-icon {
   font-size: 1.4rem;
   line-height: 1;
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-base) ease;
 }
 
 .bento-nav-item:hover .bento-nav-icon {
@@ -657,7 +657,7 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -721,7 +721,7 @@
   padding: 4px 10px;
   background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 0.75rem;
   cursor: pointer;
@@ -762,7 +762,7 @@
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s ease;
 }
 
@@ -858,7 +858,7 @@
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) ease;
   box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
 }
 

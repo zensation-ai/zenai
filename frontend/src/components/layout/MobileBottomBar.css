@@ -118,7 +118,7 @@
     text-align: center;
     color: white;
     background: var(--danger, #ef4444);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
     pointer-events: none;
     animation: badgePop 0.25s var(--ease-bounce) forwards;
@@ -181,7 +181,7 @@
 .bottom-tab:focus-visible {
   outline: 2px solid var(--primary, #ff6b35);
   outline-offset: -2px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .bottom-tab.chat-tab:focus-visible {

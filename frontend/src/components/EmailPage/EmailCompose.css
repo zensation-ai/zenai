@@ -361,7 +361,7 @@
   width: 100%;
   padding: 8px 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.15);
   color: var(--text-primary, #e0e8ef);
   font-size: 0.82rem;
@@ -388,7 +388,7 @@
 .ec-ai-tone {
   padding: 4px 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: none;
   color: var(--text-secondary);
   font-size: 0.72rem;
@@ -411,7 +411,7 @@
   background: #4A90D9;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;

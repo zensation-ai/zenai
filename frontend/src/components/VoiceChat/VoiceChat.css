@@ -23,7 +23,7 @@
 .voice-chat-embedded {
   width: 100%;
   height: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -79,7 +79,7 @@
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.5px;
-  transition: color 0.3s;
+  transition: color var(--transition-base);
 }
 
 .voice-chat-status-idle {
@@ -92,7 +92,7 @@
 }
 
 .voice-chat-status-listening {
-  color: #3b82f6;
+  color: var(--info);
 }
 
 .voice-chat-status-processing {
@@ -101,7 +101,7 @@
 }
 
 .voice-chat-status-speaking {
-  color: #22c55e;
+  color: var(--success);
 }
 
 /* Controls */
@@ -121,12 +121,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .voice-chat-mic-start {
-  background: #3b82f6;
+  background: var(--info);
   color: white;
 }
 
@@ -140,7 +140,7 @@
 }
 
 .voice-chat-mic-stop {
-  background: #ef4444;
+  background: var(--danger);
   color: white;
 }
 
@@ -170,8 +170,8 @@
 
 .voice-chat-muted {
   background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 /* Error */
@@ -179,7 +179,7 @@
   background: rgba(239, 68, 68, 0.15);
   color: #fca5a5;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin: 0 20px;
   font-size: 14px;
   text-align: center;
@@ -198,18 +198,18 @@
 .voice-chat-transcript-entry {
   padding: 8px 12px;
   margin-bottom: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   animation: voice-chat-fadeIn 0.3s;
 }
 
 .voice-chat-transcript-user {
   background: rgba(59, 130, 246, 0.1);
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--info);
 }
 
 .voice-chat-transcript-assistant {
   background: rgba(34, 197, 94, 0.1);
-  border-left: 3px solid #22c55e;
+  border-left: 3px solid var(--success);
 }
 
 .voice-chat-transcript-role {

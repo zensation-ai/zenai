@@ -37,7 +37,7 @@
 .artifact-panel.fullscreen {
   width: min(1200px, 95vw);
   max-height: 95vh;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
@@ -137,7 +137,7 @@
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary, #fff);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   font-size: 1rem;
 }
 
@@ -154,11 +154,11 @@
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary, #fff);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   font-size: 1rem;
   display: flex;
   align-items: center;
@@ -174,11 +174,11 @@
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(239, 68, 68, 0.2);
   color: #f87171;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   font-size: 1.25rem;
   display: flex;
   align-items: center;
@@ -242,7 +242,7 @@
 }
 
 .artifact-markdown blockquote {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--info);
   padding-left: 1rem;
   margin-left: 0;
   color: var(--text-secondary, #a0a0a0);
@@ -338,7 +338,7 @@
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   background: rgba(59, 130, 246, 0.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
   color: #60a5fa;
 }
@@ -363,10 +363,10 @@
   margin: 0.5rem 0;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
   border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary, #e0e0e0);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   font-size: 0.875rem;
   width: 100%;
   max-width: 400px;
@@ -395,7 +395,7 @@
   font-size: 0.75rem;
   color: #60a5fa;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-base);
 }
 
 .artifact-inline-btn:hover .artifact-inline-action {

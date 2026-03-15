@@ -68,7 +68,7 @@
   background: var(--surface);
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .generate-btn:hover:not(:disabled) {
@@ -81,8 +81,8 @@
 }
 
 .generate-btn.daily:hover:not(:disabled) {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--info);
+  color: var(--info);
 }
 
 .generate-btn.weekly:hover:not(:disabled) {
@@ -111,7 +111,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-muted);
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -174,7 +174,7 @@
 
 .digest-type.daily {
   background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
+  color: var(--info);
 }
 
 .digest-type.weekly {
@@ -411,7 +411,7 @@
   background: var(--surface-light);
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .edit-btn:hover {
@@ -491,7 +491,7 @@
   background: var(--surface-light);
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .category-toggle:hover {
@@ -518,7 +518,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .save-btn:hover:not(:disabled) {

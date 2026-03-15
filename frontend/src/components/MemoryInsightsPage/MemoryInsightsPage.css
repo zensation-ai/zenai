@@ -30,12 +30,12 @@
   background: #27272a;
   color: #e4e4e7;
   border: 1px solid #3f3f46;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: 0.875rem;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition-base);
 }
 
 .memory-insights-context-select:hover,
@@ -50,7 +50,7 @@
   padding: 16px 20px;
   background: #18181b;
   border: 1px solid #27272a;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow-x: auto;
 }
 
@@ -81,7 +81,7 @@
   gap: 4px;
   margin-bottom: 24px;
   background: #18181b;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 4px;
   border: 1px solid #27272a;
 }
@@ -98,9 +98,9 @@
   color: #a1a1aa;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .memory-insights-tab:hover {
@@ -156,7 +156,7 @@
   display: flex;
   gap: 4px;
   background: #18181b;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 3px;
   border: 1px solid #27272a;
 }
@@ -169,7 +169,7 @@
   font-size: 0.8rem;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .granularity-btn:hover {
@@ -270,7 +270,7 @@
 .timeline-bar {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transition: width var(--transition-base) ease;
   min-width: 2px;
 }
 
@@ -333,7 +333,7 @@
 .conflict-memory {
   flex: 1;
   background: #09090b;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
 }
 
@@ -448,7 +448,7 @@
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-base);
 }
 
 .curation-action-btn:hover {
@@ -550,7 +550,7 @@
   height: 6px;
   border-radius: 3px;
   background: linear-gradient(90deg, #a855f7, #ff6b35);
-  transition: width 0.3s ease;
+  transition: width var(--transition-base) ease;
   align-self: stretch;
 }
 

@@ -13,7 +13,7 @@
   backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--transition-base) ease;
 }
 
 .msd-backdrop.visible {
@@ -41,7 +41,7 @@
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--transition-base) cubic-bezier(0.22, 1, 0.36, 1);
   overflow: hidden;
 }
 
@@ -109,7 +109,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--dark-text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -204,7 +204,7 @@
   padding: 10px 12px;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--dark-text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
@@ -231,11 +231,11 @@
   color: var(--dark-text-muted);
   background: rgba(255, 255, 255, 0.06);
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .msd-section-chevron {
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-base) ease;
   color: var(--dark-text-icon);
 }
 
@@ -305,7 +305,7 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--dark-text-secondary);
   font-size: 0.9rem;
   font-weight: 450;

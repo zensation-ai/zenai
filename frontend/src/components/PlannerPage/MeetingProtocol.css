@@ -247,7 +247,7 @@
   margin: 16px 0;
   padding: 12px;
   background: var(--surface-color, #f8f9fa);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
 }
 

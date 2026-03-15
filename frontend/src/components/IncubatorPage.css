@@ -499,7 +499,7 @@
   height: 100%;
   background: linear-gradient(90deg, var(--warning), #fbbf24);
   border-radius: 3px;
-  transition: width 0.3s ease;
+  transition: width var(--transition-base) ease;
 }
 
 .cluster-progress .progress-label {
@@ -583,7 +583,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  transition: background var(--transition-base), transform 0.15s;
 }
 
 .incubator-empty-cta:hover {

@@ -275,7 +275,7 @@ browserRouter.delete('/:context/browser/bookmarks/:id', apiKeyAuth, requireScope
  * POST /api/:context/browser/analyze
  * Analyze page content with AI
  */
-browserRouter.post('/:context/browser/analyze', apiKeyAuth, asyncHandler(async (req, res) => {
+browserRouter.post('/:context/browser/analyze', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   validateContextParam(req.params.context); // validates context, throws on invalid
   const { url, title, text, domain } = req.body;
 
