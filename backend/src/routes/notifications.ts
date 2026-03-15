@@ -13,6 +13,7 @@ import { queryContext, AIContext, isValidContext } from '../utils/database-conte
 import { logger } from '../utils/logger';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { requireUUID } from '../middleware/validate-params';
+import { SYSTEM_USER_ID } from '../utils/user-context';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
 import {
@@ -430,7 +431,7 @@ export async function checkAndNotifyReadyClusters(context: AIContext): Promise<n
           `INSERT INTO notification_history (user_id, notification_type, title, body, data)
            VALUES ($1, $2, $3, $4, $5)`,
           [
-            context,
+            SYSTEM_USER_ID,
             NotificationType.CLUSTER_READY,
             'Gedanken-Cluster bereit!',
             `"${cluster.suggested_title}" ist bereit zur Konsolidierung`,
@@ -506,7 +507,7 @@ export async function generateDailyDigest(context: AIContext): Promise<void> {
         `INSERT INTO notification_history (user_id, notification_type, title, body, data)
          VALUES ($1, $2, $3, $4, $5)`,
         [
-          context,
+          SYSTEM_USER_ID,
           NotificationType.DAILY_DIGEST,
           'Tägliche Zusammenfassung',
           parts.join(' • '),

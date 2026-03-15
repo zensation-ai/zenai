@@ -5,6 +5,7 @@ import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';
 import { getRecentAIActivities, markActivitiesAsRead, getUnreadActivityCount } from '../services/ai-activity-logger';
+import { getUserId } from '../utils/user-context';
 
 const router = Router();
 
@@ -50,27 +51,24 @@ router.get('/contexts', apiKeyAuth, responseCacheMiddleware, (req, res) => {
 router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { limit = '50', offset = '0', type, priority, category } = req.query;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
   }
 
-  // CRITICAL FIX: Use queryContext() instead of pool.query() to ensure correct schema
-  // queryContext() sets search_path to the correct schema (personal or work)
-  // Without this, queries would read from the wrong schema and miss new ideas!
-
-  // Build query with optional filters
+  // Build query with optional filters + user_id isolation
   let query = `
     SELECT
       id, title, type, category, priority, summary,
       next_steps, context_needed, keywords, raw_transcript,
       created_at, updated_at
     FROM ideas
-    WHERE is_archived = false
+    WHERE is_archived = false AND user_id = $1
   `;
 
-  const params: (string | number)[] = [];
-  let paramIndex = 1;
+  const params: (string | number)[] = [userId];
+  let paramIndex = 2;
 
   if (type) {
     query += ` AND type = $${paramIndex}`;
@@ -96,7 +94,7 @@ router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res:
   const result = await queryContext(context as AIContext, query, params);
 
   // Get total count
-  const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = false');
+  const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = false AND user_id = $1', [userId]);
   const total = parseInt(countResult.rows[0].count, 10);
 
   res.json({
@@ -119,6 +117,7 @@ router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res:
 router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { limit = '50', offset = '0' } = req.query;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -129,32 +128,30 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
 
   let result;
   try {
-    // Try with all columns (including raw_transcript for newer schemas)
     result = await queryContext(context as AIContext, `
       SELECT
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords, raw_transcript,
         created_at, updated_at
       FROM ideas
-      WHERE is_archived = true
+      WHERE is_archived = true AND user_id = $1
       ORDER BY updated_at DESC
-      LIMIT $1 OFFSET $2
-    `, [parsedLimit, parsedOffset]);
+      LIMIT $2 OFFSET $3
+    `, [userId, parsedLimit, parsedOffset]);
   } catch {
-    // Fallback: raw_transcript may not exist in older schemas
     result = await queryContext(context as AIContext, `
       SELECT
         id, title, type, category, priority, summary,
         next_steps, context_needed, keywords,
         created_at, updated_at
       FROM ideas
-      WHERE is_archived = true
+      WHERE is_archived = true AND user_id = $1
       ORDER BY updated_at DESC
-      LIMIT $1 OFFSET $2
-    `, [parsedLimit, parsedOffset]);
+      LIMIT $2 OFFSET $3
+    `, [userId, parsedLimit, parsedOffset]);
   }
 
-  const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = true');
+  const countResult = await queryContext(context as AIContext, 'SELECT COUNT(*) FROM ideas WHERE is_archived = true AND user_id = $1', [userId]);
   const total = parseInt(countResult.rows[0].count, 10);
 
   res.json({
@@ -176,6 +173,7 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
  */
 router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -183,8 +181,8 @@ router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), req
 
   const result = await queryContext(
     context as AIContext,
-    'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING id, title',
-    [id]
+    'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING id, title',
+    [id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -203,6 +201,7 @@ router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), req
  */
 router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -210,8 +209,8 @@ router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), req
 
   const result = await queryContext(
     context as AIContext,
-    'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true RETURNING id, title',
-    [id]
+    'UPDATE ideas SET is_archived = false, updated_at = NOW() WHERE id = $1 AND is_archived = true AND user_id = $2 RETURNING id, title',
+    [id, userId]
   );
 
   if (result.rows.length === 0) {
@@ -233,6 +232,7 @@ router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), req
 router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { query: searchQuery, limit = 20 } = req.body;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -242,8 +242,6 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     throw new ValidationError('Search query is required');
   }
 
-  // Simple ILIKE search - more reliable than full-text search
-  // Full-text search was causing issues with text search configurations
   const searchPattern = `%${searchQuery}%`;
   const limitNum = typeof limit === 'number' ? limit : parseInt(String(limit), 10) || 20;
 
@@ -253,16 +251,16 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
       next_steps, context_needed, keywords, raw_transcript,
       created_at, updated_at
     FROM ideas
-    WHERE is_archived = false
+    WHERE is_archived = false AND user_id = $1
       AND (
-        title ILIKE $1
-        OR summary ILIKE $1
-        OR raw_transcript ILIKE $1
-        OR COALESCE(keywords::text, '') ILIKE $1
+        title ILIKE $2
+        OR summary ILIKE $2
+        OR raw_transcript ILIKE $2
+        OR COALESCE(keywords::text, '') ILIKE $2
       )
     ORDER BY created_at DESC
-    LIMIT $2
-  `, [searchPattern, limitNum]);
+    LIMIT $3
+  `, [userId, searchPattern, limitNum]);
 
   res.json({
     success: true,
@@ -280,6 +278,7 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
 router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   const { limit = '20', exclude } = req.query;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -288,23 +287,22 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
   // Parse excluded IDs
   const excludeIds = exclude ? (exclude as string).split(',').filter(Boolean) : [];
 
-  // Build exclusion clause
+  // Build exclusion clause — user_id is $1, limit is $2
   let excludeClause = '';
-  const params: (string | number)[] = [parseInt(limit as string, 10)];
+  const params: (string | number)[] = [userId, parseInt(limit as string, 10)];
 
   if (excludeIds.length > 0) {
-    excludeClause = ` AND id NOT IN (${excludeIds.map((_, idx) => `$${idx + 2}`).join(',')})`;
+    excludeClause = ` AND id NOT IN (${excludeIds.map((_, idx) => `$${idx + 3}`).join(',')})`;
     params.push(...excludeIds);
   }
 
-  // Get ideas for triage: not archived, sorted by priority then date
   const result = await queryContext(
     context as AIContext,
     `SELECT id, title, type, category, priority, summary,
             next_steps, context_needed, keywords, raw_transcript,
             created_at, updated_at
      FROM ideas
-     WHERE is_archived = false
+     WHERE is_archived = false AND user_id = $1
        ${excludeClause}
      ORDER BY
        CASE priority
@@ -314,14 +312,14 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
          ELSE 4
        END,
        created_at DESC
-     LIMIT $1`,
+     LIMIT $2`,
     params
   );
 
-  // Get total count
   const countResult = await queryContext(
     context as AIContext,
-    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false'
+    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1',
+    [userId]
   );
 
   res.json({
@@ -339,6 +337,7 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
 router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), requireUUID('id'), asyncHandler(async (req: Request, res: Response) => {
   const { context, id } = req.params;
   const { action } = req.body;
+  const userId = getUserId(req);
 
   if (!isValidContext(context)) {
     throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
@@ -349,8 +348,8 @@ router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), req
     throw new ValidationError(`Invalid triage action. Must be one of: ${validActions.join(', ')}`);
   }
 
-  // Check if idea exists
-  const ideaCheck = await queryContext(context as AIContext, 'SELECT id, title, priority FROM ideas WHERE id = $1', [id]);
+  // Check if idea exists and belongs to user
+  const ideaCheck = await queryContext(context as AIContext, 'SELECT id, title, priority FROM ideas WHERE id = $1 AND user_id = $2', [id, userId]);
   if (ideaCheck.rows.length === 0) {
     throw new NotFoundError('Idea');
   }
@@ -360,13 +359,13 @@ router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), req
   // Apply action
   switch (action) {
     case 'priority':
-      await queryContext(context as AIContext, 'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1', [id, 'high']);
+      await queryContext(context as AIContext, 'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 AND user_id = $3', [id, 'high', userId]);
       break;
     case 'archive':
-      await queryContext(context as AIContext, 'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1', [id]);
+      await queryContext(context as AIContext, 'UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 AND user_id = $2', [id, userId]);
       break;
     case 'later':
-      await queryContext(context as AIContext, 'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1', [id, 'low']);
+      await queryContext(context as AIContext, 'UPDATE ideas SET priority = $2, updated_at = NOW() WHERE id = $1 AND user_id = $3', [id, 'low', userId]);
       break;
     // 'keep' = no changes needed
   }

@@ -56,7 +56,6 @@ governanceRouter.get(
   '/:context/governance/stream',
   apiKeyAuth,
   (req: Request, res: Response) => {
-    getUserId(req); // auth check
     const { context } = req.params;
     if (!isValidContext(context)) {
       res.status(400).json({ success: false, error: 'Invalid context' });

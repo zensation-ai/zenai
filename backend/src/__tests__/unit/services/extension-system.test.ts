@@ -35,13 +35,14 @@ jest.mock('uuid', () => ({
   v4: jest.fn(() => 'test-uuid-1234'),
 }));
 
-jest.mock('../../../middleware/jwt-auth', () => ({
-  jwtAuth: (_req: any, _res: any, next: any) => {
+jest.mock('../../../middleware/auth', () => ({
+  apiKeyAuth: (_req: any, _res: any, next: any) => {
     _req.jwtUser = { id: 'user-001', email: 'test@test.com', role: 'admin' };
     _req.user = { id: 'user-001', provider: 'jwt' };
     _req.apiKey = { id: 'jwt:user-001', name: 'JWT:test@test.com', scopes: ['read', 'write', 'admin'], rateLimit: 1000 };
     next();
   },
+  requireScope: () => (_req: any, _res: any, next: any) => next(),
 }));
 
 jest.mock('../../../utils/user-context', () => ({

@@ -7,7 +7,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { jwtAuth } from '../middleware/jwt-auth';
+import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
 import { getExtensionRegistry } from '../services/extensions/extension-registry';
@@ -17,7 +17,7 @@ import { logger } from '../utils/logger';
 const router = Router();
 
 // All extension routes require authentication
-router.use(jwtAuth);
+router.use(apiKeyAuth);
 
 // ===========================================
 // List Available Extensions (Catalog)
