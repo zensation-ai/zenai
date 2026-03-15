@@ -32,7 +32,8 @@ export async function sendMessageWithVision(
   images: VisionImage[],
   task: string = 'qa',
   contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
-  includeMetadata: boolean = false
+  includeMetadata: boolean = false,
+  userId?: string
 ): Promise<VisionMessageResult> {
   const startTime = Date.now();
 
@@ -46,7 +47,7 @@ export async function sendMessageWithVision(
     : imageIndicator;
 
   // Store user message (with image indicator in text)
-  const storedUserMessage = await addMessage(sessionId, 'user', fullUserMessage);
+  const storedUserMessage = await addMessage(sessionId, 'user', fullUserMessage, userId);
 
   // Update title if this is the first message
   await updateSessionTitle(sessionId, userMessage || 'Bildanalyse');
@@ -125,7 +126,7 @@ export async function sendMessageWithVision(
   }
 
   // Store AI response
-  const storedAssistantMessage = await addMessage(sessionId, 'assistant', aiResponse);
+  const storedAssistantMessage = await addMessage(sessionId, 'assistant', aiResponse, userId);
 
   // Record as episodic memory (non-blocking)
   // Import dynamically to avoid circular dependency

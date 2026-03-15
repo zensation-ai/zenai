@@ -210,6 +210,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       if (session) {
         setSessionId(session.id);
         setMessages([]);
+        setThinkingContent('');
+        setStreamingContent('');
         // Guard: prevent useEffect from reloading/aborting when WE change the session
         skipNextSessionLoadRef.current = true;
         onSessionChange?.(session.id);
@@ -269,7 +271,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
       // Optimistically add user message
       const tempUserMessage: ChatMessage = {
-        id: `temp-user-${Date.now()}`,
+        id: `temp-user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         sessionId: currentSessionId,
         role: 'user',
         content: displayContent,
@@ -523,12 +525,6 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         showToast(errorMessage, {
           type: 'error',
           duration: 8000,
-          onUndo: () => {
-            // Re-trigger send after restoring input (via setTimeout to let state update)
-            setTimeout(() => {
-              handleSendMessage();
-            }, 100);
-          },
           undoLabel: 'Erneut senden',
         });
       }

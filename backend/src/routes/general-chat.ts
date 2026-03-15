@@ -257,7 +257,8 @@ generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, requireScope('write
     message,
     session.context as 'personal' | 'work' | 'learning' | 'creative',
     includeMetadata,
-    thinkingMode
+    thinkingMode,
+    userId
   );
 
   // Track activity for evolution timeline + suggestions (non-blocking)
@@ -364,7 +365,7 @@ generalChatRouter.post('/quick', apiKeyAuth, requireScope('write'), asyncHandler
   });
 
   // Send message and get response
-  const result = await sendMessage(session.id, trimmedMessage, context, includeMetadata);
+  const result = await sendMessage(session.id, trimmedMessage, context, includeMetadata, 'assist', userId);
 
   // Build response data
   const responseData: Record<string, unknown> = {
@@ -449,7 +450,8 @@ generalChatRouter.post(
       visionImages,
       visionTask,
       session.context as 'personal' | 'work' | 'learning' | 'creative',
-      includeMetadata
+      includeMetadata,
+      userId
     );
 
     // Build response data
@@ -561,14 +563,32 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
     logger.debug('Failed to add user interaction to memory (stream)', { sessionId: id, error });
   }
 
-  // Get conversation history
-  const historyResult = await query(`
-    SELECT role, content
-    FROM general_chat_messages
-    WHERE session_id = $1 AND user_id = $2
-    ORDER BY created_at ASC
-    LIMIT $3
-  `, [id, userId, CHAT.MAX_HISTORY_MESSAGES]);
+  // Get conversation history (session_id scope is sufficient since session ownership
+  // is verified at route level; user_id adds defense-in-depth when column exists)
+  let historyResult;
+  try {
+    historyResult = await query(`
+      SELECT role, content
+      FROM general_chat_messages
+      WHERE session_id = $1 AND user_id = $2
+      ORDER BY created_at ASC
+      LIMIT $3
+    `, [id, userId, CHAT.MAX_HISTORY_MESSAGES]);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (errMsg.includes('user_id') || errMsg.includes('does not exist')) {
+      // Fallback: user_id column not yet migrated
+      historyResult = await query(`
+        SELECT role, content
+        FROM general_chat_messages
+        WHERE session_id = $1
+        ORDER BY created_at ASC
+        LIMIT $2
+      `, [id, CHAT.MAX_HISTORY_MESSAGES]);
+    } else {
+      throw err;
+    }
+  }
 
   // Build messages array
   const messages = historyResult.rows.map((row: { role: string; content: string }) => ({
@@ -894,14 +914,16 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
       }
     }
 
-    // If headers already sent (SSE started), send error via SSE
+    // If headers already sent (SSE started), send error via SSE (if not already ended)
     if (res.headersSent) {
-      try {
-        const errorEvent = `event: error\ndata: ${JSON.stringify({ error: 'Stream failed' })}\n\n`;
-        originalWrite(errorEvent);
-        res.end();
-      } catch {
-        // Stream already broken, nothing more we can do
+      if (!res.writableEnded) {
+        try {
+          const errorEvent = `event: error\ndata: ${JSON.stringify({ error: 'Stream failed' })}\n\n`;
+          originalWrite(errorEvent);
+          res.end();
+        } catch {
+          // Stream already broken, nothing more we can do
+        }
       }
     } else {
       // Headers not sent yet, respond with JSON error

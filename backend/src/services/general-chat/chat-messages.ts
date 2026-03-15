@@ -513,10 +513,11 @@ export async function sendMessage(
   userMessage: string,
   contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
   includeMetadata: boolean = false,
-  thinkingMode: ThinkingMode = 'assist'
+  thinkingMode: ThinkingMode = 'assist',
+  userId?: string
 ): Promise<SendMessageResult> {
   // Store user message
-  const storedUserMessage = await addMessage(sessionId, 'user', userMessage);
+  const storedUserMessage = await addMessage(sessionId, 'user', userMessage, userId);
 
   // Update title if this is the first message
   await updateSessionTitle(sessionId, userMessage);
@@ -541,7 +542,7 @@ export async function sendMessage(
   }
 
   // Store AI response
-  const storedAssistantMessage = await addMessage(sessionId, 'assistant', aiResponse);
+  const storedAssistantMessage = await addMessage(sessionId, 'assistant', aiResponse, userId);
 
   // Add assistant interaction to short-term memory
   try {

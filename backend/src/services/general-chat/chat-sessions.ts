@@ -115,6 +115,24 @@ export interface VisionMessageResult {
 }
 
 // ===========================================
+// Schema Detection Cache
+// ===========================================
+
+/**
+ * Cached flags for column existence.
+ * null = not yet checked, true/false = detected.
+ * Avoids repeated failing queries when migration hasn't been applied.
+ */
+let _hasSessionUserId: boolean | null = null;
+let _hasMessageUserId: boolean | null = null;
+let _hasSessionType: boolean | null = null;
+
+function isColumnMissingError(err: unknown, columnName: string): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes(columnName) || msg.includes('column') && msg.includes('does not exist');
+}
+
+// ===========================================
 // Session Management
 // ===========================================
 
@@ -127,25 +145,73 @@ export async function createSession(context: 'personal' | 'work' | 'learning' | 
   const uid = userId || SYSTEM_USER_ID;
 
   let result;
-  try {
-    result = await query(`
-      INSERT INTO general_chat_sessions (id, context, session_type, user_id)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, context, title, created_at, updated_at
-    `, [id, context, sessionType, uid]);
-  } catch (err: unknown) {
-    // Fallback if session_type column doesn't exist yet (migration not applied)
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes('session_type')) {
-      logger.warn('session_type column missing, falling back to basic insert');
+
+  // Try with all columns, fall back progressively if columns are missing
+  if (_hasSessionUserId !== false && _hasSessionType !== false) {
+    try {
+      result = await query(`
+        INSERT INTO general_chat_sessions (id, context, session_type, user_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, context, title, created_at, updated_at
+      `, [id, context, sessionType, uid]);
+      _hasSessionUserId = true;
+      _hasSessionType = true;
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasSessionUserId = false;
+        logger.warn('user_id column missing on general_chat_sessions - run phase76 migration');
+      } else if (isColumnMissingError(err, 'session_type')) {
+        _hasSessionType = false;
+        logger.warn('session_type column missing on general_chat_sessions');
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // Retry without user_id if needed
+  if (!result && _hasSessionUserId === false && _hasSessionType !== false) {
+    try {
+      result = await query(`
+        INSERT INTO general_chat_sessions (id, context, session_type)
+        VALUES ($1, $2, $3)
+        RETURNING id, context, title, created_at, updated_at
+      `, [id, context, sessionType]);
+      _hasSessionType = true;
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'session_type')) {
+        _hasSessionType = false;
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // Retry without session_type if needed
+  if (!result && _hasSessionType === false && _hasSessionUserId !== false) {
+    try {
       result = await query(`
         INSERT INTO general_chat_sessions (id, context, user_id)
         VALUES ($1, $2, $3)
         RETURNING id, context, title, created_at, updated_at
       `, [id, context, uid]);
-    } else {
-      throw err;
+      _hasSessionUserId = true;
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasSessionUserId = false;
+      } else {
+        throw err;
+      }
     }
+  }
+
+  // Final fallback: bare minimum columns
+  if (!result) {
+    result = await query(`
+      INSERT INTO general_chat_sessions (id, context)
+      VALUES ($1, $2)
+      RETURNING id, context, title, created_at, updated_at
+    `, [id, context]);
   }
 
   const row = result.rows[0];
@@ -175,12 +241,34 @@ export async function createSession(context: 'personal' | 'work' | 'learning' | 
  */
 export async function getSession(sessionId: string, userId?: string): Promise<ChatSessionWithMessages | null> {
   const uid = userId || SYSTEM_USER_ID;
-  // Get session
-  const sessionResult = await query(`
-    SELECT id, context, title, created_at, updated_at
-    FROM general_chat_sessions
-    WHERE id = $1 AND user_id = $2
-  `, [sessionId, uid]);
+
+  let sessionResult;
+  if (_hasSessionUserId !== false) {
+    try {
+      sessionResult = await query(`
+        SELECT id, context, title, created_at, updated_at
+        FROM general_chat_sessions
+        WHERE id = $1 AND user_id = $2
+      `, [sessionId, uid]);
+      _hasSessionUserId = true;
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasSessionUserId = false;
+        logger.warn('user_id column missing on general_chat_sessions - run phase76 migration');
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // Fallback without user_id filter
+  if (!sessionResult) {
+    sessionResult = await query(`
+      SELECT id, context, title, created_at, updated_at
+      FROM general_chat_sessions
+      WHERE id = $1
+    `, [sessionId]);
+  }
 
   if (sessionResult.rows.length === 0) {
     return null;
@@ -224,19 +312,50 @@ export async function getSessions(
   userId?: string
 ): Promise<ChatSession[]> {
   const uid = userId || SYSTEM_USER_ID;
-  const params: (string | number)[] = [context, limit, uid];
-  let typeFilter = '';
-  if (sessionType) {
-    typeFilter = 'AND (session_type = $4 OR session_type IS NULL)';
-    params.push(sessionType);
+
+  let result;
+  if (_hasSessionUserId !== false) {
+    try {
+      const params: (string | number)[] = [context, limit, uid];
+      let typeFilter = '';
+      if (sessionType) {
+        typeFilter = 'AND (session_type = $4 OR session_type IS NULL)';
+        params.push(sessionType);
+      }
+      result = await query(`
+        SELECT id, context, title, created_at, updated_at
+        FROM general_chat_sessions
+        WHERE context = $1 AND user_id = $3 ${typeFilter}
+        ORDER BY updated_at DESC
+        LIMIT $2
+      `, params);
+      _hasSessionUserId = true;
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasSessionUserId = false;
+        logger.warn('user_id column missing on general_chat_sessions - run phase76 migration');
+      } else {
+        throw err;
+      }
+    }
   }
-  const result = await query(`
-    SELECT id, context, title, created_at, updated_at
-    FROM general_chat_sessions
-    WHERE context = $1 AND user_id = $3 ${typeFilter}
-    ORDER BY updated_at DESC
-    LIMIT $2
-  `, params);
+
+  // Fallback without user_id
+  if (!result) {
+    const params: (string | number)[] = [context, limit];
+    let typeFilter = '';
+    if (sessionType) {
+      typeFilter = 'AND (session_type = $3 OR session_type IS NULL)';
+      params.push(sessionType);
+    }
+    result = await query(`
+      SELECT id, context, title, created_at, updated_at
+      FROM general_chat_sessions
+      WHERE context = $1 ${typeFilter}
+      ORDER BY updated_at DESC
+      LIMIT $2
+    `, params);
+  }
 
   return result.rows.map(row => ({
     id: row.id,
@@ -253,23 +372,58 @@ export async function getSessions(
  */
 export async function deleteSession(sessionId: string, userId?: string): Promise<boolean> {
   const uid = userId || SYSTEM_USER_ID;
-  // Get session context before deletion for memory consolidation
-  const sessionResult = await query(`
-    SELECT context FROM general_chat_sessions WHERE id = $1 AND user_id = $2
-  `, [sessionId, uid]);
+
+  let sessionResult;
+  if (_hasSessionUserId !== false) {
+    try {
+      sessionResult = await query(`
+        SELECT context FROM general_chat_sessions WHERE id = $1 AND user_id = $2
+      `, [sessionId, uid]);
+      _hasSessionUserId = true;
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasSessionUserId = false;
+      } else {
+        throw err;
+      }
+    }
+  }
+  if (!sessionResult) {
+    sessionResult = await query(`
+      SELECT context FROM general_chat_sessions WHERE id = $1
+    `, [sessionId]);
+  }
 
   const rawContext = sessionResult.rows[0]?.context;
   const validContexts = ['personal', 'work', 'learning', 'creative'] as const;
   const context: 'personal' | 'work' | 'learning' | 'creative' | undefined =
     validContexts.includes(rawContext) ? rawContext : undefined;
 
-  const result = await query(`
-    DELETE FROM general_chat_sessions
-    WHERE id = $1 AND user_id = $2
-    RETURNING id
-  `, [sessionId, uid]);
+  let deleteResult;
+  if (_hasSessionUserId !== false) {
+    try {
+      deleteResult = await query(`
+        DELETE FROM general_chat_sessions
+        WHERE id = $1 AND user_id = $2
+        RETURNING id
+      `, [sessionId, uid]);
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasSessionUserId = false;
+      } else {
+        throw err;
+      }
+    }
+  }
+  if (!deleteResult) {
+    deleteResult = await query(`
+      DELETE FROM general_chat_sessions
+      WHERE id = $1
+      RETURNING id
+    `, [sessionId]);
+  }
 
-  if (result.rows.length > 0) {
+  if (deleteResult.rows.length > 0) {
     // End memory session and trigger consolidation (non-blocking)
     if (context) {
       memoryCoordinator.endSession(sessionId, true).catch(error => {
@@ -296,11 +450,33 @@ export async function addMessage(
   const id = uuidv4();
   const uid = userId || SYSTEM_USER_ID;
 
-  const result = await query(`
-    INSERT INTO general_chat_messages (id, session_id, role, content, user_id)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, session_id, role, content, created_at
-  `, [id, sessionId, role, content, uid]);
+  let result;
+  if (_hasMessageUserId !== false) {
+    try {
+      result = await query(`
+        INSERT INTO general_chat_messages (id, session_id, role, content, user_id)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, session_id, role, content, created_at
+      `, [id, sessionId, role, content, uid]);
+      _hasMessageUserId = true;
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasMessageUserId = false;
+        logger.warn('user_id column missing on general_chat_messages - run phase76 migration');
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // Fallback without user_id
+  if (!result) {
+    result = await query(`
+      INSERT INTO general_chat_messages (id, session_id, role, content)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, session_id, role, content, created_at
+    `, [id, sessionId, role, content]);
+  }
 
   // Update session's updated_at
   await query(`
