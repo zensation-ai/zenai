@@ -146,5 +146,28 @@ BEGIN
   ALTER TABLE public.notification_history ADD COLUMN IF NOT EXISTS user_id UUID DEFAULT '00000000-0000-0000-0000-000000000001';
   CREATE INDEX IF NOT EXISTS idx_notification_history_user ON public.notification_history(user_id);
 
+  -- ============================================================
+  -- 5. Missing budgets table (phase_finance.sql never ran for this table)
+  -- ============================================================
+  FOR s IN SELECT unnest(ARRAY['personal', 'work', 'learning', 'creative']) LOOP
+    EXECUTE format('
+      CREATE TABLE IF NOT EXISTS %I.budgets (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount_limit DECIMAL(12,2) NOT NULL,
+        period TEXT DEFAULT ''monthly'' CHECK (period IN (''weekly'', ''monthly'', ''quarterly'', ''yearly'')),
+        current_spent DECIMAL(12,2) DEFAULT 0,
+        alert_threshold DECIMAL(3,2) DEFAULT 0.80,
+        is_active BOOLEAN DEFAULT TRUE,
+        user_id UUID DEFAULT %L,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )', s, default_user);
+    EXECUTE format('CREATE INDEX IF NOT EXISTS idx_%s_budgets_category ON %I.budgets(category)', s, s);
+    EXECUTE format('CREATE INDEX IF NOT EXISTS idx_%s_budgets_active ON %I.budgets(is_active) WHERE is_active = TRUE', s, s);
+    EXECUTE format('CREATE INDEX IF NOT EXISTS idx_%s_budgets_user ON %I.budgets(user_id)', s, s);
+  END LOOP;
+
 END
 $$;
