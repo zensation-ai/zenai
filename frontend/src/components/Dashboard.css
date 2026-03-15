@@ -310,17 +310,90 @@
 .bento-ai-status {
   grid-column: span 2;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
+  flex-direction: column;
+  gap: 0;
   color: inherit;
   font: inherit;
   text-align: left;
+  padding: 0 !important;
+  overflow: hidden;
 }
 
 .bento-ai-status:hover {
   border-color: rgba(139, 92, 246, 0.3);
   box-shadow: 0 4px 16px rgba(139, 92, 246, 0.08);
+}
+
+.bento-ai-status-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.bento-ai-status-main:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.bento-ai-status-main:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.bento-ai-pulse {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.bento-pulse-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.6rem 0.5rem;
+  background: none;
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bento-pulse-item:last-child {
+  border-right: none;
+}
+
+.bento-pulse-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bento-pulse-item:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.bento-pulse-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bento-pulse-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .bento-ai-indicator {
@@ -919,6 +992,18 @@
 
   .bento-nav-item {
     padding: 10px 6px;
+  }
+
+  .bento-ai-pulse {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bento-pulse-item:nth-child(2) {
+    border-right: none;
+  }
+
+  .bento-pulse-item:nth-child(n+3) {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
   }
 }
 

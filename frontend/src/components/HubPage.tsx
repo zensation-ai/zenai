@@ -12,7 +12,7 @@
  * - Optional badge support per tab
  */
 
-import { memo, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode, type KeyboardEvent } from 'react';
 import type { AIContext } from './ContextSwitcher';
 import { PageHeader } from './PageHeader';
 import { RisingBubbles } from './RisingBubbles';
@@ -78,6 +78,69 @@ function HubPageComponent<T extends string>({
   noBubbles,
   ariaLabel,
 }: HubPageProps<T>) {
+  const tabListRef = useRef<HTMLElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({ left: false, right: false });
+
+  const updateScrollIndicators = useCallback(() => {
+    const el = tabListRef.current;
+    if (!el) return;
+    setScrollState({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+    });
+  }, []);
+
+  useEffect(() => {
+    const el = tabListRef.current;
+    if (!el) return;
+    updateScrollIndicators();
+    el.addEventListener('scroll', updateScrollIndicators, { passive: true });
+    const ro = new ResizeObserver(updateScrollIndicators);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', updateScrollIndicators); ro.disconnect(); };
+  }, [updateScrollIndicators, tabs]);
+
+  const handleTabKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>) => {
+    const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    let nextIndex = -1;
+
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        nextIndex = (currentIndex + 1) % tabs.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        break;
+      case 'Home':
+        e.preventDefault();
+        nextIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        nextIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    if (nextIndex >= 0) {
+      onTabChange(tabs[nextIndex].id);
+      // Focus the new tab button
+      const buttons = tabListRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+      buttons?.[nextIndex]?.focus();
+      // Scroll into view
+      buttons?.[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [tabs, activeTab, onTabChange]);
+
+  const tabPanelId = `${title.replace(/\s+/g, '-').toLowerCase()}-tabpanel`;
+  const activeTabId = `tab-${activeTab}`;
+
   return (
     <div className="hub-page" data-context={context}>
       {!noBubbles && <RisingBubbles variant="subtle" />}
@@ -93,28 +156,37 @@ function HubPageComponent<T extends string>({
         {headerActions}
       </PageHeader>
 
-      <nav className="hub-tabs" role="tablist" aria-label={ariaLabel || `${title} Navigation`}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`hub-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => onTabChange(tab.id)}
-            title={tab.description}
-          >
-            <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
-            <span className="hub-tab-label">{tab.label}</span>
-            {tab.badge != null && (
-              <span className="hub-tab-badge" aria-label={`${tab.badge}`}>
-                {tab.badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </nav>
+      <div
+        ref={wrapperRef}
+        className={`hub-tabs-wrapper${scrollState.left ? ' can-scroll-left' : ''}${scrollState.right ? ' can-scroll-right' : ''}`}
+      >
+        <nav className="hub-tabs" role="tablist" aria-label={ariaLabel || `${title} Navigation`} ref={tabListRef}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              id={`tab-${tab.id}`}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={tabPanelId}
+              tabIndex={activeTab === tab.id ? 0 : -1}
+              className={`hub-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => onTabChange(tab.id)}
+              onKeyDown={handleTabKeyDown}
+              title={tab.description}
+            >
+              <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
+              <span className="hub-tab-label">{tab.label}</span>
+              {tab.badge != null && (
+                <span className="hub-tab-badge" aria-label={`${tab.badge}`}>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-      <main className="hub-content" role="tabpanel">
+      <main className="hub-content" role="tabpanel" id={tabPanelId} aria-labelledby={activeTabId}>
         {children}
       </main>
     </div>

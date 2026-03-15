@@ -21,6 +21,41 @@
 }
 
 /* Tab Navigation */
+.hub-tabs-wrapper {
+  position: relative;
+}
+
+.hub-tabs-wrapper::before,
+.hub-tabs-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2rem;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hub-tabs-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(20, 30, 42, 0.95), transparent);
+}
+
+.hub-tabs-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(20, 30, 42, 0.95), transparent);
+}
+
+.hub-tabs-wrapper.can-scroll-left::before {
+  opacity: 1;
+}
+
+.hub-tabs-wrapper.can-scroll-right::after {
+  opacity: 1;
+}
+
 .hub-tabs {
   display: flex;
   gap: 0.25rem;
@@ -140,6 +175,14 @@
 /* Light Mode - ensure dark tab bar stays opaque for readable white text */
 :root.light-mode .hub-tabs {
   background: rgba(20, 30, 42, 0.92);
+}
+
+:root.light-mode .hub-tabs-wrapper::before {
+  background: linear-gradient(to right, rgba(20, 30, 42, 0.98), transparent);
+}
+
+:root.light-mode .hub-tabs-wrapper::after {
+  background: linear-gradient(to left, rgba(20, 30, 42, 0.98), transparent);
 }
 
 /* Show More Button - shared across hub sub-components */

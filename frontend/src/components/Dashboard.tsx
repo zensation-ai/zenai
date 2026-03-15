@@ -91,6 +91,13 @@ const QUICK_NAV: QuickNavItem[] = [
   { icon: '🧠', label: 'Meine KI', page: 'my-ai', accent: 'var(--accent-ai, #a855f7)' },
 ];
 
+interface AISystemPulse {
+  memoryFacts: number;
+  procedures: number;
+  sleepCycles: number;
+  ragQueries: number;
+}
+
 interface UpcomingEvent {
   id: string;
   title: string;
@@ -189,6 +196,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+  const [aiPulse, setAiPulse] = useState<AISystemPulse>({ memoryFacts: 0, procedures: 0, sleepCycles: 0, ragQueries: 0 });
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const hasFetched = useRef(false);
@@ -229,6 +237,22 @@ const DashboardComponent: React.FC<DashboardProps> = ({
       axios.get(`/api/${context}/calendar/upcoming`, { params: { hours: 48, limit: 4 }, signal })
         .then(r => { if (!signal?.aborted && r.data?.success) setUpcomingEvents(r.data.data || []); })
         .catch(() => {});
+
+      // Fetch AI system pulse data (non-blocking)
+      Promise.all([
+        axios.get(`/api/${context}/thinking/stats`, { signal }).catch(() => ({ data: null })),
+        axios.get(`/api/${context}/sleep-compute/stats`, { signal }).catch(() => ({ data: null })),
+        axios.get(`/api/${context}/rag/analytics`, { signal }).catch(() => ({ data: null })),
+        axios.get(`/api/${context}/memory/procedures`, { signal, params: { limit: 1 } }).catch(() => ({ data: null })),
+      ]).then(([thinkingRes, sleepRes, ragRes, procRes]) => {
+        if (signal?.aborted) return;
+        setAiPulse({
+          memoryFacts: thinkingRes.data?.data?.totalChains || 0,
+          procedures: Array.isArray(procRes.data?.data) ? procRes.data.data.length : 0,
+          sleepCycles: sleepRes.data?.data?.totalCycles || 0,
+          ragQueries: ragRes.data?.data?.totalQueries || 0,
+        });
+      }).catch(() => {});
 
       if (!res.data && !hasFetched.current) {
         hasFetched.current = true;
@@ -398,13 +422,33 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         )}
 
         {/* AI Status (spans 2 cols) */}
-        <button type="button" className="bento-card bento-ai-status" onClick={() => onNavigate('chat')}>
-          <div className="bento-ai-indicator">
-            <span className={`bento-ai-dot ${isAIActive ? 'active' : ''}`} />
-            <span className="bento-ai-label">{isAIActive ? 'KI arbeitet...' : 'KI bereit'}</span>
+        <section className="bento-card bento-ai-status" aria-label="KI-Systemstatus">
+          <button type="button" className="bento-ai-status-main" onClick={() => onNavigate('chat')}>
+            <div className="bento-ai-indicator">
+              <span className={`bento-ai-dot ${isAIActive ? 'active' : ''}`} />
+              <span className="bento-ai-label">{isAIActive ? 'KI arbeitet...' : 'KI bereit'}</span>
+            </div>
+            <span className="bento-ai-action">Chat starten →</span>
+          </button>
+          <div className="bento-ai-pulse">
+            <button type="button" className="bento-pulse-item" onClick={() => onNavigate('my-ai')} title="Gelernte Denkmuster">
+              <span className="bento-pulse-value">{aiPulse.memoryFacts}</span>
+              <span className="bento-pulse-label">Denkmuster</span>
+            </button>
+            <button type="button" className="bento-pulse-item" onClick={() => onNavigate('my-ai')} title="Gelernte Prozeduren">
+              <span className="bento-pulse-value">{aiPulse.procedures}</span>
+              <span className="bento-pulse-label">Prozeduren</span>
+            </button>
+            <button type="button" className="bento-pulse-item" onClick={() => onNavigate('insights')} title="Schlaf-Zyklen der KI">
+              <span className="bento-pulse-value">{aiPulse.sleepCycles}</span>
+              <span className="bento-pulse-label">Schlaf-Zyklen</span>
+            </button>
+            <button type="button" className="bento-pulse-item" onClick={() => onNavigate('insights')} title="RAG-Anfragen">
+              <span className="bento-pulse-value">{aiPulse.ragQueries}</span>
+              <span className="bento-pulse-label">RAG-Suchen</span>
+            </button>
           </div>
-          <span className="bento-ai-action">Chat starten →</span>
-        </button>
+        </section>
 
         {/* Quick Nav */}
         <div className="bento-card bento-quicknav">
