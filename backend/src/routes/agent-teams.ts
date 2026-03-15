@@ -684,6 +684,13 @@ agentTeamsRouter.get(
       throw new ValidationError('Invalid context');
     }
 
+    // Verify execution belongs to user first
+    const exec = await getExecutionStatus(context as AIContext, req.params.id, userId);
+    if (!exec) {
+      res.status(404).json({ success: false, error: 'Execution not found' });
+      return;
+    }
+
     const checkpoint = await loadCheckpoint(context as AIContext, req.params.id);
     if (!checkpoint) {
       res.status(404).json({ success: false, error: 'No checkpoint found' });

@@ -55,6 +55,12 @@ jest.mock('../../../services/location-cache', () => ({
   deleteSavedLocation: (...args: unknown[]) => mockDeleteSavedLocation(...args),
 }));
 
+// Mock user-context
+jest.mock('../../../utils/user-context', () => ({
+  getUserId: () => '00000000-0000-0000-0000-000000000001',
+  SYSTEM_USER_ID: '00000000-0000-0000-0000-000000000001',
+}));
+
 // Mock logger
 jest.mock('../../../utils/logger', () => ({
   logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },

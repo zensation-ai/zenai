@@ -36,6 +36,7 @@ import {
 import { isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
+import { getUserId } from '../utils/user-context';
 
 const router = Router();
 
@@ -276,7 +277,8 @@ router.post('/:context/maps/nearby', apiKeyAuth, asyncHandler(async (req: Reques
  */
 router.get('/:context/maps/saved-locations', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const context = extractContext(req);
-  const locations = await getSavedLocations(context);
+  const userId = getUserId(req);
+  const locations = await getSavedLocations(context, userId);
   res.json({ success: true, data: locations });
 }));
 
@@ -286,6 +288,7 @@ router.get('/:context/maps/saved-locations', apiKeyAuth, asyncHandler(async (req
  */
 router.post('/:context/maps/saved-locations', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = extractContext(req);
+  const userId = getUserId(req);
 
   const { label, address, lat, lng, googlePlaceId, icon, isDefault } = req.body;
   if (!label || !address || typeof lat !== 'number' || typeof lng !== 'number') {
@@ -297,7 +300,7 @@ router.post('/:context/maps/saved-locations', apiKeyAuth, requireScope('write'),
     googlePlaceId: googlePlaceId || null,
     icon: icon || 'pin',
     isDefault: isDefault || false,
-  });
+  }, userId);
 
   if (!location) {
     return res.status(500).json({ success: false, error: 'Failed to save location' });
@@ -312,9 +315,10 @@ router.post('/:context/maps/saved-locations', apiKeyAuth, requireScope('write'),
  */
 router.delete('/:context/maps/saved-locations/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const context = extractContext(req);
+  const userId = getUserId(req);
   const { id } = req.params;
 
-  const deleted = await deleteSavedLocation(context, id);
+  const deleted = await deleteSavedLocation(context, id, userId);
   if (!deleted) {
     return res.status(404).json({ success: false, error: 'Location not found' });
   }

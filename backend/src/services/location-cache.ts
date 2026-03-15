@@ -176,15 +176,15 @@ export interface SavedLocation {
 /**
  * Get user's saved locations
  */
-export async function getSavedLocations(context: AIContext): Promise<SavedLocation[]> {
+export async function getSavedLocations(context: AIContext, userId: string): Promise<SavedLocation[]> {
   try {
     const result = await queryContext(
       context,
       `SELECT id, label, address, lat, lng, google_place_id, icon, is_default
        FROM saved_locations
-       WHERE context = $1
+       WHERE context = $1 AND user_id = $2
        ORDER BY is_default DESC, label ASC`,
-      [context]
+      [context, userId]
     );
 
     return result.rows.map((row: Record<string, unknown>) => ({
@@ -208,16 +208,17 @@ export async function getSavedLocations(context: AIContext): Promise<SavedLocati
  */
 export async function saveSavedLocation(
   context: AIContext,
-  location: Omit<SavedLocation, 'id'>
+  location: Omit<SavedLocation, 'id'>,
+  userId: string
 ): Promise<SavedLocation | null> {
   try {
     const result = await queryContext(
       context,
-      `INSERT INTO saved_locations (context, label, address, lat, lng, google_place_id, icon, is_default)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO saved_locations (context, label, address, lat, lng, google_place_id, icon, is_default, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id, label, address, lat, lng, google_place_id, icon, is_default`,
       [context, location.label, location.address, location.lat, location.lng,
-       location.googlePlaceId, location.icon || 'pin', location.isDefault || false]
+       location.googlePlaceId, location.icon || 'pin', location.isDefault || false, userId]
     );
 
     const row = result.rows[0];
@@ -240,12 +241,12 @@ export async function saveSavedLocation(
 /**
  * Delete a saved location
  */
-export async function deleteSavedLocation(context: AIContext, id: string): Promise<boolean> {
+export async function deleteSavedLocation(context: AIContext, id: string, userId: string): Promise<boolean> {
   try {
     const result = await queryContext(
       context,
-      `DELETE FROM saved_locations WHERE id = $1 AND context = $2`,
-      [id, context]
+      `DELETE FROM saved_locations WHERE id = $1 AND context = $2 AND user_id = $3`,
+      [id, context, userId]
     );
     return (result.rowCount ?? 0) > 0;
   } catch (error) {
