@@ -190,10 +190,12 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
           {/* Browser Tabs */}
           <div className="browser-tab-bar">
             {browserTabs.map(tab => (
-              <div
+              <button
+                type="button"
                 key={tab.id}
                 className={`browser-tab ${tab.id === activeTabId ? 'active' : ''}`}
                 onClick={() => switchBrowserTab(tab.id)}
+                aria-selected={tab.id === activeTabId}
               >
                 <span className="browser-tab-favicon">
                   {tab.loading ? (
@@ -215,7 +217,7 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                   </button>
                 )}
-              </div>
+              </button>
             ))}
             <button
               type="button"
@@ -231,26 +233,6 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
           {/* Navigation Bar */}
           <div className="browser-nav-bar">
             <div className="browser-nav-controls">
-              <button
-                type="button"
-                className="browser-nav-btn"
-                onClick={() => { /* In Electron: webview.goBack() */ }}
-                title="Zurueck"
-                aria-label="Zurueck"
-                disabled
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
-              <button
-                type="button"
-                className="browser-nav-btn"
-                onClick={() => { /* In Electron: webview.goForward() */ }}
-                title="Vorwaerts"
-                aria-label="Vorwaerts"
-                disabled
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
               <button
                 type="button"
                 className={`browser-nav-btn ${isLoading ? 'loading' : ''}`}

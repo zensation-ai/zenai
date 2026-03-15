@@ -65,7 +65,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   });
   const json = await res.json();
   if (!res.ok || !json.success) {
-    throw new Error(json.error || `Request failed: ${res.status}`);
+    throw new Error(json.error || `Anfrage fehlgeschlagen: ${res.status}`);
   }
   return json.data as T;
 }
@@ -77,7 +77,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 const CATEGORY_LABELS: Record<Category, string> = {
   all: 'Alle',
   communication: 'Kommunikation',
-  productivity: 'Produktivitaet',
+  productivity: 'Produktivität',
   development: 'Entwicklung',
   design: 'Design',
   crm: 'CRM',
@@ -124,7 +124,7 @@ export function ToolMarketplace({ context, installedServers, onInstall }: ToolMa
       }
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load marketplace');
+      setError(err instanceof Error ? err.message : 'Marketplace konnte nicht geladen werden');
     } finally {
       setLoading(false);
     }
@@ -160,7 +160,7 @@ export function ToolMarketplace({ context, installedServers, onInstall }: ToolMa
     if (server.premium) {
       return <span className="tm-status tm-status--premium">Premium</span>;
     }
-    return <span className="tm-status tm-status--available">Verfuegbar</span>;
+    return <span className="tm-status tm-status--available">Verfügbar</span>;
   };
 
   // ===========================================
@@ -184,6 +184,7 @@ export function ToolMarketplace({ context, installedServers, onInstall }: ToolMa
           <button
             className={`tm-category-btn ${selectedCategory === 'all' ? 'tm-category-btn--active' : ''}`}
             onClick={() => setSelectedCategory('all')}
+            aria-pressed={selectedCategory === 'all'}
           >
             {CATEGORY_LABELS.all}
           </button>
@@ -192,6 +193,7 @@ export function ToolMarketplace({ context, installedServers, onInstall }: ToolMa
               key={cat}
               className={`tm-category-btn ${selectedCategory === cat ? 'tm-category-btn--active' : ''}`}
               onClick={() => setSelectedCategory(cat as Category)}
+              aria-pressed={selectedCategory === cat}
             >
               {CATEGORY_LABELS[cat as Category] || cat}
             </button>
@@ -202,7 +204,7 @@ export function ToolMarketplace({ context, installedServers, onInstall }: ToolMa
       {error && (
         <div className="tm-error" role="alert">
           <span>{error}</span>
-          <button className="tm-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schliessen">
+          <button className="tm-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schließen">
             x
           </button>
         </div>

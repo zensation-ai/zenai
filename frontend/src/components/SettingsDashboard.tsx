@@ -273,9 +273,12 @@ function AccountTab() {
     }
   };
 
-  // MFA disable
+  // MFA disable - inline input instead of window.prompt
+  const [mfaDisableCode, setMfaDisableCode] = useState('');
+  const [showMfaDisable, setShowMfaDisable] = useState(false);
   const handleMfaDisable = async () => {
-    const code = prompt('TOTP-Code eingeben um MFA zu deaktivieren:');
+    if (!showMfaDisable) { setShowMfaDisable(true); return; }
+    const code = mfaDisableCode.trim();
     if (!code) return;
     setMfaMsg(null);
     setMfaLoading(true);
@@ -288,6 +291,8 @@ function AccountTab() {
       const data = await res.json();
       if (res.ok) {
         setMfaEnabled(false);
+        setShowMfaDisable(false);
+        setMfaDisableCode('');
         setMfaMsg({ type: 'success', text: 'MFA deaktiviert.' });
       } else {
         setMfaMsg({ type: 'error', text: data.error || 'Fehler beim Deaktivieren.' });
@@ -318,9 +323,11 @@ function AccountTab() {
     }
   };
 
-  // Logout all
+  // Logout all - inline confirmation instead of window.confirm
+  const [showLogoutAllConfirm, setShowLogoutAllConfirm] = useState(false);
   const handleLogoutAll = async () => {
-    if (!confirm('Alle Sessions beenden? Du wirst ueberall abgemeldet.')) return;
+    if (!showLogoutAllConfirm) { setShowLogoutAllConfirm(true); return; }
+    setShowLogoutAllConfirm(false);
     setSesssionsMsg(null);
     try {
       const res = await fetch(`${apiUrl}/api/auth/logout-all`, {
@@ -511,7 +518,21 @@ function AccountTab() {
           </div>
         )}
         {mfaEnabled && (
-          <div className="settings-item" style={{ justifyContent: 'flex-end' }}>
+          <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+            {showMfaDisable && (
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={mfaDisableCode}
+                  onChange={e => setMfaDisableCode(e.target.value)}
+                  placeholder="TOTP-Code"
+                  style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--glass-bg)', color: 'var(--text)', width: '120px' }}
+                  autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter') handleMfaDisable(); if (e.key === 'Escape') { setShowMfaDisable(false); setMfaDisableCode(''); } }}
+                />
+                <button type="button" className="settings-action-btn neuro-press-effect neuro-focus-ring" onClick={() => { setShowMfaDisable(false); setMfaDisableCode(''); }} style={{ borderColor: 'var(--border)' }}>Abbrechen</button>
+              </div>
+            )}
             <button
               type="button"
               className="settings-action-btn neuro-press-effect neuro-focus-ring"
@@ -519,7 +540,7 @@ function AccountTab() {
               disabled={mfaLoading}
               style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}
             >
-              MFA deaktivieren
+              {showMfaDisable ? 'Bestaetigen' : 'MFA deaktivieren'}
             </button>
           </div>
         )}
@@ -573,14 +594,20 @@ function AccountTab() {
                 )}
               </div>
             ))}
-            <div className="settings-item" style={{ justifyContent: 'flex-end' }}>
+            <div className="settings-item" style={{ justifyContent: 'flex-end', gap: '0.5rem' }}>
+              {showLogoutAllConfirm && (
+                <>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Alle Sessions beenden?</span>
+                  <button type="button" className="settings-action-btn neuro-press-effect neuro-focus-ring" onClick={() => setShowLogoutAllConfirm(false)} style={{ borderColor: 'var(--border)' }}>Abbrechen</button>
+                </>
+              )}
               <button
                 type="button"
                 className="settings-action-btn neuro-press-effect neuro-focus-ring"
                 onClick={handleLogoutAll}
                 style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}
               >
-                Alle abmelden
+                {showLogoutAllConfirm ? 'Ja, alle abmelden' : 'Alle abmelden'}
               </button>
             </div>
           </>
@@ -605,11 +632,13 @@ export const SettingsDashboard = memo(({
   });
   const { settings, updateSetting } = useSettings();
 
+  const [hintsResetMsg, setHintsResetMsg] = useState(false);
   const handleResetHints = useCallback(() => {
     FEATURE_HINTS.forEach(hint => {
       try { localStorage.removeItem(`${STORAGE_KEY_PREFIX}${hint.id}`); } catch { /* noop */ }
     });
-    alert('Feature-Hinweise wurden zurückgesetzt. Beim nächsten Seitenbesuch erscheinen sie erneut.');
+    setHintsResetMsg(true);
+    setTimeout(() => setHintsResetMsg(false), 4000);
   }, []);
 
   const renderTabContent = () => {
@@ -701,7 +730,7 @@ export const SettingsDashboard = memo(({
                   className="settings-action-btn neuro-press-effect neuro-focus-ring"
                   onClick={handleResetHints}
                 >
-                  Zurücksetzen
+                  {hintsResetMsg ? '✓ Zurückgesetzt' : 'Zurücksetzen'}
                 </button>
               </div>
             </div>

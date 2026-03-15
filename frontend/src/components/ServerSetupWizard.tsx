@@ -70,7 +70,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   });
   const json = await res.json();
   if (!res.ok || !json.success) {
-    throw new Error(json.error || `Request failed: ${res.status}`);
+    throw new Error(json.error || `Anfrage fehlgeschlagen: ${res.status}`);
   }
   return json.data as T;
 }
@@ -117,7 +117,7 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
         setCredentials(initialCreds);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load setup template');
+        setError(err instanceof Error ? err.message : 'Setup-Vorlage konnte nicht geladen werden');
       } finally {
         setLoading(false);
       }

@@ -102,7 +102,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   });
   const json = await res.json();
   if (!res.ok || !json.success) {
-    throw new Error(json.error || `Request failed: ${res.status}`);
+    throw new Error(json.error || `Anfrage fehlgeschlagen: ${res.status}`);
   }
   return json.data as T;
 }
@@ -138,7 +138,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
       setServers(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load servers');
+      setError(err instanceof Error ? err.message : 'Server konnten nicht geladen werden');
     } finally {
       setLoading(false);
     }
@@ -214,7 +214,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
       closeForm();
       await loadServers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save server');
+      setError(err instanceof Error ? err.message : 'Server konnte nicht gespeichert werden');
     } finally {
       setSubmitting(false);
     }
