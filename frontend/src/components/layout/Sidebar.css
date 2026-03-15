@@ -333,7 +333,7 @@
 }
 
 .sidebar-item.active {
-  background: var(--sidebar-item-active-bg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ctx-accent, var(--primary)) 18%, transparent) 0%, color-mix(in srgb, var(--ctx-accent, var(--primary)) 10%, transparent) 100%);
   color: #ffffff;
   font-weight: 550;
 }
@@ -346,7 +346,7 @@
   bottom: 4px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: var(--primary, #ff6b35);
+  background: var(--ctx-accent, var(--primary));
   box-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
 }
 
@@ -564,7 +564,7 @@
 
 .sidebar-footer-item.active {
   color: var(--dark-text);
-  background: var(--sidebar-item-active-bg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ctx-accent, var(--primary)) 18%, transparent) 0%, color-mix(in srgb, var(--ctx-accent, var(--primary)) 10%, transparent) 100%);
 }
 
 .sidebar-footer-icon {

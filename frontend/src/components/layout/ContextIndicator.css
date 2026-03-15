@@ -30,18 +30,24 @@
 }
 
 .ctx-indicator-trigger.active {
-  background: rgba(139, 92, 246, 0.15);
-  border-color: rgba(139, 92, 246, 0.3);
-  color: rgba(139, 92, 246, 0.9);
+  background: var(--ctx-accent-badge, rgba(139, 92, 246, 0.15));
+  border-color: var(--ctx-accent-glow, rgba(139, 92, 246, 0.3));
+  color: var(--ctx-accent-light, rgba(139, 92, 246, 0.9));
 }
 
 .ctx-indicator-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(139, 92, 246, 0.7);
-  box-shadow: 0 0 4px rgba(139, 92, 246, 0.3);
+  background: var(--ctx-accent, rgba(139, 92, 246, 0.7));
+  box-shadow: 0 0 6px var(--ctx-accent-glow, rgba(139, 92, 246, 0.3));
   flex-shrink: 0;
+  animation: ctxDotPulse 3s ease-in-out infinite;
+}
+
+@keyframes ctxDotPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 .ctx-indicator-label {
@@ -146,7 +152,7 @@
 .ctx-indicator-popover-event-time {
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(139, 92, 246, 0.8);
+  color: var(--ctx-accent-light, rgba(139, 92, 246, 0.8));
   flex-shrink: 0;
   min-width: 40px;
 }

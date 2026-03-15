@@ -79,6 +79,7 @@ export function ChatInput({
             className={`thinking-mode-btn ${thinkingMode === mode ? 'active' : ''}`}
             onClick={() => setThinkingMode(mode)}
             title={label}
+            aria-pressed={thinkingMode === mode}
           >
             <span className="thinking-mode-icon">{icon}</span>
             <span className="thinking-mode-label">{label}</span>

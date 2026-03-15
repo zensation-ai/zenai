@@ -55,7 +55,7 @@
   }
 
   .bottom-tab.active {
-    color: var(--primary, #ff6b35);
+    color: var(--ctx-accent, var(--primary, #ff6b35));
   }
 
   /* Tab Icon */

@@ -5,7 +5,7 @@
  * message list, streaming response, typing indicator, and stop button.
  */
 
-import { useRef, useEffect, type RefObject } from 'react';
+import { useRef, useEffect, useState, type RefObject } from 'react';
 import {
   AI_PERSONALITY,
   AI_AVATAR,
@@ -13,6 +13,38 @@ import {
   getRandomMessage,
 } from '../../utils/aiPersonality';
 import type { ChatMessage } from './types';
+
+/** Phase-based AI processing stages shown while waiting for stream */
+const AI_PHASES = [
+  { label: 'Kontext laden...', icon: '🧠', delay: 0 },
+  { label: 'Erinnerungen durchsuchen...', icon: '📚', delay: 2000 },
+  { label: 'Zusammenhaenge analysieren...', icon: '🔗', delay: 5000 },
+  { label: 'Antwort formulieren...', icon: '✍️', delay: 8000 },
+];
+
+function useAIPhase(active: boolean) {
+  const [phase, setPhase] = useState(0);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    if (!active) {
+      setPhase(0);
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      return;
+    }
+    // Schedule phase transitions
+    timersRef.current = AI_PHASES.slice(1).map((p, i) =>
+      setTimeout(() => setPhase(i + 1), p.delay),
+    );
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    };
+  }, [active]);
+
+  return active ? AI_PHASES[phase] : AI_PHASES[0];
+}
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
@@ -45,6 +77,9 @@ export function ChatMessageList({
   messagesEndRef,
   onStopGenerating,
 }: ChatMessageListProps) {
+  // Phase-based AI status messages
+  const aiPhase = useAIPhase(sending && !isStreaming);
+
   // Stabilize thinking message to prevent flickering on every re-render
   const thinkingMessageRef = useRef<string>('');
   useEffect(() => {
@@ -113,16 +148,19 @@ export function ChatMessageList({
               </div>
             </div>
           )}
-          {/* Typing indicator - shown while waiting for stream to start */}
+          {/* Phase-based AI processing indicator */}
           {sending && !isStreaming && (
             <div className="chat-message assistant neuro-human-fade-in" role="status" aria-live="polite">
               <div className="chat-message-avatar neuro-breathing" title={AI_PERSONALITY.name} aria-hidden="true">{AI_AVATAR.thinkingEmoji}</div>
               <div className="chat-message-content">
                 <div className="chat-message-header">
                   <span className="chat-message-name">{AI_PERSONALITY.name}</span>
-                  <span className="chat-message-status">{thinkingMessageRef.current || getRandomMessage('thinking')}</span>
+                  <span className="chat-message-status ai-phase-label">
+                    <span className="ai-phase-icon" aria-hidden="true">{aiPhase.icon}</span>
+                    {aiPhase.label}
+                  </span>
                 </div>
-                <div className="typing-indicator neuro-typing" aria-label={`${AI_PERSONALITY.name} schreibt`}>
+                <div className="typing-indicator neuro-typing" aria-label={aiPhase.label}>
                   <span className="neuro-typing-dot"></span>
                   <span className="neuro-typing-dot"></span>
                   <span className="neuro-typing-dot"></span>

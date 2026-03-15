@@ -553,7 +553,7 @@ describe('GeneralChat Component', () => {
       await user.click(sendButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Thinking...')).toBeInTheDocument();
+        expect(screen.getByText('Kontext laden...')).toBeInTheDocument();
       });
     });
 

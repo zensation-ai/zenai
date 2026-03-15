@@ -285,7 +285,15 @@ textarea::placeholder {
   --status-busy: #f59e0b;
   --status-error: #ef4444;
 
-  /* Context Colors - Work Mode */
+  /* Context Color System — generic tokens overridden per [data-context] */
+  --ctx-accent: var(--primary);
+  --ctx-accent-light: var(--primary-light);
+  --ctx-accent-glow: var(--primary-glow);
+  --ctx-accent-hover: var(--primary-dark);
+  --ctx-accent-surface: rgba(255, 107, 53, 0.08);
+  --ctx-accent-badge: rgba(255, 107, 53, 0.15);
+
+  /* Legacy alias */
   --context-work-primary: #3b82f6;
   --context-work-secondary: #60a5fa;
   --context-work-hover: #2563eb;
@@ -541,6 +549,56 @@ textarea::placeholder {
   --border-color: var(--border);
   --dashboard-card-bg: rgba(22, 50, 62, 0.78);
   color-scheme: dark;
+}
+
+/* ============================================
+   CONTEXT COLOR TEMPERATURES
+   Each context gets a unique accent color that subtly
+   shifts the UI feel. Applied via data-context on :root.
+   personal = warm green (calm, home)
+   work = cool blue (focus, productivity)
+   learning = warm amber (curiosity, growth)
+   creative = vibrant purple (imagination, flow)
+   ============================================ */
+
+/* Personal — Warm Green: calm, safe, home */
+:root[data-context="personal"] {
+  --ctx-accent: #10b981;
+  --ctx-accent-light: #34d399;
+  --ctx-accent-glow: rgba(16, 185, 129, 0.35);
+  --ctx-accent-hover: #059669;
+  --ctx-accent-surface: rgba(16, 185, 129, 0.08);
+  --ctx-accent-badge: rgba(16, 185, 129, 0.15);
+}
+
+/* Work — Cool Blue: focus, trust, productivity */
+:root[data-context="work"] {
+  --ctx-accent: #3b82f6;
+  --ctx-accent-light: #60a5fa;
+  --ctx-accent-glow: rgba(59, 130, 246, 0.35);
+  --ctx-accent-hover: #2563eb;
+  --ctx-accent-surface: rgba(59, 130, 246, 0.08);
+  --ctx-accent-badge: rgba(59, 130, 246, 0.15);
+}
+
+/* Learning — Warm Amber: curiosity, growth, energy */
+:root[data-context="learning"] {
+  --ctx-accent: #f59e0b;
+  --ctx-accent-light: #fbbf24;
+  --ctx-accent-glow: rgba(245, 158, 11, 0.35);
+  --ctx-accent-hover: #d97706;
+  --ctx-accent-surface: rgba(245, 158, 11, 0.08);
+  --ctx-accent-badge: rgba(245, 158, 11, 0.15);
+}
+
+/* Creative — Vibrant Purple: imagination, flow, premium */
+:root[data-context="creative"] {
+  --ctx-accent: #a855f7;
+  --ctx-accent-light: #c084fc;
+  --ctx-accent-glow: rgba(168, 85, 247, 0.35);
+  --ctx-accent-hover: #9333ea;
+  --ctx-accent-surface: rgba(168, 85, 247, 0.08);
+  --ctx-accent-badge: rgba(168, 85, 247, 0.15);
 }
 
 body {

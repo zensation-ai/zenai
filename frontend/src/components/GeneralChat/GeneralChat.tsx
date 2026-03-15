@@ -6,7 +6,7 @@
  * Features humanized AI personality with consistent branding.
  */
 
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense, type KeyboardEvent } from 'react';
 import axios from 'axios';
 import { showToast } from '../Toast';
 import { getErrorMessage, logError } from '../../utils/errors';
@@ -527,6 +527,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           type: 'error',
           duration: 8000,
           undoLabel: 'Erneut senden',
+          onUndo: () => handleSendMessage(),
         });
       }
     } finally {
@@ -650,13 +651,16 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         );
       }
 
-      // Process block-level formatting (headings, lists) then inline
+      // Process block-level formatting (headings, lists, blockquotes, tables) then inline
       const renderBlockFormatting = (text: string): React.ReactNode[] => {
         const lines = text.split('\n');
         const result: React.ReactNode[] = [];
         let keyIndex = 0;
         let listItems: string[] = [];
         let listType: 'ul' | 'ol' | null = null;
+        let blockquoteLines: string[] = [];
+        let tableRows: string[][] = [];
+        let tableHasHeader = false;
 
         const flushList = () => {
           if (listItems.length > 0 && listType) {
@@ -673,7 +677,82 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           }
         };
 
-        for (const line of lines) {
+        const flushBlockquote = () => {
+          if (blockquoteLines.length > 0) {
+            result.push(
+              <blockquote key={`bq-${keyIndex++}`} className="chat-blockquote">
+                {blockquoteLines.map((bqLine, bi) => (
+                  <span key={bi}>{renderInline(bqLine)}{bi < blockquoteLines.length - 1 && <br />}</span>
+                ))}
+              </blockquote>
+            );
+            blockquoteLines = [];
+          }
+        };
+
+        const flushTable = () => {
+          if (tableRows.length > 0) {
+            const headerRow = tableHasHeader ? tableRows[0] : null;
+            const bodyRows = tableHasHeader ? tableRows.slice(1) : tableRows;
+            result.push(
+              <div key={`tw-${keyIndex++}`} className="chat-table-wrapper">
+                <table className="chat-table">
+                  {headerRow && (
+                    <thead>
+                      <tr>{headerRow.map((cell, ci) => <th key={ci}>{renderInline(cell)}</th>)}</tr>
+                    </thead>
+                  )}
+                  <tbody>
+                    {bodyRows.map((row, ri) => (
+                      <tr key={ri}>{row.map((cell, ci) => <td key={ci}>{renderInline(cell)}</td>)}</tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+            tableRows = [];
+            tableHasHeader = false;
+          }
+        };
+
+        const parseTableRow = (line: string): string[] | null => {
+          if (!line.includes('|')) return null;
+          const trimmed = line.trim();
+          // Must start and end with | for a proper table
+          if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return null;
+          return trimmed.slice(1, -1).split('|').map(c => c.trim());
+        };
+
+        const isSeparatorRow = (line: string): boolean =>
+          /^\|[\s:]*[-:]+[\s:]*(\|[\s:]*[-:]+[\s:]*)*\|$/.test(line.trim());
+
+        for (let li = 0; li < lines.length; li++) {
+          const line = lines[li];
+
+          // Blockquote
+          const bqMatch = line.match(/^>\s?(.*)$/);
+          if (bqMatch) {
+            flushList();
+            flushTable();
+            blockquoteLines.push(bqMatch[1]);
+            continue;
+          }
+          flushBlockquote();
+
+          // Table row
+          const tableCells = parseTableRow(line);
+          if (tableCells) {
+            flushList();
+            // Skip separator rows (---|---|---) but mark header
+            if (isSeparatorRow(line)) {
+              if (tableRows.length === 1) tableHasHeader = true;
+              continue;
+            }
+            tableRows.push(tableCells);
+            continue;
+          }
+          flushTable();
+
           // Headings
           const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
           if (headingMatch) {
@@ -711,6 +790,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           }
         }
         flushList();
+        flushBlockquote();
+        flushTable();
         return result;
       };
 
@@ -855,7 +936,26 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           role="dialog"
           aria-modal="true"
           aria-label="Sprachkonversation"
-          onKeyDown={(e) => { if (e.key === 'Escape') setVoiceChatOpen(false); }}
+          onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
+            if (e.key === 'Escape') setVoiceChatOpen(false);
+            // Focus trap: keep Tab cycling within overlay
+            if (e.key === 'Tab') {
+              const overlay = e.currentTarget;
+              const focusable = overlay.querySelectorAll<HTMLElement>(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+              );
+              if (focusable.length === 0) return;
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+              if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+              } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          }}
         >
           <div
             className="voice-chat-overlay-backdrop"

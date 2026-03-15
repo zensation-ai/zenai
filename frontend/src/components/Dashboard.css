@@ -320,8 +320,8 @@
 }
 
 .bento-ai-status:hover {
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.08);
+  border-color: var(--ctx-accent-glow, rgba(139, 92, 246, 0.3));
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ctx-accent, #8b5cf6) 8%, transparent);
 }
 
 .bento-ai-status-main {

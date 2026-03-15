@@ -243,6 +243,27 @@
   font-style: italic;
 }
 
+/* Phase-based AI processing label */
+.ai-phase-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--ctx-accent, var(--primary));
+  font-style: normal;
+  font-weight: 500;
+  animation: aiPhaseIn 0.3s var(--ease-out-expo, ease);
+}
+
+.ai-phase-icon {
+  font-size: 0.8rem;
+  font-style: normal;
+}
+
+@keyframes aiPhaseIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .chat-message-text {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
@@ -257,7 +278,7 @@
 }
 
 .chat-message.user .chat-message-text {
-  background: var(--primary);
+  background: var(--ctx-accent, var(--primary));
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -293,6 +314,63 @@
 
 .chat-message.user .inline-code {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Lists */
+.chat-list {
+  margin: 0.25rem 0;
+  padding-left: 1.5rem;
+}
+
+.chat-list li {
+  margin: 0.15rem 0;
+  line-height: 1.5;
+}
+
+/* Blockquotes */
+.chat-blockquote {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--ctx-accent, var(--primary));
+  background: var(--ctx-accent-surface, rgba(0, 0, 0, 0.04));
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Tables */
+.chat-table-wrapper {
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  border-radius: var(--radius-sm);
+}
+
+.chat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.chat-table th,
+.chat-table td {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--glass-border);
+  text-align: left;
+}
+
+.chat-table th {
+  background: var(--ctx-accent-surface, rgba(0, 0, 0, 0.06));
+  font-weight: 600;
+}
+
+.chat-table tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Headings */
+.chat-heading {
+  margin: 0.5rem 0 0.25rem;
+  line-height: 1.3;
 }
 
 /* Typing Indicator */
@@ -418,9 +496,9 @@
 
 .chat-input:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--ctx-accent, var(--primary));
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 3px var(--primary-glow);
+  box-shadow: 0 0 0 3px var(--ctx-accent-surface, var(--primary-glow));
 }
 
 .chat-input:disabled {
@@ -438,7 +516,7 @@
   height: 42px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, var(--ctx-accent-light, var(--primary-light)) 0%, var(--ctx-accent, var(--primary)) 100%);
   color: white;
   font-size: 1.1rem;
   cursor: pointer;
@@ -451,9 +529,9 @@
 }
 
 .chat-send-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, var(--ctx-accent, var(--primary)) 0%, var(--ctx-accent-hover, var(--primary-dark)) 100%);
   transform: scale(1.08) translateY(-1px);
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.35);
+  box-shadow: 0 4px 16px var(--ctx-accent-glow, rgba(255, 107, 53, 0.35));
 }
 
 .chat-send-btn:active:not(:disabled) {
@@ -524,27 +602,6 @@
   box-shadow: 0 0 0 2px var(--primary-glow);
 }
 
-/* Work Context Adjustments */
-[data-context="work"] .chat-message.assistant .chat-message-avatar {
-  background: linear-gradient(135deg, var(--context-work-secondary), var(--context-work-primary));
-}
-
-[data-context="work"] .chat-message.user .chat-message-text {
-  background: var(--context-work-primary);
-}
-
-[data-context="work"] .chat-send-btn {
-  background: var(--context-work-primary);
-}
-
-[data-context="work"] .chat-send-btn:hover:not(:disabled) {
-  background: var(--context-work-hover);
-}
-
-[data-context="work"] .chat-input:focus {
-  border-color: var(--context-work-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
 
 [data-context="work"] .new-chat-btn {
   color: var(--context-work-primary);
@@ -1002,7 +1059,7 @@
 
 /* Streaming indicator in header */
 .streaming-indicator {
-  color: var(--primary);
+  color: var(--ctx-accent, var(--primary));
   font-weight: 500;
   animation: streamingPulse 1.5s ease-in-out infinite;
 }
@@ -1068,8 +1125,8 @@
 
 /* Thinking block (Extended Thinking display) */
 .chat-thinking-block {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(255, 107, 53, 0.1));
-  border-left: 3px solid var(--primary);
+  background: linear-gradient(135deg, var(--ctx-accent-surface, rgba(255, 107, 53, 0.05)), color-mix(in srgb, var(--ctx-accent, #ff6b35) 10%, transparent));
+  border-left: 3px solid var(--ctx-accent, var(--primary));
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.5rem;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
