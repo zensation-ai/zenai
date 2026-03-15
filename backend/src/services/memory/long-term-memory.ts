@@ -365,25 +365,24 @@ class LongTermMemoryService {
       try {
         const legacyResult = await queryContext(
           context,
-          `SELECT id, category, fact_key, fact_value, confidence, source, created_at, updated_at
-           FROM personalization_facts
-           LIMIT $1`,
+          `SELECT * FROM personalization_facts LIMIT $1`,
           [CONFIG.MAX_FACTS]
         );
 
         if (legacyResult.rows.length > 0) {
           facts = legacyResult.rows.map((r: Record<string, unknown>) => {
-            const factType = ((r.category as string) || 'knowledge') as PersonalizationFact['factType'];
+            // Support both schema versions: phase27 (fact_type, content) and legacy (category, fact_key/fact_value)
+            const factType = ((r.fact_type as string) || (r.category as string) || 'knowledge') as PersonalizationFact['factType'];
             const source = ((r.source as string) || 'inferred') as PersonalizationFact['source'];
             return {
               id: r.id as string,
               factType,
-              content: (r.fact_value as string) || (r.fact_key as string) || '',
+              content: (r.content as string) || (r.fact_value as string) || (r.fact_key as string) || '',
               confidence: parseFloat(r.confidence as string) || 0.7,
               source,
-              firstSeen: new Date((r.created_at as string) || Date.now()),
-              lastConfirmed: new Date((r.updated_at as string) || Date.now()),
-              occurrences: 1,
+              firstSeen: new Date((r.first_seen as string) || (r.created_at as string) || Date.now()),
+              lastConfirmed: new Date((r.last_confirmed as string) || (r.updated_at as string) || Date.now()),
+              occurrences: parseInt(r.occurrences as string) || 1,
               retrievalCount: 0,
               lastRetrieved: null,
               decayClass: inferDecayClass(factType, source),

@@ -441,7 +441,7 @@ async function createLocalEvent(
     id, parsed.title, parsed.description || null,
     parsed.start_time, parsed.end_time || null, parsed.all_day,
     parsed.location || null, statusMap[parsed.status || 'confirmed'] || 'confirmed',
-    calendarColor || null, context, parsed.rrule || null,
+    calendarColor ? calendarColor.slice(0, 7) : null, context, parsed.rrule || null,
     parsed.uid, accountId, remote.etag, remote.data,
   ]);
 }
