@@ -241,8 +241,8 @@ function App() {
     );
   }
 
-  // Allow access with API key even without JWT session (backward compat)
-  const hasApiKey = !!(import.meta.env.VITE_API_KEY);
+  // In production, require JWT session. In dev, allow API key fallback for testing.
+  const hasApiKey = import.meta.env.DEV && !!(import.meta.env.VITE_API_KEY);
   if (!session && !hasApiKey) {
     return <AuthPage />;
   }
@@ -302,20 +302,36 @@ function AuthenticatedApp() {
     confidence: number;
   } | null>(null);
 
-  // Email unread count for sidebar badge
+  // Email unread count for sidebar badge (with exponential backoff on errors)
   const [emailUnreadCount, setEmailUnreadCount] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    let errorCount = 0;
+    let intervalId: ReturnType<typeof setTimeout>;
+
     const fetchUnread = () => {
       axios.get(`/api/${context}/emails/stats`, { signal: controller.signal }).then(res => {
         setEmailUnreadCount(res.data?.data?.unread ?? 0);
-      }).catch(() => { /* silent - includes AbortError */ });
+        errorCount = 0; // Reset on success
+        scheduleNext(60_000); // Normal 60s interval
+      }).catch(() => {
+        if (controller.signal.aborted) return;
+        errorCount++;
+        // Exponential backoff: 60s, 120s, 240s, max 300s
+        const backoff = Math.min(60_000 * Math.pow(2, errorCount - 1), 300_000);
+        scheduleNext(backoff);
+      });
     };
+
+    const scheduleNext = (ms: number) => {
+      clearTimeout(intervalId);
+      intervalId = setTimeout(fetchUnread, ms);
+    };
+
     fetchUnread();
-    const interval = setInterval(fetchUnread, 60_000);
     return () => {
       controller.abort();
-      clearInterval(interval);
+      clearTimeout(intervalId);
     };
   }, [context]);
 

@@ -144,7 +144,7 @@ export function EmailDetail({
         'th', 'thead', 'tr', 'u', 'ul', 'font', 'center', 'small', 'sub', 'sup',
       ],
       ALLOWED_ATTR: [
-        'href', 'src', 'alt', 'title', 'style', 'class', 'id', 'width', 'height',
+        'href', 'src', 'alt', 'title', 'class', 'id', 'width', 'height',
         'border', 'cellpadding', 'cellspacing', 'bgcolor', 'color', 'size', 'face',
         'align', 'valign', 'colspan', 'rowspan', 'target',
       ],

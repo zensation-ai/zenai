@@ -35,6 +35,7 @@ if (isElectronApp) {
 
 // CSRF token management (defense-in-depth alongside API key auth)
 let csrfToken: string | null = null;
+let csrfFetchPromise: Promise<void> | null = null;
 
 async function fetchCsrfToken(): Promise<void> {
   try {
@@ -48,11 +49,20 @@ async function fetchCsrfToken(): Promise<void> {
   }
 }
 
-// Fetch initial CSRF token
-fetchCsrfToken();
+// Lazy CSRF: ensure token is fetched before first mutating request
+async function ensureCsrfToken(): Promise<void> {
+  if (csrfToken) return;
+  if (!csrfFetchPromise) {
+    csrfFetchPromise = fetchCsrfToken();
+  }
+  await csrfFetchPromise;
+}
+
+// Start fetching eagerly but don't block on it
+csrfFetchPromise = fetchCsrfToken();
 
 // Configure axios interceptors
-axios.interceptors.request.use((config) => {
+axios.interceptors.request.use(async (config) => {
   // Phase 56: Prefer JWT token over API key
   const jwtToken = safeLocalStorage('get', 'zenai_access_token');
   const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
@@ -66,8 +76,12 @@ axios.interceptors.request.use((config) => {
   }
 
   // Attach CSRF token to mutating requests (defense-in-depth)
-  if (csrfToken && config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
-    config.headers['X-CSRF-Token'] = csrfToken;
+  // Await token fetch to prevent race condition on app startup
+  if (config.method && !['get', 'head', 'options'].includes(config.method.toLowerCase())) {
+    await ensureCsrfToken();
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
   }
 
   return config;
@@ -79,12 +93,14 @@ axios.interceptors.response.use(
   async (error) => {
     const config = error.config;
 
-    // 401: If JWT was used but expired, retry with API key (don't clear JWT — AuthContext handles refresh)
+    // 401: If JWT was used but expired, retry with API key for safe (non-mutating) requests only.
+    // Retrying POST/PUT/DELETE could cause duplicate side effects (e.g., sending email twice).
     if (error.response?.status === 401 && !config._retryWithApiKey) {
       const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
       const isAuthEndpoint = config.url?.includes('/api/auth/');
+      const isSafeMethod = ['get', 'head', 'options'].includes((config.method || '').toLowerCase());
 
-      if (apiKey && !isAuthEndpoint) {
+      if (apiKey && !isAuthEndpoint && isSafeMethod) {
         config._retryWithApiKey = true;
         config.headers.Authorization = `Bearer ${apiKey}`;
         return axios(config);
@@ -135,8 +151,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New content available, show update notification
-                
+                // New content available - dispatch event for UI notification
+                window.dispatchEvent(new CustomEvent('sw-update-available', {
+                  detail: { registration },
+                }));
               }
             });
           }

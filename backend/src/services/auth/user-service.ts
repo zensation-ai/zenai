@@ -368,6 +368,38 @@ export async function setMfaEnabled(userId: string, enabled: boolean): Promise<v
   );
 }
 
+/**
+ * Change user password. Verifies current password before updating.
+ */
+export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+  const result = await pool.query(
+    'SELECT password_hash FROM public.users WHERE id = $1',
+    [userId]
+  );
+
+  if (result.rows.length === 0) {
+    throw new UserServiceError('User not found', 'NOT_FOUND', 404);
+  }
+
+  const { password_hash } = result.rows[0];
+  if (!password_hash) {
+    throw new UserServiceError('Password login not available for OAuth users', 'NO_PASSWORD', 400);
+  }
+
+  const passwordValid = await bcrypt.compare(currentPassword, password_hash);
+  if (!passwordValid) {
+    throw new UserServiceError('Current password is incorrect', 'INVALID_PASSWORD', 401);
+  }
+
+  const newHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+  await pool.query(
+    'UPDATE public.users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+    [newHash, userId]
+  );
+
+  logger.info('Password changed', { operation: 'changePassword', userId });
+}
+
 // ===========================================
 // Error Class
 // ===========================================

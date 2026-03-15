@@ -270,6 +270,15 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         controller.abort();
         if (retryTimer.current) clearTimeout(retryTimer.current);
       };
+    } else {
+      // Timeout: if apiStatus never resolves, show error state after 10s
+      const timeout = setTimeout(() => {
+        if (!hasFetched.current) {
+          setLoading(false);
+          setFetchError(true);
+        }
+      }, 10_000);
+      return () => clearTimeout(timeout);
     }
   }, [apiStatus, fetchData]);
 

@@ -356,7 +356,9 @@ authRouter.get('/callback/:provider', asyncHandler(async (req: Request, res: Res
     const deviceInfo = extractDeviceInfo(req);
     const tokenPair = await jwtService.generateTokenPair(user, deviceInfo, req.ip || undefined);
 
-    // For browser-based OAuth, redirect to frontend with tokens
+    // For browser-based OAuth, redirect to frontend with tokens in URL fragment.
+    // Fragments (#) are never sent to the server in subsequent requests, preventing
+    // token leakage via server logs, Referer headers, or browser history.
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const params = new URLSearchParams({
       accessToken: tokenPair.accessToken,
@@ -364,7 +366,7 @@ authRouter.get('/callback/:provider', asyncHandler(async (req: Request, res: Res
       expiresIn: String(tokenPair.expiresIn),
     });
 
-    return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+    return res.redirect(`${frontendUrl}/auth/callback#${params.toString()}`);
   } catch (error) {
     logger.error('OAuth callback failed', error instanceof Error ? error : undefined, {
       operation: 'auth.oauthCallback',
@@ -417,10 +419,11 @@ authRouter.post('/mfa/setup', requireJwt, asyncHandler(async (req: Request, res:
   const otpauthUrl = authenticator.keyuri(user.email, 'ZenAI', secret);
   const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
 
+  // Only return the QR code and otpauth URL — the secret is embedded in the URI.
+  // Returning the raw secret in the response body would expose it to interception.
   return res.json({
     success: true,
     data: {
-      secret,
       qrCode: qrCodeDataUrl,
       otpauthUrl,
     },
@@ -473,6 +476,139 @@ authRouter.post('/mfa/verify', requireJwt, asyncHandler(async (req: Request, res
   return res.json({
     success: true,
     data: { mfa_enabled: true },
+  });
+}));
+
+// ===========================================
+// Change Password
+// ===========================================
+
+/**
+ * POST /api/auth/change-password
+ * Change the current user's password. Requires current password verification.
+ * Revokes all other sessions after password change for security.
+ */
+authRouter.post('/change-password', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.jwtUser!.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      error: 'Current password and new password are required',
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({
+      success: false,
+      error: 'New password must be at least 8 characters',
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  try {
+    await userService.changePassword(userId, currentPassword, newPassword);
+
+    // Revoke all other sessions for security (user must re-login on other devices)
+    await jwtService.revokeAllUserSessions(userId);
+
+    // Generate fresh tokens for current session
+    const user = await userService.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found', code: 'NOT_FOUND' });
+    }
+    const deviceInfo = extractDeviceInfo(req);
+    const tokenPair = await jwtService.generateTokenPair(user, deviceInfo, req.ip || undefined);
+
+    return res.json({
+      success: true,
+      data: {
+        message: 'Password changed successfully. All other sessions have been revoked.',
+        ...tokenPair,
+      },
+    });
+  } catch (error) {
+    if (error instanceof userService.UserServiceError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+      });
+    }
+    throw error;
+  }
+}));
+
+// ===========================================
+// Logout All Sessions
+// ===========================================
+
+/**
+ * POST /api/auth/logout-all
+ * Revoke all sessions for the current user (log out from all devices).
+ */
+authRouter.post('/logout-all', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.jwtUser!.id;
+
+  await jwtService.revokeAllUserSessions(userId);
+
+  return res.json({
+    success: true,
+    data: { message: 'All sessions have been revoked' },
+  });
+}));
+
+// ===========================================
+// Disable MFA
+// ===========================================
+
+/**
+ * POST /api/auth/mfa/disable
+ * Disable MFA for the current user. Requires current MFA code for verification.
+ */
+authRouter.post('/mfa/disable', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.jwtUser!.id;
+  const { code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      error: 'Current MFA code is required to disable MFA',
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  const user = await userService.findById(userId);
+  if (!user || !user.mfa_enabled || !user.mfa_secret) {
+    return res.status(400).json({
+      success: false,
+      error: 'MFA is not enabled',
+      code: 'MFA_NOT_ENABLED',
+    });
+  }
+
+  // Verify the MFA code before disabling
+  const isValid = authenticator.verify({
+    token: code,
+    secret: decrypt(user.mfa_secret),
+  });
+
+  if (!isValid) {
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid MFA code',
+      code: 'INVALID_MFA',
+    });
+  }
+
+  await userService.setMfaEnabled(userId, false);
+  await userService.setMfaSecret(userId, '');
+
+  return res.json({
+    success: true,
+    data: { mfa_enabled: false, message: 'MFA has been disabled' },
   });
 }));
 

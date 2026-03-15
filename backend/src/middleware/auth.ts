@@ -478,6 +478,13 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   'POST:/api/personal/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 }, // 3/min
   'POST:/api/work/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 }, // 3/min
 
+  // Authentication endpoints - strict brute-force protection
+  'POST:/api/auth/login': { limit: 5, windowMs: 60 * 1000 }, // 5/min - login
+  'POST:/api/auth/register': { limit: 3, windowMs: 60 * 1000 }, // 3/min - registration
+  'POST:/api/auth/refresh': { limit: 20, windowMs: 60 * 1000 }, // 20/min - token refresh
+  'POST:/api/auth/mfa/verify': { limit: 5, windowMs: 60 * 1000 }, // 5/min - MFA verification
+  'POST:/api/auth/change-password': { limit: 3, windowMs: 60 * 1000 }, // 3/min - password change
+
   // AI Chat endpoints - moderate limits to prevent abuse
   'POST:/api/chat/sessions': { limit: 10, windowMs: 60 * 1000 }, // 10/min - session creation
   'POST:/api/chat/quick': { limit: 20, windowMs: 60 * 1000 }, // 20/min - quick chat

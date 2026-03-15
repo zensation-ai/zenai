@@ -339,13 +339,15 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         try {
           // Build full URL: native fetch doesn't use axios baseURL
           const baseUrl = import.meta.env.VITE_API_URL ?? '';
+          const jwtToken = safeLocalStorage('get', 'zenai_access_token');
           const apiKey = safeLocalStorage('get', 'apiKey') ?? import.meta.env.VITE_API_KEY;
+          const authToken = jwtToken || apiKey;
 
           const response = await fetch(`${baseUrl}/api/chat/sessions/${currentSessionId}/messages/stream`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
+              ...(authToken && { Authorization: `Bearer ${authToken}` }),
             },
             body: JSON.stringify({
               message: messageContent,

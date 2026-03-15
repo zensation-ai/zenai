@@ -51,6 +51,7 @@ import {
 } from '../services/claude/thinking-budget';
 import { classifyIntent } from '../services/query-intent-classifier';
 import { query } from '../utils/database';
+import { queryContext } from '../utils/database-context';
 import {
   VisionImage,
   bufferToVisionImage,
@@ -563,11 +564,10 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
     logger.debug('Failed to add user interaction to memory (stream)', { sessionId: id, error });
   }
 
-  // Get conversation history (session_id scope is sufficient since session ownership
-  // is verified at route level; user_id adds defense-in-depth when column exists)
+  // Get conversation history using context-aware query for correct schema routing
   let historyResult;
   try {
-    historyResult = await query(`
+    historyResult = await queryContext(contextType, `
       SELECT role, content
       FROM general_chat_messages
       WHERE session_id = $1 AND user_id = $2
@@ -578,7 +578,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
     const errMsg = err instanceof Error ? err.message : String(err);
     if (errMsg.includes('user_id') || errMsg.includes('does not exist')) {
       // Fallback: user_id column not yet migrated
-      historyResult = await query(`
+      historyResult = await queryContext(contextType, `
         SELECT role, content
         FROM general_chat_messages
         WHERE session_id = $1

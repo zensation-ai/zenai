@@ -14,7 +14,7 @@ import { userProfileRouter, userProfileContextRouter } from './routes/user-profi
 import { apiKeysRouter } from './routes/api-keys';
 import { webhooksRouter } from './routes/webhooks';
 import { integrationsRouter } from './routes/integrations';
-import { rateLimiter, cleanupRateLimits } from './middleware/auth';
+import { rateLimiter, cleanupRateLimits, stopRateLimitCleanup } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/requestId';
 // Phase Security Sprint 3: CSRF Protection
 import { csrfProtection, getCsrfTokenHandler, ensureCookieParser } from './middleware/csrf';
@@ -604,10 +604,14 @@ const rateLimitCleanupInterval = setInterval(() => {
   cleanupRateLimits().catch((err) => logger.error('Rate limit cleanup failed', err));
 }, 60 * 60 * 1000);
 
+// HTTP server reference for graceful shutdown (set in startServer)
+let httpServer: import('http').Server | null = null;
+
 // Clear interval on shutdown (setupGracefulShutdown handles DB cleanup)
 const gracefulShutdown = async (signal: string) => {
   logger.info(`Received ${signal}. Starting graceful shutdown...`);
   clearInterval(rateLimitCleanupInterval);
+  stopRateLimitCleanup();
   stopMemoryScheduler();
   stopImapScheduler();
   stopCalDAVScheduler();
@@ -618,6 +622,10 @@ const gracefulShutdown = async (signal: string) => {
   await getQueueService().shutdown().catch(() => {});
   await shutdownTracing().catch(() => {});
   await shutdownAITracing().catch(() => {});
+  // Stop accepting new connections, drain in-flight requests
+  if (httpServer) {
+    await new Promise<void>((resolve) => httpServer!.close(() => resolve()));
+  }
   // Close database connections last
   stopConnectionHealthCheck();
   await closeAllPools().catch(() => {});
@@ -627,7 +635,16 @@ const gracefulShutdown = async (signal: string) => {
 process.once('SIGTERM', () => { gracefulShutdown('SIGTERM'); });
 process.once('SIGINT', () => { gracefulShutdown('SIGINT'); });
 
-// 404 Handler for undefined routes
+// Phase 66: Sentry error handler (must be BEFORE 404 and app error handler)
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { Sentry, isSentryInitialized } = require('./services/observability/sentry');
+  if (isSentryInitialized()) {
+    Sentry.setupExpressErrorHandler(app);
+  }
+} catch { /* Sentry not available */ }
+
+// 404 Handler for undefined routes (after all routes and Sentry)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -637,15 +654,6 @@ app.use((req, res) => {
     }
   });
 });
-
-// Phase 66: Sentry error handler (must be BEFORE app error handler to capture route errors)
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { Sentry, isSentryInitialized } = require('./services/observability/sentry');
-  if (isSentryInitialized()) {
-    Sentry.setupExpressErrorHandler(app);
-  }
-} catch { /* Sentry not available */ }
 
 // Error handling - Use centralized error handler (after Sentry so Sentry captures first)
 app.use(errorHandler);
@@ -794,7 +802,8 @@ async function startServer(): Promise<void> {
   validateEnvironmentVariables();
 
   // Start server after secrets are validated
-  const server = app.listen(PORT, async () => {
+  httpServer = app.listen(PORT, async () => {
+    const server = httpServer!;
     // Phase 57: Initialize WebSocket for Voice Signaling
     try {
       const { voiceSignaling } = await import('./services/voice/webrtc-signaling');

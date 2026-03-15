@@ -305,8 +305,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [storeAuthState]);
 
   const resetPassword = useCallback(async (_email: string): Promise<{ error: Error | null }> => {
-    // Password reset will be implemented in a future phase
-    return { error: new Error('Password reset is not yet available. Please contact support.') };
+    // Password reset via email is not yet implemented.
+    // Users can change their password via Settings when logged in.
+    return { error: new Error('Passwort-Reset per E-Mail ist noch nicht verfuegbar. Bitte wenden Sie sich an support@zensation.ai') };
   }, []);
 
   const getAccessToken = useCallback((): string | null => {
