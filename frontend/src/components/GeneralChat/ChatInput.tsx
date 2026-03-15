@@ -141,6 +141,7 @@ export function ChatInput({
             disabled={sending}
             className="chat-input liquid-glass-input neuro-placeholder-animated"
             aria-label="Chat-Nachricht eingeben"
+            enterKeyHint="send"
           />
           <button
             type="button"

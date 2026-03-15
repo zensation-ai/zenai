@@ -60,12 +60,31 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const streamAbortRef = useRef<AbortController | null>(null);
   // Guard: skip useEffect reload when we caused the session change internally
   const skipNextSessionLoadRef = useRef(false);
+  // Track previous initialSessionId to detect "new chat" signal (had value → null)
+  const prevInitialSessionIdRef = useRef<string | null | undefined>(undefined);
 
   // Load session on mount, context change, or external initialSessionId change
   useEffect(() => {
     // If WE triggered this change (e.g. createNewSession), skip the reload
     if (skipNextSessionLoadRef.current) {
       skipNextSessionLoadRef.current = false;
+      prevInitialSessionIdRef.current = initialSessionId;
+      return;
+    }
+
+    // Detect "new chat" signal: parent explicitly set initialSessionId from a value to null
+    const wasExplicitReset = prevInitialSessionIdRef.current !== undefined
+      && prevInitialSessionIdRef.current !== null
+      && initialSessionId === null;
+    prevInitialSessionIdRef.current = initialSessionId;
+
+    if (wasExplicitReset) {
+      // Parent requested a new blank chat — clear state instead of loading last session
+      setSessionId(null);
+      setMessages([]);
+      setStreamingContent('');
+      setThinkingContent('');
+      isInitialScrollRef.current = true;
       return;
     }
 
