@@ -146,6 +146,15 @@ BEGIN
   ALTER TABLE public.notification_history ADD COLUMN IF NOT EXISTS user_id UUID DEFAULT '00000000-0000-0000-0000-000000000001';
   CREATE INDEX IF NOT EXISTS idx_notification_history_user ON public.notification_history(user_id);
 
+  -- agent_checkpoints
+  FOR s IN SELECT unnest(ARRAY['personal', 'work', 'learning', 'creative']) LOOP
+    BEGIN
+      EXECUTE format('ALTER TABLE %I.agent_checkpoints ADD COLUMN IF NOT EXISTS user_id UUID DEFAULT %L', s, default_user);
+      EXECUTE format('CREATE INDEX IF NOT EXISTS idx_%s_agent_checkpoints_user ON %I.agent_checkpoints(user_id)', s, s);
+    EXCEPTION WHEN undefined_table THEN NULL;
+    END;
+  END LOOP;
+
   -- ============================================================
   -- 5. Missing budgets table (phase_finance.sql never ran for this table)
   -- ============================================================
