@@ -297,7 +297,6 @@ export class DocumentService {
     const limit = Math.min(filters?.limit || 50, 100);
     const offset = filters?.offset || 0;
 
-    let hasUserId = true;
     let whereClause = `WHERE context = $1 AND is_archived = $2 AND user_id = $3`;
     const params: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [context, filters?.isArchived || false, uid];
     let paramIndex = 4;
