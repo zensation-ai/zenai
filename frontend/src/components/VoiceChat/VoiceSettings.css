@@ -213,7 +213,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: white;
+  background: var(--surface);
   transition: transform 0.2s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
@@ -299,7 +299,7 @@
   }
 
   .voice-settings-select option {
-    background: white;
+    background: var(--surface);
     color: #1e293b;
   }
 

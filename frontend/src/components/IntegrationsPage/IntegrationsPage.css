@@ -526,6 +526,6 @@ tr.inactive {
   border-color: #e5e7eb;
 }
 [data-theme="light"] .mcp-config-snippet {
-  background: #ffffff;
+  background: var(--surface);
   border-color: #e5e7eb;
 }

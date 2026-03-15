@@ -468,7 +468,7 @@
 /* Light Mode */
 /* ============================================ */
 [data-theme="light"] .finance-page {
-  background: #ffffff;
+  background: var(--surface);
   color: #1f2937;
 }
 [data-theme="light"] .overview-card,

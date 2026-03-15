@@ -450,7 +450,7 @@
 
 .react-flow__node:hover {
   transform: scale(1.05);
-  z-index: 1000 !important;
+  z-index: var(--z-modal);
 }
 
 .react-flow__node.selected {

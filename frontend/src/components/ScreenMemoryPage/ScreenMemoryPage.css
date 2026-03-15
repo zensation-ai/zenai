@@ -485,7 +485,7 @@
 /* Light Mode */
 /* ============================================ */
 [data-theme="light"] .screen-memory-page {
-  background: #ffffff;
+  background: var(--surface);
   color: #1f2937;
 }
 [data-theme="light"] .timeline-card,

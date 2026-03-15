@@ -336,7 +336,7 @@
   width: 20px;
   left: 2px;
   bottom: 2px;
-  background-color: white;
+  background-color: var(--surface);
   transition: 0.3s;
   border-radius: 50%;
 }
@@ -431,7 +431,7 @@
 }
 
 :root.light-mode .settings-select option {
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
 }
 

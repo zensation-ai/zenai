@@ -34,7 +34,7 @@
 
 .anticipatory-tooltip {
   position: absolute;
-  z-index: 1000;
+  z-index: var(--z-modal);
   padding: 0.625rem 0.875rem;
   background: rgba(20, 34, 48, 0.95);
   backdrop-filter: blur(12px);

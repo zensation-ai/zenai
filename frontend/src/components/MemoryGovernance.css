@@ -201,7 +201,7 @@
 
 .memgov-toggle input:checked + .memgov-toggle-slider::before {
   transform: translateX(20px);
-  background: white;
+  background: var(--surface);
 }
 
 .memgov-toggle input:disabled + .memgov-toggle-slider {
@@ -525,7 +525,7 @@
 }
 
 :root.light-mode .memgov-toggle-slider::before {
-  background: white;
+  background: var(--surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 

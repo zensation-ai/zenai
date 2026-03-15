@@ -186,7 +186,7 @@
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  background: white;
+  background: var(--surface);
 }
 
 .add-focus-form textarea {
@@ -226,7 +226,7 @@
 }
 
 .focus-card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-md);
   padding: 1.25rem;
@@ -388,7 +388,7 @@
 }
 
 .suggestion-card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-md);
   padding: 1.25rem;
@@ -488,7 +488,7 @@
 
 .research-card-mini,
 .research-card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border, #e5e7eb);
   border-radius: var(--radius-md);
   padding: 1rem;
@@ -808,7 +808,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-xs);
   font-size: 0.875rem;
 }
@@ -929,7 +929,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
   padding: 1rem;
 }
 

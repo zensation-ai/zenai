@@ -258,7 +258,7 @@
 }
 
 .sfb-filter-toggle.active .sfb-filter-badge {
-  background: white;
+  background: var(--surface);
   color: var(--primary);
 }
 

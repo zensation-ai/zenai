@@ -95,7 +95,7 @@
   font-size: 0.875rem;
   resize: vertical;
   min-height: 80px;
-  background: white;
+  background: var(--surface);
   font-family: inherit;
 }
 
@@ -116,7 +116,7 @@
   padding: 0.5rem 1rem;
   border-radius: 6px;
   border: 1px solid var(--border, #e5e7eb);
-  background: white;
+  background: var(--surface);
   cursor: pointer;
   font-size: 0.875rem;
 }

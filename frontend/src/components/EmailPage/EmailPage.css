@@ -258,7 +258,7 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   font-size: 0.85rem;
   color: var(--text-primary, #e0e8ef);
-  z-index: 1000;
+  z-index: var(--z-modal);
   animation: ep-toast-in 0.3s ease-out;
 }
 
@@ -339,7 +339,7 @@
   color: #333;
 }
 :root.light-mode .ep-undo-toast {
-  background: #fff;
+  background: var(--surface);
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }

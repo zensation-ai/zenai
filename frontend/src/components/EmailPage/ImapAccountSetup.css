@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
   backdrop-filter: blur(4px);
 }
 
@@ -308,7 +308,7 @@
 /* Light mode */
 @media (prefers-color-scheme: light) {
   .imap-setup-modal {
-    background: #ffffff;
+    background: var(--surface);
     border-color: #e0e0e0;
   }
 

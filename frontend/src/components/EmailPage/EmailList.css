@@ -409,12 +409,12 @@
 /* ── Light Mode ──────────────────────────────────────────────── */
 
 :root.light-mode .el-search-input {
-  background: #fff;
+  background: var(--surface);
   border-color: rgba(0, 0, 0, 0.1);
   color: #1a1a2e;
 }
 :root.light-mode .el-search-input:focus {
-  background: #fff;
+  background: var(--surface);
 }
 :root.light-mode .el-row {
   border-bottom-color: rgba(0, 0, 0, 0.05);

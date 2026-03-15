@@ -399,7 +399,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
   padding: 20px;
 }
 
@@ -498,7 +498,7 @@
 /* Light Mode */
 /* ============================================ */
 [data-theme="light"] .contacts-page {
-  background: #ffffff;
+  background: var(--surface);
   color: #1f2937;
 }
 [data-theme="light"] .contacts-header {
@@ -518,7 +518,7 @@
   background: #f9fafb;
 }
 [data-theme="light"] .contact-form-modal {
-  background: #ffffff;
+  background: var(--surface);
   border-color: #e5e7eb;
 }
 [data-theme="light"] .form-group input,

@@ -264,7 +264,7 @@
   width: 100%;
   height: 100%;
   border: none;
-  background: white;
+  background: var(--surface);
 }
 
 /* ── Empty State ── */
@@ -911,19 +911,19 @@
 }
 
 [data-theme="light"] .browser-quick-link {
-  background: white;
+  background: var(--surface);
   border-color: rgba(0,0,0,0.08);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 [data-theme="light"] .browser-quick-link:hover {
-  background: white;
+  background: var(--surface);
   border-color: rgba(255, 107, 43, 0.3);
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 [data-theme="light"] .browser-search-wrapper {
-  background: white;
+  background: var(--surface);
   border-color: rgba(0,0,0,0.1);
 }
 
@@ -934,7 +934,7 @@
 
 [data-theme="light"] .browser-bookmarks-form-input,
 [data-theme="light"] .browser-bookmarks-form-select {
-  background: white;
+  background: var(--surface);
   border-color: rgba(0,0,0,0.1);
   color: var(--text-primary, #1a1a2e);
 }
