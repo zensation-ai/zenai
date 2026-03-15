@@ -375,6 +375,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           let buffer = '';
 
           if (reader) {
+            let currentEventType = '';
             try {
               while (true) {
                 const { done, value } = await reader.read();
@@ -385,8 +386,6 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                 // Process complete SSE events from buffer
                 const lines = buffer.split('\n');
                 buffer = lines.pop() ?? '';
-
-                let currentEventType = '';
                 for (const line of lines) {
                   if (line.startsWith('event: ')) {
                     // Track event type for the next data line

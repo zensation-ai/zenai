@@ -502,8 +502,6 @@ agentTeamsRouter.get(
        ORDER BY strategy_count DESC`,
       [context, days, userId]
     );
-
-    // Also get recent trends (last 7 days daily)
     const trendResult = await queryContext(
       context as AIContext,
       `SELECT

@@ -182,6 +182,7 @@ authRouter.post('/refresh', asyncHandler(async (req: Request, res: Response) => 
  */
 authRouter.post('/logout', requireJwt, asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
+  const userId = req.jwtUser!.id;
 
   if (refreshToken) {
     // Revoke specific session by refresh token
@@ -191,6 +192,9 @@ authRouter.post('/logout', requireJwt, asyncHandler(async (req: Request, res: Re
     if (session) {
       await sessionStore.revokeSession(session.id);
     }
+  } else {
+    // No refresh token provided — revoke all sessions for this user as safety measure
+    await sessionStore.revokeAllUserSessions(userId);
   }
 
   return res.json({ success: true });
@@ -528,6 +532,104 @@ authRouter.post('/change-password', requireJwt, asyncHandler(async (req: Request
         message: 'Password changed successfully. All other sessions have been revoked.',
         ...tokenPair,
       },
+    });
+  } catch (error) {
+    if (error instanceof userService.UserServiceError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+      });
+    }
+    throw error;
+  }
+}));
+
+// ===========================================
+// Password Reset (Request + Confirm)
+// ===========================================
+
+/**
+ * POST /api/auth/request-password-reset
+ * Sends a password reset email with a one-time link.
+ * Always returns success to prevent email enumeration.
+ */
+authRouter.post('/request-password-reset', asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email is required',
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  try {
+    const token = await userService.createPasswordResetToken(email);
+
+    if (token) {
+      // Send reset email via Resend
+      const { isResendConfigured, sendEmail } = await import('../services/resend');
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const resetLink = `${frontendUrl}/auth/reset-password?token=${token}`;
+
+      if (isResendConfigured()) {
+        await sendEmail({
+          to: [email.toLowerCase()],
+          subject: 'ZenAI - Passwort zuruecksetzen',
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+              <h2 style="color: #1a1a2e;">Passwort zuruecksetzen</h2>
+              <p>Du hast eine Anfrage zum Zuruecksetzen deines Passworts gestellt.</p>
+              <p>Klicke auf den folgenden Link, um ein neues Passwort zu setzen:</p>
+              <a href="${resetLink}" style="display: inline-block; background: #e67e22; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin: 16px 0;">Passwort zuruecksetzen</a>
+              <p style="color: #666; font-size: 14px;">Dieser Link ist 1 Stunde gueltig. Falls du diese Anfrage nicht gestellt hast, ignoriere diese E-Mail.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+              <p style="color: #999; font-size: 12px;">ZenAI - Enterprise AI Platform</p>
+            </div>
+          `,
+        });
+      } else {
+        logger.warn('Resend not configured, password reset token generated but email not sent', {
+          operation: 'auth.requestPasswordReset',
+          resetLink,
+        });
+      }
+    }
+  } catch (error) {
+    // Log but don't expose errors to prevent enumeration
+    logger.error('Password reset request failed', error instanceof Error ? error : undefined);
+  }
+
+  // Always return success to prevent email enumeration
+  return res.json({
+    success: true,
+    data: { message: 'Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link gesendet.' },
+  });
+}));
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using a valid token from the email link.
+ */
+authRouter.post('/reset-password', asyncHandler(async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      error: 'Token and new password are required',
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  try {
+    await userService.resetPasswordWithToken(token, newPassword);
+
+    return res.json({
+      success: true,
+      data: { message: 'Passwort wurde erfolgreich zurueckgesetzt. Du kannst dich jetzt anmelden.' },
     });
   } catch (error) {
     if (error instanceof userService.UserServiceError) {

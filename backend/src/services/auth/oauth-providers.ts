@@ -299,6 +299,9 @@ class OAuthProviderManager {
           const primaryEmail = emailResponse.data.find((e: { primary: boolean }) => e.primary);
           email = primaryEmail?.email || emailResponse.data[0]?.email;
         }
+        if (!email) {
+          throw new OAuthError('No email found on GitHub account. Please add a verified email to your GitHub profile.', 'NO_EMAIL');
+        }
         return {
           email,
           name: data.name || data.login || null,

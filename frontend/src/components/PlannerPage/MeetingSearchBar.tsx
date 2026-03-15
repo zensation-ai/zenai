@@ -3,7 +3,7 @@
  * Debounced text input, status filter, has-audio toggle.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import './MeetingSearchBar.css';
 
 interface MeetingSearchFilters {
@@ -20,20 +20,31 @@ export function MeetingSearchBar({ onSearch }: MeetingSearchBarProps) {
   const [status, setStatus] = useState('');
   const [hasAudio, setHasAudio] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+  const isInitialMount = useRef(true);
 
-  // Debounce query changes
+  const triggerSearch = useCallback((q: string, s: string, a: boolean) => {
+    onSearchRef.current(q, {
+      status: s || undefined,
+      hasAudio: a || undefined,
+    });
+  }, []);
+
+  // Debounce query/filter changes (skip initial mount - parent fetches on mount)
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      onSearch(query, {
-        status: status || undefined,
-        hasAudio: hasAudio || undefined,
-      });
+      triggerSearch(query, status, hasAudio);
     }, 300);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, status, hasAudio, onSearch]);
+  }, [query, status, hasAudio, triggerSearch]);
 
   return (
     <div className="meeting-search-bar">

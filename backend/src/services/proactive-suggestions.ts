@@ -335,9 +335,8 @@ export class ProactiveSuggestionEngine {
         context,
         `SELECT m.id, m.title, m.date, m.meeting_type
          FROM meetings m
-         WHERE m.context = $1
-           AND m.status = 'completed'
-           AND m.date >= NOW() - make_interval(hours => $2)
+         WHERE m.status = 'completed'
+           AND m.date >= NOW() - make_interval(hours => $1)
            AND NOT EXISTS (
              SELECT 1 FROM ideas i
              WHERE i.raw_transcript ILIKE '%' || m.title || '%'
@@ -346,7 +345,7 @@ export class ProactiveSuggestionEngine {
            )
          ORDER BY m.date DESC
          LIMIT 3`,
-        [context, CONFIG.FOLLOW_UP_LOOKBACK_HOURS]
+        [CONFIG.FOLLOW_UP_LOOKBACK_HOURS]
       );
 
       for (const meeting of meetingsResult.rows) {

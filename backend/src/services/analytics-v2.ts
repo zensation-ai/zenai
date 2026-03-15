@@ -118,7 +118,7 @@ export async function getOverview(
         COUNT(*) FILTER (WHERE status = 'done') AS completed,
         COUNT(*) FILTER (WHERE status = 'in_progress') AS in_progress
       FROM tasks
-      WHERE created_at <= $2
+      WHERE created_at <= $1
     `, [to]),
 
     queryPublic(`

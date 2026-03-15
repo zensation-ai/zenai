@@ -53,8 +53,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   /** Register a new account */
   register: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
-  /** Reset password (sends email) */
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  /** Reset password: without token sends reset email, with token sets new password */
+  resetPassword: (email: string, token?: string, newPassword?: string) => Promise<{ error: Error | null }>;
   /** Get the current access token (for API calls) */
   getAccessToken: () => string | null;
 }
@@ -110,8 +110,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load stored auth state on mount
+  // Load stored auth state on mount (or handle OAuth callback)
   useEffect(() => {
+    // Check for OAuth callback tokens in URL hash (e.g. /auth/callback#accessToken=...&refreshToken=...&expiresIn=...)
+    if (window.location.hash && window.location.pathname.includes('/auth/callback')) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const oauthAccessToken = hashParams.get('accessToken');
+      const oauthRefreshToken = hashParams.get('refreshToken');
+      const oauthExpiresIn = hashParams.get('expiresIn');
+
+      if (oauthAccessToken && oauthRefreshToken) {
+        // Clear hash from URL for security (prevents token leakage in history)
+        window.history.replaceState(null, '', '/');
+        // Fetch user profile with the new token, then store auth state
+        authFetchWithToken('/api/auth/me', oauthAccessToken)
+          .then(async (response) => {
+            if (response.ok) {
+              const data = await response.json();
+              const userData = data.data as AuthUser;
+              storeAuthState(oauthAccessToken, oauthRefreshToken, userData, Number(oauthExpiresIn) || 900);
+            } else {
+              clearAuthState();
+            }
+          })
+          .catch(() => clearAuthState())
+          .finally(() => setLoading(false));
+        return;
+      }
+    }
+
     const storedToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
     const storedRefresh = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
@@ -304,10 +331,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [storeAuthState]);
 
-  const resetPassword = useCallback(async (_email: string): Promise<{ error: Error | null }> => {
-    // Password reset via email is not yet implemented.
-    // Users can change their password via Settings when logged in.
-    return { error: new Error('Passwort-Reset per E-Mail ist noch nicht verfuegbar. Bitte wenden Sie sich an support@zensation.ai') };
+  const resetPassword = useCallback(async (email: string, token?: string, newPassword?: string): Promise<{ error: Error | null }> => {
+    try {
+      if (token && newPassword) {
+        // Step 2: Set new password with token
+        const response = await authFetch('/api/auth/reset-password', {
+          method: 'POST',
+          body: JSON.stringify({ token, newPassword }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          return { error: new Error(data.error || 'Reset fehlgeschlagen') };
+        }
+        return { error: null };
+      } else {
+        // Step 1: Request reset email
+        const response = await authFetch('/api/auth/request-password-reset', {
+          method: 'POST',
+          body: JSON.stringify({ email }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          return { error: new Error(data.error || 'Anfrage fehlgeschlagen') };
+        }
+        return { error: null };
+      }
+    } catch {
+      return { error: new Error('Verbindungsfehler. Pruefe deine Internetverbindung.') };
+    }
   }, []);
 
   const getAccessToken = useCallback((): string | null => {

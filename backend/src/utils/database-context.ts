@@ -381,7 +381,11 @@ export async function queryContext(
 
       // Extract PostgreSQL-specific error details for better debugging
       const pgError = error as { code?: string; detail?: string; hint?: string; message?: string; severity?: string; constraint?: string; table?: string; column?: string };
-      logger.error(`Query error [${effectiveContext}]${attempt > 0 ? ` after ${attempt + 1} attempts` : ''}`, lastError, {
+
+      // Downgrade "does not exist" errors to WARN - these are expected when migrations haven't been run
+      const isRelationMissing = pgError.code === '42P01' || (pgError.message && pgError.message.includes('does not exist'));
+      const logLabel = `Query error [${effectiveContext}]${attempt > 0 ? ` after ${attempt + 1} attempts` : ''}: ${pgError.message?.substring(0, 200) || 'unknown'}`;
+      const logMeta = {
         context: effectiveContext,
         query: text.substring(0, 500), // Increased from 100 for better debugging
         attempts: attempt + 1,
@@ -395,7 +399,12 @@ export async function queryContext(
         pgTable: pgError.table,
         pgColumn: pgError.column,
         pgMessage: pgError.message?.substring(0, 500),
-      });
+      };
+      if (isRelationMissing) {
+        logger.warn(logLabel, logMeta);
+      } else {
+        logger.error(logLabel, lastError, logMeta);
+      }
       throw error;
     }
   }

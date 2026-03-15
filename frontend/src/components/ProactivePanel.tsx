@@ -68,7 +68,7 @@ export function ProactivePanel({ context, isOpen, onClose }: ProactivePanelProps
     try {
       setLoading(true);
       const res = await fetch(
-        `${getApiBaseUrl()}/api/${context}/proactive/events?limit=30`,
+        `${getApiBaseUrl()}/api/${context}/proactive-engine/events?limit=30`,
         { headers: getApiFetchHeaders('application/json') }
       );
       if (!res.ok) throw new Error('Fehler beim Laden');
@@ -183,7 +183,7 @@ export function ProactiveBellButton({
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${getApiBaseUrl()}/api/${context}/proactive/events?limit=50`, {
+    fetch(`${getApiBaseUrl()}/api/${context}/proactive-engine/events?limit=50`, {
       headers: getApiFetchHeaders(),
       signal: controller.signal,
     })

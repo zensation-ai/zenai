@@ -564,31 +564,14 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
     logger.debug('Failed to add user interaction to memory (stream)', { sessionId: id, error });
   }
 
-  // Get conversation history using context-aware query for correct schema routing
-  let historyResult;
-  try {
-    historyResult = await queryContext(contextType, `
-      SELECT role, content
-      FROM general_chat_messages
-      WHERE session_id = $1 AND user_id = $2
-      ORDER BY created_at ASC
-      LIMIT $3
-    `, [id, userId, CHAT.MAX_HISTORY_MESSAGES]);
-  } catch (err: unknown) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    if (errMsg.includes('user_id') || errMsg.includes('does not exist')) {
-      // Fallback: user_id column not yet migrated
-      historyResult = await queryContext(contextType, `
-        SELECT role, content
-        FROM general_chat_messages
-        WHERE session_id = $1
-        ORDER BY created_at ASC
-        LIMIT $2
-      `, [id, CHAT.MAX_HISTORY_MESSAGES]);
-    } else {
-      throw err;
-    }
-  }
+  // Get conversation history from public schema (chat tables are in public, not context schemas)
+  const historyResult = await query(`
+    SELECT role, content
+    FROM general_chat_messages
+    WHERE session_id = $1 AND user_id = $2
+    ORDER BY created_at ASC
+    LIMIT $3
+  `, [id, userId, CHAT.MAX_HISTORY_MESSAGES]);
 
   // Build messages array
   const messages = historyResult.rows.map((row: { role: string; content: string }) => ({

@@ -297,6 +297,7 @@ export class DocumentService {
     const limit = Math.min(filters?.limit || 50, 100);
     const offset = filters?.offset || 0;
 
+    let hasUserId = true;
     let whereClause = `WHERE context = $1 AND is_archived = $2 AND user_id = $3`;
     const params: (string | number | boolean | Date | null | undefined | Buffer | object)[] = [context, filters?.isArchived || false, uid];
     let paramIndex = 4;
@@ -359,28 +360,30 @@ export class DocumentService {
       : 'desc';
     const orderClause = `ORDER BY "${sortBy}" ${sortOrder}`;
 
-    // Get total count
-    const countResult = await queryContext(
-      context,
-      `SELECT COUNT(*) as total FROM documents ${whereClause}`,
-      params
-    );
-    const total = parseInt(countResult.rows[0]?.total || '0', 10);
+    const executeQueries = async (wc: string, p: (string | number | boolean | Date | null | undefined | Buffer | object)[], pi: number) => {
+      const countResult = await queryContext(
+        context,
+        `SELECT COUNT(*) as total FROM documents ${wc}`,
+        p
+      );
+      const total = parseInt(countResult.rows[0]?.total || '0', 10);
 
-    // Get paginated results
-    const result = await queryContext(
-      context,
-      `SELECT ${DocumentService.DOCUMENT_LIST_COLUMNS} FROM documents ${whereClause} ${orderClause} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-      [...params, limit, offset]
-    );
+      const result = await queryContext(
+        context,
+        `SELECT ${DocumentService.DOCUMENT_LIST_COLUMNS} FROM documents ${wc} ${orderClause} LIMIT $${pi} OFFSET $${pi + 1}`,
+        [...p, limit, offset]
+      );
 
-    return {
-      data: result.rows.map(row => this.mapRowToDocument(row)),
-      total,
-      limit,
-      offset,
-      hasMore: offset + result.rows.length < total,
+      return {
+        data: result.rows.map(row => this.mapRowToDocument(row)),
+        total,
+        limit,
+        offset,
+        hasMore: offset + result.rows.length < total,
+      };
     };
+
+    return await executeQueries(whereClause, params, paramIndex);
   }
 
   /**
@@ -923,28 +926,18 @@ export class DocumentService {
     byMimeType: Record<string, number>;
   }> {
     const uid = userId || SYSTEM_USER_ID;
-    const result = await queryContext(
-      context,
-      `SELECT
+    const statsQuery = `SELECT
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE processing_status = 'pending') as pending,
         COUNT(*) FILTER (WHERE processing_status = 'processing') as processing,
         COUNT(*) FILTER (WHERE processing_status = 'completed') as completed,
         COUNT(*) FILTER (WHERE processing_status = 'failed') as failed,
         COALESCE(SUM(file_size), 0) as total_size
-      FROM documents
-      WHERE context = $1 AND user_id = $2`,
-      [context, uid]
-    );
+      FROM documents`;
+    const mimeQuery = `SELECT mime_type, COUNT(*) as count FROM documents`;
 
-    const mimeResult = await queryContext(
-      context,
-      `SELECT mime_type, COUNT(*) as count
-       FROM documents
-       WHERE context = $1 AND user_id = $2
-       GROUP BY mime_type`,
-      [context, uid]
-    );
+    const result = await queryContext(context, `${statsQuery} WHERE context = $1 AND user_id = $2`, [context, uid]);
+    const mimeResult = await queryContext(context, `${mimeQuery} WHERE context = $1 AND user_id = $2 GROUP BY mime_type`, [context, uid]);
 
     const byMimeType: Record<string, number> = {};
     for (const row of mimeResult.rows) {

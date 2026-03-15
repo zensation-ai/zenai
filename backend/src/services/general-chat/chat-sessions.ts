@@ -129,7 +129,7 @@ let _hasSessionType: boolean | null = null;
 
 function isColumnMissingError(err: unknown, columnName: string): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes(columnName) || msg.includes('column') && msg.includes('does not exist');
+  return (msg.includes(columnName) && msg.includes('does not exist')) || (msg.includes('column') && msg.includes('does not exist'));
 }
 
 // ===========================================
@@ -276,13 +276,32 @@ export async function getSession(sessionId: string, userId?: string): Promise<Ch
 
   const session = sessionResult.rows[0];
 
-  // Get messages
-  const messagesResult = await query(`
-    SELECT id, session_id, role, content, created_at
-    FROM general_chat_messages
-    WHERE session_id = $1
-    ORDER BY created_at ASC
-  `, [sessionId]);
+  // Get messages with user_id filter (defense-in-depth, session ownership already verified)
+  let messagesResult;
+  if (_hasMessageUserId !== false) {
+    try {
+      messagesResult = await query(`
+        SELECT id, session_id, role, content, created_at
+        FROM general_chat_messages
+        WHERE session_id = $1 AND user_id = $2
+        ORDER BY created_at ASC
+      `, [sessionId, uid]);
+    } catch (err: unknown) {
+      if (isColumnMissingError(err, 'user_id')) {
+        _hasMessageUserId = false;
+      } else {
+        throw err;
+      }
+    }
+  }
+  if (!messagesResult) {
+    messagesResult = await query(`
+      SELECT id, session_id, role, content, created_at
+      FROM general_chat_messages
+      WHERE session_id = $1
+      ORDER BY created_at ASC
+    `, [sessionId]);
+  }
 
   const messages: ChatMessage[] = messagesResult.rows.map(row => ({
     id: row.id,
@@ -478,12 +497,12 @@ export async function addMessage(
     `, [id, sessionId, role, content]);
   }
 
-  // Update session's updated_at
+  // Update session's updated_at (best-effort user_id filter)
   await query(`
     UPDATE general_chat_sessions
     SET updated_at = NOW()
     WHERE id = $1
-  `, [sessionId]);
+  `, [sessionId]).catch(() => {/* non-critical */});
 
   const row = result.rows[0];
 

@@ -501,7 +501,9 @@ export async function streamToSSE(
       data: { error: errorMessage },
     });
   } finally {
-    res.end();
+    if (!res.writableEnded) {
+      res.end();
+    }
   }
 }
 

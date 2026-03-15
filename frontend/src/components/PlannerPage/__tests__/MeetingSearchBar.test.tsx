@@ -102,13 +102,17 @@ describe('MeetingSearchBar', () => {
     );
   });
 
-  it('should pass undefined for empty status filter', () => {
+  it('should pass undefined for empty status filter when changed back', () => {
     render(<MeetingSearchBar onSearch={mockOnSearch} />);
 
-    // Initial call after mount debounce
-    act(() => {
-      vi.advanceTimersByTime(300);
-    });
+    const select = screen.getByRole('combobox');
+    // Change to a value, then back to empty
+    fireEvent.change(select, { target: { value: 'completed' } });
+    act(() => { vi.advanceTimersByTime(300); });
+    mockOnSearch.mockClear();
+
+    fireEvent.change(select, { target: { value: '' } });
+    act(() => { vi.advanceTimersByTime(300); });
 
     expect(mockOnSearch).toHaveBeenCalledWith(
       '',
@@ -116,12 +120,17 @@ describe('MeetingSearchBar', () => {
     );
   });
 
-  it('should pass undefined for hasAudio when unchecked', () => {
+  it('should pass undefined for hasAudio when unchecked after checking', () => {
     render(<MeetingSearchBar onSearch={mockOnSearch} />);
 
-    act(() => {
-      vi.advanceTimersByTime(300);
-    });
+    const checkbox = screen.getByRole('checkbox');
+    // Check then uncheck
+    fireEvent.click(checkbox);
+    act(() => { vi.advanceTimersByTime(300); });
+    mockOnSearch.mockClear();
+
+    fireEvent.click(checkbox);
+    act(() => { vi.advanceTimersByTime(300); });
 
     expect(mockOnSearch).toHaveBeenCalledWith(
       '',

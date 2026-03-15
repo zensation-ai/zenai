@@ -400,6 +400,79 @@ export async function changePassword(userId: string, currentPassword: string, ne
   logger.info('Password changed', { operation: 'changePassword', userId });
 }
 
+/**
+ * Create a password reset token (random, hashed in DB, 1 hour expiry).
+ * Returns the raw token for inclusion in the email link.
+ */
+export async function createPasswordResetToken(email: string): Promise<string | null> {
+  const result = await pool.query(
+    'SELECT id FROM public.users WHERE email = $1 AND auth_provider = $2',
+    [email.toLowerCase(), 'local']
+  );
+
+  if (result.rows.length === 0) {
+    // Don't reveal whether email exists — return null silently
+    return null;
+  }
+
+  const userId = result.rows[0].id;
+  const crypto = await import('crypto');
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  // Invalidate any existing reset tokens for this user
+  await pool.query(
+    `DELETE FROM public.password_reset_tokens WHERE user_id = $1`,
+    [userId]
+  );
+
+  await pool.query(
+    `INSERT INTO public.password_reset_tokens (user_id, token_hash, expires_at)
+     VALUES ($1, $2, $3)`,
+    [userId, tokenHash, expiresAt]
+  );
+
+  logger.info('Password reset token created', { operation: 'user.resetToken', userId });
+  return rawToken;
+}
+
+/**
+ * Reset password using a valid reset token.
+ */
+export async function resetPasswordWithToken(token: string, newPassword: string): Promise<void> {
+  const pwValidation = validatePassword(newPassword);
+  if (!pwValidation.valid) {
+    throw new UserServiceError(pwValidation.message!, 'WEAK_PASSWORD');
+  }
+
+  const crypto = await import('crypto');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+  const result = await pool.query(
+    `SELECT user_id FROM public.password_reset_tokens
+     WHERE token_hash = $1 AND expires_at > NOW()`,
+    [tokenHash]
+  );
+
+  if (result.rows.length === 0) {
+    throw new UserServiceError('Reset-Link ist abgelaufen oder ungueltig.', 'INVALID_TOKEN');
+  }
+
+  const userId = result.rows[0].user_id;
+  const newHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+
+  await pool.query(
+    'UPDATE public.users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+    [newHash, userId]
+  );
+
+  // Delete used token
+  await pool.query('DELETE FROM public.password_reset_tokens WHERE user_id = $1', [userId]);
+
+  logger.info('Password reset completed', { operation: 'user.resetPassword', userId });
+}
+
 // ===========================================
 // Error Class
 // ===========================================

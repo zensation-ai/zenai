@@ -433,12 +433,20 @@ export async function createBudget(
 }
 
 export async function getBudgets(context: AIContext, activeOnly = true, userId: string = SYSTEM_USER_ID): Promise<Budget[]> {
-  const where = activeOnly ? 'WHERE is_active = TRUE AND user_id = $1' : 'WHERE user_id = $1';
-  const result = await queryContext(context,
-    `SELECT * FROM budgets ${where} ORDER BY category ASC`,
-    [userId]
-  );
-  return result.rows.map(enrichBudget);
+  try {
+    const where = activeOnly ? 'WHERE is_active = TRUE AND user_id = $1' : 'WHERE user_id = $1';
+    const result = await queryContext(context,
+      `SELECT * FROM budgets ${where} ORDER BY category ASC`,
+      [userId]
+    );
+    return result.rows.map(enrichBudget);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('does not exist')) {
+      return [];
+    }
+    throw err;
+  }
 }
 
 export async function getBudget(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<Budget | null> {

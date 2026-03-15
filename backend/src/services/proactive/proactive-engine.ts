@@ -475,26 +475,37 @@ export async function getSmartSchedule(context: AIContext): Promise<{
   suggestions: string[];
 }> {
   const today = new Date().toISOString().split('T')[0];
+  const emptyRows = { rows: [] as Record<string, unknown>[] };
 
   // Meetings today
-  const meetingsRes = await queryContext(context, `
-    SELECT id, title, start_time as start, end_time as "end"
-    FROM calendar_events
-    WHERE DATE(start_time) = $1
-    ORDER BY start_time ASC
-  `, [today] as QueryParam[]);
+  let meetingsRes = emptyRows;
+  try {
+    meetingsRes = await queryContext(context, `
+      SELECT id, title, start_time as start, end_time as "end"
+      FROM calendar_events
+      WHERE DATE(start_time) = $1
+      ORDER BY start_time ASC
+    `, [today] as QueryParam[]);
+  } catch {
+    // Table may not exist
+  }
 
   // Priority tasks
-  const tasksRes = await queryContext(context, `
-    SELECT id, title, priority, due_date
-    FROM tasks
-    WHERE status NOT IN ('done', 'cancelled')
-      AND (due_date IS NULL OR due_date <= $1 + INTERVAL '3 days')
-    ORDER BY
-      CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
-      due_date ASC NULLS LAST
-    LIMIT 10
-  `, [today] as QueryParam[]);
+  let tasksRes = emptyRows;
+  try {
+    tasksRes = await queryContext(context, `
+      SELECT id, title, priority, due_date
+      FROM tasks
+      WHERE status NOT IN ('done', 'cancelled')
+        AND (due_date IS NULL OR due_date <= $1::date + INTERVAL '3 days')
+      ORDER BY
+        CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
+        due_date ASC NULLS LAST
+      LIMIT 10
+    `, [today] as QueryParam[]);
+  } catch {
+    // Table may not exist
+  }
 
   // Simple scheduling suggestions
   const suggestions: string[] = [];

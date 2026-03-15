@@ -24,25 +24,56 @@ function translateError(message: string): string {
 }
 
 export function AuthPage() {
-  const { signIn, register } = useAuth();
-  const [mode, setMode] = useState<AuthMode>('login');
+  const { signIn, register, resetPassword } = useAuth();
+  const [mode, setMode] = useState<AuthMode>(() => {
+    // Check if we're on the reset-password page with a token
+    if (window.location.pathname === '/auth/reset-password') return 'reset';
+    return 'login';
+  });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [resetToken] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+  });
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
-      if (mode === 'login' || mfaRequired) {
+      if (mode === 'reset') {
+        if (resetToken) {
+          // Step 2: Set new password with token
+          const result = await resetPassword(email, resetToken, newPassword);
+          if (result.error) {
+            setError(translateError(result.error.message));
+          } else {
+            setSuccess('Passwort wurde erfolgreich zurueckgesetzt. Du kannst dich jetzt anmelden.');
+            window.history.replaceState(null, '', '/');
+            setTimeout(() => { setMode('login'); setSuccess(null); }, 3000);
+          }
+        } else {
+          // Step 1: Request reset email
+          const result = await resetPassword(email);
+          if (result.error) {
+            setError(translateError(result.error.message));
+          } else {
+            setSuccess('Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link gesendet.');
+          }
+        }
+      } else if (mode === 'login' || mfaRequired) {
         const result = await signIn(email, password, mfaRequired ? mfaCode : undefined);
         if (result.mfaRequired) {
           setMfaRequired(true);
@@ -62,7 +93,7 @@ export function AuthPage() {
     } finally {
       setLoading(false);
     }
-  }, [mode, email, password, displayName, mfaCode, mfaRequired, signIn, register]);
+  }, [mode, email, password, newPassword, displayName, mfaCode, mfaRequired, resetToken, signIn, register, resetPassword]);
 
   const switchMode = useCallback((newMode: AuthMode) => {
     setMode(newMode);
@@ -89,6 +120,12 @@ export function AuthPage() {
           {error && (
             <div className="login-error" role="alert">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="login-success" role="status">
+              {success}
             </div>
           )}
 
@@ -139,6 +176,22 @@ export function AuthPage() {
                 />
               </div>
 
+              {mode === 'reset' && resetToken && (
+                <div className="login-field">
+                  <label htmlFor="auth-new-password">Neues Passwort</label>
+                  <input
+                    id="auth-new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mind. 8 Zeichen"
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                  />
+                </div>
+              )}
+
               {mode !== 'reset' && (
                 <div className="login-field">
                   <label htmlFor="auth-password">Passwort</label>
@@ -170,7 +223,9 @@ export function AuthPage() {
                   ? 'Anmelden'
                   : mode === 'register'
                     ? 'Registrieren'
-                    : 'Link senden'}
+                    : resetToken
+                      ? 'Passwort setzen'
+                      : 'Reset-Link senden'}
           </button>
         </form>
 

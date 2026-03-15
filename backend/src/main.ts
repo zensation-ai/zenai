@@ -999,7 +999,12 @@ async function startServer(): Promise<void> {
       }
       logger.info('Active plugins loaded (deferred)', { operation: 'startup' });
     } catch (error) {
-      logger.error('Plugin loading failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes('does not exist')) {
+        logger.warn('Plugin loading skipped (table missing)', { operation: 'startup' });
+      } else {
+        logger.error('Plugin loading failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
+      }
     }
 
     // Phase 55: Start Scheduled Event Producers
