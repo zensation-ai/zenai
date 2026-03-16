@@ -38,6 +38,7 @@ jest.mock('../../../services/voice/tts-service', () => ({
   multiTTSService: {
     getVoices: jest.fn(),
     getAvailableProviders: jest.fn(() => ['edge-tts']),
+    getCacheStats: jest.fn(() => ({ size: 0, maxEntries: 200 })),
     isAvailable: jest.fn(() => true),
   },
 }));

@@ -211,12 +211,10 @@ jobs:
             packages/*/node_modules
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify react resolution
-        working-directory: frontend
-        run: node -e "require('react/jsx-runtime')"
+      - name: Install dependencies (fresh)
+        run: |
+          rm -rf node_modules frontend/node_modules backend/node_modules
+          pnpm install --frozen-lockfile
 
       - name: Build frontend
         working-directory: frontend
