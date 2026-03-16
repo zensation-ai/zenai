@@ -3,6 +3,7 @@ import type { Module } from '../../core/module';
 import { agentTeamsRouter } from '../../routes/agent-teams';
 import { agentIdentityRouter } from '../../routes/agent-identity';
 import { autonomousAgentsRouter } from '../../routes/autonomous-agents';
+import { agentEvolutionRouter } from '../../routes/agent-evolution';
 
 export class AgentsModule implements Module {
   name = 'agents';
@@ -14,6 +15,8 @@ export class AgentsModule implements Module {
     app.use('/api', agentIdentityRouter);
     // Phase 42: Autonomous Agents - Context-aware
     app.use('/api', autonomousAgentsRouter);
+    // Phase 89: Self-Evolving Agent Pipelines
+    app.use('/api', agentEvolutionRouter);
   }
 
   async onStartup(): Promise<void> {
