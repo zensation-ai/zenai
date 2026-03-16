@@ -1,6 +1,7 @@
 import type { Express } from 'express';
 import type { Module } from '../../core/module';
 import { voiceRealtimeRouter } from '../../routes/voice-realtime';
+import { voiceAdvancedRouter } from '../../routes/voice-advanced';
 
 export class VoiceModule implements Module {
   name = 'voice';
@@ -8,6 +9,8 @@ export class VoiceModule implements Module {
   registerRoutes(app: Express): void {
     // Phase 57: Real-Time Voice Pipeline
     app.use('/api', voiceRealtimeRouter);
+    // Phase 90: Emotion Detection + Voice Commands + Personas
+    app.use('/api', voiceAdvancedRouter);
   }
 
   async onStartup(): Promise<void> {
