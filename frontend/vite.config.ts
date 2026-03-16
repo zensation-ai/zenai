@@ -5,13 +5,21 @@ import path from 'path';
 import fs from 'fs';
 
 // Resolve symlinks for pnpm workspace compatibility in CI
+// Checks local node_modules first, then root (shamefully-hoist puts deps in root)
 function resolvePackage(pkg: string): string {
-  const pkgPath = path.resolve(__dirname, 'node_modules', pkg);
-  try {
-    return fs.realpathSync(pkgPath);
-  } catch {
-    return pkgPath;
+  const candidates = [
+    path.resolve(__dirname, 'node_modules', pkg),
+    path.resolve(__dirname, '..', 'node_modules', pkg),
+  ];
+  for (const candidate of candidates) {
+    try {
+      const real = fs.realpathSync(candidate);
+      if (fs.existsSync(real)) return real;
+    } catch {
+      // Symlink target doesn't exist, try next
+    }
   }
+  return candidates[0]; // fallback
 }
 
 // Use relative paths when building for Electron (file:// protocol)
