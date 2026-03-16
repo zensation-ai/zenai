@@ -1,14 +1,27 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 
 // Types and constants
 import type { Page } from './types';
 
+// Route definitions (centralized)
+import { resolvePathToPage, resolvePagePath, LEGACY_REDIRECTS } from './routes';
+
+// Lazy-loaded page components (centralized)
+import {
+  Dashboard, ChatPage, BrowserPage, ContactsPage, FinancePage,
+  ScreenMemoryPage, IdeasPage, AIWorkshop, InsightsDashboard,
+  DocumentVaultPage, BusinessDashboard, PlannerPage, EmailPage,
+  LearningDashboard, MyAIPage, SettingsDashboard, NotificationsPage,
+  MemoryInsightsPage, SystemAdminPage, Onboarding,
+} from './routes/LazyPages';
+
 // Core components - always loaded
 import { ToastContainer } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useContextState } from './components/ContextSwitcher';
+import type { AIContext } from './components/ContextSwitcher';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { useCommandPalette, CommandPalette } from './components/CommandPalette';
@@ -31,31 +44,6 @@ import { usePageHistory } from './hooks/usePageHistory';
 
 import './App.css';
 
-// Lazy-loaded modal/on-demand components
-// CommandPalette is statically imported alongside useCommandPalette (line 16)
-
-// Lazy-loaded page components
-const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
-const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
-const BrowserPage = lazy(() => import('./components/BrowserPage/BrowserPage').then(m => ({ default: m.BrowserPage })));
-const ContactsPage = lazy(() => import('./components/ContactsPage/ContactsPage').then(m => ({ default: m.ContactsPage })));
-const FinancePage = lazy(() => import('./components/FinancePage/FinancePage').then(m => ({ default: m.FinancePage })));
-const ScreenMemoryPage = lazy(() => import('./components/ScreenMemoryPage/ScreenMemoryPage').then(m => ({ default: m.ScreenMemoryPage })));
-const IdeasPage = lazy(() => import('./components/IdeasPage').then(m => ({ default: m.IdeasPage })));
-const AIWorkshop = lazy(() => import('./components/AIWorkshop').then(m => ({ default: m.AIWorkshop })));
-const InsightsDashboard = lazy(() => import('./components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard })));
-const DocumentVaultPage = lazy(() => import('./components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage })));
-const BusinessDashboard = lazy(() => import('./components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard })));
-const PlannerPage = lazy(() => import('./components/PlannerPage/PlannerPage').then(m => ({ default: m.PlannerPage })));
-const EmailPage = lazy(() => import('./components/EmailPage/EmailPage').then(m => ({ default: m.EmailPage })));
-const LearningDashboard = lazy(() => import('./components/LearningDashboard').then(m => ({ default: m.LearningDashboard })));
-const MyAIPage = lazy(() => import('./components/MyAIPage').then(m => ({ default: m.MyAIPage })));
-const SettingsDashboard = lazy(() => import('./components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard })));
-const NotificationsPage = lazy(() => import('./components/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
-const MemoryInsightsPage = lazy(() => import('./components/MemoryInsightsPage/MemoryInsightsPage').then(m => ({ default: m.MemoryInsightsPage })));
-const SystemAdminPage = lazy(() => import('./components/SystemAdminPage').then(m => ({ default: m.SystemAdminPage })));
-const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
-
 const PageLoader = () => (
   <div className="page-loader" role="status" aria-live="polite">
     <SkeletonLoader type="card" count={1} />
@@ -64,132 +52,15 @@ const PageLoader = () => (
 );
 
 // ============================================
-// URL ROUTING CONFIGURATION
+// URL NAVIGATION HOOK (uses centralized routes)
 // ============================================
-
-const PAGE_PATHS: Record<Page, string> = {
-  // Primary pages (active routes)
-  'home': '/',
-  'chat': '/chat',
-  'browser': '/browser',
-  'contacts': '/contacts',
-  'finance': '/finance',
-  'ideas': '/ideas',
-  'workshop': '/workshop',
-  'insights': '/insights',
-  'documents': '/documents',
-  'calendar': '/calendar',
-  'email': '/email',
-  'business': '/business',
-  'learning': '/learning',
-  'my-ai': '/my-ai',
-  'screen-memory': '/screen-memory',
-  'settings': '/settings',
-  'notifications': '/notifications',
-  // Legacy pages (redirect to new locations)
-  'incubator': '/ideas/incubator',
-  'ai-workshop': '/workshop',
-  'meetings': '/calendar/meetings',
-  'tasks': '/calendar/tasks',
-  'kanban': '/calendar/kanban',
-  'gantt': '/calendar/gantt',
-  'automations': '/settings/automations',
-  'integrations': '/settings/integrations',
-  'export': '/settings/data',
-  'sync': '/settings/data',
-  'profile': '/settings/profile',
-  'archive': '/ideas/archive',
-  'triage': '/ideas/triage',
-  'stories': '/insights/connections',
-  'media': '/documents',
-  'canvas': '/documents/editor',
-  'personalization': '/my-ai',
-  'proactive': '/workshop/proactive',
-  'evolution': '/workshop/evolution',
-  'dashboard': '/insights/analytics',
-  'analytics': '/insights/analytics',
-  'digest': '/insights/digest',
-  'knowledge-graph': '/insights/connections',
-  'learning-tasks': '/learning',
-  'voice-chat': '/my-ai/voice-chat',
-  'memory-insights': '/my-ai/memory-insights',
-  'agent-teams': '/workshop/agent-teams',
-  'mcp-servers': '/settings/integrations/mcp',
-  'system-admin': '/admin',
-  'graphrag': '/insights/graphrag',
-  'procedural-memory': '/my-ai/procedures',
-};
-
-const PATH_PAGES: Record<string, Page> = {
-  // Primary routes
-  '/': 'home',
-  '/chat': 'chat',
-  '/browser': 'browser',
-  '/contacts': 'contacts',
-  '/finance': 'finance',
-  '/ideas': 'ideas',
-  '/workshop': 'workshop',
-  '/insights': 'insights',
-  '/documents': 'documents',
-  '/calendar': 'calendar',
-  '/email': 'email',
-  '/business': 'business',
-  '/learning': 'learning',
-  '/my-ai': 'my-ai',
-  '/screen-memory': 'screen-memory',
-  '/settings': 'settings',
-  '/notifications': 'notifications',
-  // Legacy paths -> redirect to primary pages
-  '/incubator': 'ideas',
-  '/ai-workshop': 'workshop',
-  '/meetings': 'calendar',
-  '/automations': 'settings',
-  '/integrations': 'settings',
-  '/export': 'settings',
-  '/sync': 'settings',
-  '/profile': 'settings',
-  '/archive': 'ideas',
-  '/triage': 'ideas',
-  '/stories': 'insights',
-  '/media': 'documents',
-  '/canvas': 'documents',
-  '/personalization': 'my-ai',
-  '/voice-chat': 'my-ai',
-  '/agent-teams': 'workshop',
-  '/admin': 'system-admin',
-};
 
 function useUrlNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const currentPage: Page = useMemo(() => {
-    const basePath = '/' + location.pathname.split('/').slice(1, 2).join('/') || '/';
-    const fullPath = location.pathname;
-
-    if (PATH_PAGES[fullPath]) {
-      return PATH_PAGES[fullPath];
-    }
-
-    if (fullPath.startsWith('/insights/')) return 'insights';
-    if (fullPath.startsWith('/workshop/')) return 'workshop';
-    if (fullPath.startsWith('/documents/')) return 'documents';
-    if (fullPath.startsWith('/calendar/')) return 'calendar';
-    if (fullPath.startsWith('/browser/')) return 'browser';
-    if (fullPath.startsWith('/contacts/')) return 'contacts';
-    if (fullPath.startsWith('/finance/')) return 'finance';
-    if (fullPath.startsWith('/email/')) return 'email';
-    if (fullPath.startsWith('/business/')) return 'business';
-    if (fullPath.startsWith('/ideas/')) return 'ideas';
-    if (fullPath.startsWith('/my-ai/')) return 'my-ai';
-    if (fullPath.startsWith('/settings/')) return 'settings';
-    if (fullPath.startsWith('/learning/')) return 'learning';
-    if (fullPath.startsWith('/screen-memory/')) return 'screen-memory';
-    if (fullPath.startsWith('/admin/')) return 'system-admin';
-    // Legacy: /ai-workshop/* → workshop
-    if (fullPath.startsWith('/ai-workshop/')) return 'workshop';
-
-    return PATH_PAGES[basePath] || 'home';
+    return resolvePathToPage(location.pathname);
   }, [location.pathname]);
 
   const tabParam = useMemo(() => {
@@ -201,15 +72,7 @@ function useUrlNavigation() {
   }, [location.pathname]);
 
   const navigateToPage = useCallback((page: Page, options?: { tab?: string }) => {
-    let path = PAGE_PATHS[page] || '/';
-
-    if (options?.tab) {
-      const tabPages: Page[] = ['insights', 'workshop', 'documents', 'ideas', 'my-ai', 'settings', 'business', 'calendar', 'email', 'learning', 'contacts', 'finance', 'screen-memory', 'memory-insights', 'system-admin'];
-      if (tabPages.includes(page)) {
-        path = `${PAGE_PATHS[page]}/${options.tab}`;
-      }
-    }
-
+    const path = resolvePagePath(page, options?.tab);
     navigate(path);
   }, [navigate]);
 
@@ -247,8 +110,6 @@ function AuthenticatedApp() {
   const keyboardShortcuts = useKeyboardShortcutsModal();
 
   // Data loading (extracted to useIdeasData hook)
-  // Note: IdeasPage now manages its own data via React Query hooks.
-  // useIdeasData is kept here for Dashboard, AppLayout sidebar badges, and AI questions.
   const {
     ideas,
     archivedCount,
@@ -273,12 +134,11 @@ function AuthenticatedApp() {
     const fetchUnread = () => {
       axios.get(`/api/${context}/emails/stats`, { signal: controller.signal }).then(res => {
         setEmailUnreadCount(res.data?.data?.unread ?? 0);
-        errorCount = 0; // Reset on success
-        scheduleNext(60_000); // Normal 60s interval
+        errorCount = 0;
+        scheduleNext(60_000);
       }).catch(() => {
         if (controller.signal.aborted) return;
         errorCount++;
-        // Exponential backoff: 60s, 120s, 240s, max 300s
         const backoff = Math.min(60_000 * Math.pow(2, errorCount - 1), 300_000);
         scheduleNext(backoff);
       });
@@ -342,259 +202,334 @@ function AuthenticatedApp() {
   };
 
   // ============================================
-  // LEGACY REDIRECTS
+  // ROUTE-BASED PAGE RENDERER
   // ============================================
 
-  // Legacy redirects - all old URLs redirect to new locations
-  if (currentPage === 'dashboard' || currentPage === 'analytics' || currentPage === 'digest' || currentPage === 'knowledge-graph') {
-    const tab = currentPage === 'analytics' ? 'analytics' :
-                currentPage === 'digest' ? 'digest' :
-                currentPage === 'knowledge-graph' ? 'connections' : 'overview';
-    return <Navigate to={`/insights/${tab}`} replace />;
-  }
+  const renderRoutes = () => (
+    <Routes>
+      {/* Dashboard */}
+      <Route path="/" element={
+        <Suspense fallback={<PageLoader />}>
+          <Dashboard
+            context={context}
+            onNavigate={navigateToPage}
+            isAIActive={isAIActive}
+            ideasCount={ideas.length}
+            apiStatus={apiStatus}
+          />
+        </Suspense>
+      } />
 
-  if (currentPage === 'proactive' || currentPage === 'evolution') {
-    return <Navigate to={`/workshop/${currentPage}`} replace />;
-  }
+      {/* Chat */}
+      <Route path="/chat" element={
+        <Suspense fallback={<PageLoader />}>
+          <ChatPage context={context} onContextChange={setContext} />
+        </Suspense>
+      } />
 
-  // ============================================
-  // PAGE RENDERER
-  // ============================================
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return (
+      {/* Ideas (with tabs) */}
+      <Route path="/ideas" element={
+        <NeuroFeedbackProvider>
           <Suspense fallback={<PageLoader />}>
-            <Dashboard
+            <IdeasPage
               context={context}
-              onNavigate={navigateToPage}
-              isAIActive={isAIActive}
-              ideasCount={ideas.length}
-              apiStatus={apiStatus}
-            />
-          </Suspense>
-        );
-
-      case 'ideas':
-        return (
-          <NeuroFeedbackProvider>
-            <Suspense fallback={<PageLoader />}>
-              <IdeasPage
-                context={context}
-                initialTab={(tabParam || 'ideas') as 'ideas' | 'incubator' | 'archive' | 'triage'}
-                onNavigate={(page) => navigateToPage(page as Page)}
-              />
-            </Suspense>
-          </NeuroFeedbackProvider>
-        );
-
-      case 'chat':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <ChatPage context={context} onContextChange={setContext} />
-          </Suspense>
-        );
-
-      case 'browser':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <BrowserPage
-              context={context}
-              initialTab={(tabParam || 'browse') as 'browse' | 'history' | 'bookmarks'}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'contacts':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <ContactsPage
-              context={context}
-              initialTab={(tabParam || 'all') as 'all' | 'favorites' | 'organizations'}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'finance':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <FinancePage
-              context={context}
-              initialTab={(tabParam || 'overview') as 'overview' | 'transactions' | 'budgets' | 'goals'}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'screen-memory':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <ScreenMemoryPage
-              context={context}
-              initialTab={(tabParam || 'timeline') as 'timeline' | 'search' | 'settings'}
-              onBack={() => navigateToPage('home')}
-            />
-          </Suspense>
-        );
-
-      case 'insights':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <InsightsDashboard
-              context={context}
-              onBack={() => navigateToPage('home')}
-              onSelectIdea={() => {
-                navigateToPage('ideas');
-              }}
-              initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep'}
-            />
-          </Suspense>
-        );
-
-      case 'workshop':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <AIWorkshop
-              context={context}
-              onBack={() => navigateToPage('home')}
-              initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams'}
-            />
-          </Suspense>
-        );
-
-      case 'learning':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <LearningDashboard
-              context={context}
-              onBack={() => navigateToPage('home')}
-              initialTab={(tabParam || 'overview') as 'overview' | 'focus' | 'suggestions' | 'research' | 'feedback' | 'profile'}
-            />
-          </Suspense>
-        );
-
-      case 'my-ai':
-        if (tabParam === 'memory-insights') {
-          return (
-            <Suspense fallback={<PageLoader />}>
-              <MemoryInsightsPage
-                context={context}
-                onBack={() => navigateToPage('my-ai')}
-              />
-            </Suspense>
-          );
-        }
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <MyAIPage
-              context={context}
-              onBack={() => navigateToPage('home')}
-              initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'voice-chat'}
-            />
-          </Suspense>
-        );
-
-      case 'system-admin':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <SystemAdminPage
-              context={context}
-              onBack={() => navigateToPage('home')}
-              initialTab={(tabParam || 'overview') as 'overview' | 'queues' | 'security' | 'sleep'}
-            />
-          </Suspense>
-        );
-
-      case 'notifications':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <NotificationsPage
-              context={context}
-              onBack={() => navigateToPage('home')}
+              initialTab={(tabParam || 'ideas') as 'ideas' | 'incubator' | 'archive' | 'triage'}
               onNavigate={(page) => navigateToPage(page as Page)}
             />
           </Suspense>
-        );
-
-
-      case 'calendar': {
-        const calendarTabMap: Record<string, 'calendar' | 'tasks' | 'projects' | 'meetings'> = {
-          'tasks': 'tasks', 'kanban': 'tasks', 'gantt': 'projects', 'meetings': 'meetings',
-        };
-        const plannerTab = tabParam ? calendarTabMap[tabParam] || 'calendar' : 'calendar';
-        return (
+        </NeuroFeedbackProvider>
+      } />
+      <Route path="/ideas/:tab" element={
+        <NeuroFeedbackProvider>
           <Suspense fallback={<PageLoader />}>
-            <PlannerPage context={context} initialTab={plannerTab} onBack={() => navigateToPage('home')} />
-          </Suspense>
-        );
-      }
-
-      case 'email':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <EmailPage
+            <IdeasPage
               context={context}
-              initialTab={(tabParam || 'inbox') as 'inbox' | 'sent' | 'drafts' | 'archived' | 'trash' | 'starred'}
-            />
-          </Suspense>
-        );
-
-      case 'business':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <BusinessDashboard
-              context={context}
-              onBack={() => navigateToPage('home')}
-              initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | undefined}
-            />
-          </Suspense>
-        );
-
-      case 'documents':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <DocumentVaultPage
-              context={context}
-              onBack={() => navigateToPage('home')}
-              initialTab={(tabParam || 'documents') as 'documents' | 'editor' | 'media'}
-            />
-          </Suspense>
-        );
-
-      case 'settings':
-        return (
-          <Suspense fallback={<PageLoader />}>
-            <SettingsDashboard
-              context={context}
-              onBack={() => navigateToPage('home')}
+              initialTab={(tabParam || 'ideas') as 'ideas' | 'incubator' | 'archive' | 'triage'}
               onNavigate={(page) => navigateToPage(page as Page)}
-              initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data'}
             />
           </Suspense>
-        );
+        </NeuroFeedbackProvider>
+      } />
 
-      default:
-        return (
-          <div className="not-found-page">
-            <div className="not-found-content">
-              <span className="not-found-icon" aria-hidden="true">🔍</span>
-              <h1>Seite nicht gefunden</h1>
-              <p>Die angeforderte Seite existiert nicht.</p>
-              <button
-                type="button"
-                className="not-found-cta neuro-press-effect neuro-focus-ring"
-                onClick={() => navigateToPage('home')}
-              >
-                Zum Dashboard
-              </button>
-            </div>
+      {/* Browser */}
+      <Route path="/browser" element={
+        <Suspense fallback={<PageLoader />}>
+          <BrowserPage context={context} initialTab="browse" onBack={() => navigateToPage('home')} />
+        </Suspense>
+      } />
+      <Route path="/browser/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <BrowserPage
+            context={context}
+            initialTab={(tabParam || 'browse') as 'browse' | 'history' | 'bookmarks'}
+            onBack={() => navigateToPage('home')}
+          />
+        </Suspense>
+      } />
+
+      {/* Contacts */}
+      <Route path="/contacts" element={
+        <Suspense fallback={<PageLoader />}>
+          <ContactsPage context={context} initialTab="all" onBack={() => navigateToPage('home')} />
+        </Suspense>
+      } />
+      <Route path="/contacts/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <ContactsPage
+            context={context}
+            initialTab={(tabParam || 'all') as 'all' | 'favorites' | 'organizations'}
+            onBack={() => navigateToPage('home')}
+          />
+        </Suspense>
+      } />
+
+      {/* Finance */}
+      <Route path="/finance" element={
+        <Suspense fallback={<PageLoader />}>
+          <FinancePage context={context} initialTab="overview" onBack={() => navigateToPage('home')} />
+        </Suspense>
+      } />
+      <Route path="/finance/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <FinancePage
+            context={context}
+            initialTab={(tabParam || 'overview') as 'overview' | 'transactions' | 'budgets' | 'goals'}
+            onBack={() => navigateToPage('home')}
+          />
+        </Suspense>
+      } />
+
+      {/* Screen Memory */}
+      <Route path="/screen-memory" element={
+        <Suspense fallback={<PageLoader />}>
+          <ScreenMemoryPage context={context} initialTab="timeline" onBack={() => navigateToPage('home')} />
+        </Suspense>
+      } />
+      <Route path="/screen-memory/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <ScreenMemoryPage
+            context={context}
+            initialTab={(tabParam || 'timeline') as 'timeline' | 'search' | 'settings'}
+            onBack={() => navigateToPage('home')}
+          />
+        </Suspense>
+      } />
+
+      {/* Insights */}
+      <Route path="/insights" element={
+        <Suspense fallback={<PageLoader />}>
+          <InsightsDashboard
+            context={context}
+            onBack={() => navigateToPage('home')}
+            onSelectIdea={() => navigateToPage('ideas')}
+            initialTab="analytics"
+          />
+        </Suspense>
+      } />
+      <Route path="/insights/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <InsightsDashboard
+            context={context}
+            onBack={() => navigateToPage('home')}
+            onSelectIdea={() => navigateToPage('ideas')}
+            initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep'}
+          />
+        </Suspense>
+      } />
+
+      {/* Workshop */}
+      <Route path="/workshop" element={
+        <Suspense fallback={<PageLoader />}>
+          <AIWorkshop context={context} onBack={() => navigateToPage('home')} initialTab="proactive" />
+        </Suspense>
+      } />
+      <Route path="/workshop/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <AIWorkshop
+            context={context}
+            onBack={() => navigateToPage('home')}
+            initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams'}
+          />
+        </Suspense>
+      } />
+
+      {/* Learning */}
+      <Route path="/learning" element={
+        <Suspense fallback={<PageLoader />}>
+          <LearningDashboard context={context} onBack={() => navigateToPage('home')} initialTab="overview" />
+        </Suspense>
+      } />
+      <Route path="/learning/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <LearningDashboard
+            context={context}
+            onBack={() => navigateToPage('home')}
+            initialTab={(tabParam || 'overview') as 'overview' | 'focus' | 'suggestions' | 'research' | 'feedback' | 'profile'}
+          />
+        </Suspense>
+      } />
+
+      {/* My AI */}
+      <Route path="/my-ai/memory-insights" element={
+        <Suspense fallback={<PageLoader />}>
+          <MemoryInsightsPage context={context} onBack={() => navigateToPage('my-ai')} />
+        </Suspense>
+      } />
+      <Route path="/my-ai" element={
+        <Suspense fallback={<PageLoader />}>
+          <MyAIPage context={context} onBack={() => navigateToPage('home')} initialTab="personalize" />
+        </Suspense>
+      } />
+      <Route path="/my-ai/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <MyAIPage
+            context={context}
+            onBack={() => navigateToPage('home')}
+            initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'voice-chat'}
+          />
+        </Suspense>
+      } />
+
+      {/* System Admin */}
+      <Route path="/admin" element={
+        <Suspense fallback={<PageLoader />}>
+          <SystemAdminPage context={context} onBack={() => navigateToPage('home')} initialTab="overview" />
+        </Suspense>
+      } />
+      <Route path="/admin/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <SystemAdminPage
+            context={context}
+            onBack={() => navigateToPage('home')}
+            initialTab={(tabParam || 'overview') as 'overview' | 'queues' | 'security' | 'sleep'}
+          />
+        </Suspense>
+      } />
+
+      {/* Notifications */}
+      <Route path="/notifications" element={
+        <Suspense fallback={<PageLoader />}>
+          <NotificationsPage
+            context={context}
+            onBack={() => navigateToPage('home')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+          />
+        </Suspense>
+      } />
+
+      {/* Calendar / Planner */}
+      <Route path="/calendar" element={
+        <Suspense fallback={<PageLoader />}>
+          <PlannerPage context={context} initialTab="calendar" onBack={() => navigateToPage('home')} />
+        </Suspense>
+      } />
+      <Route path="/calendar/:tab" element={
+        <CalendarRouteHandler context={context} tabParam={tabParam} navigateToPage={navigateToPage} />
+      } />
+
+      {/* Email */}
+      <Route path="/email" element={
+        <Suspense fallback={<PageLoader />}>
+          <EmailPage context={context} initialTab="inbox" />
+        </Suspense>
+      } />
+      <Route path="/email/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <EmailPage
+            context={context}
+            initialTab={(tabParam || 'inbox') as 'inbox' | 'sent' | 'drafts' | 'archived' | 'trash' | 'starred'}
+          />
+        </Suspense>
+      } />
+
+      {/* Business */}
+      <Route path="/business" element={
+        <Suspense fallback={<PageLoader />}>
+          <BusinessDashboard context={context} onBack={() => navigateToPage('home')} />
+        </Suspense>
+      } />
+      <Route path="/business/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <BusinessDashboard
+            context={context}
+            onBack={() => navigateToPage('home')}
+            initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | undefined}
+          />
+        </Suspense>
+      } />
+
+      {/* Documents */}
+      <Route path="/documents" element={
+        <Suspense fallback={<PageLoader />}>
+          <DocumentVaultPage context={context} onBack={() => navigateToPage('home')} initialTab="documents" />
+        </Suspense>
+      } />
+      <Route path="/documents/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <DocumentVaultPage
+            context={context}
+            onBack={() => navigateToPage('home')}
+            initialTab={(tabParam || 'documents') as 'documents' | 'editor' | 'media'}
+          />
+        </Suspense>
+      } />
+
+      {/* Settings */}
+      <Route path="/settings" element={
+        <Suspense fallback={<PageLoader />}>
+          <SettingsDashboard
+            context={context}
+            onBack={() => navigateToPage('home')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+            initialTab="general"
+          />
+        </Suspense>
+      } />
+      <Route path="/settings/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <SettingsDashboard
+            context={context}
+            onBack={() => navigateToPage('home')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+            initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data'}
+          />
+        </Suspense>
+      } />
+      <Route path="/settings/:tab/:subtab" element={
+        <Suspense fallback={<PageLoader />}>
+          <SettingsDashboard
+            context={context}
+            onBack={() => navigateToPage('home')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+            initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data'}
+          />
+        </Suspense>
+      } />
+
+      {/* Legacy Redirects */}
+      {LEGACY_REDIRECTS.map(({ from, to }) => (
+        <Route key={from} path={from} element={<Navigate to={to} replace />} />
+      ))}
+
+      {/* 404 Catch-all */}
+      <Route path="*" element={
+        <div className="not-found-page">
+          <div className="not-found-content">
+            <span className="not-found-icon" aria-hidden="true">?</span>
+            <h1>Seite nicht gefunden</h1>
+            <p>Die angeforderte Seite existiert nicht.</p>
+            <button
+              type="button"
+              className="not-found-cta neuro-press-effect neuro-focus-ring"
+              onClick={() => navigateToPage('home')}
+            >
+              Zum Dashboard
+            </button>
           </div>
-        );
-    }
-  };
+        </div>
+      } />
+    </Routes>
+  );
 
   // ============================================
   // RENDER
@@ -637,7 +572,7 @@ function AuthenticatedApp() {
           fallback={
             <div className="page-error-fallback" role="alert">
               <div className="page-error-content">
-                <span className="page-error-icon" aria-hidden="true">⚠️</span>
+                <span className="page-error-icon" aria-hidden="true">!</span>
                 <h2>Diese Seite konnte nicht geladen werden</h2>
                 <p>Ein unerwarteter Fehler ist aufgetreten. Deine Daten sind sicher.</p>
                 <div className="page-error-actions">
@@ -660,7 +595,7 @@ function AuthenticatedApp() {
             </div>
           }
         >
-          {renderPage()}
+          {renderRoutes()}
         </ErrorBoundary>
       </AppLayout>
 
@@ -701,6 +636,28 @@ function AuthenticatedApp() {
         onClose={keyboardShortcuts.close}
       />
     </ErrorBoundary>
+  );
+}
+
+// ============================================
+// HELPER COMPONENTS
+// ============================================
+
+/** Calendar route handler — maps tab param to planner tab */
+function CalendarRouteHandler({ context, tabParam, navigateToPage }: {
+  context: AIContext;
+  tabParam: string | undefined;
+  navigateToPage: (page: Page) => void;
+}) {
+  const calendarTabMap: Record<string, 'calendar' | 'tasks' | 'projects' | 'meetings'> = {
+    'tasks': 'tasks', 'kanban': 'tasks', 'gantt': 'projects', 'meetings': 'meetings',
+  };
+  const plannerTab = tabParam ? calendarTabMap[tabParam] || 'calendar' : 'calendar';
+
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <PlannerPage context={context} initialTab={plannerTab} onBack={() => navigateToPage('home')} />
+    </Suspense>
   );
 }
 

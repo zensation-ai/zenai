@@ -255,11 +255,19 @@ app.use(requestContextMiddleware);
 app.use(requestIdMiddleware); // Phase 12: Request ID tracking
 app.use(tracingMiddleware); // Phase 61: OpenTelemetry request tracing
 app.use(requestLogger); // Phase 4 Review: HTTP request/response logging with timing
-// Phase 9: Tuned compression - skip small payloads, balanced level for CPU vs ratio
+// Phase 81: Optimized compression - skip SSE streams and small payloads
 app.use(compression({
   level: 6,            // Balanced compression (1=fast, 9=best ratio, 6=good default)
-  threshold: 1024,     // Don't compress responses < 1KB (overhead > benefit)
+  threshold: 512,      // Compress responses >= 512B (lowered from 1KB for JSON API payloads)
   memLevel: 8,         // Memory usage for compression (default 8, max 9)
+  filter: (req, res) => {
+    // Skip compression for SSE streams (Server-Sent Events)
+    if (res.getHeader('Content-Type')?.toString().includes('text/event-stream')) {
+      return false;
+    }
+    // Use default filter for everything else (compresses json, html, text, etc.)
+    return compression.filter(req, res);
+  },
 }));
 
 // Phase 9: Cache-Control headers & ETag support for GET responses
