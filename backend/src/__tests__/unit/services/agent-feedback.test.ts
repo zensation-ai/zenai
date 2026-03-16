@@ -6,11 +6,9 @@
 
 // Mock pool before imports
 const mockQuery = jest.fn();
-jest.mock('../../../utils/database-context', () => {
-  return {
-    pool: { query: (...args: unknown[]) => mockQuery(...args) },
-  };
-});
+jest.mock('../../../utils/database-context', () => ({
+  pool: { query: (...args: any[]) => mockQuery(...args) },
+}));
 
 jest.mock('../../../utils/logger', () => ({
   logger: {
@@ -34,9 +32,8 @@ import {
   getOptimizedConfig,
   generateRecommendations,
   applyRecommendation,
+  TuningRecommendation,
 } from '../../../services/agents/agent-auto-tuner';
-
-import type { TuningRecommendation } from '../../../services/agents/agent-auto-tuner';
 
 import {
   getProfile,
@@ -262,9 +259,9 @@ describe('Agent Feedback Service', () => {
       const result = await getAgentPerformance('researcher', 30);
 
       expect(result).not.toBeNull();
-      expect(result!.agent_role).toBe('researcher');
-      expect(result!.total_executions).toBe(20);
-      expect(result!.avg_user_rating).toBe(4.5);
+      expect((result as any).agent_role).toBe('researcher');
+      expect((result as any).total_executions).toBe(20);
+      expect((result as any).avg_user_rating).toBe(4.5);
     });
 
     it('should return null when no data', async () => {
