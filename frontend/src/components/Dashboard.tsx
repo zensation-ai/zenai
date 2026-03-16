@@ -9,6 +9,7 @@
  */
 
 import { useMemo, memo } from 'react';
+import { motion } from 'framer-motion';
 import type { Page, ApiStatus } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import { AIBrain } from './AIBrain';
@@ -24,6 +25,7 @@ import {
 } from '../hooks/queries/useDashboard';
 import type { TrendPoint } from '../hooks/queries/useDashboard';
 import { Button, Card, Badge, Skeleton, EmptyState } from '../design-system';
+import { motion } from 'framer-motion';
 import { getPageIcon } from '../utils/navIcons';
 import {
   Lightbulb,
@@ -50,6 +52,7 @@ import {
   Palette,
   type LucideIcon,
 } from 'lucide-react';
+import { staggerItem, usePrefersReducedMotion } from '../utils/animations';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -219,6 +222,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
   const loading = summary.isLoading;
   const fetchError = summary.isError;
+  const reducedMotion = usePrefersReducedMotion();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const greeting = useMemo(() => getTimeBasedGreeting(), [context]);
@@ -285,26 +289,27 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           </>
         ) : (
           <>
-            <button type="button" className="bento-card bento-stat" onClick={() => onNavigate('ideas')}>
-              <span className="bento-stat-icon"><Lightbulb size={22} strokeWidth={1.5} /></span>
-              <span className="bento-stat-value">{stats.total}</span>
-              <span className="bento-stat-label">Gesamt</span>
-            </button>
-            <button type="button" className="bento-card bento-stat" onClick={() => onNavigate('ideas')}>
-              <span className="bento-stat-icon"><Calendar size={22} strokeWidth={1.5} /></span>
-              <span className="bento-stat-value">{stats.thisWeek}</span>
-              <span className="bento-stat-label">Diese Woche</span>
-            </button>
-            <button type="button" className="bento-card bento-stat bento-stat--hot" onClick={() => onNavigate('ideas')}>
-              <span className="bento-stat-icon"><Flame size={22} strokeWidth={1.5} /></span>
-              <span className="bento-stat-value">{stats.highPriority}</span>
-              <span className="bento-stat-label">Wichtig</span>
-            </button>
-            <button type="button" className="bento-card bento-stat bento-stat--streak" onClick={() => onNavigate('insights')}>
-              <span className="bento-stat-icon">{streak > 0 ? <Flame size={22} strokeWidth={1.5} /> : <Moon size={22} strokeWidth={1.5} />}</span>
-              <span className="bento-stat-value">{streak}d</span>
-              <span className="bento-stat-label">Streak</span>
-            </button>
+            {([
+              { icon: <Lightbulb size={22} strokeWidth={1.5} />, value: stats.total, label: 'Gesamt', cls: '', page: 'ideas' as Page },
+              { icon: <Calendar size={22} strokeWidth={1.5} />, value: stats.thisWeek, label: 'Diese Woche', cls: '', page: 'ideas' as Page },
+              { icon: <Flame size={22} strokeWidth={1.5} />, value: stats.highPriority, label: 'Wichtig', cls: ' bento-stat--hot', page: 'ideas' as Page },
+              { icon: streak > 0 ? <Flame size={22} strokeWidth={1.5} /> : <Moon size={22} strokeWidth={1.5} />, value: `${streak}d`, label: 'Streak', cls: ' bento-stat--streak', page: 'insights' as Page },
+            ] as const).map((stat, i) => (
+              <motion.button
+                key={stat.label}
+                type="button"
+                className={`bento-card bento-stat${stat.cls}`}
+                onClick={() => onNavigate(stat.page)}
+                variants={reducedMotion ? undefined : staggerItem}
+                initial={reducedMotion ? undefined : 'initial'}
+                animate={reducedMotion ? undefined : 'animate'}
+                transition={reducedMotion ? undefined : { delay: i * 0.03 }}
+              >
+                <span className="bento-stat-icon">{stat.icon}</span>
+                <span className="bento-stat-value">{stat.value}</span>
+                <span className="bento-stat-label">{stat.label}</span>
+              </motion.button>
+            ))}
           </>
         )}
 

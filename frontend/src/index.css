@@ -1520,3 +1520,52 @@ select:focus-visible {
   --glass-2026-bg: rgba(18, 36, 42, 0.82);
   --glass-2026-bg-hover: rgba(22, 42, 52, 0.88);
 }
+
+/* ============================================
+   ANIMATION UTILITIES — Phase 84
+   GPU-composited keyframes and utility classes
+   ============================================ */
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer::after,
+  .animate-pulse-subtle,
+  .neuro-human-fade-in,
+  .neuro-breathing {
+    animation: none !important;
+    transition: none !important;
+  }
+}

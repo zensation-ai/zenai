@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import Fuse, { type IFuseOptions } from 'fuse.js';
+import { motion } from 'framer-motion';
 import type { Page } from '../types/idea';
 import { formatShortcut } from '../hooks/useKeyboardShortcut';
 import { useRegisteredCommands } from '../hooks/useCommandRegistry';
 import { getGKeyLabel } from '../hooks/useKeyboardNavigation';
+import { scaleIn, springs, durations, usePrefersReducedMotion } from '../utils/animations';
 import './CommandPalette.css';
 
 // ============================================
@@ -342,18 +344,33 @@ export const CommandPalette = memo(function CommandPalette({
     };
   }, [isOpen, onClose]);
 
+  const reducedMotion = usePrefersReducedMotion();
+
   if (!isOpen) return null;
 
   let currentIndex = -1;
 
   return createPortal(
-    <div className="command-palette-overlay" onClick={onClose} role="presentation">
-      <div
+    <motion.div
+      className="command-palette-overlay"
+      onClick={onClose}
+      role="presentation"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: durations.fast }}
+    >
+      <motion.div
         className="command-palette"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Schnellnavigation"
+        variants={reducedMotion ? undefined : scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={reducedMotion ? { duration: 0.01 } : { ...springs.snappy, duration: durations.instant }}
       >
         {/* Search Input */}
         <div className="command-palette-header">
@@ -477,8 +494,8 @@ export const CommandPalette = memo(function CommandPalette({
             </span>
           </div>
         </div>
-      </div>
-    </div>,
+      </motion.div>
+    </motion.div>,
     document.body
   );
 });

@@ -6,6 +6,7 @@
  */
 
 import { useRef, useEffect, useState, type RefObject } from 'react';
+import { motion } from 'framer-motion';
 import {
   AI_PERSONALITY,
   EMPTY_STATE_MESSAGES,
@@ -14,6 +15,7 @@ import {
 import type { ChatMessage } from './types';
 import { ToolResultRenderer } from './ToolResultRenderer';
 import { Brain, User, BookOpen, Link, Pencil } from 'lucide-react';
+import { slideUp, springs, usePrefersReducedMotion } from '../../utils/animations';
 
 /* ------------------------------------------------------------------ */
 /* SVG icon helpers — small inline 16x16 icons by tool category       */
@@ -239,6 +241,14 @@ export function ChatMessageList({
 }: ChatMessageListProps) {
   // Phase-based AI status messages
   const aiPhase = useAIPhase(sending && !isStreaming);
+  const reducedMotion = usePrefersReducedMotion();
+
+  // Track previous message count to only animate newly added messages
+  const prevMessageCountRef = useRef(messages.length);
+  useEffect(() => {
+    // Update after render so we know which messages were already visible
+    prevMessageCountRef.current = messages.length;
+  });
 
   // Track which tool pill is expanded (by index)
   const [expandedToolIdx, setExpandedToolIdx] = useState<number | null>(null);
@@ -271,29 +281,42 @@ export function ChatMessageList({
         </div>
       ) : (
         <>
-          {messages.map(message => (
-            <div
-              key={message.id}
-              className={`chat-message ${message.role} neuro-human-fade-in`}
-              role="article"
-              aria-label={`Nachricht von ${message.role === 'assistant' ? AI_PERSONALITY.name : 'Dir'}`}
-            >
-              <div className="chat-message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'} aria-hidden="true">
-                {message.role === 'assistant' ? <Brain size={18} strokeWidth={1.5} /> : <User size={18} strokeWidth={1.5} />}
-              </div>
-              <div className="chat-message-content">
-                <div className="chat-message-header">
-                  <span className="chat-message-name">
-                    {message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}
-                  </span>
-                  <span className="chat-message-time">{formatTime(message.createdAt)}</span>
+          {messages.map((message, index) => {
+            const isNewMessage = index >= prevMessageCountRef.current;
+            const shouldAnimate = isNewMessage && !reducedMotion;
+            const MessageWrapper = shouldAnimate ? motion.div : 'div';
+            const animProps = shouldAnimate ? {
+              variants: slideUp,
+              initial: 'initial' as const,
+              animate: 'animate' as const,
+              transition: { ...springs.gentle, opacity: { duration: 0.2 } },
+            } : {};
+
+            return (
+              <MessageWrapper
+                key={message.id}
+                className={`chat-message ${message.role} neuro-human-fade-in`}
+                role="article"
+                aria-label={`Nachricht von ${message.role === 'assistant' ? AI_PERSONALITY.name : 'Dir'}`}
+                {...animProps}
+              >
+                <div className="chat-message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'} aria-hidden="true">
+                  {message.role === 'assistant' ? <Brain size={18} strokeWidth={1.5} /> : <User size={18} strokeWidth={1.5} />}
                 </div>
-                <div className="chat-message-text">
-                  {renderContent(message.content, message.id)}
+                <div className="chat-message-content">
+                  <div className="chat-message-header">
+                    <span className="chat-message-name">
+                      {message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}
+                    </span>
+                    <span className="chat-message-time">{formatTime(message.createdAt)}</span>
+                  </div>
+                  <div className="chat-message-text">
+                    {renderContent(message.content, message.id)}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </MessageWrapper>
+            );
+          })}
           {/* Streaming response - shows content as it arrives (including empty state while waiting for first delta) */}
           {isStreaming && (
             <div className="chat-message assistant neuro-human-fade-in streaming" role="status" aria-live="polite">

@@ -42,6 +42,7 @@ import { ScrollProgress } from './components/AnticipatoryUI';
 // Layout System
 import { AppLayout } from './components/layout/AppLayout';
 import { usePageHistory } from './hooks/usePageHistory';
+import { PageTransition } from './components/PageTransition';
 
 import './App.css';
 
@@ -569,6 +570,7 @@ function AuthenticatedApp() {
           </ErrorBoundary>
         )}
       >
+        <PageTransition pageKey={currentPage}>
         <ErrorBoundary
           key={currentPage}
           fallback={
@@ -599,6 +601,7 @@ function AuthenticatedApp() {
         >
           {renderRoutes()}
         </ErrorBoundary>
+        </PageTransition>
       </AppLayout>
 
       <ToastContainer />

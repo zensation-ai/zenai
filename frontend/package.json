@@ -39,6 +39,7 @@
     "@zenai/shared": "workspace:*",
     "axios": "^1.6.5",
     "dompurify": "^3.3.2",
+    "framer-motion": "^12.37.0",
     "fuse.js": "^7.1.0",
     "lucide-react": "^0.577.0",
     "react": "^18.2.0",
