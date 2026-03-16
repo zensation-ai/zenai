@@ -33,6 +33,20 @@ textarea {
   touch-action: manipulation;
 }
 
+/* ============================================
+   Safe Area Utilities (Phase 85)
+   ============================================ */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left { padding-left: env(safe-area-inset-left); }
+.safe-right { padding-right: env(safe-area-inset-right); }
+
+/* Touch Target Utility — ensures 44x44px minimum (WCAG 2.5.5) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 /* Global Input Baseline - crystal clear readability */
 /* iOS auto-zooms on focus when font-size < 16px — enforce minimum */
 input,

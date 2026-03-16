@@ -9,6 +9,13 @@
   position: relative;
   max-width: 100%;
   overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Mobile: no sidebar margin */
+.layout-main.no-sidebar {
+  margin-left: 0;
+  padding-bottom: calc(var(--bottombar-height, 64px) + env(safe-area-inset-bottom, 0px));
 }
 
 /* ============================================

@@ -1,0 +1,70 @@
+/* ============================================
+   PULL TO REFRESH - Native-feel refresh gesture
+   Phase 85: Mobile Excellence
+   ============================================ */
+
+.ptr-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Pull indicator */
+.ptr-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  color: var(--primary, #ff6b35);
+}
+
+.ptr-indicator.visible {
+  opacity: 1;
+}
+
+/* Spinner icon */
+.ptr-spinner {
+  will-change: transform;
+}
+
+.ptr-spinner.refreshing {
+  animation: ptrSpin 0.8s linear infinite;
+}
+
+@keyframes ptrSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Content wrapper */
+.ptr-content {
+  will-change: transform;
+  min-height: 100%;
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .ptr-spinner.refreshing {
+    animation-duration: 2s;
+  }
+
+  .ptr-indicator,
+  .ptr-content {
+    transition-duration: 0.01ms !important;
+  }
+}

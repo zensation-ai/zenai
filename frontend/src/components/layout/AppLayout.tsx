@@ -23,6 +23,7 @@ import { SmartSurface } from '../SmartSurface/SmartSurface';
 import { ContextIndicator } from './ContextIndicator';
 import { OfflineIndicator } from '../OfflineIndicator';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -75,10 +76,20 @@ export function AppLayout({
     enabled: true,
   });
 
-  // Sidebar collapsed state - persisted to localStorage
+  // Responsive breakpoints
+  const { isMobile, isTablet } = useBreakpoint();
+
+  // Sidebar collapsed state - persisted to localStorage, auto-collapse on tablet
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return safeLocalStorage('get', 'sidebar-collapsed') === 'true';
   });
+
+  // Auto-collapse sidebar on tablet, auto-expand on desktop
+  useEffect(() => {
+    if (isTablet && !sidebarCollapsed) {
+      setSidebarCollapsed(true);
+    }
+  }, [isTablet]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mobile sidebar drawer state
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -168,28 +179,30 @@ export function AppLayout({
   }, [mobileChatOpen]);
 
   return (
-    <div className="flex h-dvh relative max-w-full overflow-hidden" data-context={context}>
+    <div className={`flex h-dvh relative max-w-full overflow-hidden ${isMobile ? 'is-mobile' : ''} ${isTablet ? 'is-tablet' : ''}`} data-context={context}>
       {/* Skip to main content link (accessibility) */}
       <a href="#main-content" className="skip-link">
         Zum Hauptinhalt springen
       </a>
 
-      {/* Desktop Sidebar */}
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={handleToggleSidebar}
-        currentPage={currentPage}
-        onNavigate={onNavigate}
-        apiStatus={apiStatus}
-        isAIActive={isAIActive}
-        aiActivityMessage={aiActivityMessage}
-        archivedCount={archivedCount}
-        notificationCount={notificationCount}
-        emailUnreadCount={emailUnreadCount}
-        favoritePages={favoritePages}
-        toggleFavorite={toggleFavorite}
-        isFavorited={isFavorited}
-      />
+      {/* Desktop/Tablet Sidebar — hidden on mobile */}
+      {!isMobile && (
+        <Sidebar
+          collapsed={sidebarCollapsed || isTablet}
+          onToggleCollapse={handleToggleSidebar}
+          currentPage={currentPage}
+          onNavigate={onNavigate}
+          apiStatus={apiStatus}
+          isAIActive={isAIActive}
+          aiActivityMessage={aiActivityMessage}
+          archivedCount={archivedCount}
+          notificationCount={notificationCount}
+          emailUnreadCount={emailUnreadCount}
+          favoritePages={favoritePages}
+          toggleFavorite={toggleFavorite}
+          isFavorited={isFavorited}
+        />
+      )}
 
       {/* Main Content Area */}
       <div
@@ -197,6 +210,7 @@ export function AppLayout({
           max-md:ml-0 max-md:pb-bottombar
           max-[1200px]:ml-sidebar-collapsed
           ${sidebarCollapsed ? 'ml-sidebar-collapsed' : 'ml-sidebar'}
+          ${isMobile ? 'no-sidebar' : ''}
           print:ml-0 print:pb-0`}
       >
         <div className="relative flex items-stretch">
@@ -244,13 +258,15 @@ export function AppLayout({
         </main>
       </div>
 
-      {/* Mobile Bottom Bar */}
-      <MobileBottomBar
-        currentPage={currentPage}
-        onNavigate={handleMobileNavigate}
-        onOpenMore={handleOpenMobileSidebar}
-        emailUnreadCount={emailUnreadCount}
-      />
+      {/* Mobile Bottom Bar — only on mobile */}
+      {isMobile && (
+        <MobileBottomBar
+          currentPage={currentPage}
+          onNavigate={handleMobileNavigate}
+          onOpenMore={handleOpenMobileSidebar}
+          emailUnreadCount={emailUnreadCount}
+        />
+      )}
 
       {/* Mobile Sidebar Drawer */}
       <MobileSidebarDrawer

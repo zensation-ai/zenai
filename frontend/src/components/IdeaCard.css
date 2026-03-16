@@ -200,10 +200,10 @@
   border-radius: 50%;
   color: var(--text-muted);
   font-size: 0.9rem;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -4,6 +4,8 @@
   "description": "Enterprise AI Platform by ZenSation. Designed & Developed by Alexander Bering.",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "handle_links": "preferred",
   "background_color": "#0a0f14",
   "theme_color": "#0a0f14",
   "orientation": "any",
@@ -71,6 +73,13 @@
       "short_name": "Chat",
       "description": "AI Chat starten",
       "url": "/chat",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Suche",
+      "short_name": "Suche",
+      "description": "Globale Suche starten",
+      "url": "/?action=search",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
