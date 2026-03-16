@@ -2,6 +2,7 @@ import type { Express } from 'express';
 import type { Module } from '../../core/module';
 import { memoryInsightsRouter } from '../../routes/memory-insights';
 import { memoryProceduresRouter } from '../../routes/memory-procedures';
+import { prospectiveMemoryRouter } from '../../routes/prospective-memory';
 
 export class MemoryModule implements Module {
   name = 'memory';
@@ -11,6 +12,8 @@ export class MemoryModule implements Module {
     app.use('/api', memoryInsightsRouter);
     // Phase 59: Memory Excellence - Procedural Memory & BM25
     app.use('/api', memoryProceduresRouter);
+    // Phase 87: Prospective Memory + Metamemory
+    app.use('/api', prospectiveMemoryRouter);
   }
 
   async onStartup(): Promise<void> {
