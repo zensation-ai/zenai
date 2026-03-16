@@ -25,7 +25,6 @@ import {
 } from '../hooks/queries/useDashboard';
 import type { TrendPoint } from '../hooks/queries/useDashboard';
 import { Button, Card, Badge, Skeleton, EmptyState } from '../design-system';
-import { motion } from 'framer-motion';
 import { getPageIcon } from '../utils/navIcons';
 import {
   Lightbulb,

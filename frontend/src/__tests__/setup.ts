@@ -9,6 +9,34 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
+// Mock framer-motion to avoid useContext errors in jsdom
+vi.mock('framer-motion', () => {
+  const actual = vi.importActual('framer-motion');
+  return {
+    ...actual,
+    motion: new Proxy({}, {
+      get: (_target, prop: string) => {
+        // Return a forwardRef component that renders the HTML element
+        const { forwardRef } = require('react');
+        return forwardRef((props: Record<string, unknown>, ref: unknown) => {
+          // Strip framer-motion-specific props
+          const {
+            variants, initial, animate, exit, transition, whileHover,
+            whileTap, whileFocus, whileInView, layout, layoutId,
+            onAnimationStart, onAnimationComplete, ...rest
+          } = props;
+          const { createElement } = require('react');
+          return createElement(prop, { ...rest, ref });
+        });
+      },
+    }),
+    AnimatePresence: ({ children }: { children: unknown }) => children,
+    useAnimation: () => ({ start: vi.fn(), stop: vi.fn(), set: vi.fn() }),
+    useMotionValue: (v: number) => ({ get: () => v, set: vi.fn(), on: vi.fn() }),
+    useTransform: (v: unknown) => v,
+  };
+});
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();
