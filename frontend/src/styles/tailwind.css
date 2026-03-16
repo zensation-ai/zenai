@@ -1,0 +1,311 @@
+@import "tailwindcss";
+
+/* ============================================
+   ZenAI Design System - Tailwind CSS v4 Theme
+   All tokens from frontend/src/design-system/
+   ============================================ */
+
+@theme {
+  /* ----------------------------------------------------------
+     Breakpoints
+     ---------------------------------------------------------- */
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ----------------------------------------------------------
+     Colors: Brand
+     ---------------------------------------------------------- */
+  --color-brand: #ff6b35;
+  --color-brand-dark: #e55a2b;
+  --color-brand-light: #ff8c61;
+  --color-brand-lighter: #fff0e6;
+  --color-brand-glow: rgba(255, 107, 53, 0.3);
+
+  /* ----------------------------------------------------------
+     Colors: Petrol
+     ---------------------------------------------------------- */
+  --color-petrol: #1a3a4a;
+  --color-petrol-light: #2a5a6a;
+  --color-petrol-lighter: #3a7a8a;
+  --color-petrol-glow: rgba(26, 58, 74, 0.3);
+
+  /* ----------------------------------------------------------
+     Colors: Semantic
+     ---------------------------------------------------------- */
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-success-glow: rgba(16, 185, 129, 0.3);
+
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-warning-glow: rgba(245, 158, 11, 0.3);
+
+  --color-danger: #ef4444;
+  --color-danger-light: #fee2e2;
+  --color-danger-glow: rgba(239, 68, 68, 0.3);
+
+  --color-accent: #a855f7;
+  --color-accent-light: #f3e8ff;
+  --color-accent-glow: rgba(168, 85, 247, 0.3);
+
+  --color-info: #3b82f6;
+
+  /* ----------------------------------------------------------
+     Colors: Surface (Light Mode)
+     ---------------------------------------------------------- */
+  --color-surface: rgba(240, 245, 248, 0.8);
+  --color-surface-bg: #dce5eb;
+  --color-surface-card: rgba(240, 245, 250, 0.85);
+  --color-surface-hover: rgba(220, 235, 245, 0.6);
+  --color-surface-active: rgba(200, 225, 240, 0.7);
+  --color-surface-solid: #edf2f5;
+
+  /* ----------------------------------------------------------
+     Colors: Surface (Dark Mode) — use with dark: prefix
+     ---------------------------------------------------------- */
+  --color-surface-dark: rgba(22, 28, 36, 0.8);
+  --color-surface-dark-bg: #0a0a0f;
+  --color-surface-dark-card: rgba(30, 36, 44, 0.85);
+  --color-surface-dark-hover: rgba(40, 48, 58, 0.6);
+  --color-surface-dark-active: rgba(50, 60, 72, 0.7);
+  --color-surface-dark-solid: #183642;
+
+  /* ----------------------------------------------------------
+     Colors: Glass
+     ---------------------------------------------------------- */
+  --color-glass-bg: rgba(238, 244, 250, 0.78);
+  --color-glass-border: rgba(180, 205, 225, 0.55);
+  --color-glass-dark-bg: rgba(20, 30, 40, 0.75);
+  --color-glass-dark-border: rgba(80, 120, 160, 0.25);
+
+  /* ----------------------------------------------------------
+     Colors: Text (Light)
+     ---------------------------------------------------------- */
+  --color-txt: #0f1f2a;
+  --color-txt-muted: #2a3d4d;
+  --color-txt-secondary: #3a4d5a;
+  --color-txt-placeholder: #6b7b8a;
+
+  /* ----------------------------------------------------------
+     Colors: Text (Dark)
+     ---------------------------------------------------------- */
+  --color-txt-dark: #e5e5e5;
+  --color-txt-dark-muted: #a0aab0;
+  --color-txt-dark-secondary: #808a90;
+  --color-txt-dark-placeholder: #606a70;
+
+  /* ----------------------------------------------------------
+     Colors: Text on Dark surfaces (sidebar/topbar)
+     ---------------------------------------------------------- */
+  --color-on-dark: rgba(255, 255, 255, 0.97);
+  --color-on-dark-secondary: rgba(255, 255, 255, 0.85);
+  --color-on-dark-muted: rgba(255, 255, 255, 0.78);
+  --color-on-dark-icon: rgba(255, 255, 255, 0.82);
+
+  /* ----------------------------------------------------------
+     Colors: Context accents
+     ---------------------------------------------------------- */
+  --color-ctx-personal: #0ea5e9;
+  --color-ctx-work: #3b82f6;
+  --color-ctx-learning: #10b981;
+  --color-ctx-creative: #8b5cf6;
+
+  /* ----------------------------------------------------------
+     Colors: Status
+     ---------------------------------------------------------- */
+  --color-status-online: #22c55e;
+  --color-status-offline: #6b7280;
+  --color-status-busy: #f59e0b;
+
+  /* ----------------------------------------------------------
+     Fonts
+     ---------------------------------------------------------- */
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* ----------------------------------------------------------
+     Font sizes (with line-height via --text-*--line-height)
+     ---------------------------------------------------------- */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1;
+
+  /* ----------------------------------------------------------
+     Spacing (extends Tailwind defaults)
+     ---------------------------------------------------------- */
+  --spacing-sidebar: 260px;
+  --spacing-sidebar-collapsed: 64px;
+  --spacing-topbar: 52px;
+  --spacing-bottombar: 64px;
+  --spacing-touch: 44px;
+
+  /* ----------------------------------------------------------
+     Border Radius
+     ---------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* ----------------------------------------------------------
+     Shadows (Light)
+     ---------------------------------------------------------- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16), 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(255, 107, 53, 0.15);
+  --shadow-glow-petrol: 0 0 20px rgba(26, 58, 74, 0.15);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --shadow-dark-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-dark-md: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-dark-lg: 0 8px 32px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  /* ----------------------------------------------------------
+     Z-Index Layers
+     ---------------------------------------------------------- */
+  --z-index-background: 0;
+  --z-index-content: 1;
+  --z-index-elevated: 2;
+  --z-index-batch-bar: 20;
+  --z-index-sticky: 30;
+  --z-index-topbar: 50;
+  --z-index-sidebar: 60;
+  --z-index-header: 70;
+  --z-index-floating: 100;
+  --z-index-drawer: 150;
+  --z-index-dropdown: 200;
+  --z-index-overlay: 250;
+  --z-index-modal: 400;
+  --z-index-toast: 500;
+  --z-index-command: 600;
+  --z-index-onboarding: 700;
+  --z-index-login: 800;
+  --z-index-skip: 900;
+
+  /* ----------------------------------------------------------
+     Backdrop Blur
+     ---------------------------------------------------------- */
+  --blur-glass: 12px;
+  --blur-glass-heavy: 20px;
+
+  /* ----------------------------------------------------------
+     Transitions
+     ---------------------------------------------------------- */
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-snap: cubic-bezier(0, 0, 0.2, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+
+  /* ----------------------------------------------------------
+     Animations
+     ---------------------------------------------------------- */
+  --animate-shimmer: shimmer 2s infinite linear;
+  --animate-pulse-subtle: pulse-subtle 2s infinite ease-in-out;
+  --animate-slide-in-right: slide-in-right 0.3s ease-out;
+  --animate-slide-in-bottom: slide-in-bottom 0.2s ease-out;
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-scale-in: scale-in 0.15s ease-out;
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  @keyframes slide-in-right {
+    0% { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slide-in-bottom {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes scale-in {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}
+
+/* ============================================
+   Custom Utility Classes
+   ============================================ */
+
+/* Glass utility */
+@utility glass {
+  background: rgba(238, 244, 250, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(180, 205, 225, 0.55);
+}
+
+@utility glass-dark {
+  background: rgba(20, 30, 40, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(80, 120, 160, 0.25);
+}
+
+/* Scrollbar styling */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+/* Focus ring */
+@utility focus-ring {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Line clamp */
+@utility line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@utility line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
