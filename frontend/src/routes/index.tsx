@@ -69,6 +69,7 @@ export const PAGE_PATHS: Record<Page, string> = {
   'system-admin': '/admin',
   'graphrag': '/insights/graphrag',
   'procedural-memory': '/my-ai/procedures',
+  'digital-twin': '/my-ai/digital-twin',
 };
 
 /** Maps URL paths to Page identifiers */

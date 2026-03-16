@@ -109,6 +109,8 @@ export type Page =
   | 'system-admin'
   // Sub-tabs
   | 'graphrag'
-  | 'procedural-memory';
+  | 'procedural-memory'
+  // Phase 92: Digital Twin
+  | 'digital-twin';
 
 export type { AIContext as Context } from '../components/ContextSwitcher';

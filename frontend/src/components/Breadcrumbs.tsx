@@ -265,6 +265,13 @@ export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
     { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
     { label: 'Prozeduren', page: 'procedural-memory', icon: '📋' },
   ],
+
+  // Digital Twin (sub-tab of Meine KI)
+  'digital-twin': [
+    ROOT,
+    { label: 'Meine KI', page: 'my-ai', icon: '🤖' },
+    { label: 'Digital Twin', page: 'digital-twin', icon: '🪞' },
+  ],
 };
 
 /**
