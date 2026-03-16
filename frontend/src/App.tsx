@@ -14,8 +14,12 @@ import {
   ScreenMemoryPage, IdeasPage, AIWorkshop, InsightsDashboard,
   DocumentVaultPage, BusinessDashboard, PlannerPage, EmailPage,
   LearningDashboard, MyAIPage, SettingsDashboard, NotificationsPage,
-  MemoryInsightsPage, SystemAdminPage, Onboarding,
+  MemoryInsightsPage, SystemAdminPage,
 } from './routes/LazyPages';
+
+// Onboarding (Phase 86)
+import { OnboardingWizard } from './components/OnboardingWizard/OnboardingWizard';
+import { useOnboarding } from './hooks/useOnboarding';
 
 // Core components - always loaded
 import { ToastContainer } from './components/Toast';
@@ -121,10 +125,9 @@ function AuthenticatedApp() {
     loadIdeas,
   } = useIdeasData(context, currentPage);
 
-  // UI State
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    return safeLocalStorage('get', 'onboardingComplete') !== 'true';
-  });
+  // Onboarding (Phase 86)
+  const { showOnboarding, completeOnboarding } = useOnboarding();
+  const isOnboardingComplete = !showOnboarding || safeLocalStorage('get', 'onboardingComplete') === 'true';
 
   // Email unread count for sidebar badge (with exponential backoff on errors)
   const [emailUnreadCount, setEmailUnreadCount] = useState(0);
@@ -198,10 +201,10 @@ function AuthenticatedApp() {
     onNavigate: navigateToPage,
   });
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = useCallback(() => {
+    completeOnboarding();
     safeLocalStorage('set', 'onboardingComplete', 'true');
-    setShowOnboarding(false);
-  };
+  }, [completeOnboarding]);
 
   // ============================================
   // ROUTE-BASED PAGE RENDERER
@@ -540,10 +543,12 @@ function AuthenticatedApp() {
   return (
     <ShortcutHintProvider>
     <ErrorBoundary>
-      {showOnboarding && (
-        <Suspense fallback={<PageLoader />}>
-          <Onboarding context={context} onComplete={handleOnboardingComplete} />
-        </Suspense>
+      {!isOnboardingComplete && (
+        <OnboardingWizard
+          context={context}
+          onContextChange={setContext}
+          onComplete={handleOnboardingComplete}
+        />
       )}
 
       <ScrollProgress />

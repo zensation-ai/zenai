@@ -52,6 +52,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { staggerItem, usePrefersReducedMotion } from '../utils/animations';
+import { SetupChecklist } from './SetupChecklist';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -266,6 +267,9 @@ const DashboardComponent: React.FC<DashboardProps> = ({
             Neuer Gedanke
           </Button>
         </section>
+
+        {/* Setup Checklist (Phase 86) */}
+        <SetupChecklist onNavigate={onNavigate} ideasCount={ideasCount} />
 
         {/* Stat tiles */}
         {fetchError && !loading ? (
