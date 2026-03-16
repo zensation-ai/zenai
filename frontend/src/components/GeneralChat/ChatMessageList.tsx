@@ -8,12 +8,12 @@
 import { useRef, useEffect, useState, type RefObject } from 'react';
 import {
   AI_PERSONALITY,
-  AI_AVATAR,
   EMPTY_STATE_MESSAGES,
   getRandomMessage,
 } from '../../utils/aiPersonality';
 import type { ChatMessage } from './types';
 import { ToolResultRenderer } from './ToolResultRenderer';
+import { Brain, User, BookOpen, Link, Pencil } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
 /* SVG icon helpers — small inline 16x16 icons by tool category       */
@@ -164,10 +164,10 @@ function formatDuration(ms: number): string {
 
 /** Phase-based AI processing stages shown while waiting for stream */
 const AI_PHASES = [
-  { label: 'Kontext laden...', icon: '🧠', delay: 0 },
-  { label: 'Erinnerungen durchsuchen...', icon: '📚', delay: 2000 },
-  { label: 'Zusammenhaenge analysieren...', icon: '🔗', delay: 5000 },
-  { label: 'Antwort formulieren...', icon: '✍️', delay: 8000 },
+  { label: 'Kontext laden...', icon: <Brain size={14} strokeWidth={1.5} />, delay: 0 },
+  { label: 'Erinnerungen durchsuchen...', icon: <BookOpen size={14} strokeWidth={1.5} />, delay: 2000 },
+  { label: 'Zusammenhaenge analysieren...', icon: <Link size={14} strokeWidth={1.5} />, delay: 5000 },
+  { label: 'Antwort formulieren...', icon: <Pencil size={14} strokeWidth={1.5} />, delay: 8000 },
 ];
 
 function useAIPhase(active: boolean) {
@@ -261,7 +261,7 @@ export function ChatMessageList({
     <div className="chat-messages" role="log" aria-label="Chat-Nachrichten">
       {messages.length === 0 ? (
         <div className="chat-empty neuro-empty-state neuro-human-fade-in" role="status" aria-label="Leerer Chat - Beginne eine Unterhaltung">
-          <div className="chat-empty-avatar neuro-breathing" aria-hidden="true">{AI_AVATAR.emoji}</div>
+          <div className="chat-empty-avatar neuro-breathing" aria-hidden="true"><Brain size={32} strokeWidth={1.5} /></div>
           <h3 className="chat-empty-title neuro-empty-title">{EMPTY_STATE_MESSAGES.chat.title}</h3>
           <p className="chat-empty-description neuro-empty-description">{EMPTY_STATE_MESSAGES.chat.description}</p>
           <span className="chat-empty-hint neuro-empty-encouragement">{EMPTY_STATE_MESSAGES.chat.encouragement}</span>
@@ -279,7 +279,7 @@ export function ChatMessageList({
               aria-label={`Nachricht von ${message.role === 'assistant' ? AI_PERSONALITY.name : 'Dir'}`}
             >
               <div className="chat-message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'} aria-hidden="true">
-                {message.role === 'assistant' ? AI_AVATAR.emoji : '\u{1F464}'}
+                {message.role === 'assistant' ? <Brain size={18} strokeWidth={1.5} /> : <User size={18} strokeWidth={1.5} />}
               </div>
               <div className="chat-message-content">
                 <div className="chat-message-header">
@@ -297,7 +297,7 @@ export function ChatMessageList({
           {/* Streaming response - shows content as it arrives (including empty state while waiting for first delta) */}
           {isStreaming && (
             <div className="chat-message assistant neuro-human-fade-in streaming" role="status" aria-live="polite">
-              <div className="chat-message-avatar" title={AI_PERSONALITY.name} aria-hidden="true">{AI_AVATAR.emoji}</div>
+              <div className="chat-message-avatar" title={AI_PERSONALITY.name} aria-hidden="true"><Brain size={18} strokeWidth={1.5} /></div>
               <div className="chat-message-content">
                 <div className="chat-message-header">
                   <span className="chat-message-name">{AI_PERSONALITY.name}</span>
@@ -377,7 +377,7 @@ export function ChatMessageList({
           {/* Phase-based AI processing indicator */}
           {sending && !isStreaming && (
             <div className="chat-message assistant neuro-human-fade-in" role="status" aria-live="polite">
-              <div className="chat-message-avatar neuro-breathing" title={AI_PERSONALITY.name} aria-hidden="true">{AI_AVATAR.thinkingEmoji}</div>
+              <div className="chat-message-avatar neuro-breathing" title={AI_PERSONALITY.name} aria-hidden="true"><Brain size={18} strokeWidth={1.5} /></div>
               <div className="chat-message-content">
                 <div className="chat-message-header">
                   <span className="chat-message-name">{AI_PERSONALITY.name}</span>

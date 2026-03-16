@@ -24,6 +24,32 @@ import {
 } from '../hooks/queries/useDashboard';
 import type { TrendPoint } from '../hooks/queries/useDashboard';
 import { Button, Card, Badge, Skeleton, EmptyState } from '../design-system';
+import { getPageIcon } from '../utils/navIcons';
+import {
+  Lightbulb,
+  Calendar,
+  Flame,
+  Moon,
+  ClipboardList,
+  FileText,
+  HelpCircle,
+  Search,
+  AlertTriangle,
+  Clock,
+  Target,
+  Sparkles,
+  Brain,
+  Pencil,
+  MessageSquare,
+  Sprout,
+  RefreshCw,
+  Shuffle,
+  Home,
+  Briefcase,
+  BookOpen,
+  Palette,
+  type LucideIcon,
+} from 'lucide-react';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -34,45 +60,51 @@ interface DashboardProps {
   apiStatus: ApiStatus | null;
 }
 
-const CONTEXT_LABELS: Record<AIContext, { icon: string; label: string }> = {
-  personal: { icon: '🏠', label: 'Privat' },
-  work: { icon: '💼', label: 'Arbeit' },
-  learning: { icon: '📚', label: 'Lernen' },
-  creative: { icon: '🎨', label: 'Kreativ' },
+const CONTEXT_ICONS: Record<AIContext, LucideIcon> = {
+  personal: Home,
+  work: Briefcase,
+  learning: BookOpen,
+  creative: Palette,
 };
 
-const TYPE_EMOJIS: Record<string, string> = {
-  task: '📋', idea: '💡', note: '📝', question: '❓',
-  insight: '🔍', problem: '⚠️', reminder: '⏰', goal: '🎯',
+const CONTEXT_LABELS: Record<AIContext, { label: string }> = {
+  personal: { label: 'Privat' },
+  work: { label: 'Arbeit' },
+  learning: { label: 'Lernen' },
+  creative: { label: 'Kreativ' },
 };
 
-const ACTIVITY_ICONS: Record<string, string> = {
-  idea_created: '✨', idea_structured: '🧠', search_performed: '🔍',
-  draft_generated: '📝', pattern_detected: '💡', suggestion_made: '💬',
-  idea_evolved: '🌱', routine_detected: '🔄', context_switch: '🔀',
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  task: ClipboardList, idea: Lightbulb, note: FileText, question: HelpCircle,
+  insight: Search, problem: AlertTriangle, reminder: Clock, goal: Target,
+};
+
+const ACTIVITY_ICON_MAP: Record<string, LucideIcon> = {
+  idea_created: Sparkles, idea_structured: Brain, search_performed: Search,
+  draft_generated: Pencil, pattern_detected: Lightbulb, suggestion_made: MessageSquare,
+  idea_evolved: Sprout, routine_detected: RefreshCw, context_switch: Shuffle,
 };
 
 interface QuickNavItem {
-  icon: string;
   label: string;
   page: Page;
   accent: string;
 }
 
 const QUICK_NAV: QuickNavItem[] = [
-  { icon: '💡', label: 'Gedanken', page: 'ideas', accent: 'var(--accent-ideas, #f59e0b)' },
-  { icon: '💬', label: 'Chat', page: 'chat', accent: 'var(--accent-chat, #f97316)' },
-  { icon: '📅', label: 'Planer', page: 'calendar', accent: 'var(--accent-calendar, #3b82f6)' },
-  { icon: '📚', label: 'Wissen', page: 'documents', accent: 'var(--accent-docs, #6366f1)' },
-  { icon: '📊', label: 'Insights', page: 'insights', accent: 'var(--accent-insights, #10b981)' },
-  { icon: '🧪', label: 'Werkstatt', page: 'workshop', accent: 'var(--accent-workshop, #8b5cf6)' },
-  { icon: '✉️', label: 'Email', page: 'email', accent: 'var(--accent-email, #ec4899)' },
-  { icon: '🧠', label: 'Meine KI', page: 'my-ai', accent: 'var(--accent-ai, #a855f7)' },
+  { label: 'Gedanken', page: 'ideas', accent: 'var(--accent-ideas, #f59e0b)' },
+  { label: 'Chat', page: 'chat', accent: 'var(--accent-chat, #f97316)' },
+  { label: 'Planer', page: 'calendar', accent: 'var(--accent-calendar, #3b82f6)' },
+  { label: 'Wissen', page: 'documents', accent: 'var(--accent-docs, #6366f1)' },
+  { label: 'Insights', page: 'insights', accent: 'var(--accent-insights, #10b981)' },
+  { label: 'Werkstatt', page: 'workshop', accent: 'var(--accent-workshop, #8b5cf6)' },
+  { label: 'Email', page: 'email', accent: 'var(--accent-email, #ec4899)' },
+  { label: 'Meine KI', page: 'my-ai', accent: 'var(--accent-ai, #a855f7)' },
 ];
 
-const EVENT_ICONS: Record<string, string> = {
-  appointment: '📅', reminder: '⏰', deadline: '⚠️',
-  travel_block: '🚗', focus_time: '🎯',
+const EVENT_ICON_MAP: Record<string, LucideIcon> = {
+  appointment: Calendar, reminder: Clock, deadline: AlertTriangle,
+  travel_block: Target, focus_time: Target,
 };
 
 /** SVG Sparkline for 7-day trend */
@@ -191,6 +223,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const greeting = useMemo(() => getTimeBasedGreeting(), [context]);
   const contextInfo = CONTEXT_LABELS[context];
+  const ContextIcon = CONTEXT_ICONS[context];
 
   const welcomeSubtext = useMemo(() => {
     if (ideasCount === 0) return 'Bereit fuer deinen ersten Gedanken?';
@@ -213,11 +246,11 @@ const DashboardComponent: React.FC<DashboardProps> = ({
               <AIBrain isActive={isAIActive} activityType="thinking" ideasCount={ideasCount} size="small" />
             </div>
             <div className="bento-hero-text">
-              <h2 className="bento-greeting">{greeting.emoji} {greeting.greeting}</h2>
+              <h2 className="bento-greeting">{greeting.greeting}</h2>
               <p className="bento-subtext">{welcomeSubtext}</p>
             </div>
             <Badge variant="context" size="sm" className="bento-context-badge">
-              <span aria-hidden="true">{contextInfo.icon}</span>
+              <ContextIcon size={14} strokeWidth={1.5} aria-hidden="true" />
               {contextInfo.label}
             </Badge>
           </div>
@@ -225,7 +258,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
             variant="primary"
             className="bento-cta"
             onClick={() => onNavigate('ideas')}
-            icon={<span>💡</span>}
+            icon={<Lightbulb size={16} strokeWidth={1.5} />}
           >
             Neuer Gedanke
           </Button>
@@ -253,22 +286,22 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         ) : (
           <>
             <button type="button" className="bento-card bento-stat" onClick={() => onNavigate('ideas')}>
-              <span className="bento-stat-icon">💡</span>
+              <span className="bento-stat-icon"><Lightbulb size={22} strokeWidth={1.5} /></span>
               <span className="bento-stat-value">{stats.total}</span>
               <span className="bento-stat-label">Gesamt</span>
             </button>
             <button type="button" className="bento-card bento-stat" onClick={() => onNavigate('ideas')}>
-              <span className="bento-stat-icon">📅</span>
+              <span className="bento-stat-icon"><Calendar size={22} strokeWidth={1.5} /></span>
               <span className="bento-stat-value">{stats.thisWeek}</span>
               <span className="bento-stat-label">Diese Woche</span>
             </button>
             <button type="button" className="bento-card bento-stat bento-stat--hot" onClick={() => onNavigate('ideas')}>
-              <span className="bento-stat-icon">🔥</span>
+              <span className="bento-stat-icon"><Flame size={22} strokeWidth={1.5} /></span>
               <span className="bento-stat-value">{stats.highPriority}</span>
               <span className="bento-stat-label">Wichtig</span>
             </button>
             <button type="button" className="bento-card bento-stat bento-stat--streak" onClick={() => onNavigate('insights')}>
-              <span className="bento-stat-icon">{streak > 0 ? '🔥' : '💤'}</span>
+              <span className="bento-stat-icon">{streak > 0 ? <Flame size={22} strokeWidth={1.5} /> : <Moon size={22} strokeWidth={1.5} />}</span>
               <span className="bento-stat-value">{streak}d</span>
               <span className="bento-stat-label">Streak</span>
             </button>
@@ -319,18 +352,21 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         <div className="bento-card bento-quicknav">
           <h3 className="bento-section-title">Schnellzugriff</h3>
           <div className="bento-nav-grid">
-            {QUICK_NAV.map((item) => (
-              <button
-                key={item.page}
-                type="button"
-                className="bento-nav-item"
-                onClick={() => onNavigate(item.page)}
-                style={{ '--nav-accent': item.accent } as React.CSSProperties}
-              >
-                <span className="bento-nav-icon">{item.icon}</span>
-                <span className="bento-nav-label">{item.label}</span>
-              </button>
-            ))}
+            {QUICK_NAV.map((item) => {
+              const NavIcon = getPageIcon(item.page);
+              return (
+                <button
+                  key={item.page}
+                  type="button"
+                  className="bento-nav-item"
+                  onClick={() => onNavigate(item.page)}
+                  style={{ '--nav-accent': item.accent } as React.CSSProperties}
+                >
+                  <span className="bento-nav-icon"><NavIcon size={20} strokeWidth={1.5} /></span>
+                  <span className="bento-nav-label">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -348,7 +384,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         {!loading && upcomingEvents.length > 0 && (
           <section className="bento-card bento-events">
             <div className="bento-card-header">
-              <h3>📅 Termine</h3>
+              <h3><Calendar size={16} strokeWidth={1.5} /> Termine</h3>
               <Button variant="ghost" size="sm" className="bento-link" onClick={() => onNavigate('calendar')}>
                 Alle →
               </Button>
@@ -365,7 +401,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                     className="bento-event-row"
                     onClick={() => onNavigate('calendar')}
                   >
-                    <span className="bento-event-icon">{EVENT_ICONS[evt.event_type] || '📅'}</span>
+                    <span className="bento-event-icon">{(() => { const EIcon = EVENT_ICON_MAP[evt.event_type] || Calendar; return <EIcon size={16} strokeWidth={1.5} />; })()}</span>
                     <div className="bento-event-info">
                       <span className="bento-event-title">{evt.title}</span>
                       <span className="bento-event-time">{dayStr}, {timeStr}</span>
@@ -390,7 +426,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
             <Skeleton variant="text" count={3} />
           ) : recentIdeas.length === 0 ? (
             <EmptyState
-              icon={<span>💡</span>}
+              icon={<Lightbulb size={32} strokeWidth={1.5} />}
               title={`Noch keine Gedanken in ${contextInfo.label}`}
               action={
                 <Button variant="primary" size="sm" className="bento-empty-cta" onClick={() => onNavigate('ideas')}>
@@ -407,12 +443,12 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                   className="bento-idea-row"
                   onClick={() => onNavigate('ideas')}
                 >
-                  <span className="bento-idea-type">{TYPE_EMOJIS[idea.type] || '📝'}</span>
+                  <span className="bento-idea-type">{(() => { const TIcon = TYPE_ICONS[idea.type] || FileText; return <TIcon size={16} strokeWidth={1.5} />; })()}</span>
                   <div className="bento-idea-info">
                     <span className="bento-idea-title">{idea.title}</span>
                     <span className="bento-idea-time">{formatTime(idea.created_at)}</span>
                   </div>
-                  {idea.priority === 'high' && <span className="bento-idea-hot">🔥</span>}
+                  {idea.priority === 'high' && <span className="bento-idea-hot"><Flame size={14} strokeWidth={1.5} /></span>}
                 </button>
               ))}
             </div>
@@ -441,7 +477,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
             <Skeleton variant="text" count={3} />
           ) : activity.length === 0 ? (
             <EmptyState
-              icon={<span>🧠</span>}
+              icon={<Brain size={32} strokeWidth={1.5} />}
               title="Noch keine Aktivitaet"
               description="Starte einen Chat oder erfasse Gedanken."
             />
@@ -460,7 +496,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                     },
                   } : {})}
                 >
-                  <span className="bento-activity-icon">{ACTIVITY_ICONS[item.activityType] || '🔹'}</span>
+                  <span className="bento-activity-icon">{(() => { const AIcon = ACTIVITY_ICON_MAP[item.activityType] || Sparkles; return <AIcon size={16} strokeWidth={1.5} />; })()}</span>
                   <div className="bento-activity-info">
                     <span className="bento-activity-msg">{item.message}</span>
                     <span className="bento-activity-time">{formatTime(item.createdAt)}</span>

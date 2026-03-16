@@ -1,0 +1,42 @@
+/* ============================================
+   Kbd - Keyboard Shortcut Badge
+   GitHub-style key hint
+   ============================================ */
+
+.zen-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  font-family: var(--font-mono, 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
+  border-radius: 4px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  user-select: none;
+  vertical-align: middle;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .zen-kbd {
+    color: var(--dark-text-muted);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  }
+}
+
+:root[data-theme="dark"] .zen-kbd {
+  color: var(--dark-text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}

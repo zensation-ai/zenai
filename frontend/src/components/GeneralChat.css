@@ -118,7 +118,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  color: white;
   box-shadow: 0 4px 16px rgba(255, 107, 53, 0.25);
   animation: avatarPulse 3s ease-in-out infinite;
   margin-bottom: 0.5rem;
@@ -197,16 +197,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
   flex-shrink: 0;
+  color: var(--text-secondary);
 }
 
 .chat-message.assistant .chat-message-avatar {
   background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  color: white;
 }
 
 .chat-message.user .chat-message-avatar {
   background: var(--surface);
+  color: var(--text-secondary);
 }
 
 .chat-message-content {

@@ -13,6 +13,9 @@
 /* Import Neurodesign System */
 @import './neurodesign.css';
 
+/* Inter font — premium sans-serif with variable weight */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -47,6 +50,47 @@ textarea::placeholder {
 }
 
 :root {
+  /* ===== Phase 83: Premium Design Tokens ===== */
+
+  /* Typography - Inter + Geist Mono */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Premium Surface Colors (used alongside existing system) */
+  --color-bg-primary: #0A0A0F;
+  --color-bg-primary-light: #FAFAFA;
+  --color-surface-1: #111118;
+  --color-surface-2: #1A1A24;
+  --color-surface-3: #222230;
+  --color-text-primary: #E5E5E5;
+  --color-text-secondary: #8B8B9E;
+  --color-text-tertiary: #5C5C6F;
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-default: rgba(255, 255, 255, 0.1);
+
+  /* Context Accent Colors */
+  --color-ctx-personal: #0EA5E9;
+  --color-ctx-work: #3B82F6;
+  --color-ctx-learning: #10B981;
+  --color-ctx-creative: #8B5CF6;
+
+  /* Brand Color */
+  --color-brand: #6366F1;
+  --color-brand-glow: rgba(99, 102, 241, 0.15);
+
+  /* Premium Shadows (layered, subtle) */
+  --shadow-premium-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
+  --shadow-premium-md: 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-premium-lg: 0 4px 8px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.25);
+  --shadow-brand-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+
+  /* Glass (premium) */
+  --premium-glass-bg: rgba(255, 255, 255, 0.03);
+  --premium-glass-border: rgba(255, 255, 255, 0.06);
+  --premium-glass-blur: 12px;
+
+  /* ===== End Phase 83 Tokens ===== */
+
   /* Zensation Design: Midnight Petrol + Sunset Orange */
   /* Enhanced with more depth and less white */
 
@@ -602,7 +646,7 @@ textarea::placeholder {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-sans, 'Inter', system-ui, -apple-system, sans-serif);
   background: var(--background-gradient);
   background-attachment: fixed;
   color: var(--text);

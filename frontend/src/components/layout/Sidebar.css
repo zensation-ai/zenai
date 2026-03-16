@@ -351,12 +351,17 @@
 }
 
 .sidebar-item-icon {
-  font-size: 1.05rem;
-  line-height: 1;
   flex-shrink: 0;
   width: 20px;
-  text-align: center;
-  transition: transform 0.15s var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sidebar-text-muted, rgba(255, 255, 255, 0.5));
+  transition: transform 0.15s var(--ease-bounce, cubic-bezier(0.34, 1.56, 0.64, 1)), color 0.15s ease;
+}
+
+.sidebar-item.active .sidebar-item-icon {
+  color: var(--sidebar-text, rgba(255, 255, 255, 0.95));
 }
 
 .sidebar-item:hover .sidebar-item-icon {
@@ -415,25 +420,6 @@
   position: absolute;
   top: 6px;
   right: 6px;
-}
-
-/* G+key Shortcut Hints */
-.sidebar-item-shortcut {
-  margin-left: auto;
-  flex-shrink: 0;
-  padding: 1px 5px;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-muted, rgba(42, 61, 77, 0.45));
-  letter-spacing: 0.02em;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.sidebar-item:hover .sidebar-item-shortcut,
-.sidebar-item-wrapper:hover .sidebar-item-shortcut {
-  opacity: 1;
 }
 
 /* ============================================
@@ -587,11 +573,12 @@
 }
 
 .sidebar-footer-icon {
-  font-size: 0.95rem;
-  line-height: 1;
   width: 20px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  color: var(--sidebar-text-muted, rgba(255, 255, 255, 0.5));
 }
 
 .sidebar-footer-label {

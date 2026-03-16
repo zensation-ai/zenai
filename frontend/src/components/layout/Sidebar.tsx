@@ -1,12 +1,13 @@
 /**
- * Sidebar - Persistente Navigation
+ * Sidebar - Premium Navigation
  *
- * Dark Petrol Design, passend zum bestehenden Header-Stil.
- * Neuro-optimiert:
- * - Collapsible Sektionen (Miller's Law: max 4 Items pro Gruppe)
- * - Smooth Collapse/Expand Animation
- * - Active State mit Orange-Akzent
- * - Keyboard Navigation
+ * Linear-quality sidebar with lucide-react icons.
+ * Features:
+ * - Clean icon-based navigation (no emojis)
+ * - Active item: left accent bar + subtle background tint
+ * - Hover: smooth 150ms background transition
+ * - Section headers: uppercase, letter-spaced, muted
+ * - Collapsed state: icons only with tooltip
  * - WCAG 2.1 AA Compliant
  */
 
@@ -14,7 +15,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
-import { getGKeyLabel } from '../../hooks/useKeyboardNavigation';
+import { getPageIcon, LogOut, Star, ChevronDown } from '../../utils/navIcons';
 
 import { safeLocalStorage } from '../../utils/storage';
 import { useAuth } from '../../contexts/AuthContext';
@@ -99,6 +100,12 @@ export const Sidebar = memo(function Sidebar({
     return section.items.some(item => isNavItemActive(item, currentPage));
   };
 
+  /** Render a lucide icon for a nav item */
+  const renderIcon = (page: Page, size: number = 18) => {
+    const IconComponent = getPageIcon(page);
+    return <IconComponent size={size} strokeWidth={1.5} />;
+  };
+
   return (
     <aside
       ref={sidebarRef}
@@ -154,9 +161,8 @@ export const Sidebar = memo(function Sidebar({
           title="Dashboard"
           aria-current={currentPage === 'home' ? 'page' : undefined}
         >
-          <span className="sidebar-item-icon" aria-hidden="true">🏠</span>
+          <span className="sidebar-item-icon" aria-hidden="true">{renderIcon('home')}</span>
           {!collapsed && <span className="sidebar-item-label">Dashboard</span>}
-          {!collapsed && <span className="sidebar-item-shortcut" aria-hidden="true">G H</span>}
         </button>
       </div>
 
@@ -169,9 +175,8 @@ export const Sidebar = memo(function Sidebar({
           title={NAV_CHAT_ITEM.description}
           aria-current={currentPage === 'chat' ? 'page' : undefined}
         >
-          <span className="sidebar-item-icon" aria-hidden="true">{NAV_CHAT_ITEM.icon}</span>
+          <span className="sidebar-item-icon" aria-hidden="true">{renderIcon('chat')}</span>
           {!collapsed && <span className="sidebar-item-label">{NAV_CHAT_ITEM.label}</span>}
-          {!collapsed && <span className="sidebar-item-shortcut" aria-hidden="true">G C</span>}
         </button>
         <button
           type="button"
@@ -180,9 +185,8 @@ export const Sidebar = memo(function Sidebar({
           title={NAV_BROWSER_ITEM.description}
           aria-current={currentPage === 'browser' ? 'page' : undefined}
         >
-          <span className="sidebar-item-icon" aria-hidden="true">{NAV_BROWSER_ITEM.icon}</span>
+          <span className="sidebar-item-icon" aria-hidden="true">{renderIcon('browser')}</span>
           {!collapsed && <span className="sidebar-item-label">{NAV_BROWSER_ITEM.label}</span>}
-          {!collapsed && <span className="sidebar-item-shortcut" aria-hidden="true">G R</span>}
         </button>
       </div>
 
@@ -198,12 +202,11 @@ export const Sidebar = memo(function Sidebar({
               aria-expanded={expandedSections.has('favorites')}
             >
               <span className="sidebar-section-label">Favoriten</span>
-              <svg
-                className={`sidebar-section-chevron ${expandedSections.has('favorites') ? 'expanded' : ''}`}
-                width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
-              >
-                <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <ChevronDown
+                size={12}
+                strokeWidth={1.5}
+                className={`sidebar-section-chevron-icon ${expandedSections.has('favorites') ? 'expanded' : ''}`}
+              />
             </button>
             <div className={`sidebar-section-items ${expandedSections.has('favorites') ? 'expanded' : ''}`}>
               {favoritePages.map(page => {
@@ -218,7 +221,7 @@ export const Sidebar = memo(function Sidebar({
                       onClick={() => handleNavigate(page)}
                       aria-current={isActive ? 'page' : undefined}
                     >
-                      <span className="sidebar-item-icon" aria-hidden="true">{navItem.icon}</span>
+                      <span className="sidebar-item-icon" aria-hidden="true">{renderIcon(page)}</span>
                       <span className="sidebar-item-label">{navItem.label}</span>
                     </button>
                     {toggleFavorite && (
@@ -229,7 +232,7 @@ export const Sidebar = memo(function Sidebar({
                         aria-label={`${navItem.label} aus Favoriten entfernen`}
                         title="Aus Favoriten entfernen"
                       >
-                        <span aria-hidden="true">★</span>
+                        <Star size={12} strokeWidth={1.5} fill="currentColor" />
                       </button>
                     )}
                   </div>
@@ -257,16 +260,11 @@ export const Sidebar = memo(function Sidebar({
                   aria-expanded={isExpanded}
                 >
                   <span className="sidebar-section-label">{section.label}</span>
-                  <svg
-                    className={`sidebar-section-chevron ${isExpanded ? 'expanded' : ''}`}
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <ChevronDown
+                    size={12}
+                    strokeWidth={1.5}
+                    className={`sidebar-section-chevron-icon ${isExpanded ? 'expanded' : ''}`}
+                  />
                 </button>
               ) : (
                 <div className="sidebar-section-divider" aria-hidden="true" />
@@ -288,7 +286,7 @@ export const Sidebar = memo(function Sidebar({
                         aria-current={isActive ? 'page' : undefined}
                         aria-label={item.label}
                       >
-                        <span className="sidebar-item-icon" aria-hidden="true">{item.icon}</span>
+                        <span className="sidebar-item-icon" aria-hidden="true">{renderIcon(item.page)}</span>
                         {!collapsed && (
                           <>
                             <span className="sidebar-item-text">
@@ -298,14 +296,8 @@ export const Sidebar = memo(function Sidebar({
                               )}
                             </span>
                             {badge !== undefined && (
-                              <span className="sidebar-item-badge" aria-label={`${badge} Einträge`}>{badge}</span>
+                              <span className="sidebar-item-badge" aria-label={`${badge} Eintraege`}>{badge}</span>
                             )}
-                            {(() => {
-                              const gKey = getGKeyLabel(item.page);
-                              return gKey ? (
-                                <span className="sidebar-item-shortcut" aria-hidden="true">{gKey}</span>
-                              ) : null;
-                            })()}
                           </>
                         )}
                         {collapsed && badge !== undefined && (
@@ -317,10 +309,10 @@ export const Sidebar = memo(function Sidebar({
                           type="button"
                           className={`sidebar-favorite-btn neuro-focus-ring ${isFavorited?.(item.page) ? 'favorited' : ''}`}
                           onClick={() => toggleFavorite(item.page)}
-                          aria-label={isFavorited?.(item.page) ? `${item.label} aus Favoriten entfernen` : `${item.label} zu Favoriten hinzufügen`}
-                          title={isFavorited?.(item.page) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                          aria-label={isFavorited?.(item.page) ? `${item.label} aus Favoriten entfernen` : `${item.label} zu Favoriten hinzufuegen`}
+                          title={isFavorited?.(item.page) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufuegen'}
                         >
-                          <span aria-hidden="true">{isFavorited?.(item.page) ? '★' : '☆'}</span>
+                          <Star size={12} strokeWidth={1.5} fill={isFavorited?.(item.page) ? 'currentColor' : 'none'} />
                         </button>
                       )}
                     </div>
@@ -370,7 +362,7 @@ export const Sidebar = memo(function Sidebar({
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={item.label}
               >
-                <span className="sidebar-footer-icon" aria-hidden="true">{item.icon}</span>
+                <span className="sidebar-footer-icon" aria-hidden="true">{renderIcon(item.page, 16)}</span>
                 {!collapsed && <span className="sidebar-footer-label">{item.label}</span>}
               </button>
             );
@@ -382,7 +374,7 @@ export const Sidebar = memo(function Sidebar({
             title="Abmelden"
             aria-label="Abmelden"
           >
-            <span className="sidebar-footer-icon" aria-hidden="true">🚪</span>
+            <span className="sidebar-footer-icon" aria-hidden="true"><LogOut size={16} strokeWidth={1.5} /></span>
             {!collapsed && <span className="sidebar-footer-label">Abmelden</span>}
           </button>
         </div>
