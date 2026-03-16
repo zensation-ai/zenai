@@ -22,7 +22,6 @@ import { ProactivePanel, ProactiveBellButton } from '../ProactivePanel';
 import { SmartSurface } from '../SmartSurface/SmartSurface';
 import { ContextIndicator } from './ContextIndicator';
 import { OfflineIndicator } from '../OfflineIndicator';
-import './AppLayout.css';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -161,7 +160,7 @@ export function AppLayout({
   }, [mobileChatOpen]);
 
   return (
-    <div className="app-layout" data-context={context}>
+    <div className="flex h-dvh relative max-w-full overflow-hidden" data-context={context}>
       {/* Skip to main content link (accessibility) */}
       <a href="#main-content" className="skip-link">
         Zum Hauptinhalt springen
@@ -185,8 +184,14 @@ export function AppLayout({
       />
 
       {/* Main Content Area */}
-      <div className={`layout-main ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <div className="topbar-with-proactive">
+      <div
+        className={`flex flex-1 flex-col min-w-0 min-h-0 max-w-[100vw] overflow-hidden transition-[margin-left] duration-300 ease-smooth
+          max-md:ml-0 max-md:pb-bottombar
+          max-[1200px]:ml-sidebar-collapsed
+          ${sidebarCollapsed ? 'ml-sidebar-collapsed' : 'ml-sidebar'}
+          print:ml-0 print:pb-0`}
+      >
+        <div className="relative flex items-stretch">
           <TopBar
             currentPage={currentPage}
             context={context}
@@ -198,7 +203,7 @@ export function AppLayout({
             isFavorited={isFavorited?.(currentPage)}
             onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
           />
-          <div className="topbar-proactive-wrapper">
+          <div className="flex items-center pr-3 shrink-0 border-b border-white/[0.06]">
             <ContextIndicator context={context} />
             <ProactiveBellButton context={context} onClick={() => setProactivePanelOpen(prev => !prev)} />
           </div>
@@ -214,14 +219,19 @@ export function AppLayout({
 
         <SmartSurface context={context} />
 
-        <div className="layout-breadcrumbs">
+        <div className="shrink-0 max-md:hidden">
           <Breadcrumbs
             items={getBreadcrumbs(currentPage)}
             onNavigate={onNavigate}
           />
         </div>
 
-        <main className="layout-content" id="main-content" role="main" ref={mainContentRef}>
+        <main
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative scroll-smooth overscroll-y-contain motion-reduce:scroll-auto"
+          id="main-content"
+          role="main"
+          ref={mainContentRef}
+        >
           {children}
         </main>
       </div>
@@ -260,14 +270,18 @@ export function AppLayout({
 
       {/* Mobile Chat Overlay */}
       {mobileChatOpen && renderChat && (
-        <div className="mobile-chat-overlay" ref={chatOverlayRef}>
-          <div className="mobile-chat-backdrop" onClick={handleCloseChat} aria-hidden="true" />
-          <div className="mobile-chat-sheet">
-            <div className="mobile-chat-header">
-              <h2 className="mobile-chat-title">Chat</h2>
+        <div className="hidden max-md:block fixed inset-0 z-dropdown" ref={chatOverlayRef}>
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-[4px] animate-fade-in"
+            onClick={handleCloseChat}
+            aria-hidden="true"
+          />
+          <div className="absolute bottom-0 left-0 right-0 top-[10vh] pb-[env(safe-area-inset-bottom,0px)] bg-surface-solid rounded-t-xl flex flex-col animate-slide-in-bottom shadow-xl dark:bg-surface-dark-solid">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(20,50,70,0.08)] shrink-0">
+              <h2 className="text-base font-semibold text-txt m-0">Chat</h2>
               <button
                 type="button"
-                className="mobile-chat-close neuro-focus-ring"
+                className="w-touch h-touch flex items-center justify-center bg-[rgba(20,60,80,0.08)] border-none rounded-sm text-txt-secondary cursor-pointer transition-all duration-150 hover:bg-surface-hover focus-ring"
                 onClick={handleCloseChat}
                 aria-label="Chat schließen"
               >
@@ -276,7 +290,7 @@ export function AppLayout({
                 </svg>
               </button>
             </div>
-            <div className="mobile-chat-content">
+            <div className="flex-1 overflow-y-auto p-0">
               {renderChat()}
             </div>
           </div>
