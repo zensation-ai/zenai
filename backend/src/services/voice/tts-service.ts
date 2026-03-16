@@ -297,6 +297,37 @@ export class MultiTTSService {
     } else {
       this.defaultProvider = 'edge-tts';
     }
+
+    // Pre-cache common greetings for faster first-response latency
+    this.preWarmCache();
+  }
+
+  /**
+   * Pre-synthesize common greetings and short phrases so the first
+   * voice interaction feels instant instead of waiting for TTS.
+   */
+  private preWarmCache(): void {
+    const commonPhrases = [
+      'Guten Morgen!',
+      'Guten Tag!',
+      'Hallo!',
+      'Wie kann ich dir helfen?',
+      'Einen Moment bitte.',
+      'Alles klar.',
+      'Verstanden.',
+      'Gerne!',
+      'Das schaue ich mir an.',
+      'Hier ist, was ich gefunden habe.',
+    ];
+
+    // Fire-and-forget: synthesize in background without blocking startup
+    setTimeout(() => {
+      for (const phrase of commonPhrases) {
+        this.synthesize(phrase).catch(() => {
+          // Ignore pre-warm failures — cache miss is acceptable fallback
+        });
+      }
+    }, 5000); // Delay 5s to let the server finish startup first
   }
 
   async synthesize(text: string, options?: TTSOptions): Promise<Buffer> {
