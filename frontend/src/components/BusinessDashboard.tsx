@@ -21,6 +21,7 @@ const HealthDashboard = lazy(() => import('./business/HealthDashboard').then(m =
 const BusinessReports = lazy(() => import('./business/BusinessReports').then(m => ({ default: m.BusinessReports })));
 const BusinessInsightsTab = lazy(() => import('./business/BusinessInsightsTab').then(m => ({ default: m.BusinessInsightsTab })));
 const ConnectorSettings = lazy(() => import('./business/ConnectorSettings').then(m => ({ default: m.ConnectorSettings })));
+const BusinessNarrativeTab = lazy(() => import('./BusinessNarrative/BusinessNarrative').then(m => ({ default: m.BusinessNarrative })));
 
 interface BusinessDashboardProps {
   context: AIContext;
@@ -37,6 +38,7 @@ const TABS: readonly TabDef<BusinessTab>[] = [
   { id: 'insights', label: 'Insights', icon: '💡', description: 'AI-generierte Erkenntnisse' },
   { id: 'reports', label: 'Reports', icon: '📋', description: 'AI-generierte Berichte' },
   { id: 'connectors', label: 'Connectors', icon: '🔗', description: 'Datenquellen verwalten' },
+  { id: 'intelligence', label: 'Intelligence', icon: '🧠', description: 'Cross-Context Business Narrative' },
 ];
 
 const TabLoader = () => (
@@ -105,6 +107,12 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
         return (
           <Suspense fallback={<TabLoader />}>
             <ConnectorSettings />
+          </Suspense>
+        );
+      case 'intelligence':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <BusinessNarrativeTab context={context} />
           </Suspense>
         );
       default:

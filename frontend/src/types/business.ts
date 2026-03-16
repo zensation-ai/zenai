@@ -242,4 +242,4 @@ export interface BusinessConnector {
 // Dashboard Tab Type
 // ============================================
 
-export type BusinessTab = 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'reports' | 'insights' | 'connectors';
+export type BusinessTab = 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'reports' | 'insights' | 'connectors' | 'intelligence';
