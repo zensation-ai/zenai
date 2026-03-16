@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
+import './styles/tailwind.css';
 import './index.css';
 import { safeLocalStorage } from './utils/storage';
 import { ConfirmProvider } from './components/ConfirmDialog';

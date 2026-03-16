@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 import fs from 'fs';
@@ -38,6 +39,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    tailwindcss(),
     react(),
     // Bundle analyzer: generates stats.html after build
     // Run `npm run build` then open stats.html to inspect bundle composition
