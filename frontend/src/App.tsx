@@ -353,7 +353,7 @@ function AuthenticatedApp() {
           <AIWorkshop
             context={context}
             onBack={() => navigateToPage('home')}
-            initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams'}
+            initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams' | 'automations'}
           />
         </Suspense>
       } />

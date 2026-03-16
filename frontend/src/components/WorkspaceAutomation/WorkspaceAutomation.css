@@ -1,0 +1,545 @@
+/* Phase 93: Workspace Automation Styles */
+
+.wa {
+  padding: 0;
+}
+
+/* ─── Error Banner ─────────────────────────────────────── */
+.wa__error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--color-error-bg, #fef2f2);
+  color: var(--color-error, #dc2626);
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.wa__error-close {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+/* ─── Tabs ─────────────────────────────────────────────── */
+.wa__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  padding-bottom: 0.5rem;
+}
+
+.wa__tab {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  transition: all 0.2s;
+}
+
+.wa__tab:hover {
+  background: var(--color-surface-hover, #f3f4f6);
+  color: var(--color-text-primary, #111827);
+}
+
+.wa__tab--active {
+  background: var(--color-brand-light, #eef2ff);
+  color: var(--color-brand, #4f46e5);
+  font-weight: 600;
+}
+
+.wa__tab--create {
+  margin-left: auto;
+  background: var(--color-brand, #4f46e5);
+  color: #fff;
+  border-radius: 6px;
+}
+
+.wa__tab--create:hover {
+  background: var(--color-brand-dark, #4338ca);
+  color: #fff;
+}
+
+/* ─── Template Gallery ─────────────────────────────────── */
+.wa__templates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.wa__template-card {
+  padding: 1.25rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.wa__template-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.wa__template-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.wa__template-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.wa__template-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+}
+
+.wa__template-category {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wa__template-desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.5;
+}
+
+.wa__template-meta {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.wa__badge {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  background: var(--color-surface-hover, #f3f4f6);
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.wa__template-activate {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--color-brand, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.wa__template-activate:hover {
+  background: var(--color-brand-dark, #4338ca);
+}
+
+/* ─── Automations List ─────────────────────────────────── */
+.wa__automations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.wa__loading {
+  text-align: center;
+  color: var(--color-text-secondary, #6b7280);
+  padding: 2rem;
+}
+
+.wa__empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.wa__empty p {
+  margin: 0.25rem 0;
+}
+
+/* ─── Automation Card ──────────────────────────────────── */
+.wa-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--color-surface, #fff);
+  transition: opacity 0.2s;
+}
+
+.wa-card--disabled {
+  opacity: 0.6;
+}
+
+.wa-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.wa-card__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.wa-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-card__name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+}
+
+.wa-card__desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+/* ─── Toggle Switch ────────────────────────────────────── */
+.wa-card__toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.wa-card__toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.wa-card__toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-border, #d1d5db);
+  border-radius: 11px;
+  transition: background 0.2s;
+}
+
+.wa-card__toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.wa-card__toggle input:checked + .wa-card__toggle-slider {
+  background: var(--color-brand, #4f46e5);
+}
+
+.wa-card__toggle input:checked + .wa-card__toggle-slider::before {
+  transform: translateX(18px);
+}
+
+/* ─── Meta Row ─────────────────────────────────────────── */
+.wa-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.wa-card__badge {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.wa-card__badge--trigger {
+  background: var(--color-brand-light, #eef2ff);
+  color: var(--color-brand, #4f46e5);
+}
+
+.wa-card__badge--template {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.wa-card__stat {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+/* ─── Action Buttons ───────────────────────────────────── */
+.wa-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.wa-card__action-btn {
+  padding: 0.35rem 0.75rem;
+  background: var(--color-surface-hover, #f3f4f6);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #374151);
+  transition: all 0.15s;
+}
+
+.wa-card__action-btn:hover {
+  background: var(--color-border, #e5e7eb);
+}
+
+.wa-card__action-btn--run {
+  background: var(--color-brand-light, #eef2ff);
+  color: var(--color-brand, #4f46e5);
+  border-color: var(--color-brand-light, #c7d2fe);
+}
+
+.wa-card__action-btn--run:hover {
+  background: var(--color-brand, #4f46e5);
+  color: #fff;
+}
+
+.wa-card__action-btn--danger {
+  color: var(--color-error, #dc2626);
+}
+
+.wa-card__action-btn--danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+/* ─── Expanded Details ─────────────────────────────────── */
+.wa-card__details {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.wa-card__detail-section {
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.wa-card__detail-section strong {
+  color: var(--color-text-primary, #111827);
+}
+
+.wa-card__detail-section ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.wa-card__detail-section li {
+  margin: 0.15rem 0;
+}
+
+/* ─── Status Badges ────────────────────────────────────── */
+.wa__status--running {
+  color: #f59e0b;
+}
+
+.wa__status--completed {
+  color: #10b981;
+}
+
+.wa__status--failed {
+  color: #ef4444;
+}
+
+/* ─── Modal ────────────────────────────────────────────── */
+.wa__modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.wa__modal {
+  background: var(--color-surface, #fff);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.wa__modal-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.wa__modal-field {
+  margin-bottom: 1rem;
+}
+
+.wa__modal-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  margin-bottom: 0.35rem;
+}
+
+.wa__modal-field input,
+.wa__modal-field textarea,
+.wa__modal-field select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-text-primary, #111827);
+  box-sizing: border-box;
+}
+
+.wa__modal-field input:focus,
+.wa__modal-field textarea:focus,
+.wa__modal-field select:focus {
+  outline: none;
+  border-color: var(--color-brand, #4f46e5);
+  box-shadow: 0 0 0 2px var(--color-brand-light, #eef2ff);
+}
+
+.wa__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.wa__modal-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.wa__modal-btn--cancel {
+  background: var(--color-surface-hover, #f3f4f6);
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.wa__modal-btn--cancel:hover {
+  background: var(--color-border, #e5e7eb);
+}
+
+.wa__modal-btn--create {
+  background: var(--color-brand, #4f46e5);
+  color: #fff;
+}
+
+.wa__modal-btn--create:hover {
+  background: var(--color-brand-dark, #4338ca);
+}
+
+.wa__modal-btn--create:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Dark Mode ────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .wa__error {
+    background: rgba(220, 38, 38, 0.1);
+    color: #fca5a5;
+  }
+
+  .wa__template-card,
+  .wa-card,
+  .wa__modal {
+    background: var(--color-surface-dark, #1f2937);
+    border-color: var(--color-border-dark, #374151);
+  }
+
+  .wa__template-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .wa-card__toggle-slider {
+    background: #4b5563;
+  }
+
+  .wa__modal-field input,
+  .wa__modal-field textarea,
+  .wa__modal-field select {
+    background: var(--color-surface-dark, #111827);
+    border-color: var(--color-border-dark, #374151);
+    color: #f3f4f6;
+  }
+
+  .wa-card__action-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .wa-card__action-btn:hover {
+    background: #4b5563;
+  }
+
+  .wa__tab:hover {
+    background: #374151;
+    color: #f3f4f6;
+  }
+}
+
+/* ─── Responsive ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .wa__templates {
+    grid-template-columns: 1fr;
+  }
+
+  .wa__tabs {
+    flex-wrap: wrap;
+  }
+
+  .wa__tab--create {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+}

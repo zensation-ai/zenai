@@ -76,7 +76,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: '🧪',
         label: 'Werkstatt',
         description: 'KI entwickelt deine Ideen weiter',
-        subPages: ['proactive', 'evolution', 'agent-teams'],
+        subPages: ['proactive', 'evolution', 'agent-teams', 'automations'],
       },
     ],
   },
