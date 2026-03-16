@@ -260,3 +260,72 @@ class LocalInferenceService {
 
 /** Global singleton */
 export const localInference = new LocalInferenceService();
+
+// ---------------------------------------------------------------------------
+// Phase 94: On-Device AI Enhanced Provider Bridge
+// ---------------------------------------------------------------------------
+
+/**
+ * OnDeviceEnhancedProvider wraps the Phase 94 on-device-ai service
+ * as a LocalInferenceProvider for backward compatibility.
+ */
+export class OnDeviceEnhancedProvider implements LocalInferenceProvider {
+  readonly name = 'on-device-enhanced';
+  private onDeviceAI: typeof import('./on-device-ai').onDeviceAI | null = null;
+
+  isAvailable(): boolean {
+    return true; // Always available (pure JS fallbacks)
+  }
+
+  async init(options?: { onProgress?: (progress: number) => void }): Promise<boolean> {
+    try {
+      const mod = await import('./on-device-ai');
+      this.onDeviceAI = mod.onDeviceAI;
+      await this.onDeviceAI.init();
+      options?.onProgress?.(1);
+      return true;
+    } catch {
+      options?.onProgress?.(1);
+      return false;
+    }
+  }
+
+  async classifyIntent(query: string): Promise<'chat' | 'search' | 'action' | 'code'> {
+    if (!this.onDeviceAI) return 'chat';
+    const intent = await this.onDeviceAI.classifyIntent(query);
+    // Map extended categories to the 4 basic ones
+    switch (intent) {
+      case 'search':
+      case 'question':
+        return 'search';
+      case 'command':
+        return 'action';
+      case 'code':
+        return 'code';
+      default:
+        return 'chat';
+    }
+  }
+
+  async generateEmbedding(text: string): Promise<number[]> {
+    if (!this.onDeviceAI) return new Array(64).fill(0);
+    return this.onDeviceAI.generateEmbedding(text);
+  }
+
+  async analyzeSentiment(text: string): Promise<{ score: number; label: string }> {
+    if (!this.onDeviceAI) return { score: 0, label: 'neutral' };
+    const result = await this.onDeviceAI.analyzeSentiment(text);
+    return { score: result.score, label: result.label };
+  }
+
+  async summarize(text: string, maxLength?: number): Promise<string> {
+    if (!this.onDeviceAI) return text.slice(0, maxLength ?? 200);
+    // Convert maxLength to approximate sentence count
+    const maxSentences = maxLength ? Math.max(1, Math.floor(maxLength / 80)) : 3;
+    return this.onDeviceAI.summarize(text, maxSentences);
+  }
+
+  async dispose(): Promise<void> {
+    this.onDeviceAI = null;
+  }
+}

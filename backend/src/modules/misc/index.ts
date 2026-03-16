@@ -3,6 +3,7 @@ import type { Module } from '../../core/module';
 import { a2aRouter } from '../../routes/a2a';
 import { unifiedAssistantRouter } from '../../routes/unified-assistant';
 import { digitalTwinRouter } from '../../routes/digital-twin';
+import { onDeviceAIRouter } from '../../routes/on-device-ai';
 
 export class MiscModule implements Module {
   name = 'misc';
@@ -14,5 +15,7 @@ export class MiscModule implements Module {
     app.use('/api', unifiedAssistantRouter);
     // Phase 92: Digital Twin Profile
     app.use('/api', digitalTwinRouter);
+    // Phase 94: On-Device AI
+    app.use('/api', onDeviceAIRouter);
   }
 }

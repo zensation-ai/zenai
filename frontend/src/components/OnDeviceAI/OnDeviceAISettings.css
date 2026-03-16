@@ -1,0 +1,388 @@
+/* On-Device AI Settings - Phase 94 */
+
+.on-device-settings {
+  padding: 24px;
+  max-width: 800px;
+}
+
+.on-device-settings h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.on-device-settings .subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+/* Capability Cards */
+.odai-capabilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.odai-cap-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--surface-secondary, #f5f5f7);
+  border: 1px solid var(--border-color, #e0e0e0);
+  transition: all 0.2s ease;
+}
+
+.odai-cap-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.odai-cap-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.odai-cap-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.odai-cap-status {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.odai-cap-status.available {
+  color: var(--color-success, #34c759);
+}
+
+.odai-cap-status.unavailable {
+  color: var(--text-tertiary, #999);
+}
+
+/* Section Card */
+.odai-section {
+  background: var(--surface-secondary, #f5f5f7);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.odai-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.odai-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.odai-section-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* Toggle Switch */
+.odai-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.odai-toggle input[type="checkbox"] {
+  display: none;
+}
+
+.odai-toggle-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--border-color, #ccc);
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.odai-toggle input:checked + .odai-toggle-track {
+  background: var(--color-primary, #007aff);
+}
+
+.odai-toggle-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.odai-toggle input:checked ~ .odai-toggle-track .odai-toggle-thumb,
+.odai-toggle input:checked + .odai-toggle-track .odai-toggle-thumb {
+  transform: translateX(20px);
+}
+
+.odai-toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Model List */
+.odai-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.odai-model-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.odai-model-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.odai-model-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.odai-model-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.odai-model-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.odai-model-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.odai-model-badge.ready {
+  background: var(--color-success-bg, #e8f5e9);
+  color: var(--color-success, #2e7d32);
+}
+
+.odai-model-badge.built-in {
+  background: var(--color-info-bg, #e3f2fd);
+  color: var(--color-info, #1565c0);
+}
+
+.odai-model-badge.planned {
+  background: var(--surface-tertiary, #f0f0f0);
+  color: var(--text-tertiary, #888);
+}
+
+/* Stats Grid */
+.odai-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.odai-stat-card {
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-color, #e5e5e5);
+  text-align: center;
+}
+
+.odai-stat-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-primary, #007aff);
+}
+
+.odai-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Storage Meter */
+.odai-storage-meter {
+  margin-top: 12px;
+}
+
+.odai-storage-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border-color, #e0e0e0);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.odai-storage-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--color-primary, #007aff);
+  transition: width 0.3s ease;
+  min-width: 2px;
+}
+
+.odai-storage-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Action Buttons */
+.odai-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.odai-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--surface-primary, #fff);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.odai-btn:hover {
+  background: var(--surface-hover, #f0f0f2);
+}
+
+.odai-btn.destructive {
+  color: var(--color-danger, #ff3b30);
+  border-color: var(--color-danger, #ff3b30);
+}
+
+.odai-btn.destructive:hover {
+  background: var(--color-danger-bg, #fff1f0);
+}
+
+.odai-btn.primary {
+  background: var(--color-primary, #007aff);
+  color: white;
+  border-color: var(--color-primary, #007aff);
+}
+
+.odai-btn.primary:hover {
+  opacity: 0.9;
+}
+
+/* Complexity Slider */
+.odai-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.odai-slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--color-primary, #007aff);
+}
+
+.odai-slider-value {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Privacy Badge */
+.odai-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.odai-privacy-badge.on {
+  background: var(--color-success-bg, #e8f5e9);
+  color: var(--color-success, #2e7d32);
+}
+
+.odai-privacy-badge.off {
+  background: var(--surface-tertiary, #f0f0f0);
+  color: var(--text-secondary);
+}
+
+/* Dark Mode */
+[data-theme="dark"] .odai-cap-card,
+[data-theme="dark"] .odai-section {
+  background: var(--surface-secondary, #2c2c2e);
+  border-color: var(--border-color, #3a3a3c);
+}
+
+[data-theme="dark"] .odai-model-item,
+[data-theme="dark"] .odai-stat-card {
+  background: var(--surface-primary, #1c1c1e);
+  border-color: var(--border-color, #3a3a3c);
+}
+
+[data-theme="dark"] .odai-btn {
+  background: var(--surface-primary, #1c1c1e);
+  border-color: var(--border-color, #3a3a3c);
+}
+
+[data-theme="dark"] .odai-btn:hover {
+  background: var(--surface-hover, #3a3a3c);
+}
+
+[data-theme="dark"] .odai-model-badge.ready {
+  background: rgba(52, 199, 89, 0.15);
+}
+
+[data-theme="dark"] .odai-model-badge.built-in {
+  background: rgba(0, 122, 255, 0.15);
+}
+
+@media (max-width: 600px) {
+  .on-device-settings {
+    padding: 16px;
+  }
+
+  .odai-capabilities {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .odai-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

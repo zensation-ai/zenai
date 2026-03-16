@@ -1,5 +1,5 @@
 /**
- * SettingsDashboard - Einstellungen (15 Tabs)
+ * SettingsDashboard - Einstellungen (16 Tabs)
  *
  * Tabs:
  * - Profil: Benutzerprofil und Business-Profil
@@ -15,6 +15,7 @@
  * - Integrationen: OAuth, API Keys, Webhooks
  * - MCP Server: Externe MCP-Verbindungen verwalten
  * - Extensions: Plugin/Erweiterungs-Marketplace
+ * - Lokale KI: On-Device AI und Datenschutz-Modus
  * - System: Observability, Health, Queues und Metriken
  * - Daten: Export + Sync kombiniert
  */
@@ -43,8 +44,9 @@ const ContextRulesPanel = lazy(() => import('./ContextRulesPanel').then(m => ({ 
 const ProactiveRulesPanel = lazy(() => import('./ProactiveRulesPanel').then(m => ({ default: m.ProactiveRulesPanel })));
 const SecurityAuditPanel = lazy(() => import('./SecurityAuditPanel').then(m => ({ default: m.SecurityAuditPanel })));
 const ObservabilityPanel = lazy(() => import('./ObservabilityPanel').then(m => ({ default: m.ObservabilityPanel })));
+const OnDeviceAISettings = lazy(() => import('./OnDeviceAI/OnDeviceAISettings').then(m => ({ default: m.OnDeviceAISettings })));
 
-type SettingsTab = 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'system' | 'data';
+type SettingsTab = 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'on-device-ai' | 'system' | 'data';
 
 interface SettingsDashboardProps {
   context: AIContext;
@@ -67,6 +69,7 @@ const TABS: readonly TabDef<SettingsTab>[] = [
   { id: 'integrations', label: 'Integrationen', icon: '🔗', description: 'OAuth, API Keys, Webhooks' },
   { id: 'mcp-servers', label: 'MCP Server', icon: '🔌', description: 'Externe MCP-Verbindungen' },
   { id: 'extensions', label: 'Extensions', icon: '🧩', description: 'Erweiterungen und Plugins' },
+  { id: 'on-device-ai', label: 'Lokale KI', icon: '🖥️', description: 'On-Device KI und Datenschutz-Modus' },
   { id: 'system', label: 'System', icon: '📡', description: 'Health, Queues und Metriken' },
   { id: 'data', label: 'Daten', icon: '📦', description: 'Export und Synchronisation' },
 ];
@@ -855,6 +858,13 @@ export const SettingsDashboard = memo(({
         return (
           <Suspense fallback={<TabLoader />}>
             <ExtensionMarketplace />
+          </Suspense>
+        );
+
+      case 'on-device-ai':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <OnDeviceAISettings context={context} />
           </Suspense>
         );
 
