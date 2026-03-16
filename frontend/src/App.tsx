@@ -20,6 +20,7 @@ import { AIQuestionBubble } from './components/AIQuestionBubble';
 import { GlobalSearch } from './components/GlobalSearch';
 import { useIdeasData } from './hooks/useIdeasData';
 import { useAIQuestions } from './hooks/useAIQuestions';
+import { ShortcutHintProvider } from './components/ShortcutHint';
 
 // Neurodesign System
 import { NeuroFeedbackProvider } from './components/NeuroFeedback';
@@ -601,6 +602,7 @@ function AuthenticatedApp() {
   // ============================================
 
   return (
+    <ShortcutHintProvider>
     <ErrorBoundary>
       {showOnboarding && (
         <Suspense fallback={<PageLoader />}>
@@ -684,6 +686,7 @@ function AuthenticatedApp() {
           onClose={commandPalette.close}
           commands={commandPalette.commands}
           recentPages={pageHistory.recentPages}
+          currentPage={currentPage}
         />
       )}
 
@@ -701,6 +704,7 @@ function AuthenticatedApp() {
         onClose={keyboardShortcuts.close}
       />
     </ErrorBoundary>
+    </ShortcutHintProvider>
   );
 }
 

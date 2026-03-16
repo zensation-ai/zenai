@@ -22,6 +22,7 @@ import { ProactivePanel, ProactiveBellButton } from '../ProactivePanel';
 import { SmartSurface } from '../SmartSurface/SmartSurface';
 import { ContextIndicator } from './ContextIndicator';
 import { OfflineIndicator } from '../OfflineIndicator';
+import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -67,6 +68,12 @@ export function AppLayout({
   // Feature discovery hints
   const location = useLocation();
   const { activeHint, dismissHint } = useFeatureHint(location.pathname);
+
+  // Vim-style G+key navigation
+  const { isSequenceActive, sequenceHint } = useKeyboardNavigation({
+    onNavigate,
+    enabled: true,
+  });
 
   // Sidebar collapsed state - persisted to localStorage
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -286,6 +293,16 @@ export function AppLayout({
       {/* Feature Discovery Hints */}
       {activeHint && (
         <FeatureHintCard hint={activeHint} onDismiss={dismissHint} />
+      )}
+
+      {/* G+key sequence hint overlay */}
+      {isSequenceActive && sequenceHint && (
+        <div className="g-key-hint-overlay" aria-live="polite">
+          <div className="g-key-hint-pill">
+            <kbd>G</kbd>
+            <span>+ Taste druecken...</span>
+          </div>
+        </div>
       )}
     </div>
   );

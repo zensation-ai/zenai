@@ -14,6 +14,7 @@ import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
+import { getGKeyLabel } from '../../hooks/useKeyboardNavigation';
 
 import { safeLocalStorage } from '../../utils/storage';
 import { useAuth } from '../../contexts/AuthContext';
@@ -155,6 +156,7 @@ export const Sidebar = memo(function Sidebar({
         >
           <span className="sidebar-item-icon" aria-hidden="true">🏠</span>
           {!collapsed && <span className="sidebar-item-label">Dashboard</span>}
+          {!collapsed && <span className="sidebar-item-shortcut" aria-hidden="true">G H</span>}
         </button>
       </div>
 
@@ -169,6 +171,7 @@ export const Sidebar = memo(function Sidebar({
         >
           <span className="sidebar-item-icon" aria-hidden="true">{NAV_CHAT_ITEM.icon}</span>
           {!collapsed && <span className="sidebar-item-label">{NAV_CHAT_ITEM.label}</span>}
+          {!collapsed && <span className="sidebar-item-shortcut" aria-hidden="true">G C</span>}
         </button>
         <button
           type="button"
@@ -179,6 +182,7 @@ export const Sidebar = memo(function Sidebar({
         >
           <span className="sidebar-item-icon" aria-hidden="true">{NAV_BROWSER_ITEM.icon}</span>
           {!collapsed && <span className="sidebar-item-label">{NAV_BROWSER_ITEM.label}</span>}
+          {!collapsed && <span className="sidebar-item-shortcut" aria-hidden="true">G R</span>}
         </button>
       </div>
 
@@ -296,6 +300,12 @@ export const Sidebar = memo(function Sidebar({
                             {badge !== undefined && (
                               <span className="sidebar-item-badge" aria-label={`${badge} Einträge`}>{badge}</span>
                             )}
+                            {(() => {
+                              const gKey = getGKeyLabel(item.page);
+                              return gKey ? (
+                                <span className="sidebar-item-shortcut" aria-hidden="true">{gKey}</span>
+                              ) : null;
+                            })()}
                           </>
                         )}
                         {collapsed && badge !== undefined && (

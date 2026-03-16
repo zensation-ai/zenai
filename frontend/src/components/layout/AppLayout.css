@@ -205,6 +205,56 @@
   border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));
 }
 
+/* G+key Navigation Hint Overlay */
+.g-key-hint-overlay {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+  animation: gKeyHintAppear 0.2s ease-out;
+}
+
+.g-key-hint-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.15));
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  font-size: 13px;
+  color: var(--text, #0f1f2a);
+  white-space: nowrap;
+}
+
+.g-key-hint-pill kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  padding: 2px 8px;
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@keyframes gKeyHintAppear {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+:root.dark-mode .g-key-hint-pill {
+  background: var(--card-bg, #142a34);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
 @media print {
   .layout-main {
     margin-left: 0;

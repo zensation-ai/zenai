@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import Fuse, { type IFuseOptions } from 'fuse.js';
 import type { Page } from '../types/idea';
 import { formatShortcut } from '../hooks/useKeyboardShortcut';
+import { useRegisteredCommands } from '../hooks/useCommandRegistry';
+import { getGKeyLabel } from '../hooks/useKeyboardNavigation';
 import './CommandPalette.css';
 
 // ============================================
@@ -29,111 +32,59 @@ export type CommandCategory =
   | 'actions'
   | 'recent';
 
+type PaletteMode = 'universal' | 'navigation' | 'commands' | 'contacts' | 'tags';
+
+const MODE_PREFIXES: Record<string, PaletteMode> = {
+  '/': 'navigation',
+  '>': 'commands',
+  '@': 'contacts',
+  '#': 'tags',
+};
+
+const MODE_INFO: Record<PaletteMode, { label: string; color: string; placeholder: string }> = {
+  universal: { label: '', color: '', placeholder: 'Seite, Aktion oder Befehl suchen...' },
+  navigation: { label: '/', color: '#3b82f6', placeholder: 'Navigation...' },
+  commands: { label: '>', color: '#8b5cf6', placeholder: 'Befehl ausfuehren...' },
+  contacts: { label: '@', color: '#10b981', placeholder: 'Kontakt suchen...' },
+  tags: { label: '#', color: '#f59e0b', placeholder: 'Tag suchen...' },
+};
+
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   commands: Command[];
   recentPages?: string[];
+  currentPage?: Page;
 }
 
 // ============================================
-// Fuzzy Search
+// Recency storage
 // ============================================
 
-/**
- * Simple fuzzy search - matches if all characters appear in order
- * Returns match score (lower = better match)
- */
-function fuzzyMatch(query: string, text: string): { matches: boolean; score: number } {
-  const queryLower = query.toLowerCase();
-  const textLower = text.toLowerCase();
+const RECENCY_KEY = 'zenai_command_recency';
+const MAX_RECENCY_ENTRIES = 30;
 
-  if (!query) return { matches: true, score: 0 };
-
-  // Exact match gets best score
-  if (textLower === queryLower) return { matches: true, score: -100 };
-
-  // Starts with query
-  if (textLower.startsWith(queryLower)) return { matches: true, score: -50 };
-
-  // Contains query as substring
-  if (textLower.includes(queryLower)) return { matches: true, score: -25 };
-
-  // Fuzzy match: all chars in order
-  let queryIndex = 0;
-  let score = 0;
-  let lastMatchIndex = -1;
-
-  for (let i = 0; i < textLower.length && queryIndex < queryLower.length; i++) {
-    if (textLower[i] === queryLower[queryIndex]) {
-      // Bonus for consecutive matches
-      if (lastMatchIndex === i - 1) {
-        score -= 5;
-      }
-      // Bonus for match at word boundary
-      if (i === 0 || textLower[i - 1] === ' ' || textLower[i - 1] === '-') {
-        score -= 10;
-      }
-      lastMatchIndex = i;
-      queryIndex++;
-    } else {
-      score += 1;
-    }
+function getRecencyMap(): Record<string, number> {
+  try {
+    const stored = localStorage.getItem(RECENCY_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
   }
-
-  return {
-    matches: queryIndex === queryLower.length,
-    score
-  };
 }
 
-function searchCommands(commands: Command[], query: string): Command[] {
-  if (!query.trim()) {
-    // Sort by priority when no query
-    return [...commands].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+function recordRecency(commandId: string): void {
+  try {
+    const map = getRecencyMap();
+    map[commandId] = Date.now();
+    // Prune old entries
+    const entries = Object.entries(map)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, MAX_RECENCY_ENTRIES);
+    localStorage.setItem(RECENCY_KEY, JSON.stringify(Object.fromEntries(entries)));
+  } catch {
+    // Ignore storage errors
   }
-
-  const results: { command: Command; score: number }[] = [];
-
-  for (const command of commands) {
-    // Search in label
-    const labelMatch = fuzzyMatch(query, command.label);
-
-    // Search in description
-    const descMatch = command.description
-      ? fuzzyMatch(query, command.description)
-      : { matches: false, score: 1000 };
-
-    // Search in keywords
-    let keywordScore = 1000;
-    if (command.keywords) {
-      for (const keyword of command.keywords) {
-        const kwMatch = fuzzyMatch(query, keyword);
-        if (kwMatch.matches && kwMatch.score < keywordScore) {
-          keywordScore = kwMatch.score;
-        }
-      }
-    }
-
-    // Take best match
-    const bestScore = Math.min(
-      labelMatch.matches ? labelMatch.score : 1000,
-      descMatch.matches ? descMatch.score + 10 : 1000,
-      keywordScore + 5
-    );
-
-    if (labelMatch.matches || descMatch.matches || keywordScore < 1000) {
-      results.push({
-        command,
-        score: bestScore - (command.priority || 0) * 0.1
-      });
-    }
-  }
-
-  // Sort by score (lower is better)
-  return results
-    .sort((a, b) => a.score - b.score)
-    .map(r => r.command);
 }
 
 // ============================================
@@ -141,7 +92,7 @@ function searchCommands(commands: Command[], query: string): Command[] {
 // ============================================
 
 const CATEGORY_INFO: Record<CommandCategory, { label: string; icon: string }> = {
-  recent: { label: 'Kürzlich', icon: '🕐' },
+  recent: { label: 'Kuerzlich', icon: '🕐' },
   navigation: { label: 'Navigation', icon: '🧭' },
   'ai-features': { label: 'KI-Features', icon: '🤖' },
   content: { label: 'Inhalte', icon: '📄' },
@@ -151,12 +102,35 @@ const CATEGORY_INFO: Record<CommandCategory, { label: string; icon: string }> = 
 
 const CATEGORY_ORDER: CommandCategory[] = [
   'recent',
+  'actions',
   'navigation',
   'ai-features',
   'content',
   'settings',
-  'actions',
 ];
+
+const MODE_CATEGORY_FILTER: Partial<Record<PaletteMode, CommandCategory[]>> = {
+  navigation: ['navigation', 'recent'],
+  commands: ['actions', 'ai-features', 'settings'],
+};
+
+// ============================================
+// Fuse.js Configuration
+// ============================================
+
+const FUSE_OPTIONS: IFuseOptions<Command> = {
+  keys: [
+    { name: 'label', weight: 0.5 },
+    { name: 'description', weight: 0.25 },
+    { name: 'keywords', weight: 0.25 },
+  ],
+  threshold: 0.3,
+  includeScore: true,
+  ignoreLocation: true,
+  minMatchCharLength: 1,
+};
+
+const MAX_VISIBLE_RESULTS = 12;
 
 // ============================================
 // Command Palette Component
@@ -167,28 +141,92 @@ export const CommandPalette = memo(function CommandPalette({
   onClose,
   commands,
   recentPages = [],
+  currentPage,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Build commands with recent pages boosted
-  const allCommands = useMemo(() => {
-    return commands.map(cmd => ({
-      ...cmd,
-      priority: recentPages.includes(cmd.id)
-        ? (cmd.priority || 0) + 100
-        : cmd.priority,
-      category: recentPages.includes(cmd.id) ? 'recent' as CommandCategory : cmd.category,
-    }));
-  }, [commands, recentPages]);
+  // Consume page-registered commands
+  const registeredCommands = useRegisteredCommands();
 
-  // Search results
-  const filteredCommands = useMemo(
-    () => searchCommands(allCommands, query),
-    [allCommands, query]
+  // Determine mode from prefix
+  const { mode, cleanQuery } = useMemo(() => {
+    if (!query) return { mode: 'universal' as PaletteMode, cleanQuery: '' };
+    const firstChar = query[0];
+    const detectedMode = MODE_PREFIXES[firstChar];
+    if (detectedMode) {
+      return { mode: detectedMode, cleanQuery: query.slice(1).trimStart() };
+    }
+    return { mode: 'universal' as PaletteMode, cleanQuery: query };
+  }, [query]);
+
+  const modeInfo = MODE_INFO[mode];
+
+  // Merge built-in commands with registry commands + add G-key shortcuts
+  const allCommands = useMemo(() => {
+    const recencyMap = getRecencyMap();
+
+    // Start with built-in commands, add G-key shortcuts
+    const enriched = commands.map(cmd => {
+      const gKey = getGKeyLabel(cmd.id as Page);
+      const shortcutDisplay = cmd.shortcut ?? (gKey ? gKey : undefined);
+      const recencyBonus = recencyMap[cmd.id] ? 50 : 0;
+      const contextBonus = currentPage && isRelatedToCurrentPage(cmd, currentPage) ? 20 : 0;
+
+      return {
+        ...cmd,
+        shortcut: shortcutDisplay,
+        priority: (cmd.priority ?? 0) + recencyBonus + contextBonus,
+        category: recentPages.includes(cmd.id) ? 'recent' as CommandCategory : cmd.category,
+      };
+    });
+
+    // Add registered commands
+    for (const regCmd of registeredCommands) {
+      enriched.push({
+        id: regCmd.id,
+        label: regCmd.label,
+        description: regCmd.description,
+        icon: regCmd.icon ?? '⚡',
+        category: 'actions' as CommandCategory,
+        keywords: regCmd.keywords,
+        shortcut: regCmd.shortcut,
+        action: regCmd.action,
+        priority: (regCmd.priority ?? 0) + 30, // Boost page-specific commands
+      });
+    }
+
+    return enriched;
+  }, [commands, recentPages, registeredCommands, currentPage]);
+
+  // Filter by mode
+  const modeFilteredCommands = useMemo(() => {
+    const categoryFilter = MODE_CATEGORY_FILTER[mode];
+    if (!categoryFilter) return allCommands;
+    return allCommands.filter(cmd => categoryFilter.includes(cmd.category));
+  }, [allCommands, mode]);
+
+  // Fuse.js search
+  const fuse = useMemo(
+    () => new Fuse(modeFilteredCommands, FUSE_OPTIONS),
+    [modeFilteredCommands]
   );
+
+  const filteredCommands = useMemo(() => {
+    if (!cleanQuery.trim()) {
+      // No query: sort by priority
+      return [...modeFilteredCommands]
+        .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+        .slice(0, MAX_VISIBLE_RESULTS);
+    }
+
+    return fuse
+      .search(cleanQuery)
+      .slice(0, MAX_VISIBLE_RESULTS)
+      .map(r => r.item);
+  }, [fuse, modeFilteredCommands, cleanQuery]);
 
   // Group by category
   const groupedCommands = useMemo(() => {
@@ -222,7 +260,6 @@ export const CommandPalette = memo(function CommandPalette({
     if (isOpen) {
       setQuery('');
       setSelectedIndex(0);
-      // Focus input after animation
       const timer = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(timer);
     }
@@ -240,6 +277,13 @@ export const CommandPalette = memo(function CommandPalette({
     selected?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [selectedIndex]);
 
+  // Execute and record recency
+  const executeCommand = useCallback((command: Command) => {
+    recordRecency(command.id);
+    command.action();
+    onClose();
+  }, [onClose]);
+
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     switch (e.key) {
@@ -254,8 +298,7 @@ export const CommandPalette = memo(function CommandPalette({
       case 'Enter':
         e.preventDefault();
         if (flatList[selectedIndex]) {
-          flatList[selectedIndex].action();
-          onClose();
+          executeCommand(flatList[selectedIndex]);
         }
         break;
       case 'Escape':
@@ -270,16 +313,17 @@ export const CommandPalette = memo(function CommandPalette({
           setSelectedIndex(i => Math.min(i + 1, flatList.length - 1));
         }
         break;
+      case 'Backspace':
+        // If query is just a prefix character and backspace empties it, clear mode
+        if (query.length === 1 && MODE_PREFIXES[query]) {
+          e.preventDefault();
+          setQuery('');
+        }
+        break;
     }
-  }, [flatList, selectedIndex, onClose]);
+  }, [flatList, selectedIndex, onClose, executeCommand, query]);
 
-  // Execute command
-  const executeCommand = useCallback((command: Command) => {
-    command.action();
-    onClose();
-  }, [onClose]);
-
-  // Global escape handler
+  // Global escape handler + body scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
@@ -317,11 +361,19 @@ export const CommandPalette = memo(function CommandPalette({
             <span className="command-palette-search-icon" aria-hidden="true">
               🔍
             </span>
+            {mode !== 'universal' && (
+              <span
+                className="command-palette-mode-pill"
+                style={{ backgroundColor: modeInfo.color }}
+              >
+                {modeInfo.label}
+              </span>
+            )}
             <input
               ref={inputRef}
               type="text"
               className="command-palette-input"
-              placeholder="Seite oder Aktion suchen..."
+              placeholder={modeInfo.placeholder}
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -332,6 +384,23 @@ export const CommandPalette = memo(function CommandPalette({
             />
             <kbd className="command-palette-shortcut-hint">ESC</kbd>
           </div>
+          {/* Mode hints */}
+          {mode === 'universal' && !query && (
+            <div className="command-palette-mode-hints">
+              <span className="command-palette-mode-hint">
+                <kbd>/</kbd> Navigation
+              </span>
+              <span className="command-palette-mode-hint">
+                <kbd>&gt;</kbd> Befehle
+              </span>
+              <span className="command-palette-mode-hint">
+                <kbd>@</kbd> Kontakte
+              </span>
+              <span className="command-palette-mode-hint">
+                <kbd>#</kbd> Tags
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Results */}
@@ -339,7 +408,7 @@ export const CommandPalette = memo(function CommandPalette({
           {flatList.length === 0 ? (
             <div className="command-palette-empty">
               <span className="command-palette-empty-icon">🔍</span>
-              <p>Keine Ergebnisse für "{query}"</p>
+              <p>Keine Ergebnisse fuer &quot;{cleanQuery}&quot;</p>
             </div>
           ) : (
             CATEGORY_ORDER.map(category => {
@@ -401,10 +470,10 @@ export const CommandPalette = memo(function CommandPalette({
               <kbd>↑↓</kbd> navigieren
             </span>
             <span className="command-palette-hint">
-              <kbd>↵</kbd> auswählen
+              <kbd>↵</kbd> auswaehlen
             </span>
             <span className="command-palette-hint">
-              <kbd>esc</kbd> schließen
+              <kbd>esc</kbd> schliessen
             </span>
           </div>
         </div>
@@ -415,6 +484,23 @@ export const CommandPalette = memo(function CommandPalette({
 });
 
 // ============================================
+// Context-awareness helper
+// ============================================
+
+function isRelatedToCurrentPage(cmd: Command, currentPage: Page): boolean {
+  // Boost commands that match the current page context
+  const pageContextMap: Record<string, string[]> = {
+    ideas: ['action-new-idea', 'incubator', 'triage', 'archive', 'workshop'],
+    calendar: ['action-new-task', 'meetings', 'kanban', 'gantt'],
+    email: ['action-new-email'],
+    documents: ['canvas', 'media', 'meetings'],
+    chat: ['action-voice'],
+  };
+  const related = pageContextMap[currentPage];
+  return related?.includes(cmd.id) ?? false;
+}
+
+// ============================================
 // Hook for Command Palette
 // ============================================
 
@@ -423,9 +509,11 @@ interface UseCommandPaletteOptions {
   onAction?: (action: string) => void;
   /** External recent pages from usePageHistory (shared state) */
   externalRecentPages?: string[];
+  /** Current page for context-awareness */
+  currentPage?: Page;
 }
 
-export function useCommandPalette({ onNavigate, onAction, externalRecentPages }: UseCommandPaletteOptions) {
+export function useCommandPalette({ onNavigate, onAction, externalRecentPages, currentPage: _currentPage }: UseCommandPaletteOptions) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Use external recent pages if provided, otherwise empty
@@ -442,10 +530,10 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
     {
       id: 'home',
       label: 'Dashboard',
-      description: 'Startseite mit Übersicht',
+      description: 'Startseite mit Uebersicht',
       icon: '🏠',
       category: 'navigation',
-      keywords: ['home', 'start', 'dashboard', 'übersicht', 'startseite'],
+      keywords: ['home', 'start', 'dashboard', 'uebersicht', 'startseite'],
       shortcut: 'Cmd+H',
       priority: 105,
       action: () => navigateTo('home'),
@@ -456,7 +544,7 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
       description: 'Vollbild-Chat mit der KI',
       icon: '💬',
       category: 'navigation',
-      keywords: ['chat', 'gespräch', 'fragen', 'konversation', 'zen'],
+      keywords: ['chat', 'gespraech', 'fragen', 'konversation', 'zen'],
       priority: 102,
       action: () => navigateTo('chat'),
     },
@@ -591,14 +679,14 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
       description: 'Archivierte Gedanken',
       icon: '📥',
       category: 'ai-features',
-      keywords: ['archiv', 'gelöscht', 'alt'],
+      keywords: ['archiv', 'geloescht', 'alt'],
       priority: 72,
       action: () => navigateTo('archive'),
     },
     {
       id: 'workshop',
       label: 'Werkstatt',
-      description: 'KI-Vorschläge und Agenten',
+      description: 'KI-Vorschlaege und Agenten',
       icon: '🧪',
       category: 'ai-features',
       keywords: ['werkstatt', 'workshop', 'ki', 'ai', 'proaktiv', 'evolution'],
@@ -731,7 +819,6 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
       priority: 20,
       action: () => navigateTo('profile'),
     },
-    // notifications is in navigation section above as 'Unified Inbox'
     {
       id: 'export',
       label: 'Daten',
@@ -750,12 +837,38 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages }:
       description: 'Schnell erfassen',
       icon: '➕',
       category: 'actions',
-      keywords: ['neu', 'new', 'create', 'erstellen'],
+      keywords: ['neu', 'new', 'create', 'erstellen', 'gedanke', 'idee'],
       shortcut: 'Cmd+N',
       priority: 95,
       action: () => {
         onAction?.('new-idea');
         navigateTo('ideas');
+      },
+    },
+    {
+      id: 'action-new-task',
+      label: 'Neue Aufgabe',
+      description: 'Aufgabe erstellen',
+      icon: '📌',
+      category: 'actions',
+      keywords: ['task', 'aufgabe', 'todo', 'erstellen'],
+      priority: 90,
+      action: () => {
+        onAction?.('new-task');
+        navigateTo('calendar');
+      },
+    },
+    {
+      id: 'action-new-email',
+      label: 'Neue E-Mail',
+      description: 'E-Mail verfassen',
+      icon: '✉️',
+      category: 'actions',
+      keywords: ['email', 'mail', 'schreiben', 'verfassen', 'senden'],
+      priority: 85,
+      action: () => {
+        onAction?.('new-email');
+        navigateTo('email');
       },
     },
     {
