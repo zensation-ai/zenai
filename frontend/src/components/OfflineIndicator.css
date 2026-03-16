@@ -13,15 +13,12 @@
   font-weight: 500;
   flex-shrink: 0;
 
-  /* Glassmorphism */
-  background: var(--glass-bg, rgba(238, 244, 250, 0.78));
+  /* Glassmorphism + Warning tint */
+  background: rgba(245, 158, 11, 0.08);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--glass-border, rgba(180, 205, 225, 0.55));
-
-  /* Warning tint */
   color: var(--warning, #f59e0b);
-  background: rgba(245, 158, 11, 0.08);
 
   /* Animate in */
   animation: offline-slide-in 0.25s ease-out;

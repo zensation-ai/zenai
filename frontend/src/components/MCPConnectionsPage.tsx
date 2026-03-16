@@ -261,7 +261,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
   const healthCheck = async (id: string) => {
     setActionLoading(prev => ({ ...prev, [id]: true }));
     try {
-      await apiFetch(`/api/${context}/mcp/servers/${id}/health`);
+      await apiFetch(`/api/${context}/mcp/servers/${id}/health`, { method: 'POST' });
       await loadServers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Health check failed');
@@ -326,12 +326,11 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
     return <span className="mcp-status mcp-status--unknown">Offline</span>;
   };
 
-  const getTransportLabel = (t: TransportType) => {
+  const getTransportLabel = (t: TransportType): string => {
     switch (t) {
       case 'streamable-http': return 'HTTP';
       case 'stdio': return 'Stdio';
       case 'sse': return 'SSE';
-      default: return t;
     }
   };
 
@@ -700,5 +699,3 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
     </div>
   );
 }
-
-export default MCPConnectionsPage;

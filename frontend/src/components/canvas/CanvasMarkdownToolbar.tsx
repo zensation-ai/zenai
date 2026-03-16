@@ -22,11 +22,12 @@ interface ToolbarAction {
   suffix: string;
   placeholder: string;
   block?: boolean;
+  className?: string;
 }
 
 const TOOLBAR_ACTIONS: ToolbarAction[] = [
-  { label: 'B', icon: 'B', title: 'Fett (Ctrl+B)', prefix: '**', suffix: '**', placeholder: 'fett' },
-  { label: 'I', icon: 'I', title: 'Kursiv (Ctrl+I)', prefix: '_', suffix: '_', placeholder: 'kursiv' },
+  { label: 'B', icon: 'B', title: 'Fett (Ctrl+B)', prefix: '**', suffix: '**', placeholder: 'fett', className: 'bold' },
+  { label: 'I', icon: 'I', title: 'Kursiv (Ctrl+I)', prefix: '_', suffix: '_', placeholder: 'kursiv', className: 'italic' },
   { label: 'Code', icon: '`', title: 'Inline Code', prefix: '`', suffix: '`', placeholder: 'code' },
   { label: 'Link', icon: '\uD83D\uDD17', title: 'Link', prefix: '[', suffix: '](url)', placeholder: 'Link-Text' },
   { label: 'Bild', icon: '\uD83D\uDDBC\uFE0F', title: 'Bild einfuegen', prefix: '![', suffix: '](url)', placeholder: 'Bildbeschreibung' },
@@ -89,7 +90,7 @@ export function CanvasMarkdownToolbar({
       {TOOLBAR_ACTIONS.map((action) => (
         <button
           key={action.label}
-          className={`canvas-md-toolbar-btn ${action.label === 'B' ? 'bold' : ''} ${action.label === 'I' ? 'italic' : ''}`}
+          className={`canvas-md-toolbar-btn${action.className ? ` ${action.className}` : ''}`}
           onClick={() => handleAction(action)}
           title={action.title}
           aria-label={action.title}

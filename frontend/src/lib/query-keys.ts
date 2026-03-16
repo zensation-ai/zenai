@@ -87,6 +87,7 @@ export const queryKeys = {
   calendar: {
     events: (ctx: string, filters?: Record<string, unknown>) =>
       ['calendar', ctx, 'events', filters ?? {}] as const,
+    upcoming: (ctx: string) => ['calendar', ctx, 'upcoming'] as const,
   },
 
   // Documents
@@ -102,6 +103,12 @@ export const queryKeys = {
     stats: (ctx: string) => ['dashboard', ctx, 'stats'] as const,
     activity: (ctx: string) => ['dashboard', ctx, 'activity'] as const,
     trend: (ctx: string) => ['dashboard', ctx, 'trend'] as const,
+    summary: (ctx: string) => ['dashboard', ctx, 'summary'] as const,
+  },
+
+  // AI System Pulse
+  aiPulse: {
+    all: (ctx: string) => ['ai-pulse', ctx] as const,
   },
 
   // Health

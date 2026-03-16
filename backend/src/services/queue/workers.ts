@@ -5,7 +5,7 @@
  * Each worker processes jobs from a specific queue.
  * Workers are no-op if REDIS_URL is not configured.
  *
- * Phase 5.1 enhancements:
+ * Enhancements:
  * - Enhanced error handling with failed event context + DLQ pattern
  * - Job progress reporting for long-running jobs
  * - getWorkerHealth() for monitoring active/completed/failed counts
@@ -252,7 +252,7 @@ const MAX_STALLED_COUNT = 2; // mark as failed after 2 stall detections
  * Start all queue workers. No-op if REDIS_URL is not configured.
  */
 export async function startWorkers(): Promise<boolean> {
-  if (workersStarted) {return true;}
+  if (workersStarted) return true;
 
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) {
@@ -387,7 +387,7 @@ export async function startWorkers(): Promise<boolean> {
  * Stop all queue workers gracefully.
  */
 export async function stopWorkers(): Promise<void> {
-  if (workers.size === 0) {return;}
+  if (workers.size === 0) return;
 
   logger.info('Stopping queue workers...', { operation: 'worker' });
 

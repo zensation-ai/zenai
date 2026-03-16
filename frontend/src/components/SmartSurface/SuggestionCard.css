@@ -342,10 +342,10 @@
   justify-content: flex-end;
 }
 
-.ds-briefing-action-btn {
-  background: linear-gradient(135deg, #f59e0b, #f97316) !important;
-  padding: 5px 14px !important;
-  font-size: 0.75rem !important;
+.ds-suggestion-action-btn.ds-briefing-action-btn {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  padding: 5px 14px;
+  font-size: 0.75rem;
 }
 
 .ds-briefing-action-btn:hover {
@@ -423,15 +423,3 @@
   }
 }
 
-/* ─── Animation ───────────────────────────── */
-
-@keyframes ds-suggestion-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}

@@ -320,11 +320,18 @@ describe('context validation', () => {
     ];
 
     for (const ep of endpoints) {
-      const req = ep.method === 'get'
-        ? request(app).get(ep.path)
-        : ep.method === 'put'
-          ? request(app).put(ep.path).send({})
-          : request(app).post(ep.path).send({ text: 'test' });
+      let req;
+      switch (ep.method) {
+        case 'get':
+          req = request(app).get(ep.path);
+          break;
+        case 'put':
+          req = request(app).put(ep.path).send({});
+          break;
+        default:
+          req = request(app).post(ep.path).send({ text: 'test' });
+          break;
+      }
 
       const res = await req;
       expect(res.status).toBe(400);

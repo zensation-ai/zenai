@@ -124,7 +124,6 @@ function ChatSessionSidebarComponent({
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
   };
 
-  // Clear confirm-delete state when search changes to avoid stale references
   const filtered = search.trim()
     ? sessions.filter(s =>
         s.title?.toLowerCase().includes(search.toLowerCase())
@@ -132,9 +131,11 @@ function ChatSessionSidebarComponent({
     : sessions;
 
   // Reset confirm state if the target session is no longer visible
-  if (confirmDeleteId && !filtered.some(s => s.id === confirmDeleteId)) {
-    setConfirmDeleteId(null);
-  }
+  useEffect(() => {
+    if (confirmDeleteId && !filtered.some(s => s.id === confirmDeleteId)) {
+      setConfirmDeleteId(null);
+    }
+  }, [confirmDeleteId, filtered]);
 
   // Group sessions by date category
   const grouped = groupByDate(filtered);

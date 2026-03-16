@@ -61,7 +61,7 @@ describe('PlannerPage Component', () => {
     mockActiveTab = 'calendar';
   });
 
-  it('should render tab navigation with 4 tabs', () => {
+  it('should render tab navigation with 5 tabs', () => {
     render(<PlannerPage context="work" {...defaultProps} />);
     expect(screen.getByText('Kalender')).toBeInTheDocument();
     expect(screen.getByText('Aufgaben')).toBeInTheDocument();

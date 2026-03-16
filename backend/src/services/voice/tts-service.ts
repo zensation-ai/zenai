@@ -247,7 +247,7 @@ class TTSCache {
     if (text.length > 200) return;
 
     if (this.cache.size >= this.maxEntries) {
-      // Evict least-accessed entry
+      // Evict least-frequently-accessed entry
       let minKey = '';
       let minAccess = Infinity;
       for (const [k, v] of this.cache) {
@@ -280,6 +280,7 @@ export class MultiTTSService {
   private providers: Map<string, TTSProvider>;
   private defaultProvider: string;
   private phraseCache: TTSCache;
+  private preWarmTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.providers = new Map();
@@ -317,8 +318,6 @@ export class MultiTTSService {
       }, 5000);
     }
   }
-
-  private preWarmTimer: ReturnType<typeof setTimeout> | null = null;
 
   async synthesize(text: string, options?: TTSOptions): Promise<Buffer> {
     // Check phrase cache first

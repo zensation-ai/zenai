@@ -135,7 +135,7 @@ export function useDashboardActivityQuery(context: AIContext, enabled = true) {
  */
 export function useDashboardSummaryQuery(context: AIContext, enabled = true) {
   return useQuery({
-    queryKey: ['dashboard', context, 'summary'] as const,
+    queryKey: queryKeys.dashboard.summary(context),
     queryFn: async ({ signal }) => {
       const response = await axios.get(`/api/${context}/analytics/dashboard-summary`, { signal });
       const d = response.data;
@@ -163,7 +163,7 @@ export function useDashboardSummaryQuery(context: AIContext, enabled = true) {
  */
 export function useUpcomingEventsQuery(context: AIContext, enabled = true) {
   return useQuery({
-    queryKey: ['calendar', context, 'upcoming'] as const,
+    queryKey: queryKeys.calendar.upcoming(context),
     queryFn: async ({ signal }) => {
       const response = await axios.get(`/api/${context}/calendar/upcoming`, {
         signal,
@@ -188,7 +188,7 @@ export function useMarkActivityReadMutation(context: AIContext) {
     },
     onSuccess: () => {
       // Invalidate both summary and activity queries
-      queryClient.invalidateQueries({ queryKey: ['dashboard', context, 'summary'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.summary(context) });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.activity(context) });
     },
     onError: (error) => {
@@ -202,7 +202,7 @@ export function useMarkActivityReadMutation(context: AIContext) {
  */
 export function useAIPulseQuery(context: AIContext, enabled = true) {
   return useQuery({
-    queryKey: ['ai-pulse', context] as const,
+    queryKey: queryKeys.aiPulse.all(context),
     queryFn: async ({ signal }) => {
       const [thinkingRes, sleepRes, ragRes, procRes] = await Promise.all([
         axios.get(`/api/${context}/thinking/stats`, { signal }).catch(() => ({ data: null })),
@@ -211,10 +211,10 @@ export function useAIPulseQuery(context: AIContext, enabled = true) {
         axios.get(`/api/${context}/memory/procedures`, { signal, params: { limit: 1 } }).catch(() => ({ data: null })),
       ]);
       return {
-        memoryFacts: thinkingRes.data?.data?.totalChains || 0,
+        memoryFacts: thinkingRes.data?.data?.totalChains ?? 0,
         procedures: Array.isArray(procRes.data?.data) ? procRes.data.data.length : 0,
-        sleepCycles: sleepRes.data?.data?.totalCycles || 0,
-        ragQueries: ragRes.data?.data?.totalQueries || 0,
+        sleepCycles: sleepRes.data?.data?.totalCycles ?? 0,
+        ragQueries: ragRes.data?.data?.totalQueries ?? 0,
       } as AISystemPulse;
     },
     enabled,
@@ -245,7 +245,7 @@ export function useHealthQuery() {
 
       return {
         database: !!dbConnected,
-        ollama: !!(claudeAvailable || ollamaConnected || openaiConfigured),
+        aiAvailable: !!(claudeAvailable || ollamaConnected || openaiConfigured),
         models: ollamaModels as string[],
       };
     },

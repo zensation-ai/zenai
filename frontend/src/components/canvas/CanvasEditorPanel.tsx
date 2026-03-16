@@ -95,7 +95,6 @@ function loadMermaid(): Promise<MermaidAPI | null> {
  * Loads mermaid from CDN on first use with graceful fallback.
  */
 function MermaidDiagram({ code, diagramId }: { code: string; diagramId: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [svgContent, setSvgContent] = useState<string>('');
 
@@ -145,7 +144,6 @@ function MermaidDiagram({ code, diagramId }: { code: string; diagramId: string }
 
   return (
     <div
-      ref={containerRef}
       className="canvas-mermaid-diagram"
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
@@ -162,6 +160,14 @@ function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden'));
     reader.readAsDataURL(file);
   });
+}
+
+function getPlaceholder(type: 'markdown' | 'code' | 'html'): string {
+  switch (type) {
+    case 'markdown': return '# Titel\n\nSchreibe hier Markdown...\n\nBilder per Drag & Drop einfuegen.';
+    case 'code': return '// Code hier eingeben...';
+    case 'html': return '<html>...';
+  }
 }
 
 export const CanvasEditorPanel = forwardRef<CanvasEditorPanelHandle, CanvasEditorPanelProps>(
@@ -354,13 +360,7 @@ export const CanvasEditorPanel = forwardRef<CanvasEditorPanelHandle, CanvasEdito
               value={content}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={
-                type === 'markdown'
-                  ? '# Titel\n\nSchreibe hier Markdown...\n\nBilder per Drag & Drop einfuegen.'
-                  : type === 'code'
-                    ? '// Code hier eingeben...'
-                    : '<html>...'
-              }
+              placeholder={getPlaceholder(type)}
               spellCheck={type === 'markdown'}
               aria-label="Dokumentinhalt bearbeiten"
             />

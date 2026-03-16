@@ -105,7 +105,7 @@ export function OfflineIndicator() {
             Offline
             {pendingSync > 0 && (
               <span className="offline-indicator__count">
-                {' '}&middot; {pendingSync} ausstehend{pendingSync !== 1 ? 'e' : 'e'} Aktion{pendingSync !== 1 ? 'en' : ''}
+                {' '}&middot; {pendingSync} ausstehende Aktion{pendingSync !== 1 ? 'en' : ''}
               </span>
             )}
           </span>

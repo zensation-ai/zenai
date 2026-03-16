@@ -292,6 +292,7 @@
 }
 
 .canvas-editor-pane {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -789,10 +790,6 @@
 /* ============================================
    Image Drag-and-Drop Overlay
    ============================================ */
-
-.canvas-editor-pane {
-  position: relative;
-}
 
 .canvas-editor-dragging {
   outline: 2px dashed rgba(99, 102, 241, 0.5);

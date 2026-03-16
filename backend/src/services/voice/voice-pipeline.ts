@@ -10,10 +10,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
-import { sttService, STTResult } from './stt-service';
-import { multiTTSService, TTSOptions } from './tts-service';
+import type { STTResult } from './stt-service';
+import { sttService } from './stt-service';
+import type { TTSOptions } from './tts-service';
+import { multiTTSService } from './tts-service';
 import { audioProcessor } from './audio-processor';
-import { TurnTakingEngine, VADResult, createTurnTakingEngine } from './turn-taking';
+import type { TurnTakingEngine, VADResult } from './turn-taking';
+import { createTurnTakingEngine } from './turn-taking';
 import { sendMessage } from '../general-chat/chat-messages';
 import { createSession } from '../general-chat/chat-sessions';
 

@@ -125,6 +125,26 @@ export function useReorderTasksMutation(context: AIContext) {
   });
 }
 
+/**
+ * Delete a task
+ */
+export function useDeleteTaskMutation(context: AIContext) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(`/api/${context}/tasks/${id}`);
+      return id;
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all(context) });
+    },
+    onError: (error) => {
+      logError('useDeleteTaskMutation', error);
+    },
+  });
+}
+
 // ===========================================
 // Project Query Hooks
 // ===========================================
@@ -156,26 +176,6 @@ export function useProjectDetailQuery(context: AIContext, id: string | null) {
     },
     enabled: !!id,
     staleTime: 30_000,
-  });
-}
-
-/**
- * Delete a task (optimistic)
- */
-export function useDeleteTaskMutation(context: AIContext) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await axios.delete(`/api/${context}/tasks/${id}`);
-      return id;
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all(context) });
-    },
-    onError: (error) => {
-      logError('useDeleteTaskMutation', error);
-    },
   });
 }
 

@@ -124,7 +124,7 @@ export function CanvasToolbar({
     []
   );
 
-  const getSaveStatusLabel = () => {
+  const getSaveStatusLabel = (): string => {
     switch (saveStatus) {
       case 'saved': return 'Gespeichert';
       case 'saving': return 'Speichert...';
@@ -132,7 +132,7 @@ export function CanvasToolbar({
     }
   };
 
-  const getSaveStatusIcon = () => {
+  const getSaveStatusIcon = (): string => {
     switch (saveStatus) {
       case 'saved': return '\u2713';
       case 'saving': return '\u23F3';

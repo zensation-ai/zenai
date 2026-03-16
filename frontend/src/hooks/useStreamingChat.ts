@@ -399,13 +399,17 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
 
   // ---- Public API ----
 
+  // Use a ref for isPending to avoid re-creating sendMessage on every render
+  const isPendingRef = useRef(false);
+  isPendingRef.current = mutation.isPending;
+
   const sendMessage = useCallback(
     (params: SendMessageParams) => {
-      // Prevent double-send
-      if (mutation.isPending) return;
+      if (isPendingRef.current) return;
       mutation.mutate(params);
     },
-    [mutation]
+    // mutation.mutate is stable across renders in React Query v5
+    [mutation.mutate]
   );
 
   return {

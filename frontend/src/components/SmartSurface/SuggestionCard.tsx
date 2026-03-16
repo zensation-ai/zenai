@@ -47,10 +47,7 @@ export function SuggestionCard({ suggestion, onDismiss, onSnooze, onAccept }: Su
   const runExitAnimation = useCallback((type: 'dismiss' | 'snooze', cb: () => void) => {
     setExitAnimation(type);
     // Wait for the CSS animation to finish before calling the callback
-    const timer = setTimeout(() => {
-      cb();
-    }, 280);
-    return () => clearTimeout(timer);
+    setTimeout(cb, 280);
   }, []);
 
   const handleDismiss = useCallback(() => {
@@ -66,11 +63,14 @@ export function SuggestionCard({ suggestion, onDismiss, onSnooze, onAccept }: Su
     runExitAnimation('snooze', () => onSnooze(suggestion.id, duration));
   }, [onSnooze, suggestion.id, runExitAnimation]);
 
-  const exitClass = exitAnimation === 'dismiss'
-    ? 'ds-suggestion-card--exit-dismiss'
-    : exitAnimation === 'snooze'
-      ? 'ds-suggestion-card--exit-snooze'
-      : '';
+  function getExitClass(): string {
+    switch (exitAnimation) {
+      case 'dismiss': return 'ds-suggestion-card--exit-dismiss';
+      case 'snooze': return 'ds-suggestion-card--exit-snooze';
+      default: return '';
+    }
+  }
+  const exitClass = getExitClass();
 
   // Morning Briefing: special wide card
   if (isBriefing) {

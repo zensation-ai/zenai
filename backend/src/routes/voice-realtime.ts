@@ -81,10 +81,7 @@ voiceRealtimeRouter.post(
       throw new ValidationError(parseResult.error.issues[0]?.message || 'Invalid request body');
     }
 
-    const result = await voicePipeline.startSession(
-      context as 'personal' | 'work' | 'learning' | 'creative',
-      parseResult.data
-    );
+    const result = await voicePipeline.startSession(context, parseResult.data);
 
     logger.info('Voice session started via REST', {
       sessionId: result.sessionId,
@@ -214,7 +211,7 @@ voiceRealtimeRouter.get(
     validateContext(context);
 
     const result = await queryContext(
-      context as 'personal' | 'work' | 'learning' | 'creative',
+      context,
       'SELECT * FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
       [userId]
     );
@@ -254,17 +251,16 @@ voiceRealtimeRouter.put(
     }
 
     const data = parseResult.data;
-    const ctx = context as 'personal' | 'work' | 'learning' | 'creative';
 
     // Check if settings exist for this user
-    const existing = await queryContext(ctx,
+    const existing = await queryContext(context,
       'SELECT id FROM voice_settings WHERE user_id = $1 LIMIT 1',
       [userId]
     );
 
     let result;
     if (existing.rows.length > 0) {
-      result = await queryContext(ctx, `
+      result = await queryContext(context, `
         UPDATE voice_settings
         SET stt_provider = COALESCE($1, stt_provider),
             tts_provider = COALESCE($2, tts_provider),
@@ -288,7 +284,7 @@ voiceRealtimeRouter.put(
         userId,
       ]);
     } else {
-      result = await queryContext(ctx, `
+      result = await queryContext(context, `
         INSERT INTO voice_settings (stt_provider, tts_provider, tts_voice, language, vad_sensitivity, silence_threshold_ms, auto_send, user_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *

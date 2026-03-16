@@ -6,7 +6,7 @@
  * Passes time-of-day and day-of-week context for time-aware suggestions.
  */
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import type { AIContext } from '../components/ContextSwitcher';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
@@ -64,8 +64,9 @@ export function useSmartSuggestions(
   const [loading, setLoading] = useState(true);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  const timeOfDay = useMemo(() => getTimeOfDay(), []);
-  const dayOfWeek = useMemo(() => getDayOfWeek(), []);
+  // Compute once on hook mount -- stable for the session lifetime
+  const timeContextRef = useRef({ timeOfDay: getTimeOfDay(), dayOfWeek: getDayOfWeek() });
+  const { timeOfDay, dayOfWeek } = timeContextRef.current;
 
   const fetchSuggestions = useCallback(async () => {
     try {
@@ -128,33 +129,30 @@ export function useSmartSuggestions(
     };
   }, [context, options?.sse, fetchSuggestions]);
 
-  const dismiss = useCallback(async (id: string) => {
+  /** Optimistically remove a suggestion, then call the API. Re-fetches on failure. */
+  const performAction = useCallback(async (id: string, action: string, body?: Record<string, unknown>) => {
     setSuggestions(prev => prev.filter(s => s.id !== id));
     try {
-      await axios.post(`/api/${context}/suggestions/${id}/dismiss`);
-    } catch {
-      // Re-fetch on error to restore state
-      fetchSuggestions();
-    }
-  }, [context, fetchSuggestions]);
-
-  const snooze = useCallback(async (id: string, duration: SnoozeDuration) => {
-    setSuggestions(prev => prev.filter(s => s.id !== id));
-    try {
-      await axios.post(`/api/${context}/suggestions/${id}/snooze`, { duration });
+      await axios.post(`/api/${context}/suggestions/${id}/${action}`, body);
     } catch {
       fetchSuggestions();
     }
   }, [context, fetchSuggestions]);
 
-  const accept = useCallback(async (id: string) => {
-    setSuggestions(prev => prev.filter(s => s.id !== id));
-    try {
-      await axios.post(`/api/${context}/suggestions/${id}/accept`);
-    } catch {
-      fetchSuggestions();
-    }
-  }, [context, fetchSuggestions]);
+  const dismiss = useCallback(
+    (id: string) => performAction(id, 'dismiss'),
+    [performAction]
+  );
+
+  const snooze = useCallback(
+    (id: string, duration: SnoozeDuration) => performAction(id, 'snooze', { duration }),
+    [performAction]
+  );
+
+  const accept = useCallback(
+    (id: string) => performAction(id, 'accept'),
+    [performAction]
+  );
 
   return {
     suggestions,

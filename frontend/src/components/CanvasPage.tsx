@@ -37,8 +37,6 @@ interface CanvasPageProps {
 const MAX_IMAGE_SIZE_MB = 5;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
-// Uses global axios instance configured in main.tsx (baseURL + auth interceptor)
-
 export function CanvasPage({ context }: CanvasPageProps) {
   const [documents, setDocuments] = useState<CanvasDocument[]>([]);
   const [activeDocument, setActiveDocument] = useState<CanvasDocument | null>(null);
@@ -97,9 +95,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
         if (!isMountedRef.current) return;
         setSaveStatus('saving');
         try {
-          await axios.patch(
-            `/api/canvas/${documentId}`,
-            { content });
+          await axios.patch(`/api/canvas/${documentId}`, { content });
           if (isMountedRef.current) setSaveStatus('saved');
         } catch (error) {
           logError('canvas-save', error);
@@ -115,7 +111,8 @@ export function CanvasPage({ context }: CanvasPageProps) {
     try {
       const response = await axios.post(
         `/api/canvas`,
-        { context, title: 'Neues Dokument', type: 'markdown' }      );
+        { context, title: 'Neues Dokument', type: 'markdown' }
+      );
       if (response.data.success) {
         const newDoc = response.data.data;
         setDocuments((prev) => [newDoc, ...prev]);
@@ -174,8 +171,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
       try {
         await axios.patch(
           `/api/canvas/${activeDocument.id}`,
-          { title },
-          {}
+          { title }
         );
         setDocuments((prev) =>
           prev.map((d) => (d.id === activeDocument.id ? { ...d, title } : d))
@@ -195,8 +191,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
       try {
         await axios.patch(
           `/api/canvas/${activeDocument.id}`,
-          { type },
-          {}
+          { type }
         );
       } catch (error) {
         logError('canvas-type-update', error);
@@ -213,8 +208,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
       try {
         await axios.patch(
           `/api/canvas/${activeDocument.id}`,
-          { language },
-          {}
+          { language }
         );
       } catch (error) {
         logError('canvas-language-update', error);
@@ -317,8 +311,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
           axios
             .patch(
               `/api/canvas/${activeDocument.id}`,
-              { content: activeDocument.content },
-              {}
+              { content: activeDocument.content }
             )
             .then(() => {
               if (isMountedRef.current) setSaveStatus('saved');
