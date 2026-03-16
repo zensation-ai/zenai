@@ -10,11 +10,14 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { AIContext } from '../utils/database-context';
 import { isValidUUID, validateContextParam } from '../utils/validation';
 import { getUserId } from '../utils/user-context';
+import { systemUserGuard } from '../middleware/system-user-guard';
 import * as financeService from '../services/finance';
 
 const router = Router();
 
+// All routes require auth + block SYSTEM_USER_ID (financial data)
 router.use(apiKeyAuth);
+router.use(systemUserGuard);
 
 // ============================================================
 // Helpers

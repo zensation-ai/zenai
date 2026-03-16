@@ -22,6 +22,8 @@
     "create-web-key": "ts-node scripts/create-web-api-key.ts",
     "generate-api-key": "ts-node generate-api-key.ts",
     "mcp:start": "ts-node src/mcp/server.ts",
+    "test:integration": "jest --config jest.integration.config.js --forceExit",
+    "security:audit": "ts-node scripts/security-audit.ts",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"
   },

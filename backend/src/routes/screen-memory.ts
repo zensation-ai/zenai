@@ -11,11 +11,14 @@ import { AIContext } from '../utils/database-context';
 import { isValidUUID, validateContextParam } from '../utils/validation';
 import { sendData, sendList, sendMessage, sendNotFound, sendValidationError, parsePagination } from '../utils/response';
 import { getUserId } from '../utils/user-context';
+import { systemUserGuard } from '../middleware/system-user-guard';
 import * as screenMemoryService from '../services/screen-memory';
 
 const router = Router();
 
+// All routes require auth + block SYSTEM_USER_ID (personal captures)
 router.use(apiKeyAuth);
+router.use(systemUserGuard);
 
 function getContext(req: Request): AIContext {
   return validateContextParam(req.params.context);

@@ -10,12 +10,14 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { AIContext } from '../utils/database-context';
 import { isValidUUID } from '../utils/validation';
 import { getUserId } from '../utils/user-context';
+import { systemUserGuard } from '../middleware/system-user-guard';
 import * as contactsService from '../services/contacts';
 
 const router = Router();
 
-// All routes require auth
+// All routes require auth + block SYSTEM_USER_ID (personal CRM data)
 router.use(apiKeyAuth);
+router.use(systemUserGuard);
 
 // ============================================================
 // Helpers

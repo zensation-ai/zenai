@@ -85,7 +85,15 @@ function isBlockedRoute(path: string): boolean {
  * AND the route is in the blocked list.
  */
 export function systemUserGuard(req: Request, res: Response, next: NextFunction): void {
-  // Only check if we have a user context
+  // Only check if auth middleware has already run and set user context.
+  // If neither jwtUser nor apiKey is present, auth hasn't run yet — skip.
+  const hasJwt = !!req.jwtUser;
+  const hasApiKey = !!(req as unknown as Record<string, unknown>).apiKey;
+  if (!hasJwt && !hasApiKey) {
+    return next();
+  }
+
+  // Determine effective user ID (mirrors getUserId logic)
   const userId = req.jwtUser?.id
     || (req.user?.id && !req.user.id.startsWith('api-key') ? req.user.id : null);
 

@@ -63,18 +63,16 @@ jest.mock('../../services/auth/oauth-providers', () => ({
   },
 }));
 
-const mockSessionStore = {
-  createSession: jest.fn(),
-  getSession: jest.fn(),
-  deleteSession: jest.fn(),
-  getUserSessions: jest.fn().mockResolvedValue([]),
-  findByRefreshTokenHash: jest.fn().mockResolvedValue(null),
-  revokeSession: jest.fn(),
-  revokeAllUserSessions: jest.fn(),
-};
-
 jest.mock('../../services/auth/session-store', () => ({
-  sessionStore: mockSessionStore,
+  sessionStore: {
+    createSession: jest.fn(),
+    getSession: jest.fn(),
+    deleteSession: jest.fn(),
+    getUserSessions: jest.fn().mockResolvedValue([]),
+    findByRefreshTokenHash: jest.fn().mockResolvedValue(null),
+    revokeSession: jest.fn(),
+    revokeAllUserSessions: jest.fn(),
+  },
 }));
 
 jest.mock('../../services/security/field-encryption', () => ({
@@ -277,7 +275,8 @@ describe('Auth Flow Integration Tests', () => {
   describe('Logout', () => {
     it('should logout successfully', async () => {
       // requireJwt mock sets req.jwtUser
-      mockSessionStore.findByRefreshTokenHash.mockResolvedValue(null);
+      const { sessionStore } = jest.requireMock('../../services/auth/session-store');
+      sessionStore.findByRefreshTokenHash.mockResolvedValue(null);
 
       const res = await request(app)
         .post('/api/auth/logout')
@@ -289,7 +288,8 @@ describe('Auth Flow Integration Tests', () => {
     });
 
     it('should logout without refresh token (revokes all sessions)', async () => {
-      mockSessionStore.revokeAllUserSessions.mockResolvedValue(undefined);
+      const { sessionStore } = jest.requireMock('../../services/auth/session-store');
+      sessionStore.revokeAllUserSessions.mockResolvedValue(undefined);
 
       const res = await request(app)
         .post('/api/auth/logout')
