@@ -1,0 +1,103 @@
+/* Phase 88: Cognitive Load Indicator */
+
+.cognitive-load-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  padding: 4px;
+}
+
+/* Colored dot */
+.cognitive-load-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background-color 0.6s ease, box-shadow 0.6s ease;
+}
+
+.cognitive-load-dot--available {
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+.cognitive-load-dot--normal {
+  box-shadow: 0 0 4px rgba(234, 179, 8, 0.5);
+}
+
+.cognitive-load-dot--low {
+  box-shadow: 0 0 4px rgba(249, 115, 22, 0.5);
+}
+
+.cognitive-load-dot--dnd {
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+  animation: cognitive-pulse-dnd 2s ease-in-out infinite;
+}
+
+/* Focus icon */
+.cognitive-load-focus-icon {
+  font-size: 14px;
+  line-height: 1;
+  animation: cognitive-pulse-focus 2s ease-in-out infinite;
+}
+
+/* Tooltip */
+.cognitive-load-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  min-width: 180px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-primary, #1a1a2e);
+  background: var(--surface-primary, #ffffff);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.1));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  white-space: normal;
+}
+
+.cognitive-load-indicator:hover .cognitive-load-tooltip {
+  display: block;
+}
+
+.cognitive-load-tooltip-detail {
+  color: var(--text-secondary, #6b7280);
+  font-size: 11px;
+}
+
+.cognitive-load-tooltip-focus {
+  color: var(--color-primary, #6366f1);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+/* Animations */
+@keyframes cognitive-pulse-dnd {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes cognitive-pulse-focus {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* Dark mode */
+[data-theme="dark"] .cognitive-load-tooltip,
+.dark .cognitive-load-tooltip {
+  color: #e2e8f0;
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .cognitive-load-tooltip-detail,
+.dark .cognitive-load-tooltip-detail {
+  color: #94a3b8;
+}

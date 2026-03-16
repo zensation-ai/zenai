@@ -3,6 +3,7 @@ import type { Module } from '../../core/module';
 import { proactiveEngineRouter } from '../../routes/proactive-engine';
 import { autonomyRouter } from '../../routes/autonomy';
 import { smartSuggestionsRouter } from '../../routes/smart-suggestions';
+import { proactiveIntelligenceRouter } from '../../routes/proactive-intelligence';
 
 export class ProactiveModule implements Module {
   name = 'proactive';
@@ -14,6 +15,8 @@ export class ProactiveModule implements Module {
     app.use('/api', autonomyRouter);
     // Phase 69.1: Smart Suggestion Surface
     app.use('/api', smartSuggestionsRouter);
+    // Phase 88: Interruptibility + Habit Engine + Focus Mode
+    app.use('/api', proactiveIntelligenceRouter);
   }
 
   async onStartup(): Promise<void> {
