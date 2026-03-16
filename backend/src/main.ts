@@ -269,6 +269,36 @@ app.use(cacheControlMiddleware);
 import { a2aWellKnownRouter } from './routes/a2a';
 app.use(a2aWellKnownRouter);  // /.well-known/agent.json (no auth)
 
+// Phase 77: MCP Server Card discovery (no auth, MCP 2025+ standard)
+app.get('/.well-known/mcp.json', (_req, res) => {
+  const baseUrl = process.env.API_URL
+    || (process.env.RAILWAY_STATIC_URL ? `https://${process.env.RAILWAY_STATIC_URL}` : null)
+    || `http://localhost:${process.env.PORT || 3000}`;
+
+  res.json({
+    name: 'ZenAI',
+    version: '1.0.0',
+    description: 'ZenAI Enterprise AI Platform - Personal AI Brain with 51+ tools',
+    transport: {
+      type: 'streamable-http',
+      url: `${baseUrl}/api/mcp`,
+    },
+    capabilities: {
+      tools: true,
+      resources: true,
+      prompts: true,
+    },
+    authentication: {
+      type: 'bearer',
+      description: 'API key or JWT token required',
+    },
+    contact: {
+      name: 'ZenSation Enterprise Solutions',
+      url: 'https://zensation.ai',
+    },
+  });
+});
+
 // Readiness gate: return 503 until DB connections are confirmed
 // Health endpoints are always allowed (for container probes)
 app.use((req, res, next) => {
@@ -575,6 +605,10 @@ app.use('/api', contextRulesRouter);  // /api/:context/context-rules CRUD, perfo
 // Phase 54: Proactive Event Engine
 import { proactiveEngineRouter } from './routes/proactive-engine';
 app.use('/api', proactiveEngineRouter);  // /api/:context/proactive-engine/events, rules, stats, process
+
+// Phase 77: Autonomy Dial - Controls proactive AI decision levels
+import { autonomyRouter } from './routes/autonomy';
+app.use('/api', autonomyRouter);  // /api/:context/autonomy/levels, /api/:context/autonomy/history
 
 // Phase 62: Enterprise Security - Admin routes for audit logs & rate limits
 import { securityRouter } from './routes/security';

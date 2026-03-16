@@ -1242,6 +1242,71 @@ export const TOOL_MCP_LIST_TOOLS: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 77: Memory Self-Editing Tools (Letta V1 Pattern)
+// ===========================================
+
+/**
+ * Memory rethink tool - AI re-evaluates and corrects an existing memory fact
+ * Enables the AI to actively correct outdated or wrong memories with an audit trail.
+ */
+export const TOOL_MEMORY_RETHINK: ToolDefinition = {
+  name: 'memory_rethink',
+  description:
+    'Ueberdenkt und korrigiert einen bestehenden Fakt im Langzeitgedaechtnis. Nutze dies wenn du erkennst, dass ein gespeicherter Fakt veraltet, ungenau oder falsch geworden ist und eine neue Einschaetzung noetig ist. Speichert den Korrekturgrund als Audit-Trail.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      fact_id: {
+        type: 'string',
+        description: 'ID des zu korrigierenden Fakts (aus memory_introspect oder recall)',
+      },
+      new_understanding: {
+        type: 'string',
+        description: 'Neue, korrigierte Formulierung des Fakts',
+      },
+      reason: {
+        type: 'string',
+        description: 'Begruendung fuer die Korrektur (z.B. "Nutzer hat neue Information gegeben", "Widerspruch mit neuerem Fakt")',
+      },
+    },
+    required: ['fact_id', 'new_understanding', 'reason'],
+  },
+};
+
+/**
+ * Memory restructure tool - AI merges, splits, promotes, or demotes memory facts
+ * Enables the AI to actively reorganize its memory for better structure and relevance.
+ */
+export const TOOL_MEMORY_RESTRUCTURE: ToolDefinition = {
+  name: 'memory_restructure',
+  description:
+    'Reorganisiert Fakten im Langzeitgedaechtnis. Nutze dies um zusammengehoerige Fakten zu verschmelzen (merge), einen komplexen Fakt in spezifischere aufzuteilen (split), oder die Wichtigkeit eines Fakts anzupassen (promote/demote). Hilft das Gedaechtnis sauber und relevant zu halten.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      action: {
+        type: 'string',
+        enum: ['merge', 'split', 'promote', 'demote'],
+        description: 'merge: mehrere Fakten zu einem kombinieren, split: einen Fakt in mehrere aufteilen, promote: Wichtigkeit erhoehen, demote: Wichtigkeit verringern',
+      },
+      fact_ids: {
+        type: 'string',
+        description: 'Komma-separierte Liste von Fakt-IDs (fuer merge: alle zu verschmelzenden, fuer split/promote/demote: einzelne ID)',
+      },
+      new_content: {
+        type: 'string',
+        description: 'Neuer Inhalt (bei merge: kombinierter Fakt, bei split: komma-separierte neue Fakten)',
+      },
+      reason: {
+        type: 'string',
+        description: 'Begruendung fuer die Restrukturierung',
+      },
+    },
+    required: ['action', 'fact_ids', 'reason'],
+  },
+};
+
+// ===========================================
 // Tool Registry
 // ===========================================
 

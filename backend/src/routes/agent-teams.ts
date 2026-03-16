@@ -46,12 +46,14 @@ agentTeamsRouter.post(
       aiContext = 'personal',
       strategy,
       skipReview,
+      useGraph,
     } = req.body as {
       task: string;
       context?: string;
       aiContext?: AIContext;
       strategy?: string;
       skipReview?: boolean;
+      useGraph?: boolean;
     };
 
     const userId = getUserId(req);
@@ -76,6 +78,7 @@ agentTeamsRouter.post(
       taskLength: task.length,
       strategy,
       aiContext,
+      useGraph: !!useGraph,
     });
 
     const teamTask: TeamTask = {
@@ -86,7 +89,7 @@ agentTeamsRouter.post(
       skipReview,
     };
 
-    const result = await executeTeamTask(teamTask);
+    const result = await executeTeamTask(teamTask, undefined, { useGraph: !!useGraph });
 
     // Persist execution result (non-blocking)
     queryContext(
@@ -371,6 +374,7 @@ agentTeamsRouter.post(
         strategy,
         skipReview,
         templateId,
+        useGraph,
       } = req.body as {
         task: string;
         context?: string;
@@ -378,6 +382,7 @@ agentTeamsRouter.post(
         strategy?: string;
         skipReview?: boolean;
         templateId?: string;
+        useGraph?: boolean;
       };
 
       if (!task || typeof task !== 'string' || task.trim().length === 0) {
@@ -428,7 +433,7 @@ agentTeamsRouter.post(
       };
 
       // Execute with SSE streaming (handles response internally)
-      await executeTeamTaskStreaming(teamTask, res);
+      await executeTeamTaskStreaming(teamTask, res, { useGraph: !!useGraph });
 
       // Track activity in background
       trackActivity(aiContext, {

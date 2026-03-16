@@ -11,9 +11,11 @@ import { logger } from '../utils/logger';
 import {
   getUnprocessedEvents,
   markEventProcessed,
+  emitSystemEvent,
   type SystemEvent,
 } from './event-system';
 import { requestApproval, type ActionType, type RiskLevel } from './governance';
+import { getAutonomyLevel, type AutonomyLevel } from './autonomy-config';
 
 // ===========================================
 // Types
@@ -242,29 +244,200 @@ async function executeDecision(
       break;
 
     case 'take_action':
+      base.actionTaken = await executeAutonomousAction(context, rule, event, 'take_action');
+      break;
+
     case 'trigger_agent':
-      if (rule.requiresApproval) {
-        // Route through governance
-        await requestApproval(context, {
-          action_type: 'proactive_action' as ActionType,
-          action_source: 'proactive_engine',
-          description: `${rule.name}: ${event.eventType}`,
-          payload: {
-            ruleId: rule.id,
-            eventId: event.id,
-            actionConfig: rule.actionConfig,
-            eventPayload: event.payload,
-          },
-          risk_level: rule.riskLevel,
-        });
-        base.actionTaken = 'approval_requested';
-      } else {
-        base.actionTaken = 'auto_executed';
-      }
+      base.actionTaken = await executeAutonomousAction(context, rule, event, 'trigger_agent');
       break;
   }
 
   return base;
+}
+
+/**
+ * Execute an action or trigger_agent decision respecting the autonomy dial.
+ * Returns the actionTaken label for the DecisionResult.
+ */
+async function executeAutonomousAction(
+  context: AIContext,
+  rule: ProactiveRule,
+  event: SystemEvent,
+  decisionType: 'take_action' | 'trigger_agent'
+): Promise<string> {
+  // If the rule explicitly requires approval, always go through governance
+  // regardless of autonomy level (safety override)
+  if (rule.requiresApproval) {
+    await requestApproval(context, {
+      action_type: 'proactive_action' as ActionType,
+      action_source: 'proactive_engine',
+      description: `${rule.name}: ${event.eventType}`,
+      payload: {
+        ruleId: rule.id,
+        eventId: event.id,
+        decisionType,
+        actionConfig: rule.actionConfig,
+        eventPayload: event.payload,
+      },
+      risk_level: rule.riskLevel,
+    });
+    return 'approval_requested';
+  }
+
+  const level: AutonomyLevel = getAutonomyLevel(decisionType, context);
+
+  switch (level) {
+    case 'suggest':
+      await emitSuggestion(context, rule, event, decisionType);
+      return 'suggestion_created';
+
+    case 'ask':
+      await requestApproval(context, {
+        action_type: 'proactive_action' as ActionType,
+        action_source: 'proactive_engine',
+        description: `${rule.name}: ${event.eventType}`,
+        payload: {
+          ruleId: rule.id,
+          eventId: event.id,
+          decisionType,
+          autonomyLevel: level,
+          actionConfig: rule.actionConfig,
+          eventPayload: event.payload,
+        },
+        risk_level: rule.riskLevel,
+      });
+      return 'approval_requested';
+
+    case 'act':
+      // Execute and notify
+      if (decisionType === 'trigger_agent') {
+        await executeAgentTrigger(context, rule, event);
+      }
+      // Emit notification event so user is informed
+      await emitSystemEvent({
+        context,
+        eventType: 'proactive.action_executed',
+        eventSource: 'proactive_engine',
+        payload: {
+          ruleId: rule.id,
+          ruleName: rule.name,
+          eventId: event.id,
+          decisionType,
+          autonomyLevel: level,
+          actionConfig: rule.actionConfig,
+        },
+      }).catch(() => {});
+      return 'auto_executed_notified';
+
+    case 'auto':
+      // Execute silently
+      if (decisionType === 'trigger_agent') {
+        await executeAgentTrigger(context, rule, event);
+      }
+      return 'auto_executed';
+
+    default:
+      return 'auto_executed';
+  }
+}
+
+/**
+ * Trigger agent orchestrator execution from a proactive rule.
+ * Gracefully degrades if the agent orchestrator is unavailable.
+ */
+async function executeAgentTrigger(
+  context: AIContext,
+  rule: ProactiveRule,
+  event: SystemEvent
+): Promise<void> {
+  try {
+    const { executeTeamTask } = await import('./agent-orchestrator');
+
+    const config = rule.actionConfig || {};
+    const description = (config.taskDescription as string)
+      || `Proactive: ${rule.name} — ${event.eventType}`;
+
+    await executeTeamTask({
+      description,
+      aiContext: context,
+      strategy: (config.strategy as 'research_write_review' | 'research_only' | 'write_only' | 'code_solve' | 'research_code_review') || undefined,
+      context: JSON.stringify({
+        triggeredBy: 'proactive_engine',
+        ruleId: rule.id,
+        ruleName: rule.name,
+        eventType: event.eventType,
+        eventPayload: event.payload,
+      }),
+    });
+
+    logger.info('Agent trigger executed successfully', {
+      ruleId: rule.id,
+      ruleName: rule.name,
+      context,
+    });
+  } catch (error) {
+    logger.error('Failed to execute agent trigger',
+      error instanceof Error ? error : undefined,
+      { ruleId: rule.id, context },
+    );
+    // Emit failure event but don't throw — graceful degradation
+    await emitSystemEvent({
+      context,
+      eventType: 'proactive.agent_trigger_failed',
+      eventSource: 'proactive_engine',
+      payload: {
+        ruleId: rule.id,
+        ruleName: rule.name,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    }).catch(() => {});
+  }
+}
+
+/**
+ * Create a smart suggestion for suggest-level autonomy.
+ * Gracefully degrades if smart-suggestions service is unavailable.
+ */
+async function emitSuggestion(
+  context: AIContext,
+  rule: ProactiveRule,
+  event: SystemEvent,
+  decisionType: string
+): Promise<void> {
+  try {
+    const { createSuggestion } = await import('./smart-suggestions');
+    await createSuggestion(context, {
+      userId: '00000000-0000-0000-0000-000000000001', // SYSTEM_USER_ID fallback
+      type: 'knowledge_insight',
+      title: rule.name,
+      description: `${decisionType}: ${event.eventType} — ${rule.description || rule.name}`,
+      metadata: {
+        ruleId: rule.id,
+        eventId: event.id,
+        decisionType,
+        actionConfig: rule.actionConfig,
+        eventPayload: event.payload,
+      },
+      priority: rule.priority,
+    });
+  } catch (error) {
+    // Fall back to system event if smart-suggestions unavailable
+    logger.debug('Smart suggestions unavailable, emitting event instead', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    await emitSystemEvent({
+      context,
+      eventType: 'proactive.suggestion',
+      eventSource: 'proactive_engine',
+      payload: {
+        ruleId: rule.id,
+        ruleName: rule.name,
+        eventId: event.id,
+        decisionType,
+        actionConfig: rule.actionConfig,
+      },
+    }).catch(() => {});
+  }
 }
 
 // ===========================================

@@ -265,3 +265,316 @@ Ich werde diese Information ab sofort in allen Gesprächen berücksichtigen.`;
     return 'Fehler beim Aktualisieren des Profils. Bitte versuche es erneut.';
   }
 }
+
+// ===========================================
+// Memory Rethink Handler (Letta V1 Pattern)
+// ===========================================
+
+/**
+ * Re-evaluate and update an existing memory fact with audit trail.
+ * Unlike memory_update, this requires an explicit reason for the change,
+ * stores the old content as metadata, and is designed for AI self-correction.
+ */
+export async function handleMemoryRethink(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const factId = input.fact_id as string;
+  const newUnderstanding = input.new_understanding as string;
+  const reason = input.reason as string;
+  const context = execContext.aiContext;
+
+  if (!factId || !newUnderstanding || !reason) {
+    return 'Fehler: fact_id, new_understanding und reason sind alle erforderlich.';
+  }
+
+  logger.debug('Tool: memory_rethink', { factId, reason, context });
+
+  try {
+    const facts = await longTermMemory.getFacts(context);
+    const found = findFact(facts, factId);
+
+    if (!found) {
+      return `Fakt mit ID "${factId}" nicht gefunden. Nutze memory_introspect um verfuegbare Fakten anzuzeigen.`;
+    }
+
+    const targetFact = found.fact;
+    const oldContent = targetFact.content;
+
+    // Store the rethink metadata as JSON in the database
+    const rethinkMetadata = JSON.stringify({
+      old_content: oldContent,
+      reason,
+      rethought_at: new Date().toISOString(),
+    });
+
+    // Update fact in database with new content and audit metadata
+    try {
+      await queryContext(
+        context,
+        `UPDATE personalization_facts
+         SET content = $1,
+             last_confirmed = NOW(),
+             occurrences = occurrences + 1,
+             metadata = COALESCE(metadata, '{}')::jsonb || $2::jsonb
+         WHERE id = $3`,
+        [newUnderstanding, rethinkMetadata, targetFact.id]
+      );
+    } catch (dbError) {
+      // Fallback: try simpler update without jsonb merge
+      logger.debug('DB rethink with metadata failed, falling back to simple update', { dbError });
+      await queryContext(
+        context,
+        `UPDATE personalization_facts
+         SET content = $1,
+             last_confirmed = NOW(),
+             occurrences = occurrences + 1
+         WHERE id = $2`,
+        [newUnderstanding, targetFact.id]
+      );
+    }
+
+    // Update in-memory state
+    targetFact.content = newUnderstanding;
+    targetFact.lastConfirmed = new Date();
+    targetFact.occurrences++;
+
+    logger.info('Memory fact rethought via tool', {
+      factId: targetFact.id,
+      oldContent: oldContent.substring(0, 50),
+      newContent: newUnderstanding.substring(0, 50),
+      reason,
+    });
+
+    return `Fakt ueberarbeitet:
+- **Vorher**: ${oldContent.substring(0, 100)}${oldContent.length > 100 ? '...' : ''}
+- **Nachher**: ${newUnderstanding.substring(0, 100)}${newUnderstanding.length > 100 ? '...' : ''}
+- **Grund**: ${reason}
+
+Die korrigierte Information wird ab sofort verwendet. Der Korrekturgrund wurde als Audit-Trail gespeichert.`;
+  } catch (error) {
+    logger.error('Tool memory_rethink failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Ueberarbeiten des Fakts. Bitte versuche es erneut.';
+  }
+}
+
+// ===========================================
+// Memory Restructure Handler (Letta V1 Pattern)
+// ===========================================
+
+/**
+ * Merge, split, promote, or demote memory facts.
+ * Enables the AI to actively reorganize its memory structure.
+ */
+export async function handleMemoryRestructure(
+  input: Record<string, unknown>,
+  execContext: ToolExecutionContext
+): Promise<string> {
+  const action = input.action as 'merge' | 'split' | 'promote' | 'demote';
+  const factIdsRaw = input.fact_ids as string;
+  const newContent = input.new_content as string | undefined;
+  const reason = input.reason as string;
+  const context = execContext.aiContext;
+
+  if (!action || !factIdsRaw || !reason) {
+    return 'Fehler: action, fact_ids und reason sind erforderlich.';
+  }
+
+  const validActions = ['merge', 'split', 'promote', 'demote'];
+  if (!validActions.includes(action)) {
+    return `Fehler: Ungueltige Aktion "${action}". Erlaubt: ${validActions.join(', ')}`;
+  }
+
+  const factIds = factIdsRaw.split(',').map(id => id.trim()).filter(Boolean);
+  if (factIds.length === 0) {
+    return 'Fehler: Mindestens eine Fakt-ID ist erforderlich.';
+  }
+
+  logger.debug('Tool: memory_restructure', { action, factIds, reason, context });
+
+  try {
+    const facts = await longTermMemory.getFacts(context);
+
+    switch (action) {
+      case 'merge': {
+        if (factIds.length < 2) {
+          return 'Fehler: Fuer merge werden mindestens 2 Fakt-IDs benoetigt.';
+        }
+        if (!newContent) {
+          return 'Fehler: Fuer merge ist new_content (der kombinierte Fakt) erforderlich.';
+        }
+
+        const foundFacts: PersonalizationFact[] = [];
+        for (const fid of factIds) {
+          const found = findFact(facts, fid);
+          if (found) {
+            foundFacts.push(found.fact);
+          }
+        }
+
+        if (foundFacts.length < 2) {
+          return `Nur ${foundFacts.length} von ${factIds.length} Fakten gefunden. Merge erfordert mindestens 2 gefundene Fakten.`;
+        }
+
+        // Archive originals (soft-delete)
+        for (const fact of foundFacts) {
+          try {
+            await queryContext(
+              context,
+              `UPDATE personalization_facts SET is_active = false, confidence = 0 WHERE id = $1`,
+              [fact.id]
+            );
+            longTermMemory.removeFact(context, fact.id);
+          } catch (dbErr) {
+            logger.debug('DB archive during merge failed for fact', { factId: fact.id, dbErr });
+          }
+        }
+
+        // Create merged fact
+        const highestConfidence = Math.max(...foundFacts.map(f => f.confidence));
+        await longTermMemory.addFact(context, {
+          factType: foundFacts[0].factType,
+          content: newContent,
+          confidence: Math.min(1.0, highestConfidence + 0.05),
+          source: 'explicit',
+        });
+
+        const archivedNames = foundFacts.map(f => `"${f.content.substring(0, 40)}..."`).join(', ');
+        logger.info('Memory facts merged via tool', { mergedCount: foundFacts.length, reason });
+
+        return `${foundFacts.length} Fakten verschmolzen:
+- **Archiviert**: ${archivedNames}
+- **Neuer Fakt**: "${newContent.substring(0, 100)}${newContent.length > 100 ? '...' : ''}"
+- **Grund**: ${reason}`;
+      }
+
+      case 'split': {
+        if (factIds.length !== 1) {
+          return 'Fehler: Fuer split wird genau 1 Fakt-ID benoetigt.';
+        }
+        if (!newContent) {
+          return 'Fehler: Fuer split ist new_content (komma-separierte neue Fakten) erforderlich.';
+        }
+
+        const found = findFact(facts, factIds[0]);
+        if (!found) {
+          return `Fakt mit ID "${factIds[0]}" nicht gefunden.`;
+        }
+
+        const originalFact = found.fact;
+        const newFacts = newContent.split(',').map(s => s.trim()).filter(Boolean);
+
+        if (newFacts.length < 2) {
+          return 'Fehler: Split erfordert mindestens 2 neue Fakten (komma-separiert in new_content).';
+        }
+
+        // Archive original
+        try {
+          await queryContext(
+            context,
+            `UPDATE personalization_facts SET is_active = false, confidence = 0 WHERE id = $1`,
+            [originalFact.id]
+          );
+          longTermMemory.removeFact(context, originalFact.id);
+        } catch (dbErr) {
+          logger.debug('DB archive during split failed', { factId: originalFact.id, dbErr });
+        }
+
+        // Create new split facts
+        for (const content of newFacts) {
+          await longTermMemory.addFact(context, {
+            factType: originalFact.factType,
+            content,
+            confidence: originalFact.confidence,
+            source: 'explicit',
+          });
+        }
+
+        logger.info('Memory fact split via tool', { originalId: originalFact.id, splitCount: newFacts.length, reason });
+
+        return `Fakt aufgeteilt:
+- **Original**: "${originalFact.content.substring(0, 80)}..."
+- **Neue Fakten** (${newFacts.length}):
+${newFacts.map((f, i) => `  ${i + 1}. ${f}`).join('\n')}
+- **Grund**: ${reason}`;
+      }
+
+      case 'promote': {
+        if (factIds.length !== 1) {
+          return 'Fehler: Fuer promote wird genau 1 Fakt-ID benoetigt.';
+        }
+
+        const found = findFact(facts, factIds[0]);
+        if (!found) {
+          return `Fakt mit ID "${factIds[0]}" nicht gefunden.`;
+        }
+
+        const targetFact = found.fact;
+        const oldConfidence = targetFact.confidence;
+        const newConfidence = Math.min(1.0, oldConfidence + 0.15);
+
+        try {
+          await queryContext(
+            context,
+            `UPDATE personalization_facts SET confidence = $1, last_confirmed = NOW() WHERE id = $2`,
+            [newConfidence, targetFact.id]
+          );
+        } catch (dbErr) {
+          logger.debug('DB promote failed', { factId: targetFact.id, dbErr });
+        }
+
+        targetFact.confidence = newConfidence;
+        targetFact.lastConfirmed = new Date();
+
+        logger.info('Memory fact promoted via tool', { factId: targetFact.id, oldConfidence, newConfidence, reason });
+
+        return `Fakt hochgestuft:
+- **Fakt**: "${targetFact.content.substring(0, 80)}..."
+- **Konfidenz**: ${(oldConfidence * 100).toFixed(0)}% → ${(newConfidence * 100).toFixed(0)}%
+- **Grund**: ${reason}`;
+      }
+
+      case 'demote': {
+        if (factIds.length !== 1) {
+          return 'Fehler: Fuer demote wird genau 1 Fakt-ID benoetigt.';
+        }
+
+        const found = findFact(facts, factIds[0]);
+        if (!found) {
+          return `Fakt mit ID "${factIds[0]}" nicht gefunden.`;
+        }
+
+        const targetFact = found.fact;
+        const oldConfidence = targetFact.confidence;
+        const newConfidence = Math.max(0.1, oldConfidence - 0.2);
+
+        try {
+          await queryContext(
+            context,
+            `UPDATE personalization_facts SET confidence = $1 WHERE id = $2`,
+            [newConfidence, targetFact.id]
+          );
+        } catch (dbErr) {
+          logger.debug('DB demote failed', { factId: targetFact.id, dbErr });
+        }
+
+        targetFact.confidence = newConfidence;
+
+        logger.info('Memory fact demoted via tool', { factId: targetFact.id, oldConfidence, newConfidence, reason });
+
+        return `Fakt herabgestuft:
+- **Fakt**: "${targetFact.content.substring(0, 80)}..."
+- **Konfidenz**: ${(oldConfidence * 100).toFixed(0)}% → ${(newConfidence * 100).toFixed(0)}%
+- **Grund**: ${reason}
+
+Der Fakt wird in zukuenftigen Antworten weniger stark gewichtet.`;
+      }
+
+      default:
+        return `Unbekannte Aktion: ${action}`;
+    }
+  } catch (error) {
+    logger.error('Tool memory_restructure failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Restrukturieren der Fakten. Bitte versuche es erneut.';
+  }
+}

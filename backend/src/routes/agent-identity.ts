@@ -3,13 +3,21 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { asyncHandler } from '../middleware/errorHandler';
 import { apiKeyAuth } from '../middleware/auth';
 import { getAgentIdentityService } from '../services/agents/agent-identity';
 import { getWorkflowStore } from '../services/agents/workflow-store';
-import { AgentGraph, GraphEdge, createResearchWriteReviewGraph, createCodeReviewGraph, createResearchCodeReviewGraph } from '../services/agents/agent-graph';
+import { AgentGraph, GraphEdge, WorkflowState, createResearchWriteReviewGraph, createCodeReviewGraph, createResearchCodeReviewGraph } from '../services/agents/agent-graph';
 import { AIContext } from '../utils/database-context';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
+import { createResearcher } from '../services/agents/researcher';
+import { createWriter } from '../services/agents/writer';
+import { createReviewer } from '../services/agents/reviewer';
+import { createCoder } from '../services/agents/coder';
+import { BaseAgent } from '../services/agents/base-agent';
+import { AgentRole } from '../services/memory/shared-memory';
 
 const router = Router();
 
@@ -169,8 +177,51 @@ router.post('/agent-workflows/:id/execute', asyncHandler(async (req: Request, re
     graph.setStart(def.startNodeId);
   }
 
-  // Execute with default agent executor
-  const result = await graph.execute(input, aiContext);
+  // Verify graph has nodes before executing
+  if (graph.getNodes().length === 0) {
+    return res.status(400).json({ success: false, error: 'Workflow has no nodes to execute' });
+  }
+
+  // Agent factory: maps role string to real agent instances
+  const createAgentForRole = (role: string): BaseAgent => {
+    switch (role as AgentRole) {
+      case 'researcher': return createResearcher();
+      case 'writer': return createWriter();
+      case 'reviewer': return createReviewer();
+      case 'coder': return createCoder();
+      default:
+        logger.warn(`Unknown agent role "${role}" in workflow, falling back to researcher`);
+        return createResearcher();
+    }
+  };
+
+  // Agent executor callback for graph.execute()
+  const teamId = uuidv4();
+  const agentExecutor = async (role: string, task: string, state: WorkflowState): Promise<string> => {
+    const agent = createAgentForRole(role);
+
+    // Build context from previous node results
+    const previousResults = Object.values(state.nodeResults)
+      .filter(r => r.success && r.output)
+      .map(r => `[${r.nodeType}:${r.nodeId}] ${r.output}`)
+      .join('\n\n');
+
+    const output = await agent.execute({
+      task,
+      context: previousResults || undefined,
+      aiContext,
+      teamId,
+    });
+
+    if (!output.success) {
+      throw new Error(output.error || `Agent ${role} failed`);
+    }
+
+    return output.content;
+  };
+
+  // Execute the graph with real agent executor
+  const result = await graph.execute(input, aiContext, agentExecutor);
 
   // Record the run
   await store.recordRun({

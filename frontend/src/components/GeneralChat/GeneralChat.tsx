@@ -50,7 +50,9 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const [offline, setOffline] = useState(() => isOffline());
   // Tool activity tracking (Phase 76 — Tool-Use Visualization)
   const [activeToolName, setActiveToolName] = useState<string | null>(null);
-  const [toolResults, setToolResults] = useState<Array<{ name: string; result: string }>>([]);
+  const [toolResults, setToolResults] = useState<Array<{ name: string; result: string; duration_ms: number; success: boolean }>>([]);
+  // Track when the current tool started (for duration calculation)
+  const toolStartTimeRef = useRef<number>(0);
   // Artifacts state
   const [artifacts, setArtifacts] = useState<Map<string, Artifact[]>>(new Map());
   const [activeArtifact, setActiveArtifact] = useState<{ artifact: Artifact; messageId: string; index: number } | null>(null);
@@ -431,6 +433,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                       // Handle tool use events — show activity + dispatch navigation
                       if (currentEventType === 'tool_use_start' && data.tool) {
                         setActiveToolName(data.tool.name || null);
+                        toolStartTimeRef.current = Date.now();
                         currentEventType = '';
                         continue;
                       }
@@ -438,17 +441,29 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                         setActiveToolName(null);
                         const toolName = data.tool.name || 'unknown';
                         const toolResult = data.tool.result || '';
+                        const toolError = !!data.tool.error;
+                        const duration_ms = toolStartTimeRef.current > 0
+                          ? Date.now() - toolStartTimeRef.current
+                          : 0;
+                        toolStartTimeRef.current = 0;
                         // Track tool result for inline display (keep last 5)
-                        setToolResults(prev => [...prev.slice(-4), { name: toolName, result: toolResult }]);
+                        setToolResults(prev => [...prev.slice(-4), {
+                          name: toolName,
+                          result: toolError ? (data.tool.error || toolResult) : toolResult,
+                          duration_ms,
+                          success: !toolError,
+                        }]);
                         // Handle navigation actions
-                        try {
-                          const parsed = JSON.parse(toolResult);
-                          if (parsed.action === 'navigate' && parsed.page) {
-                            window.dispatchEvent(new CustomEvent('zenai-assistant-navigate', {
-                              detail: { action: 'navigate', page: parsed.page },
-                            }));
-                          }
-                        } catch { /* not JSON or no navigation */ }
+                        if (!toolError) {
+                          try {
+                            const parsed = JSON.parse(toolResult);
+                            if (parsed.action === 'navigate' && parsed.page) {
+                              window.dispatchEvent(new CustomEvent('zenai-assistant-navigate', {
+                                detail: { action: 'navigate', page: parsed.page },
+                              }));
+                            }
+                          } catch { /* not JSON or no navigation */ }
+                        }
                         currentEventType = '';
                         continue;
                       }

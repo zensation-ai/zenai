@@ -5,10 +5,13 @@
  * Manages voice sessions, processes audio, and coordinates responses.
  *
  * Phase 57: Real-Time Voice Pipeline
+ * Sprint 2C: Sentence-level TTS streaming for reduced latency
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../../utils/logger';
+import { query } from '../../utils/database';
 import { queryContext } from '../../utils/database-context';
 import type { STTResult } from './stt-service';
 import { sttService } from './stt-service';
@@ -18,7 +21,11 @@ import { audioProcessor } from './audio-processor';
 import type { TurnTakingEngine, VADResult } from './turn-taking';
 import { createTurnTakingEngine } from './turn-taking';
 import { sendMessage } from '../general-chat/chat-messages';
-import { createSession } from '../general-chat/chat-sessions';
+import { GENERAL_CHAT_SYSTEM_PROMPT } from '../general-chat/chat-messages';
+import { addMessage, updateSessionTitle, createSession } from '../general-chat/chat-sessions';
+import { getClaudeClient, CLAUDE_MODEL } from '../claude/client';
+import { isClaudeAvailable } from '../claude';
+import { memoryCoordinator } from '../memory';
 
 // ============================================================
 // Types
@@ -45,6 +52,22 @@ export interface VoiceSession {
   turnCount: number;
   totalAudioDuration_ms: number;
 }
+
+/**
+ * Callback invoked each time a sentence's TTS audio is ready.
+ * index is 0-based, in the order sentences were detected.
+ */
+export type SentenceAudioCallback = (
+  audio: Buffer,
+  sentence: string,
+  index: number,
+) => void;
+
+/**
+ * Common abbreviations that end with a period but are NOT sentence endings.
+ * Used to avoid premature sentence splits on "Dr.", "Nr.", "z.B." etc.
+ */
+const ABBREVIATION_PATTERN = /(?:Dr|Mr|Mrs|Ms|Prof|Nr|Abs|Bd|ca|etc|evtl|ggf|inkl|max|min|usw|vgl|vs|z\.B|d\.h|u\.a|s\.o|i\.d\.R|o\.ä|u\.U|bzw)\.\s*$/i;
 
 // ============================================================
 // Voice Pipeline
@@ -307,6 +330,271 @@ export class VoicePipeline {
       }
       return { responseAudio: audioChunks, responseText };
     }
+  }
+
+  /**
+   * Process audio chunk with sentence-level TTS streaming.
+   *
+   * Instead of waiting for the full LLM response before starting TTS,
+   * this streams Claude's response token-by-token, detects sentence
+   * boundaries, and immediately fires TTS for each complete sentence.
+   * Audio chunks are delivered via onAudioChunk as soon as they are ready.
+   *
+   * Falls back to the non-streaming path if Claude streaming is unavailable.
+   */
+  async processAudioChunkStreaming(
+    sessionId: string,
+    chunk: Buffer,
+    onAudioChunk: SentenceAudioCallback,
+    onResponseText?: (text: string) => void,
+  ): Promise<{
+    vad: VADResult;
+    transcript?: string;
+    responseText?: string;
+  }> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`Voice session ${sessionId} not found`);
+    }
+
+    // Run VAD
+    const vad = session.turnTaking.processChunk(chunk);
+
+    // Buffer audio while speaking
+    if (vad.isSpeaking || !vad.turnComplete) {
+      if (vad.isSpeaking) {
+        session.audioBuffer.push(chunk);
+      }
+      return { vad };
+    }
+
+    // Turn is complete - process the buffered audio
+    if (session.isProcessing) {
+      return { vad };
+    }
+
+    session.isProcessing = true;
+
+    try {
+      // Concatenate buffered audio
+      const fullAudio = audioProcessor.concatenateAudio(session.audioBuffer);
+      session.audioBuffer = [];
+
+      if (fullAudio.length === 0) {
+        session.isProcessing = false;
+        return { vad };
+      }
+
+      // Calculate audio duration
+      const audioDuration = audioProcessor.calculateDuration(fullAudio.length);
+      session.totalAudioDuration_ms += audioDuration;
+
+      // STT: transcribe audio
+      const sttResult: STTResult = await sttService.transcribe(fullAudio, {
+        language: session.config.language?.split('-')[0] || 'de',
+        provider: session.config.sttProvider,
+        format: 'webm',
+      });
+
+      if (!sttResult.text || sttResult.text.trim().length === 0) {
+        session.isProcessing = false;
+        return { vad, transcript: '' };
+      }
+
+      // Use sentence-level streaming LLM + TTS
+      const responseText = await this.processTranscriptStreaming(
+        session,
+        sttResult.text,
+        onAudioChunk,
+      );
+
+      if (onResponseText) {
+        onResponseText(responseText);
+      }
+
+      session.turnCount++;
+      session.isProcessing = false;
+
+      return {
+        vad,
+        transcript: sttResult.text,
+        responseText,
+      };
+    } catch (error) {
+      session.isProcessing = false;
+      logger.error('Voice pipeline streaming processing failed', error instanceof Error ? error : undefined, {
+        sessionId,
+        operation: 'voice-pipeline',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Sentence-level streaming: stream Claude's response, detect sentence
+   * boundaries on-the-fly, and fire TTS for each sentence immediately.
+   *
+   * TTS runs in parallel with continued Claude streaming. Audio chunks
+   * are delivered to onAudioChunk in sentence order (but as soon as ready).
+   */
+  private async processTranscriptStreaming(
+    session: VoiceSession,
+    transcript: string,
+    onAudioChunk: SentenceAudioCallback,
+  ): Promise<string> {
+    // If Claude is not available, fall back to non-streaming path
+    if (!isClaudeAvailable()) {
+      logger.warn('Claude unavailable for streaming, falling back to non-streaming path');
+      const result = await this.processTranscript(session, transcript);
+      // Deliver all audio chunks via callback
+      for (let i = 0; i < result.responseAudio.length; i++) {
+        const sentences = audioProcessor.splitIntoSentences(result.responseText);
+        onAudioChunk(result.responseAudio[i], sentences[i] || '', i);
+      }
+      return result.responseText;
+    }
+
+    // Store user message in chat history
+    await addMessage(session.chatSessionId, 'user', transcript);
+    await updateSessionTitle(session.chatSessionId, transcript);
+
+    // Fire-and-forget memory interaction
+    try {
+      await memoryCoordinator.addInteraction(session.chatSessionId, 'user', transcript);
+    } catch {
+      // Non-critical
+    }
+
+    // Get conversation history for context
+    const historyResult = await query(`
+      SELECT role, content
+      FROM general_chat_messages
+      WHERE session_id = $1
+      ORDER BY created_at ASC
+      LIMIT 20
+    `, [session.chatSessionId]);
+
+    const messages: Anthropic.MessageParam[] = historyResult.rows.map(row => ({
+      role: row.role as 'user' | 'assistant',
+      content: row.content,
+    }));
+
+    // Stream from Claude API
+    const client = getClaudeClient();
+    const stream = client.messages.stream({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: GENERAL_CHAT_SYSTEM_PROMPT,
+      messages,
+      temperature: 0.7,
+    });
+
+    let textBuffer = '';
+    let fullResponse = '';
+    let sentenceIndex = 0;
+    const ttsPromises: Promise<void>[] = [];
+
+    const ttsOptions: TTSOptions = {
+      voice: session.config.ttsVoice,
+      provider: session.config.ttsProvider,
+    };
+
+    // Helper: flush buffer as a sentence and trigger TTS
+    const flushSentence = (sentence: string) => {
+      const trimmed = sentence.trim();
+      if (trimmed.length === 0) return;
+
+      const idx = sentenceIndex++;
+      logger.debug('Sentence detected, triggering TTS', {
+        sentenceIndex: idx,
+        sentenceLength: trimmed.length,
+        operation: 'voice-pipeline-streaming',
+      });
+
+      // Fire TTS in parallel - do not await
+      const ttsPromise = multiTTSService.synthesize(trimmed, ttsOptions)
+        .then(audio => {
+          onAudioChunk(audio, trimmed, idx);
+        })
+        .catch(err => {
+          logger.warn('TTS failed for streamed sentence, skipping', {
+            error: err instanceof Error ? err.message : String(err),
+            sentenceIndex: idx,
+            sentenceLength: trimmed.length,
+          });
+        });
+
+      ttsPromises.push(ttsPromise);
+    };
+
+    // Process streaming text deltas
+    stream.on('text', (text: string) => {
+      fullResponse += text;
+      textBuffer += text;
+
+      // Check for sentence boundaries in the buffer
+      // We need to handle cases where a period belongs to an abbreviation
+      while (true) {
+        // Find the next potential sentence-ending punctuation
+        const match = textBuffer.match(/[.!?]\s+/);
+        if (!match || match.index === undefined) break;
+
+        const endPos = match.index + 1; // position right after the punctuation
+        const candidate = textBuffer.substring(0, endPos);
+
+        // Skip abbreviations (Dr., Nr., z.B., etc.)
+        if (ABBREVIATION_PATTERN.test(candidate)) {
+          // This is an abbreviation - skip past this match and keep looking
+          // We need to advance past this period to avoid infinite loop
+          const skipTo = match.index + match[0].length;
+          // Look for the next match after this one
+          const remainder = textBuffer.substring(skipTo);
+          const nextMatch = remainder.match(/[.!?]\s+/);
+          if (!nextMatch) break;
+          // Continue the loop - the next iteration will find it
+          // Actually, let's just break and wait for more text
+          break;
+        }
+
+        // Valid sentence boundary found
+        const sentence = textBuffer.substring(0, match.index + match[0].length);
+        textBuffer = textBuffer.substring(match.index + match[0].length);
+        flushSentence(sentence);
+      }
+    });
+
+    // Wait for stream to complete
+    await stream.finalMessage();
+
+    // Flush any remaining text in the buffer as the final sentence
+    if (textBuffer.trim().length > 0) {
+      flushSentence(textBuffer);
+      textBuffer = '';
+    }
+
+    // Wait for all TTS operations to complete
+    await Promise.allSettled(ttsPromises);
+
+    // Store assistant response in chat history
+    if (fullResponse.length > 0) {
+      await addMessage(session.chatSessionId, 'assistant', fullResponse);
+
+      // Fire-and-forget memory interaction
+      try {
+        await memoryCoordinator.addInteraction(session.chatSessionId, 'assistant', fullResponse);
+      } catch {
+        // Non-critical
+      }
+    }
+
+    logger.info('Sentence-level streaming complete', {
+      sessionId: session.id,
+      sentenceCount: sentenceIndex,
+      totalLength: fullResponse.length,
+      operation: 'voice-pipeline-streaming',
+    });
+
+    return fullResponse;
   }
 
   /**

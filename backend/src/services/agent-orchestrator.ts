@@ -28,6 +28,7 @@ import { createResearcher } from './agents/researcher';
 import { createWriter } from './agents/writer';
 import { createReviewer } from './agents/reviewer';
 import { createCoder } from './agents/coder';
+import { AgentGraph, WorkflowState } from './agents/agent-graph';
 
 // ===========================================
 // Types & Interfaces
@@ -443,13 +444,24 @@ REGELN:
 /** Maximum retries per agent on failure */
 const MAX_AGENT_RETRIES = 1;
 
+/** Options for executeTeamTask */
+export interface ExecuteTeamTaskOptions {
+  /** When true, use AgentGraph execution engine instead of sequential pipeline */
+  useGraph?: boolean;
+}
+
 /**
  * Execute a complex task with a team of agents
  */
 export async function executeTeamTask(
   task: TeamTask,
-  onProgress?: AgentProgressCallback
+  onProgress?: AgentProgressCallback,
+  options?: ExecuteTeamTaskOptions
 ): Promise<TeamResult> {
+  // Delegate to graph-based execution if requested
+  if (options?.useGraph) {
+    return executeWithGraph(task, onProgress);
+  }
   const startTime = Date.now();
   const teamId = uuidv4();
   const agentResults: AgentOutput[] = [];
@@ -690,12 +702,374 @@ export async function executeTeamTask(
   }
 }
 
+// ===========================================
+// Graph-Based Execution
+// ===========================================
+
+/**
+ * Build an AgentGraph dynamically from a TeamStrategy
+ */
+function buildGraphForStrategy(strategy: TeamStrategy, skipReview?: boolean): AgentGraph {
+  switch (strategy) {
+    case 'research_only': {
+      return new AgentGraph('research-only')
+        .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
+        .setStart('researcher');
+    }
+
+    case 'write_only': {
+      const graph = new AgentGraph('write-only')
+        .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } });
+      if (!skipReview) {
+        graph
+          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
+          .addEdge({ from: 'writer', to: 'reviewer' });
+      }
+      return graph.setStart('writer');
+    }
+
+    case 'research_write_review': {
+      const graph = new AgentGraph('research-write-review')
+        .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
+        .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } })
+        .addEdge({ from: 'researcher', to: 'writer' });
+      if (!skipReview) {
+        graph
+          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
+          .addEdge({ from: 'writer', to: 'reviewer' });
+      }
+      return graph.setStart('researcher');
+    }
+
+    case 'code_solve': {
+      const graph = new AgentGraph('code-solve')
+        .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } });
+      if (!skipReview) {
+        graph
+          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
+          .addEdge({ from: 'coder', to: 'reviewer' });
+      }
+      return graph.setStart('coder');
+    }
+
+    case 'research_code_review': {
+      return new AgentGraph('research-code-review')
+        .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
+        .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } })
+        .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
+        .addEdge({ from: 'researcher', to: 'coder' })
+        .addEdge({ from: 'coder', to: 'reviewer' })
+        .setStart('researcher');
+    }
+
+    case 'custom': {
+      // Custom strategy cannot be auto-mapped to a graph; fall back to empty graph
+      return new AgentGraph('custom');
+    }
+  }
+}
+
+/**
+ * Execute a team task using the AgentGraph execution engine.
+ * Maps strategy to graph topology, wires agent factories, and
+ * translates graph results back to TeamResult format.
+ */
+async function executeWithGraph(
+  task: TeamTask,
+  onProgress?: AgentProgressCallback
+): Promise<TeamResult> {
+  const startTime = Date.now();
+  const teamId = uuidv4();
+  const agentOutputs: AgentOutput[] = [];
+
+  logger.info('Starting graph-based team task execution', {
+    teamId,
+    taskLength: task.description.length,
+    strategy: task.strategy,
+  });
+
+  try {
+    // Initialize shared memory
+    sharedMemory.initialize(teamId);
+
+    // Determine strategy
+    const strategy = task.strategy || classifyTeamStrategy(task.description);
+    const pipeline = strategy === 'custom' && task.customPipeline
+      ? task.customPipeline
+      : getAgentPipeline(strategy, task.skipReview);
+
+    // Build graph from strategy
+    const graph = buildGraphForStrategy(strategy, task.skipReview);
+    const graphNodes = graph.getNodes();
+
+    if (graphNodes.length === 0) {
+      throw new Error('Empty agent graph - cannot execute');
+    }
+
+    // Emit team_start
+    onProgress?.({
+      type: 'team_start',
+      teamId,
+      strategy,
+      pipeline,
+    });
+
+    // Write plan to shared memory
+    sharedMemory.write(
+      teamId,
+      'orchestrator',
+      'plan',
+      `Aufgabe: ${task.description}\nStrategie: ${strategy} (graph)\nNodes: ${graphNodes.map(n => n.config.agentRole || n.id).join(' → ')}`,
+    );
+
+    // Track node index for progress events
+    let nodeIndex = 0;
+    const totalNodes = graphNodes.filter(n => n.type === 'agent').length;
+
+    // Set up progress callback to translate graph events → orchestrator events
+    graph.setProgressCallback((event) => {
+      switch (event.type) {
+        case 'node_start': {
+          const node = graphNodes.find(n => n.id === event.nodeId);
+          if (node?.type === 'agent') {
+            onProgress?.({
+              type: 'agent_start',
+              teamId,
+              agentRole: (node.config.agentRole || 'researcher') as AgentRole,
+              agentIndex: nodeIndex,
+              totalAgents: totalNodes,
+              subTask: task.description,
+            });
+          }
+          break;
+        }
+        case 'node_complete': {
+          const node = graphNodes.find(n => n.id === event.nodeId);
+          if (node?.type === 'agent' && event.result) {
+            const role = (node.config.agentRole || 'researcher') as AgentRole;
+
+            // Build an AgentOutput record from the graph node result
+            const agentOutput: AgentOutput = {
+              role,
+              success: event.result.success ?? true,
+              content: event.result.output || '',
+              toolsUsed: [],
+              tokensUsed: { input: 0, output: 0 },
+              executionTimeMs: event.result.durationMs || 0,
+            };
+            agentOutputs.push(agentOutput);
+
+            onProgress?.({
+              type: 'agent_complete',
+              teamId,
+              agentRole: role,
+              agentIndex: nodeIndex,
+              totalAgents: totalNodes,
+              result: {
+                role,
+                success: true,
+                toolsUsed: [],
+                executionTimeMs: event.result.durationMs || 0,
+              },
+            });
+            nodeIndex++;
+          }
+          break;
+        }
+        case 'node_error': {
+          const node = graphNodes.find(n => n.id === event.nodeId);
+          if (node?.type === 'agent' && event.result) {
+            const role = (node.config.agentRole || 'researcher') as AgentRole;
+
+            const agentOutput: AgentOutput = {
+              role,
+              success: false,
+              content: '',
+              toolsUsed: [],
+              tokensUsed: { input: 0, output: 0 },
+              executionTimeMs: event.result.durationMs || 0,
+              error: event.result.output,
+            };
+            agentOutputs.push(agentOutput);
+
+            onProgress?.({
+              type: 'agent_error',
+              teamId,
+              agentRole: role,
+              agentIndex: nodeIndex,
+              totalAgents: totalNodes,
+              result: {
+                role,
+                success: false,
+                error: event.result.output,
+                executionTimeMs: event.result.durationMs || 0,
+              },
+            });
+            nodeIndex++;
+          }
+          break;
+        }
+      }
+    });
+
+    // Agent executor callback for graph.execute()
+    const agentExecutor = async (role: string, agentTask: string, state: WorkflowState): Promise<string> => {
+      const agent = createAgent(role as AgentRole);
+
+      // Build context from previous node results
+      const previousResults = Object.values(state.nodeResults)
+        .filter(r => r.success && r.output)
+        .map(r => `[${r.nodeId}] ${r.output}`)
+        .join('\n\n---\n\n');
+
+      const output = await agent.execute({
+        task: agentTask,
+        context: previousResults || task.context,
+        aiContext: task.aiContext,
+        teamId,
+      });
+
+      // Update token counts on the last agentOutput entry (which was created in node_complete)
+      // We do this after execution because we only know tokens after the agent finishes
+      // The node_complete callback fires after this returns, so we store the output for retrieval
+      if (!output.success) {
+        throw new Error(output.error || `Agent ${role} failed`);
+      }
+
+      // Patch the last agentOutput with real token info
+      // (the node_complete callback will fire after we return the string)
+      // Store metadata on the state for later retrieval
+      state.variables[`_tokens_${state.currentNodeId}`] = output.tokensUsed;
+      state.variables[`_tools_${state.currentNodeId}`] = output.toolsUsed;
+
+      return output.content;
+    };
+
+    // Execute the graph
+    const graphResult = await graph.execute(
+      task.context ? `${task.description}\n\nKontext: ${task.context}` : task.description,
+      task.aiContext,
+      agentExecutor,
+      undefined, // no toolExecutor needed
+      20,        // maxIterations
+    );
+
+    // Patch agentOutputs with real token/tool info stored in state variables
+    for (const agentOutput of agentOutputs) {
+      // Find matching node by role
+      const matchNode = graphNodes.find(n => n.config.agentRole === agentOutput.role);
+      if (matchNode) {
+        const tokens = graphResult.state.variables[`_tokens_${matchNode.id}`] as { input: number; output: number } | undefined;
+        const tools = graphResult.state.variables[`_tools_${matchNode.id}`] as string[] | undefined;
+        if (tokens) agentOutput.tokensUsed = tokens;
+        if (tools) agentOutput.toolsUsed = tools;
+      }
+    }
+
+    // Aggregate final output
+    const finalOutput = graphResult.finalOutput || aggregateResults(agentOutputs, pipeline);
+
+    // Get memory stats
+    const memoryStats = sharedMemory.getStats(teamId);
+
+    // Calculate total tokens
+    const totalTokens = agentOutputs.reduce(
+      (acc, r) => ({
+        input: acc.input + r.tokensUsed.input,
+        output: acc.output + r.tokensUsed.output,
+      }),
+      { input: 0, output: 0 }
+    );
+
+    const teamResult: TeamResult = {
+      teamId,
+      success: graphResult.success,
+      finalOutput,
+      agentResults: agentOutputs,
+      executionTimeMs: Date.now() - startTime,
+      strategy,
+      totalTokens,
+      memoryStats: {
+        totalEntries: memoryStats.totalEntries,
+        byAgent: memoryStats.byAgent,
+      },
+    };
+
+    // Emit team_complete
+    onProgress?.({
+      type: 'team_complete',
+      teamId,
+      finalOutput,
+      stats: {
+        input: totalTokens.input,
+        output: totalTokens.output,
+        executionTimeMs: teamResult.executionTimeMs,
+        memoryEntries: memoryStats.totalEntries,
+      },
+    });
+
+    logger.info('Graph-based team task completed', {
+      teamId,
+      success: teamResult.success,
+      agentCount: agentOutputs.length,
+      nodeCount: graphResult.nodeHistory.length,
+      totalTokens,
+      executionTimeMs: teamResult.executionTimeMs,
+    });
+
+    // Emit system event for proactive engine
+    import('./event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({
+        context: task.aiContext,
+        eventType: teamResult.success ? 'agent.completed' : 'agent.failed',
+        eventSource: 'agent_orchestrator',
+        payload: { teamId, strategy, executionTimeMs: teamResult.executionTimeMs, agentCount: agentOutputs.length, executionMode: 'graph' },
+      })
+    ).catch(err => {
+      logger.warn('Failed to emit agent event', { error: err instanceof Error ? err.message : String(err), teamId });
+    });
+
+    return teamResult;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logger.error('Graph-based team task failed', error instanceof Error ? error : new Error(errorMsg));
+
+    // Return a failed TeamResult rather than throwing
+    const strategy = task.strategy || classifyTeamStrategy(task.description);
+    const memoryStats = sharedMemory.getStats(teamId);
+    const totalTokens = agentOutputs.reduce(
+      (acc, r) => ({
+        input: acc.input + r.tokensUsed.input,
+        output: acc.output + r.tokensUsed.output,
+      }),
+      { input: 0, output: 0 }
+    );
+
+    return {
+      teamId,
+      success: false,
+      finalOutput: `Graph execution failed: ${errorMsg}`,
+      agentResults: agentOutputs,
+      executionTimeMs: Date.now() - startTime,
+      strategy,
+      totalTokens,
+      memoryStats: {
+        totalEntries: memoryStats.totalEntries,
+        byAgent: memoryStats.byAgent,
+      },
+    };
+  } finally {
+    sharedMemory.clear(teamId);
+  }
+}
+
 /**
  * Execute a team task with SSE streaming progress
  */
 export async function executeTeamTaskStreaming(
   task: TeamTask,
-  res: Response
+  res: Response,
+  options?: ExecuteTeamTaskOptions
 ): Promise<void> {
   // Setup SSE headers
   res.writeHead(200, {
@@ -717,7 +1091,7 @@ export async function executeTeamTaskStreaming(
       if (!closed) {
         sendEvent(event);
       }
-    });
+    }, options);
 
     // Send final result as JSON event
     if (!closed) {

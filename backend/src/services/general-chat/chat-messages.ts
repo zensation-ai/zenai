@@ -9,7 +9,7 @@ import { getUnifiedContext } from '../business-context';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../memory';
 import { getPersonalFactsPromptSection } from '../personal-facts-bridge';
 import { implicitFeedback } from '../memory/implicit-feedback';
-import { detectChatMode, shouldEnhanceWithRAG, getDefaultToolsForMode } from '../chat-modes';
+import { detectChatModeAsync, shouldEnhanceWithRAG, getDefaultToolsForMode } from '../chat-modes';
 import { classifyIntent, intentToRetrievalConfig } from '../query-intent-classifier';
 import { ThinkingMode, applyThinkingMode } from '../thinking-partner';
 import { executeWithTools, ToolExecutionContext } from '../claude/tool-use';
@@ -102,8 +102,8 @@ export async function generateEnhancedResponse(
     sessionId,
   };
 
-  // Detect optimal processing mode
-  const modeResult = detectChatMode(userMessage);
+  // Detect optimal processing mode (with semantic fallback for ambiguous messages)
+  const modeResult = await detectChatModeAsync(userMessage);
 
   logger.info('Chat mode detected', {
     sessionId,

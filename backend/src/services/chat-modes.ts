@@ -570,6 +570,133 @@ export function getDefaultToolsForMode(mode: ChatMode): string[] {
   }
 }
 
+// ===========================================
+// Semantic Fallback (LLM-based classification)
+// ===========================================
+
+/**
+ * Simple in-memory LRU cache for semantic classification results.
+ * Max 100 entries, 5-minute TTL.
+ */
+interface CacheEntry {
+  result: ModeDetectionResult;
+  timestamp: number;
+}
+
+const SEMANTIC_CACHE_MAX = 100;
+const SEMANTIC_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const semanticCache = new Map<string, CacheEntry>();
+
+function getCachedSemantic(key: string): ModeDetectionResult | null {
+  const entry = semanticCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > SEMANTIC_CACHE_TTL_MS) {
+    semanticCache.delete(key);
+    return null;
+  }
+  // Move to end (LRU refresh)
+  semanticCache.delete(key);
+  semanticCache.set(key, entry);
+  return entry.result;
+}
+
+function setCachedSemantic(key: string, result: ModeDetectionResult): void {
+  // Evict oldest if at capacity
+  if (semanticCache.size >= SEMANTIC_CACHE_MAX) {
+    const firstKey = semanticCache.keys().next().value;
+    if (firstKey !== undefined) {
+      semanticCache.delete(firstKey);
+    }
+  }
+  semanticCache.set(key, { result, timestamp: Date.now() });
+}
+
+/**
+ * Classify a message using Claude Haiku as a semantic fallback.
+ * Returns null if the API call fails (graceful degradation).
+ */
+async function classifyWithSemantic(message: string): Promise<ModeDetectionResult | null> {
+  try {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const client = new Anthropic();
+
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 20,
+      system: 'Classify the user message into exactly ONE mode. Respond with ONLY the mode name, nothing else.\n\nModes:\n- tool_assisted: User wants to create, search, calculate, execute code, send email, or use any tool\n- agent: User wants multi-step research, analysis, comparison, or complex task\n- rag_enhanced: User asks about their own notes, memories, past conversations\n- conversation: General chat, greetings, opinions, philosophical discussion',
+      messages: [{ role: 'user', content: message }],
+    });
+
+    const modeText = response.content[0]?.type === 'text'
+      ? response.content[0].text.trim().toLowerCase()
+      : 'conversation';
+
+    const validModes: string[] = ['tool_assisted', 'agent', 'rag_enhanced', 'conversation'];
+    const mode = validModes.includes(modeText) ? modeText : 'conversation';
+
+    return {
+      mode: mode as ChatMode,
+      confidence: 0.85,
+      suggestedTools: [],
+      reasoning: 'semantic-classifier',
+    };
+  } catch (error) {
+    logger.warn('Semantic classifier failed, using regex fallback', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
+/**
+ * Async version of detectChatMode with semantic fallback.
+ *
+ * - First runs the existing regex-based detection (fast path).
+ * - If confidence >= 0.6, returns immediately.
+ * - If confidence < 0.6, calls Claude Haiku for semantic classification.
+ * - Results are cached (LRU, max 100 entries, 5-min TTL).
+ *
+ * @param message - The user's message
+ * @returns Mode detection result with confidence
+ */
+export async function detectChatModeAsync(message: string): Promise<ModeDetectionResult> {
+  // Fast path: regex-based detection
+  const regexResult = detectChatMode(message);
+
+  if (regexResult.confidence >= 0.6) {
+    return regexResult;
+  }
+
+  // Check cache before making API call
+  const cacheKey = normalizeMessage(message);
+  const cached = getCachedSemantic(cacheKey);
+  if (cached) {
+    logger.debug('Semantic cache hit for chat mode', { mode: cached.mode });
+    return cached;
+  }
+
+  // Semantic fallback for low-confidence results
+  logger.debug('Low confidence regex result, trying semantic fallback', {
+    regexMode: regexResult.mode,
+    regexConfidence: regexResult.confidence,
+  });
+
+  const semanticResult = await classifyWithSemantic(message);
+
+  if (semanticResult) {
+    setCachedSemantic(cacheKey, semanticResult);
+    logger.debug('Semantic classifier result', { mode: semanticResult.mode });
+    return semanticResult;
+  }
+
+  // If semantic fails, fall back to regex result
+  return regexResult;
+}
+
+// ===========================================
+// Simple Conversation Detection
+// ===========================================
+
 /**
  * Check if a message is a simple greeting/small talk
  */

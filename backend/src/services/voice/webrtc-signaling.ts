@@ -195,8 +195,29 @@ export class VoiceSignalingServer {
 
           const audioBuffer = Buffer.from(audioData.audio, 'base64');
 
-          // Process audio chunk through pipeline
-          const result = await voicePipeline.processAudioChunk(currentSessionId, audioBuffer);
+          // Use sentence-level streaming: TTS audio chunks are sent
+          // to the client as soon as each sentence is synthesized,
+          // rather than waiting for the full LLM response.
+          const result = await voicePipeline.processAudioChunkStreaming(
+            currentSessionId,
+            audioBuffer,
+            // onAudioChunk: send each sentence's audio immediately
+            (audio, _sentence, _index) => {
+              this.sendJSON(ws, {
+                type: 'response_audio',
+                sessionId: currentSessionId,
+                data: { audio: audio.toString('base64') },
+              });
+            },
+            // onResponseText: send the full response text once complete
+            (text) => {
+              this.sendJSON(ws, {
+                type: 'response_text',
+                sessionId: currentSessionId,
+                data: { text },
+              });
+            },
+          );
 
           // Always send VAD status
           this.sendJSON(ws, {
@@ -217,26 +238,6 @@ export class VoiceSignalingServer {
               sessionId: currentSessionId,
               data: { text: result.transcript },
             });
-          }
-
-          // Send response text if available
-          if (result.responseText) {
-            this.sendJSON(ws, {
-              type: 'response_text',
-              sessionId: currentSessionId,
-              data: { text: result.responseText },
-            });
-          }
-
-          // Send response audio if available
-          if (result.responseAudio && result.responseAudio.length > 0) {
-            for (const audioChunk of result.responseAudio) {
-              this.sendJSON(ws, {
-                type: 'response_audio',
-                sessionId: currentSessionId,
-                data: { audio: audioChunk.toString('base64') },
-              });
-            }
           }
         } catch (error) {
           this.sendJSON(ws, {

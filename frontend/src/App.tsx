@@ -1,30 +1,21 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import axios from 'axios';
 
 // Types and constants
-import type { StructuredIdea, Page } from './types';
-import { AI_PROCESSING_STEP_DELAY_MS, AI_PROCESSING_INITIAL_DELAY_MS } from './constants';
+import type { Page } from './types';
 
 // Core components - always loaded
-import { ToastContainer, showToast } from './components/Toast';
+import { ToastContainer } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useContextState } from './components/ContextSwitcher';
-import { usePersonaState } from './components/PersonaSelector';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { KeyboardShortcutsModal, useKeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { useCommandPalette, CommandPalette } from './components/CommandPalette';
-import type { ProcessType } from './components/AIProcessingOverlay';
-import { AIProcessingOverlay } from './components/AIProcessingOverlay';
-import type { InputMode } from './components/CommandCenter';
-import type { AdvancedFilters } from './components/SearchFilterBar';
 import { safeLocalStorage } from './utils/storage';
-import { getErrorMessage } from './utils/errors';
 import { useAuth } from './contexts/AuthContext';
 import { AuthPage } from './components/AuthPage/AuthPage';
-import { safeParseResponse, IdeaCreationResponseSchema, SearchResponseSchema, ProgressiveSearchResponseSchema } from './utils/apiSchemas';
 import { GeneralChat } from './components/GeneralChat';
-import { ContextNudge } from './components/ContextNudge';
 import { AIQuestionBubble } from './components/AIQuestionBubble';
 import { GlobalSearch } from './components/GlobalSearch';
 import { useIdeasData } from './hooks/useIdeasData';
@@ -253,54 +244,24 @@ function App() {
 function AuthenticatedApp() {
   const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
   const [context, setContext] = useContextState();
-  const [selectedPersona] = usePersonaState(context);
   const keyboardShortcuts = useKeyboardShortcutsModal();
 
   // Data loading (extracted to useIdeasData hook)
+  // Note: IdeasPage now manages its own data via React Query hooks.
+  // useIdeasData is kept here for Dashboard, AppLayout sidebar badges, and AI questions.
   const {
-    ideas, setIdeas,
-    archivedIdeas, setArchivedIdeas,
-    archivedCount, setArchivedCount,
+    ideas,
+    archivedCount,
     notificationCount,
     loading,
-    error, setError,
     apiStatus,
     loadIdeas,
-    lastSubmitTimeRef,
-  } = useIdeasData(context, currentPage === 'ideas' && tabParam === 'archive' ? 'archive' : currentPage);
+  } = useIdeasData(context, currentPage);
 
   // UI State
-  const [processing, setProcessing] = useState(false);
-  const [textInput, setTextInput] = useState('');
-  const [searchResults, setSearchResults] = useState<StructuredIdea[] | null>(null);
-  const [filters, setFilters] = useState<AdvancedFilters>({
-    types: new Set(),
-    categories: new Set(),
-    priorities: new Set(),
-  });
-  const [selectedIdea, setSelectedIdea] = useState<StructuredIdea | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isSearching, setIsSearching] = useState(false);
-  const searchAbortRef = useRef<AbortController | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return safeLocalStorage('get', 'onboardingComplete') !== 'true';
   });
-  const [inputMode, setInputMode] = useState<InputMode>('voice');
-  const isSubmittingRef = useRef(false);
-  const [aiOverlay, setAIOverlay] = useState<{
-    visible: boolean;
-    type: ProcessType;
-    step: number;
-  } | null>(null);
-
-  // Context nudge state for AI-suggested context
-  const [contextNudge, setContextNudge] = useState<{
-    ideaId: string;
-    ideaTitle: string;
-    suggestedContext: 'personal' | 'work' | 'learning' | 'creative';
-    confidence: number;
-  } | null>(null);
 
   // Email unread count for sidebar badge (with exponential backoff on errors)
   const [emailUnreadCount, setEmailUnreadCount] = useState(0);
@@ -354,24 +315,18 @@ function AuthenticatedApp() {
     onAction: (action) => {
       if (action === 'new-idea') {
         navigateToPage('ideas');
-        setInputMode('voice');
       } else if (action === 'voice-input') {
         navigateToPage('ideas');
-        setInputMode('voice');
       }
     },
   });
 
-  const isAIActive = processing || isSearching || isRecording || loading;
-  const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
+  const isAIActive = loading;
   const aiActivityMessage = useMemo(() => {
     if (!isAIActive) return undefined;
-    if (isRecording) return 'Transkribiere...';
-    if (isSearching) return 'Suche...';
-    if (processing) return 'Verarbeite Gedanken...';
     if (loading) return 'Lade Daten...';
     return undefined;
-  }, [isAIActive, isRecording, isSearching, processing, loading]);
+  }, [isAIActive, loading]);
 
   // Proactive AI questions
   const aiQuestions = useAIQuestions({
@@ -381,215 +336,10 @@ function AuthenticatedApp() {
     onNavigate: navigateToPage,
   });
 
-  // Clear search/selection and abort pending requests when context changes
-  useEffect(() => {
-    searchAbortRef.current?.abort();
-    searchAbortRef.current = null;
-    setSearchResults(null);
-    setSelectedIdea(null);
-    setIsSearching(false);
-  }, [context]);
-
-  // ============================================
-  // HANDLERS
-  // ============================================
-
-  const handleArchive = useCallback((id: string) => {
-    setIdeas(prev => prev.filter(i => i.id !== id));
-    setArchivedCount(prev => prev + 1);
-  }, []);
-
-  const handleRestore = useCallback((id: string) => {
-    setArchivedIdeas(prev => {
-      const restored = prev.find(i => i.id === id);
-      if (restored) {
-        setIdeas(prevIdeas => [restored, ...prevIdeas]);
-        setArchivedCount(prevCount => Math.max(0, prevCount - 1));
-        return prev.filter(i => i.id !== id);
-      }
-      return prev;
-    });
-  }, []);
-
-  const handleMove = useCallback((id: string) => {
-    setIdeas(prev => prev.filter(i => i.id !== id));
-    setSelectedIdea(null);
-  }, []);
-
-  const handleContextNudgeMove = useCallback(async (ideaId: string, targetContext: 'personal' | 'work' | 'learning' | 'creative') => {
-    try {
-      await axios.post(`/api/${context}/ideas/${ideaId}/move`, { targetContext });
-      setIdeas(prev => prev.filter(i => i.id !== ideaId));
-      showToast(`Gedanke nach "${targetContext}" verschoben`, 'success');
-    } catch (err: unknown) {
-      showToast(getErrorMessage(err, 'Verschieben fehlgeschlagen'), 'error');
-    }
-    setContextNudge(null);
-  }, [context]);
-
-  const submitText = useCallback(async () => {
-    if (!textInput.trim()) return;
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-
-    setProcessing(true);
-    setError(null);
-    setAIOverlay({ visible: true, type: 'text', step: 0 });
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_INITIAL_DELAY_MS));
-      setAIOverlay({ visible: true, type: 'text', step: 1 });
-
-      const response = await axios.post(`/api/${context}/voice-memo`, {
-        text: textInput,
-        persona: selectedPersona,
-      });
-
-      const creationData = safeParseResponse(IdeaCreationResponseSchema, response.data, 'submitText');
-
-      setAIOverlay({ visible: true, type: 'text', step: 2 });
-      await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_STEP_DELAY_MS));
-      setAIOverlay({ visible: true, type: 'text', step: 3 });
-      await new Promise(resolve => setTimeout(resolve, AI_PROCESSING_STEP_DELAY_MS));
-
-      const newIdea: StructuredIdea = {
-        id: creationData.ideaId,
-        title: creationData.structured?.title ?? textInput.slice(0, 60),
-        type: (creationData.structured?.type as StructuredIdea['type']) ?? 'idea',
-        category: (creationData.structured?.category as StructuredIdea['category']) ?? 'personal',
-        priority: (creationData.structured?.priority as StructuredIdea['priority']) ?? 'medium',
-        summary: creationData.structured?.summary ?? '',
-        next_steps: creationData.structured?.next_steps ?? [],
-        context_needed: creationData.structured?.context_needed ?? [],
-        keywords: creationData.structured?.keywords ?? [],
-        created_at: new Date().toISOString(),
-      };
-
-      setIdeas(prev => [newIdea, ...prev]);
-      lastSubmitTimeRef.current = Date.now();
-      setTextInput('');
-      showToast('Gedanke erfolgreich strukturiert!', 'success');
-
-      // Show context nudge if AI suggests a different context
-      const suggested = response.data.suggestedContext || creationData.structured?.suggested_context;
-      if (suggested && suggested !== context) {
-        setContextNudge({
-          ideaId: creationData.ideaId,
-          ideaTitle: creationData.structured?.title || 'Neuer Gedanke',
-          suggestedContext: suggested,
-          confidence: response.data.contextConfidence || 0.7,
-        });
-      }
-    } catch (err: unknown) {
-      const errorMessage = getErrorMessage(err, 'Verarbeitung fehlgeschlagen');
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-    } finally {
-      setProcessing(false);
-      setAIOverlay(null);
-      isSubmittingRef.current = false;
-    }
-  }, [textInput, context, selectedPersona]);
-
-  const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults(null);
-      return;
-    }
-
-    // Abort any pending search request
-    searchAbortRef.current?.abort();
-    const controller = new AbortController();
-    searchAbortRef.current = controller;
-
-    setIsSearching(true);
-    try {
-      // Phase 32B: Progressive search - keyword-first, then semantic
-      const response = await axios.post(`/api/${context}/ideas/search/progressive`, { query, limit: 15 }, { signal: controller.signal });
-      const parsed = safeParseResponse(ProgressiveSearchResponseSchema, response.data, 'progressiveSearch');
-
-      // Merge keyword results (fast) + semantic results (deep), keyword first
-      const keywordIdeas = parsed.keyword?.ideas ?? [];
-      const semanticIdeas = parsed.semantic?.ideas ?? [];
-      // Zod passthrough() adds index signature incompatible with StructuredIdea
-      const merged: StructuredIdea[] = [...keywordIdeas, ...semanticIdeas] as unknown as StructuredIdea[];
-
-      setSearchResults(merged);
-    } catch (progressiveErr) {
-      if (axios.isCancel(progressiveErr)) return;
-      // Fallback to classic search if progressive endpoint not available
-      try {
-        const response = await axios.post(`/api/${context}/ideas/search`, { query, limit: 20 }, { signal: controller.signal });
-        const parsed = safeParseResponse(SearchResponseSchema, response.data, 'handleSearch');
-        setSearchResults(parsed.ideas as unknown as StructuredIdea[]);
-      } catch (err: unknown) {
-        if (axios.isCancel(err)) return;
-        const errorMessage = getErrorMessage(err, 'Suche fehlgeschlagen');
-        setError(errorMessage);
-        showToast(errorMessage, 'error');
-      }
-    } finally {
-      setIsSearching(false);
-    }
-  }, [context]);
-
-  const clearSearch = useCallback(() => {
-    setSearchResults(null);
-  }, []);
-
-  const handleIdeaClick = useCallback((idea: StructuredIdea) => {
-    setSelectedIdea(idea);
-  }, []);
-
-  const navigateToIdea = useCallback((ideaId: string) => {
-    const idea = ideas.find((i) => i.id === ideaId);
-    if (idea) {
-      setSelectedIdea(idea);
-    }
-  }, [ideas]);
-
   const handleOnboardingComplete = () => {
     safeLocalStorage('set', 'onboardingComplete', 'true');
     setShowOnboarding(false);
   };
-
-  const handleRecordProcessed = useCallback((result: {
-    ideaId: string;
-    structured: {
-      title?: string;
-      type?: string;
-      category?: string;
-      priority?: string;
-      summary?: string;
-      next_steps?: string[];
-      context_needed?: string[];
-      keywords?: string[];
-    };
-    suggestedContext?: 'personal' | 'work' | 'learning' | 'creative';
-    contextConfidence?: number;
-  }) => {
-    const newIdea: StructuredIdea = {
-      id: result.ideaId,
-      ...result.structured,
-      next_steps: result.structured.next_steps || [],
-      context_needed: result.structured.context_needed || [],
-      keywords: result.structured.keywords || [],
-      created_at: new Date().toISOString(),
-    } as StructuredIdea;
-    setIdeas(prev => [newIdea, ...prev]);
-    setTextInput('');
-
-    // Show context nudge if AI suggests a different context
-    const suggested = result.suggestedContext || (result.structured as Record<string, unknown>).suggested_context as typeof result.suggestedContext;
-    if (suggested && suggested !== context && (result.contextConfidence || 0.7) >= 0.5) {
-      setContextNudge({
-        ideaId: result.ideaId,
-        ideaTitle: result.structured.title || 'Neuer Gedanke',
-        suggestedContext: suggested,
-        confidence: result.contextConfidence || 0.7,
-      });
-    }
-  }, [context]);
 
   // ============================================
   // LEGACY REDIRECTS
@@ -632,43 +382,8 @@ function AuthenticatedApp() {
             <Suspense fallback={<PageLoader />}>
               <IdeasPage
                 context={context}
-                selectedPersona={selectedPersona}
-                ideas={ideas}
-                loading={loading}
-                error={error}
-                processing={processing}
-                isSearching={isSearching}
-                isAIActive={isAIActive}
-                aiActivityType={aiActivityType as 'transcribing' | 'searching' | 'thinking' | 'processing'}
-                aiOverlay={aiOverlay}
-                textInput={textInput}
-                onTextChange={setTextInput}
-                inputMode={inputMode}
-                onInputModeChange={setInputMode}
-                onSubmitText={submitText}
-                onSearch={handleSearch}
-                onClearSearch={clearSearch}
-                onDeleteIdea={(id) => setIdeas(prev => prev.filter(i => i.id !== id))}
-                onArchiveIdea={handleArchive}
-                onMoveIdea={handleMove}
-                onRecordingChange={setIsRecording}
-                onRecordProcessed={handleRecordProcessed}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                searchResults={searchResults}
-                filters={filters}
-                onFilterChange={setFilters}
-                onSetError={setError}
-                selectedIdea={selectedIdea}
-                onIdeaClick={handleIdeaClick}
-                onCloseDetail={() => setSelectedIdea(null)}
-                onNavigateToIdea={navigateToIdea}
-                archivedIdeas={archivedIdeas}
-                archivedCount={archivedCount}
-                onRestore={handleRestore}
-                onTriageComplete={() => loadIdeas()}
                 initialTab={(tabParam || 'ideas') as 'ideas' | 'incubator' | 'archive' | 'triage'}
-                onIdeaCreated={() => loadIdeas()}
+                onNavigate={(page) => navigateToPage(page as Page)}
               />
             </Suspense>
           </NeuroFeedbackProvider>
@@ -731,12 +446,8 @@ function AuthenticatedApp() {
             <InsightsDashboard
               context={context}
               onBack={() => navigateToPage('home')}
-              onSelectIdea={(ideaId) => {
-                const idea = ideas.find(i => i.id === ideaId);
-                if (idea) {
-                  setSelectedIdea(idea);
-                  navigateToPage('ideas');
-                }
+              onSelectIdea={() => {
+                navigateToPage('ideas');
               }}
               initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep'}
             />
@@ -955,27 +666,7 @@ function AuthenticatedApp() {
 
       <ToastContainer />
 
-      {aiOverlay?.visible && (
-        <AIProcessingOverlay
-          isVisible={aiOverlay.visible}
-          processType={aiOverlay.type}
-          currentStepIndex={aiOverlay.step}
-        />
-      )}
-
-      {contextNudge && (
-        <ContextNudge
-          currentContext={context}
-          suggestedContext={contextNudge.suggestedContext}
-          ideaTitle={contextNudge.ideaTitle}
-          ideaId={contextNudge.ideaId}
-          confidence={contextNudge.confidence}
-          onMove={handleContextNudgeMove}
-          onDismiss={() => setContextNudge(null)}
-        />
-      )}
-
-      {aiQuestions.currentQuestion && !contextNudge && !aiOverlay?.visible && (
+      {aiQuestions.currentQuestion && (
         <AIQuestionBubble
           question={aiQuestions.currentQuestion.question}
           emoji={aiQuestions.currentQuestion.emoji}

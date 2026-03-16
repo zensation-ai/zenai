@@ -37,7 +37,7 @@ import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
 import Anthropic from '@anthropic-ai/sdk';
 import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
 import { toolRegistry, ToolExecutionContext } from '../services/claude/tool-use';
-import { detectChatMode } from '../services/chat-modes';
+import { detectChatModeAsync } from '../services/chat-modes';
 import { isValidThinkingMode, getAvailableModes, applyThinkingMode, ThinkingMode } from '../services/thinking-partner';
 import {
   buildCompactionConfig,
@@ -580,7 +580,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
   }));
 
   // Detect mode for system prompt enhancement (message already trimmed by Zod)
-  const modeResult = detectChatMode(message);
+  const modeResult = await detectChatModeAsync(message);
 
   // Build system prompt - use assistant knowledge for assistant mode
   let systemPrompt = isAssistantMode

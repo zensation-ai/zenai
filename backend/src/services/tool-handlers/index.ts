@@ -59,6 +59,8 @@ import {
   TOOL_MEMORY_UPDATE,
   TOOL_MEMORY_DELETE,
   TOOL_MEMORY_UPDATE_PROFILE,
+  TOOL_MEMORY_RETHINK,
+  TOOL_MEMORY_RESTRUCTURE,
   TOOL_ASK_INBOX,
   TOOL_INBOX_SUMMARY,
   TOOL_MCP_CALL_TOOL,
@@ -103,6 +105,8 @@ import {
   handleMemoryUpdate,
   handleMemoryDelete,
   handleMemoryUpdateProfile,
+  handleMemoryRethink,
+  handleMemoryRestructure,
 } from './memory-tools';
 import {
   handleAskInbox,
@@ -1104,6 +1108,10 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_MEMORY_DELETE, handleMemoryDelete);
   toolRegistry.register(TOOL_MEMORY_UPDATE_PROFILE, handleMemoryUpdateProfile);
 
+  // Phase 77: Memory Self-Editing tools (Letta V1 Pattern)
+  toolRegistry.register(TOOL_MEMORY_RETHINK, handleMemoryRethink);
+  toolRegistry.register(TOOL_MEMORY_RESTRUCTURE, handleMemoryRestructure);
+
   // Phase 43: Email Intelligence tools
   toolRegistry.register(TOOL_ASK_INBOX, handleAskInbox);
   toolRegistry.register(TOOL_INBOX_SUMMARY, handleInboxSummary);
@@ -1161,6 +1169,8 @@ export function registerAllToolHandlers(): void {
       'memory_update',
       'memory_delete',
       'memory_update_profile',
+      'memory_rethink',
+      'memory_restructure',
       'ask_inbox',
       'inbox_summary',
       'mcp_call_tool',

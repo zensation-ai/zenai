@@ -139,6 +139,7 @@ async function processMemoryConsolidation(job: BullJob): Promise<Record<string, 
 
 /**
  * Process a RAG indexing job.
+ * Delegates to graphIndexer for entity/relation extraction from ideas.
  */
 async function processRagIndexing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
@@ -151,13 +152,49 @@ async function processRagIndexing(job: BullJob): Promise<Record<string, unknown>
     ideaId,
   });
 
-  await job.updateProgress(50);
+  await job.updateProgress(10);
 
-  return { status: 'completed', context, ideaId };
+  try {
+    const { graphIndexer } = await import('../knowledge-graph/graph-indexer');
+
+    await job.updateProgress(50);
+
+    if (ideaId) {
+      const result = await graphIndexer.indexIdea(ideaId, context);
+      await job.updateProgress(100);
+      return {
+        status: 'completed',
+        context,
+        ideaId,
+        entitiesCreated: result.entityCount,
+        relationsCreated: result.relationCount,
+      };
+    } else {
+      const result = await graphIndexer.indexBatch(context, { limit: 50 });
+      await job.updateProgress(100);
+      return {
+        status: 'completed',
+        context,
+        processedCount: result.processedCount,
+        entitiesCreated: result.entitiesCreated,
+        relationsCreated: result.relationsCreated,
+        errors: result.errors.length,
+        duration_ms: result.duration_ms,
+      };
+    }
+  } catch (error) {
+    logger.warn('RAG indexing service not available', {
+      operation: 'worker',
+      queue: 'rag-indexing',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { status: 'skipped', context, ideaId };
+  }
 }
 
 /**
  * Process an email analysis job.
+ * Delegates to processEmailWithAI for AI-powered email categorization and summarization.
  */
 async function processEmailProcessing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
@@ -170,13 +207,38 @@ async function processEmailProcessing(job: BullJob): Promise<Record<string, unkn
     emailId,
   });
 
-  await job.updateProgress(50);
+  await job.updateProgress(10);
 
-  return { status: 'completed', context, emailId };
+  if (!emailId) {
+    logger.warn('Email processing job missing emailId', {
+      operation: 'worker',
+      queue: 'email-processing',
+    });
+    return { status: 'skipped', context, reason: 'missing emailId' };
+  }
+
+  try {
+    const { processEmailWithAI } = await import('../email-ai');
+
+    await job.updateProgress(50);
+
+    await processEmailWithAI(context, emailId);
+
+    await job.updateProgress(100);
+    return { status: 'completed', context, emailId, processedAt: new Date().toISOString() };
+  } catch (error) {
+    logger.warn('Email AI processing service not available', {
+      operation: 'worker',
+      queue: 'email-processing',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { status: 'skipped', context, emailId };
+  }
 }
 
 /**
  * Process a graph indexing job.
+ * Delegates to graphIndexer for batch knowledge graph indexing with status tracking.
  */
 async function processGraphIndexing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
@@ -187,9 +249,37 @@ async function processGraphIndexing(job: BullJob): Promise<Record<string, unknow
     context,
   });
 
-  await job.updateProgress(50);
+  await job.updateProgress(10);
 
-  return { status: 'completed', context };
+  try {
+    const { graphIndexer } = await import('../knowledge-graph/graph-indexer');
+
+    const status = await graphIndexer.getIndexingStatus(context);
+
+    await job.updateProgress(50);
+
+    const result = await graphIndexer.indexBatch(context, { limit: 100 });
+
+    await job.updateProgress(100);
+    return {
+      status: 'completed',
+      context,
+      totalIdeas: status.totalIdeas,
+      indexedIdeas: status.indexedIdeas,
+      processedCount: result.processedCount,
+      entitiesCreated: result.entitiesCreated,
+      relationsCreated: result.relationsCreated,
+      errors: result.errors.length,
+      duration_ms: result.duration_ms,
+    };
+  } catch (error) {
+    logger.warn('Graph indexing service not available', {
+      operation: 'worker',
+      queue: 'graph-indexing',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { status: 'skipped', context };
+  }
 }
 
 /**

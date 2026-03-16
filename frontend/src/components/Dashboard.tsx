@@ -13,7 +13,6 @@ import type { Page, ApiStatus } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import { AIBrain } from './AIBrain';
 import { RisingBubbles } from './RisingBubbles';
-import { SkeletonLoader } from './SkeletonLoader';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { ProactiveDigest } from './ProactiveDigest';
 import { ProactiveBriefingWidget } from './ProactiveBriefing/ProactiveBriefingWidget';
@@ -24,6 +23,7 @@ import {
   useMarkActivityReadMutation,
 } from '../hooks/queries/useDashboard';
 import type { TrendPoint } from '../hooks/queries/useDashboard';
+import { Button, Card, Badge, Skeleton, EmptyState } from '../design-system';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -216,35 +216,39 @@ const DashboardComponent: React.FC<DashboardProps> = ({
               <h2 className="bento-greeting">{greeting.emoji} {greeting.greeting}</h2>
               <p className="bento-subtext">{welcomeSubtext}</p>
             </div>
-            <span className="bento-context-badge">
+            <Badge variant="context" size="sm" className="bento-context-badge">
               <span aria-hidden="true">{contextInfo.icon}</span>
               {contextInfo.label}
-            </span>
+            </Badge>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="primary"
             className="bento-cta"
             onClick={() => onNavigate('ideas')}
+            icon={<span>💡</span>}
           >
-            <span aria-hidden="true">💡</span>
             Neuer Gedanke
-          </button>
+          </Button>
         </section>
 
         {/* Stat tiles */}
         {fetchError && !loading ? (
-          <div className="bento-card bento-stat" style={{ gridColumn: 'span 4', textAlign: 'center', padding: '1.5rem' }}>
-            <p style={{ marginBottom: '0.75rem', opacity: 0.7 }}>Daten konnten nicht geladen werden.</p>
-            <button type="button" className="neuro-focus-ring" onClick={() => summary.refetch()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--glass-bg)' }}>
-              Erneut versuchen
-            </button>
-          </div>
+          <Card variant="surface" padding="md" className="bento-stat" style={{ gridColumn: 'span 4', textAlign: 'center' }}>
+            <EmptyState
+              title="Daten konnten nicht geladen werden"
+              action={
+                <Button variant="secondary" size="sm" onClick={() => summary.refetch()}>
+                  Erneut versuchen
+                </Button>
+              }
+            />
+          </Card>
         ) : loading ? (
           <>
-            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
-            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
-            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
-            <div className="bento-card bento-stat"><SkeletonLoader type="card" count={1} /></div>
+            <Card variant="surface" padding="sm" className="bento-stat"><Skeleton variant="card" /></Card>
+            <Card variant="surface" padding="sm" className="bento-stat"><Skeleton variant="card" /></Card>
+            <Card variant="surface" padding="sm" className="bento-stat"><Skeleton variant="card" /></Card>
+            <Card variant="surface" padding="sm" className="bento-stat"><Skeleton variant="card" /></Card>
           </>
         ) : (
           <>
@@ -345,9 +349,9 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           <section className="bento-card bento-events">
             <div className="bento-card-header">
               <h3>📅 Termine</h3>
-              <button type="button" className="bento-link" onClick={() => onNavigate('calendar')}>
+              <Button variant="ghost" size="sm" className="bento-link" onClick={() => onNavigate('calendar')}>
                 Alle →
-              </button>
+              </Button>
             </div>
             <div className="bento-events-list">
               {upcomingEvents.map((evt) => {
@@ -366,7 +370,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
                       <span className="bento-event-title">{evt.title}</span>
                       <span className="bento-event-time">{dayStr}, {timeStr}</span>
                     </div>
-                    {evt.ai_generated && <span className="bento-ai-tag">KI</span>}
+                    {evt.ai_generated && <Badge variant="status" color="info" size="sm" className="bento-ai-tag">KI</Badge>}
                   </button>
                 );
               })}
@@ -378,20 +382,22 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         <section className="bento-card bento-recent">
           <div className="bento-card-header">
             <h3>Letzte Gedanken</h3>
-            <button type="button" className="bento-link" onClick={() => onNavigate('ideas')}>
+            <Button variant="ghost" size="sm" className="bento-link" onClick={() => onNavigate('ideas')}>
               Alle →
-            </button>
+            </Button>
           </div>
           {loading ? (
-            <SkeletonLoader type="card" count={3} />
+            <Skeleton variant="text" count={3} />
           ) : recentIdeas.length === 0 ? (
-            <div className="bento-empty">
-              <span>💡</span>
-              <p>Noch keine Gedanken in <strong>{contextInfo.label}</strong>.</p>
-              <button type="button" className="bento-empty-cta" onClick={() => onNavigate('ideas')}>
-                Ersten Gedanken erfassen
-              </button>
-            </div>
+            <EmptyState
+              icon={<span>💡</span>}
+              title={`Noch keine Gedanken in ${contextInfo.label}`}
+              action={
+                <Button variant="primary" size="sm" className="bento-empty-cta" onClick={() => onNavigate('ideas')}>
+                  Ersten Gedanken erfassen
+                </Button>
+              }
+            />
           ) : (
             <div className="bento-ideas-list">
               {recentIdeas.map((idea) => (
@@ -418,26 +424,27 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           <div className="bento-card-header">
             <h3>
               KI-Aktivitaet
-              {unreadCount > 0 && <span className="bento-badge">{unreadCount}</span>}
+              {unreadCount > 0 && <Badge variant="status" color="danger" size="sm" className="bento-badge">{unreadCount}</Badge>}
             </h3>
             <div className="bento-card-actions">
               {unreadCount > 0 && (
-                <button type="button" className="bento-link-muted" onClick={() => markReadMutation.mutate()}>
+                <Button variant="ghost" size="sm" className="bento-link-muted" onClick={() => markReadMutation.mutate()}>
                   Gelesen
-                </button>
+                </Button>
               )}
-              <button type="button" className="bento-link" onClick={() => onNavigate('insights')}>
+              <Button variant="ghost" size="sm" className="bento-link" onClick={() => onNavigate('insights')}>
                 Insights →
-              </button>
+              </Button>
             </div>
           </div>
           {loading ? (
-            <SkeletonLoader type="card" count={3} />
+            <Skeleton variant="text" count={3} />
           ) : activity.length === 0 ? (
-            <div className="bento-empty">
-              <span>🧠</span>
-              <p>Starte einen Chat oder erfasse Gedanken.</p>
-            </div>
+            <EmptyState
+              icon={<span>🧠</span>}
+              title="Noch keine Aktivitaet"
+              description="Starte einen Chat oder erfasse Gedanken."
+            />
           ) : (
             <div className="bento-activity-list">
               {activity.map((item) => (

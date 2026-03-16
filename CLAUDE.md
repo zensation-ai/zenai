@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 76
+## Current Phase: 77
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1144,6 +1144,92 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-16: Phase 77 - Quality Excellence (Frontend + Production + Differentiation)
+
+**Umfassendes Quality-Upgrade: React Query Migration, Production Hardening, Differenzierung.**
+
+**Phase 4: Frontend Excellence**
+
+| Feature | Details |
+|---------|---------|
+| **React Query Migration** | 27 Hooks in 5 Dateien (useIdeas, useDashboard, useContacts, useTasks + index), Query Key Factory mit 12 Domains |
+| **Dashboard Migration** | 7 useState durch 4 React Query Hooks ersetzt, bundled `/analytics/dashboard-summary` Endpoint |
+| **ContactsPage Migration** | Filter-driven Queries: `setContactFilters()` triggert automatischen Refetch |
+| **PlannerPage Migration** | 6 React Query Hooks, dynamische Badge-Counts via useMemo |
+| **useStreamingChat Hook** | SSE + useMutation, optimistic Cache Updates, RAF-throttled Rendering (~60fps), Tool Activity Tracking |
+| **Skeleton Loading** | ChatSessionSidebar: 4-Item Content Skeleton statt Spinner, Dashboard: SkeletonLoader Cards |
+| **Responsive Polish** | Mobile Chat: `min-height: 40vh; max-height: calc(100dvh - 200px)`, Touch Targets ≥44px verifiziert |
+
+**Phase 5: Production Hardening**
+
+| Feature | Details |
+|---------|---------|
+| **BullMQ Workers** | Job Progress (10/30/50/100%), Dead Letter Queue, Stalled Detection (30s/max 2), Health Metrics (6 Counter/Queue) |
+| **Offline Resilience** | OfflineIndicator (Glassmorphism, pending count, sync animation), React Query `offlineFirst`, auto-invalidation bei Reconnect |
+| **Env Var Docs** | 29 undokumentierte Variablen in CLAUDE.md ergaenzt (PORT, API_URL, JWT_SECRET, DB_*, OLLAMA_*, APNS_*, SLACK_*) |
+| **CI Fix** | pnpm Symlink Resolution fuer Vite (resolvePackage mit realpathSync + root fallback), voice-route Test Mock |
+
+**Phase 6: Differentiation Features**
+
+| Feature | Details |
+|---------|---------|
+| **Proactive Intelligence** | Morning Briefing (6-11 Uhr, Aufgaben/Emails/Events), time-aware API Params, Pulse/Dismiss/Snooze Animationen |
+| **Multi-Modal Canvas** | Markdown Toolbar (6 Buttons), Image Drag-Drop (5MB), Mermaid Preview (CDN dynamic import), Export (MD/PDF/HTML) |
+| **Voice Quality** | TTS LFU Cache (200 Eintraege, 30min TTL), Greeting Pre-Cache (10 deutsche Phrasen, 5s nach Startup) |
+| **MCP Ecosystem** | Quick-Connect Actions, Health Summary Stats, Setup Wizard Integration |
+
+**Code Polish (4 parallele Agents)**
+
+| Bereich | Verbesserungen |
+|---------|----------------|
+| **Dead Code** | Entfernter containerRef, tote CSS Keyframes, doppelte background, unerreichbare default |
+| **Bugs** | MCP healthCheck POST, ChatSessionSidebar setState-waehrend-Render, OfflineIndicator Pluralisierung |
+| **Type Safety** | `??` statt `\|\|`, inline Query Keys → Factory, `import type`, Guard Clauses |
+| **DRY** | Smart Suggestions 3x Action Code → performAction Helper |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `frontend/src/hooks/useStreamingChat.ts` | SSE + React Query Streaming Hook |
+| `frontend/src/components/OfflineIndicator.tsx` | Offline-Status mit Glassmorphism |
+| `frontend/src/components/OfflineIndicator.css` | Offline-Indicator Styles |
+| `frontend/src/components/canvas/CanvasMarkdownToolbar.tsx` | 6-Button Markdown Toolbar |
+
+**Geaenderte Dateien (23+):**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `frontend/src/hooks/queries/useDashboard.ts` | Bundled Summary Query, Query Key Factory |
+| `frontend/src/hooks/queries/useContacts.ts` | Organization Mutations hinzugefuegt |
+| `frontend/src/hooks/queries/useTasks.ts` | Delete/Update Project Mutations |
+| `frontend/src/lib/query-keys.ts` | dashboard.summary, calendar.upcoming, aiPulse Keys |
+| `frontend/src/lib/query-client.ts` | offlineFirst Mode, onlineManager auto-invalidation |
+| `frontend/src/components/Dashboard.tsx` | React Query Migration (komplett) |
+| `frontend/src/components/ContactsPage/ContactsPage.tsx` | React Query Migration (komplett) |
+| `frontend/src/components/PlannerPage/PlannerPage.tsx` | React Query Migration (komplett) |
+| `frontend/src/hooks/useSmartSuggestions.ts` | Time-aware Suggestions, performAction Helper |
+| `frontend/src/components/SmartSurface/SmartSurface.tsx` | Morning Briefing Card |
+| `frontend/src/components/SmartSurface/SuggestionCard.tsx` | Exit Animationen, Briefing Type |
+| `frontend/src/components/SmartSurface/SuggestionCard.css` | Pulse/Dismiss/Snooze Keyframes |
+| `frontend/src/components/canvas/CanvasEditorPanel.tsx` | Mermaid Preview, Image Upload, Export |
+| `frontend/src/components/canvas/CanvasToolbar.tsx` | Export Buttons, Return Types |
+| `frontend/src/components/canvas/Canvas.css` | Toolbar + Preview Styles |
+| `frontend/src/components/MCPConnectionsPage.tsx` | Quick-Connect, Health Fix |
+| `frontend/src/components/layout/AppLayout.tsx` | OfflineIndicator integriert |
+| `frontend/src/components/GeneralChat.css` | Mobile Fullscreen (dvh) |
+| `frontend/src/components/ChatSessionSidebar.tsx` | Skeleton Loading, useEffect Fix |
+| `backend/src/services/queue/workers.ts` | DLQ, Stalled, Health Metrics, Progress |
+| `backend/src/services/voice/tts-service.ts` | LFU Cache, Pre-Warm, ENV Guard |
+| `backend/src/services/voice/voice-pipeline.ts` | Type-only Imports |
+| `backend/src/routes/observability.ts` | Worker Health Endpoint |
+| `frontend/vite.config.ts` | pnpm Symlink Resolution |
+| `.github/workflows/ci.yml` | Fresh Install fuer build-frontend |
+
+**Tests:** Frontend 572/572 ✅ | TypeScript 0 Fehler ✅ | CI 12/12 Jobs gruen ✅
+
+---
 
 ### 2026-03-15: Phase 76 - Foundation Excellence (Tool Visualization + Documentation)
 
