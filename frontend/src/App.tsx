@@ -34,7 +34,8 @@ import { useAuth } from './contexts/AuthContext';
 import { AuthPage } from './components/AuthPage/AuthPage';
 import { GeneralChat } from './components/GeneralChat';
 import { AIQuestionBubble } from './components/AIQuestionBubble';
-import { GlobalSearch } from './components/GlobalSearch';
+// Phase 95: UniversalSearch replaces GlobalSearch
+import { UniversalSearch } from './components/UniversalSearch/UniversalSearch';
 import { useIdeasData } from './hooks/useIdeasData';
 import { useAIQuestions } from './hooks/useAIQuestions';
 import { ShortcutHintProvider } from './components/ShortcutHint';
@@ -634,11 +635,11 @@ function AuthenticatedApp() {
       )}
 
       {globalSearchOpen && (
-        <GlobalSearch
+        <UniversalSearch
           isOpen={globalSearchOpen}
           onClose={closeGlobalSearch}
           context={context}
-          onNavigate={(page) => { navigateToPage(page as Page); closeGlobalSearch(); }}
+          onNavigate={(_type, _id) => { closeGlobalSearch(); }}
         />
       )}
 
