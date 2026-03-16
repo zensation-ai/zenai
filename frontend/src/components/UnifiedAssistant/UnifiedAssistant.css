@@ -1,0 +1,491 @@
+/* ===========================================
+ * Unified Assistant Overlay (Phase 91)
+ *
+ * Glassmorphism overlay with backdrop blur,
+ * smooth animations, dark mode, and responsive design.
+ * =========================================== */
+
+/* ─── Backdrop ─────────────────────────────── */
+
+.unified-assistant-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: ua-backdrop-in 0.2s ease-out;
+}
+
+.unified-assistant-backdrop.closing {
+  animation: ua-backdrop-out 0.15s ease-in forwards;
+}
+
+@keyframes ua-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ua-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ─── Overlay Container ───────────────────── */
+
+.unified-assistant-overlay {
+  position: fixed;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: 580px;
+  max-width: calc(100vw - 32px);
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  animation: ua-overlay-in 0.2s ease-out;
+  overflow: hidden;
+}
+
+.unified-assistant-overlay.closing {
+  animation: ua-overlay-out 0.15s ease-in forwards;
+}
+
+@keyframes ua-overlay-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) translateY(0);
+  }
+}
+
+@keyframes ua-overlay-out {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.95) translateY(-8px);
+  }
+}
+
+/* ─── Search Input Area ───────────────────── */
+
+.ua-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.ua-search-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.ua-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--text-primary, #111827);
+  line-height: 1.5;
+}
+
+.ua-input::placeholder {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.ua-shortcut-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  font-family: system-ui, sans-serif;
+}
+
+.ua-loading-indicator {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-top-color: var(--brand-primary, #6366f1);
+  border-radius: 50%;
+  animation: ua-spin 0.6s linear infinite;
+}
+
+@keyframes ua-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Results Area ────────────────────────── */
+
+.ua-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+}
+
+.ua-results::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ua-results::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+/* ─── Section Headers ─────────────────────── */
+
+.ua-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 8px 10px 4px;
+  margin: 0;
+}
+
+/* ─── Result Items ────────────────────────── */
+
+.ua-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary, #111827);
+}
+
+.ua-result-item:hover,
+.ua-result-item.selected {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.ua-result-item.selected {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.ua-result-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.ua-result-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ua-result-label {
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ua-result-description {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ua-result-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--brand-primary, #6366f1);
+}
+
+.ua-result-enter {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.ua-result-item.selected .ua-result-enter,
+.ua-result-item:hover .ua-result-enter {
+  opacity: 1;
+}
+
+/* ─── Quick Action Chips ──────────────────── */
+
+.ua-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 10px;
+}
+
+.ua-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+
+.ua-chip:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.2);
+  color: var(--brand-primary, #6366f1);
+}
+
+.ua-chip-icon {
+  font-size: 13px;
+}
+
+/* ─── Footer ──────────────────────────────── */
+
+.ua-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 11px;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.ua-footer-keys {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ua-footer-key {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ua-footer-key kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: system-ui, sans-serif;
+}
+
+/* ─── Empty State ─────────────────────────── */
+
+.ua-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-tertiary, #9ca3af);
+  font-size: 13px;
+  text-align: center;
+  gap: 4px;
+}
+
+.ua-empty-icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+/* ===========================================
+ * Dark Mode
+ * =========================================== */
+
+[data-theme="dark"] .unified-assistant-overlay,
+.dark .unified-assistant-overlay {
+  background: rgba(30, 30, 40, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.4),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .unified-assistant-backdrop,
+.dark .unified-assistant-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .ua-input,
+.dark .ua-input {
+  color: #f3f4f6;
+}
+
+[data-theme="dark"] .ua-input::placeholder,
+.dark .ua-input::placeholder {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .ua-input-area,
+.dark .ua-input-area {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .ua-result-item,
+.dark .ua-result-item {
+  color: #f3f4f6;
+}
+
+[data-theme="dark"] .ua-result-item:hover,
+[data-theme="dark"] .ua-result-item.selected,
+.dark .ua-result-item:hover,
+.dark .ua-result-item.selected {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .ua-result-icon,
+.dark .ua-result-icon {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .ua-shortcut-badge,
+[data-theme="dark"] .ua-footer-key kbd,
+.dark .ua-shortcut-badge,
+.dark .ua-footer-key kbd {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .ua-chip,
+.dark .ua-chip {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .ua-chip:hover,
+.dark .ua-chip:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .ua-footer,
+.dark .ua-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .ua-result-enter,
+.dark .ua-result-enter {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===========================================
+ * Mobile Responsive (Bottom Sheet)
+ * =========================================== */
+
+@media (max-width: 640px) {
+  .unified-assistant-overlay {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 16px 16px 0 0;
+    animation: ua-sheet-in 0.25s ease-out;
+  }
+
+  .unified-assistant-overlay.closing {
+    animation: ua-sheet-out 0.2s ease-in forwards;
+  }
+
+  @keyframes ua-sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes ua-sheet-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+
+  .ua-input {
+    font-size: 17px; /* Prevent iOS zoom */
+  }
+
+  .ua-shortcut-badge {
+    display: none;
+  }
+
+  .ua-footer-keys {
+    display: none;
+  }
+}

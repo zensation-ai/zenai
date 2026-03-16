@@ -24,6 +24,7 @@ import { ContextIndicator } from './ContextIndicator';
 import { OfflineIndicator } from '../OfflineIndicator';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { UnifiedAssistant } from '../UnifiedAssistant/UnifiedAssistant';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -283,6 +284,9 @@ export function AppLayout({
         favoritePages={favoritePages}
         toggleFavorite={toggleFavorite}
       />
+
+      {/* Unified AI Assistant Overlay (Cmd+Shift+Space) */}
+      <UnifiedAssistant context={context} currentPage={currentPage} onNavigate={onNavigate} onOpenSearch={onOpenSearch} />
 
       {/* Floating AI Assistant */}
       <FloatingAssistant
