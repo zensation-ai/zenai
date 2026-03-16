@@ -225,7 +225,7 @@ export const CommandPalette = memo(function CommandPalette({
     return fuse
       .search(cleanQuery)
       .slice(0, MAX_VISIBLE_RESULTS)
-      .map(r => r.item);
+      .map((r: { item: Command }) => r.item);
   }, [fuse, modeFilteredCommands, cleanQuery]);
 
   // Group by category
