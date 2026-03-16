@@ -2,6 +2,17 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
+import fs from 'fs';
+
+// Resolve symlinks for pnpm workspace compatibility in CI
+function resolvePackage(pkg: string): string {
+  const pkgPath = path.resolve(__dirname, 'node_modules', pkg);
+  try {
+    return fs.realpathSync(pkgPath);
+  } catch {
+    return pkgPath;
+  }
+}
 
 // Use relative paths when building for Electron (file:// protocol)
 const isElectronBuild = process.env.ELECTRON_BUILD === 'true';
@@ -9,10 +20,11 @@ const isElectronBuild = process.env.ELECTRON_BUILD === 'true';
 export default defineConfig({
   base: isElectronBuild ? './' : '/',
   // Deduplicate React — prevents "multiple copies of React" in pnpm workspaces
+  // resolvePackage() follows symlinks for pnpm CI compatibility
   resolve: {
     alias: {
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      react: resolvePackage('react'),
+      'react-dom': resolvePackage('react-dom'),
     },
   },
   plugins: [
