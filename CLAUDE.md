@@ -896,6 +896,68 @@ ENCRYPTION_KEY=...                  # AES-256 key for data-at-rest encryption (h
 SENTRY_DSN=...                      # Sentry DSN for backend error tracking
 SENTRY_ENABLED=true                 # Enable in non-production (production auto-enabled)
 # Frontend: VITE_SENTRY_DSN in frontend/.env
+
+# Server & Infrastructure
+PORT=3000                              # HTTP server port (default: 3000)
+API_URL=https://ki-ab-production.up.railway.app  # Public backend URL for OAuth callbacks, Swagger, A2A
+FRONTEND_URL=https://frontend-mu-six-93.vercel.app  # Frontend URL for OAuth redirects
+ALLOWED_ORIGINS=https://frontend-mu-six-93.vercel.app,https://zensation.ai  # CORS origins (comma-separated)
+LOG_LEVEL=info                         # Log level: debug, info, warn, error
+
+# Database (fallback when no DATABASE_URL)
+DB_HOST=localhost                      # PostgreSQL host
+DB_PORT=5432                           # PostgreSQL port
+DB_USER=postgres                       # PostgreSQL user
+DB_PASSWORD=                           # PostgreSQL password
+DB_POOL_SIZE=8                         # Max database pool connections (default: 8)
+DB_POOL_MIN=2                          # Min database pool connections (default: 2)
+DB_SSL_REJECT_UNAUTHORIZED=true        # Reject unauthorized SSL certs
+SLOW_QUERY_THRESHOLD=300               # Log queries slower than N ms (default: 300)
+
+# Authentication (Phase 56)
+JWT_SECRET=                            # JWT signing secret (auto-generated in dev, required in prod)
+MICROSOFT_CLIENT_ID=                   # Microsoft OAuth2 Client ID
+MICROSOFT_CLIENT_SECRET=               # Microsoft OAuth2 Client Secret
+GITHUB_CLIENT_ID=                      # GitHub OAuth2 Client ID (for OAuth login)
+GITHUB_CLIENT_SECRET=                  # GitHub OAuth2 Client Secret
+
+# Alternative AI Providers
+OPENAI_API_KEY=                        # OpenAI API key (GPT fallback)
+OPENAI_MODEL=gpt-4o-mini              # OpenAI model (default: gpt-4o-mini)
+OLLAMA_URL=http://localhost:11434      # Ollama local LLM URL
+OLLAMA_MODEL=                          # Ollama text model name
+OLLAMA_EMBEDDING_MODEL=               # Ollama embedding model name
+WHISPER_MODEL=base                     # Local Whisper STT model size
+
+# Memory Scheduler (additional)
+STATS_SCHEDULE="0 * * * *"            # Memory stats logging schedule
+ENABLE_MEMORY_STATS=true              # Enable memory stats logging
+FOCUS_RESEARCH_SCHEDULE="0 4 * * 0"   # Weekly focus research schedule
+ENABLE_FOCUS_RESEARCH=true            # Enable focus research
+
+# Business Metrics
+GOOGLE_PAGESPEED_API_KEY=             # Google PageSpeed API key (optional)
+UPTIMEROBOT_API_KEY=                  # UptimeRobot API key
+ENABLE_BUSINESS_METRICS=              # Enable business metrics collection
+
+# Slack Integration
+SLACK_CLIENT_ID=                      # Slack OAuth Client ID
+SLACK_CLIENT_SECRET=                  # Slack OAuth Client Secret
+SLACK_SIGNING_SECRET=                 # Slack Signing Secret for webhook verification
+
+# Push Notifications
+APNS_KEY_ID=                          # Apple Push Notification Service Key ID
+APNS_TEAM_ID=                         # APNS Team ID
+APNS_BUNDLE_ID=com.alexanderbering.PersonalAIBrain  # APNS Bundle ID
+APNS_PRIVATE_KEY=                     # APNS P8 private key content
+
+# Frontend (Vite - prefix VITE_)
+# VITE_API_URL=                       # Backend API base URL
+# VITE_API_KEY=                       # API key for backend auth
+# VITE_BACKEND_PORT=3000              # Backend port for local dev
+# VITE_SENTRY_DSN=                    # Frontend Sentry DSN
+# VITE_SUPABASE_URL=                  # Supabase URL for frontend auth
+# VITE_SUPABASE_ANON_KEY=            # Supabase anon key for frontend auth
 ```
 
 ## Railway Environment Variables (Production)

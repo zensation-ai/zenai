@@ -10,6 +10,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { getMetricSnapshots, getMetricsSummary, isMetricsEnabled } from '../services/observability/metrics';
 import { isTracingEnabled } from '../services/observability/tracing';
 import { getQueueService, QueueName, QUEUE_NAMES } from '../services/queue/job-queue';
+import { getWorkerHealth } from '../services/queue/workers';
 import { getPoolStats } from '../utils/database-context';
 
 export const observabilityRouter = Router();
@@ -119,6 +120,7 @@ observabilityRouter.get(
     const totalFailed = queueStats.reduce((sum, q) => sum + q.failed, 0);
 
     const poolStats = getPoolStats();
+    const workerHealth = getWorkerHealth();
 
     res.json({
       success: true,
@@ -138,6 +140,7 @@ observabilityRouter.get(
           totalFailed,
           queues: queueStats,
         },
+        workers: workerHealth,
         database: {
           pool: poolStats.pool,
           events: poolStats.events,

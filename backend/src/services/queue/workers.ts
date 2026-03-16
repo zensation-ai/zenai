@@ -1,9 +1,16 @@
 /**
- * Phase 61: Queue Workers
+ * Phase 61+: Queue Workers
  *
  * Worker definitions for background job processing.
  * Each worker processes jobs from a specific queue.
  * Workers are no-op if REDIS_URL is not configured.
+ *
+ * Phase 5.1 enhancements:
+ * - Enhanced error handling with failed event context + DLQ pattern
+ * - Job progress reporting for long-running jobs
+ * - getWorkerHealth() for monitoring active/completed/failed counts
+ * - Stalled job detection with configurable interval
+ * - Dead letter queue: final-attempt failures logged with full context
  */
 
 import { logger } from '../../utils/logger';
@@ -15,13 +22,93 @@ type BullWorker = {
   on(event: string, handler: (...args: unknown[]) => void): void;
 };
 
+// BullMQ Job shape (minimal typing to avoid hard dependency)
+interface BullJob {
+  id?: string;
+  name?: string;
+  data: Record<string, unknown>;
+  attemptsMade?: number;
+  opts?: { attempts?: number };
+  updateProgress(progress: number | Record<string, unknown>): Promise<void>;
+}
+
 const workers: Map<string, BullWorker> = new Map();
 let workersStarted = false;
+
+// --- Per-worker health counters ---
+
+interface WorkerHealthCounters {
+  completed: number;
+  failed: number;
+  active: number;
+  stalled: number;
+  dlq: number;
+  lastCompletedAt: string | null;
+  lastFailedAt: string | null;
+}
+
+const healthCounters: Map<string, WorkerHealthCounters> = new Map();
+
+function getOrCreateCounters(queueName: string): WorkerHealthCounters {
+  let c = healthCounters.get(queueName);
+  if (!c) {
+    c = { completed: 0, failed: 0, active: 0, stalled: 0, dlq: 0, lastCompletedAt: null, lastFailedAt: null };
+    healthCounters.set(queueName, c);
+  }
+  return c;
+}
+
+// --- Worker Health API ---
+
+export interface WorkerHealthStatus {
+  queue: string;
+  active: number;
+  completed: number;
+  failed: number;
+  stalled: number;
+  dlq: number;
+  lastCompletedAt: string | null;
+  lastFailedAt: string | null;
+}
+
+export interface WorkerHealthReport {
+  workersRunning: boolean;
+  workers: WorkerHealthStatus[];
+}
+
+/**
+ * Get health status for all workers (active jobs, completed count, failed count, DLQ count).
+ */
+export function getWorkerHealth(): WorkerHealthReport {
+  if (!workersStarted || workers.size === 0) {
+    return { workersRunning: false, workers: [] };
+  }
+
+  const statuses: WorkerHealthStatus[] = [];
+  for (const queueName of workers.keys()) {
+    const c = getOrCreateCounters(queueName);
+    statuses.push({
+      queue: queueName,
+      active: c.active,
+      completed: c.completed,
+      failed: c.failed,
+      stalled: c.stalled,
+      dlq: c.dlq,
+      lastCompletedAt: c.lastCompletedAt,
+      lastFailedAt: c.lastFailedAt,
+    });
+  }
+
+  return { workersRunning: true, workers: statuses };
+}
+
+// --- Job processors ---
 
 /**
  * Process a memory consolidation job.
  */
-async function processMemoryConsolidation(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function processMemoryConsolidation(job: BullJob): Promise<Record<string, unknown>> {
+  const data = job.data;
   const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
   logger.info('Processing memory consolidation job', {
     operation: 'worker',
@@ -29,12 +116,16 @@ async function processMemoryConsolidation(data: Record<string, unknown>): Promis
     context,
   });
 
+  await job.updateProgress(10);
+
   // Calls into existing memory consolidation logic
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const memoryModule = require('../memory/index');
     if (typeof memoryModule.memoryCoordinator?.consolidateAll === 'function') {
+      await job.updateProgress(30);
       await memoryModule.memoryCoordinator.consolidateAll(context);
+      await job.updateProgress(100);
     }
   } catch (error) {
     logger.debug('Memory consolidation function not available', {
@@ -49,7 +140,8 @@ async function processMemoryConsolidation(data: Record<string, unknown>): Promis
 /**
  * Process a RAG indexing job.
  */
-async function processRagIndexing(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function processRagIndexing(job: BullJob): Promise<Record<string, unknown>> {
+  const data = job.data;
   const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
   const ideaId = data.ideaId as string | undefined;
   logger.info('Processing RAG indexing job', {
@@ -59,13 +151,16 @@ async function processRagIndexing(data: Record<string, unknown>): Promise<Record
     ideaId,
   });
 
+  await job.updateProgress(50);
+
   return { status: 'completed', context, ideaId };
 }
 
 /**
  * Process an email analysis job.
  */
-async function processEmailProcessing(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function processEmailProcessing(job: BullJob): Promise<Record<string, unknown>> {
+  const data = job.data;
   const emailId = data.emailId as string | undefined;
   const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'work';
   logger.info('Processing email analysis job', {
@@ -75,13 +170,16 @@ async function processEmailProcessing(data: Record<string, unknown>): Promise<Re
     emailId,
   });
 
+  await job.updateProgress(50);
+
   return { status: 'completed', context, emailId };
 }
 
 /**
  * Process a graph indexing job.
  */
-async function processGraphIndexing(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function processGraphIndexing(job: BullJob): Promise<Record<string, unknown>> {
+  const data = job.data;
   const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
   logger.info('Processing graph indexing job', {
     operation: 'worker',
@@ -89,16 +187,21 @@ async function processGraphIndexing(data: Record<string, unknown>): Promise<Reco
     context,
   });
 
+  await job.updateProgress(50);
+
   return { status: 'completed', context };
 }
 
 /**
  * Process a sleep compute job (Phase 63).
  */
-async function processSleepCompute(data: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function processSleepCompute(job: BullJob): Promise<Record<string, unknown>> {
   try {
+    await job.updateProgress(10);
     const { processSleepJob } = await import('./workers/sleep-worker');
-    const result = await processSleepJob(data);
+    await job.updateProgress(30);
+    const result = await processSleepJob(job.data);
+    await job.updateProgress(100);
     return { status: 'completed', ...result };
   } catch (error) {
     logger.debug('Sleep compute processor not available', {
@@ -109,14 +212,41 @@ async function processSleepCompute(data: Record<string, unknown>): Promise<Recor
   }
 }
 
-// Worker processor map
-const processors: Record<string, (data: Record<string, unknown>) => Promise<Record<string, unknown>>> = {
+// Worker processor map — now receives the full BullJob for progress reporting
+const processors: Record<string, (job: BullJob) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
   'rag-indexing': processRagIndexing,
   'email-processing': processEmailProcessing,
   'graph-indexing': processGraphIndexing,
   'sleep-compute': processSleepCompute,
 };
+
+// --- Dead Letter Queue helper ---
+
+/**
+ * Log a job to the dead letter queue.
+ * In this implementation we log with full context for alerting/debugging.
+ * A dedicated DLQ queue could be added in the future if needed.
+ */
+function handleDeadLetter(queueName: string, job: BullJob | null, err: Error | unknown): void {
+  const counters = getOrCreateCounters(queueName);
+  counters.dlq++;
+
+  logger.error(`[DLQ] Job exhausted all retries: ${queueName}`, err instanceof Error ? err : undefined, {
+    operation: 'worker-dlq',
+    queue: queueName,
+    jobId: job?.id,
+    jobName: job?.name,
+    attemptsMade: job?.attemptsMade,
+    maxAttempts: job?.opts?.attempts,
+    data: job?.data ? JSON.stringify(job.data).slice(0, 500) : undefined,
+  });
+}
+
+// --- Stalled job config ---
+
+const STALLED_CHECK_INTERVAL_MS = 30_000; // check every 30s
+const MAX_STALLED_COUNT = 2; // mark as failed after 2 stall detections
 
 /**
  * Start all queue workers. No-op if REDIS_URL is not configured.
@@ -147,44 +277,88 @@ export async function startWorkers(): Promise<boolean> {
     };
 
     for (const [queueName, processor] of Object.entries(processors)) {
+      const counters = getOrCreateCounters(queueName);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const worker = new Worker(
         queueName,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        async (job: any) => {
+        async (job: BullJob) => {
+          counters.active++;
           const startTime = Date.now();
           try {
-            const result = await processor(job.data as Record<string, unknown>);
+            const result = await processor(job);
             const duration = Date.now() - startTime;
             recordQueueJob(queueName, 'completed', duration);
+            counters.completed++;
+            counters.lastCompletedAt = new Date().toISOString();
             return result;
           } catch (error) {
             const duration = Date.now() - startTime;
             recordQueueJob(queueName, 'failed', duration);
+            counters.failed++;
+            counters.lastFailedAt = new Date().toISOString();
             throw error;
+          } finally {
+            counters.active = Math.max(0, counters.active - 1);
           }
         },
         {
           connection,
           concurrency: concurrencyMap[queueName] || 1,
+          stalledInterval: STALLED_CHECK_INTERVAL_MS,
+          maxStalledCount: MAX_STALLED_COUNT,
         },
       );
 
+      // --- Event handlers ---
+
+      worker.on('completed', (job: unknown) => {
+        const j = job as BullJob | undefined;
+        logger.debug(`Worker job completed: ${queueName}`, {
+          operation: 'worker',
+          queue: queueName,
+          jobId: j?.id,
+          jobName: j?.name,
+        });
+      });
+
       worker.on('failed', (job: unknown, err: unknown) => {
-        const jobData = job as { id?: string; name?: string; attemptsMade?: number } | undefined;
+        const j = job as BullJob | undefined;
+        const maxAttempts = j?.opts?.attempts ?? 3;
+        const attemptsMade = j?.attemptsMade ?? 0;
+        const isFinalAttempt = attemptsMade >= maxAttempts;
+
         logger.error(`Worker job failed: ${queueName}`, err instanceof Error ? err : undefined, {
           operation: 'worker',
           queue: queueName,
-          jobId: jobData?.id,
-          jobName: jobData?.name,
-          attempts: jobData?.attemptsMade,
+          jobId: j?.id,
+          jobName: j?.name,
+          attemptsMade,
+          maxAttempts,
+          isFinalAttempt,
+          errorMessage: err instanceof Error ? err.message : String(err),
         });
+
+        // Dead letter queue: log exhausted jobs with full context
+        if (isFinalAttempt) {
+          handleDeadLetter(queueName, j ?? null, err);
+        }
       });
 
       worker.on('error', (err: unknown) => {
         logger.error(`Worker error: ${queueName}`, err instanceof Error ? err : undefined, {
           operation: 'worker',
           queue: queueName,
+        });
+      });
+
+      worker.on('stalled', (jobId: unknown) => {
+        counters.stalled++;
+        logger.warn(`Worker job stalled: ${queueName}`, {
+          operation: 'worker',
+          queue: queueName,
+          jobId: String(jobId),
+          stalledCount: counters.stalled,
         });
       });
 
@@ -195,6 +369,8 @@ export async function startWorkers(): Promise<boolean> {
     logger.info('Queue workers started', {
       operation: 'worker',
       queues: Object.keys(processors),
+      stalledCheckIntervalMs: STALLED_CHECK_INTERVAL_MS,
+      maxStalledCount: MAX_STALLED_COUNT,
     });
     return true;
   } catch (error) {

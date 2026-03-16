@@ -3,10 +3,14 @@
  *
  * Central QueryClient with sensible defaults for ZenAI.
  * Provides stale-while-revalidate pattern, retry logic,
- * and context-aware cache invalidation.
+ * offline-first network mode, and context-aware cache invalidation.
+ *
+ * Phase 5.3: Added networkMode 'offlineFirst' so cached data is served
+ * immediately when offline, and onlineManager listener to refetch stale
+ * queries when connectivity is restored.
  */
 
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, onlineManager } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,9 +19,18 @@ export const queryClient = new QueryClient({
       gcTime: 5 * 60_000, // 5min garbage collection
       retry: 1,
       refetchOnWindowFocus: false, // avoid excessive refetches
+      networkMode: 'offlineFirst', // serve cache when offline, revalidate when online
     },
     mutations: {
       retry: 0,
+      networkMode: 'offlineFirst',
     },
   },
+});
+
+// Refetch all stale queries when the browser comes back online
+onlineManager.subscribe((isOnline) => {
+  if (isOnline) {
+    queryClient.invalidateQueries();
+  }
 });

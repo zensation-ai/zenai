@@ -204,15 +204,86 @@ class EdgeTTSProvider implements TTSProvider {
 }
 
 // ============================================================
+// TTS Phrase Cache (avoid re-synthesizing identical phrases)
+// ============================================================
+
+interface CacheEntry {
+  audio: Buffer;
+  createdAt: number;
+  accessCount: number;
+}
+
+class TTSCache {
+  private cache: Map<string, CacheEntry>;
+  private maxEntries: number;
+  private ttlMs: number;
+
+  constructor(maxEntries = 200, ttlMs = 30 * 60 * 1000) {
+    this.cache = new Map();
+    this.maxEntries = maxEntries;
+    this.ttlMs = ttlMs;
+  }
+
+  private makeKey(text: string, voice?: string, provider?: string): string {
+    return `${provider || 'default'}:${voice || 'default'}:${text}`;
+  }
+
+  get(text: string, voice?: string, provider?: string): Buffer | null {
+    const key = this.makeKey(text, voice, provider);
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() - entry.createdAt > this.ttlMs) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    entry.accessCount++;
+    return entry.audio;
+  }
+
+  set(text: string, audio: Buffer, voice?: string, provider?: string): void {
+    // Only cache short phrases (< 200 chars) to avoid memory bloat
+    if (text.length > 200) return;
+
+    if (this.cache.size >= this.maxEntries) {
+      // Evict least-accessed entry
+      let minKey = '';
+      let minAccess = Infinity;
+      for (const [k, v] of this.cache) {
+        if (v.accessCount < minAccess) {
+          minAccess = v.accessCount;
+          minKey = k;
+        }
+      }
+      if (minKey) this.cache.delete(minKey);
+    }
+
+    this.cache.set(this.makeKey(text, voice, provider), {
+      audio,
+      createdAt: Date.now(),
+      accessCount: 1,
+    });
+  }
+
+  get size(): number { return this.cache.size; }
+  get stats(): { size: number; maxEntries: number } {
+    return { size: this.cache.size, maxEntries: this.maxEntries };
+  }
+}
+
+// ============================================================
 // Multi-TTS Service
 // ============================================================
 
 export class MultiTTSService {
   private providers: Map<string, TTSProvider>;
   private defaultProvider: string;
+  private phraseCache: TTSCache;
 
   constructor() {
     this.providers = new Map();
+    this.phraseCache = new TTSCache();
 
     const elevenlabs = new ElevenLabsProvider();
     this.providers.set('elevenlabs', elevenlabs);
@@ -229,12 +300,18 @@ export class MultiTTSService {
   }
 
   async synthesize(text: string, options?: TTSOptions): Promise<Buffer> {
+    // Check phrase cache first
+    const cached = this.phraseCache.get(text, options?.voice, options?.provider);
+    if (cached) return cached;
+
     const providerName = options?.provider || this.defaultProvider;
     const provider = this.providers.get(providerName);
 
     if (provider && provider.isAvailable()) {
       try {
-        return await provider.synthesize(text, options);
+        const audio = await provider.synthesize(text, options);
+        this.phraseCache.set(text, audio, options?.voice, options?.provider);
+        return audio;
       } catch (error) {
         logger.warn(`TTS provider ${providerName} failed, trying fallback`, {
           error: error instanceof Error ? error.message : String(error),
@@ -246,7 +323,9 @@ export class MultiTTSService {
     for (const [name, p] of this.providers) {
       if (name !== providerName && p.isAvailable()) {
         try {
-          return await p.synthesize(text, options);
+          const audio = await p.synthesize(text, options);
+          this.phraseCache.set(text, audio, options?.voice, options?.provider);
+          return audio;
         } catch (error) {
           logger.warn(`TTS fallback provider ${name} also failed`, {
             error: error instanceof Error ? error.message : String(error),
@@ -256,6 +335,29 @@ export class MultiTTSService {
     }
 
     throw new Error('No TTS provider available');
+  }
+
+  /**
+   * Synthesize multiple sentences in parallel (up to concurrency limit)
+   */
+  async synthesizeBatch(sentences: string[], options?: TTSOptions, concurrency = 3): Promise<Buffer[]> {
+    const results: Buffer[] = new Array(sentences.length);
+    let nextIdx = 0;
+
+    const worker = async () => {
+      while (nextIdx < sentences.length) {
+        const idx = nextIdx++;
+        results[idx] = await this.synthesize(sentences[idx], options);
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(concurrency, sentences.length) }, () => worker());
+    await Promise.all(workers);
+    return results;
+  }
+
+  getCacheStats(): { size: number; maxEntries: number } {
+    return this.phraseCache.stats;
   }
 
   async *streamSynthesize(text: string, options?: TTSOptions): AsyncGenerator<Buffer> {

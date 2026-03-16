@@ -333,6 +333,7 @@ voiceRealtimeRouter.get(
         tts: {
           available: multiTTSService.getAvailableProviders(),
           default: multiTTSService.getAvailableProviders()[0] || 'edge-tts',
+          cache: multiTTSService.getCacheStats(),
         },
       },
     });

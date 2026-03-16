@@ -26,6 +26,43 @@
   font-size: 0.85rem;
 }
 
+/* Ecosystem Health Summary */
+.mcp-ecosystem-summary {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md, 8px);
+  backdrop-filter: blur(12px);
+}
+
+.mcp-summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 0.25rem;
+}
+
+.mcp-summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text, #fff);
+}
+
+.mcp-summary-value.mcp-summary--healthy {
+  color: var(--success, #22c55e);
+}
+
+.mcp-summary-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* Tabs (Phase 71) */
 .mcp-tabs {
   display: flex;

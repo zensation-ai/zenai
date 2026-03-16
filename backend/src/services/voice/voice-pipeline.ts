@@ -78,7 +78,7 @@ export class VoicePipeline {
         silenceThreshold_ms: config?.silenceThreshold_ms || 1500,
       },
       turnTaking: createTurnTakingEngine({
-        silenceThreshold_ms: config?.silenceThreshold_ms || 1500,
+        silenceThreshold_ms: config?.silenceThreshold_ms || 1000,
       }),
       audioBuffer: [],
       isProcessing: false,
@@ -266,27 +266,44 @@ export class VoicePipeline {
     const responseText = chatResult.assistantMessage.content;
 
     // Split response into sentences for progressive TTS
-    const sentences = audioProcessor.splitIntoSentences(responseText);
-    const audioChunks: Buffer[] = [];
+    const sentences = audioProcessor.splitIntoSentences(responseText)
+      .filter(s => s.trim().length > 0);
 
-    for (const sentence of sentences) {
-      if (sentence.trim().length === 0) continue;
-
-      try {
-        const audio = await multiTTSService.synthesize(sentence, {
-          voice: session.config.ttsVoice,
-          provider: session.config.ttsProvider,
-        });
-        audioChunks.push(audio);
-      } catch (error) {
-        logger.warn('TTS synthesis failed for sentence', {
-          error: error instanceof Error ? error.message : String(error),
-          sentenceLength: sentence.length,
-        });
-      }
+    if (sentences.length === 0) {
+      return { responseAudio: [], responseText };
     }
 
-    return { responseAudio: audioChunks, responseText };
+    // Parallel TTS synthesis (up to 3 concurrent, with phrase caching)
+    try {
+      const audioChunks = await multiTTSService.synthesizeBatch(sentences, {
+        voice: session.config.ttsVoice,
+        provider: session.config.ttsProvider,
+      }, 3);
+      return { responseAudio: audioChunks, responseText };
+    } catch (error) {
+      logger.warn('Batch TTS synthesis failed, trying sequential fallback', {
+        error: error instanceof Error ? error.message : String(error),
+        sentenceCount: sentences.length,
+      });
+
+      // Sequential fallback
+      const audioChunks: Buffer[] = [];
+      for (const sentence of sentences) {
+        try {
+          const audio = await multiTTSService.synthesize(sentence, {
+            voice: session.config.ttsVoice,
+            provider: session.config.ttsProvider,
+          });
+          audioChunks.push(audio);
+        } catch (err) {
+          logger.warn('TTS synthesis failed for sentence', {
+            error: err instanceof Error ? err.message : String(err),
+            sentenceLength: sentence.length,
+          });
+        }
+      }
+      return { responseAudio: audioChunks, responseText };
+    }
   }
 
   /**

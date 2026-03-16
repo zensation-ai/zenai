@@ -402,6 +402,34 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
       {/* Servers Tab */}
       {activeTab === 'servers' && (
         <>
+          {/* Ecosystem Health Summary */}
+          {!loading && servers.length > 0 && (
+            <div className="mcp-ecosystem-summary">
+              <div className="mcp-summary-stat">
+                <span className="mcp-summary-value">{servers.length}</span>
+                <span className="mcp-summary-label">Server</span>
+              </div>
+              <div className="mcp-summary-stat">
+                <span className="mcp-summary-value mcp-summary--healthy">
+                  {servers.filter(s => s.healthStatus === 'healthy').length}
+                </span>
+                <span className="mcp-summary-label">Healthy</span>
+              </div>
+              <div className="mcp-summary-stat">
+                <span className="mcp-summary-value">
+                  {servers.reduce((sum, s) => sum + (s.toolCount || 0), 0)}
+                </span>
+                <span className="mcp-summary-label">Tools</span>
+              </div>
+              <div className="mcp-summary-stat">
+                <span className="mcp-summary-value">
+                  {servers.reduce((sum, s) => sum + (s.resourceCount || 0), 0)}
+                </span>
+                <span className="mcp-summary-label">Resources</span>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="mcp-error" role="alert">
               <span>{error}</span>

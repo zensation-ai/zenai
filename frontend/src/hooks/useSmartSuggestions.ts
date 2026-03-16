@@ -1,11 +1,12 @@
 /**
- * useSmartSuggestions Hook (Phase 69.1)
+ * useSmartSuggestions Hook (Phase 69.1, enhanced Phase 6.1)
  *
  * Fetches smart suggestions via API, supports dismiss/snooze/accept actions.
  * Optionally subscribes to SSE for real-time updates.
+ * Passes time-of-day and day-of-week context for time-aware suggestions.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
 import type { AIContext } from '../components/ContextSwitcher';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
@@ -26,9 +27,29 @@ export interface SmartSuggestion {
 
 export type SnoozeDuration = '1h' | '4h' | 'tomorrow';
 
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+
+export function getTimeOfDay(): TimeOfDay {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 22) return 'evening';
+  return 'night';
+}
+
+export function getDayOfWeek(): string {
+  return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
+}
+
+export function isMorningBriefingTime(): boolean {
+  const hour = new Date().getHours();
+  return hour >= 6 && hour < 11;
+}
+
 interface UseSmartSuggestionsReturn {
   suggestions: SmartSuggestion[];
   loading: boolean;
+  timeOfDay: TimeOfDay;
   dismiss: (id: string) => Promise<void>;
   snooze: (id: string, duration: SnoozeDuration) => Promise<void>;
   accept: (id: string) => Promise<void>;
@@ -43,9 +64,17 @@ export function useSmartSuggestions(
   const [loading, setLoading] = useState(true);
   const eventSourceRef = useRef<EventSource | null>(null);
 
+  const timeOfDay = useMemo(() => getTimeOfDay(), []);
+  const dayOfWeek = useMemo(() => getDayOfWeek(), []);
+
   const fetchSuggestions = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/${context}/suggestions?limit=3`);
+      const params = new URLSearchParams({
+        limit: '3',
+        timeOfDay,
+        dayOfWeek,
+      });
+      const response = await axios.get(`/api/${context}/suggestions?${params.toString()}`);
       if (response.data?.success && Array.isArray(response.data.data)) {
         setSuggestions(response.data.data);
       }
@@ -54,7 +83,7 @@ export function useSmartSuggestions(
     } finally {
       setLoading(false);
     }
-  }, [context]);
+  }, [context, timeOfDay, dayOfWeek]);
 
   // Initial fetch
   useEffect(() => {
@@ -130,6 +159,7 @@ export function useSmartSuggestions(
   return {
     suggestions,
     loading,
+    timeOfDay,
     dismiss,
     snooze,
     accept,

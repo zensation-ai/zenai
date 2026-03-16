@@ -3,13 +3,15 @@
  *
  * Interactive canvas mode - side-by-side editor with chat.
  * Supports markdown, code, and HTML documents with live preview and auto-save.
+ * Enhanced with mermaid diagrams, image embedding, export, and markdown toolbar.
  *
  * Phase 33 Sprint 4 - Feature 10
+ * Phase 6.2 - Multi-Modal Canvas Enhancement
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { CanvasEditorPanel, type ViewMode } from './canvas/CanvasEditorPanel';
+import { CanvasEditorPanel, type ViewMode, type CanvasEditorPanelHandle } from './canvas/CanvasEditorPanel';
 import { CanvasToolbar } from './canvas/CanvasToolbar';
 import { CanvasDocumentList } from './canvas/CanvasDocumentList';
 import { showToast } from './Toast';
@@ -32,6 +34,9 @@ interface CanvasPageProps {
   context: string;
 }
 
+const MAX_IMAGE_SIZE_MB = 5;
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+
 // Uses global axios instance configured in main.tsx (baseURL + auth interceptor)
 
 export function CanvasPage({ context }: CanvasPageProps) {
@@ -44,6 +49,8 @@ export function CanvasPage({ context }: CanvasPageProps) {
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const isMountedRef = useRef(true);
+  const editorPanelRef = useRef<CanvasEditorPanelHandle>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -247,6 +254,57 @@ export function CanvasPage({ context }: CanvasPageProps) {
     showToast('Download gestartet', 'success');
   }, [activeDocument]);
 
+  // Insert image via file picker
+  const handleInsertImage = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileInputChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0 || !activeDocument) return;
+
+      const file = files[0];
+      if (!file.type.startsWith('image/')) {
+        showToast('Nur Bilddateien werden unterstuetzt', 'error');
+        return;
+      }
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        showToast(`Bild ist groesser als ${MAX_IMAGE_SIZE_MB}MB`, 'error');
+        return;
+      }
+
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden'));
+          reader.readAsDataURL(file);
+        });
+
+        const altText = file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
+        const markdownImage = `\n![${altText}](${dataUrl})\n`;
+
+        const textarea = editorPanelRef.current?.getTextareaRef();
+        const cursorPos = textarea ? textarea.selectionStart : activeDocument.content.length;
+        const newContent =
+          activeDocument.content.substring(0, cursorPos) +
+          markdownImage +
+          activeDocument.content.substring(cursorPos);
+
+        handleContentChange(newContent);
+        showToast(`Bild "${file.name}" eingefuegt`, 'success');
+      } catch (err) {
+        logError('canvas-image-insert', err);
+        showToast('Fehler beim Einfuegen des Bildes', 'error');
+      }
+
+      // Reset the input so the same file can be selected again
+      e.target.value = '';
+    },
+    [activeDocument, handleContentChange]
+  );
+
   // Keyboard shortcut: Ctrl+S
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -276,10 +334,23 @@ export function CanvasPage({ context }: CanvasPageProps) {
     return () => document.removeEventListener('keydown', handler);
   }, [activeDocument, saveStatus]);
 
+  // Hidden file input for image insertion
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      style={{ display: 'none' }}
+      onChange={handleFileInputChange}
+      aria-hidden="true"
+    />
+  );
+
   // Empty state
   if (!activeDocument) {
     return (
       <div className="canvas-page canvas-empty-state">
+        {fileInput}
         <div className="canvas-empty-content">
           <h2>{'\uD83C\uDFA8'} Canvas</h2>
           <p>Erstelle interaktive Dokumente mit Live-Vorschau.</p>
@@ -313,6 +384,8 @@ export function CanvasPage({ context }: CanvasPageProps) {
 
   return (
     <div className="canvas-page">
+      {fileInput}
+
       {/* Mobile Tab Switcher */}
       <div className="canvas-mobile-tabs">
         <button
@@ -346,9 +419,12 @@ export function CanvasPage({ context }: CanvasPageProps) {
             onCopy={handleCopy}
             onNewDocument={handleNewDocument}
             onShowDocList={() => setShowDocList(true)}
+            content={activeDocument.content}
+            onInsertImage={handleInsertImage}
           />
 
           <CanvasEditorPanel
+            ref={editorPanelRef}
             content={activeDocument.content}
             onChange={handleContentChange}
             type={activeDocument.type}

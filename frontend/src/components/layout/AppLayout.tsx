@@ -21,6 +21,7 @@ import { FeatureHintCard } from '../FeatureHintCard';
 import { ProactivePanel, ProactiveBellButton } from '../ProactivePanel';
 import { SmartSurface } from '../SmartSurface/SmartSurface';
 import { ContextIndicator } from './ContextIndicator';
+import { OfflineIndicator } from '../OfflineIndicator';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -208,6 +209,8 @@ export function AppLayout({
           isOpen={proactivePanelOpen}
           onClose={() => setProactivePanelOpen(false)}
         />
+
+        <OfflineIndicator />
 
         <SmartSurface context={context} />
 
