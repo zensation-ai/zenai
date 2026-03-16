@@ -417,6 +417,25 @@
   right: 6px;
 }
 
+/* G+key Shortcut Hints */
+.sidebar-item-shortcut {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 1px 5px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted, rgba(42, 61, 77, 0.45));
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-item:hover .sidebar-item-shortcut,
+.sidebar-item-wrapper:hover .sidebar-item-shortcut {
+  opacity: 1;
+}
+
 /* ============================================
    Item Wrapper (for hover favorite toggle)
    ============================================ */

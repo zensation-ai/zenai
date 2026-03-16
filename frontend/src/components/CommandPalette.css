@@ -446,6 +446,67 @@
   }
 }
 
+/* Mode Pill */
+.command-palette-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  animation: modePillAppear 0.15s ease-out;
+}
+
+@keyframes modePillAppear {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Mode Hints (below search) */
+.command-palette-mode-hints {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px 0;
+  flex-wrap: wrap;
+}
+
+.command-palette-mode-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted, #2a3d4d);
+}
+
+.command-palette-mode-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 1px 4px;
+  background: var(--bg-secondary, rgba(20, 60, 80, 0.08));
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.15));
+  border-radius: 3px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+:root.dark-mode .command-palette-mode-hint {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+:root.dark-mode .command-palette-mode-hint kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* Scrollbar styling */
 .command-palette-results::-webkit-scrollbar {
   width: 8px;

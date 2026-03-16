@@ -14,6 +14,7 @@ import type { AdvancedFilters } from './SearchFilterBar';
 import type { ProcessType } from './AIProcessingOverlay';
 import type { InputMode } from './CommandCenter';
 import { usePersonaState } from './PersonaSelector';
+import { useListNavigation } from '../hooks/useListNavigation';
 import {
   useIdeasQuery,
   useArchivedIdeasQuery,
@@ -511,6 +512,13 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   const handleSelectAll = useCallback(() => {
     setSelectedIds(new Set(filteredIdeas.map(i => i.id)));
   }, [filteredIdeas]);
+
+  // J/K list navigation (keyboard-only, Enter opens detail)
+  useListNavigation({
+    items: filteredIdeas,
+    onSelect: (idea) => handleIdeaClick(idea),
+    enabled: activeIdeasTab === 'ideas' && !selectedIdea && !selectionMode,
+  });
 
   return (
     <div className={`ideas-page${isAIActive ? ' ai-active' : ''}`} data-context={context}>

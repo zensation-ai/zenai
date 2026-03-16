@@ -1,84 +1,95 @@
 /**
- * useKeyboardNavigation - Vim-Style Key Sequence Navigation
+ * useKeyboardNavigation - Vim-style G+key navigation sequences
  *
- * Supports G+key sequences for global navigation:
- *   G then D = Dashboard
- *   G then C = Chat
- *   G then I = Ideas
- *   G then E = Email
- *   G then T = Tasks (Planner)
- *   G then S = Settings
- *   G then K = Contacts
- *   G then F = Finance
- *   G then B = Business
- *   G then W = Workshop
- *   G then N = Notifications
- *   G then L = Learning
+ * Enables "G then key" two-step navigation (like Vim's `g` prefix).
+ * Example: G then H = go Home, G then I = go Ideas, G then C = go Chat.
  *
- * Also handles:
- *   J/K for list navigation
- *   Escape hierarchy
- *
- * Phase 82: Keyboard-First & Command System
+ * Automatically disabled when focus is in input/textarea/contenteditable.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Page } from '../types';
+import type { Page } from '../types/idea';
 
-// ============================================
-// Navigation Map
-// ============================================
-
-const G_KEY_NAV_MAP: Record<string, Page> = {
-  d: 'home',
-  c: 'chat',
-  i: 'ideas',
-  e: 'email',
-  t: 'calendar',
-  s: 'settings',
-  k: 'contacts',
-  f: 'finance',
-  b: 'business',
-  w: 'workshop',
-  n: 'notifications',
-  l: 'learning',
-  m: 'my-ai',
-  o: 'documents',
-  p: 'insights',
-  r: 'browser',
+/** Map of second-key to page navigation target */
+const G_KEY_MAP: Record<string, { page: Page; label: string }> = {
+  h: { page: 'home', label: 'Dashboard' },
+  c: { page: 'chat', label: 'Chat' },
+  i: { page: 'ideas', label: 'Gedanken' },
+  w: { page: 'workshop', label: 'Werkstatt' },
+  p: { page: 'calendar', label: 'Planer' },
+  e: { page: 'email', label: 'E-Mail' },
+  d: { page: 'documents', label: 'Wissensbasis' },
+  n: { page: 'insights', label: 'Insights' },
+  b: { page: 'business', label: 'Business' },
+  l: { page: 'learning', label: 'Lernen' },
+  a: { page: 'my-ai', label: 'Meine KI' },
+  s: { page: 'settings', label: 'Einstellungen' },
+  f: { page: 'finance', label: 'Finanzen' },
+  k: { page: 'contacts', label: 'Kontakte' },
+  r: { page: 'browser', label: 'Browser' },
+  t: { page: 'agent-teams', label: 'Agent Teams' },
 };
 
-// ============================================
-// Types
-// ============================================
+/** Timeout for second key in ms */
+const SEQUENCE_TIMEOUT = 1500;
 
 interface UseKeyboardNavigationOptions {
   onNavigate: (page: Page) => void;
-  /** Whether keyboard navigation is enabled (disabled when modals/inputs are focused) */
   enabled?: boolean;
 }
 
-interface KeyboardNavigationState {
-  /** Current pending key in a sequence (e.g., 'g' waiting for second key) */
-  pendingKey: string | null;
-  /** Visual indicator text for the pending sequence */
+interface UseKeyboardNavigationReturn {
+  /** Whether we're waiting for the second key after G */
+  isSequenceActive: boolean;
+  /** Hint text like "G + ?" to show in the UI */
   sequenceHint: string | null;
 }
 
-// ============================================
-// Hook
-// ============================================
+/**
+ * Get the G+key shortcut label for a given page (e.g., "G H" for home).
+ * Returns null if no mapping exists.
+ */
+export function getGKeyLabel(page: Page): string | null {
+  for (const [key, mapping] of Object.entries(G_KEY_MAP)) {
+    if (mapping.page === page) {
+      return `G ${key.toUpperCase()}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Returns all G+key mappings (for displaying in help/settings).
+ */
+export function getAllGKeyMappings(): Array<{ key: string; page: Page; label: string }> {
+  return Object.entries(G_KEY_MAP).map(([key, mapping]) => ({
+    key: key.toUpperCase(),
+    page: mapping.page,
+    label: mapping.label,
+  }));
+}
+
+function isInputFocused(): boolean {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+  if ((el as HTMLElement).isContentEditable) return true;
+  // Also skip if a dialog/modal is open
+  if (el.closest('[role="dialog"]')) return true;
+  return false;
+}
 
 export function useKeyboardNavigation({
   onNavigate,
   enabled = true,
-}: UseKeyboardNavigationOptions): KeyboardNavigationState {
-  const [pendingKey, setPendingKey] = useState<string | null>(null);
+}: UseKeyboardNavigationOptions): UseKeyboardNavigationReturn {
+  const [isSequenceActive, setIsSequenceActive] = useState(false);
   const [sequenceHint, setSequenceHint] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearPending = useCallback(() => {
-    setPendingKey(null);
+  const clearSequence = useCallback(() => {
+    setIsSequenceActive(false);
     setSequenceHint(null);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -90,44 +101,28 @@ export function useKeyboardNavigation({
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip when typing in input fields, textareas, or contenteditable elements
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
+      // Skip if in input fields
+      if (isInputFocused()) return;
+      // Skip if any modifier is held
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      // Skip if any modifier key is pressed (except shift for uppercase)
-      if (e.metaKey || e.ctrlKey || e.altKey) {
-        return;
-      }
-
-      const key = e.key.toLowerCase();
-
-      // Handle pending G sequence
-      if (pendingKey === 'g') {
-        const targetPage = G_KEY_NAV_MAP[key];
-        if (targetPage) {
-          e.preventDefault();
-          onNavigate(targetPage);
-        }
-        clearPending();
-        return;
-      }
-
-      // Start G sequence
-      if (key === 'g' && !e.shiftKey) {
+      if (isSequenceActive) {
+        // We're waiting for the second key
         e.preventDefault();
-        setPendingKey('g');
-        setSequenceHint('g...');
-
-        // Auto-clear after 1.5 seconds
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(clearPending, 1500);
+        const mapping = G_KEY_MAP[e.key.toLowerCase()];
+        if (mapping) {
+          onNavigate(mapping.page);
+        }
+        clearSequence();
         return;
+      }
+
+      // First key: G (lowercase only, no modifiers)
+      if (e.key === 'g' && !e.shiftKey) {
+        setIsSequenceActive(true);
+        setSequenceHint('G + ...');
+        // Auto-cancel after timeout
+        timeoutRef.current = setTimeout(clearSequence, SEQUENCE_TIMEOUT);
       }
     };
 
@@ -136,7 +131,7 @@ export function useKeyboardNavigation({
       document.removeEventListener('keydown', handleKeyDown);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [enabled, pendingKey, onNavigate, clearPending]);
+  }, [enabled, isSequenceActive, onNavigate, clearSequence]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -145,28 +140,5 @@ export function useKeyboardNavigation({
     };
   }, []);
 
-  return { pendingKey, sequenceHint };
-}
-
-/**
- * Get a display label for a G+key navigation shortcut
- */
-export function getGKeyLabel(page: Page): string | undefined {
-  for (const [key, target] of Object.entries(G_KEY_NAV_MAP)) {
-    if (target === page) {
-      return `G ${key.toUpperCase()}`;
-    }
-  }
-  return undefined;
-}
-
-/**
- * Get all G-key navigation mappings for display
- */
-export function getAllGKeyMappings(): Array<{ key: string; page: Page; label: string }> {
-  return Object.entries(G_KEY_NAV_MAP).map(([key, page]) => ({
-    key: key.toUpperCase(),
-    page,
-    label: `G dann ${key.toUpperCase()}`,
-  }));
+  return { isSequenceActive, sequenceHint };
 }

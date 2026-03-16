@@ -1,162 +1,127 @@
 /**
- * useListNavigation - J/K List Navigation Hook
+ * useListNavigation - J/K list navigation (Vim-style)
  *
- * Provides Vim-style J/K navigation for any list:
- *   J = Move down
- *   K = Move up
- *   Enter = Open/Select
- *   E = Archive (optional)
- *   X = Toggle select (optional)
+ * Enables J/K keys for navigating through lists (ideas, emails, tasks, etc.).
+ * Enter selects, Escape deselects.
  *
- * Phase 82: Keyboard-First & Command System
+ * Automatically disabled when focus is in input/textarea/contenteditable.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-
-// ============================================
-// Types
-// ============================================
+import { useState, useEffect, useCallback } from 'react';
 
 interface UseListNavigationOptions<T> {
-  /** The list of items to navigate */
+  /** The list items to navigate through */
   items: T[];
-  /** Callback when Enter is pressed on the selected item */
+  /** Called when user presses Enter on selected item */
   onSelect?: (item: T, index: number) => void;
-  /** Callback when E is pressed on the selected item (archive/action) */
-  onAction?: (item: T, index: number) => void;
-  /** Whether the navigation is active */
+  /** Whether the hook is active */
   enabled?: boolean;
-  /** Container ref for scrolling selected item into view */
-  containerRef?: React.RefObject<HTMLElement | null>;
-  /** CSS selector for items within the container */
-  itemSelector?: string;
+  /** CSS selector for list item containers (used for scroll-into-view) */
+  containerSelector?: string;
 }
 
 interface UseListNavigationReturn {
-  /** Currently selected index (-1 = none selected) */
+  /** Currently selected index (-1 = none) */
   selectedIndex: number;
-  /** Set the selected index programmatically */
+  /** Set selected index programmatically */
   setSelectedIndex: (index: number) => void;
   /** Props to spread on each list item for highlighting */
   getItemProps: (index: number) => {
-    'data-list-selected': boolean;
     'data-list-index': number;
+    'data-list-selected': boolean;
   };
-  /** Whether list navigation is actively capturing keys */
-  isActive: boolean;
 }
 
-// ============================================
-// Hook
-// ============================================
+function isInputFocused(): boolean {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+  if ((el as HTMLElement).isContentEditable) return true;
+  if (el.closest('[role="dialog"]')) return true;
+  return false;
+}
 
 export function useListNavigation<T>({
   items,
   onSelect,
-  onAction,
   enabled = true,
-  containerRef,
-  itemSelector = '[data-list-index]',
+  containerSelector,
 }: UseListNavigationOptions<T>): UseListNavigationReturn {
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isActive, setIsActive] = useState(false);
-  const selectedIndexRef = useRef(selectedIndex);
-  selectedIndexRef.current = selectedIndex;
 
   // Reset selection when items change
   useEffect(() => {
-    if (selectedIndex >= items.length) {
-      setSelectedIndex(Math.max(0, items.length - 1));
-    }
-  }, [items.length, selectedIndex]);
+    setSelectedIndex(-1);
+  }, [items.length]);
 
   // Scroll selected item into view
   useEffect(() => {
-    if (!containerRef?.current || selectedIndex < 0) return;
-    const container = containerRef.current;
-    const selectedEl = container.querySelector(`${itemSelector}[data-list-index="${selectedIndex}"]`);
-    selectedEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [selectedIndex, containerRef, itemSelector]);
+    if (selectedIndex < 0 || !containerSelector) return;
+    const container = document.querySelector(containerSelector);
+    if (!container) return;
+    const selected = container.querySelector(`[data-list-index="${selectedIndex}"]`);
+    selected?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [selectedIndex, containerSelector]);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!enabled || items.length === 0) return;
+  useEffect(() => {
+    if (!enabled || items.length === 0) return;
 
-      // Skip when typing in input fields
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Skip if modifier keys are pressed
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isInputFocused()) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      switch (e.key.toLowerCase()) {
-        case 'j': {
-          e.preventDefault();
-          setIsActive(true);
-          setSelectedIndex(prev => {
-            const next = Math.min(prev + 1, items.length - 1);
-            return prev === -1 ? 0 : next;
-          });
-          break;
-        }
-        case 'k': {
-          e.preventDefault();
-          setIsActive(true);
-          setSelectedIndex(prev => Math.max(prev - 1, 0));
-          break;
-        }
-        case 'enter': {
-          if (selectedIndexRef.current >= 0 && isActive) {
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+          if (!e.shiftKey || e.key === 'ArrowDown') {
             e.preventDefault();
-            const item = items[selectedIndexRef.current];
-            if (item) onSelect?.(item, selectedIndexRef.current);
+            setSelectedIndex(prev => {
+              const next = prev < items.length - 1 ? prev + 1 : prev;
+              return next;
+            });
           }
           break;
-        }
-        case 'e': {
-          if (selectedIndexRef.current >= 0 && isActive && onAction) {
+
+        case 'k':
+        case 'ArrowUp':
+          if (!e.shiftKey || e.key === 'ArrowUp') {
             e.preventDefault();
-            const item = items[selectedIndexRef.current];
-            if (item) onAction(item, selectedIndexRef.current);
+            setSelectedIndex(prev => {
+              const next = prev > 0 ? prev - 1 : 0;
+              return next;
+            });
           }
           break;
-        }
-        case 'escape': {
-          if (isActive) {
+
+        case 'Enter':
+          if (selectedIndex >= 0 && selectedIndex < items.length && onSelect) {
             e.preventDefault();
-            setIsActive(false);
+            onSelect(items[selectedIndex], selectedIndex);
+          }
+          break;
+
+        case 'Escape':
+          if (selectedIndex >= 0) {
+            e.preventDefault();
             setSelectedIndex(-1);
           }
           break;
-        }
       }
-    },
-    [enabled, items, onSelect, onAction, isActive]
-  );
+    };
 
-  useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  }, [enabled, items, selectedIndex, onSelect]);
 
-  const getItemProps = useCallback(
-    (index: number) => ({
-      'data-list-selected': isActive && index === selectedIndex,
-      'data-list-index': index,
-    }),
-    [isActive, selectedIndex]
-  );
+  const getItemProps = useCallback((index: number) => ({
+    'data-list-index': index,
+    'data-list-selected': index === selectedIndex,
+  }), [selectedIndex]);
 
   return {
-    selectedIndex: isActive ? selectedIndex : -1,
+    selectedIndex,
     setSelectedIndex,
     getItemProps,
-    isActive,
   };
 }

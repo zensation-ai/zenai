@@ -1,0 +1,77 @@
+/* ============================================
+   ShortcutHint Toast - Progressive Discovery
+   ============================================ */
+
+.shortcut-hint-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.95));
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.15));
+  border-radius: 12px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  font-size: 13px;
+  color: var(--text, #0f1f2a);
+  cursor: pointer;
+  z-index: 9998;
+  animation: shortcutHintSlideIn 0.3s var(--ease-out-expo, cubic-bezier(0.22, 1, 0.36, 1));
+  max-width: 360px;
+}
+
+.shortcut-hint-toast-text {
+  flex: 1;
+}
+
+.shortcut-hint-toast-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  background: var(--primary, #ff6b35);
+  color: #fff;
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@keyframes shortcutHintSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Dark Mode */
+:root.dark-mode .shortcut-hint-toast {
+  background: var(--card-bg, #142a34);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .shortcut-hint-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 80px; /* Above mobile bottom bar */
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-hint-toast {
+    animation: none;
+  }
+}

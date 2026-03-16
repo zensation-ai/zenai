@@ -1,114 +1,106 @@
 /**
- * useCommandRegistry - Central Command Registration System
+ * useCommandRegistry - Central command registration system
  *
- * Pages register their context-specific commands here.
- * The CommandPalette consumes the unified command list.
+ * Allows pages to register contextual commands that appear in CommandPalette.
+ * Commands are automatically unregistered when the component unmounts.
  *
- * Phase 82: Keyboard-First & Command System
+ * Usage:
+ *   const { registerCommands } = useCommandRegistry();
+ *   useEffect(() => {
+ *     return registerCommands('ideas-page', [
+ *       { id: 'new-idea', label: 'Neuer Gedanke', action: () => ... },
+ *     ]);
+ *   }, [registerCommands]);
  */
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import type { Page } from '../types';
-
-// ============================================
-// Types
-// ============================================
-
-export type CommandCategory =
-  | 'navigation'
-  | 'ai-features'
-  | 'content'
-  | 'settings'
-  | 'actions'
-  | 'recent'
-  | 'search-results';
+import { createContext, useContext, useCallback, useRef, useSyncExternalStore } from 'react';
 
 export interface RegisteredCommand {
   id: string;
   label: string;
   description?: string;
-  icon: string;
-  category: CommandCategory;
+  icon?: string;
   keywords?: string[];
   shortcut?: string;
   action: () => void;
-  /** Higher = more important, shown first */
+  /** Source page that registered this command */
+  source: string;
+  /** Higher = shown first */
   priority?: number;
-  /** Page context where this command is most relevant */
-  context?: Page;
 }
 
-interface CommandRegistration {
-  sourceId: string;
-  commands: RegisteredCommand[];
-}
+type CommandRegistryListener = () => void;
 
-// ============================================
-// Hook
-// ============================================
+class CommandRegistryStore {
+  private commands = new Map<string, RegisteredCommand[]>();
+  private listeners = new Set<CommandRegistryListener>();
 
-export function useCommandRegistry() {
-  const [registrations, setRegistrations] = useState<Map<string, CommandRegistration>>(new Map());
-  const registrationsRef = useRef(registrations);
-  registrationsRef.current = registrations;
+  /** Register commands for a source (returns unregister function) */
+  register(source: string, commands: Omit<RegisteredCommand, 'source'>[]): () => void {
+    const registered = commands.map(cmd => ({ ...cmd, source }));
+    this.commands.set(source, registered);
+    this.notify();
+    return () => {
+      this.commands.delete(source);
+      this.notify();
+    };
+  }
 
-  /**
-   * Register commands from a source (e.g., a page component).
-   * Call with an empty array to unregister.
-   */
-  const registerCommands = useCallback((sourceId: string, commands: RegisteredCommand[]) => {
-    setRegistrations(prev => {
-      const next = new Map(prev);
-      if (commands.length === 0) {
-        next.delete(sourceId);
-      } else {
-        next.set(sourceId, { sourceId, commands });
-      }
-      return next;
-    });
-  }, []);
-
-  /**
-   * Unregister all commands from a source
-   */
-  const unregisterCommands = useCallback((sourceId: string) => {
-    setRegistrations(prev => {
-      const next = new Map(prev);
-      next.delete(sourceId);
-      return next;
-    });
-  }, []);
-
-  /**
-   * All registered commands flattened
-   */
-  const allCommands = useMemo(() => {
-    const commands: RegisteredCommand[] = [];
-    for (const reg of registrations.values()) {
-      commands.push(...reg.commands);
+  /** Get all registered commands */
+  getAll(): RegisteredCommand[] {
+    const all: RegisteredCommand[] = [];
+    for (const commands of this.commands.values()) {
+      all.push(...commands);
     }
-    return commands;
-  }, [registrations]);
+    return all;
+  }
 
-  return {
-    registerCommands,
-    unregisterCommands,
-    allCommands,
+  /** Get snapshot for useSyncExternalStore */
+  getSnapshot = (): RegisteredCommand[] => {
+    return this.getAll();
   };
+
+  /** Subscribe for useSyncExternalStore */
+  subscribe = (listener: CommandRegistryListener): (() => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
+  private notify() {
+    for (const listener of this.listeners) {
+      listener();
+    }
+  }
+}
+
+// Singleton store
+const registryStore = new CommandRegistryStore();
+
+/** React Context for the registry (allows testing with custom stores) */
+export const CommandRegistryContext = createContext<CommandRegistryStore>(registryStore);
+
+/**
+ * Hook to register page-specific commands.
+ */
+export function useCommandRegistry() {
+  const store = useContext(CommandRegistryContext);
+  const storeRef = useRef(store);
+  storeRef.current = store;
+
+  const registerCommands = useCallback(
+    (source: string, commands: Omit<RegisteredCommand, 'source'>[]): (() => void) => {
+      return storeRef.current.register(source, commands);
+    },
+    []
+  );
+
+  return { registerCommands };
 }
 
 /**
- * Hook for pages to register their context-specific commands.
- * Auto-unregisters on unmount.
+ * Hook to consume all registered commands (used by CommandPalette).
  */
-export function usePageCommands(
-  sourceId: string,
-  commands: RegisteredCommand[],
-  registerCommands: (sourceId: string, commands: RegisteredCommand[]) => void,
-  unregisterCommands: (sourceId: string) => void
-) {
-  useEffect(() => {
-    registerCommands(sourceId, commands);
-    return () => unregisterCommands(sourceId);
-  }, [sourceId, commands, registerCommands, unregisterCommands]);
+export function useRegisteredCommands(): RegisteredCommand[] {
+  const store = useContext(CommandRegistryContext);
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }
