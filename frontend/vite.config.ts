@@ -23,6 +23,8 @@ export default defineConfig({
   // resolvePackage() follows symlinks for pnpm CI compatibility
   resolve: {
     alias: {
+      'react/jsx-runtime': path.join(resolvePackage('react'), 'jsx-runtime'),
+      'react/jsx-dev-runtime': path.join(resolvePackage('react'), 'jsx-dev-runtime'),
       react: resolvePackage('react'),
       'react-dom': resolvePackage('react-dom'),
     },
