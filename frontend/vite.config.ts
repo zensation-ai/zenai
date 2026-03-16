@@ -84,35 +84,83 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Vendor chunks - separate large libraries
-          if (id.includes('node_modules/react-dom/')) return 'vendor-react';
-          if (id.includes('node_modules/react/')) return 'vendor-react';
-          if (id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/') || id.includes('node_modules/@remix-run/router/')) return 'vendor-router';
-          if (id.includes('node_modules/axios/')) return 'vendor-axios';
-          if (id.includes('node_modules/react-syntax-highlighter/')) return 'vendor-syntax';
-          if (id.includes('node_modules/react-markdown/') || id.includes('node_modules/remark-gfm/')) return 'vendor-markdown';
-          if (id.includes('node_modules/reactflow/') || id.includes('node_modules/@reactflow/')) return 'vendor-reactflow';
-          if (id.includes('node_modules/zod/')) return 'vendor-zod';
+          // === Vendor chunks: separate large libraries ===
 
-          // Recharts - split into core (state/util) and rendering (chart/cartesian)
-          // to keep each chunk under 250 kB
+          // React core (react + react-dom) — loaded on every page
+          if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react/')) {
+            return 'vendor-react';
+          }
+
+          // React Router — loaded on every page (routing infrastructure)
+          if (id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/') || id.includes('node_modules/@remix-run/router/')) {
+            return 'vendor-router';
+          }
+
+          // TanStack React Query — loaded on every page (data layer)
+          if (id.includes('node_modules/@tanstack/react-query') || id.includes('node_modules/@tanstack/query-core')) {
+            return 'vendor-query';
+          }
+
+          // Axios — HTTP client, loaded on every page
+          if (id.includes('node_modules/axios/')) {
+            return 'vendor-axios';
+          }
+
+          // Syntax Highlighter — only loaded when viewing code
+          if (id.includes('node_modules/react-syntax-highlighter/')) {
+            return 'vendor-syntax';
+          }
+
+          // Markdown rendering — only loaded for markdown content
+          if (id.includes('node_modules/react-markdown/') || id.includes('node_modules/remark-gfm/') || id.includes('node_modules/mdast-') || id.includes('node_modules/micromark') || id.includes('node_modules/unified/') || id.includes('node_modules/unist-')) {
+            return 'vendor-markdown';
+          }
+
+          // ReactFlow — only loaded on graph/workflow pages
+          if (id.includes('node_modules/reactflow/') || id.includes('node_modules/@reactflow/')) {
+            return 'vendor-reactflow';
+          }
+
+          // Zod — validation library
+          if (id.includes('node_modules/zod/')) {
+            return 'vendor-zod';
+          }
+
+          // Sentry — error tracking
+          if (id.includes('node_modules/@sentry/')) {
+            return 'vendor-sentry';
+          }
+
+          // Recharts core (state/util/hooks) — separate from chart rendering
           if (id.includes('node_modules/recharts/')) {
             if (id.includes('/state/') || id.includes('/util/') || id.includes('/context/') || id.includes('/hooks') || id.includes('/container/') || id.includes('/synchronisation/')) {
               return 'vendor-recharts-core';
             }
             return 'vendor-recharts-charts';
           }
-          // d3 modules used by recharts — separate chunk to keep recharts-core < 250 kB
+
+          // d3 modules used by recharts — separate chunk
           if (id.includes('node_modules/d3-') || id.includes('node_modules/victory-vendor/') || id.includes('node_modules/internmap/')) {
             return 'vendor-d3';
           }
 
-          // Feature-based chunks for lazy-loaded pages
+          // DOMPurify — XSS sanitization
+          if (id.includes('node_modules/dompurify/')) {
+            return 'vendor-dompurify';
+          }
+
+          // === Feature chunks for lazy-loaded pages ===
           if (id.includes('src/components/AnalyticsDashboard') || id.includes('src/components/DigestDashboard')) return 'feature-insights';
           if (id.includes('src/components/IncubatorPage') || id.includes('src/components/ProactiveDashboard') || id.includes('src/components/EvolutionDashboard')) return 'feature-ai';
           if (id.includes('src/components/LearningDashboard')) return 'feature-learning';
           if (id.includes('src/components/MediaGallery')) return 'feature-media';
           if (id.includes('src/components/MeetingsPage') || id.includes('src/components/MeetingDetail')) return 'feature-meetings';
+          if (id.includes('src/components/VoiceChat/')) return 'feature-voice';
+          if (id.includes('src/components/EmailPage/')) return 'feature-email';
+          if (id.includes('src/components/FinancePage/')) return 'feature-finance';
+          if (id.includes('src/components/BrowserPage/')) return 'feature-browser';
+          if (id.includes('src/components/ContactsPage/')) return 'feature-contacts';
+          if (id.includes('src/components/AgentTeamsPage')) return 'feature-agents';
         },
       },
     },

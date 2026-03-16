@@ -121,7 +121,18 @@ export class MiddlewareModule implements Module {
     app.use(requestIdMiddleware);
     app.use(tracingMiddleware);
     app.use(requestLogger);
-    app.use(compression({ level: 6, threshold: 1024, memLevel: 8 }));
+    app.use(compression({
+      level: 6,
+      threshold: 512,
+      memLevel: 8,
+      filter: (req, res) => {
+        // Skip compression for SSE streams (Server-Sent Events)
+        if (res.getHeader('Content-Type')?.toString().includes('text/event-stream')) {
+          return false;
+        }
+        return compression.filter(req, res);
+      },
+    }));
 
     // Cache-Control headers & ETag support
     app.use(cacheControlMiddleware);

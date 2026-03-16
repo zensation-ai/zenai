@@ -312,16 +312,18 @@ export async function queryContext(
     const client = await pool.connect();
 
     try {
-      // Set search_path via static lookup — no string interpolation
-      await client.query(SEARCH_PATH_SQL[effectiveContext]);
-
-      // Phase 66: Set app.current_user_id for RLS policies
-      // Reads from AsyncLocalStorage (set by auth middleware per-request).
-      // When set, RLS policies enforce user_id = current_user_id.
-      // When NOT set (background jobs, startup), COALESCE in policy falls back to permissive.
+      // Phase 81: Combined setup query (3 round-trips → 2, or 2 → 1 when no userId)
+      // Merges search_path + user_id config into a single statement.
+      // The actual query runs separately because it has parameterized $1/$2 placeholders
+      // that would conflict with the setup statements.
       const currentUserId = getCurrentUserId();
       if (currentUserId) {
-        await client.query(`SELECT set_config('app.current_user_id', $1, true)`, [currentUserId]);
+        // Single round-trip for both setup statements
+        await client.query(
+          `${SEARCH_PATH_SQL[effectiveContext]}; SELECT set_config('app.current_user_id', '${currentUserId.replace(/'/g, "''")}', true)`
+        );
+      } else {
+        await client.query(SEARCH_PATH_SQL[effectiveContext]);
       }
 
       // Execute query in correct schema
