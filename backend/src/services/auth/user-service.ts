@@ -349,7 +349,14 @@ export async function updateProfile(userId: string, input: UpdateProfileInput): 
  * Set MFA secret for a user.
  * Phase 66: Encrypts the secret before storing.
  */
-export async function setMfaSecret(userId: string, secret: string): Promise<void> {
+export async function setMfaSecret(userId: string, secret: string | null): Promise<void> {
+  if (secret === null) {
+    await pool.query(
+      'UPDATE public.users SET mfa_secret = NULL, updated_at = NOW() WHERE id = $1',
+      [userId]
+    );
+    return;
+  }
   const { encrypt } = await import('../security/field-encryption');
   const encryptedSecret = encrypt(secret);
   await pool.query(

@@ -64,6 +64,9 @@ export interface MCPServerStatus {
 // MCP Client (single server connection)
 // ===========================================
 
+/** Preferred MCP protocol version */
+const PREFERRED_PROTOCOL_VERSION = '2024-11-05';
+
 export class MCPClientInstance {
   private transport: IMCPTransport;
   private config: MCPServerConfig;
@@ -72,6 +75,7 @@ export class MCPClientInstance {
   private lastHealthCheck: Date | null = null;
   private healthy = false;
   private lastError: string | null = null;
+  private negotiatedProtocolVersion: string = PREFERRED_PROTOCOL_VERSION;
 
   constructor(config: MCPServerConfig) {
     this.config = config;
@@ -82,20 +86,40 @@ export class MCPClientInstance {
   get name(): string { return this.config.name; }
   get isHealthy(): boolean { return this.healthy; }
   get isConnected(): boolean { return this.transport.isConnected(); }
+  get protocolVersion(): string { return this.negotiatedProtocolVersion; }
 
   /**
-   * Initialize connection by sending initialize request
+   * Initialize connection by sending initialize request.
+   * Negotiates protocol version with server.
    */
   async connect(): Promise<void> {
     try {
-      await this.transport.request('initialize', {
-        protocolVersion: '2024-11-05',
+      const result = await this.transport.request('initialize', {
+        protocolVersion: PREFERRED_PROTOCOL_VERSION,
         capabilities: {},
         clientInfo: { name: 'zenai-client', version: '1.0.0' },
       });
+
+      // Negotiate protocol version from server response
+      const serverVersion = result.protocolVersion as string | undefined;
+      if (serverVersion && serverVersion !== PREFERRED_PROTOCOL_VERSION) {
+        logger.warn('MCP server returned different protocol version', {
+          id: this.config.id,
+          preferred: PREFERRED_PROTOCOL_VERSION,
+          serverVersion,
+        });
+        this.negotiatedProtocolVersion = serverVersion;
+      } else if (serverVersion) {
+        this.negotiatedProtocolVersion = serverVersion;
+      }
+
       this.healthy = true;
       this.lastError = null;
-      logger.info('MCP client connected', { id: this.config.id, name: this.config.name });
+      logger.info('MCP client connected', {
+        id: this.config.id,
+        name: this.config.name,
+        protocolVersion: this.negotiatedProtocolVersion,
+      });
     } catch (error) {
       this.healthy = false;
       this.lastError = error instanceof Error ? error.message : String(error);

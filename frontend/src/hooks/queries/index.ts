@@ -11,3 +11,7 @@ export * from './useIdeas';
 export * from './useDashboard';
 export * from './useContacts';
 export * from './useTasks';
+export * from './useChat';
+export * from './useCalendar';
+export * from './useEmail';
+export * from './useFinance';

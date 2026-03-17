@@ -85,7 +85,10 @@ export function encrypt(plaintext: string): string {
   if (!initialized) initEncryption();
 
   if (!encryptionKey) {
-    return plaintext; // Graceful degradation
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ENCRYPTION_KEY is required in production. Cannot store sensitive data as plaintext.');
+    }
+    return plaintext; // Graceful degradation in development only
   }
 
   try {
@@ -167,8 +170,10 @@ export function decrypt(encrypted: string): string {
     return decrypted.toString('utf8');
   } catch (error) {
     // If auth tag verification fails, it means data was tampered with
+    const errCode = (error as NodeJS.ErrnoException).code;
     const message = error instanceof Error ? error.message : String(error);
-    if (message.includes('Unsupported state') || message.includes('unable to authenticate')) {
+    if (errCode === 'ERR_CRYPTO_GCM_AUTH_TAG_MISMATCH' ||
+        message.includes('Unsupported state') || message.includes('unable to authenticate')) {
       logger.error('SECURITY: Encrypted data failed authentication — possible tampering', undefined, {
         operation: 'decrypt',
       });

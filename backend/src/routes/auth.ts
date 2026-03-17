@@ -14,14 +14,15 @@ import * as jwtService from '../services/auth/jwt-service';
 import { oauthManager } from '../services/auth/oauth-providers';
 import { sessionStore } from '../services/auth/session-store';
 import { decrypt } from '../services/security/field-encryption';
+import { createEndpointLimiter } from '../services/security/rate-limit-advanced';
 
 export const authRouter = Router();
 
 // ===========================================
 // Rate limit config for auth endpoints
 // ===========================================
-// Note: Global rate limiter in main.ts handles /api/auth/* endpoints.
-// Additional endpoint-specific limits should be added to ENDPOINT_LIMITS in auth.ts middleware.
+// Auth-tier rate limiting (10 req/min) applied to sensitive endpoints.
+const authRateLimiter = createEndpointLimiter('auth');
 
 // ===========================================
 // Registration
@@ -31,7 +32,7 @@ export const authRouter = Router();
  * POST /api/auth/register
  * Register a new user with email/password.
  */
-authRouter.post('/register', asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/register', authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email, password, display_name } = req.body;
 
   if (!email || !password) {
@@ -74,7 +75,7 @@ authRouter.post('/register', asyncHandler(async (req: Request, res: Response) =>
  * POST /api/auth/login
  * Authenticate with email/password, returns token pair.
  */
-authRouter.post('/login', asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/login', authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email, password, mfa_code } = req.body;
 
   if (!email || !password) {
@@ -141,7 +142,7 @@ authRouter.post('/login', asyncHandler(async (req: Request, res: Response) => {
  * POST /api/auth/refresh
  * Refresh token pair using a valid refresh token.
  */
-authRouter.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/refresh', authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
@@ -397,7 +398,7 @@ authRouter.get('/callback/:provider', asyncHandler(async (req: Request, res: Res
  * POST /api/auth/mfa/setup
  * Generate TOTP secret and QR code for MFA setup.
  */
-authRouter.post('/mfa/setup', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/mfa/setup', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.jwtUser!.id;
   const user = await userService.findById(userId);
 
@@ -438,7 +439,7 @@ authRouter.post('/mfa/setup', requireJwt, asyncHandler(async (req: Request, res:
  * POST /api/auth/mfa/verify
  * Verify MFA setup or perform MFA verification.
  */
-authRouter.post('/mfa/verify', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/mfa/verify', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.jwtUser!.id;
   const { code } = req.body;
 
@@ -492,7 +493,7 @@ authRouter.post('/mfa/verify', requireJwt, asyncHandler(async (req: Request, res
  * Change the current user's password. Requires current password verification.
  * Revokes all other sessions after password change for security.
  */
-authRouter.post('/change-password', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/change-password', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.jwtUser!.id;
   const { currentPassword, newPassword } = req.body;
 
@@ -554,7 +555,7 @@ authRouter.post('/change-password', requireJwt, asyncHandler(async (req: Request
  * Sends a password reset email with a one-time link.
  * Always returns success to prevent email enumeration.
  */
-authRouter.post('/request-password-reset', asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/request-password-reset', authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
   if (!email) {
@@ -613,7 +614,7 @@ authRouter.post('/request-password-reset', asyncHandler(async (req: Request, res
  * POST /api/auth/reset-password
  * Reset password using a valid token from the email link.
  */
-authRouter.post('/reset-password', asyncHandler(async (req: Request, res: Response) => {
+authRouter.post('/reset-password', authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { token, newPassword } = req.body;
 
   if (!token || !newPassword) {
@@ -705,8 +706,9 @@ authRouter.post('/mfa/disable', requireJwt, asyncHandler(async (req: Request, re
     });
   }
 
+  // Disable flag first — if setMfaSecret fails, MFA is still disabled at flag level
   await userService.setMfaEnabled(userId, false);
-  await userService.setMfaSecret(userId, '');
+  await userService.setMfaSecret(userId, null);
 
   return res.json({
     success: true,

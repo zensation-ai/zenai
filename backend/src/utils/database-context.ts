@@ -133,7 +133,7 @@ const POOL_CONFIG = {
   max: parseInt(process.env.DB_POOL_SIZE || '8', 10),
   min: parseInt(process.env.DB_POOL_MIN || '2', 10),
   idleTimeoutMillis: 60000, // 60s to reduce reconnections
-  connectionTimeoutMillis: 10000, // 10s for Supabase latency
+  connectionTimeoutMillis: 5000, // 5s connection timeout
   // Statement timeout to prevent long-running queries
   statement_timeout: 30000,
   // Aggressive keep-alive for stable connections
@@ -295,7 +295,7 @@ export async function queryContext(
   if (waitingCount > 0) {
     emitPoolMetric('waiting');
   }
-  if (waitingCount > maxPool * 0.5) {
+  if (waitingCount > maxPool * 0.25) {
     logger.warn(`Pool near exhaustion [${effectiveContext}]`, {
       context: effectiveContext,
       waitingCount,
@@ -317,13 +317,14 @@ export async function queryContext(
       // The actual query runs separately because it has parameterized $1/$2 placeholders
       // that would conflict with the setup statements.
       const currentUserId = getCurrentUserId();
+      // SECURITY: Separate queries to avoid multi-statement parameter binding ambiguity.
+      // pg driver's $1 binding with multi-statement strings relies on undocumented libpq behavior.
+      await client.query(SEARCH_PATH_SQL[effectiveContext]);
       if (currentUserId) {
-        // Single round-trip for both setup statements
         await client.query(
-          `${SEARCH_PATH_SQL[effectiveContext]}; SELECT set_config('app.current_user_id', '${currentUserId.replace(/'/g, "''")}', true)`
+          `SELECT set_config('app.current_user_id', $1, true)`,
+          [currentUserId]
         );
-      } else {
-        await client.query(SEARCH_PATH_SQL[effectiveContext]);
       }
 
       // Execute query in correct schema

@@ -112,6 +112,8 @@ export const ragResultCache = {
   /**
    * Store a RAG result in both cache layers.
    * Fire-and-forget: failures are logged but don't propagate.
+   *
+   * Stores idea IDs from results as tags for fine-grained invalidation.
    */
   async set(
     query: string,
@@ -128,16 +130,26 @@ export const ragResultCache = {
 
     stats.writes++;
 
-    // Layer 1: Redis
+    // Extract idea IDs from results for fine-grained invalidation
+    const ideaIds = result.results.map(r => r.id).filter(Boolean);
+
+    // Layer 1: Redis — store result and track idea-to-key mapping
     cache.set(key, result, ttlSeconds).catch(err => {
       logger.debug('RAG cache Redis write failed', {
         error: err instanceof Error ? err.message : 'Unknown',
       });
     });
 
-    // Layer 2: Semantic cache (uses its own TTL internally)
+    // Store reverse mapping: idea ID -> set of cache keys (for targeted invalidation)
+    for (const ideaId of ideaIds) {
+      const mappingKey = `${RAG_CACHE_PREFIX}:idea-keys:${context}:${ideaId}`;
+      cache.sAdd(mappingKey, key, ttlSeconds).catch(() => {/* non-critical */});
+    }
+
+    // Layer 2: Semantic cache — tag with context and individual idea IDs
     const semanticKey = `${context}:${query}`;
-    ragCache.set(semanticKey, result, [context]).catch(err => {
+    const tags = [context, ...ideaIds.map(id => `idea:${id}`)];
+    ragCache.set(semanticKey, result, tags).catch(err => {
       logger.debug('RAG cache semantic write failed', {
         error: err instanceof Error ? err.message : 'Unknown',
       });
@@ -164,6 +176,49 @@ export const ragResultCache = {
         context,
         redisDeleted,
         semanticDeleted,
+      });
+    }
+
+    return totalDeleted;
+  },
+
+  /**
+   * Invalidate RAG caches that contain a specific idea.
+   * More targeted than invalidate(context) — only clears queries whose
+   * results included the given idea ID.
+   *
+   * @param context - The AI context
+   * @param ideaId - The idea ID that was created/updated/deleted
+   * @returns Number of entries invalidated
+   */
+  async invalidateForIdea(context: AIContext, ideaId: string): Promise<number> {
+    stats.invalidations++;
+    let totalDeleted = 0;
+
+    // Layer 1: Redis — look up cache keys that contain this idea
+    try {
+      const mappingKey = `${RAG_CACHE_PREFIX}:idea-keys:${context}:${ideaId}`;
+      const cacheKeys = await cache.sMembers(mappingKey);
+      if (cacheKeys && cacheKeys.length > 0) {
+        for (const key of cacheKeys) {
+          const deleted = await cache.del(key);
+          if (deleted) totalDeleted++;
+        }
+        await cache.del(mappingKey);
+      }
+    } catch {
+      // Redis unavailable — fall through to semantic cache
+    }
+
+    // Layer 2: Semantic cache — invalidate by idea tag
+    const semanticDeleted = ragCache.invalidateByTag(`idea:${ideaId}`);
+    totalDeleted += semanticDeleted;
+
+    if (totalDeleted > 0) {
+      logger.info('RAG cache invalidated for idea', {
+        context,
+        ideaId,
+        totalDeleted,
       });
     }
 

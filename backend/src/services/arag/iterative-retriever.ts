@@ -33,10 +33,10 @@ import type {
 const MAX_ITERATIONS = 3;
 
 /** Confidence threshold for early exit */
-const EARLY_EXIT_CONFIDENCE = 0.9;
+const EARLY_EXIT_CONFIDENCE = 0.75;
 
 /** Confidence threshold triggering strategy revision */
-const REVISION_THRESHOLD = 0.6;
+const REVISION_THRESHOLD = 0.5;
 
 /** Maximum results per interface call */
 const MAX_RESULTS_PER_INTERFACE = 10;

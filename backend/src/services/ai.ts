@@ -268,7 +268,8 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   // Try Ollama first (local, fast)
   try {
     logger.debug('Generating embedding with Ollama', { operation: 'generateEmbedding' });
-    return await generateOllamaEmbedding(text);
+    const embedding = await generateOllamaEmbedding(text);
+    return validateEmbedding(embedding, 'ollama');
   } catch (error: unknown) {
     logger.debug('Ollama embedding failed, trying OpenAI fallback', {
       error: getErrorMessage(error),
@@ -281,11 +282,12 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     try {
       logger.debug('Generating embedding with OpenAI', { operation: 'generateEmbedding' });
       const embedding = await generateOpenAIEmbedding(text);
+      const validated = validateEmbedding(embedding, 'openai');
       logger.info('OpenAI embedding generated successfully', {
         operation: 'generateEmbedding',
-        dimensions: embedding.length
+        dimensions: validated.length
       });
-      return embedding;
+      return validated;
     } catch (error: unknown) {
       logger.warn('OpenAI embedding failed', {
         error: getErrorMessage(error),
@@ -297,6 +299,40 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   // Return empty embedding as final fallback
   logger.warn('All embedding providers failed', { operation: 'generateEmbedding' });
   return [];
+}
+
+/**
+ * Validate an embedding vector for dimension, NaN values, and zero vectors.
+ * Throws on invalid embeddings to prevent silent data corruption.
+ */
+function validateEmbedding(embedding: number[], provider: string): number[] {
+  if (!embedding || embedding.length === 0) {
+    throw new Error(`${provider}: Empty embedding returned`);
+  }
+
+  // Check for expected dimensions
+  if (embedding.length !== AI_CONFIG.embeddingDimensions) {
+    logger.error(`Embedding dimension mismatch from ${provider}`, undefined, {
+      expected: AI_CONFIG.embeddingDimensions,
+      got: embedding.length,
+      operation: 'generateEmbedding',
+    });
+    throw new Error(`Embedding dimension mismatch: expected ${AI_CONFIG.embeddingDimensions}, got ${embedding.length}`);
+  }
+
+  // Check for NaN values
+  const hasNaN = embedding.some(v => Number.isNaN(v));
+  if (hasNaN) {
+    throw new Error(`${provider}: Embedding contains NaN values`);
+  }
+
+  // Check for zero vector (all zeros = meaningless embedding)
+  const isZero = embedding.every(v => v === 0);
+  if (isZero) {
+    throw new Error(`${provider}: Embedding is a zero vector`);
+  }
+
+  return embedding;
 }
 
 /**

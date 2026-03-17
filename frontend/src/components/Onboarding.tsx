@@ -5,6 +5,7 @@ import { AI_PERSONALITY, AI_AVATAR, getTimeBasedGreeting } from '../utils/aiPers
 import './Onboarding.css';
 import '../neurodesign.css';
 import { logError } from '../utils/errors';
+import { logger } from '../utils/logger';
 import type { AIContext } from './ContextSwitcher';
 
 interface OnboardingProps {
@@ -103,7 +104,7 @@ export function Onboarding({ context, onComplete }: OnboardingProps) {
         });
       } catch {
         // Profile save failed - continue anyway (table may not exist)
-        console.warn('Profile save failed - continuing with onboarding');
+        logger.warn('Profile save failed - continuing with onboarding');
       }
 
       // Create default focus areas if goals selected

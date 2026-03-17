@@ -19,6 +19,7 @@ import { searchWeb } from '../web-search';
 import { CHAT } from '../../config/constants';
 import { routeToModel, recordUsage } from '../model-orchestrator';
 import { logAIDecision } from '../compliance-logger';
+import { estimateChatInputTokens, estimateTokens } from '../../utils/token-estimation';
 import {
   RAGQualityMetrics,
   ResponseMetadata,
@@ -458,9 +459,13 @@ export async function generateEnhancedResponse(
     hasConversationHistory: conversationHistory.length > 0,
   });
 
-  // Estimate token usage (approximate: ~4 chars/token)
-  const estimatedInputTokens = Math.ceil((systemPrompt.length + userMessage.length) / 4);
-  const estimatedOutputTokens = Math.ceil(response.length / 4);
+  // Estimate token usage using language-aware heuristic
+  const estimatedInputTokens = estimateChatInputTokens(systemPrompt, userMessage, {
+    historyMessageCount: conversationHistory.length,
+    historyTotalLength: conversationHistory.reduce((sum, m) => sum + m.content.length, 0),
+    hasTools: modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent',
+  });
+  const estimatedOutputTokens = estimateTokens(response);
   recordUsage(
     routingDecision.model.modelId,
     routingDecision.model.provider,

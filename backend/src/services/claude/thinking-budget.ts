@@ -154,6 +154,34 @@ const CONFIG = {
 };
 
 // ===========================================
+// Adaptive Thinking
+// ===========================================
+
+/** Default generous budget when adaptive thinking is enabled */
+const ADAPTIVE_DEFAULT_BUDGET = 16000;
+
+/**
+ * Check if adaptive thinking is enabled.
+ * When enabled, the system uses a generous default budget instead of
+ * complex task-type analysis, letting Claude dynamically determine
+ * the appropriate thinking depth.
+ *
+ * Controlled via ADAPTIVE_THINKING env var (default: true).
+ */
+export function isAdaptiveEnabled(): boolean {
+  return process.env.ADAPTIVE_THINKING !== 'false';
+}
+
+/**
+ * Get the adaptive thinking budget.
+ * Returns a generous default that allows Claude to use as much
+ * or as little thinking as needed for the task.
+ */
+export function getAdaptiveBudget(): number {
+  return ADAPTIVE_DEFAULT_BUDGET;
+}
+
+// ===========================================
 // Task Type Classification
 // ===========================================
 

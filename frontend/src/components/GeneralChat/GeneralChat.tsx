@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense, type Keyboard
 import axios from 'axios';
 import { showToast } from '../Toast';
 import { getErrorMessage, logError } from '../../utils/errors';
+import { logger } from '../../utils/logger';
 import { safeLocalStorage } from '../../utils/storage';
 import { ArtifactButton } from '../ArtifactButton';
 import { ErrorBoundary } from '../ErrorBoundary';
@@ -67,6 +68,17 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const skipNextSessionLoadRef = useRef(false);
   // Track previous initialSessionId to detect "new chat" signal (had value → null)
   const prevInitialSessionIdRef = useRef<string | null | undefined>(undefined);
+  // Stable session key: incremented to force re-initialization on rapid parent updates
+  const [sessionKey, setSessionKey] = useState(0);
+  const prevSessionIdForKeyRef = useRef(initialSessionId);
+
+  // Detect rapid parent updates and force re-initialization via stable key
+  useEffect(() => {
+    if (initialSessionId !== prevSessionIdForKeyRef.current) {
+      prevSessionIdForKeyRef.current = initialSessionId;
+      setSessionKey(k => k + 1);
+    }
+  }, [initialSessionId]);
 
   // Load session on mount, context change, or external initialSessionId change
   useEffect(() => {
@@ -108,7 +120,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         streamingRafRef.current = null;
       }
     };
-  }, [context, initialSessionId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [context, sessionKey]);
 
   // Track whether this is an initial/session-switch load (instant scroll) vs new message (smooth)
   const isInitialScrollRef = useRef(true);
@@ -446,13 +459,17 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                           ? Date.now() - toolStartTimeRef.current
                           : 0;
                         toolStartTimeRef.current = 0;
-                        // Track tool result for inline display (keep last 5)
-                        setToolResults(prev => [...prev.slice(-4), {
-                          name: toolName,
-                          result: toolError ? (data.tool.error || toolResult) : toolResult,
-                          duration_ms,
-                          success: !toolError,
-                        }]);
+                        // Track tool result for inline display (bounded to prevent memory leaks)
+                        const MAX_TOOL_RESULTS = 50;
+                        setToolResults(prev => {
+                          const next = [...prev, {
+                            name: toolName,
+                            result: toolError ? (data.tool.error || toolResult) : toolResult,
+                            duration_ms,
+                            success: !toolError,
+                          }];
+                          return next.length > MAX_TOOL_RESULTS ? next.slice(-MAX_TOOL_RESULTS) : next;
+                        });
                         // Handle navigation actions
                         if (!toolError) {
                           try {
@@ -500,7 +517,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
             } catch (readerErr) {
               // Reader errors (connection lost, stream broken) - use partial content if available
               if (readerErr instanceof Error && readerErr.name === 'AbortError') throw readerErr;
-              console.warn('Stream reader error, using partial content:', readerErr);
+              logger.warn('Stream reader error, using partial content:', readerErr);
             } finally {
               // Always release the reader lock to prevent resource leaks
               try { reader.releaseLock(); } catch { /* already released */ }
@@ -1011,14 +1028,16 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
             role="presentation"
           />
           <div className="voice-chat-overlay-content">
-            <Suspense fallback={<div className="voice-chat-loading">Lade Sprachkonversation...</div>}>
-              <VoiceChatOverlay
-                context={context}
-                apiUrl={import.meta.env.VITE_API_URL ?? ''}
-                apiKey={import.meta.env.VITE_API_KEY ?? ''}
-                onClose={() => setVoiceChatOpen(false)}
-              />
-            </Suspense>
+            <ErrorBoundary fallback={<div className="lazy-load-error">Sprachkonversation konnte nicht geladen werden.</div>}>
+              <Suspense fallback={<div className="voice-chat-loading">Lade Sprachkonversation...</div>}>
+                <VoiceChatOverlay
+                  context={context}
+                  apiUrl={import.meta.env.VITE_API_URL ?? ''}
+                  apiKey={import.meta.env.VITE_API_KEY ?? ''}
+                  onClose={() => setVoiceChatOpen(false)}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       )}

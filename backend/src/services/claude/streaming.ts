@@ -14,9 +14,11 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import crypto from 'crypto';
 import { Response } from 'express';
 import { logger } from '../../utils/logger';
 import { getClaudeClient, CLAUDE_MODEL } from './client';
+import { getAnthropicBetaHeaders } from './client';
 import {
   CompactionConfig,
   COMPACTION_BETA,
@@ -25,6 +27,8 @@ import {
   calculateTokensSaved,
   recordCompaction,
 } from './context-compaction';
+import { isAdaptiveEnabled, getAdaptiveBudget } from './thinking-budget';
+import type { EffortLevel } from '../chat-modes';
 
 // ===========================================
 // Types & Interfaces
@@ -60,11 +64,13 @@ export interface StreamEvent {
       result?: string;
     };
     error?: string;
+    requestId?: string;
     metadata?: {
       inputTokens?: number;
       outputTokens?: number;
       thinkingTokens?: number;
       stopReason?: string;
+      requestId?: string;
     };
   };
 }
@@ -101,6 +107,14 @@ export interface StreamingOptions {
   compactionConfig?: CompactionConfig;
   /** Session ID for compaction state tracking */
   sessionId?: string;
+  /** Request correlation ID for tracing across logs and SSE events */
+  requestId?: string;
+  /** AbortSignal to cancel streaming when client disconnects */
+  abortSignal?: AbortSignal;
+  /** Effort level for cost optimization (low/medium/high). Maps to Claude API effort parameter. */
+  effort?: EffortLevel;
+  /** Whether to include structured outputs beta header for tool use */
+  structuredOutputs?: boolean;
 }
 
 /**
@@ -129,10 +143,23 @@ export interface StreamingResult {
 // Default Configuration
 // ===========================================
 
+/** Maximum size for tool results sent via SSE (64KB) */
+const MAX_TOOL_RESULT_SSE_BYTES = 64 * 1024;
+
+/**
+ * Truncate a tool result string if it exceeds the SSE size limit.
+ * Full result is still sent to Claude; only the SSE client gets truncated output.
+ */
+function truncateForSSE(result: string): string {
+  if (result.length <= MAX_TOOL_RESULT_SSE_BYTES) return result;
+  const truncated = result.substring(0, MAX_TOOL_RESULT_SSE_BYTES);
+  return `${truncated}\n\n[Output truncated: ${result.length} bytes, showing first 64KB]`;
+}
+
 const DEFAULT_OPTIONS: StreamingOptions = {
   enableThinking: true,
   thinkingBudget: 10000,
-  temperature: 1, // Required for Extended Thinking
+  temperature: 0.7, // Default for conversation; overridden to 1 when Extended Thinking is enabled
   maxTokens: 16000,
 };
 
@@ -179,8 +206,10 @@ export async function streamToSSE(
 ): Promise<void> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const client = getClaudeClient();
+  const requestId = opts.requestId || crypto.randomUUID();
 
   logger.info('Starting SSE stream', {
+    requestId,
     enableThinking: opts.enableThinking,
     thinkingBudget: opts.thinkingBudget,
     messageCount: messages.length,
@@ -199,14 +228,23 @@ export async function streamToSSE(
 
     // Add Extended Thinking if enabled (requires specific model and settings)
     if (opts.enableThinking) {
+      // Use adaptive budget (generous default) when enabled, otherwise use calculated budget
+      const budgetTokens = isAdaptiveEnabled()
+        ? getAdaptiveBudget()
+        : (opts.thinkingBudget ?? 10000);
       params.thinking = {
         type: 'enabled',
-        budget_tokens: opts.thinkingBudget ?? 10000,
+        budget_tokens: budgetTokens,
       };
       // Extended Thinking requires temperature = 1
       params.temperature = 1;
     } else if (opts.temperature !== undefined) {
       params.temperature = opts.temperature;
+    }
+
+    // Add effort parameter for cost optimization
+    if (opts.effort) {
+      params.effort = opts.effort;
     }
 
     if (opts.systemPrompt) {
@@ -225,9 +263,18 @@ export async function streamToSSE(
       params.context_management = contextManagement;
     }
 
-    // Request options for beta features
-    const requestOpts = contextManagement
-      ? { headers: { 'anthropic-beta': COMPACTION_BETA } }
+    // Build beta headers (compaction, structured outputs)
+    const betaHeaders: string[] = [];
+    if (contextManagement) {
+      betaHeaders.push(COMPACTION_BETA);
+    }
+    const structuredBetas = getAnthropicBetaHeaders({
+      structuredOutputs: opts.structuredOutputs,
+    });
+    betaHeaders.push(...structuredBetas);
+
+    const requestOpts = betaHeaders.length > 0
+      ? { headers: { 'anthropic-beta': betaHeaders.join(',') } }
       : undefined;
 
     // Create streaming response (with beta headers if compaction enabled)
@@ -244,17 +291,30 @@ export async function streamToSSE(
 
     // Safety timeout: abort stream if Claude API hangs (90 seconds)
     streamTimeout = setTimeout(() => {
-      logger.warn('Stream timeout reached (90s), aborting');
+      logger.warn('Stream timeout reached (90s), aborting', { requestId });
       stream.abort();
     }, 90000);
 
+    // Abort stream on client disconnect signal
+    if (opts.abortSignal) {
+      const onAbort = () => {
+        logger.info('Client disconnect signal received, aborting stream', { requestId });
+        stream.abort();
+      };
+      if (opts.abortSignal.aborted) {
+        stream.abort();
+      } else {
+        opts.abortSignal.addEventListener('abort', onAbort, { once: true });
+      }
+    }
+
     // Handle stream-level errors (connection lost, API errors, timeout abort)
     stream.on('error', (err: Error) => {
-      logger.error('Stream error event', err);
+      logger.error('Stream error event', err, { requestId });
       clearTimeout(streamTimeout);
       // Propagate error to SSE client so it doesn't hang
       try {
-        sendSSE(res, { type: 'error', data: { error: err.message || 'Stream connection lost' } });
+        sendSSE(res, { type: 'error', data: { error: err.message || 'Stream connection lost', requestId } });
       } catch { /* stream already broken */ }
     });
 
@@ -372,7 +432,7 @@ export async function streamToSSE(
             });
             sendSSE(res, {
               type: 'tool_use_end',
-              data: { tool: { name: toolBlock.name, result } },
+              data: { tool: { name: toolBlock.name, result: truncateForSSE(result) } },
             });
           } catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'Tool execution failed';
@@ -406,13 +466,21 @@ export async function streamToSSE(
         };
 
         if (opts.enableThinking) {
+          const budgetTokens = isAdaptiveEnabled()
+            ? getAdaptiveBudget()
+            : (opts.thinkingBudget ?? 10000);
           followUpParams.thinking = {
             type: 'enabled',
-            budget_tokens: opts.thinkingBudget ?? 10000,
+            budget_tokens: budgetTokens,
           };
           followUpParams.temperature = 1;
         } else if (opts.temperature !== undefined) {
           followUpParams.temperature = opts.temperature;
+        }
+
+        // Carry effort parameter to follow-up
+        if (opts.effort) {
+          followUpParams.effort = opts.effort;
         }
 
         if (opts.systemPrompt) {
@@ -463,6 +531,7 @@ export async function streamToSSE(
         clearTimeout(followUpTimeout);
 
         logger.info('Tool follow-up stream complete', {
+          requestId,
           iteration,
           stopReason: currentFinalMessage.stop_reason,
           toolsCalled: toolUseBlocks.map(b => b.name),
@@ -476,15 +545,18 @@ export async function streamToSSE(
       type: 'done',
       data: {
         content: responseContent,
+        requestId,
         metadata: {
           inputTokens: usage?.input_tokens ?? 0,
           outputTokens: usage?.output_tokens ?? 0,
           stopReason: finalMessage.stop_reason || 'end_turn',
+          requestId,
         },
       },
     });
 
     logger.info('SSE stream complete', {
+      requestId,
       inputTokens: usage?.input_tokens ?? 0,
       outputTokens: usage?.output_tokens ?? 0,
       stopReason: finalMessage.stop_reason,
@@ -494,11 +566,11 @@ export async function streamToSSE(
   } catch (error) {
     clearTimeout(streamTimeout);
     const errorMessage = error instanceof Error ? error.message : 'Unknown streaming error';
-    logger.error('SSE stream failed', error instanceof Error ? error : undefined);
+    logger.error('SSE stream failed', error instanceof Error ? error : undefined, { requestId });
 
     sendSSE(res, {
       type: 'error',
-      data: { error: errorMessage },
+      data: { error: errorMessage, requestId },
     });
   } finally {
     if (!res.writableEnded) {
@@ -535,13 +607,21 @@ export async function streamAndCollect(
   };
 
   if (opts.enableThinking) {
+    const budgetTokens = isAdaptiveEnabled()
+      ? getAdaptiveBudget()
+      : (opts.thinkingBudget ?? 10000);
     params.thinking = {
       type: 'enabled',
-      budget_tokens: opts.thinkingBudget ?? 10000,
+      budget_tokens: budgetTokens,
     };
     params.temperature = 1;
   } else if (opts.temperature !== undefined) {
     params.temperature = opts.temperature;
+  }
+
+  // Add effort parameter for cost optimization
+  if (opts.effort) {
+    params.effort = opts.effort;
   }
 
   if (opts.systemPrompt) {
@@ -560,8 +640,18 @@ export async function streamAndCollect(
     params.context_management = contextManagement;
   }
 
-  const requestOpts = contextManagement
-    ? { headers: { 'anthropic-beta': COMPACTION_BETA } }
+  // Build beta headers
+  const betaHeaders: string[] = [];
+  if (contextManagement) {
+    betaHeaders.push(COMPACTION_BETA);
+  }
+  const structuredBetas = getAnthropicBetaHeaders({
+    structuredOutputs: opts.structuredOutputs,
+  });
+  betaHeaders.push(...structuredBetas);
+
+  const requestOpts = betaHeaders.length > 0
+    ? { headers: { 'anthropic-beta': betaHeaders.join(',') } }
     : undefined;
 
   // Create streaming response
@@ -660,7 +750,9 @@ export async function thinkingStream(
   compactionConfig?: CompactionConfig,
   sessionId?: string,
   tools?: Anthropic.Tool[],
-  toolExecutor?: StreamingToolExecutor
+  toolExecutor?: StreamingToolExecutor,
+  requestId?: string,
+  abortSignal?: AbortSignal
 ): Promise<void> {
   setupSSEHeaders(res);
 
@@ -673,5 +765,7 @@ export async function thinkingStream(
     sessionId,
     tools,
     toolExecutor,
+    requestId,
+    abortSignal,
   });
 }

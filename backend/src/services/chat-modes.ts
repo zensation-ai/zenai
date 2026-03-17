@@ -555,6 +555,37 @@ function analyzeKeywordsForTools(message: string): string[] {
 }
 
 /**
+ * API effort level for cost optimization.
+ * Maps to Claude API's `effort` parameter which controls token spending.
+ * - 'low': Minimal reasoning, fast responses (simple chat)
+ * - 'medium': Balanced reasoning (tool use, RAG)
+ * - 'high': Maximum reasoning depth (complex agent tasks)
+ */
+export type EffortLevel = 'low' | 'medium' | 'high';
+
+/**
+ * Get the appropriate effort level for a chat mode.
+ * Used to optimize API costs by matching reasoning depth to task complexity.
+ *
+ * @param mode - The detected chat mode
+ * @returns The effort level for the Claude API
+ */
+export function getEffortForMode(mode: ChatMode): EffortLevel {
+  switch (mode) {
+    case 'conversation':
+      return 'low';
+    case 'tool_assisted':
+      return 'medium';
+    case 'rag_enhanced':
+      return 'medium';
+    case 'agent':
+      return 'high';
+    default:
+      return 'medium';
+  }
+}
+
+/**
  * Get the default tools for a mode
  */
 export function getDefaultToolsForMode(mode: ChatMode): string[] {

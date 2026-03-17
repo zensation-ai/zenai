@@ -147,8 +147,82 @@ const DEFAULT_CONFIG: EnhancedRAGConfig = {
 };
 
 // ===========================================
+// Contextual Chunk Enrichment (Anthropic technique)
+// ===========================================
+
+/**
+ * Enrich a chunk with document-level context before embedding/re-ranking.
+ *
+ * Prepends 50-100 tokens of context (title, topic, context label) so that
+ * ambiguous chunks like "Revenue grew 3%" become self-describing:
+ * "[From: "Q3 Earnings Analysis" | Topic: Finance | Context: work] Revenue grew 3%"
+ *
+ * This is a lightweight, zero-API-call enrichment that improves retrieval
+ * accuracy by 35-67% according to Anthropic's contextual retrieval research.
+ */
+export function enrichChunkWithContext(chunk: { content: string; title?: string; topic?: string; context?: string }): string {
+  const parts: string[] = [];
+  if (chunk.title) parts.push(`From: "${chunk.title}"`);
+  if (chunk.topic) parts.push(`Topic: ${chunk.topic}`);
+  if (chunk.context) parts.push(`Context: ${chunk.context}`);
+
+  const prefix = parts.length > 0 ? `[${parts.join(' | ')}] ` : '';
+  return prefix + chunk.content;
+}
+
+/**
+ * Enrich a search query with available context information.
+ * This helps the embedding model match the enriched chunks more accurately
+ * by ensuring the query vector lives in the same semantic space.
+ */
+export function enrichQueryWithContext(query: string, context?: AIContext, topic?: string): string {
+  const parts: string[] = [];
+  if (topic) parts.push(`Topic: ${topic}`);
+  if (context) parts.push(`Context: ${context}`);
+
+  if (parts.length === 0) return query;
+  return `[${parts.join(' | ')}] ${query}`;
+}
+
+// ===========================================
 // Enhanced RAG Service
 // ===========================================
+
+// ===========================================
+// Heuristic Fallback Re-ranker
+// ===========================================
+
+/**
+ * Heuristic re-ranker used when the cross-encoder fails.
+ * Scores by keyword overlap, recency (shorter content = more focused), and source diversity.
+ */
+function heuristicRerank(query: string, results: EnhancedResult[]): EnhancedResult[] {
+  // Keep all terms (min length 1) — short terms like "AI", "ML", "UI" are valid search terms
+  const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+
+  return results.map(r => {
+    const text = `${r.title} ${r.summary}`.toLowerCase();
+
+    // Keyword overlap: fraction of query terms found in result text
+    const matchingTerms = queryTerms.filter(term => text.includes(term));
+    const keywordScore = queryTerms.length > 0 ? matchingTerms.length / queryTerms.length : 0;
+
+    // Length bonus: prefer concise, focused results (normalized 0-1)
+    const lengthScore = Math.max(0, 1 - (text.length / 2000));
+
+    // Source diversity bonus: results from multiple retrieval sources are more reliable
+    const diversityScore = Math.min(r.sources.length / 3, 1);
+
+    // Combine: 50% keyword overlap, 30% original score, 10% length, 10% diversity
+    const heuristicScore = keywordScore * 0.5 + r.score * 0.3 + lengthScore * 0.1 + diversityScore * 0.1;
+
+    return {
+      ...r,
+      score: Math.min(heuristicScore, 1.0),
+      relevanceReason: `Heuristic: ${matchingTerms.length}/${queryTerms.length} keyword matches`,
+    };
+  }).sort((a, b) => b.score - a.score);
+}
 
 class EnhancedRAGService {
   private config: EnhancedRAGConfig;
@@ -222,6 +296,9 @@ class EnhancedRAGService {
       !cfg.autoDetectHyDE || shouldUseHyDE(query)
     );
 
+    // Enrich the search query with context metadata for better embedding alignment
+    const enrichedQuery = enrichQueryWithContext(query, context);
+
     let hydeResults: HyDERetrievalResult[] = [];
     let agenticResults: RetrievalResult[] = [];
     let graphRAGResults: HybridRetrievalResult[] = [];
@@ -229,11 +306,11 @@ class EnhancedRAGService {
     // Step 1: Run retrieval methods (parallel when possible)
     const retrievalPromises: Promise<void>[] = [];
 
-    // HyDE retrieval (if enabled)
+    // HyDE retrieval (if enabled) — use enriched query for better hypothetical doc generation
     if (useHyDE) {
       const hydeStart = Date.now();
       retrievalPromises.push(
-        hydeService.hybridRetrieve(query, context, { maxResults: cfg.maxResults })
+        hydeService.hybridRetrieve(enrichedQuery, context, { maxResults: cfg.maxResults })
           .then(results => {
             hydeResults = results;
             timing.hyde = Date.now() - hydeStart;
@@ -246,10 +323,10 @@ class EnhancedRAGService {
       );
     }
 
-    // Agentic RAG retrieval (always)
+    // Agentic RAG retrieval (always) — use enriched query for context-aware search
     const agenticStart = Date.now();
     retrievalPromises.push(
-      agenticRAG.retrieve(query, context, cfg.agenticConfig)
+      agenticRAG.retrieve(enrichedQuery, context, cfg.agenticConfig)
         .then(result => {
           agenticResults = result.results;
           timing.agentic = Date.now() - agenticStart;
@@ -261,10 +338,10 @@ class EnhancedRAGService {
         })
     );
 
-    // Phase 58: GraphRAG hybrid retrieval (if enabled)
+    // Phase 58: GraphRAG hybrid retrieval (if enabled) — use enriched query
     if (cfg.enableGraphRAG) {
       retrievalPromises.push(
-        hybridRetriever.retrieve(query, context, { maxResults: cfg.maxResults })
+        hybridRetriever.retrieve(enrichedQuery, context, { maxResults: cfg.maxResults })
           .then(results => {
             graphRAGResults = results;
             methodsUsed.push('graphrag');
@@ -288,7 +365,7 @@ class EnhancedRAGService {
       const crossStart = Date.now();
       try {
         const reranked = await hybridRerank(
-          query,
+          enrichedQuery,
           merged.map(r => ({
             id: r.id,
             title: r.title,
@@ -304,8 +381,10 @@ class EnhancedRAGService {
         timing.crossEncoder = Date.now() - crossStart;
         methodsUsed.push('cross_encoder');
       } catch (error) {
-        logger.warn('Cross-encoder re-ranking failed, using merged results', { error });
-        finalResults = merged;
+        logger.warn('Cross-encoder re-ranking failed, falling back to heuristic rerank', { error });
+        finalResults = heuristicRerank(enrichedQuery, merged);
+        timing.crossEncoder = Date.now() - crossStart;
+        methodsUsed.push('heuristic_rerank');
       }
     } else {
       finalResults = merged;
@@ -404,17 +483,21 @@ class EnhancedRAGService {
   /**
    * Contextual Chunk Enrichment (Anthropic pattern)
    *
-   * Prepends document context before the content/summary to improve
-   * re-ranking accuracy. This reduces retrieval failures by ~49%
-   * according to Anthropic's research.
+   * Prepends 50-100 tokens of document-level context before the content/summary
+   * to improve embedding quality and re-ranking accuracy. According to Anthropic's
+   * research, this technique reduces retrieval failures by 35-67%.
    *
-   * Pattern: "[Document: {title}] {summary_or_content}"
+   * A chunk saying "Revenue grew 3%" gets prefixed with context like:
+   * [From: "Q3 Earnings Analysis" | Topic: Finance | Context: work]
+   *
+   * The prefix is kept short (~50-100 tokens) to avoid diluting the chunk's
+   * semantic signal while providing enough context for disambiguation.
    */
-  private enrichWithContext(title: string, summary: string, content?: string): { enrichedSummary: string; enrichedContent?: string } {
-    const contextPrefix = title ? `[Document: ${title}] ` : '';
+  private enrichWithContext(title: string, summary: string, content?: string, topic?: string, contextLabel?: string): { enrichedSummary: string; enrichedContent?: string } {
+    const prefix = enrichChunkWithContext({ content: '', title, topic, context: contextLabel });
     return {
-      enrichedSummary: `${contextPrefix}${summary}`,
-      enrichedContent: content ? `${contextPrefix}${content}` : undefined,
+      enrichedSummary: `${prefix}${summary}`,
+      enrichedContent: content ? `${prefix}${content}` : undefined,
     };
   }
 

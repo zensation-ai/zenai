@@ -21,6 +21,7 @@ import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { getPrometheusMetrics } from '../utils/metrics';
 import { getExecutorFactory } from '../services/code-execution/executor-factory';
+import { optionalAuth } from '../middleware/auth';
 
 // Version from package.json - read at startup
 const packageJson = require('../../package.json');
@@ -159,14 +160,18 @@ healthRouter.get('/', (req, res) => {
       rss: formatBytes(process.memoryUsage().rss),
     },
     // Minimal services info for frontend status indicators
-    // Based on configuration, not active health checks
+    // Uses background health check status for accuracy
     services: {
-      databases: {
-        personal: { status: 'connected' }, // If server is running, DB init succeeded
-        work: { status: 'connected' },
-        learning: { status: 'connected' },
-        creative: { status: 'connected' },
-      },
+      databases: (() => {
+        const hcStatus = getHealthCheckStatus();
+        const dbStatus = hcStatus.isHealthy ? 'connected' : 'degraded';
+        return {
+          personal: { status: dbStatus },
+          work: { status: dbStatus },
+          learning: { status: dbStatus },
+          creative: { status: dbStatus },
+        };
+      })(),
       ai: {
         primary: aiServices.primary,
         claude: { status: isClaudeAvailable() ? 'healthy' : 'not_configured' },
@@ -183,13 +188,12 @@ healthRouter.get('/', (req, res) => {
  * SECURITY: In production, only return minimal info unless authenticated
  * WARNING: This endpoint is slower (1-3s) due to external service checks
  */
-healthRouter.get('/detailed', asyncHandler(async (req, res) => {
+healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
   const startTime = Date.now();
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Check if request has valid API key (for detailed info)
-  const hasApiKey = req.headers.authorization?.startsWith('Bearer ab_') ||
-                    (req.headers['x-api-key'] as string)?.startsWith('ab_');
+  // Check if request has a validated API key (verified by optionalAuth middleware)
+  const hasApiKey = !!req.apiKey;
 
   // Gather all health checks in parallel (Phase 7.3: expanded with latency + dependencies)
   const [dbHealth, ollamaHealth, cacheStats, claudeHealth, personalLatency, workLatency, learningLatency, creativeLatency] = await Promise.all([

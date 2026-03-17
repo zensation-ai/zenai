@@ -90,6 +90,56 @@ export class MCPToolBridge {
   }
 
   /**
+   * Validate tool input against its JSON Schema (lightweight, no external deps).
+   * Checks required fields and basic type constraints from the schema.
+   */
+  private validateToolInput(
+    input: Record<string, unknown>,
+    schema: Record<string, unknown>
+  ): string | null {
+    if (schema.type !== 'object') return null; // Only validate object schemas
+
+    const properties = (schema.properties || {}) as Record<string, Record<string, unknown>>;
+    const required = (schema.required || []) as string[];
+
+    // Check required fields
+    for (const field of required) {
+      if (input[field] === undefined || input[field] === null) {
+        return `Missing required field: ${field}`;
+      }
+    }
+
+    // Check basic types for provided fields
+    for (const [key, value] of Object.entries(input)) {
+      const propSchema = properties[key];
+      if (!propSchema || !propSchema.type) continue;
+
+      const expectedType = propSchema.type as string;
+      const actualType = Array.isArray(value) ? 'array' : typeof value;
+
+      if (expectedType === 'integer' || expectedType === 'number') {
+        if (typeof value !== 'number') {
+          return `Field '${key}' expected ${expectedType}, got ${actualType}`;
+        }
+      } else if (expectedType === 'string') {
+        if (typeof value !== 'string') {
+          return `Field '${key}' expected string, got ${actualType}`;
+        }
+      } else if (expectedType === 'boolean') {
+        if (typeof value !== 'boolean') {
+          return `Field '${key}' expected boolean, got ${actualType}`;
+        }
+      } else if (expectedType === 'array') {
+        if (!Array.isArray(value)) {
+          return `Field '${key}' expected array, got ${actualType}`;
+        }
+      }
+    }
+
+    return null; // Validation passed
+  }
+
+  /**
    * Execute a bridged tool
    */
   async executeTool(
@@ -105,6 +155,23 @@ export class MCPToolBridge {
         latencyMs: 0,
         isError: true,
       };
+    }
+
+    // Validate input against schema before execution
+    if (bridgedTool.inputSchema && Object.keys(bridgedTool.inputSchema).length > 0) {
+      const validationError = this.validateToolInput(args, bridgedTool.inputSchema);
+      if (validationError) {
+        logger.warn('MCP tool input validation failed', {
+          qualifiedName,
+          error: validationError,
+        });
+        return {
+          success: false,
+          content: `MCP tool input validation failed: ${validationError}`,
+          latencyMs: 0,
+          isError: true,
+        };
+      }
     }
 
     const startTime = Date.now();

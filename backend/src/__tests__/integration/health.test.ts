@@ -24,7 +24,7 @@ jest.mock('../../utils/database-context', () => ({
     pool: { totalCount: 5, idleCount: 3, activeCount: 2, waitingCount: 0, maxSize: 8 },
     events: { connects: 10, acquires: 200, removes: 0, errors: 0 },
   }),
-  getHealthCheckStatus: jest.fn().mockReturnValue({ lastCheck: new Date().toISOString(), status: 'ok' }),
+  getHealthCheckStatus: jest.fn().mockReturnValue({ lastCheck: new Date().toISOString(), status: 'ok', isHealthy: true, consecutiveFailures: 0 }),
 }));
 
 jest.mock('../../utils/ollama', () => ({

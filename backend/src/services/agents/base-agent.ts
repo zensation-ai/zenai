@@ -78,10 +78,46 @@ export abstract class BaseAgent {
     return this.config.role;
   }
 
+  /** Timeout for agent execution in milliseconds */
+  static AGENT_TIMEOUT_MS = 60_000;
+
+  /** Maximum tokens (input + output) per agent execution */
+  static MAX_TOKENS_PER_AGENT = 100_000;
+
   /**
-   * Execute the agent's task
+   * Execute the agent's task with timeout enforcement
    */
   async execute(input: AgentInput): Promise<AgentOutput> {
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Agent ${this.config.role} timed out after ${BaseAgent.AGENT_TIMEOUT_MS}ms`)),
+        BaseAgent.AGENT_TIMEOUT_MS
+      )
+    );
+
+    try {
+      return await Promise.race([this._executeInternal(input), timeoutPromise]);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const isTimeout = errorMsg.includes('timed out');
+      logger.error(`Agent ${this.config.role} ${isTimeout ? 'timed out' : 'failed'}`, error instanceof Error ? error : undefined);
+
+      return {
+        role: this.config.role,
+        success: false,
+        content: '',
+        toolsUsed: [],
+        tokensUsed: { input: 0, output: 0 },
+        executionTimeMs: BaseAgent.AGENT_TIMEOUT_MS,
+        error: errorMsg,
+      };
+    }
+  }
+
+  /**
+   * Internal execution logic (wrapped by timeout in execute())
+   */
+  private async _executeInternal(input: AgentInput): Promise<AgentOutput> {
     const startTime = Date.now();
     const toolsUsed: string[] = [];
     let totalInputTokens = 0;
@@ -132,6 +168,22 @@ export abstract class BaseAgent {
 
         totalInputTokens += response.usage.input_tokens;
         totalOutputTokens += response.usage.output_tokens;
+
+        // Enforce token limit
+        if (totalInputTokens + totalOutputTokens > BaseAgent.MAX_TOKENS_PER_AGENT) {
+          logger.warn(`Agent ${this.config.role} exceeded token limit`, {
+            totalInputTokens,
+            totalOutputTokens,
+            limit: BaseAgent.MAX_TOKENS_PER_AGENT,
+          });
+          // Collect any text we have so far
+          const partialText = response.content
+            .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+            .map(b => b.text)
+            .join('\n');
+          if (partialText) finalContent = partialText;
+          break;
+        }
 
         // Process response blocks
         const textParts: string[] = [];

@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import type { Contact, Organization, ContactInteraction, ContactStats } from './types';
+import { logger } from '../../utils/logger';
 
 // Uses global axios instance configured in main.tsx (baseURL + auth interceptor)
 
@@ -49,7 +50,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
         setTotalContacts(data.total);
       }
     } catch (err) {
-      if (!axios.isCancel(err)) console.error('Failed to fetch contacts', err);
+      if (!axios.isCancel(err)) logger.error('Failed to fetch contacts', err);
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
         setTotalOrganizations(data.total);
       }
     } catch (err) {
-      console.error('Failed to fetch organizations', err);
+      logger.error('Failed to fetch organizations', err);
     }
   }, [context]);
 
@@ -73,7 +74,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
       const { data } = await axios.get(`/api/${context}/contacts/stats`);
       if (data.success) setStats(data.data);
     } catch (err) {
-      console.error('Failed to fetch stats', err);
+      logger.error('Failed to fetch stats', err);
     }
   }, [context]);
 
@@ -82,7 +83,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
       const { data } = await axios.get(`/api/${context}/contacts/follow-ups`);
       if (data.success) setFollowUps(data.data);
     } catch (err) {
-      console.error('Failed to fetch follow-ups', err);
+      logger.error('Failed to fetch follow-ups', err);
     }
   }, [context]);
 
@@ -91,7 +92,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
       const { data } = await axios.get(`/api/${context}/contacts/${contactId}/timeline`);
       if (data.success) setInteractions(data.data);
     } catch (err) {
-      console.error('Failed to fetch interactions', err);
+      logger.error('Failed to fetch interactions', err);
     }
   }, [context]);
 
@@ -104,7 +105,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
         return data.data;
       }
     } catch (err) {
-      console.error('Failed to create contact', err);
+      logger.error('Failed to create contact', err);
     }
     return null;
   }, [context, fetchContacts, fetchStats]);
@@ -118,7 +119,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
         return true;
       }
     } catch (err) {
-      console.error('Failed to update contact', err);
+      logger.error('Failed to update contact', err);
     }
     return false;
   }, [context, selectedContact]);
@@ -133,7 +134,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
         return true;
       }
     } catch (err) {
-      console.error('Failed to delete contact', err);
+      logger.error('Failed to delete contact', err);
     }
     return false;
   }, [context, selectedContact, fetchStats]);
@@ -146,7 +147,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
         return data.data;
       }
     } catch (err) {
-      console.error('Failed to create organization', err);
+      logger.error('Failed to create organization', err);
     }
     return null;
   }, [context, fetchOrganizations]);
@@ -159,7 +160,7 @@ export function useContactsData({ context }: UseContactsDataProps) {
         return true;
       }
     } catch (err) {
-      console.error('Failed to delete organization', err);
+      logger.error('Failed to delete organization', err);
     }
     return false;
   }, [context]);

@@ -25,11 +25,18 @@ jest.mock('../../utils/database-context', () => ({
   isValidUUID: jest.fn((id: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id),
   ),
+  getHealthCheckStatus: jest.fn().mockReturnValue({ isHealthy: true, consecutiveFailures: 0, lastCheck: new Date().toISOString(), status: 'ok' }),
+  getPoolStats: jest.fn().mockReturnValue({ contexts: {}, pool: { totalCount: 5, idleCount: 3, activeCount: 2, waitingCount: 0, maxSize: 8 }, events: {} }),
+  testConnections: jest.fn(),
   AIContext: {},
 }));
 
 jest.mock('../../middleware/auth', () => ({
   apiKeyAuth: jest.fn((req: any, _res: any, next: any) => {
+    req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
+    next();
+  }),
+  optionalAuth: jest.fn((req: any, _res: any, next: any) => {
     req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
     next();
   }),

@@ -268,7 +268,7 @@ export function ChatMessageList({
 
 
   return (
-    <div className="chat-messages" role="log" aria-label="Chat-Nachrichten">
+    <div className="chat-messages" role="log" aria-live="polite" aria-atomic="false" aria-label="Chat-Nachrichten">
       {messages.length === 0 ? (
         <div className="chat-empty neuro-empty-state neuro-human-fade-in" role="status" aria-label="Leerer Chat - Beginne eine Unterhaltung">
           <div className="chat-empty-avatar neuro-breathing" aria-hidden="true"><Brain size={32} strokeWidth={1.5} /></div>

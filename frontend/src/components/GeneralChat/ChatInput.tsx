@@ -5,11 +5,19 @@
  * textarea, send button, thinking mode bar, and inline error display.
  */
 
-import { useCallback, useEffect, type RefObject, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, type RefObject, type Dispatch, type SetStateAction } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { ImageUpload } from '../ImageUpload';
 import { VoiceInput } from '../VoiceInput';
 import { AnimatedButton } from '../ui';
+
+// Module-level constant — stable reference for useMemo
+const ALL_THINKING_MODES = [
+  { mode: 'assist' as const, icon: '\u{1F4A1}', label: 'Hilf mir' },
+  { mode: 'challenge' as const, icon: '\u{1F525}', label: 'Fordere mich heraus' },
+  { mode: 'coach' as const, icon: '\u{1F3AF}', label: 'Coache mich' },
+  { mode: 'synthesize' as const, icon: '\u{1F517}', label: 'Verbinde Ideen' },
+] as const;
 
 interface ChatInputProps {
   inputValue: string;
@@ -64,22 +72,25 @@ export function ChatInput({
     autoResize();
   }, [inputValue, autoResize]);
 
+  // Context-aware mode filtering: show all for learning, hide challenge for creative
+  const contextModes = useMemo(() => {
+    if (context === 'learning') return ALL_THINKING_MODES;
+    if (context === 'creative') return ALL_THINKING_MODES.filter(m => m.mode !== 'challenge');
+    return ALL_THINKING_MODES;
+  }, [context]);
+
   return (
     <>
       {/* Thinking Mode Toggle (Phase 32C-1) - hidden in assistantMode where it has no effect */}
       {!assistantMode && <div className="thinking-mode-bar">
-        {([
-          { mode: 'assist' as const, icon: '\u{1F4A1}', label: 'Hilf mir' },
-          { mode: 'challenge' as const, icon: '\u{1F525}', label: 'Fordere mich heraus' },
-          { mode: 'coach' as const, icon: '\u{1F3AF}', label: 'Coache mich' },
-          { mode: 'synthesize' as const, icon: '\u{1F517}', label: 'Verbinde Ideen' },
-        ]).map(({ mode, icon, label }) => (
+        {contextModes.map(({ mode, icon, label }) => (
           <button
             key={mode}
             type="button"
             className={`thinking-mode-btn ${thinkingMode === mode ? 'active' : ''}`}
             onClick={() => setThinkingMode(mode)}
             title={label}
+            aria-label={label}
             aria-pressed={thinkingMode === mode}
           >
             <span className="thinking-mode-icon">{icon}</span>

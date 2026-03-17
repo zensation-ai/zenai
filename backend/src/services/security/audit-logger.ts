@@ -133,6 +133,10 @@ class SecurityAuditLogger {
         operation: 'security-audit',
         eventType: event.eventType,
       });
+      // Critical security events must not be silently lost
+      if (severity === 'critical') {
+        throw error;
+      }
       return null;
     }
   }

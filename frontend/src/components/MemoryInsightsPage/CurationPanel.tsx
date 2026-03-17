@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { logger } from '../../utils/logger';
 
 interface CurationSuggestion {
   id: string;
@@ -74,7 +75,7 @@ export function CurationPanel({ context }: CurationPanelProps) {
     } catch {
       // Endpoint may not exist yet — dismiss the suggestion as acknowledged
       handleDismiss(suggestion.id);
-      console.warn(`Curation action "${config?.label}" fuer Memory ${suggestion.memoryId} vorgemerkt (Backend-Endpunkt ausstehend).`);
+      logger.warn(`Curation action "${config?.label}" fuer Memory ${suggestion.memoryId} vorgemerkt (Backend-Endpunkt ausstehend).`);
     }
   };
 

@@ -195,6 +195,21 @@ export const NAV_FOOTER_ITEMS: NavItem[] = [
   },
 ];
 
+// ===========================================
+// Derived data for consumers
+// ===========================================
+
+/** All section nav items (flattened, excludes chat/browser/footer) */
+export const ALL_NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap(s => s.items);
+
+/** All navigable items including chat, browser, and footer */
+export const ALL_NAVIGABLE_ITEMS: NavItem[] = [
+  NAV_CHAT_ITEM,
+  NAV_BROWSER_ITEM,
+  ...ALL_NAV_ITEMS,
+  ...NAV_FOOTER_ITEMS,
+];
+
 /**
  * Check if a page is active (including sub-pages)
  */

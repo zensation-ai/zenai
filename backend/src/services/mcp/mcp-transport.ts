@@ -180,6 +180,8 @@ export class StdioMCPTransport implements IMCPTransport {
       params: params || {},
     });
 
+    const stdioTimeout = this.config.timeout || 30000;
+
     try {
       const env = { ...process.env, ...this.config.env };
       const args = this.config.args?.join(' ') || '';
@@ -187,7 +189,7 @@ export class StdioMCPTransport implements IMCPTransport {
 
       const output = execSync(cmd, {
         env,
-        timeout: this.config.timeout || 30000,
+        timeout: stdioTimeout,
         encoding: 'utf-8',
       });
 
@@ -202,6 +204,10 @@ export class StdioMCPTransport implements IMCPTransport {
       return (data.result || data) as MCPTransportResult;
     } catch (error) {
       this.connected = false;
+      // Detect timeout from execSync (throws with .killed = true or ETIMEDOUT)
+      if (error instanceof Error && ('killed' in error || error.message.includes('ETIMEDOUT') || error.message.includes('timed out'))) {
+        throw new Error(`MCP stdio transport timeout after ${stdioTimeout}ms for method '${method}'`);
+      }
       throw error;
     }
   }

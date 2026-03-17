@@ -442,7 +442,7 @@ REGELN:
 // ===========================================
 
 /** Maximum retries per agent on failure */
-const MAX_AGENT_RETRIES = 1;
+const MAX_AGENT_RETRIES = 2;
 
 /** Options for executeTeamTask */
 export interface ExecuteTeamTaskOptions {
@@ -541,12 +541,18 @@ export async function executeTeamTask(
         teamId,
       };
 
-      // Execute with retry on failure
+      // Execute with retry on failure (exponential backoff)
       let result: AgentOutput | null = null;
       let retries = 0;
 
       while (retries <= MAX_AGENT_RETRIES) {
         const agent = createAgent(subTask.assignedAgent);
+
+        // On retry, include previous error in context so agent can adapt
+        if (retries > 0 && result?.error) {
+          agentInput.context = `${agentInput.context || ''}\n\n[PREVIOUS ATTEMPT FAILED]: ${result.error}\nPlease try a different approach.`.trim();
+        }
+
         result = await agent.execute(agentInput);
 
         if (result.success) {
@@ -555,12 +561,17 @@ export async function executeTeamTask(
 
         retries++;
         if (retries <= MAX_AGENT_RETRIES) {
-          logger.info('Retrying failed agent', {
+          // Exponential backoff: 2s, 4s (base 2)
+          const backoffMs = Math.pow(2, retries) * 1000;
+          logger.info('Retrying failed agent with backoff', {
             teamId,
             agent: subTask.assignedAgent,
             attempt: retries + 1,
+            backoffMs,
             error: result.error,
           });
+
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
 
           // Write retry info to shared memory
           sharedMemory.write(
@@ -568,7 +579,7 @@ export async function executeTeamTask(
             'orchestrator',
             'decision',
             `Retry für ${subTask.assignedAgent}: ${result.error}`,
-            { retry: retries }
+            { retry: retries, backoffMs }
           );
         }
       }

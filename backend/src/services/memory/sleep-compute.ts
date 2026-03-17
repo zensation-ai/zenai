@@ -11,6 +11,8 @@
 
 import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
+import { getRedisClient } from '../../utils/cache';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface SleepCycleResult {
   processed: number;
@@ -19,6 +21,7 @@ export interface SleepCycleResult {
   memoryUpdates: number;
   preloadedItems: number;
   durationMs: number;
+  skipped?: boolean;
 }
 
 export interface SleepInsight {
@@ -28,11 +31,67 @@ export interface SleepInsight {
 }
 
 class SleepComputeEngine {
+  /** Lock TTL for sleep cycle distributed lock (2 minutes) */
+  private static readonly LOCK_TTL_MS = 120_000;
+
+  /**
+   * Acquire a Redis distributed lock using SET NX EX.
+   * Returns the lock value on success, null if lock already held.
+   */
+  private async acquireLock(key: string, ttlMs: number): Promise<string | null> {
+    const redis = getRedisClient();
+    if (!redis) return uuidv4(); // No Redis = allow execution (single instance fallback)
+
+    const lockValue = uuidv4();
+    try {
+      const result = await redis.set(key, lockValue, 'PX', ttlMs, 'NX');
+      return result === 'OK' ? lockValue : null;
+    } catch {
+      return uuidv4(); // On Redis error, allow execution
+    }
+  }
+
+  /**
+   * Release a Redis distributed lock (only if we hold it).
+   */
+  private async releaseLock(key: string, lockValue: string): Promise<void> {
+    const redis = getRedisClient();
+    if (!redis) return;
+
+    try {
+      // Lua script for atomic compare-and-delete
+      const script = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`;
+      await redis.eval(script, 1, key, lockValue);
+    } catch {
+      // Non-critical: lock will expire via TTL
+    }
+  }
+
   /**
    * Run a full sleep cycle for a context.
    * Called by BullMQ worker when system is idle.
+   * Uses distributed lock to prevent concurrent cycles.
    */
   async runSleepCycle(context: AIContext): Promise<SleepCycleResult> {
+    const lockKey = `sleep-cycle:${context}`;
+    const lockValue = await this.acquireLock(lockKey, SleepComputeEngine.LOCK_TTL_MS);
+
+    if (!lockValue) {
+      logger.info(`Sleep cycle already running for ${context}, skipping`, {
+        operation: 'sleep-compute',
+        context,
+      });
+      return {
+        processed: 0,
+        insights: [],
+        contradictionsResolved: 0,
+        memoryUpdates: 0,
+        preloadedItems: 0,
+        durationMs: 0,
+        skipped: true,
+      };
+    }
+
     const startTime = Date.now();
     const result: SleepCycleResult = {
       processed: 0,
@@ -89,6 +148,8 @@ class SleepComputeEngine {
         context,
       });
       return result;
+    } finally {
+      await this.releaseLock(lockKey, lockValue);
     }
   }
 
@@ -241,7 +302,7 @@ class SleepComputeEngine {
             updated_at = NOW(),
             expires_at = NOW() + INTERVAL '2 hours'
         `, [
-          `preload:${context}:${dayOfWeek}:${Math.floor(hour / 4)}`,
+          `preload:${context}:${dayOfWeek}:${Math.floor(hour / 4)}:fact:${row.id || preloaded}`,
           JSON.stringify({ facts: [row.content] }),
           Math.ceil(String(row.content || '').length / 4),
         ]);
@@ -386,8 +447,8 @@ class SleepComputeEngine {
       const result = await queryContext('personal', `
         SELECT COUNT(*) as cnt
         FROM general_chat_sessions
-        WHERE updated_at > NOW() - INTERVAL '${windowMinutes} minutes'
-      `, []);
+        WHERE updated_at > NOW() - make_interval(mins := $1)
+      `, [windowMinutes]);
       return (parseInt(result.rows[0]?.cnt || '0', 10)) < threshold;
     } catch {
       return true; // Assume idle if we can't check

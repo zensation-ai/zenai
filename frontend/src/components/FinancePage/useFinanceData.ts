@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
+import { logger } from '../../utils/logger';
 import type {
   FinancialAccount, Transaction, Budget, FinancialGoal,
   FinancialOverview, TransactionType,
@@ -37,7 +38,7 @@ export function useFinanceData(context: string) {
       const res = await axios.get(`/api/${context}/finance/overview`);
       setOverview(res.data.data);
     } catch (err) {
-      console.error('Failed to fetch overview', err);
+      logger.error('Failed to fetch overview', err);
     }
   }, [context]);
 
@@ -56,7 +57,7 @@ export function useFinanceData(context: string) {
       setTransactions(res.data.data);
       setTransactionsTotal(res.data.total || 0);
     } catch (err) {
-      console.error('Failed to fetch transactions', err);
+      logger.error('Failed to fetch transactions', err);
     }
   }, [context]);
 
@@ -65,7 +66,7 @@ export function useFinanceData(context: string) {
       const res = await axios.get(`/api/${context}/finance/accounts`);
       setAccounts(res.data.data);
     } catch (err) {
-      console.error('Failed to fetch accounts', err);
+      logger.error('Failed to fetch accounts', err);
     }
   }, [context]);
 
@@ -74,7 +75,7 @@ export function useFinanceData(context: string) {
       const res = await axios.get(`/api/${context}/finance/budgets`);
       setBudgets(res.data.data);
     } catch (err) {
-      console.error('Failed to fetch budgets', err);
+      logger.error('Failed to fetch budgets', err);
     }
   }, [context]);
 
@@ -83,7 +84,7 @@ export function useFinanceData(context: string) {
       const res = await axios.get(`/api/${context}/finance/goals?active=false`);
       setGoals(res.data.data);
     } catch (err) {
-      console.error('Failed to fetch goals', err);
+      logger.error('Failed to fetch goals', err);
     }
   }, [context]);
 

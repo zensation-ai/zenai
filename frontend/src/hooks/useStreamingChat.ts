@@ -21,6 +21,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/query-keys';
 import { safeLocalStorage } from '../utils/storage';
 import { logError } from '../utils/errors';
+import { logger } from '../utils/logger';
 import type { ChatMessage } from '../components/GeneralChat/types';
 import type { AIContext } from '../components/ContextSwitcher';
 
@@ -303,7 +304,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
         } catch (readerErr) {
           // AbortError should propagate; other reader errors use partial content
           if (readerErr instanceof Error && readerErr.name === 'AbortError') throw readerErr;
-          console.warn('Stream reader error, using partial content:', readerErr);
+          logger.warn('Stream reader error, using partial content:', readerErr);
         } finally {
           try { reader.releaseLock(); } catch { /* already released */ }
         }

@@ -5,6 +5,7 @@
 // Mock dependencies before imports
 jest.mock('../../../utils/cache', () => {
   const store = new Map<string, { value: string; ttl: number }>();
+  const sets = new Map<string, Set<string>>();
   return {
     cache: {
       get: jest.fn(async (key: string) => {
@@ -21,12 +22,22 @@ jest.mock('../../../utils/cache', () => {
       }),
       delPattern: jest.fn(async () => 2),
       isAvailable: jest.fn(() => true),
+      sAdd: jest.fn(async (key: string, member: string) => {
+        if (!sets.has(key)) sets.set(key, new Set());
+        sets.get(key)!.add(member);
+        return true;
+      }),
+      sMembers: jest.fn(async (key: string) => {
+        const s = sets.get(key);
+        return s ? Array.from(s) : [];
+      }),
     },
     cacheKeys: {
       search: (context: string, query: string) => `search:${context}:${query}`,
     },
     // Expose store for test manipulation
     __store: store,
+    __sets: sets,
   };
 });
 

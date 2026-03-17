@@ -238,6 +238,41 @@ export const cache = {
   },
 
   /**
+   * Add a member to a Redis set. Creates the set if it doesn't exist.
+   * Used for reverse-index mappings (e.g., idea ID -> cache keys).
+   */
+  async sAdd(key: string, member: string, ttlSeconds?: number): Promise<boolean> {
+    const client = getClient();
+    if (!client || !isConnected) return false;
+
+    try {
+      await client.sadd(key, member);
+      if (ttlSeconds) {
+        await client.expire(key, ttlSeconds);
+      }
+      return true;
+    } catch (error) {
+      logger.debug('Cache sAdd error', { key, error: error instanceof Error ? error.message : 'Unknown' });
+      return false;
+    }
+  },
+
+  /**
+   * Get all members of a Redis set.
+   */
+  async sMembers(key: string): Promise<string[]> {
+    const client = getClient();
+    if (!client || !isConnected) return [];
+
+    try {
+      return await client.smembers(key);
+    } catch (error) {
+      logger.debug('Cache sMembers error', { key, error: error instanceof Error ? error.message : 'Unknown' });
+      return [];
+    }
+  },
+
+  /**
    * Graceful shutdown
    */
   async close(): Promise<void> {

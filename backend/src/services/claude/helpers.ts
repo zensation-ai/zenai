@@ -39,8 +39,16 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
     return null;
   }
 
+  // Track which extraction layer succeeds for prompt quality monitoring.
+  // Layer 1 (direct-object) should succeed for well-behaved prompts.
+  // Layers 2+ indicate the LLM wrapped JSON in markdown, returned an array,
+  // produced malformed JSON, or output free-form text. Frequent use of
+  // later layers suggests the system prompt needs a "respond ONLY with JSON" instruction.
+  let jsonExtractionLayer = 0;
+
   const methods = [
-    // Method 1: Direct JSON object
+    // Layer 1: Direct JSON object — the happy path.
+    // Succeeds when Claude returns a bare JSON object as instructed.
     () => {
       const match = responseText.match(/\{[\s\S]*\}/);
       if (match) {
@@ -49,7 +57,8 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
       return null;
     },
 
-    // Method 2: JSON in markdown code block
+    // Layer 2: JSON wrapped in a markdown code block.
+    // Needed when Claude wraps output in ```json ... ``` despite instructions.
     () => {
       const markdownMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
       if (markdownMatch) {
@@ -58,7 +67,8 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
       return null;
     },
 
-    // Method 3: JSON array extraction
+    // Layer 3: JSON array extraction.
+    // For prompts that expect array output (e.g., batch processing).
     () => {
       const arrayMatch = responseText.match(/\[[\s\S]*\]/);
       if (arrayMatch) {
@@ -67,7 +77,9 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
       return null;
     },
 
-    // Method 4: Fix common JSON errors (trailing commas, unquoted keys)
+    // Layer 4: Fix common JSON syntax errors.
+    // Handles trailing commas, single quotes, trailing text after closing brace.
+    // Needed when Claude outputs almost-valid JSON with minor syntax issues.
     () => {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {return null;}
@@ -94,7 +106,9 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
       return { json: JSON.parse(jsonStr), method: 'fixed-json' };
     },
 
-    // Method 5: Extract key-value pairs manually and reconstruct
+    // Layer 5: Last resort — extract key-value pairs line by line and reconstruct.
+    // Handles cases where the response is semi-structured text rather than JSON.
+    // If this layer is frequently needed, the prompt should be reviewed.
     () => {
       const lines = responseText.split('\n');
       const obj: Record<string, unknown> = {};
@@ -131,10 +145,20 @@ export function extractJSONFromResponse(responseText: string): JSONExtractionRes
   ];
 
   for (const method of methods) {
+    jsonExtractionLayer++;
     try {
       const result = method();
       if (result) {
-        logger.debug('JSON extraction successful', { method: result.method });
+        if (jsonExtractionLayer > 1) {
+          // Layers beyond 1 indicate the prompt could be improved to return cleaner JSON
+          logger.warn('JSON extraction required fallback layer', {
+            layer: jsonExtractionLayer,
+            method: result.method,
+            responsePreview: responseText.substring(0, 100),
+          });
+        } else {
+          logger.debug('JSON extraction successful', { method: result.method, layer: jsonExtractionLayer });
+        }
         return result;
       }
     } catch {

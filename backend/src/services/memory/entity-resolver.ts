@@ -48,8 +48,55 @@ export interface LinkedFact {
 export class EntityResolver {
   private graphBuilder: GraphBuilder;
 
+  /** Pending facts queued for batch resolution */
+  private pendingFacts: Array<{ context: AIContext; content: string }> = [];
+  /** Timer for batch processing */
+  private batchTimer: NodeJS.Timeout | null = null;
+  /** Maximum batch size before forced flush */
+  private static readonly BATCH_SIZE = 10;
+  /** Delay before processing incomplete batch (ms) */
+  private static readonly BATCH_DELAY_MS = 5000;
+
   constructor() {
     this.graphBuilder = new GraphBuilder();
+  }
+
+  /**
+   * Queue a fact for batched entity resolution.
+   * Facts are collected and processed in batches of 10 or every 5 seconds.
+   */
+  queueFactForResolution(context: AIContext, content: string): void {
+    this.pendingFacts.push({ context, content });
+
+    if (this.pendingFacts.length >= EntityResolver.BATCH_SIZE) {
+      this.processBatch();
+    } else if (!this.batchTimer) {
+      this.batchTimer = setTimeout(() => this.processBatch(), EntityResolver.BATCH_DELAY_MS);
+    }
+  }
+
+  /**
+   * Process all pending facts in a batch.
+   */
+  private processBatch(): void {
+    if (this.batchTimer) {
+      clearTimeout(this.batchTimer);
+      this.batchTimer = null;
+    }
+
+    if (this.pendingFacts.length === 0) return;
+
+    const batch = this.pendingFacts.splice(0);
+
+    // Process each fact in the batch (fire-and-forget)
+    for (const { context, content } of batch) {
+      this.resolveFromFact(context, content).catch(err => {
+        logger.debug('Batched entity resolution failed for fact', {
+          error: err instanceof Error ? err.message : String(err),
+          contentPreview: content.substring(0, 80),
+        });
+      });
+    }
   }
 
   /**

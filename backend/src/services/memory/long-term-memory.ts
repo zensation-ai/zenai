@@ -823,13 +823,10 @@ Antworte als JSON:
           fact.occurrences,
         ]
       );
-      // Phase 59: Entity Resolution for new facts (fire-and-forget)
+      // Phase 59: Entity Resolution for new facts (batched, fire-and-forget)
       try {
-        const { EntityResolver } = await import('./entity-resolver');
-        const resolver = new EntityResolver();
-        resolver.resolveFromFact(context, fact.content).catch(err => {
-          logger.debug('Entity resolution skipped', { error: err instanceof Error ? err.message : String(err) });
-        });
+        const { entityResolver } = await import('./entity-resolver');
+        entityResolver.queueFactForResolution(context, fact.content);
       } catch (err) {
         logger.debug('Entity resolution import skipped', { error: err instanceof Error ? err.message : String(err) });
       }

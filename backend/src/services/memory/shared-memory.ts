@@ -12,6 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger';
+import { cache, getRedisClient } from '../../utils/cache';
 
 // ===========================================
 // Types & Interfaces
@@ -47,6 +48,10 @@ const CONFIG = {
   MAX_TEAMS: 50,
   /** Team TTL in milliseconds (1 hour) */
   TEAM_TTL_MS: 60 * 60 * 1000,
+  /** Redis TTL for shared memory persistence (1 hour) */
+  REDIS_TTL_SECONDS: 3600,
+  /** Redis key prefix */
+  REDIS_PREFIX: 'shared-memory:',
 };
 
 // ===========================================
@@ -63,7 +68,8 @@ class SharedMemoryService {
   private stores: Map<string, TeamStore> = new Map();
 
   /**
-   * Initialize a team's shared memory
+   * Initialize a team's shared memory.
+   * Tries to restore from Redis if available.
    */
   initialize(teamId: string): void {
     if (this.stores.has(teamId)) {
@@ -76,6 +82,69 @@ class SharedMemoryService {
       lastActivity: now,
     });
     this.enforceTeamLimit();
+
+    // Try to restore from Redis in background
+    this.restoreFromRedis(teamId).catch(() => {
+      // Non-critical: Redis restore failed silently
+    });
+  }
+
+  /**
+   * Persist team store to Redis for durability
+   */
+  private async persistToRedis(teamId: string): Promise<void> {
+    const store = this.stores.get(teamId);
+    if (!store) return;
+
+    try {
+      const key = `${CONFIG.REDIS_PREFIX}${teamId}`;
+      // Pass object directly — cache.set handles JSON serialization internally
+      await cache.set(key, {
+        entries: store.entries,
+        createdAt: store.createdAt.toISOString(),
+        lastActivity: store.lastActivity.toISOString(),
+      }, CONFIG.REDIS_TTL_SECONDS);
+    } catch {
+      // Non-critical: Redis persistence is a durability layer, not required
+    }
+  }
+
+  /**
+   * Restore team store from Redis
+   */
+  private async restoreFromRedis(teamId: string): Promise<void> {
+    try {
+      const key = `${CONFIG.REDIS_PREFIX}${teamId}`;
+      const data = await cache.get<{
+        entries: SharedMemoryEntry[];
+        createdAt: string;
+        lastActivity: string;
+      }>(key);
+      if (!data) return;
+
+      const parsed = data as {
+        entries: SharedMemoryEntry[];
+        createdAt: string;
+        lastActivity: string;
+      };
+
+      const store = this.stores.get(teamId);
+      if (!store || store.entries.length > 0) return; // Don't overwrite if already populated
+
+      store.entries = parsed.entries.map(e => ({
+        ...e,
+        timestamp: new Date(e.timestamp),
+      }));
+      store.createdAt = new Date(parsed.createdAt);
+      store.lastActivity = new Date(parsed.lastActivity);
+
+      logger.debug('Shared memory restored from Redis', {
+        teamId,
+        entryCount: store.entries.length,
+      });
+    } catch {
+      // Non-critical: restore from Redis is best-effort
+    }
   }
 
   /**
@@ -123,6 +192,9 @@ class SharedMemoryService {
       entryId: entry.id,
       totalEntries: store.entries.length,
     });
+
+    // Persist to Redis in background for durability
+    this.persistToRedis(teamId).catch(() => { /* non-critical */ });
 
     return entry;
   }
@@ -266,6 +338,8 @@ class SharedMemoryService {
    */
   clear(teamId: string): void {
     this.stores.delete(teamId);
+    // Clean up Redis key
+    cache.del(`${CONFIG.REDIS_PREFIX}${teamId}`).catch(() => { /* non-critical */ });
   }
 
   /**

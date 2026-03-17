@@ -17,7 +17,23 @@ import { withRetry, withCircuitBreaker, isAnthropicRetryable } from '../../utils
 // ===========================================
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-export const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+
+/**
+ * Centralized model configuration.
+ * All model IDs are configurable via environment variables with sensible defaults.
+ */
+export const MODEL_CONFIG = {
+  /** Default model for general use (chat, tool use, RAG) */
+  default: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+  /** Model used for Extended Thinking tasks */
+  thinking: process.env.CLAUDE_THINKING_MODEL || 'claude-sonnet-4-20250514',
+  /** Fast model for simple classifications and quick tasks */
+  haiku: process.env.CLAUDE_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+  /** Most capable model for complex analysis */
+  opus: process.env.CLAUDE_OPUS_MODEL || 'claude-opus-4-20250514',
+} as const;
+
+export const CLAUDE_MODEL = MODEL_CONFIG.default;
 
 // ===========================================
 // Retry Configuration
@@ -96,6 +112,33 @@ export async function executeWithProtection<T>(
   return withCircuitBreaker(circuitKey, async () => {
     return withRetry(fn, retryConfig);
   });
+}
+
+// ===========================================
+// Beta Headers
+// ===========================================
+
+/** Structured Outputs beta header for tool use with strict JSON schemas */
+const STRUCTURED_OUTPUTS_BETA = 'structured-outputs-2025-11-13';
+
+/**
+ * Get Anthropic beta header strings based on requested features.
+ * Returns an array of beta header values to be joined with commas.
+ *
+ * @param options - Feature flags for beta headers
+ * @returns Array of beta header strings (may be empty)
+ */
+export function getAnthropicBetaHeaders(options: {
+  /** Include structured outputs beta for strict JSON tool results */
+  structuredOutputs?: boolean;
+} = {}): string[] {
+  const headers: string[] = [];
+
+  if (options.structuredOutputs) {
+    headers.push(STRUCTURED_OUTPUTS_BETA);
+  }
+
+  return headers;
 }
 
 // ===========================================

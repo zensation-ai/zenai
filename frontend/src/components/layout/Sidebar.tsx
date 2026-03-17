@@ -11,7 +11,7 @@
  * - WCAG 2.1 AA Compliant
  */
 
-import { memo, useState, useCallback, useEffect, useRef } from 'react';
+import { memo, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { Page, ApiStatus } from '../../types';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
@@ -87,12 +87,21 @@ export const Sidebar = memo(function Sidebar({
     onNavigate(page);
   }, [onNavigate]);
 
-  // Resolve badge values
+  // Resolve badge values — memoized to avoid recalculating on every render
+  const badgeValues = useMemo(() => {
+    const values: Record<string, number | undefined> = {};
+    const allItems = [...NAV_SECTIONS.flatMap(s => s.items), ...NAV_FOOTER_ITEMS];
+    for (const item of allItems) {
+      if (!item.badge) continue;
+      if (item.badge === 'archived') values[item.page] = archivedCount > 0 ? archivedCount : undefined;
+      else if (item.badge === 'notifications') values[item.page] = notificationCount > 0 ? notificationCount : undefined;
+      else if (item.badge === 'email_unread') values[item.page] = emailUnreadCount > 0 ? emailUnreadCount : undefined;
+    }
+    return values;
+  }, [archivedCount, notificationCount, emailUnreadCount]);
+
   const getBadgeValue = (item: NavItem): number | undefined => {
-    if (item.badge === 'archived') return archivedCount > 0 ? archivedCount : undefined;
-    if (item.badge === 'notifications') return notificationCount > 0 ? notificationCount : undefined;
-    if (item.badge === 'email_unread') return emailUnreadCount > 0 ? emailUnreadCount : undefined;
-    return undefined;
+    return badgeValues[item.page];
   };
 
   // Check if section contains active page
