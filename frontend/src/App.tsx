@@ -338,7 +338,7 @@ function AuthenticatedApp() {
             context={context}
             onBack={() => navigateToPage('home')}
             onSelectIdea={() => navigateToPage('ideas')}
-            initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep'}
+            initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep' | 'ai-traces'}
           />
         </Suspense>
       } />

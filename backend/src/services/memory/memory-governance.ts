@@ -219,7 +219,7 @@ class MemoryGovernanceService {
       // 2. Delete episodic memory
       const episodesRes = await queryContext(
         context,
-        `DELETE FROM episodic_memory WHERE context = $1`,
+        `DELETE FROM episodic_memories WHERE context = $1`,
         [context]
       );
       result.episodesDeleted = episodesRes.rowCount || 0;
@@ -236,7 +236,7 @@ class MemoryGovernanceService {
       try {
         const procRes = await queryContext(
           context,
-          `DELETE FROM procedural_memory WHERE context = $1`,
+          `DELETE FROM procedural_memories WHERE context = $1`,
           [context]
         );
         result.proceduresDeleted = procRes.rowCount || 0;
@@ -290,11 +290,11 @@ class MemoryGovernanceService {
    */
   async eraseLayer(context: AIContext, layer: MemoryLayer): Promise<number> {
     const tableMap: Record<MemoryLayer, string> = {
-      working: 'working_memory_slots',
-      episodic: 'episodic_memory',
+      working: 'working_memory_sessions',
+      episodic: 'episodic_memories',
       short_term: 'conversation_memory',
       long_term: 'learned_facts',
-      procedural: 'procedural_memory',
+      procedural: 'procedural_memories',
       reflection: 'reflection_insights',
     };
 
@@ -378,7 +378,7 @@ class MemoryGovernanceService {
       const episodesResult = await queryContext(
         context,
         `SELECT id, type, summary, strength, emotional_valence, source_session_id, created_at
-         FROM episodic_memory WHERE context = $1 ORDER BY created_at DESC`,
+         FROM episodic_memories WHERE context = $1 ORDER BY created_at DESC`,
         [context]
       );
       memoryExport.episodes = episodesResult.rows;
@@ -398,7 +398,7 @@ class MemoryGovernanceService {
           context,
           `SELECT id, type, name, trigger_description, steps, success_count, failure_count,
                   confidence, tags, created_at, last_used
-           FROM procedural_memory WHERE context = $1 ORDER BY created_at DESC`,
+           FROM procedural_memories WHERE context = $1 ORDER BY created_at DESC`,
           [context]
         );
         memoryExport.procedures = procResult.rows;
@@ -459,7 +459,7 @@ class MemoryGovernanceService {
       // Delete old episodes
       const episodesRes = await queryContext(
         context,
-        `DELETE FROM episodic_memory
+        `DELETE FROM episodic_memories
          WHERE context = $1 AND created_at < NOW() - make_interval(days => $2)`,
         [context, settings.retentionDays]
       );
@@ -577,7 +577,7 @@ class MemoryGovernanceService {
       // Count per layer
       const queries = [
         { key: 'facts', sql: `SELECT COUNT(*) as cnt FROM learned_facts WHERE context = $1` },
-        { key: 'episodes', sql: `SELECT COUNT(*) as cnt FROM episodic_memory WHERE context = $1` },
+        { key: 'episodes', sql: `SELECT COUNT(*) as cnt FROM episodic_memories WHERE context = $1` },
         { key: 'patterns', sql: `SELECT COUNT(*) as cnt FROM conversation_patterns WHERE context = $1` },
       ];
 
@@ -592,7 +592,7 @@ class MemoryGovernanceService {
 
       // Optional tables
       const optionalTables = [
-        { table: 'procedural_memory', key: 'procedures' },
+        { table: 'procedural_memories', key: 'procedures' },
         { table: 'reflection_insights', key: 'reflections' },
       ];
       for (const { table, key } of optionalTables) {
