@@ -9,6 +9,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { isValidContext } from '../utils/database-context';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
 import {
   createProspectiveMemory,
   listPending,
@@ -43,9 +44,13 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const memories = await listPending(context, userId);
-
-    return res.json({ success: true, data: memories });
+    try {
+      const memories = await listPending(context, userId);
+      return res.json({ success: true, data: memories });
+    } catch (error) {
+      logger.error('Prospektive Erinnerung: Auflisten fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      return res.status(500).json({ success: false, error: 'Prospektive Erinnerungen konnten nicht geladen werden' });
+    }
   })
 );
 
@@ -78,15 +83,20 @@ router.post(
       throw new ValidationError('priority must be: low, medium, or high.');
     }
 
-    const memory = await createProspectiveMemory(context, userId, {
-      triggerType,
-      triggerCondition,
-      memoryContent,
-      priority,
-      expiresAt,
-    });
+    try {
+      const memory = await createProspectiveMemory(context, userId, {
+        triggerType,
+        triggerCondition,
+        memoryContent,
+        priority,
+        expiresAt,
+      });
 
-    return res.status(201).json({ success: true, data: memory });
+      return res.status(201).json({ success: true, data: memory });
+    } catch (error) {
+      logger.error('Prospektive Erinnerung: Erstellung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: triggerType });
+      return res.status(500).json({ success: false, error: 'Prospektive Erinnerung konnte nicht erstellt werden' });
+    }
   })
 );
 
@@ -104,12 +114,17 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const memory = await fireMemory(context, id);
-    if (!memory) {
-      return res.status(404).json({ success: false, error: 'Memory not found or not pending' });
-    }
+    try {
+      const memory = await fireMemory(context, id);
+      if (!memory) {
+        return res.status(404).json({ success: false, error: 'Memory not found or not pending' });
+      }
 
-    return res.json({ success: true, data: memory });
+      return res.json({ success: true, data: memory });
+    } catch (error) {
+      logger.error('Prospektive Erinnerung: Auslösung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: id });
+      return res.status(500).json({ success: false, error: 'Erinnerung konnte nicht ausgelöst werden' });
+    }
   })
 );
 
@@ -127,12 +142,17 @@ router.post(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const memory = await dismissMemory(context, id);
-    if (!memory) {
-      return res.status(404).json({ success: false, error: 'Memory not found or not pending' });
-    }
+    try {
+      const memory = await dismissMemory(context, id);
+      if (!memory) {
+        return res.status(404).json({ success: false, error: 'Memory not found or not pending' });
+      }
 
-    return res.json({ success: true, data: memory });
+      return res.json({ success: true, data: memory });
+    } catch (error) {
+      logger.error('Prospektive Erinnerung: Verwerfen fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: id });
+      return res.status(500).json({ success: false, error: 'Erinnerung konnte nicht verworfen werden' });
+    }
   })
 );
 
@@ -154,9 +174,13 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const stats = await getMetamemoryStats(context, userId);
-
-    return res.json({ success: true, data: stats });
+    try {
+      const stats = await getMetamemoryStats(context, userId);
+      return res.json({ success: true, data: stats });
+    } catch (error) {
+      logger.error('Prospektive Erinnerung: Metamemory-Statistiken fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      return res.status(500).json({ success: false, error: 'Metamemory-Statistiken konnten nicht geladen werden' });
+    }
   })
 );
 
@@ -174,9 +198,13 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const gaps = await getKnowledgeGaps(context, userId);
-
-    return res.json({ success: true, data: gaps });
+    try {
+      const gaps = await getKnowledgeGaps(context, userId);
+      return res.json({ success: true, data: gaps });
+    } catch (error) {
+      logger.error('Prospektive Erinnerung: Wissenslücken-Analyse fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      return res.status(500).json({ success: false, error: 'Wissenslücken konnten nicht analysiert werden' });
+    }
   })
 );
 
@@ -194,10 +222,14 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const threshold = parseFloat(req.query.threshold as string) || 0.4;
-    const conflicts = await findConflicts(context, userId, threshold);
-
-    return res.json({ success: true, data: conflicts });
+    try {
+      const threshold = parseFloat(req.query.threshold as string) || 0.4;
+      const conflicts = await findConflicts(context, userId, threshold);
+      return res.json({ success: true, data: conflicts });
+    } catch (error) {
+      logger.error('Prospektive Erinnerung: Konflikt-Erkennung fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      return res.status(500).json({ success: false, error: 'Fakten-Konflikte konnten nicht erkannt werden' });
+    }
   })
 );
 

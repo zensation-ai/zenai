@@ -10,6 +10,7 @@ import type { AIContext } from '../types';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
 import {
   calculateInterruptibility,
   type InterruptibilitySignals,
@@ -51,8 +52,13 @@ proactiveIntelligenceRouter.get(
       sessionDuration: Math.max(0, Number(req.query.sessionDuration) || 0),
     };
 
-    const result = calculateInterruptibility(signals);
-    res.json({ success: true, data: result });
+    try {
+      const result = calculateInterruptibility(signals);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Unterbrechbarkeits-Berechnung fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Unterbrechbarkeits-Score konnte nicht berechnet werden' });
+    }
   }),
 );
 
@@ -76,8 +82,13 @@ proactiveIntelligenceRouter.post(
       throw new ValidationError('activityType is required');
     }
 
-    const result = await recordActivity(context, userId, activityType, metadata ?? {});
-    res.json({ success: true, data: result });
+    try {
+      const result = await recordActivity(context, userId, activityType, metadata ?? {});
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Aktivitäts-Erfassung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: activityType });
+      res.status(500).json({ success: false, error: 'Aktivität konnte nicht erfasst werden' });
+    }
   }),
 );
 
@@ -94,14 +105,19 @@ proactiveIntelligenceRouter.get(
     const userId = getUserId(req);
     const refresh = req.query.refresh === 'true';
 
-    let patterns;
-    if (refresh) {
-      patterns = await detectPatterns(context, userId);
-    } else {
-      patterns = await getStoredPatterns(context, userId);
-    }
+    try {
+      let patterns;
+      if (refresh) {
+        patterns = await detectPatterns(context, userId);
+      } else {
+        patterns = await getStoredPatterns(context, userId);
+      }
 
-    res.json({ success: true, data: patterns });
+      res.json({ success: true, data: patterns });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Muster-Erkennung fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Gewohnheitsmuster konnten nicht geladen werden' });
+    }
   }),
 );
 
@@ -116,10 +132,16 @@ proactiveIntelligenceRouter.get(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
     const userId = getUserId(req);
-    const patterns = await getStoredPatterns(context, userId);
-    const suggestions = generateSuggestions(context, userId, patterns);
 
-    res.json({ success: true, data: suggestions });
+    try {
+      const patterns = await getStoredPatterns(context, userId);
+      const suggestions = generateSuggestions(context, userId, patterns);
+
+      res.json({ success: true, data: suggestions });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Vorschläge fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Gewohnheits-Vorschläge konnten nicht erstellt werden' });
+    }
   }),
 );
 
@@ -134,9 +156,14 @@ proactiveIntelligenceRouter.get(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
     const userId = getUserId(req);
-    const stats = await getHabitStats(context, userId);
 
-    res.json({ success: true, data: stats });
+    try {
+      const stats = await getHabitStats(context, userId);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Statistiken fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Gewohnheits-Statistiken konnten nicht geladen werden' });
+    }
   }),
 );
 
@@ -164,8 +191,13 @@ proactiveIntelligenceRouter.post(
       throw new ValidationError('durationMinutes cannot exceed 480 (8 hours)');
     }
 
-    const session = await startFocusMode(context, userId, durationMinutes, taskId);
-    res.json({ success: true, data: session });
+    try {
+      const session = await startFocusMode(context, userId, durationMinutes, taskId);
+      res.json({ success: true, data: session });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Fokus-Modus Start fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: String(durationMinutes) });
+      res.status(500).json({ success: false, error: 'Fokus-Modus konnte nicht gestartet werden' });
+    }
   }),
 );
 
@@ -180,14 +212,20 @@ proactiveIntelligenceRouter.post(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
     const userId = getUserId(req);
-    const session = await endFocusMode(context, userId);
 
-    if (!session) {
-      res.json({ success: true, data: null, message: 'No active focus session' });
-      return;
+    try {
+      const session = await endFocusMode(context, userId);
+
+      if (!session) {
+        res.json({ success: true, data: null, message: 'No active focus session' });
+        return;
+      }
+
+      res.json({ success: true, data: session });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Fokus-Modus Ende fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Fokus-Modus konnte nicht beendet werden' });
     }
-
-    res.json({ success: true, data: session });
   }),
 );
 
@@ -202,9 +240,14 @@ proactiveIntelligenceRouter.get(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
     const userId = getUserId(req);
-    const status = await getFocusStatus(context, userId);
 
-    res.json({ success: true, data: status });
+    try {
+      const status = await getFocusStatus(context, userId);
+      res.json({ success: true, data: status });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Fokus-Status fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Fokus-Status konnte nicht abgerufen werden' });
+    }
   }),
 );
 
@@ -220,8 +263,13 @@ proactiveIntelligenceRouter.get(
 
     const userId = getUserId(req);
     const days = Math.min(90, Math.max(1, Number(req.query.days) || 7));
-    const sessions = await getFocusHistory(context, userId, days);
 
-    res.json({ success: true, data: sessions });
+    try {
+      const sessions = await getFocusHistory(context, userId, days);
+      res.json({ success: true, data: sessions });
+    } catch (error) {
+      logger.error('Proaktive Intelligenz: Fokus-Verlauf fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Fokus-Verlauf konnte nicht geladen werden' });
+    }
   }),
 );

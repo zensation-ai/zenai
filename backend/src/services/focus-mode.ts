@@ -34,26 +34,31 @@ export async function startFocusMode(
   durationMinutes: number,
   taskId?: string,
 ): Promise<FocusSession> {
-  // End any existing active session first
-  await queryContext(context, `
-    UPDATE focus_sessions
-    SET status = 'cancelled', ends_at = NOW()
-    WHERE user_id = $1 AND status = 'active'
-  `, [userId]);
+  try {
+    // End any existing active session first
+    await queryContext(context, `
+      UPDATE focus_sessions
+      SET status = 'cancelled', ends_at = NOW()
+      WHERE user_id = $1 AND status = 'active'
+    `, [userId]);
 
-  const id = uuidv4();
-  const endsAt = new Date(Date.now() + durationMinutes * 60 * 1000).toISOString();
+    const id = uuidv4();
+    const endsAt = new Date(Date.now() + durationMinutes * 60 * 1000).toISOString();
 
-  const result = await queryContext(context, `
-    INSERT INTO focus_sessions (id, user_id, started_at, ends_at, duration_minutes, active_task_id, status, created_at)
-    VALUES ($1, $2, NOW(), $3, $4, $5, 'active', NOW())
-    RETURNING *
-  `, [id, userId, endsAt, durationMinutes, taskId ?? null]);
+    const result = await queryContext(context, `
+      INSERT INTO focus_sessions (id, user_id, started_at, ends_at, duration_minutes, active_task_id, status, created_at)
+      VALUES ($1, $2, NOW(), $3, $4, $5, 'active', NOW())
+      RETURNING *
+    `, [id, userId, endsAt, durationMinutes, taskId ?? null]);
 
-  const row = result.rows[0];
-  logger.info('Focus mode started', { context, userId, durationMinutes, taskId });
+    const row = result.rows[0];
+    logger.info('Focus mode started', { context, userId, durationMinutes, taskId });
 
-  return mapRow(row);
+    return mapRow(row);
+  } catch (error) {
+    logger.error('Focus mode: Focus-Session konnte nicht gestartet werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 // ─── End focus mode ───────────────────────────────────
@@ -62,19 +67,24 @@ export async function endFocusMode(
   context: AIContext,
   userId: string,
 ): Promise<FocusSession | null> {
-  const result = await queryContext(context, `
-    UPDATE focus_sessions
-    SET status = 'completed', ends_at = NOW()
-    WHERE user_id = $1 AND status = 'active'
-    RETURNING *
-  `, [userId]);
+  try {
+    const result = await queryContext(context, `
+      UPDATE focus_sessions
+      SET status = 'completed', ends_at = NOW()
+      WHERE user_id = $1 AND status = 'active'
+      RETURNING *
+    `, [userId]);
 
-  if (result.rows.length === 0) {
-    return null;
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    logger.info('Focus mode ended', { context, userId });
+    return mapRow(result.rows[0]);
+  } catch (error) {
+    logger.error('Focus mode: Focus-Session konnte nicht beendet werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
   }
-
-  logger.info('Focus mode ended', { context, userId });
-  return mapRow(result.rows[0]);
 }
 
 // ─── Get current focus status ─────────────────────────
@@ -83,29 +93,34 @@ export async function getFocusStatus(
   context: AIContext,
   userId: string,
 ): Promise<{ active: boolean; session: FocusSession | null; remainingMinutes: number }> {
-  // Auto-complete expired sessions
-  await queryContext(context, `
-    UPDATE focus_sessions
-    SET status = 'completed'
-    WHERE user_id = $1 AND status = 'active' AND ends_at < NOW()
-  `, [userId]);
+  try {
+    // Auto-complete expired sessions
+    await queryContext(context, `
+      UPDATE focus_sessions
+      SET status = 'completed'
+      WHERE user_id = $1 AND status = 'active' AND ends_at < NOW()
+    `, [userId]);
 
-  const result = await queryContext(context, `
-    SELECT * FROM focus_sessions
-    WHERE user_id = $1 AND status = 'active'
-    ORDER BY started_at DESC
-    LIMIT 1
-  `, [userId]);
+    const result = await queryContext(context, `
+      SELECT * FROM focus_sessions
+      WHERE user_id = $1 AND status = 'active'
+      ORDER BY started_at DESC
+      LIMIT 1
+    `, [userId]);
 
-  if (result.rows.length === 0) {
-    return { active: false, session: null, remainingMinutes: 0 };
+    if (result.rows.length === 0) {
+      return { active: false, session: null, remainingMinutes: 0 };
+    }
+
+    const session = mapRow(result.rows[0]);
+    const endsAt = session.ends_at ? new Date(session.ends_at).getTime() : 0;
+    const remainingMinutes = Math.max(0, Math.round((endsAt - Date.now()) / 60000));
+
+    return { active: true, session, remainingMinutes };
+  } catch (error) {
+    logger.error('Focus mode: Focus-Status konnte nicht abgerufen werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
   }
-
-  const session = mapRow(result.rows[0]);
-  const endsAt = session.ends_at ? new Date(session.ends_at).getTime() : 0;
-  const remainingMinutes = Math.max(0, Math.round((endsAt - Date.now()) / 60000));
-
-  return { active: true, session, remainingMinutes };
 }
 
 // ─── Get focus history ────────────────────────────────
@@ -115,15 +130,20 @@ export async function getFocusHistory(
   userId: string,
   days = 7,
 ): Promise<FocusSession[]> {
-  const result = await queryContext(context, `
-    SELECT * FROM focus_sessions
-    WHERE user_id = $1
-      AND created_at > NOW() - ($2 || ' days')::INTERVAL
-    ORDER BY created_at DESC
-    LIMIT 50
-  `, [userId, String(days)]);
+  try {
+    const result = await queryContext(context, `
+      SELECT * FROM focus_sessions
+      WHERE user_id = $1
+        AND created_at > NOW() - ($2 || ' days')::INTERVAL
+      ORDER BY created_at DESC
+      LIMIT 50
+    `, [userId, String(days)]);
 
-  return result.rows.map(mapRow);
+    return result.rows.map(mapRow);
+  } catch (error) {
+    logger.error('Focus mode: Focus-Verlauf konnte nicht geladen werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 // ─── Helper ───────────────────────────────────────────

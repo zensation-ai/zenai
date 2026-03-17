@@ -84,43 +84,49 @@ voiceAdvancedRouter.post(
       throw new ValidationError('At least text or prosodic signals (speechRate, avgPitch, volume) must be provided');
     }
 
-    let result;
+    try {
+      let result;
 
-    if (signals.text && hasProsody) {
-      // Combined detection
-      const textEmotion = detectFromText(signals.text);
-      const prosodyEmotion = detectFromProsody({
-        speechRate: signals.speechRate,
-        avgPitch: signals.avgPitch,
-        pitchVariation: signals.pitchVariation,
-        volume: signals.volume,
-        pauseFrequency: signals.pauseFrequency,
+      if (signals.text && hasProsody) {
+        // Combined detection
+        const textEmotion = detectFromText(signals.text);
+        const prosodyEmotion = detectFromProsody({
+          speechRate: signals.speechRate,
+          avgPitch: signals.avgPitch,
+          pitchVariation: signals.pitchVariation,
+          volume: signals.volume,
+          pauseFrequency: signals.pauseFrequency,
+        });
+        result = combineSignals(textEmotion, prosodyEmotion);
+      } else if (signals.text) {
+        result = detectFromText(signals.text);
+      } else {
+        result = detectFromProsody({
+          speechRate: signals.speechRate,
+          avgPitch: signals.avgPitch,
+          pitchVariation: signals.pitchVariation,
+          volume: signals.volume,
+          pauseFrequency: signals.pauseFrequency,
+        });
+      }
+
+      logger.debug('Emotion detection complete', {
+        context,
+        primary: result.primary,
+        confidence: result.confidence,
+        hasText: !!signals.text,
+        hasProsody,
       });
-      result = combineSignals(textEmotion, prosodyEmotion);
-    } else if (signals.text) {
-      result = detectFromText(signals.text);
-    } else {
-      result = detectFromProsody({
-        speechRate: signals.speechRate,
-        avgPitch: signals.avgPitch,
-        pitchVariation: signals.pitchVariation,
-        volume: signals.volume,
-        pauseFrequency: signals.pauseFrequency,
+
+      res.json({
+        success: true,
+        data: result,
       });
-    }
-
-    logger.debug('Emotion detection complete', {
-      context,
-      primary: result.primary,
-      confidence: result.confidence,
-      hasText: !!signals.text,
-      hasProsody,
-    });
-
-    res.json({
-      success: true,
-      data: result,
-    });
+    } catch (error) {
+    if (error instanceof ValidationError) { throw error; }
+    logger.error('Voice: Emotions-Erkennung fehlgeschlagen', error instanceof Error ? error : undefined, { context: req.params.context as 'personal' | 'work' | 'learning' | 'creative' });
+    res.status(500).json({ success: false, error: 'Emotions-Erkennung fehlgeschlagen' });
+  }
   })
 );
 
@@ -136,15 +142,20 @@ voiceAdvancedRouter.get(
     const { context } = req.params;
     validateContext(context);
 
-    const personas = listPersonas();
+    try {
+      const personas = listPersonas();
 
-    res.json({
-      success: true,
-      data: {
-        personas,
-        contextDefault: getPersona(context),
-      },
-    });
+      res.json({
+        success: true,
+        data: {
+          personas,
+          contextDefault: getPersona(context),
+        },
+      });
+    } catch (error) {
+      logger.error('Voice: Personas-Liste fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Sprachpersonas konnten nicht geladen werden' });
+    }
   })
 );
 
@@ -160,34 +171,39 @@ voiceAdvancedRouter.get(
     const { context } = req.params;
     validateContext(context);
 
-    // Check DB for user's active persona preference
-    const result = await queryContext(
-      context,
-      'SELECT active_persona_id FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
-      [userId]
-    );
+    try {
+      // Check DB for user's active persona preference
+      const result = await queryContext(
+        context,
+        'SELECT active_persona_id FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+        [userId]
+      );
 
-    const activePersonaId = result.rows[0]?.active_persona_id;
-    let persona;
+      const activePersonaId = result.rows[0]?.active_persona_id;
+      let persona;
 
-    if (activePersonaId) {
-      persona = getPersonaById(activePersonaId);
+      if (activePersonaId) {
+        persona = getPersonaById(activePersonaId);
+      }
+
+      // Fall back to context default
+      if (!persona) {
+        persona = getPersona(context);
+      }
+
+      const promptAddendum = getPersonaPromptAddendum(persona);
+
+      res.json({
+        success: true,
+        data: {
+          persona,
+          promptAddendum,
+        },
+      });
+    } catch (error) {
+      logger.error('Voice: Aktive Persona fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Aktive Sprachpersona konnte nicht geladen werden' });
     }
-
-    // Fall back to context default
-    if (!persona) {
-      persona = getPersona(context);
-    }
-
-    const promptAddendum = getPersonaPromptAddendum(persona);
-
-    res.json({
-      success: true,
-      data: {
-        persona,
-        promptAddendum,
-      },
-    });
   })
 );
 
@@ -216,33 +232,39 @@ voiceAdvancedRouter.put(
       throw new ValidationError(`Unknown persona: ${personaId}. Use GET /voice/personas to see available options.`);
     }
 
-    // Upsert voice settings with active persona
-    const existing = await queryContext(context,
-      'SELECT id FROM voice_settings WHERE user_id = $1 LIMIT 1',
-      [userId]
-    );
+    try {
+      // Upsert voice settings with active persona
+      const existing = await queryContext(context,
+        'SELECT id FROM voice_settings WHERE user_id = $1 LIMIT 1',
+        [userId]
+      );
 
-    if (existing.rows.length > 0) {
-      await queryContext(context,
-        'UPDATE voice_settings SET active_persona_id = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
-        [personaId, existing.rows[0].id, userId]
-      );
-    } else {
-      await queryContext(context,
-        'INSERT INTO voice_settings (active_persona_id, user_id) VALUES ($1, $2)',
-        [personaId, userId]
-      );
+      if (existing.rows.length > 0) {
+        await queryContext(context,
+          'UPDATE voice_settings SET active_persona_id = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
+          [personaId, existing.rows[0].id, userId]
+        );
+      } else {
+        await queryContext(context,
+          'INSERT INTO voice_settings (active_persona_id, user_id) VALUES ($1, $2)',
+          [personaId, userId]
+        );
+      }
+
+      logger.info('Active voice persona updated', { context, personaId, userId });
+
+      res.json({
+        success: true,
+        data: {
+          persona,
+          promptAddendum: getPersonaPromptAddendum(persona),
+        },
+      });
+    } catch (error) {
+      if (error instanceof ValidationError) { throw error; }
+      logger.error('Voice: Persona-Aktualisierung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: personaId });
+      res.status(500).json({ success: false, error: 'Sprachpersona konnte nicht aktualisiert werden' });
     }
-
-    logger.info('Active voice persona updated', { context, personaId, userId });
-
-    res.json({
-      success: true,
-      data: {
-        persona,
-        promptAddendum: getPersonaPromptAddendum(persona),
-      },
-    });
   })
 );
 
@@ -263,13 +285,18 @@ voiceAdvancedRouter.post(
       throw new ValidationError(parseResult.error.issues[0]?.message || 'Invalid request body');
     }
 
-    const { transcript } = parseResult.data;
-    const command = parseCommand(transcript);
+    try {
+      const { transcript } = parseResult.data;
+      const command = parseCommand(transcript);
 
-    res.json({
-      success: true,
-      data: command,
-    });
+      res.json({
+        success: true,
+        data: command,
+      });
+    } catch (error) {
+      logger.error('Voice: Kommando-Parsing fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Sprachbefehl konnte nicht verarbeitet werden' });
+    }
   })
 );
 
@@ -285,21 +312,26 @@ voiceAdvancedRouter.get(
     const { context } = req.params;
     validateContext(context);
 
-    const result = await queryContext(
-      context,
-      'SELECT emotion_detection_enabled, adaptive_responses_enabled FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
-      [userId]
-    );
+    try {
+      const result = await queryContext(
+        context,
+        'SELECT emotion_detection_enabled, adaptive_responses_enabled FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+        [userId]
+      );
 
-    const settings = result.rows[0] || {
-      emotion_detection_enabled: true,
-      adaptive_responses_enabled: true,
-    };
+      const settings = result.rows[0] || {
+        emotion_detection_enabled: true,
+        adaptive_responses_enabled: true,
+      };
 
-    res.json({
-      success: true,
-      data: settings,
-    });
+      res.json({
+        success: true,
+        data: settings,
+      });
+    } catch (error) {
+      logger.error('Voice: Emotions-Einstellungen fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Emotions-Einstellungen konnten nicht geladen werden' });
+    }
   })
 );
 
@@ -322,41 +354,46 @@ voiceAdvancedRouter.put(
 
     const data = parseResult.data;
 
-    const existing = await queryContext(context,
-      'SELECT id FROM voice_settings WHERE user_id = $1 LIMIT 1',
-      [userId]
-    );
+    try {
+      const existing = await queryContext(context,
+        'SELECT id FROM voice_settings WHERE user_id = $1 LIMIT 1',
+        [userId]
+      );
 
-    let result;
-    if (existing.rows.length > 0) {
-      result = await queryContext(context, `
-        UPDATE voice_settings
-        SET emotion_detection_enabled = COALESCE($1, emotion_detection_enabled),
-            adaptive_responses_enabled = COALESCE($2, adaptive_responses_enabled),
-            updated_at = NOW()
-        WHERE id = $3 AND user_id = $4
-        RETURNING emotion_detection_enabled, adaptive_responses_enabled
-      `, [
-        data.emotion_detection_enabled ?? null,
-        data.adaptive_responses_enabled ?? null,
-        existing.rows[0].id,
-        userId,
-      ]);
-    } else {
-      result = await queryContext(context, `
-        INSERT INTO voice_settings (emotion_detection_enabled, adaptive_responses_enabled, user_id)
-        VALUES ($1, $2, $3)
-        RETURNING emotion_detection_enabled, adaptive_responses_enabled
-      `, [
-        data.emotion_detection_enabled ?? true,
-        data.adaptive_responses_enabled ?? true,
-        userId,
-      ]);
+      let result;
+      if (existing.rows.length > 0) {
+        result = await queryContext(context, `
+          UPDATE voice_settings
+          SET emotion_detection_enabled = COALESCE($1, emotion_detection_enabled),
+              adaptive_responses_enabled = COALESCE($2, adaptive_responses_enabled),
+              updated_at = NOW()
+          WHERE id = $3 AND user_id = $4
+          RETURNING emotion_detection_enabled, adaptive_responses_enabled
+        `, [
+          data.emotion_detection_enabled ?? null,
+          data.adaptive_responses_enabled ?? null,
+          existing.rows[0].id,
+          userId,
+        ]);
+      } else {
+        result = await queryContext(context, `
+          INSERT INTO voice_settings (emotion_detection_enabled, adaptive_responses_enabled, user_id)
+          VALUES ($1, $2, $3)
+          RETURNING emotion_detection_enabled, adaptive_responses_enabled
+        `, [
+          data.emotion_detection_enabled ?? true,
+          data.adaptive_responses_enabled ?? true,
+          userId,
+        ]);
+      }
+
+      res.json({
+        success: true,
+        data: result.rows[0],
+      });
+    } catch (error) {
+      logger.error('Voice: Emotions-Einstellungen Aktualisierung fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Emotions-Einstellungen konnten nicht aktualisiert werden' });
     }
-
-    res.json({
-      success: true,
-      data: result.rows[0],
-    });
   })
 );

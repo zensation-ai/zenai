@@ -9,6 +9,7 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
 import {
   getProfile,
   upsertProfileSection,
@@ -34,8 +35,13 @@ digitalTwinRouter.get(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
     const userId = getUserId(req);
 
-    const profile = await getProfile(context, userId);
-    res.json({ success: true, data: profile });
+    try {
+      const profile = await getProfile(context, userId);
+      res.json({ success: true, data: profile });
+    } catch (error) {
+      logger.error('Digital Twin: Profil-Abruf fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Digital-Twin-Profil konnte nicht geladen werden' });
+    }
   }),
 );
 
@@ -57,10 +63,15 @@ digitalTwinRouter.put(
       throw new ValidationError('data must be a JSON object');
     }
 
-    const entry = await upsertProfileSection(
-      context, userId, section as ProfileSection, data, 'user_correction', 1.0,
-    );
-    res.json({ success: true, data: entry });
+    try {
+      const entry = await upsertProfileSection(
+        context, userId, section as ProfileSection, data, 'user_correction', 1.0,
+      );
+      res.json({ success: true, data: entry });
+    } catch (error) {
+      logger.error('Digital Twin: Profil-Aktualisierung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: section });
+      res.status(500).json({ success: false, error: 'Profilsektion konnte nicht aktualisiert werden' });
+    }
   }),
 );
 
@@ -74,8 +85,13 @@ digitalTwinRouter.get(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
     const userId = getUserId(req);
 
-    const radar = await getRadarScores(context, userId);
-    res.json({ success: true, data: radar });
+    try {
+      const radar = await getRadarScores(context, userId);
+      res.json({ success: true, data: radar });
+    } catch (error) {
+      logger.error('Digital Twin: Radar-Scores fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Radar-Scores konnten nicht berechnet werden' });
+    }
   }),
 );
 
@@ -89,9 +105,14 @@ digitalTwinRouter.get(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
     const userId = getUserId(req);
 
-    const limit = Math.min(parseInt(req.query.limit as string, 10) || 12, 52);
-    const snapshots = await getEvolution(context, userId, limit);
-    res.json({ success: true, data: snapshots });
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string, 10) || 12, 52);
+      const snapshots = await getEvolution(context, userId, limit);
+      res.json({ success: true, data: snapshots });
+    } catch (error) {
+      logger.error('Digital Twin: Evolutionsverlauf fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Evolutionsverlauf konnte nicht geladen werden' });
+    }
   }),
 );
 
@@ -113,10 +134,15 @@ digitalTwinRouter.post(
       throw new ValidationError('corrected_value must be a JSON object');
     }
 
-    const correction = await submitCorrection(
-      context, userId, section as ProfileSection, corrected_value, reason,
-    );
-    res.json({ success: true, data: correction });
+    try {
+      const correction = await submitCorrection(
+        context, userId, section as ProfileSection, corrected_value, reason,
+      );
+      res.json({ success: true, data: correction });
+    } catch (error) {
+      logger.error('Digital Twin: Korrektur fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: section });
+      res.status(500).json({ success: false, error: 'Korrektur konnte nicht gespeichert werden' });
+    }
   }),
 );
 
@@ -130,8 +156,13 @@ digitalTwinRouter.get(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
     const userId = getUserId(req);
 
-    const exported = await exportProfile(context, userId);
-    res.json({ success: true, data: exported });
+    try {
+      const exported = await exportProfile(context, userId);
+      res.json({ success: true, data: exported });
+    } catch (error) {
+      logger.error('Digital Twin: Export fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Profil-Export konnte nicht erstellt werden' });
+    }
   }),
 );
 
@@ -145,15 +176,20 @@ digitalTwinRouter.post(
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
     const userId = getUserId(req);
 
-    const sections = await aggregateProfile(context, userId);
-    const snapshot = await createSnapshot(context, userId);
+    try {
+      const sections = await aggregateProfile(context, userId);
+      const snapshot = await createSnapshot(context, userId);
 
-    res.json({
-      success: true,
-      data: {
-        sections_updated: sections.length,
-        snapshot_id: snapshot.id,
-      },
-    });
+      res.json({
+        success: true,
+        data: {
+          sections_updated: sections.length,
+          snapshot_id: snapshot.id,
+        },
+      });
+    } catch (error) {
+      logger.error('Digital Twin: Profil-Refresh fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Profil konnte nicht aktualisiert werden' });
+    }
   }),
 );

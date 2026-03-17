@@ -10,6 +10,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
 import {
   generateDailyDigest,
   generateWeeklyReport,
@@ -33,8 +34,13 @@ businessNarrativeRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const digest = await generateDailyDigest(context, userId);
-    res.json({ success: true, data: digest });
+    try {
+      const digest = await generateDailyDigest(context, userId);
+      res.json({ success: true, data: digest });
+    } catch (error) {
+      logger.error('Geschäftsnarrative: Täglicher Digest fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Täglicher Geschäfts-Digest konnte nicht erstellt werden' });
+    }
   })
 );
 
@@ -48,8 +54,13 @@ businessNarrativeRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const report = await generateWeeklyReport(context, userId);
-    res.json({ success: true, data: report });
+    try {
+      const report = await generateWeeklyReport(context, userId);
+      res.json({ success: true, data: report });
+    } catch (error) {
+      logger.error('Geschäftsnarrative: Wochenbericht fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Wochenbericht konnte nicht erstellt werden' });
+    }
   })
 );
 
@@ -63,8 +74,13 @@ businessNarrativeRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const anomalies = await detectAllAnomalies(context, userId);
-    res.json({ success: true, data: anomalies });
+    try {
+      const anomalies = await detectAllAnomalies(context, userId);
+      res.json({ success: true, data: anomalies });
+    } catch (error) {
+      logger.error('Geschäftsnarrative: Anomalie-Erkennung fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Anomalien konnten nicht erkannt werden' });
+    }
   })
 );
 
@@ -78,8 +94,13 @@ businessNarrativeRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const kpis = await listKPIs(context, userId);
-    res.json({ success: true, data: kpis });
+    try {
+      const kpis = await listKPIs(context, userId);
+      res.json({ success: true, data: kpis });
+    } catch (error) {
+      logger.error('Geschäftsnarrative: KPI-Liste fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'KPIs konnten nicht geladen werden' });
+    }
   })
 );
 
@@ -97,8 +118,13 @@ businessNarrativeRouter.post(
     if (!name || !formula) { throw new ValidationError('name and formula are required'); }
     if (!formula.sources || !formula.aggregation) { throw new ValidationError('formula must include sources and aggregation'); }
 
-    const kpi = await createKPI(context, userId, { name, description, formula, targetValue, unit });
-    res.status(201).json({ success: true, data: kpi });
+    try {
+      const kpi = await createKPI(context, userId, { name, description, formula, targetValue, unit });
+      res.status(201).json({ success: true, data: kpi });
+    } catch (error) {
+      logger.error('Geschäftsnarrative: KPI-Erstellung fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'KPI konnte nicht erstellt werden' });
+    }
   })
 );
 
@@ -113,10 +139,16 @@ businessNarrativeRouter.put(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const updated = await updateKPI(context, userId, req.params.id, req.body);
-    if (!updated) { throw new NotFoundError('KPI not found'); }
+    try {
+      const updated = await updateKPI(context, userId, req.params.id, req.body);
+      if (!updated) { throw new NotFoundError('KPI not found'); }
 
-    res.json({ success: true, data: updated });
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      if (error instanceof NotFoundError) { throw error; }
+      logger.error('Geschäftsnarrative: KPI-Aktualisierung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: req.params.id });
+      res.status(500).json({ success: false, error: 'KPI konnte nicht aktualisiert werden' });
+    }
   })
 );
 
@@ -131,10 +163,16 @@ businessNarrativeRouter.delete(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const deleted = await deleteKPI(context, userId, req.params.id);
-    if (!deleted) { throw new NotFoundError('KPI not found'); }
+    try {
+      const deleted = await deleteKPI(context, userId, req.params.id);
+      if (!deleted) { throw new NotFoundError('KPI not found'); }
 
-    res.json({ success: true, message: 'KPI deleted' });
+      res.json({ success: true, message: 'KPI deleted' });
+    } catch (error) {
+      if (error instanceof NotFoundError) { throw error; }
+      logger.error('Geschäftsnarrative: KPI-Löschung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: req.params.id });
+      res.status(500).json({ success: false, error: 'KPI konnte nicht gelöscht werden' });
+    }
   })
 );
 
@@ -148,8 +186,13 @@ businessNarrativeRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const days = Math.min(parseInt(req.query.days as string, 10) || 7, 30);
-    const trends = await getTrends(context, userId, days);
-    res.json({ success: true, data: trends });
+    try {
+      const days = Math.min(parseInt(req.query.days as string, 10) || 7, 30);
+      const trends = await getTrends(context, userId, days);
+      res.json({ success: true, data: trends });
+    } catch (error) {
+      logger.error('Geschäftsnarrative: Trend-Analyse fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Trends konnten nicht geladen werden' });
+    }
   })
 );

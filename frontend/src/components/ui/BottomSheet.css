@@ -1,29 +1,23 @@
-/* ============================================
-   BOTTOM SHEET - Mobile-native slide-up panel
-   Phase 85: Mobile Excellence
-   ============================================ */
+/* BottomSheet — Phase 85 */
 
 .bottom-sheet-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal, 1000);
+  z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
 }
 
-/* Backdrop */
 .bottom-sheet-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  animation: bsBackdropIn 0.25s ease forwards;
+  background: rgba(0, 0, 0, 0.4);
+  animation: bsBackdropIn 0.25s ease-out;
 }
 
 .bottom-sheet-backdrop.closing {
-  animation: bsBackdropOut 0.25s ease forwards;
+  animation: bsBackdropOut 0.25s ease-in forwards;
 }
 
 @keyframes bsBackdropIn {
@@ -36,26 +30,22 @@
   to { opacity: 0; }
 }
 
-/* Sheet */
 .bottom-sheet {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--surface-solid, #edf2f5);
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  background: var(--color-surface-primary, #fff);
   border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow: hidden;
+  animation: bsSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
-  /* Spring-like animation */
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  animation: bsSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .bottom-sheet.closing {
-  animation: bsSlideDown 0.25s ease forwards;
+  animation: bsSlideDown 0.25s ease-in forwards;
 }
 
 @keyframes bsSlideUp {
@@ -68,87 +58,45 @@
   to { transform: translateY(100%); }
 }
 
-/* Drag Handle */
 .bottom-sheet-handle {
   display: flex;
-  align-items: center;
   justify-content: center;
   padding: 10px 0 6px;
   cursor: grab;
-  flex-shrink: 0;
-  touch-action: none;
-}
-
-.bottom-sheet-handle:active {
-  cursor: grabbing;
 }
 
 .bottom-sheet-handle-bar {
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(128, 128, 128, 0.35);
+  background: var(--color-border-secondary, #d1d5db);
 }
 
-/* Header */
 .bottom-sheet-header {
-  padding: 4px 16px 12px;
-  border-bottom: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
-  flex-shrink: 0;
+  padding: 0 16px 8px;
+  border-bottom: 1px solid var(--color-border-primary, #e5e7eb);
 }
 
 .bottom-sheet-title {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text, #1a3a4a);
   margin: 0;
 }
 
-/* Content */
 .bottom-sheet-content {
   flex: 1;
-  min-height: 0;
   overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 0 16px 16px;
 }
 
-/* ============================================
-   Dark Mode
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-  .bottom-sheet {
-    background: var(--surface-solid, #1a3440);
-  }
-
-  .bottom-sheet-handle-bar {
-    background: rgba(200, 200, 200, 0.3);
-  }
-
-  .bottom-sheet-header {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-  }
+/* Dark mode */
+[data-theme="dark"] .bottom-sheet,
+.dark .bottom-sheet {
+  background: var(--color-surface-primary, #1f2937);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
 }
 
-:root[data-theme="dark"] .bottom-sheet {
-  background: var(--surface-solid, #1a3440);
-}
-
-:root[data-theme="dark"] .bottom-sheet-handle-bar {
-  background: rgba(200, 200, 200, 0.3);
-}
-
-/* ============================================
-   Reduced Motion
-   ============================================ */
-
-@media (prefers-reduced-motion: reduce) {
-  .bottom-sheet,
-  .bottom-sheet-backdrop {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+[data-theme="dark"] .bottom-sheet-handle-bar,
+.dark .bottom-sheet-handle-bar {
+  background: var(--color-border-secondary, #4b5563);
 }

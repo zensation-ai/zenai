@@ -10,6 +10,7 @@ import type { AIContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
 import {
   unifiedSearch,
   getSearchSuggestions,
@@ -52,19 +53,24 @@ semanticSearchRouter.post(
 
     const parsedLimit = Math.min(Math.max(parseInt(String(limit), 10) || 20, 1), 50);
 
-    const result = await unifiedSearch({
-      query: query.trim(),
-      context,
-      userId,
-      types: types as SearchEntityType[] | undefined,
-      timeRange,
-      limit: parsedLimit,
-    });
+    try {
+      const result = await unifiedSearch({
+        query: query.trim(),
+        context,
+        userId,
+        types: types as SearchEntityType[] | undefined,
+        timeRange,
+        limit: parsedLimit,
+      });
 
-    // Record search in history (fire-and-forget)
-    recordSearchHistory(context, userId, query.trim(), result.totalResults).catch(() => {});
+      // Record search in history (fire-and-forget)
+      recordSearchHistory(context, userId, query.trim(), result.totalResults).catch(() => {});
 
-    res.json({ success: true, data: result });
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Semantische Suche: Unified Search fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Suche konnte nicht durchgeführt werden' });
+    }
   })
 );
 
@@ -80,10 +86,15 @@ semanticSearchRouter.get(
       throw new ValidationError('Invalid context');
     }
 
-    const prefix = (req.query.q as string || '').trim();
-    const suggestions = await getSearchSuggestions(context, userId, prefix);
+    try {
+      const prefix = (req.query.q as string || '').trim();
+      const suggestions = await getSearchSuggestions(context, userId, prefix);
 
-    res.json({ success: true, data: suggestions });
+      res.json({ success: true, data: suggestions });
+    } catch (error) {
+      logger.error('Semantische Suche: Vorschläge fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Suchvorschläge konnten nicht geladen werden' });
+    }
   })
 );
 
@@ -99,10 +110,15 @@ semanticSearchRouter.get(
       throw new ValidationError('Invalid context');
     }
 
-    const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 50);
-    const history = await getSearchHistory(context, userId, limit);
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 50);
+      const history = await getSearchHistory(context, userId, limit);
 
-    res.json({ success: true, data: history });
+      res.json({ success: true, data: history });
+    } catch (error) {
+      logger.error('Semantische Suche: Verlauf fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Suchverlauf konnte nicht geladen werden' });
+    }
   })
 );
 
@@ -118,9 +134,13 @@ semanticSearchRouter.delete(
       throw new ValidationError('Invalid context');
     }
 
-    await clearSearchHistory(context, userId);
-
-    res.json({ success: true, message: 'Search history cleared' });
+    try {
+      await clearSearchHistory(context, userId);
+      res.json({ success: true, message: 'Search history cleared' });
+    } catch (error) {
+      logger.error('Semantische Suche: Verlauf löschen fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Suchverlauf konnte nicht gelöscht werden' });
+    }
   })
 );
 
@@ -136,8 +156,12 @@ semanticSearchRouter.get(
       throw new ValidationError('Invalid context');
     }
 
-    const facets = await getSearchFacets(context, userId);
-
-    res.json({ success: true, data: facets });
+    try {
+      const facets = await getSearchFacets(context, userId);
+      res.json({ success: true, data: facets });
+    } catch (error) {
+      logger.error('Semantische Suche: Facetten fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Suchfacetten konnten nicht geladen werden' });
+    }
   })
 );

@@ -9,6 +9,7 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
 import {
   processQuery,
   getSuggestionsForPage,
@@ -33,27 +34,32 @@ unifiedAssistantRouter.post(
       throw new ValidationError('Query is required');
     }
 
-    const startTime = Date.now();
-    const result = processQuery(query.trim());
-    const responseTimeMs = Date.now() - startTime;
+    try {
+      const startTime = Date.now();
+      const result = processQuery(query.trim());
+      const responseTimeMs = Date.now() - startTime;
 
-    // Fire-and-forget: record interaction
-    recordInteraction(context, userId, {
-      query: query.trim(),
-      intent: result.intent,
-      action: (result.actions[0] as unknown as Record<string, unknown>) ?? null,
-      result: { actionCount: result.actions.length, confidence: result.confidence },
-      pageContext: pageContext ?? null,
-      responseTimeMs,
-    }).catch(() => { /* swallow */ });
-
-    res.json({
-      success: true,
-      data: {
-        ...result,
+      // Fire-and-forget: record interaction
+      recordInteraction(context, userId, {
+        query: query.trim(),
+        intent: result.intent,
+        action: (result.actions[0] as unknown as Record<string, unknown>) ?? null,
+        result: { actionCount: result.actions.length, confidence: result.confidence },
+        pageContext: pageContext ?? null,
         responseTimeMs,
-      },
-    });
+      }).catch(() => { /* swallow */ });
+
+      res.json({
+        success: true,
+        data: {
+          ...result,
+          responseTimeMs,
+        },
+      });
+    } catch (error) {
+      logger.error('Unified Assistant: Query-Verarbeitung fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Assistenten-Anfrage konnte nicht verarbeitet werden' });
+    }
   })
 );
 
@@ -66,10 +72,15 @@ unifiedAssistantRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const pageContext = (req.query.page as string) ?? 'dashboard';
-    const suggestions = getSuggestionsForPage(pageContext);
+    try {
+      const pageContext = (req.query.page as string) ?? 'dashboard';
+      const suggestions = getSuggestionsForPage(pageContext);
 
-    res.json({ success: true, data: suggestions });
+      res.json({ success: true, data: suggestions });
+    } catch (error) {
+      logger.error('Unified Assistant: Vorschläge fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Assistenten-Vorschläge konnten nicht geladen werden' });
+    }
   })
 );
 
@@ -88,26 +99,31 @@ unifiedAssistantRouter.post(
       throw new ValidationError('actionId is required');
     }
 
-    // For now, cross-feature actions return instructions for the frontend to execute.
-    // The actual execution happens client-side via navigation + state passing.
-    const actionInstructions: Record<string, unknown> = {
-      actionId,
-      status: 'delegated',
-      message: 'Action delegated to frontend for execution',
-      params: params ?? {},
-    };
+    try {
+      // For now, cross-feature actions return instructions for the frontend to execute.
+      // The actual execution happens client-side via navigation + state passing.
+      const actionInstructions: Record<string, unknown> = {
+        actionId,
+        status: 'delegated',
+        message: 'Action delegated to frontend for execution',
+        params: params ?? {},
+      };
 
-    // Record the execution
-    recordInteraction(context, userId, {
-      query: `execute:${actionId}`,
-      intent: 'action',
-      action: { actionId, params },
-      result: actionInstructions,
-      pageContext: null,
-      responseTimeMs: 0,
-    }).catch(() => { /* swallow */ });
+      // Record the execution
+      recordInteraction(context, userId, {
+        query: `execute:${actionId}`,
+        intent: 'action',
+        action: { actionId, params },
+        result: actionInstructions,
+        pageContext: null,
+        responseTimeMs: 0,
+      }).catch(() => { /* swallow */ });
 
-    res.json({ success: true, data: actionInstructions });
+      res.json({ success: true, data: actionInstructions });
+    } catch (error) {
+      logger.error('Unified Assistant: Aktion fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: actionId });
+      res.status(500).json({ success: false, error: 'Assistenten-Aktion konnte nicht ausgeführt werden' });
+    }
   })
 );
 
@@ -121,9 +137,14 @@ unifiedAssistantRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) { throw new ValidationError('Invalid context'); }
 
-    const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 50);
-    const history = await getInteractionHistory(context, userId, limit);
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 50);
+      const history = await getInteractionHistory(context, userId, limit);
 
-    res.json({ success: true, data: history });
+      res.json({ success: true, data: history });
+    } catch (error) {
+      logger.error('Unified Assistant: Verlauf fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Assistenten-Verlauf konnte nicht geladen werden' });
+    }
   })
 );

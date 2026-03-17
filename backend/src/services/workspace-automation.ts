@@ -258,14 +258,19 @@ export async function listAutomations(
   context: AIContext,
   userId: string,
 ): Promise<WorkspaceAutomation[]> {
-  const result = await queryContext(
-    context,
-    `SELECT * FROM workspace_automations
-     WHERE user_id = $1
-     ORDER BY created_at DESC`,
-    [userId],
-  );
-  return result.rows;
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT * FROM workspace_automations
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [userId],
+    );
+    return result.rows;
+  } catch (error) {
+    logger.error('Workspace automation: Automationen konnten nicht geladen werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 /**
@@ -276,12 +281,17 @@ export async function getAutomation(
   automationId: string,
   userId: string,
 ): Promise<WorkspaceAutomation | null> {
-  const result = await queryContext(
-    context,
-    `SELECT * FROM workspace_automations WHERE id = $1 AND user_id = $2`,
-    [automationId, userId],
-  );
-  return result.rows[0] ?? null;
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT * FROM workspace_automations WHERE id = $1 AND user_id = $2`,
+      [automationId, userId],
+    );
+    return result.rows[0] ?? null;
+  } catch (error) {
+    logger.error('Workspace automation: Automation konnte nicht geladen werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
+  }
 }
 
 /**
@@ -292,25 +302,30 @@ export async function createAutomation(
   userId: string,
   input: CreateAutomationInput,
 ): Promise<WorkspaceAutomation> {
-  const result = await queryContext(
-    context,
-    `INSERT INTO workspace_automations
-       (user_id, name, description, trigger_type, trigger_config, conditions, actions, enabled, template_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-     RETURNING *`,
-    [
-      userId,
-      input.name,
-      input.description ?? null,
-      input.trigger_type,
-      JSON.stringify(input.trigger_config),
-      JSON.stringify(input.conditions ?? []),
-      JSON.stringify(input.actions),
-      input.enabled ?? true,
-      input.template_id ?? null,
-    ],
-  );
-  return result.rows[0];
+  try {
+    const result = await queryContext(
+      context,
+      `INSERT INTO workspace_automations
+         (user_id, name, description, trigger_type, trigger_config, conditions, actions, enabled, template_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING *`,
+      [
+        userId,
+        input.name,
+        input.description ?? null,
+        input.trigger_type,
+        JSON.stringify(input.trigger_config),
+        JSON.stringify(input.conditions ?? []),
+        JSON.stringify(input.actions),
+        input.enabled ?? true,
+        input.template_id ?? null,
+      ],
+    );
+    return result.rows[0];
+  } catch (error) {
+    logger.error('Workspace automation: Automation konnte nicht erstellt werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 /**
@@ -348,53 +363,58 @@ export async function updateAutomation(
   userId: string,
   updates: Partial<CreateAutomationInput>,
 ): Promise<WorkspaceAutomation | null> {
-  const fields: string[] = [];
-  const values: (string | number | boolean | null)[] = [];
-  let idx = 1;
+  try {
+    const fields: string[] = [];
+    const values: (string | number | boolean | null)[] = [];
+    let idx = 1;
 
-  if (updates.name !== undefined) {
-    fields.push(`name = $${idx++}`);
-    values.push(updates.name);
-  }
-  if (updates.description !== undefined) {
-    fields.push(`description = $${idx++}`);
-    values.push(updates.description);
-  }
-  if (updates.trigger_type !== undefined) {
-    fields.push(`trigger_type = $${idx++}`);
-    values.push(updates.trigger_type);
-  }
-  if (updates.trigger_config !== undefined) {
-    fields.push(`trigger_config = $${idx++}`);
-    values.push(JSON.stringify(updates.trigger_config));
-  }
-  if (updates.conditions !== undefined) {
-    fields.push(`conditions = $${idx++}`);
-    values.push(JSON.stringify(updates.conditions));
-  }
-  if (updates.actions !== undefined) {
-    fields.push(`actions = $${idx++}`);
-    values.push(JSON.stringify(updates.actions));
-  }
-  if (updates.enabled !== undefined) {
-    fields.push(`enabled = $${idx++}`);
-    values.push(updates.enabled);
-  }
+    if (updates.name !== undefined) {
+      fields.push(`name = $${idx++}`);
+      values.push(updates.name);
+    }
+    if (updates.description !== undefined) {
+      fields.push(`description = $${idx++}`);
+      values.push(updates.description);
+    }
+    if (updates.trigger_type !== undefined) {
+      fields.push(`trigger_type = $${idx++}`);
+      values.push(updates.trigger_type);
+    }
+    if (updates.trigger_config !== undefined) {
+      fields.push(`trigger_config = $${idx++}`);
+      values.push(JSON.stringify(updates.trigger_config));
+    }
+    if (updates.conditions !== undefined) {
+      fields.push(`conditions = $${idx++}`);
+      values.push(JSON.stringify(updates.conditions));
+    }
+    if (updates.actions !== undefined) {
+      fields.push(`actions = $${idx++}`);
+      values.push(JSON.stringify(updates.actions));
+    }
+    if (updates.enabled !== undefined) {
+      fields.push(`enabled = $${idx++}`);
+      values.push(updates.enabled);
+    }
 
-  if (fields.length === 0) return getAutomation(context, automationId, userId);
+    if (fields.length === 0) return getAutomation(context, automationId, userId);
 
-  fields.push(`updated_at = NOW()`);
-  values.push(automationId, userId);
+    fields.push(`updated_at = NOW()`);
+    values.push(automationId, userId);
 
-  const result = await queryContext(
-    context,
-    `UPDATE workspace_automations
-     SET ${fields.join(', ')}
-     WHERE id = $${idx++} AND user_id = $${idx}
-     RETURNING *`,
-    values,
-  );
-  return result.rows[0] ?? null;
+    const result = await queryContext(
+      context,
+      `UPDATE workspace_automations
+       SET ${fields.join(', ')}
+       WHERE id = $${idx++} AND user_id = $${idx}
+       RETURNING *`,
+      values,
+    );
+    return result.rows[0] ?? null;
+  } catch (error) {
+    logger.error('Workspace automation: Automation konnte nicht aktualisiert werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
+  }
 }
 
 /**
@@ -405,12 +425,17 @@ export async function deleteAutomation(
   automationId: string,
   userId: string,
 ): Promise<boolean> {
-  const result = await queryContext(
-    context,
-    `DELETE FROM workspace_automations WHERE id = $1 AND user_id = $2`,
-    [automationId, userId],
-  );
-  return (result.rowCount ?? 0) > 0;
+  try {
+    const result = await queryContext(
+      context,
+      `DELETE FROM workspace_automations WHERE id = $1 AND user_id = $2`,
+      [automationId, userId],
+    );
+    return (result.rowCount ?? 0) > 0;
+  } catch (error) {
+    logger.error('Workspace automation: Automation konnte nicht geloescht werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
+  }
 }
 
 /**
@@ -520,19 +545,24 @@ export async function getExecutionHistory(
   userId: string,
   limit = 20,
 ): Promise<AutomationExecution[]> {
-  // Verify ownership
-  const automation = await getAutomation(context, automationId, userId);
-  if (!automation) return [];
+  try {
+    // Verify ownership
+    const automation = await getAutomation(context, automationId, userId);
+    if (!automation) return [];
 
-  const result = await queryContext(
-    context,
-    `SELECT * FROM automation_executions
-     WHERE automation_id = $1
-     ORDER BY started_at DESC
-     LIMIT $2`,
-    [automationId, limit],
-  );
-  return result.rows;
+    const result = await queryContext(
+      context,
+      `SELECT * FROM automation_executions
+       WHERE automation_id = $1
+       ORDER BY started_at DESC
+       LIMIT $2`,
+      [automationId, limit],
+    );
+    return result.rows;
+  } catch (error) {
+    logger.error('Workspace automation: Ausfuehrungsverlauf konnte nicht geladen werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
+  }
 }
 
 // ─── Internal Helpers ───────────────────────────────────

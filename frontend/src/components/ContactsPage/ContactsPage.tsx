@@ -18,11 +18,15 @@ import {
   useCreateOrganizationMutation,
   useDeleteOrganizationMutation,
 } from '../../hooks/queries/useContacts';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/query-keys';
 import { ContactList } from './ContactList';
 import { OrganizationList } from './OrganizationList';
 import { useEscapeKey } from '../../hooks/useClickOutside';
 import { ContactForm } from './ContactForm';
 import { HubPage, type TabDef } from '../HubPage';
+import { PullToRefresh } from '../ui';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import type { AIContext } from '../ContextSwitcher';
 import type { Contact, Organization } from './types';
@@ -73,6 +77,13 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
   const deleteContactMutation = useDeleteContactMutation(context);
   const createOrgMutation = useCreateOrganizationMutation(context);
   const deleteOrgMutation = useDeleteOrganizationMutation(context);
+
+  const queryClient = useQueryClient();
+  const { isMobile } = useBreakpoint();
+
+  const handlePullToRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.contacts.all(context) });
+  }, [queryClient, context]);
 
   // Derived data
   const contacts = (contactsQuery.data ?? []) as Contact[];
@@ -202,6 +213,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
         )}
 
         {/* Content */}
+        <PullToRefresh onRefresh={handlePullToRefresh} enabled={isMobile}>
         <div className="contacts-content">
           {activeTab === 'organizations' ? (
             <OrganizationList
@@ -228,6 +240,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
             />
           )}
         </div>
+        </PullToRefresh>
       </HubPage>
 
       {showForm && (

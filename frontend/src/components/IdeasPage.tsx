@@ -40,6 +40,8 @@ import { AIProcessingOverlay } from './AIProcessingOverlay';
 import { CommandCenter } from './CommandCenter';
 import { RateLimitBanner } from './RateLimitBanner';
 import { IdeaBatchActionBar } from './IdeaBatchActionBar';
+import { PullToRefresh } from './ui';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useConfirm } from './ConfirmDialog';
 import { showToast } from './Toast';
 import {
@@ -95,6 +97,13 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   const toggleFavoriteMutation = useToggleFavoriteMutation(context);
 
   const error = queryError ? getErrorMessage(queryError, 'Gedanken konnten nicht geladen werden') : null;
+
+  const { isMobile } = useBreakpoint();
+
+  const handlePullToRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.ideas.list(context) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.ideas.stats(context) });
+  }, [queryClient, context]);
 
   // ============================================
   // PAGE-LOCAL STATE
@@ -755,6 +764,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
           })}
         />
 
+        <PullToRefresh onRefresh={handlePullToRefresh} enabled={isMobile}>
         <section className="ideas-section">
           <div className="section-header">
             <h2>
@@ -862,6 +872,7 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
             </>
           )}
         </section>
+        </PullToRefresh>
       </div>
 
       {/* Detail Modal */}

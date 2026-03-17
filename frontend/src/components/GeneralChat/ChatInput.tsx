@@ -9,6 +9,7 @@ import { useCallback, useEffect, type RefObject, type Dispatch, type SetStateAct
 import type { AIContext } from '../ContextSwitcher';
 import { ImageUpload } from '../ImageUpload';
 import { VoiceInput } from '../VoiceInput';
+import { AnimatedButton } from '../ui';
 
 interface ChatInputProps {
   inputValue: string;
@@ -143,8 +144,7 @@ export function ChatInput({
             aria-label="Chat-Nachricht eingeben"
             enterKeyHint="send"
           />
-          <button
-            type="button"
+          <AnimatedButton
             className="chat-send-btn neuro-hover-lift neuro-color-transition neuro-focus-ring"
             onClick={handleSendMessage}
             disabled={sending || (!inputValue.trim() && selectedImages.length === 0)}
@@ -155,7 +155,7 @@ export function ChatInput({
             ) : (
               <span className="send-arrow">{'\u2191'}</span>
             )}
-          </button>
+          </AnimatedButton>
         </div>
         <div className="chat-input-footer">
           <span className="chat-hint" title="Enter sendet die Nachricht, Shift+Enter f\u00FCr neue Zeile">

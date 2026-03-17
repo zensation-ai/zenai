@@ -32,30 +32,35 @@ router.get(
     const userId = getUserId(req);
     const context = req.params.context;
 
-    logger.debug(`[OnDeviceAI] Status request from user=${userId}, context=${context}`);
+    try {
+      logger.debug(`[OnDeviceAI] Status request from user=${userId}, context=${context}`);
 
-    res.json({
-      success: true,
-      data: {
-        cloudAvailable: true,
-        cloudModel: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-20250514',
-        cloudLatencyMs: null, // Could be populated with avg latency
-        recommendOnDevice: [
-          'intent_classification',
-          'sentiment_analysis',
-          'text_completion',
-          'extractive_summarization',
-        ],
-        requiresCloud: [
-          'creative_writing',
-          'code_generation',
-          'complex_reasoning',
-          'rag_retrieval',
-          'tool_use',
-          'vision',
-        ],
-      },
-    });
+      res.json({
+        success: true,
+        data: {
+          cloudAvailable: true,
+          cloudModel: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-20250514',
+          cloudLatencyMs: null, // Could be populated with avg latency
+          recommendOnDevice: [
+            'intent_classification',
+            'sentiment_analysis',
+            'text_completion',
+            'extractive_summarization',
+          ],
+          requiresCloud: [
+            'creative_writing',
+            'code_generation',
+            'complex_reasoning',
+            'rag_retrieval',
+            'tool_use',
+            'vision',
+          ],
+        },
+      });
+    } catch (error) {
+      logger.error('On-Device AI: Status-Abfrage fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' });
+      res.status(500).json({ success: false, error: 'On-Device-AI-Status konnte nicht abgerufen werden' });
+    }
   }),
 );
 
@@ -83,16 +88,21 @@ router.post(
       return;
     }
 
-    logger.info(`[OnDeviceAI] Vocab sync from user=${userId}, context=${context}, terms=${vocabulary.length}`);
+    try {
+      logger.info(`[OnDeviceAI] Vocab sync from user=${userId}, context=${context}, terms=${vocabulary.length}`);
 
-    // For now, just acknowledge. In future, store in DB.
-    res.json({
-      success: true,
-      data: {
-        termsReceived: vocabulary.length,
-        syncedAt: new Date().toISOString(),
-      },
-    });
+      // For now, just acknowledge. In future, store in DB.
+      res.json({
+        success: true,
+        data: {
+          termsReceived: vocabulary.length,
+          syncedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      logger.error('On-Device AI: Vokabular-Sync fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' });
+      res.status(500).json({ success: false, error: 'Vokabular-Synchronisierung fehlgeschlagen' });
+    }
   }),
 );
 
@@ -109,30 +119,35 @@ router.get(
     const userId = getUserId(req);
     const context = req.params.context;
 
-    logger.debug(`[OnDeviceAI] Config request from user=${userId}, context=${context}`);
+    try {
+      logger.debug(`[OnDeviceAI] Config request from user=${userId}, context=${context}`);
 
-    res.json({
-      success: true,
-      data: {
-        recommendedComplexityThreshold: 0.5,
-        maxCorpusSize: 500,
-        cacheTTLMs: 30 * 60 * 1000, // 30 minutes
-        enabledProviders: [
-          'intent-classifier',
-          'sentiment-analyzer',
-          'summarizer',
-          'text-completer',
-        ],
-        plannedProviders: [
-          {
-            id: 'embedding-onnx',
-            name: 'all-MiniLM-L6-v2',
-            sizeBytes: 23 * 1024 * 1024,
-            status: 'planned',
-          },
-        ],
-      },
-    });
+      res.json({
+        success: true,
+        data: {
+          recommendedComplexityThreshold: 0.5,
+          maxCorpusSize: 500,
+          cacheTTLMs: 30 * 60 * 1000, // 30 minutes
+          enabledProviders: [
+            'intent-classifier',
+            'sentiment-analyzer',
+            'summarizer',
+            'text-completer',
+          ],
+          plannedProviders: [
+            {
+              id: 'embedding-onnx',
+              name: 'all-MiniLM-L6-v2',
+              sizeBytes: 23 * 1024 * 1024,
+              status: 'planned',
+            },
+          ],
+        },
+      });
+    } catch (error) {
+      logger.error('On-Device AI: Konfiguration fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' });
+      res.status(500).json({ success: false, error: 'On-Device-AI-Konfiguration konnte nicht geladen werden' });
+    }
   }),
 );
 

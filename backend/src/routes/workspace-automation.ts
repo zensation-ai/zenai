@@ -10,6 +10,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { requireUUID } from '../middleware/validate-params';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
+import { logger } from '../utils/logger';
 import {
   listAutomations,
   getAutomation,
@@ -37,8 +38,13 @@ workspaceAutomationRouter.get(
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
     const userId = getUserId(req);
 
-    const automations = await listAutomations(context, userId);
-    res.json({ success: true, data: automations });
+    try {
+      const automations = await listAutomations(context, userId);
+      res.json({ success: true, data: automations });
+    } catch (error) {
+      logger.error('Workspace-Automation: Auflisten fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Automatisierungen konnten nicht geladen werden' });
+    }
   }),
 );
 
@@ -51,8 +57,13 @@ workspaceAutomationRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
 
-    const templates = getTemplates();
-    res.json({ success: true, data: templates });
+    try {
+      const templates = getTemplates();
+      res.json({ success: true, data: templates });
+    } catch (error) {
+      logger.error('Workspace-Automation: Vorlagen fehlgeschlagen', error instanceof Error ? error : undefined, { context });
+      res.status(500).json({ success: false, error: 'Automatisierungs-Vorlagen konnten nicht geladen werden' });
+    }
   }),
 );
 
@@ -67,10 +78,16 @@ workspaceAutomationRouter.get(
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
     const userId = getUserId(req);
 
-    const automation = await getAutomation(context, req.params.id, userId);
-    if (!automation) throw new NotFoundError('Automation not found');
+    try {
+      const automation = await getAutomation(context, req.params.id, userId);
+      if (!automation) throw new NotFoundError('Automation not found');
 
-    res.json({ success: true, data: automation });
+      res.json({ success: true, data: automation });
+    } catch (error) {
+      if (error instanceof NotFoundError) { throw error; }
+      logger.error('Workspace-Automation: Abruf fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: req.params.id });
+      res.status(500).json({ success: false, error: 'Automatisierung konnte nicht geladen werden' });
+    }
   }),
 );
 
@@ -96,17 +113,22 @@ workspaceAutomationRouter.post(
       throw new ValidationError('actions must be a non-empty array');
     }
 
-    const automation = await createAutomation(context, userId, {
-      name,
-      description,
-      trigger_type,
-      trigger_config: trigger_config ?? {},
-      conditions,
-      actions,
-      enabled,
-    });
+    try {
+      const automation = await createAutomation(context, userId, {
+        name,
+        description,
+        trigger_type,
+        trigger_config: trigger_config ?? {},
+        conditions,
+        actions,
+        enabled,
+      });
 
-    res.status(201).json({ success: true, data: automation });
+      res.status(201).json({ success: true, data: automation });
+    } catch (error) {
+      logger.error('Workspace-Automation: Erstellung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: name });
+      res.status(500).json({ success: false, error: 'Automatisierung konnte nicht erstellt werden' });
+    }
   }),
 );
 
@@ -154,18 +176,24 @@ workspaceAutomationRouter.put(
       throw new ValidationError(`trigger_type must be one of: ${VALID_TRIGGER_TYPES.join(', ')}`);
     }
 
-    const updated = await updateAutomation(context, req.params.id, userId, {
-      name,
-      description,
-      trigger_type,
-      trigger_config,
-      conditions,
-      actions,
-      enabled,
-    });
+    try {
+      const updated = await updateAutomation(context, req.params.id, userId, {
+        name,
+        description,
+        trigger_type,
+        trigger_config,
+        conditions,
+        actions,
+        enabled,
+      });
 
-    if (!updated) throw new NotFoundError('Automation not found');
-    res.json({ success: true, data: updated });
+      if (!updated) throw new NotFoundError('Automation not found');
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      if (error instanceof NotFoundError) { throw error; }
+      logger.error('Workspace-Automation: Aktualisierung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: req.params.id });
+      res.status(500).json({ success: false, error: 'Automatisierung konnte nicht aktualisiert werden' });
+    }
   }),
 );
 
@@ -180,10 +208,16 @@ workspaceAutomationRouter.delete(
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
     const userId = getUserId(req);
 
-    const deleted = await deleteAutomation(context, req.params.id, userId);
-    if (!deleted) throw new NotFoundError('Automation not found');
+    try {
+      const deleted = await deleteAutomation(context, req.params.id, userId);
+      if (!deleted) throw new NotFoundError('Automation not found');
 
-    res.json({ success: true, message: 'Automation deleted' });
+      res.json({ success: true, message: 'Automation deleted' });
+    } catch (error) {
+      if (error instanceof NotFoundError) { throw error; }
+      logger.error('Workspace-Automation: Löschung fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: req.params.id });
+      res.status(500).json({ success: false, error: 'Automatisierung konnte nicht gelöscht werden' });
+    }
   }),
 );
 
@@ -223,9 +257,14 @@ workspaceAutomationRouter.get(
     if (!isValidContext(context)) throw new ValidationError('Invalid context');
     const userId = getUserId(req);
 
-    const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
-    const history = await getExecutionHistory(context, req.params.id, userId, limit);
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
+      const history = await getExecutionHistory(context, req.params.id, userId, limit);
 
-    res.json({ success: true, data: history });
+      res.json({ success: true, data: history });
+    } catch (error) {
+      logger.error('Workspace-Automation: Ausführungsverlauf fehlgeschlagen', error instanceof Error ? error : undefined, { context, operation: req.params.id });
+      res.status(500).json({ success: false, error: 'Ausführungsverlauf konnte nicht geladen werden' });
+    }
   }),
 );

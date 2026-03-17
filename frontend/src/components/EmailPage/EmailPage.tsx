@@ -17,6 +17,8 @@ import { EmailList } from './EmailList';
 import { EmailDetail } from './EmailDetail';
 import { EmailCompose } from './EmailCompose';
 import { ImapAccountSetup } from './ImapAccountSetup';
+import { PullToRefresh } from '../ui';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 import type { EmailTab, ComposeState, Email, EmailCategory } from './types';
 import { FOLDER_CONFIG, CATEGORY_LABELS } from './types';
 import './EmailPage.css';
@@ -42,6 +44,12 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
   const data = useEmailData(context);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { isMobile } = useBreakpoint();
+
+  const handlePullToRefresh = useCallback(async () => {
+    await data.refetchCurrent();
+    data.fetchStats();
+  }, [data]);
 
   // ── Data loading ──────────────────────────────────────────
 
@@ -365,6 +373,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
       {/* ── Split pane ─────────────────────────────────────── */}
       <div className={`ep-split ${mobileShowDetail ? 'ep-split--detail-active' : ''}`}>
         {/* Left: Email List */}
+        <PullToRefresh onRefresh={handlePullToRefresh} enabled={isMobile}>
         <div className="ep-split-list">
           <EmailList
             emails={data.emails}
@@ -397,6 +406,7 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
             </button>
           )}
         </div>
+        </PullToRefresh>
 
         {/* Right: Email Detail */}
         <div className="ep-split-detail">

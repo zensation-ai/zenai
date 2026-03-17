@@ -45,15 +45,20 @@ export async function recordActivity(
   activityType: string,
   metadata: Record<string, unknown> = {},
 ): Promise<{ id: string }> {
-  const id = uuidv4();
-  const page = (metadata.page as string) ?? '';
+  try {
+    const id = uuidv4();
+    const page = (metadata.page as string) ?? '';
 
-  await queryContext(context, `
-    INSERT INTO habit_activities (id, user_id, activity_type, page, metadata, created_at)
-    VALUES ($1, $2, $3, $4, $5, NOW())
-  `, [id, userId, activityType, page, JSON.stringify(metadata)]);
+    await queryContext(context, `
+      INSERT INTO habit_activities (id, user_id, activity_type, page, metadata, created_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+    `, [id, userId, activityType, page, JSON.stringify(metadata)]);
 
-  return { id };
+    return { id };
+  } catch (error) {
+    logger.error('Habit engine: Aktivitaet konnte nicht aufgezeichnet werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 // ─── Detect patterns ──────────────────────────────────
@@ -306,21 +311,26 @@ export async function getStoredPatterns(
   context: AIContext,
   userId: string,
 ): Promise<HabitPattern[]> {
-  const result = await queryContext(context, `
-    SELECT id, pattern_type, description, confidence, data, detected_at
-    FROM habit_patterns
-    WHERE user_id = $1
-      AND status = 'active'
-    ORDER BY detected_at DESC
-    LIMIT 20
-  `, [userId]);
+  try {
+    const result = await queryContext(context, `
+      SELECT id, pattern_type, description, confidence, data, detected_at
+      FROM habit_patterns
+      WHERE user_id = $1
+        AND status = 'active'
+      ORDER BY detected_at DESC
+      LIMIT 20
+    `, [userId]);
 
-  return result.rows.map((r: Record<string, unknown>) => ({
-    id: String(r.id),
-    pattern_type: r.pattern_type as HabitPattern['pattern_type'],
-    description: String(r.description),
-    detected_at: String(r.detected_at),
-    confidence: Number(r.confidence),
-    data: (r.data as Record<string, unknown>) ?? {},
-  }));
+    return result.rows.map((r: Record<string, unknown>) => ({
+      id: String(r.id),
+      pattern_type: r.pattern_type as HabitPattern['pattern_type'],
+      description: String(r.description),
+      detected_at: String(r.detected_at),
+      confidence: Number(r.confidence),
+      data: (r.data as Record<string, unknown>) ?? {},
+    }));
+  } catch (error) {
+    logger.error('Habit engine: Gespeicherte Muster konnten nicht geladen werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }

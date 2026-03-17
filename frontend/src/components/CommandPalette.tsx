@@ -7,6 +7,8 @@ import { formatShortcut } from '../hooks/useKeyboardShortcut';
 import { useRegisteredCommands } from '../hooks/useCommandRegistry';
 import { getGKeyLabel } from '../hooks/useKeyboardNavigation';
 import { scaleIn, springs, durations, usePrefersReducedMotion } from '../utils/animations';
+import { BottomSheet } from './ui';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 import './CommandPalette.css';
 
 // ============================================
@@ -149,6 +151,7 @@ export const CommandPalette = memo(function CommandPalette({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const { isMobile } = useBreakpoint();
 
   // Consume page-registered commands
   const registeredCommands = useRegisteredCommands();
@@ -350,6 +353,146 @@ export const CommandPalette = memo(function CommandPalette({
 
   let currentIndex = -1;
 
+  const paletteContent = (
+    <>
+      {/* Search Input */}
+      <div className="command-palette-header">
+        <div className="command-palette-search">
+          <span className="command-palette-search-icon" aria-hidden="true">
+            🔍
+          </span>
+          {mode !== 'universal' && (
+            <span
+              className="command-palette-mode-pill"
+              style={{ backgroundColor: modeInfo.color }}
+            >
+              {modeInfo.label}
+            </span>
+          )}
+          <input
+            ref={inputRef}
+            type="text"
+            className="command-palette-input"
+            placeholder={modeInfo.placeholder}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+          />
+          <kbd className="command-palette-shortcut-hint">ESC</kbd>
+        </div>
+        {/* Mode hints */}
+        {mode === 'universal' && !query && (
+          <div className="command-palette-mode-hints">
+            <span className="command-palette-mode-hint">
+              <kbd>/</kbd> Navigation
+            </span>
+            <span className="command-palette-mode-hint">
+              <kbd>&gt;</kbd> Befehle
+            </span>
+            <span className="command-palette-mode-hint">
+              <kbd>@</kbd> Kontakte
+            </span>
+            <span className="command-palette-mode-hint">
+              <kbd>#</kbd> Tags
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Results */}
+      <div className="command-palette-results" ref={listRef}>
+        {flatList.length === 0 ? (
+          <div className="command-palette-empty">
+            <span className="command-palette-empty-icon">🔍</span>
+            <p>Keine Ergebnisse fuer &quot;{cleanQuery}&quot;</p>
+          </div>
+        ) : (
+          CATEGORY_ORDER.map(category => {
+            const items = groupedCommands[category];
+            if (items.length === 0) return null;
+
+            const info = CATEGORY_INFO[category];
+
+            return (
+              <div key={category} className="command-palette-group">
+                <div className="command-palette-group-header">
+                  <span className="command-palette-group-icon">{info.icon}</span>
+                  <span className="command-palette-group-label">{info.label}</span>
+                </div>
+                <ul className="command-palette-list">
+                  {items.map(command => {
+                    currentIndex++;
+                    const isSelected = currentIndex === selectedIndex;
+                    const itemIndex = currentIndex;
+
+                    return (
+                      <li key={command.id}>
+                        <button
+                          type="button"
+                          className={`command-palette-item ${isSelected ? 'selected' : ''}`}
+                          data-selected={isSelected}
+                          onClick={() => executeCommand(command)}
+                          onMouseEnter={() => setSelectedIndex(itemIndex)}
+                        >
+                          <span className="command-palette-item-icon">{command.icon}</span>
+                          <div className="command-palette-item-content">
+                            <span className="command-palette-item-label">{command.label}</span>
+                            {command.description && (
+                              <span className="command-palette-item-description">
+                                {command.description}
+                              </span>
+                            )}
+                          </div>
+                          {command.shortcut && (
+                            <kbd className="command-palette-item-shortcut">
+                              {formatShortcut(command.shortcut)}
+                            </kbd>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="command-palette-footer">
+        <div className="command-palette-footer-hints">
+          <span className="command-palette-hint">
+            <kbd>↑↓</kbd> navigieren
+          </span>
+          <span className="command-palette-hint">
+            <kbd>↵</kbd> auswaehlen
+          </span>
+          <span className="command-palette-hint">
+            <kbd>esc</kbd> schliessen
+          </span>
+        </div>
+      </div>
+    </>
+  );
+
+  // Mobile: render as BottomSheet
+  if (isMobile) {
+    return createPortal(
+      <BottomSheet isOpen={isOpen} onClose={onClose} snapPoint="full" title="Schnellnavigation">
+        <div className="command-palette command-palette--bottom-sheet">
+          {paletteContent}
+        </div>
+      </BottomSheet>,
+      document.body
+    );
+  }
+
+  // Desktop: render as centered modal with animation
   return createPortal(
     <motion.div
       className="command-palette-overlay"
@@ -372,128 +515,7 @@ export const CommandPalette = memo(function CommandPalette({
         exit="exit"
         transition={reducedMotion ? { duration: 0.01 } : { ...springs.snappy, duration: durations.instant }}
       >
-        {/* Search Input */}
-        <div className="command-palette-header">
-          <div className="command-palette-search">
-            <span className="command-palette-search-icon" aria-hidden="true">
-              🔍
-            </span>
-            {mode !== 'universal' && (
-              <span
-                className="command-palette-mode-pill"
-                style={{ backgroundColor: modeInfo.color }}
-              >
-                {modeInfo.label}
-              </span>
-            )}
-            <input
-              ref={inputRef}
-              type="text"
-              className="command-palette-input"
-              placeholder={modeInfo.placeholder}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-            />
-            <kbd className="command-palette-shortcut-hint">ESC</kbd>
-          </div>
-          {/* Mode hints */}
-          {mode === 'universal' && !query && (
-            <div className="command-palette-mode-hints">
-              <span className="command-palette-mode-hint">
-                <kbd>/</kbd> Navigation
-              </span>
-              <span className="command-palette-mode-hint">
-                <kbd>&gt;</kbd> Befehle
-              </span>
-              <span className="command-palette-mode-hint">
-                <kbd>@</kbd> Kontakte
-              </span>
-              <span className="command-palette-mode-hint">
-                <kbd>#</kbd> Tags
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Results */}
-        <div className="command-palette-results" ref={listRef}>
-          {flatList.length === 0 ? (
-            <div className="command-palette-empty">
-              <span className="command-palette-empty-icon">🔍</span>
-              <p>Keine Ergebnisse fuer &quot;{cleanQuery}&quot;</p>
-            </div>
-          ) : (
-            CATEGORY_ORDER.map(category => {
-              const items = groupedCommands[category];
-              if (items.length === 0) return null;
-
-              const info = CATEGORY_INFO[category];
-
-              return (
-                <div key={category} className="command-palette-group">
-                  <div className="command-palette-group-header">
-                    <span className="command-palette-group-icon">{info.icon}</span>
-                    <span className="command-palette-group-label">{info.label}</span>
-                  </div>
-                  <ul className="command-palette-list">
-                    {items.map(command => {
-                      currentIndex++;
-                      const isSelected = currentIndex === selectedIndex;
-                      const itemIndex = currentIndex;
-
-                      return (
-                        <li key={command.id}>
-                          <button
-                            type="button"
-                            className={`command-palette-item ${isSelected ? 'selected' : ''}`}
-                            data-selected={isSelected}
-                            onClick={() => executeCommand(command)}
-                            onMouseEnter={() => setSelectedIndex(itemIndex)}
-                          >
-                            <span className="command-palette-item-icon">{command.icon}</span>
-                            <div className="command-palette-item-content">
-                              <span className="command-palette-item-label">{command.label}</span>
-                              {command.description && (
-                                <span className="command-palette-item-description">
-                                  {command.description}
-                                </span>
-                              )}
-                            </div>
-                            {command.shortcut && (
-                              <kbd className="command-palette-item-shortcut">
-                                {formatShortcut(command.shortcut)}
-                              </kbd>
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="command-palette-footer">
-          <div className="command-palette-footer-hints">
-            <span className="command-palette-hint">
-              <kbd>↑↓</kbd> navigieren
-            </span>
-            <span className="command-palette-hint">
-              <kbd>↵</kbd> auswaehlen
-            </span>
-            <span className="command-palette-hint">
-              <kbd>esc</kbd> schliessen
-            </span>
-          </div>
-        </div>
+        {paletteContent}
       </motion.div>
     </motion.div>,
     document.body

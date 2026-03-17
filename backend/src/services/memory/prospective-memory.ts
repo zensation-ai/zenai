@@ -54,33 +54,38 @@ export async function createProspectiveMemory(
   userId: string,
   data: ProspectiveMemoryInput
 ): Promise<ProspectiveMemoryRecord> {
-  const { triggerType, triggerCondition, memoryContent, priority, expiresAt } = data;
+  try {
+    const { triggerType, triggerCondition, memoryContent, priority, expiresAt } = data;
 
-  const result = await queryContext(
-    context,
-    `INSERT INTO prospective_memories
-     (user_id, trigger_type, trigger_condition, memory_content, priority, expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, user_id, trigger_type, trigger_condition, memory_content,
-               priority, status, fired_at, expires_at, created_at, updated_at`,
-    [
-      userId,
+    const result = await queryContext(
+      context,
+      `INSERT INTO prospective_memories
+       (user_id, trigger_type, trigger_condition, memory_content, priority, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, user_id, trigger_type, trigger_condition, memory_content,
+                 priority, status, fired_at, expires_at, created_at, updated_at`,
+      [
+        userId,
+        triggerType,
+        JSON.stringify(triggerCondition),
+        memoryContent,
+        priority ?? 'medium',
+        expiresAt ?? null,
+      ]
+    );
+
+    const record = mapRow(result.rows[0]);
+    logger.info('Prospective memory created', {
+      id: record.id,
       triggerType,
-      JSON.stringify(triggerCondition),
-      memoryContent,
-      priority ?? 'medium',
-      expiresAt ?? null,
-    ]
-  );
+      context,
+    });
 
-  const record = mapRow(result.rows[0]);
-  logger.info('Prospective memory created', {
-    id: record.id,
-    triggerType,
-    context,
-  });
-
-  return record;
+    return record;
+  } catch (error) {
+    logger.error('Prospective memory: Erinnerung konnte nicht erstellt werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 /**
@@ -89,19 +94,24 @@ export async function createProspectiveMemory(
 export async function checkTimeBasedTriggers(
   context: AIContext
 ): Promise<ProspectiveMemoryRecord[]> {
-  const result = await queryContext(
-    context,
-    `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
-            priority, status, fired_at, expires_at, created_at, updated_at
-     FROM prospective_memories
-     WHERE status = 'pending'
-       AND trigger_type = 'time'
-       AND (trigger_condition->>'time')::timestamptz <= NOW()
-     ORDER BY priority DESC, created_at ASC`,
-    []
-  );
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
+              priority, status, fired_at, expires_at, created_at, updated_at
+       FROM prospective_memories
+       WHERE status = 'pending'
+         AND trigger_type = 'time'
+         AND (trigger_condition->>'time')::timestamptz <= NOW()
+       ORDER BY priority DESC, created_at ASC`,
+      []
+    );
 
-  return result.rows.map(mapRow);
+    return result.rows.map(mapRow);
+  } catch (error) {
+    logger.error('Prospective memory: Zeitbasierte Trigger konnten nicht geprueft werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
+  }
 }
 
 /**
@@ -112,21 +122,26 @@ export async function checkActivityTriggers(
   userId: string,
   currentPage: string
 ): Promise<ProspectiveMemoryRecord[]> {
-  const result = await queryContext(
-    context,
-    `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
-            priority, status, fired_at, expires_at, created_at, updated_at
-     FROM prospective_memories
-     WHERE status = 'pending'
-       AND trigger_type = 'activity'
-       AND user_id = $1
-       AND (trigger_condition->>'page' = $2
-            OR trigger_condition->>'activity' = $2)
-     ORDER BY priority DESC, created_at ASC`,
-    [userId, currentPage]
-  );
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
+              priority, status, fired_at, expires_at, created_at, updated_at
+       FROM prospective_memories
+       WHERE status = 'pending'
+         AND trigger_type = 'activity'
+         AND user_id = $1
+         AND (trigger_condition->>'page' = $2
+              OR trigger_condition->>'activity' = $2)
+       ORDER BY priority DESC, created_at ASC`,
+      [userId, currentPage]
+    );
 
-  return result.rows.map(mapRow);
+    return result.rows.map(mapRow);
+  } catch (error) {
+    logger.error('Prospective memory: Aktivitaets-Trigger konnten nicht geprueft werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 /**
@@ -136,20 +151,25 @@ export async function checkContextTriggers(
   context: AIContext,
   userId: string
 ): Promise<ProspectiveMemoryRecord[]> {
-  const result = await queryContext(
-    context,
-    `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
-            priority, status, fired_at, expires_at, created_at, updated_at
-     FROM prospective_memories
-     WHERE status = 'pending'
-       AND trigger_type = 'context'
-       AND user_id = $1
-       AND trigger_condition->>'context' = $2
-     ORDER BY priority DESC, created_at ASC`,
-    [userId, context]
-  );
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
+              priority, status, fired_at, expires_at, created_at, updated_at
+       FROM prospective_memories
+       WHERE status = 'pending'
+         AND trigger_type = 'context'
+         AND user_id = $1
+         AND trigger_condition->>'context' = $2
+       ORDER BY priority DESC, created_at ASC`,
+      [userId, context]
+    );
 
-  return result.rows.map(mapRow);
+    return result.rows.map(mapRow);
+  } catch (error) {
+    logger.error('Prospective memory: Kontext-Trigger konnten nicht geprueft werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 /**
@@ -159,22 +179,27 @@ export async function fireMemory(
   context: AIContext,
   memoryId: string
 ): Promise<ProspectiveMemoryRecord | null> {
-  const result = await queryContext(
-    context,
-    `UPDATE prospective_memories
-     SET status = 'fired', fired_at = NOW(), updated_at = NOW()
-     WHERE id = $1 AND status = 'pending'
-     RETURNING id, user_id, trigger_type, trigger_condition, memory_content,
-               priority, status, fired_at, expires_at, created_at, updated_at`,
-    [memoryId]
-  );
+  try {
+    const result = await queryContext(
+      context,
+      `UPDATE prospective_memories
+       SET status = 'fired', fired_at = NOW(), updated_at = NOW()
+       WHERE id = $1 AND status = 'pending'
+       RETURNING id, user_id, trigger_type, trigger_condition, memory_content,
+                 priority, status, fired_at, expires_at, created_at, updated_at`,
+      [memoryId]
+    );
 
-  if (result.rows.length === 0) {
-    return null;
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    logger.info('Prospective memory fired', { id: memoryId, context });
+    return mapRow(result.rows[0]);
+  } catch (error) {
+    logger.error('Prospective memory: Erinnerung konnte nicht ausgeloest werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
   }
-
-  logger.info('Prospective memory fired', { id: memoryId, context });
-  return mapRow(result.rows[0]);
 }
 
 /**
@@ -184,22 +209,27 @@ export async function dismissMemory(
   context: AIContext,
   memoryId: string
 ): Promise<ProspectiveMemoryRecord | null> {
-  const result = await queryContext(
-    context,
-    `UPDATE prospective_memories
-     SET status = 'dismissed', updated_at = NOW()
-     WHERE id = $1 AND status = 'pending'
-     RETURNING id, user_id, trigger_type, trigger_condition, memory_content,
-               priority, status, fired_at, expires_at, created_at, updated_at`,
-    [memoryId]
-  );
+  try {
+    const result = await queryContext(
+      context,
+      `UPDATE prospective_memories
+       SET status = 'dismissed', updated_at = NOW()
+       WHERE id = $1 AND status = 'pending'
+       RETURNING id, user_id, trigger_type, trigger_condition, memory_content,
+                 priority, status, fired_at, expires_at, created_at, updated_at`,
+      [memoryId]
+    );
 
-  if (result.rows.length === 0) {
-    return null;
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    logger.info('Prospective memory dismissed', { id: memoryId, context });
+    return mapRow(result.rows[0]);
+  } catch (error) {
+    logger.error('Prospective memory: Erinnerung konnte nicht verworfen werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
   }
-
-  logger.info('Prospective memory dismissed', { id: memoryId, context });
-  return mapRow(result.rows[0]);
 }
 
 /**
@@ -209,19 +239,24 @@ export async function listPending(
   context: AIContext,
   userId: string
 ): Promise<ProspectiveMemoryRecord[]> {
-  const result = await queryContext(
-    context,
-    `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
-            priority, status, fired_at, expires_at, created_at, updated_at
-     FROM prospective_memories
-     WHERE user_id = $1 AND status = 'pending'
-     ORDER BY
-       CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END,
-       created_at ASC`,
-    [userId]
-  );
+  try {
+    const result = await queryContext(
+      context,
+      `SELECT id, user_id, trigger_type, trigger_condition, memory_content,
+              priority, status, fired_at, expires_at, created_at, updated_at
+       FROM prospective_memories
+       WHERE user_id = $1 AND status = 'pending'
+       ORDER BY
+         CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END,
+         created_at ASC`,
+      [userId]
+    );
 
-  return result.rows.map(mapRow);
+    return result.rows.map(mapRow);
+  } catch (error) {
+    logger.error('Prospective memory: Erinnerungen konnten nicht abgerufen werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    throw error;
+  }
 }
 
 /**
@@ -230,22 +265,27 @@ export async function listPending(
 export async function getExpiredAndCleanup(
   context: AIContext
 ): Promise<number> {
-  const result = await queryContext(
-    context,
-    `UPDATE prospective_memories
-     SET status = 'expired', updated_at = NOW()
-     WHERE status = 'pending'
-       AND expires_at IS NOT NULL
-       AND expires_at <= NOW()`,
-    []
-  );
+  try {
+    const result = await queryContext(
+      context,
+      `UPDATE prospective_memories
+       SET status = 'expired', updated_at = NOW()
+       WHERE status = 'pending'
+         AND expires_at IS NOT NULL
+         AND expires_at <= NOW()`,
+      []
+    );
 
-  const count = result.rowCount ?? 0;
-  if (count > 0) {
-    logger.info('Expired prospective memories cleaned up', { count, context });
+    const count = result.rowCount ?? 0;
+    if (count > 0) {
+      logger.info('Expired prospective memories cleaned up', { count, context });
+    }
+
+    return count;
+  } catch (error) {
+    logger.error('Prospective memory: Abgelaufene Erinnerungen konnten nicht bereinigt werden', error instanceof Error ? error : new Error(String(error)), { context });
+    throw error;
   }
-
-  return count;
 }
 
 // ===========================================
