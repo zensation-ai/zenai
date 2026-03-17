@@ -342,7 +342,7 @@ export async function generateDailyDigest(
 ): Promise<DailyDigest> {
   const today = new Date().toISOString().split('T')[0];
   const sections: NarrativeSection[] = [];
-  let allAnomalies: AnomalyInfo[] = [];
+  const allAnomalies: AnomalyInfo[] = [];
   const allActionItems: string[] = [];
 
   // Revenue Section
