@@ -501,7 +501,7 @@ class ProactiveDigestService {
         ),
         queryContext(
           context,
-          `SELECT COUNT(*) as cnt FROM episodic_memory
+          `SELECT COUNT(*) as cnt FROM episodic_memories
            WHERE context = $1 AND created_at BETWEEN $2 AND $3`,
           [context, from, to]
         ),
