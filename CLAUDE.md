@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 77
+## Current Phase: 96
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -130,6 +130,21 @@
 | **Maps** | `get_directions`, `get_opening_hours`, `find_nearby_places`, `optimize_day_route` |
 | **Email Intelligence** | `ask_inbox`, `inbox_summary` |
 | **MCP Ecosystem** | `mcp_call_tool`, `mcp_list_tools` |
+
+## Route Registration (Module System)
+
+- Routes are registered via modules in `backend/src/modules/` (NOT directly in main.ts)
+- Each module implements `Module` interface: `registerRoutes(app)` + optional `onStartup()`
+- Module index: `backend/src/modules/index.ts` registers all modules
+- To add a new route: create route file, import in appropriate module's `index.ts`
+- 32 modules: agents, analytics, auth, browser, business, calendar, canvas, chat, code, contacts, core-routes, documents, email, extensions, finance, governance, ideas, inbox, knowledge, learning, mcp, memory, misc, observability, planner, proactive, project-context, search, security, sleep, voice
+
+## Quality Audit Checklist (for new phases)
+
+- Verify new route files have `/:context/` prefix (not bare `/status`)
+- Verify new components are imported somewhere (check for orphans with `grep -r "ComponentName" frontend/src/`)
+- Verify `initialTab` casts in `App.tsx` include ALL tabs from the component's TABS array
+- Verify new routes are registered in the correct module in `backend/src/modules/*/index.ts`
 
 ## Key Files
 
@@ -1038,17 +1053,17 @@ cd backend && npm test -- --testPathPattern="intelligent-learning"
 # Backend - Tests mit Coverage
 cd backend && npm test -- --coverage
 
-# Frontend
-cd frontend && npm test
+# Frontend (vitest)
+cd frontend && npx vitest run
 ```
 
-### Test-Status (2026-03-14)
+### Test-Status (2026-03-17)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 4139 | 24 | 0 |
-| **Frontend** | 572 | 0 | 0 |
-| **Gesamt** | 4711 | 24 | 0 |
+| **Backend** | 4622 | 24 | 0 |
+| **Frontend** | 664 | 0 | 0 |
+| **Gesamt** | 5286 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
